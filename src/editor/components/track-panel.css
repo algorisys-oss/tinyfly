@@ -1,0 +1,182 @@
+.track-panel {
+  display: flex;
+  flex-direction: column;
+  background: #1a1a1a;
+  border-radius: 4px;
+  overflow: hidden;
+  min-width: 200px;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #252525;
+  border-bottom: 1px solid #333;
+  color: #aaa;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: #333;
+  border: none;
+  border-radius: 4px;
+  color: #aaa;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+
+.add-btn:hover {
+  background: #4a9eff;
+  color: #fff;
+}
+
+.panel-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.add-track-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #202020;
+  border-bottom: 1px solid #333;
+}
+
+.add-track-form input {
+  padding: 8px;
+  background: #252525;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 12px;
+}
+
+.add-track-form input:focus {
+  outline: none;
+  border-color: #4a9eff;
+}
+
+.confirm-btn {
+  padding: 8px;
+  background: #4a9eff;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.confirm-btn:hover {
+  background: #6ab0ff;
+}
+
+.track-list {
+  padding: 8px;
+}
+
+.track-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  margin-bottom: 4px;
+  background: #252525;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.track-item:hover {
+  background: #2a2a2a;
+}
+
+.track-item.selected {
+  background: #2a3a4a;
+  border: 1px solid #4a9eff;
+  margin: -1px;
+  margin-bottom: 3px;
+}
+
+.track-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.track-target {
+  font-size: 12px;
+  color: #ddd;
+  font-weight: 500;
+}
+
+.track-property {
+  font-size: 10px;
+  color: #888;
+}
+
+.track-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.keyframe-count {
+  font-size: 10px;
+  color: #666;
+}
+
+.remove-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #666;
+  font-size: 14px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.1s, background 0.1s, color 0.1s;
+}
+
+.track-item:hover .remove-btn {
+  opacity: 1;
+}
+
+.remove-btn:hover {
+  background: #3a2020;
+  color: #ff6666;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
+
+.empty-state p {
+  margin: 0 0 4px 0;
+  font-size: 12px;
+}
+
+.empty-state .hint {
+  font-size: 11px;
+  color: #555;
+}

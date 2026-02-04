@@ -1,0 +1,80 @@
+.curve-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  background: #1a1a1a;
+  border-radius: 4px;
+}
+
+.curve-editor-svg {
+  background: #222;
+  border-radius: 4px;
+  cursor: default;
+}
+
+.curve-editor-handle {
+  fill: #4a9eff;
+  stroke: #fff;
+  stroke-width: 2;
+  cursor: grab;
+  transition: fill 0.15s ease;
+}
+
+.curve-editor-handle:hover {
+  fill: #6ab0ff;
+}
+
+.curve-editor-handle.dragging {
+  fill: #ff6b4a;
+  cursor: grabbing;
+}
+
+.curve-editor-label {
+  fill: #666;
+  font-size: 10px;
+  font-family: system-ui, sans-serif;
+  text-anchor: middle;
+}
+
+.curve-editor-value {
+  padding: 6px 8px;
+  background: #111;
+  border-radius: 4px;
+  font-size: 11px;
+  text-align: center;
+}
+
+.curve-editor-value code {
+  color: #8bc34a;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.curve-editor-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.curve-preset-btn {
+  flex: 1 0 calc(50% - 2px);
+  padding: 6px 4px;
+  background: #333;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #ccc;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.curve-preset-btn:hover {
+  background: #404040;
+  border-color: #4a9eff;
+  color: #fff;
+}
+
+.curve-preset-btn:active {
+  background: #4a9eff;
+  color: #fff;
+}

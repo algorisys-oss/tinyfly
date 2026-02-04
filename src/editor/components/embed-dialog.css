@@ -1,0 +1,261 @@
+.embed-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.embed-dialog {
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 700px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.embed-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #333;
+}
+
+.embed-dialog-header h2 {
+  margin: 0;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.embed-close-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #888;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+
+.embed-close-btn:hover {
+  background: #333;
+  color: #fff;
+}
+
+.embed-dialog-content {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.embed-type-selector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.embed-type-btn {
+  flex: 1;
+  padding: 10px 16px;
+  background: #252525;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #aaa;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.embed-type-btn:hover {
+  background: #333;
+  color: #fff;
+}
+
+.embed-type-btn.active {
+  background: #4a9eff;
+  border-color: #4a9eff;
+  color: #fff;
+}
+
+.embed-description {
+  margin-bottom: 16px;
+}
+
+.embed-description p {
+  margin: 0;
+  color: #888;
+  font-size: 13px;
+}
+
+.embed-code-container {
+  background: #0d0d0d;
+  border: 1px solid #333;
+  border-radius: 4px;
+  max-height: 300px;
+  overflow: auto;
+}
+
+.embed-code {
+  margin: 0;
+  padding: 16px;
+  color: #ccc;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.embed-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.embed-btn {
+  padding: 10px 20px;
+  background: #333;
+  border: none;
+  border-radius: 4px;
+  color: #aaa;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.embed-btn:hover {
+  background: #444;
+  color: #fff;
+}
+
+.embed-btn-primary {
+  background: #4a9eff;
+  color: #fff;
+}
+
+.embed-btn-primary:hover {
+  background: #6ab0ff;
+}
+
+.embed-instructions {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #333;
+}
+
+.embed-instructions h4 {
+  margin: 0 0 12px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.embed-instructions ol {
+  margin: 0;
+  padding-left: 20px;
+  color: #888;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.embed-instructions code {
+  background: #252525;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  color: #4a9eff;
+}
+
+.embed-note {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: #252525;
+  border-left: 3px solid #f39c12;
+  border-radius: 0 4px 4px 0;
+  font-size: 12px;
+  color: #aaa;
+}
+
+.embed-note strong {
+  color: #f39c12;
+}
+
+/* Mobile breakpoint */
+@media (max-width: 768px) {
+  .embed-dialog {
+    width: 100%;
+    max-width: none;
+    max-height: 100vh;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  .embed-dialog-header {
+    padding: 12px 16px;
+  }
+
+  .embed-dialog-header h2 {
+    font-size: 16px;
+  }
+
+  .embed-dialog-content {
+    padding: 16px;
+  }
+
+  .embed-type-selector {
+    flex-direction: column;
+  }
+
+  .embed-type-btn {
+    padding: 12px 16px;
+  }
+
+  .embed-code-container {
+    max-height: 200px;
+  }
+
+  .embed-code {
+    font-size: 11px;
+    padding: 12px;
+  }
+
+  .embed-actions {
+    flex-direction: column;
+  }
+
+  .embed-btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* Small phone breakpoint */
+@media (max-width: 480px) {
+  .embed-dialog-header {
+    padding: 10px 12px;
+  }
+
+  .embed-dialog-content {
+    padding: 12px;
+  }
+
+  .embed-code {
+    font-size: 10px;
+    padding: 10px;
+  }
+}

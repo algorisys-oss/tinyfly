@@ -1,0 +1,12 @@
+# Files and directories to exclude from OSS publishing
+# Each line is a path relative to the repo root
+
+# Internal scripts
+scripts/
+
+# Internal documentation
+CLAUDE.md
+
+# IDE and editor configs (optional - uncomment if needed)
+# .vscode/
+# .idea/

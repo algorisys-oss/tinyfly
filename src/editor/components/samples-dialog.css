@@ -1,0 +1,253 @@
+.samples-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.samples-dialog {
+  background: #1a1a1a;
+  border-radius: 12px;
+  width: 700px;
+  max-width: 90vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.samples-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #333;
+  flex-shrink: 0;
+}
+
+.samples-dialog-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.samples-close-btn {
+  background: transparent;
+  border: none;
+  color: #888;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.1s, color 0.1s;
+}
+
+.samples-close-btn:hover {
+  background: #333;
+  color: #fff;
+}
+
+.samples-dialog-content {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.samples-categories {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.samples-category-btn {
+  padding: 8px 16px;
+  background: #252525;
+  border: 1px solid #333;
+  border-radius: 20px;
+  color: #aaa;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.samples-category-btn:hover {
+  background: #2a2a2a;
+  border-color: #444;
+  color: #fff;
+}
+
+.samples-category-btn.active {
+  background: #4a9eff;
+  border-color: #4a9eff;
+  color: #fff;
+}
+
+.samples-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.sample-card {
+  background: #252525;
+  border: 2px solid #333;
+  border-radius: 10px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.sample-card:hover,
+.sample-card.hovered {
+  background: #2a2a2a;
+  border-color: #4a9eff;
+  transform: translateY(-2px);
+}
+
+.sample-thumbnail {
+  font-size: 40px;
+  margin-bottom: 12px;
+  line-height: 1;
+}
+
+.sample-info {
+  width: 100%;
+}
+
+.sample-name {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.sample-description {
+  margin: 0 0 8px 0;
+  font-size: 11px;
+  color: #888;
+  line-height: 1.4;
+}
+
+.sample-duration {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #1a1a1a;
+  border-radius: 10px;
+  font-size: 10px;
+  color: #666;
+  font-family: monospace;
+}
+
+.samples-footer {
+  padding-top: 16px;
+  border-top: 1px solid #333;
+}
+
+.samples-hint {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+}
+
+/* Mobile breakpoint */
+@media (max-width: 768px) {
+  .samples-dialog {
+    width: 100%;
+    max-width: none;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .samples-dialog-header {
+    padding: 12px 16px;
+  }
+
+  .samples-dialog-header h2 {
+    font-size: 16px;
+  }
+
+  .samples-dialog-content {
+    padding: 16px;
+  }
+
+  .samples-categories {
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  .samples-category-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .samples-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .sample-card {
+    padding: 12px;
+  }
+
+  .sample-thumbnail {
+    font-size: 32px;
+    margin-bottom: 8px;
+  }
+
+  .sample-name {
+    font-size: 13px;
+  }
+
+  .sample-description {
+    font-size: 10px;
+  }
+}
+
+/* Small phone breakpoint */
+@media (max-width: 480px) {
+  .samples-dialog-content {
+    padding: 12px;
+  }
+
+  .samples-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .sample-card {
+    flex-direction: row;
+    text-align: left;
+    padding: 10px;
+  }
+
+  .sample-thumbnail {
+    font-size: 28px;
+    margin-bottom: 0;
+    margin-right: 12px;
+    flex-shrink: 0;
+  }
+
+  .sample-info {
+    text-align: left;
+  }
+}

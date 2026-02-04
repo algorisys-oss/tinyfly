@@ -1,0 +1,379 @@
+.property-panel {
+  display: flex;
+  flex-direction: column;
+  background: #1a1a1a;
+  border-radius: 4px;
+  overflow: hidden;
+  min-width: 240px;
+}
+
+.panel-header {
+  padding: 8px 12px;
+  background: #252525;
+  border-bottom: 1px solid #333;
+  color: #aaa;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.panel-content {
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.no-selection {
+  color: #666;
+  font-size: 12px;
+  text-align: center;
+  padding: 20px;
+}
+
+.no-selection p {
+  margin: 0;
+}
+
+.property-section {
+  margin-bottom: 16px;
+}
+
+.property-section h4 {
+  margin: 0 0 8px 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.property-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+
+.property-row label {
+  flex: 0 0 70px;
+  font-size: 12px;
+  color: #aaa;
+}
+
+.property-row input,
+.property-row select {
+  flex: 1;
+  padding: 6px 8px;
+  background: #252525;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.property-row input:focus,
+.property-row select:focus {
+  outline: none;
+  border-color: #4a9eff;
+}
+
+.property-row input[type='number'] {
+  font-family: monospace;
+}
+
+.property-row select {
+  cursor: pointer;
+}
+
+.property-value {
+  flex: 1;
+  font-size: 12px;
+  color: #ddd;
+  font-family: monospace;
+}
+
+.property-actions {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #333;
+}
+
+.delete-btn {
+  width: 100%;
+  padding: 8px;
+  background: #3a2020;
+  border: 1px solid #5a3030;
+  border-radius: 4px;
+  color: #ff6666;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.delete-btn:hover {
+  background: #4a2020;
+  border-color: #7a4040;
+}
+
+/* Color input styles */
+.property-row input[type='color'] {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 28px;
+  padding: 2px;
+  cursor: pointer;
+}
+
+.property-row input.color-text {
+  flex: 1;
+  font-family: monospace;
+  font-size: 11px;
+}
+
+/* Checkbox styles */
+.property-row.checkbox-row input[type='checkbox'] {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #4a9eff;
+}
+
+/* Gradient controls */
+.gradient-stops {
+  margin-top: 8px;
+  padding: 8px;
+  background: #1a1a1a;
+  border-radius: 4px;
+}
+
+.gradient-stops-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+}
+
+.gradient-stop-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.gradient-stop-row input[type='color'] {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 24px;
+  padding: 2px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.gradient-stop-row .offset-input {
+  flex: 0 0 45px;
+  width: 45px;
+}
+
+.gradient-stop-row .offset-unit {
+  color: #666;
+  font-size: 11px;
+}
+
+.gradient-stop-remove {
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  color: #888;
+  font-size: 14px;
+  cursor: pointer;
+  transition: color 0.1s, background 0.1s;
+}
+
+.gradient-stop-remove:hover {
+  background: #3a2020;
+  color: #ff6666;
+}
+
+.gradient-add-stop {
+  width: 100%;
+  margin-top: 4px;
+  padding: 6px;
+  background: #252525;
+  border: 1px dashed #444;
+  border-radius: 4px;
+  color: #888;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s, color 0.1s;
+}
+
+.gradient-add-stop:hover {
+  background: #333;
+  border-color: #4a9eff;
+  color: #fff;
+}
+
+/* Image upload controls */
+.image-upload-btn {
+  flex: 1;
+  padding: 6px 12px;
+  background: #4a9eff;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.image-upload-btn:hover {
+  background: #3a8eef;
+}
+
+.image-clear-btn {
+  flex: 1;
+  padding: 6px 12px;
+  background: #3a2020;
+  border: 1px solid #5a3030;
+  border-radius: 4px;
+  color: #ff6666;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.image-clear-btn:hover {
+  background: #4a2020;
+  border-color: #7a4040;
+}
+
+.property-row input:disabled {
+  background: #1a1a1a;
+  color: #666;
+  cursor: not-allowed;
+}
+
+/* Unit labels */
+.property-row .unit {
+  flex: 0 0 auto;
+  color: #666;
+  font-size: 11px;
+}
+
+/* Motion path button */
+.apply-motion-path-btn {
+  flex: 1;
+  padding: 8px 12px;
+  background: #4a9eff;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.apply-motion-path-btn:hover:not(:disabled) {
+  background: #3a8eef;
+}
+
+.apply-motion-path-btn:disabled {
+  background: #333;
+  color: #666;
+  cursor: not-allowed;
+}
+
+/* Path segment buttons */
+.path-segment-buttons {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.path-segment-btn {
+  flex: 1;
+  padding: 6px 8px;
+  background: #333;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #aaa;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s, color 0.1s;
+}
+
+.path-segment-btn:hover {
+  background: #444;
+  border-color: #4a9eff;
+  color: #fff;
+}
+
+.path-hint {
+  margin: 8px 0 0 0;
+  font-size: 11px;
+  color: #666;
+  font-style: italic;
+}
+
+/* Help icon in section headers */
+.property-section h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Text Effects Grid */
+.text-effects-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.text-effect-btn {
+  padding: 8px 6px;
+  background: #333;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #ccc;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  text-align: center;
+}
+
+.text-effect-btn:hover {
+  background: #444;
+  border-color: #4a9eff;
+  color: #fff;
+}
+
+.text-effect-btn:active {
+  background: #4a9eff;
+  color: #fff;
+}
+
+.text-effect-applied {
+  margin-top: 8px;
+  padding: 6px 8px;
+  background: rgba(46, 204, 113, 0.15);
+  border: 1px solid rgba(46, 204, 113, 0.3);
+  border-radius: 4px;
+  color: #2ecc71;
+  font-size: 11px;
+  text-align: center;
+}
+
+/* Curve Editor Section */
+.curve-editor-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #333;
+}

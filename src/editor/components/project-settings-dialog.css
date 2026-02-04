@@ -1,0 +1,204 @@
+.settings-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.settings-dialog {
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 24px;
+  min-width: 400px;
+  max-width: 500px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.settings-dialog h2 {
+  margin: 0 0 20px;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.settings-section {
+  margin-bottom: 20px;
+}
+
+.settings-label {
+  display: block;
+  margin-bottom: 8px;
+  color: #aaa;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.settings-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: #252525;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.settings-input:focus {
+  outline: none;
+  border-color: #4a9eff;
+}
+
+.settings-input-small {
+  width: 80px;
+}
+
+.settings-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.settings-preset-btn {
+  padding: 6px 12px;
+  background: #333;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #aaa;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.settings-preset-btn:hover {
+  background: #444;
+  color: #fff;
+}
+
+.settings-preset-btn.active {
+  background: #4a9eff;
+  border-color: #4a9eff;
+  color: #fff;
+}
+
+.settings-dimensions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-dimension {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-dimension label {
+  color: #888;
+  font-size: 12px;
+  min-width: 40px;
+}
+
+.settings-dimension-x {
+  color: #666;
+  font-size: 14px;
+}
+
+.settings-unit {
+  color: #666;
+  font-size: 12px;
+}
+
+.settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #333;
+}
+
+.settings-btn {
+  padding: 10px 20px;
+  background: #333;
+  border: none;
+  border-radius: 4px;
+  color: #aaa;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.settings-btn:hover {
+  background: #444;
+  color: #fff;
+}
+
+.settings-btn-primary {
+  background: #4a9eff;
+  color: #fff;
+}
+
+.settings-btn-primary:hover {
+  background: #6ab0ff;
+}
+
+/* Mobile breakpoint */
+@media (max-width: 768px) {
+  .settings-dialog {
+    min-width: auto;
+    max-width: none;
+    width: calc(100vw - 32px);
+    margin: 16px;
+    padding: 20px;
+  }
+
+  .settings-dialog h2 {
+    font-size: 16px;
+  }
+
+  .settings-dimensions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .settings-dimension-x {
+    display: none;
+  }
+
+  .settings-actions {
+    flex-direction: column;
+  }
+
+  .settings-btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* Small phone breakpoint */
+@media (max-width: 480px) {
+  .settings-dialog {
+    padding: 16px;
+    margin: 8px;
+    width: calc(100vw - 16px);
+  }
+
+  .settings-presets {
+    gap: 4px;
+  }
+
+  .settings-preset-btn {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+}

@@ -1,0 +1,282 @@
+.editor {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #0d0d0d;
+  color: #fff;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.editor-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 12px 20px;
+  background: #1a1a1a;
+  border-bottom: 1px solid #333;
+  flex-shrink: 0;
+}
+
+.editor-header h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #4a9eff;
+}
+
+.editor-subtitle {
+  font-size: 12px;
+  color: #666;
+}
+
+.settings-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #888;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  margin-left: auto;
+  margin-right: 8px;
+}
+
+.settings-btn:hover {
+  background: #333;
+  color: #fff;
+}
+
+.help-tour-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #888;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  margin-left: auto;
+}
+
+.help-tour-btn:hover {
+  background: #333;
+  color: #4a9eff;
+}
+
+.editor-main {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  overflow: hidden;
+}
+
+.editor-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  border-color: #333;
+  overflow-y: auto;
+}
+
+.editor-sidebar-left {
+  border-right: 1px solid #333;
+}
+
+.editor-sidebar-right {
+  border-left: 1px solid #333;
+}
+
+.editor-center {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 16px;
+  gap: 16px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.editor-preview {
+  flex: 1;
+  min-height: 200px;
+}
+
+.editor-controls {
+  flex-shrink: 0;
+}
+
+.editor-timeline {
+  flex-shrink: 0;
+  height: 200px;
+  min-height: 150px;
+}
+
+/* Mobile sidebar toggle buttons */
+.mobile-sidebar-toggle {
+  display: none;
+  position: fixed;
+  bottom: 16px;
+  z-index: 100;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background: #4a9eff;
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s, background 0.2s;
+}
+
+.mobile-sidebar-toggle:hover {
+  background: #6ab0ff;
+  transform: scale(1.05);
+}
+
+.mobile-sidebar-toggle.left {
+  left: 16px;
+}
+
+.mobile-sidebar-toggle.right {
+  right: 16px;
+}
+
+.mobile-sidebar-toggle.active {
+  background: #e74c3c;
+}
+
+/* Mobile sidebar overlay */
+.mobile-sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 90;
+}
+
+/* Tablet breakpoint (< 1024px) */
+@media (max-width: 1024px) {
+  .editor-sidebar {
+    width: 240px;
+  }
+
+  .editor-center {
+    padding: 12px;
+    gap: 12px;
+  }
+}
+
+/* Mobile breakpoint (< 768px) */
+@media (max-width: 768px) {
+  .editor-header {
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .editor-header h1 {
+    font-size: 16px;
+  }
+
+  .editor-subtitle {
+    display: none;
+  }
+
+  .settings-btn {
+    margin-left: 0;
+    margin-right: 0;
+    order: 3;
+  }
+
+  .editor-main {
+    flex-direction: column;
+    position: relative;
+  }
+
+  .editor-sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    width: 280px;
+    max-width: 85vw;
+    z-index: 95;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    border: none;
+  }
+
+  .editor-sidebar-left {
+    left: 0;
+    border-right: 1px solid #333;
+  }
+
+  .editor-sidebar-right {
+    right: 0;
+    left: auto;
+    transform: translateX(100%);
+    border-left: 1px solid #333;
+  }
+
+  .editor-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .mobile-sidebar-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mobile-sidebar-overlay.visible {
+    display: block;
+  }
+
+  .editor-center {
+    flex: 1;
+    padding: 8px;
+    gap: 8px;
+    min-height: 0;
+  }
+
+  .editor-preview {
+    min-height: 150px;
+  }
+
+  .editor-timeline {
+    height: 150px;
+    min-height: 120px;
+  }
+}
+
+/* Small phone breakpoint (< 480px) */
+@media (max-width: 480px) {
+  .editor-header {
+    padding: 6px 8px;
+  }
+
+  .editor-header h1 {
+    font-size: 14px;
+  }
+
+  .editor-center {
+    padding: 6px;
+    gap: 6px;
+  }
+
+  .editor-timeline {
+    height: 120px;
+    min-height: 100px;
+  }
+}

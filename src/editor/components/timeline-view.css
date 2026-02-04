@@ -1,0 +1,218 @@
+.timeline-view {
+  display: flex;
+  flex-direction: column;
+  background: #1a1a1a;
+  border-radius: 4px;
+  overflow: hidden;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 12px;
+}
+
+/* Time Ruler */
+.timeline-ruler {
+  position: relative;
+  height: 24px;
+  background: #252525;
+  border-bottom: 1px solid #333;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.ruler-markers {
+  position: relative;
+  height: 100%;
+}
+
+.ruler-marker {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-left: 1px solid #444;
+}
+
+.ruler-marker.major {
+  border-left-color: #666;
+}
+
+.ruler-label {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  color: #888;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.ruler-marker.major .ruler-label {
+  color: #aaa;
+}
+
+/* Playhead */
+.timeline-playhead {
+  position: absolute;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background: #ff4444;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.timeline-playhead::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -4px;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid #ff4444;
+}
+
+/* Tracks */
+.timeline-tracks {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.timeline-track {
+  display: flex;
+  height: 32px;
+  border-bottom: 1px solid #333;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.timeline-track:hover {
+  background: #252525;
+}
+
+.timeline-track.selected {
+  background: #2a3a4a;
+}
+
+.track-label {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 120px;
+  padding: 0 8px;
+  background: #202020;
+  border-right: 1px solid #333;
+  flex-shrink: 0;
+}
+
+.track-target {
+  color: #ddd;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.track-property {
+  color: #888;
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.track-keyframes {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Keyframes */
+.keyframe {
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  margin-top: -5px;
+  background: #4a9eff;
+  border-radius: 2px;
+  transform: rotate(45deg);
+  cursor: pointer;
+  transition: transform 0.1s, background 0.1s;
+}
+
+.keyframe:hover {
+  transform: rotate(45deg) scale(1.2);
+  background: #6ab0ff;
+}
+
+.keyframe.selected {
+  background: #ff9944;
+  box-shadow: 0 0 0 2px rgba(255, 153, 68, 0.3);
+}
+
+.keyframe.dragging {
+  background: #ff6644;
+  transform: rotate(45deg) scale(1.3);
+  box-shadow: 0 0 0 3px rgba(255, 102, 68, 0.4);
+  z-index: 100;
+  cursor: grabbing;
+}
+
+/* Mobile breakpoint */
+@media (max-width: 768px) {
+  .timeline-ruler {
+    height: 20px;
+  }
+
+  .ruler-label {
+    font-size: 9px;
+    top: 3px;
+  }
+
+  .timeline-track {
+    height: 28px;
+  }
+
+  .track-label {
+    width: 90px;
+    padding: 0 6px;
+  }
+
+  .track-target {
+    font-size: 11px;
+  }
+
+  .track-property {
+    font-size: 9px;
+  }
+
+  .keyframe {
+    width: 8px;
+    height: 8px;
+    margin-left: -4px;
+    margin-top: -4px;
+  }
+}
+
+/* Small phone breakpoint */
+@media (max-width: 480px) {
+  .track-label {
+    width: 70px;
+    padding: 0 4px;
+  }
+
+  .track-target {
+    font-size: 10px;
+  }
+
+  .track-property {
+    font-size: 8px;
+  }
+
+  .keyframe {
+    width: 7px;
+    height: 7px;
+    margin-left: -3.5px;
+    margin-top: -3.5px;
+  }
+}

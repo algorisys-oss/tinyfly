@@ -1,0 +1,191 @@
+.playback-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  background: #252525;
+  border-radius: 4px;
+}
+
+.playback-buttons,
+.history-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.history-buttons {
+  padding-right: 8px;
+  border-right: 1px solid #444;
+}
+
+.control-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: #333;
+  border: none;
+  border-radius: 4px;
+  color: #aaa;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+
+.control-btn:hover:not(:disabled) {
+  background: #444;
+  color: #fff;
+}
+
+.control-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.control-btn.play-btn {
+  width: 40px;
+  height: 40px;
+  background: #4a9eff;
+  color: #fff;
+}
+
+.control-btn.play-btn:hover {
+  background: #6ab0ff;
+}
+
+.time-display {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: monospace;
+  font-size: 14px;
+  color: #aaa;
+}
+
+.current-time {
+  color: #fff;
+}
+
+.time-separator {
+  color: #666;
+}
+
+.duration {
+  color: #888;
+}
+
+.seek-bar {
+  flex: 1;
+  min-width: 100px;
+}
+
+.seek-slider {
+  width: 100%;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #333;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.seek-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: #4a9eff;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.seek-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.seek-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: #4a9eff;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* Tablet breakpoint */
+@media (max-width: 1024px) {
+  .playback-controls {
+    gap: 12px;
+    padding: 8px 12px;
+  }
+}
+
+/* Mobile breakpoint */
+@media (max-width: 768px) {
+  .playback-controls {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .history-buttons {
+    order: 3;
+    padding-right: 0;
+    border-right: none;
+    padding-top: 8px;
+    border-top: 1px solid #444;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .playback-buttons {
+    gap: 6px;
+  }
+
+  .control-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .control-btn.play-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .time-display {
+    font-size: 12px;
+  }
+
+  .seek-bar {
+    min-width: 80px;
+  }
+}
+
+/* Small phone breakpoint */
+@media (max-width: 480px) {
+  .playback-controls {
+    padding: 6px;
+    gap: 6px;
+  }
+
+  .control-btn {
+    width: 26px;
+    height: 26px;
+  }
+
+  .control-btn.play-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .time-display {
+    font-size: 11px;
+  }
+
+  .seek-bar {
+    min-width: 60px;
+  }
+}

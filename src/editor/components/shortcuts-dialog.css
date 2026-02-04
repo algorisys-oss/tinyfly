@@ -1,0 +1,214 @@
+.shortcuts-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.shortcuts-dialog {
+  background: #1a1a1a;
+  border-radius: 12px;
+  width: 600px;
+  max-width: 90vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.shortcuts-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #333;
+  flex-shrink: 0;
+}
+
+.shortcuts-dialog-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.shortcuts-close-btn {
+  background: transparent;
+  border: none;
+  color: #888;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.1s, color 0.1s;
+}
+
+.shortcuts-close-btn:hover {
+  background: #333;
+  color: #fff;
+}
+
+.shortcuts-dialog-content {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.shortcuts-category {
+  margin-bottom: 24px;
+}
+
+.shortcuts-category:last-of-type {
+  margin-bottom: 16px;
+}
+
+.shortcuts-category-title {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #4a9eff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.shortcuts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shortcut-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #252525;
+  border-radius: 6px;
+}
+
+.shortcut-keys {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.shortcut-key {
+  display: inline-block;
+  padding: 4px 8px;
+  background: #333;
+  border: 1px solid #444;
+  border-radius: 4px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #fff;
+  min-width: 24px;
+  text-align: center;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.shortcut-separator {
+  color: #666;
+  font-size: 12px;
+  margin: 0 2px;
+}
+
+.shortcut-description {
+  font-size: 13px;
+  color: #aaa;
+}
+
+.shortcuts-footer {
+  padding-top: 16px;
+  border-top: 1px solid #333;
+}
+
+.shortcuts-hint {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+}
+
+.shortcuts-hint kbd {
+  padding: 2px 6px;
+  background: #333;
+  border: 1px solid #444;
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: 11px;
+  color: #aaa;
+}
+
+/* Mobile breakpoint */
+@media (max-width: 768px) {
+  .shortcuts-dialog {
+    width: 100%;
+    max-width: none;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .shortcuts-dialog-header {
+    padding: 12px 16px;
+  }
+
+  .shortcuts-dialog-header h2 {
+    font-size: 16px;
+  }
+
+  .shortcuts-dialog-content {
+    padding: 16px;
+  }
+
+  .shortcuts-category {
+    margin-bottom: 20px;
+  }
+
+  .shortcuts-category-title {
+    font-size: 13px;
+  }
+
+  .shortcut-item {
+    padding: 6px 10px;
+  }
+
+  .shortcut-key {
+    padding: 3px 6px;
+    font-size: 11px;
+    min-width: 20px;
+  }
+
+  .shortcut-description {
+    font-size: 12px;
+  }
+}
+
+/* Small phone breakpoint */
+@media (max-width: 480px) {
+  .shortcuts-dialog-content {
+    padding: 12px;
+  }
+
+  .shortcut-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .shortcut-description {
+    font-size: 11px;
+  }
+}
