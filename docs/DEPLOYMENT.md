@@ -22,6 +22,49 @@ npm run build:player
 
 The build output is in the `dist/` directory.
 
+## Publishing to OSS Repository
+
+The project uses a separate OSS (Open Source Software) repository for public releases. The `publish-oss.sh` script handles publishing a cleaned version without internal files.
+
+### What Gets Excluded
+
+Files listed in `.ossignore` are excluded from OSS publishing:
+- `scripts/` - Internal publishing scripts
+- `CLAUDE.md` - Internal AI instructions
+
+### Publishing Process
+
+```bash
+# Dry run - preview what will be published
+./scripts/publish-oss.sh
+
+# Actually push to OSS repo
+OSS_REMOTE=https://github.com/algorisys-oss/tinyfly.git ./scripts/publish-oss.sh --push
+```
+
+### What the Script Does
+
+1. Creates a clean copy from the latest git commit
+2. Removes paths listed in `.ossignore`
+3. Patches `package.json` (removes `private` flag)
+4. Pushes to the OSS repository
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `OSS_REMOTE` | Git URL of the OSS repository | (required for --push) |
+| `OSS_BRANCH` | Branch to push to | `main` |
+| `OSS_MESSAGE` | Custom commit message | Auto-generated |
+
+### Example with Custom Message
+
+```bash
+OSS_REMOTE=https://github.com/algorisys-oss/tinyfly.git \
+OSS_MESSAGE="Release v1.0.0" \
+./scripts/publish-oss.sh --push
+```
+
 ## Deployment Options
 
 ### 1. Static Hosting (Recommended)

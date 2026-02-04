@@ -293,4 +293,4 @@ For commercial licensing inquiries, please contact us via [GitHub](https://githu
 
 ### Attribution
 
-Regardless of license type, all usage of YappyDraw must retain visible attribution to the **Algorisys Open Source Team** and a link to the [original repository](https://github.com/algorisys-oss/tinyfly).
+Regardless of license type, all usage of TinyFly must retain visible attribution to the **Algorisys Open Source Team** and a link to the [original repository](https://github.com/algorisys-oss/tinyfly).
