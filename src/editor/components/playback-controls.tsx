@@ -102,16 +102,7 @@ export const PlaybackControls: Component<PlaybackControlsProps> = (props) => {
           }
           title={props.store.isPlaying() ? 'Pause' : 'Play'}
         >
-          {props.store.isPlaying() ? (
-            <svg viewBox="0 0 24 24" width="20" height="20">
-              <rect x="6" y="5" width="4" height="14" fill="currentColor" />
-              <rect x="14" y="5" width="4" height="14" fill="currentColor" />
-            </svg>
-          ) : (
-            <svg viewBox="0 0 24 24" width="20" height="20">
-              <polygon points="6,4 20,12 6,20" fill="currentColor" />
-            </svg>
-          )}
+          <span class="play-icon">{props.store.isPlaying() ? '❚❚' : '▶'}</span>
         </button>
       </div>
 

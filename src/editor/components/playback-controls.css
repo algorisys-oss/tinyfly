@@ -51,6 +51,12 @@
   color: #fff;
 }
 
+.control-btn.play-btn .play-icon {
+  font-size: 16px;
+  line-height: 1;
+  color: #fff;
+}
+
 .control-btn.play-btn:hover {
   background: #6ab0ff;
 }

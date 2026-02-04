@@ -1,0 +1,185 @@
+.splash-container {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  cursor: pointer;
+  user-select: none;
+  overflow: hidden;
+}
+
+.splash-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.splash-logo {
+  font-size: 72px;
+  font-weight: 700;
+  letter-spacing: -2px;
+  opacity: 0;
+}
+
+.splash-logo-tiny {
+  color: #e0e0e0;
+}
+
+.splash-logo-fly {
+  color: #00d4ff;
+  text-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+}
+
+.splash-tagline {
+  font-size: 18px;
+  color: #a0a0a0;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  opacity: 0;
+}
+
+/* Flying particles */
+.splash-fly {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.splash-fly-1 {
+  width: 12px;
+  height: 12px;
+  background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.8), 0 0 40px rgba(0, 212, 255, 0.4);
+  top: -60px;
+  left: calc(50% - 6px);
+}
+
+.splash-fly-2 {
+  width: 8px;
+  height: 8px;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+  box-shadow: 0 0 15px rgba(255, 107, 107, 0.8), 0 0 30px rgba(255, 107, 107, 0.4);
+  top: -40px;
+  left: calc(50% - 4px);
+}
+
+.splash-fly-3 {
+  width: 10px;
+  height: 10px;
+  background: linear-gradient(135deg, #ffd93d 0%, #ffcd00 100%);
+  box-shadow: 0 0 18px rgba(255, 217, 61, 0.8), 0 0 35px rgba(255, 217, 61, 0.4);
+  top: 80px;
+  left: calc(50% - 5px);
+}
+
+.splash-hint {
+  position: absolute;
+  bottom: 60px;
+  font-size: 14px;
+  color: #606060;
+  opacity: 0;
+}
+
+/* Status bar */
+.splash-status-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  background: rgba(0, 0, 0, 0.3);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 13px;
+  color: #808080;
+}
+
+.splash-status-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.splash-version {
+  color: #00d4ff;
+  font-weight: 500;
+}
+
+.splash-status-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.splash-heart {
+  color: #ff6b6b;
+  font-size: 14px;
+  animation: heartbeat 1.2s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+.splash-status-bar a {
+  color: #00d4ff;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.splash-status-bar a:hover {
+  color: #4de0ff;
+  text-decoration: underline;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .splash-logo {
+    font-size: 48px;
+  }
+
+  .splash-tagline {
+    font-size: 14px;
+    letter-spacing: 1px;
+  }
+
+  .splash-fly-1 {
+    width: 10px;
+    height: 10px;
+  }
+
+  .splash-fly-2 {
+    width: 6px;
+    height: 6px;
+  }
+
+  .splash-fly-3 {
+    width: 8px;
+    height: 8px;
+  }
+
+  .splash-status-bar {
+    font-size: 11px;
+    padding: 0 12px;
+    height: 32px;
+  }
+
+  .splash-hint {
+    bottom: 50px;
+  }
+}

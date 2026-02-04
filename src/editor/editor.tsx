@@ -19,6 +19,7 @@ import {
 } from './components'
 import { createEditorStore, createProjectStore, createSceneStore, createOnboardingStore } from './stores'
 import { serializeTimeline, deserializeTimeline } from '../engine'
+import { StatusBar } from '../components'
 import './editor.css'
 
 export const Editor: Component = () => {
@@ -258,6 +259,8 @@ export const Editor: Component = () => {
       <ShortcutsDialog isOpen={showShortcuts()} onClose={() => setShowShortcuts(false)} />
 
       <OnboardingOverlay store={onboardingStore} />
+
+      <StatusBar />
     </div>
   )
 }
