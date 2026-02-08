@@ -2,6 +2,7 @@ import { Router, Route } from '@solidjs/router'
 import { createSignal, Show } from 'solid-js'
 import { Editor } from './editor'
 import { Gallery } from './gallery'
+import { DocsViewer } from './docs'
 import { Splash } from './splash'
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
         <Router>
           <Route path="/" component={Editor} />
           <Route path="/gallery" component={Gallery} />
+          <Route path="/docs" component={DocsViewer} />
         </Router>
       </Show>
     </>

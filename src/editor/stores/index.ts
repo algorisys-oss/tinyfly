@@ -13,5 +13,6 @@ export type {
   TextElement,
   ImageElement,
 } from './scene-store'
+export type { SceneDefinition } from './scene-types'
 export { createOnboardingStore, onboardingSteps } from './onboarding-store'
 export type { OnboardingStore, OnboardingStep, OnboardingState } from './onboarding-store'

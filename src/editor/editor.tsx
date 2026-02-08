@@ -16,6 +16,7 @@ import {
   PresetPanel,
   OnboardingOverlay,
   Tooltip,
+  SceneBar,
 } from './components'
 import { createEditorStore, createProjectStore, createSceneStore, createOnboardingStore } from './stores'
 import { serializeTimeline, deserializeTimeline } from '../engine'
@@ -32,6 +33,12 @@ export const Editor: Component = () => {
   const [showExportAs, setShowExportAs] = createSignal(false)
   const [showSamples, setShowSamples] = createSignal(false)
   const [showShortcuts, setShowShortcuts] = createSignal(false)
+
+  // Guard to prevent auto-save during scene switching
+  let isSwitchingScene = false
+
+  // Scene transition preview animation
+  const [sceneTransitionClass, setSceneTransitionClass] = createSignal('')
 
   // Mobile sidebar state
   const [leftSidebarOpen, setLeftSidebarOpen] = createSignal(false)
@@ -65,18 +72,82 @@ export const Editor: Component = () => {
     }
   }
 
-  // Initialize timeline from project or create demo
+  /**
+   * Load a scene's data into the editor and scene stores.
+   */
+  function loadSceneIntoEditor(sceneId: string) {
+    const project = projectStore.currentProject()
+    const scene = project.scenes.find((s) => s.id === sceneId) ?? project.scenes[0]
+
+    // Load elements
+    sceneStore.loadElements(scene.elements)
+
+    // Load timeline
+    if (scene.timeline) {
+      const timeline = deserializeTimeline(scene.timeline)
+      store.loadTimeline(timeline)
+    } else {
+      store.createNewTimeline(scene.id, scene.name, { duration: 2000 })
+      store.clearHistory()
+    }
+  }
+
+  /**
+   * Save current editor state into the active scene, then switch to a new scene.
+   */
+  function switchScene(newSceneId: string) {
+    isSwitchingScene = true
+
+    try {
+      // Get the transition for the target scene (for preview animation)
+      const transition = projectStore.getSceneTransition(newSceneId)
+
+      // Stop playback
+      store.stop()
+
+      // Save current scene state
+      const timeline = store.state.timeline
+      const serializedTimeline = timeline ? serializeTimeline(timeline) : null
+      const elements = sceneStore.exportElements()
+      projectStore.saveActiveSceneState(elements, serializedTimeline)
+
+      // Apply transition preview animation if set
+      if (transition.type !== 'none' && transition.duration > 0) {
+        setSceneTransitionClass(`scene-switch-${transition.type}`)
+        setTimeout(() => setSceneTransitionClass(''), Math.min(transition.duration, 500))
+      }
+
+      // Switch active scene
+      projectStore.setActiveScene(newSceneId)
+
+      // Load new scene
+      loadSceneIntoEditor(newSceneId)
+
+      // Clear undo history (per-scene undo not supported in v1)
+      store.clearHistory()
+    } finally {
+      isSwitchingScene = false
+    }
+  }
+
+  // Initialize from active scene on mount
   onMount(() => {
     document.addEventListener('keydown', handleKeyDown)
-    const project = projectStore.currentProject()
 
-    if (project.timeline) {
-      // Load existing timeline from project
-      const timeline = deserializeTimeline(project.timeline)
+    const project = projectStore.currentProject()
+    const activeScene = project.scenes.find((s) => s.id === project.activeSceneId)
+      ?? project.scenes[0]
+
+    if (activeScene.elements.length > 0) {
+      sceneStore.loadElements(activeScene.elements)
+    }
+
+    if (activeScene.timeline) {
+      const timeline = deserializeTimeline(activeScene.timeline)
       store.loadTimeline(timeline)
     } else {
       // Create a demo timeline for new projects
-      store.createNewTimeline(project.id, project.name, {
+      store.createNewTimeline(activeScene.id, activeScene.name, {
         duration: 2000,
       })
 
@@ -134,13 +205,14 @@ export const Editor: Component = () => {
     document.removeEventListener('keydown', handleKeyDown)
   })
 
-  // Auto-save: sync timeline to project store when it changes
+  // Auto-save: sync timeline and elements to active scene in project store
   createEffect(() => {
+    if (isSwitchingScene) return
+
     const timeline = store.state.timeline
-    if (timeline) {
-      const serialized = serializeTimeline(timeline)
-      projectStore.updateTimeline(serialized)
-    }
+    const elements = sceneStore.exportElements()
+    const serializedTimeline = timeline ? serializeTimeline(timeline) : null
+    projectStore.saveActiveSceneState(elements, serializedTimeline)
   })
 
   const handleSettingsClick = () => {
@@ -181,6 +253,8 @@ export const Editor: Component = () => {
         <Toolbar store={store} projectStore={projectStore} sceneStore={sceneStore} onEmbed={() => setShowEmbed(true)} onExportAs={() => setShowExportAs(true)} onSamples={() => setShowSamples(true)} onShowShortcuts={() => setShowShortcuts(true)} />
       </header>
 
+      <SceneBar projectStore={projectStore} onSwitchScene={switchScene} />
+
       <main class="editor-main">
         {/* Mobile sidebar overlay */}
         <div
@@ -194,7 +268,7 @@ export const Editor: Component = () => {
         </aside>
 
         <div class="editor-center">
-          <section class="editor-preview">
+          <section class={`editor-preview ${sceneTransitionClass()}`}>
             <PreviewPanel store={store} sceneStore={sceneStore} />
           </section>
 
@@ -238,8 +312,10 @@ export const Editor: Component = () => {
       <EmbedDialog
         store={store}
         sceneStore={sceneStore}
+        projectStore={projectStore}
         isOpen={showEmbed()}
         onClose={() => setShowEmbed(false)}
+        sceneName={projectStore.getActiveScene().name}
       />
 
       <ExportDialog
@@ -247,6 +323,7 @@ export const Editor: Component = () => {
         sceneStore={sceneStore}
         isOpen={showExportAs()}
         onClose={() => setShowExportAs(false)}
+        sceneName={projectStore.getActiveScene().name}
       />
 
       <SamplesDialog

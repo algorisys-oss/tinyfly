@@ -186,14 +186,16 @@
 - [ ] Audio/video sync support
 - [x] Motion path (animate along SVG path)
 - [ ] Mask/clip support
-- [ ] Multiple scenes/artboards
+- [x] Multiple scenes/artboards
+- [x] Scene transitions (fade, slide-left, slide-right, slide-up, slide-down)
+- [x] Multi-scene player/sequencer (TinyflySequencer)
 - [ ] Collaborative editing
 - [x] Custom easing curve editor
 
 ## Phase 22: Distribution
 
 - [ ] NPM package for the engine
-- [ ] Documentation site
+- [x] Documentation (getting started, editor guide, API reference, examples, in-app viewer)
 - [x] Example gallery (14 professional examples with DOM/Canvas renderer toggle)
 - [ ] CDN hosted player script
 
@@ -201,7 +203,7 @@
 
 ## Test Coverage
 
-- 370 tests passing
+- 429 tests passing
 - Easing functions: 48 tests
 - Interpolators: 21 tests
 - Clock: 19 tests
@@ -212,8 +214,9 @@
 - Canvas adapter: 25 tests
 - SVG adapter: 16 tests
 - History store: 14 tests
-- Project store: 29 tests
+- Project store: 58 tests
 - Player: 30 tests
+- Sequencer: 30 tests
 - Scene store: 45 tests
 - Animation presets: 18 tests
 - CSS export: 10 tests

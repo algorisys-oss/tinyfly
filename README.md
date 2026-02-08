@@ -30,9 +30,20 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Track management** - Add, remove, and organize animation tracks
 - **Playback controls** - Preview animations in real-time
 - **Undo/Redo** - Full history support with keyboard shortcuts
+- **Multiple scenes** - Organize animations into separate scenes with independent elements and timelines
+- **Scene transitions** - Configurable transitions between scenes (fade, slide)
+- **Multi-scene sequencer** - Play all scenes in order with transitions
 - **Project management** - Auto-save to LocalStorage
 - **Export/Import** - JSON file support
-- **Embed code** - Generate copy-paste code for websites
+- **Embed code** - Generate copy-paste code for websites (single scene or full sequence)
+
+## Documentation
+
+- [Getting Started](docs/getting-started.md) — Installation, setup, and your first animation
+- [Editor Guide](docs/editor-guide.md) — Complete guide to the visual editor (elements, timeline, scenes, presets, shortcuts)
+- [API Reference](docs/api-reference.md) — Full engine, player, adapter, and export API documentation
+- [Examples](docs/examples.md) — Code examples for common animation patterns
+- [Deployment](docs/DEPLOYMENT.md) — Hosting, Docker, and CDN configuration
 
 ## Installation
 
@@ -207,6 +218,34 @@ player.setSpeed(2);
 player.destroy();
 ```
 
+### Sequencer (Multi-Scene)
+
+```typescript
+import { TinyflySequencer, playSequence } from 'tinyfly/player';
+
+// Quick play all scenes in sequence
+const sequencer = await playSequence('#container', 'sequence.json', {
+  loop: -1,
+  autoplay: true,
+  onSceneChange: (index) => console.log(`Scene ${index}`),
+});
+
+// Manual control
+const sequencer = new TinyflySequencer('#container', options);
+await sequencer.load('sequence.json');
+sequencer.play();
+sequencer.pause();
+sequencer.goToScene(2);
+sequencer.destroy();
+
+// Properties
+sequencer.currentSceneIndex; // Current scene index
+sequencer.sceneCount;        // Total number of scenes
+sequencer.isPlaying;         // Playback state
+```
+
+**Transition types:** `none`, `fade`, `slide-left`, `slide-right`, `slide-up`, `slide-down`
+
 ## Architecture
 
 ```
@@ -237,11 +276,11 @@ tinyfly/
 - [ ] npm package publishing
 
 ### Future
+- [x] Scene transitions (fade, slide between scenes)
+- [x] Multi-scene player/sequencer
 - [ ] WebGL adapter
 - [ ] React Native adapter
-- [ ] Lottie import/export
 - [ ] Collaborative editing
-- [ ] Animation presets library
 
 ## Development
 
@@ -261,11 +300,14 @@ npm run build
 
 ### Test Coverage
 
-- 264 tests passing
+- 429 tests passing
 - Core engine: 134 tests
-- Adapters: 44 tests
-- Editor stores: 43 tests
+- Adapters: 57 tests
+- Editor stores: 135 tests
 - Player: 30 tests
+- Sequencer: 30 tests
+- Export formats: 30 tests
+- Animation presets: 18 tests
 
 ## Contributing
 

@@ -10,6 +10,7 @@ interface ExportDialogProps {
   sceneStore: SceneStore
   isOpen: boolean
   onClose: () => void
+  sceneName?: string
 }
 
 type ExportFormat = 'css' | 'lottie' | 'gif'
@@ -107,6 +108,7 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
         <div class="export-dialog">
           <div class="export-dialog-header">
             <h2>Export Animation</h2>
+            {props.sceneName && <span style="font-size: 12px; color: #888; margin-left: 8px;">Scene: {props.sceneName}</span>}
             <button class="export-close-btn" onClick={props.onClose}>
               ×
             </button>

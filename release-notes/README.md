@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.2.0](v0.2.0.md) | 2026-02-08 | Scene transitions, multi-scene sequencer, documentation, in-app docs viewer |
 | [v0.1.0](v0.1.0.md) | 2026-02-04 | Initial release with core engine, editor, and player |
 
 ## Contributing

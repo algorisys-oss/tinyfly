@@ -62,6 +62,35 @@
   overflow-y: auto;
 }
 
+.embed-scope-selector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.embed-scope-btn {
+  flex: 1;
+  padding: 8px 12px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #888;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.embed-scope-btn:hover {
+  background: #252525;
+  color: #ccc;
+}
+
+.embed-scope-btn.active {
+  background: #1a2a3a;
+  border-color: #4a9eff;
+  color: #4a9eff;
+}
+
 .embed-type-selector {
   display: flex;
   gap: 8px;
