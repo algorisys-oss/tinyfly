@@ -15,7 +15,7 @@ export interface SampleDefinition {
   /** Short description */
   description: string
   /** Category for organization */
-  category: 'basic' | 'motion' | 'text' | 'ui' | 'effects' | 'showcase'
+  category: 'basic' | 'motion' | 'text' | 'ui' | 'effects' | 'showcase' | 'products'
   /** Preview thumbnail (emoji for now, could be image URL) */
   thumbnail: string
   /** Animation duration in ms */
@@ -1528,6 +1528,282 @@ export const sampleDefinitions: SampleDefinition[] = [
       { target: 'Line3', property: 'rotate', keyframes: [{ time: 0, value: 0 }, { time: 400, value: 0 }, { time: 700, value: -45, easing: 'ease-in-out' }, { time: 1100, value: -45 }, { time: 1500, value: 0, easing: 'ease-in-out' }] },
     ],
   },
+
+  // === PRODUCTS (Algorisys) ===
+  // Rich, "viral infographic" style showcases for the Algorisys product family.
+  // All authored for the default 300x200 canvas. x/y tracks are translate offsets.
+  {
+    id: 'algo-tinyfly',
+    name: 'TinyFly — Animation Engine',
+    description: 'A spark flies across a keyframe timeline, lighting each keyframe as the logo assembles',
+    category: 'products',
+    thumbnail: '🪁',
+    duration: 4000,
+    elements: [
+      { type: 'rect', name: 'BG', x: 0, y: 0, width: 300, height: 200, fill: { type: 'linear', angle: 135, stops: [{ offset: 0, color: '#0b1220' }, { offset: 1, color: '#16233f' }] } },
+      { type: 'text', name: 'Title', x: 60, y: 56, width: 180, height: 48, text: 'tinyfly', fontSize: 44, fontWeight: 800, fill: '#4a9eff', textAlign: 'center' },
+      { type: 'line', name: 'Timeline', x: 60, y: 132, x2: 240, y2: 132, stroke: '#2b3a55', strokeWidth: 3 },
+      { type: 'circle', name: 'Dot1', x: 65, y: 127, width: 10, height: 10, fill: '#2b3a55' },
+      { type: 'circle', name: 'Dot2', x: 115, y: 127, width: 10, height: 10, fill: '#2b3a55' },
+      { type: 'circle', name: 'Dot3', x: 165, y: 127, width: 10, height: 10, fill: '#2b3a55' },
+      { type: 'circle', name: 'Dot4', x: 215, y: 127, width: 10, height: 10, fill: '#2b3a55' },
+      { type: 'circle', name: 'Spark', x: 63, y: 125, width: 14, height: 14, fill: '#00e5ff' },
+      { type: 'text', name: 'Tagline', x: 40, y: 160, width: 220, height: 20, text: 'JSON-first animation engine · 0 dependencies', fontSize: 11, fontWeight: 500, fill: '#8fa6c9', textAlign: 'center' },
+    ],
+    tracks: [
+      // Logo assembles
+      { target: 'Title', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 300, value: 0 }, { time: 900, value: 1, easing: 'ease-out' }] },
+      { target: 'Title', property: 'y', keyframes: [{ time: 0, value: 22 }, { time: 300, value: 22 }, { time: 900, value: 0, easing: 'ease-out-cubic' }] },
+      { target: 'Title', property: 'scale', keyframes: [{ time: 0, value: 0.7 }, { time: 300, value: 0.7 }, { time: 900, value: 1.05, easing: 'ease-out' }, { time: 1200, value: 1, easing: 'ease-in-out' }] },
+      // Timeline draws in
+      { target: 'Timeline', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 400, value: 1, easing: 'ease-out' }] },
+      // Spark flies along the timeline lighting each keyframe, then flies off screen
+      { target: 'Spark', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 400, value: 1, easing: 'ease-out' }, { time: 3200, value: 1 }, { time: 3600, value: 0, easing: 'ease-in' }] },
+      { target: 'Spark', property: 'x', keyframes: [{ time: 0, value: 0 }, { time: 500, value: 0 }, { time: 1100, value: 50, easing: 'ease-in-out' }, { time: 1700, value: 100, easing: 'ease-in-out' }, { time: 2300, value: 150, easing: 'ease-in-out' }, { time: 3600, value: 300, easing: 'ease-in' }] },
+      { target: 'Spark', property: 'scale', keyframes: [{ time: 500, value: 1 }, { time: 1100, value: 1.5, easing: 'ease-out' }, { time: 1400, value: 1, easing: 'ease-in' }, { time: 1700, value: 1.5, easing: 'ease-out' }, { time: 2000, value: 1, easing: 'ease-in' }, { time: 2300, value: 1.5, easing: 'ease-out' }, { time: 2600, value: 1, easing: 'ease-in' }] },
+      // Keyframe dots light up as the spark passes
+      { target: 'Dot1', property: 'fill', keyframes: [{ time: 0, value: '#2b3a55' }, { time: 500, value: '#2b3a55' }, { time: 650, value: '#00e5ff', easing: 'ease-out' }] },
+      { target: 'Dot1', property: 'scale', keyframes: [{ time: 500, value: 1 }, { time: 650, value: 1.7, easing: 'ease-out' }, { time: 900, value: 1, easing: 'ease-in-out' }] },
+      { target: 'Dot2', property: 'fill', keyframes: [{ time: 0, value: '#2b3a55' }, { time: 1100, value: '#2b3a55' }, { time: 1250, value: '#00e5ff', easing: 'ease-out' }] },
+      { target: 'Dot2', property: 'scale', keyframes: [{ time: 1100, value: 1 }, { time: 1250, value: 1.7, easing: 'ease-out' }, { time: 1500, value: 1, easing: 'ease-in-out' }] },
+      { target: 'Dot3', property: 'fill', keyframes: [{ time: 0, value: '#2b3a55' }, { time: 1700, value: '#2b3a55' }, { time: 1850, value: '#00e5ff', easing: 'ease-out' }] },
+      { target: 'Dot3', property: 'scale', keyframes: [{ time: 1700, value: 1 }, { time: 1850, value: 1.7, easing: 'ease-out' }, { time: 2100, value: 1, easing: 'ease-in-out' }] },
+      { target: 'Dot4', property: 'fill', keyframes: [{ time: 0, value: '#2b3a55' }, { time: 2300, value: '#2b3a55' }, { time: 2450, value: '#00e5ff', easing: 'ease-out' }] },
+      { target: 'Dot4', property: 'scale', keyframes: [{ time: 2300, value: 1 }, { time: 2450, value: 1.7, easing: 'ease-out' }, { time: 2700, value: 1, easing: 'ease-in-out' }] },
+      // Tagline
+      { target: 'Tagline', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 2600, value: 0 }, { time: 3100, value: 1, easing: 'ease-out' }] },
+      { target: 'Tagline', property: 'y', keyframes: [{ time: 0, value: 8 }, { time: 2600, value: 8 }, { time: 3100, value: 0, easing: 'ease-out' }] },
+    ],
+  },
+
+  {
+    id: 'algo-yappydraw',
+    name: 'YappyDraw — Draw Together',
+    description: 'A pen sketches across the board, popping colorful strokes into place',
+    category: 'products',
+    thumbnail: '✏️',
+    duration: 4000,
+    elements: [
+      { type: 'rect', name: 'BG', x: 0, y: 0, width: 300, height: 200, fill: { type: 'linear', angle: 135, stops: [{ offset: 0, color: '#1a1a2e' }, { offset: 1, color: '#2a2a52' }] } },
+      { type: 'rect', name: 'Board', x: 45, y: 30, width: 210, height: 110, fill: '#fdfdff', borderRadius: 14 },
+      { type: 'circle', name: 'Blob1', x: 78, y: 62, width: 26, height: 26, fill: '#ff6b6b' },
+      { type: 'circle', name: 'Blob2', x: 132, y: 88, width: 26, height: 26, fill: '#4ecdc4' },
+      { type: 'circle', name: 'Blob3', x: 188, y: 56, width: 26, height: 26, fill: '#ffd93d' },
+      { type: 'arrow', name: 'Pen', x: 70, y: 50, x2: 84, y2: 74, stroke: '#2d2d44', strokeWidth: 4, headSize: 10, startHead: false, endHead: true },
+      { type: 'text', name: 'Title', x: 50, y: 150, width: 200, height: 28, text: 'YappyDraw', fontSize: 26, fontWeight: 800, fill: '#ff6b6b', textAlign: 'center' },
+      { type: 'text', name: 'Tagline', x: 40, y: 180, width: 220, height: 16, text: 'real-time collaborative sketching', fontSize: 10, fontWeight: 500, fill: '#9aa0c8', textAlign: 'center' },
+    ],
+    tracks: [
+      // Board springs in
+      { target: 'Board', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 400, value: 1, easing: 'ease-out' }] },
+      { target: 'Board', property: 'scale', keyframes: [{ time: 0, value: 0.85 }, { time: 400, value: 1.03, easing: 'ease-out' }, { time: 650, value: 1, easing: 'ease-in-out' }] },
+      // Pen travels blob1 -> blob2 -> blob3 (base at 70,50; offsets to each target), then lifts off
+      { target: 'Pen', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 500, value: 1, easing: 'ease-out' }, { time: 2700, value: 1 }, { time: 3000, value: 0, easing: 'ease-in' }] },
+      { target: 'Pen', property: 'x', keyframes: [{ time: 0, value: 0 }, { time: 600, value: 0 }, { time: 1200, value: 55, easing: 'ease-in-out' }, { time: 1900, value: 110, easing: 'ease-in-out' }, { time: 3000, value: 150, easing: 'ease-in' }] },
+      { target: 'Pen', property: 'y', keyframes: [{ time: 0, value: -12 }, { time: 600, value: 0, easing: 'ease-out' }, { time: 1200, value: 26, easing: 'ease-in-out' }, { time: 1900, value: -6, easing: 'ease-in-out' }, { time: 3000, value: -40, easing: 'ease-in' }] },
+      // Strokes pop as the pen reaches them
+      { target: 'Blob1', property: 'scale', keyframes: [{ time: 0, value: 0 }, { time: 650, value: 0 }, { time: 850, value: 1.25, easing: 'ease-out' }, { time: 1100, value: 1, easing: 'ease-in-out' }] },
+      { target: 'Blob2', property: 'scale', keyframes: [{ time: 0, value: 0 }, { time: 1250, value: 0 }, { time: 1450, value: 1.25, easing: 'ease-out' }, { time: 1700, value: 1, easing: 'ease-in-out' }] },
+      { target: 'Blob3', property: 'scale', keyframes: [{ time: 0, value: 0 }, { time: 1950, value: 0 }, { time: 2150, value: 1.25, easing: 'ease-out' }, { time: 2400, value: 1, easing: 'ease-in-out' }] },
+      // Title + tagline reveal
+      { target: 'Title', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 2700, value: 0 }, { time: 3200, value: 1, easing: 'ease-out' }] },
+      { target: 'Title', property: 'scale', keyframes: [{ time: 0, value: 0.6 }, { time: 2700, value: 0.6 }, { time: 3200, value: 1.08, easing: 'ease-out' }, { time: 3450, value: 1, easing: 'ease-in-out' }] },
+      { target: 'Tagline', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 3200, value: 0 }, { time: 3600, value: 1, easing: 'ease-out' }] },
+    ],
+  },
+
+  {
+    id: 'algo-happypaint',
+    name: 'HappyPaint — Splash of Color',
+    description: 'Paint blobs burst outward into a spinning palette, then the logo lands',
+    category: 'products',
+    thumbnail: '🎨',
+    duration: 4000,
+    elements: [
+      { type: 'rect', name: 'BG', x: 0, y: 0, width: 300, height: 200, fill: { type: 'linear', angle: 135, stops: [{ offset: 0, color: '#2d132c' }, { offset: 1, color: '#801336' }] } },
+      { type: 'circle', name: 'Splash1', x: 96, y: 46, width: 40, height: 40, fill: '#ff5e7e' },
+      { type: 'circle', name: 'Splash2', x: 176, y: 54, width: 34, height: 34, fill: '#fd9644' },
+      { type: 'circle', name: 'Splash3', x: 198, y: 108, width: 44, height: 44, fill: '#f7d038' },
+      { type: 'circle', name: 'Splash4', x: 78, y: 112, width: 32, height: 32, fill: '#4bcffa' },
+      { type: 'circle', name: 'Splash5', x: 138, y: 130, width: 38, height: 38, fill: '#a55eea' },
+      { type: 'circle', name: 'Center', x: 132, y: 74, width: 36, height: 36, fill: '#ffffff' },
+      { type: 'text', name: 'Title', x: 45, y: 156, width: 210, height: 26, text: 'happypaint.art', fontSize: 24, fontWeight: 800, fill: '#ffffff', textAlign: 'center' },
+    ],
+    tracks: [
+      // Center blooms and slowly spins the whole palette feel
+      { target: 'Center', property: 'scale', keyframes: [{ time: 0, value: 0 }, { time: 350, value: 1.3, easing: 'ease-out' }, { time: 650, value: 1, easing: 'ease-in-out' }] },
+      { target: 'Center', property: 'fill', keyframes: [{ time: 0, value: '#ffffff' }, { time: 900, value: '#ff5e7e', easing: 'ease-in-out' }, { time: 1600, value: '#a55eea', easing: 'ease-in-out' }, { time: 2400, value: '#4bcffa', easing: 'ease-in-out' }, { time: 3200, value: '#ffffff', easing: 'ease-in-out' }] },
+      { target: 'Center', property: 'rotate', keyframes: [{ time: 0, value: 0 }, { time: 4000, value: 360, easing: 'linear' }] },
+      // Splashes burst outward with a bouncy overshoot, staggered
+      { target: 'Splash1', property: 'scale', keyframes: [{ time: 0, value: 0 }, { time: 300, value: 0 }, { time: 550, value: 1.35, easing: 'ease-out' }, { time: 800, value: 1, easing: 'ease-in-out' }] },
+      { target: 'Splash1', property: 'rotate', keyframes: [{ time: 0, value: -40 }, { time: 800, value: 0, easing: 'ease-out-cubic' }] },
+      { target: 'Splash2', property: 'scale', keyframes: [{ time: 0, value: 0 }, { time: 450, value: 0 }, { time: 700, value: 1.35, easing: 'ease-out' }, { time: 950, value: 1, easing: 'ease-in-out' }] },
+      { target: 'Splash2', property: 'rotate', keyframes: [{ time: 0, value: 40 }, { time: 950, value: 0, easing: 'ease-out-cubic' }] },
+      { target: 'Splash3', property: 'scale', keyframes: [{ time: 0, value: 0 }, { time: 600, value: 0 }, { time: 850, value: 1.35, easing: 'ease-out' }, { time: 1100, value: 1, easing: 'ease-in-out' }] },
+      { target: 'Splash3', property: 'rotate', keyframes: [{ time: 0, value: -30 }, { time: 1100, value: 0, easing: 'ease-out-cubic' }] },
+      { target: 'Splash4', property: 'scale', keyframes: [{ time: 0, value: 0 }, { time: 750, value: 0 }, { time: 1000, value: 1.35, easing: 'ease-out' }, { time: 1250, value: 1, easing: 'ease-in-out' }] },
+      { target: 'Splash4', property: 'rotate', keyframes: [{ time: 0, value: 30 }, { time: 1250, value: 0, easing: 'ease-out-cubic' }] },
+      { target: 'Splash5', property: 'scale', keyframes: [{ time: 0, value: 0 }, { time: 900, value: 0 }, { time: 1150, value: 1.35, easing: 'ease-out' }, { time: 1400, value: 1, easing: 'ease-in-out' }] },
+      { target: 'Splash5', property: 'rotate', keyframes: [{ time: 0, value: -50 }, { time: 1400, value: 0, easing: 'ease-out-cubic' }] },
+      // Gentle breathing on the palette after it forms
+      { target: 'Splash3', property: 'y', keyframes: [{ time: 1400, value: 0 }, { time: 2400, value: -6, easing: 'ease-in-out' }, { time: 3400, value: 0, easing: 'ease-in-out' }] },
+      { target: 'Splash1', property: 'y', keyframes: [{ time: 1400, value: 0 }, { time: 2400, value: 6, easing: 'ease-in-out' }, { time: 3400, value: 0, easing: 'ease-in-out' }] },
+      // Title lands
+      { target: 'Title', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 1600, value: 0 }, { time: 2100, value: 1, easing: 'ease-out' }] },
+      { target: 'Title', property: 'y', keyframes: [{ time: 0, value: 18 }, { time: 1600, value: 18 }, { time: 2100, value: 0, easing: 'ease-out-cubic' }] },
+    ],
+  },
+
+  {
+    id: 'algo-propeak',
+    name: 'ProPeak — Reach the Summit',
+    description: 'Bars climb into an ascending trend, an arrow soars, and the growth badge pops',
+    category: 'products',
+    thumbnail: '⛰️',
+    duration: 4000,
+    elements: [
+      { type: 'rect', name: 'BG', x: 0, y: 0, width: 300, height: 200, fill: { type: 'linear', angle: 135, stops: [{ offset: 0, color: '#12263a' }, { offset: 1, color: '#1b3a5c' }] } },
+      { type: 'line', name: 'Baseline', x: 40, y: 150, x2: 260, y2: 150, stroke: '#3a5474', strokeWidth: 2 },
+      { type: 'rect', name: 'Bar1', x: 56, y: 140, width: 30, height: 10, fill: '#2bcbba', borderRadius: 4 },
+      { type: 'rect', name: 'Bar2', x: 100, y: 140, width: 30, height: 10, fill: '#26de81', borderRadius: 4 },
+      { type: 'rect', name: 'Bar3', x: 144, y: 140, width: 30, height: 10, fill: '#4b7bec', borderRadius: 4 },
+      { type: 'rect', name: 'Bar4', x: 188, y: 140, width: 30, height: 10, fill: '#45aaf2', borderRadius: 4 },
+      { type: 'arrow', name: 'Trend', x: 58, y: 132, x2: 210, y2: 60, stroke: '#26de81', strokeWidth: 4, headSize: 12, startHead: false, endHead: true },
+      { type: 'circle', name: 'Badge', x: 196, y: 42, width: 46, height: 46, fill: '#26de81' },
+      { type: 'text', name: 'Pct', x: 196, y: 56, width: 46, height: 20, text: '+87%', fontSize: 14, fontWeight: 800, fill: '#0b2818', textAlign: 'center' },
+      { type: 'text', name: 'Title', x: 40, y: 165, width: 220, height: 26, text: 'ProPeak', fontSize: 24, fontWeight: 800, fill: '#ffffff', textAlign: 'center' },
+    ],
+    tracks: [
+      { target: 'Baseline', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 300, value: 1, easing: 'ease-out' }] },
+      // Ascending staircase of bars
+      { target: 'Bar1', property: 'height', keyframes: [{ time: 0, value: 0 }, { time: 300, value: 0 }, { time: 800, value: 30, easing: 'ease-out' }] },
+      { target: 'Bar1', property: 'y', keyframes: [{ time: 0, value: 0 }, { time: 300, value: 0 }, { time: 800, value: -30, easing: 'ease-out' }] },
+      { target: 'Bar2', property: 'height', keyframes: [{ time: 0, value: 0 }, { time: 500, value: 0 }, { time: 1000, value: 55, easing: 'ease-out' }] },
+      { target: 'Bar2', property: 'y', keyframes: [{ time: 0, value: 0 }, { time: 500, value: 0 }, { time: 1000, value: -55, easing: 'ease-out' }] },
+      { target: 'Bar3', property: 'height', keyframes: [{ time: 0, value: 0 }, { time: 700, value: 0 }, { time: 1200, value: 78, easing: 'ease-out' }] },
+      { target: 'Bar3', property: 'y', keyframes: [{ time: 0, value: 0 }, { time: 700, value: 0 }, { time: 1200, value: -78, easing: 'ease-out' }] },
+      { target: 'Bar4', property: 'height', keyframes: [{ time: 0, value: 0 }, { time: 900, value: 0 }, { time: 1400, value: 100, easing: 'ease-out' }] },
+      { target: 'Bar4', property: 'y', keyframes: [{ time: 0, value: 0 }, { time: 900, value: 0 }, { time: 1400, value: -100, easing: 'ease-out' }] },
+      // Trend arrow soars up over the bars
+      { target: 'Trend', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 1500, value: 0 }, { time: 1700, value: 1, easing: 'ease-out' }] },
+      { target: 'Trend', property: 'scale', keyframes: [{ time: 1500, value: 0.3 }, { time: 1900, value: 1.08, easing: 'ease-out-cubic' }, { time: 2150, value: 1, easing: 'ease-in-out' }] },
+      // Growth badge pops at the summit
+      { target: 'Badge', property: 'scale', keyframes: [{ time: 0, value: 0 }, { time: 2000, value: 0 }, { time: 2250, value: 1.3, easing: 'ease-out' }, { time: 2500, value: 1, easing: 'ease-in-out' }] },
+      { target: 'Pct', property: 'scale', keyframes: [{ time: 0, value: 0 }, { time: 2100, value: 0 }, { time: 2350, value: 1.2, easing: 'ease-out' }, { time: 2600, value: 1, easing: 'ease-in-out' }] },
+      { target: 'Pct', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 2100, value: 0 }, { time: 2350, value: 1, easing: 'ease-out' }] },
+      { target: 'Badge', property: 'y', keyframes: [{ time: 2500, value: 0 }, { time: 3200, value: -5, easing: 'ease-in-out' }, { time: 3900, value: 0, easing: 'ease-in-out' }] },
+      { target: 'Pct', property: 'y', keyframes: [{ time: 2500, value: 0 }, { time: 3200, value: -5, easing: 'ease-in-out' }, { time: 3900, value: 0, easing: 'ease-in-out' }] },
+      // Title
+      { target: 'Title', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 2600, value: 0 }, { time: 3100, value: 1, easing: 'ease-out' }] },
+      { target: 'Title', property: 'y', keyframes: [{ time: 0, value: 14 }, { time: 2600, value: 14 }, { time: 3100, value: 0, easing: 'ease-out-cubic' }] },
+    ],
+  },
+
+  {
+    id: 'algo-skillzengine',
+    name: 'SkillzEngine — Level Up',
+    description: 'Gears spin, skill bars fill, and the level-up badge bursts in',
+    category: 'products',
+    thumbnail: '⚙️',
+    duration: 4000,
+    elements: [
+      { type: 'rect', name: 'BG', x: 0, y: 0, width: 300, height: 200, fill: { type: 'linear', angle: 135, stops: [{ offset: 0, color: '#1e1e2e' }, { offset: 1, color: '#2d2b55' }] } },
+      { type: 'rect', name: 'GearA', x: 34, y: 34, width: 40, height: 40, fill: '#7b2ff7', borderRadius: 12 },
+      { type: 'rect', name: 'GearB', x: 60, y: 58, width: 28, height: 28, fill: '#b06bff', borderRadius: 9 },
+      { type: 'rect', name: 'Track1', x: 110, y: 46, width: 150, height: 12, fill: '#2a2a44', borderRadius: 6 },
+      { type: 'rect', name: 'Fill1', x: 110, y: 46, width: 0, height: 12, fill: '#f1c40f', borderRadius: 6 },
+      { type: 'rect', name: 'Track2', x: 110, y: 70, width: 150, height: 12, fill: '#2a2a44', borderRadius: 6 },
+      { type: 'rect', name: 'Fill2', x: 110, y: 70, width: 0, height: 12, fill: '#2bcbba', borderRadius: 6 },
+      { type: 'rect', name: 'Track3', x: 110, y: 94, width: 150, height: 12, fill: '#2a2a44', borderRadius: 6 },
+      { type: 'rect', name: 'Fill3', x: 110, y: 94, width: 0, height: 12, fill: '#7b2ff7', borderRadius: 6 },
+      { type: 'circle', name: 'Badge', x: 128, y: 118, width: 44, height: 44, fill: '#f1c40f' },
+      { type: 'text', name: 'BadgeTxt', x: 128, y: 131, width: 44, height: 18, text: 'LVL', fontSize: 13, fontWeight: 800, fill: '#2d2b55', textAlign: 'center' },
+      { type: 'text', name: 'Title', x: 40, y: 168, width: 220, height: 24, text: 'SkillzEngine', fontSize: 22, fontWeight: 800, fill: '#ffffff', textAlign: 'center' },
+    ],
+    tracks: [
+      // Gears spin in opposite directions, continuously
+      { target: 'GearA', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 300, value: 1, easing: 'ease-out' }] },
+      { target: 'GearA', property: 'rotate', keyframes: [{ time: 0, value: 0 }, { time: 4000, value: 360, easing: 'linear' }] },
+      { target: 'GearB', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 300, value: 1, easing: 'ease-out' }] },
+      { target: 'GearB', property: 'rotate', keyframes: [{ time: 0, value: 0 }, { time: 4000, value: -360, easing: 'linear' }] },
+      // Skill bars fill up, staggered
+      { target: 'Fill1', property: 'width', keyframes: [{ time: 0, value: 0 }, { time: 400, value: 0 }, { time: 1200, value: 132, easing: 'ease-out-cubic' }] },
+      { target: 'Fill2', property: 'width', keyframes: [{ time: 0, value: 0 }, { time: 700, value: 0 }, { time: 1500, value: 108, easing: 'ease-out-cubic' }] },
+      { target: 'Fill3', property: 'width', keyframes: [{ time: 0, value: 0 }, { time: 1000, value: 0 }, { time: 1800, value: 150, easing: 'ease-out-cubic' }] },
+      // Level-up badge bursts and spins in
+      { target: 'Badge', property: 'scale', keyframes: [{ time: 0, value: 0 }, { time: 1900, value: 0 }, { time: 2200, value: 1.35, easing: 'ease-out' }, { time: 2500, value: 1, easing: 'ease-in-out' }] },
+      { target: 'Badge', property: 'rotate', keyframes: [{ time: 1900, value: -120 }, { time: 2500, value: 0, easing: 'ease-out-cubic' }] },
+      { target: 'Badge', property: 'fill', keyframes: [{ time: 2500, value: '#f1c40f' }, { time: 3000, value: '#ffe27a', easing: 'ease-in-out' }, { time: 3500, value: '#f1c40f', easing: 'ease-in-out' }] },
+      { target: 'BadgeTxt', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 2300, value: 0 }, { time: 2550, value: 1, easing: 'ease-out' }] },
+      { target: 'BadgeTxt', property: 'scale', keyframes: [{ time: 0, value: 0.5 }, { time: 2300, value: 0.5 }, { time: 2550, value: 1.15, easing: 'ease-out' }, { time: 2800, value: 1, easing: 'ease-in-out' }] },
+      // Title
+      { target: 'Title', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 2600, value: 0 }, { time: 3100, value: 1, easing: 'ease-out' }] },
+      { target: 'Title', property: 'y', keyframes: [{ time: 0, value: 14 }, { time: 2600, value: 14 }, { time: 3100, value: 0, easing: 'ease-out-cubic' }] },
+    ],
+  },
+
+  {
+    id: 'algo-ecosystem',
+    name: 'Algorisys Ecosystem',
+    description: 'The five products orbit a central hub, connectors draw out, nodes pop in — the viral hero infographic',
+    category: 'products',
+    thumbnail: '🌐',
+    duration: 4500,
+    elements: [
+      { type: 'rect', name: 'BG', x: 0, y: 0, width: 300, height: 200, fill: { type: 'radial', centerX: 0.5, centerY: 0.5, radius: 0.8, stops: [{ offset: 0, color: '#1c2740' }, { offset: 1, color: '#0a0f1c' }] } },
+      { type: 'text', name: 'Heading', x: 40, y: 8, width: 220, height: 18, text: 'THE ALGORISYS ECOSYSTEM', fontSize: 12, fontWeight: 700, fill: '#6f86b3', textAlign: 'center' },
+      // Connectors (hub center 150,100 -> each node center)
+      { type: 'line', name: 'Link1', x: 150, y: 100, x2: 150, y2: 45, stroke: '#33436a', strokeWidth: 2 },
+      { type: 'line', name: 'Link2', x: 150, y: 100, x2: 212, y2: 80, stroke: '#33436a', strokeWidth: 2 },
+      { type: 'line', name: 'Link3', x: 150, y: 100, x2: 188, y2: 150, stroke: '#33436a', strokeWidth: 2 },
+      { type: 'line', name: 'Link4', x: 150, y: 100, x2: 112, y2: 150, stroke: '#33436a', strokeWidth: 2 },
+      { type: 'line', name: 'Link5', x: 150, y: 100, x2: 88, y2: 80, stroke: '#33436a', strokeWidth: 2 },
+      // Product nodes (circle centered at the link endpoints)
+      { type: 'circle', name: 'Node1', x: 134, y: 29, width: 32, height: 32, fill: '#4a9eff' },
+      { type: 'circle', name: 'Node2', x: 196, y: 64, width: 32, height: 32, fill: '#ff6b6b' },
+      { type: 'circle', name: 'Node3', x: 172, y: 134, width: 32, height: 32, fill: '#f7d038' },
+      { type: 'circle', name: 'Node4', x: 96, y: 134, width: 32, height: 32, fill: '#26de81' },
+      { type: 'circle', name: 'Node5', x: 72, y: 64, width: 32, height: 32, fill: '#7b2ff7' },
+      // Node labels
+      { type: 'text', name: 'Label1', x: 108, y: 12, width: 84, height: 12, text: 'TinyFly', fontSize: 9, fontWeight: 700, fill: '#cfe0ff', textAlign: 'center' },
+      { type: 'text', name: 'Label2', x: 200, y: 98, width: 84, height: 12, text: 'YappyDraw', fontSize: 9, fontWeight: 700, fill: '#ffd4d4', textAlign: 'center' },
+      { type: 'text', name: 'Label3', x: 146, y: 168, width: 84, height: 12, text: 'HappyPaint', fontSize: 9, fontWeight: 700, fill: '#fff0b8', textAlign: 'center' },
+      { type: 'text', name: 'Label4', x: 70, y: 168, width: 84, height: 12, text: 'ProPeak', fontSize: 9, fontWeight: 700, fill: '#bff5d8', textAlign: 'center' },
+      { type: 'text', name: 'Label5', x: 16, y: 98, width: 84, height: 12, text: 'SkillzEngine', fontSize: 9, fontWeight: 700, fill: '#dcc9ff', textAlign: 'center' },
+      // Central hub
+      { type: 'circle', name: 'Hub', x: 128, y: 78, width: 44, height: 44, fill: { type: 'linear', angle: 135, stops: [{ offset: 0, color: '#4a9eff' }, { offset: 1, color: '#7b2ff7' }] } },
+      { type: 'text', name: 'HubTxt', x: 128, y: 92, width: 44, height: 18, text: 'A', fontSize: 20, fontWeight: 900, fill: '#ffffff', textAlign: 'center' },
+    ],
+    tracks: [
+      { target: 'Heading', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 400, value: 1, easing: 'ease-out' }] },
+      // Hub blooms first and gently rotates throughout
+      { target: 'Hub', property: 'scale', keyframes: [{ time: 0, value: 0 }, { time: 400, value: 1.25, easing: 'ease-out' }, { time: 700, value: 1, easing: 'ease-in-out' }] },
+      { target: 'Hub', property: 'rotate', keyframes: [{ time: 0, value: 0 }, { time: 4500, value: 360, easing: 'linear' }] },
+      { target: 'HubTxt', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 500, value: 1, easing: 'ease-out' }] },
+      // Connectors fade out from the hub, staggered
+      { target: 'Link1', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 700, value: 0 }, { time: 950, value: 1, easing: 'ease-out' }] },
+      { target: 'Link2', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 850, value: 0 }, { time: 1100, value: 1, easing: 'ease-out' }] },
+      { target: 'Link3', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 1000, value: 0 }, { time: 1250, value: 1, easing: 'ease-out' }] },
+      { target: 'Link4', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 1150, value: 0 }, { time: 1400, value: 1, easing: 'ease-out' }] },
+      { target: 'Link5', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 1300, value: 0 }, { time: 1550, value: 1, easing: 'ease-out' }] },
+      // Nodes pop in after their connector, with overshoot
+      { target: 'Node1', property: 'scale', keyframes: [{ time: 0, value: 0 }, { time: 950, value: 0 }, { time: 1200, value: 1.3, easing: 'ease-out' }, { time: 1450, value: 1, easing: 'ease-in-out' }] },
+      { target: 'Node2', property: 'scale', keyframes: [{ time: 0, value: 0 }, { time: 1100, value: 0 }, { time: 1350, value: 1.3, easing: 'ease-out' }, { time: 1600, value: 1, easing: 'ease-in-out' }] },
+      { target: 'Node3', property: 'scale', keyframes: [{ time: 0, value: 0 }, { time: 1250, value: 0 }, { time: 1500, value: 1.3, easing: 'ease-out' }, { time: 1750, value: 1, easing: 'ease-in-out' }] },
+      { target: 'Node4', property: 'scale', keyframes: [{ time: 0, value: 0 }, { time: 1400, value: 0 }, { time: 1650, value: 1.3, easing: 'ease-out' }, { time: 1900, value: 1, easing: 'ease-in-out' }] },
+      { target: 'Node5', property: 'scale', keyframes: [{ time: 0, value: 0 }, { time: 1550, value: 0 }, { time: 1800, value: 1.3, easing: 'ease-out' }, { time: 2050, value: 1, easing: 'ease-in-out' }] },
+      // Labels fade in with their nodes
+      { target: 'Label1', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 1300, value: 0 }, { time: 1600, value: 1, easing: 'ease-out' }] },
+      { target: 'Label2', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 1450, value: 0 }, { time: 1750, value: 1, easing: 'ease-out' }] },
+      { target: 'Label3', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 1600, value: 0 }, { time: 1900, value: 1, easing: 'ease-out' }] },
+      { target: 'Label4', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 1750, value: 0 }, { time: 2050, value: 1, easing: 'ease-out' }] },
+      { target: 'Label5', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 1900, value: 0 }, { time: 2200, value: 1, easing: 'ease-out' }] },
+      // Nodes gently breathe once fully formed (orbit feel)
+      { target: 'Node1', property: 'y', keyframes: [{ time: 2200, value: 0 }, { time: 3100, value: -5, easing: 'ease-in-out' }, { time: 4000, value: 0, easing: 'ease-in-out' }] },
+      { target: 'Node3', property: 'y', keyframes: [{ time: 2200, value: 0 }, { time: 3100, value: 5, easing: 'ease-in-out' }, { time: 4000, value: 0, easing: 'ease-in-out' }] },
+      { target: 'Node5', property: 'x', keyframes: [{ time: 2200, value: 0 }, { time: 3100, value: -5, easing: 'ease-in-out' }, { time: 4000, value: 0, easing: 'ease-in-out' }] },
+    ],
+  },
 ]
 
 /**
@@ -1548,7 +1824,7 @@ export function getSampleById(id: string): SampleDefinition | undefined {
  * Get all unique categories
  */
 export function getCategories(): SampleDefinition['category'][] {
-  return ['basic', 'motion', 'text', 'ui', 'effects', 'showcase']
+  return ['basic', 'motion', 'text', 'ui', 'effects', 'showcase', 'products']
 }
 
 /**
@@ -1561,4 +1837,5 @@ export const categoryNames: Record<SampleDefinition['category'], string> = {
   ui: 'UI Elements',
   effects: 'Effects',
   showcase: 'Showcase',
+  products: 'Algorisys',
 }

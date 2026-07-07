@@ -36,6 +36,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Project management** - Auto-save to LocalStorage
 - **Export/Import** - JSON file support
 - **Embed code** - Generate copy-paste code for websites (single scene or full sequence)
+- **Sample library** - One-click starter animations across Basic, Motion, Text, UI, Effects, Showcase, and **Algorisys** product-showcase categories (viral infographic demos for TinyFly, YappyDraw, HappyPaint, ProPeak, SkillzEngine, and the full ecosystem)
 
 ## Documentation
 

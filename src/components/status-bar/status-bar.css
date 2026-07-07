@@ -19,6 +19,20 @@
 .status-bar-version {
   color: #4a9eff;
   font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s ease;
+}
+
+.status-bar-version:hover {
+  color: #6ab0ff;
+  text-decoration: underline;
+}
+
+.status-bar-version:focus-visible {
+  outline: 1px solid #4a9eff;
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 .status-bar-right {

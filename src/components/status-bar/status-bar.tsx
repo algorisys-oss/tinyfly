@@ -6,10 +6,32 @@ interface StatusBarProps {
 }
 
 export const StatusBar: Component<StatusBarProps> = (props) => {
+  /** Force a full reload that bypasses the cache so the latest build is fetched. */
+  const hardReload = () => {
+    // Cache-busting query param guarantees a fresh document + assets.
+    const url = new URL(window.location.href)
+    url.searchParams.set('_r', Date.now().toString())
+    window.location.replace(url.toString())
+  }
+
   return (
     <div class="status-bar">
       <div class="status-bar-left">
-        <span class="status-bar-version">v{__APP_VERSION__}</span>
+        <span
+          class="status-bar-version"
+          role="button"
+          tabindex="0"
+          title="Click to hard reload the app"
+          onClick={hardReload}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              hardReload()
+            }
+          }}
+        >
+          v{__APP_VERSION__}
+        </span>
         {props.leftContent}
       </div>
       <div class="status-bar-right">

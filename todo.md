@@ -180,6 +180,8 @@
 - [x] Shift+resize should resize elements proportionately
 - [x] Test motion path animation thoroughly (center alignment, full path coverage)
 - [x] Renderer switcher (DOM/Canvas/SVG) in preview panel
+- [x] Add "Algorisys" product showcase samples (6 viral-infographic demos: TinyFly, YappyDraw, HappyPaint, ProPeak, SkillzEngine, Ecosystem)
+- [x] Hard-reload the app when the version chip in the status bar is clicked
 
 ## Phase 21: Advanced Features
 
