@@ -88,6 +88,9 @@
 
 .editor-sidebar-left {
   border-right: 1px solid #333;
+  /* ElementPanel is height:100% and scrolls internally via its own
+     .panel-content, so the outer sidebar must not add a second scrollbar. */
+  overflow: hidden;
 }
 
 .editor-sidebar-right {
