@@ -1,5 +1,6 @@
 import { createSignal } from 'solid-js'
 import { createStore } from 'solid-js/store'
+import { measureTextLetters } from '../utils/split-text'
 
 export type ElementType = 'rect' | 'circle' | 'text' | 'image' | 'line' | 'arrow' | 'path' | 'group'
 
@@ -692,6 +693,75 @@ export function createSceneStore() {
   }
 
   /**
+   * Result of splitting a text element into per-letter elements.
+   */
+  interface SplitTextResult {
+    /** Ids of the created letter elements, in reading order. */
+    letterIds: string[]
+    /** The characters, in the same order as {@link letterIds}. */
+    chars: string[]
+  }
+
+  /**
+   * Split a text element into one text element per glyph.
+   *
+   * This mirrors Adobe Animate's "break apart" workflow: the source text is
+   * replaced by a series of single-character text elements positioned to
+   * reproduce the original layout. Each letter is an ordinary scene element, so
+   * it can be animated independently (e.g. staggered entrances) with the same
+   * public API used for any other element.
+   *
+   * Whitespace does not produce an element — it only advances the layout. Returns
+   * null when the target is not a (non-empty) text element.
+   */
+  function splitTextElement(elementId: string): SplitTextResult | null {
+    const source = state.elements.find((el) => el.id === elementId)
+    if (!source || source.type !== 'text') return null
+
+    const text = source as TextElement
+    const letters = measureTextLetters(text)
+    if (letters.length === 0) return null
+
+    const letterIds: string[] = []
+    const chars: string[] = []
+    const letterElements: TextElement[] = letters.map((layout, i) => {
+      const id = generateId()
+      letterIds.push(id)
+      chars.push(layout.char)
+      return {
+        type: 'text',
+        id,
+        name: `${text.name} · ${i + 1}`,
+        x: layout.x,
+        y: layout.y,
+        width: layout.width,
+        height: layout.height,
+        rotation: 0,
+        opacity: text.opacity,
+        visible: true,
+        locked: false,
+        text: layout.char,
+        fontSize: text.fontSize,
+        fontFamily: text.fontFamily,
+        fontWeight: text.fontWeight,
+        fill: text.fill,
+        textAlign: 'center',
+      }
+    })
+
+    // Replace the source text element with its letters, preserving overall order.
+    const index = state.elements.findIndex((el) => el.id === elementId)
+    const next = [...state.elements]
+    next.splice(index, 1, ...letterElements)
+    setState('elements', next)
+    setState('selectedElementId', letterIds[0] ?? null)
+    setState('selectedElementIds', letterIds)
+    bumpVersion()
+
+    return { letterIds, chars }
+  }
+
+  /**
    * Load elements from serialized data.
    */
   function loadElements(elements: SceneElement[]): void {
@@ -759,6 +829,7 @@ export function createSceneStore() {
     exportElements,
     groupElements,
     ungroupElement,
+    splitTextElement,
     getParentGroup,
     getTopLevelElements,
     copyElements,

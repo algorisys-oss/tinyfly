@@ -67,6 +67,17 @@ export class Timeline {
     return this._calculateDuration()
   }
 
+  /**
+   * Set an explicit timeline duration (ms). Pass `undefined` to fall back to the
+   * duration calculated from the last keyframe across all tracks.
+   */
+  setDuration(duration: number | undefined): void {
+    this._explicitDuration = duration
+    if (duration !== undefined) {
+      this._config = { ...this._config, duration }
+    }
+  }
+
   get currentTime(): number {
     return this._currentTime
   }

@@ -56,6 +56,9 @@ const TRANSFORM_PROPERTIES = new Set([
   'motionPathRotate',
 ])
 
+/** Clip-inset properties (percent 0-100), composed into clip-path: inset(...). */
+const CLIP_PROPERTIES = new Set(['clipTop', 'clipRight', 'clipBottom', 'clipLeft'])
+
 /**
  * SVGAdapter applies animation state to SVG elements.
  * It maps animation properties to SVG attributes and handles
@@ -112,10 +115,13 @@ export class SVGAdapter {
     properties: Map<string, AnimatableValue>
   ): void {
     const transforms: Record<string, number> = {}
+    const clip: Record<string, number> = {}
 
     for (const [property, value] of properties) {
       if (TRANSFORM_PROPERTIES.has(property)) {
         transforms[property] = value as number
+      } else if (CLIP_PROPERTIES.has(property)) {
+        if (typeof value === 'number') clip[property] = value
       } else if (property === 'opacity') {
         // Apply opacity to both fill and stroke
         element.setAttribute('fill-opacity', String(value))
@@ -129,6 +135,15 @@ export class SVGAdapter {
     if (Object.keys(transforms).length > 0) {
       const transformString = this.buildCssTransformString(transforms)
       ;(element as SVGElement & { style: CSSStyleDeclaration }).style.transform = transformString
+    }
+
+    // Apply composed clip-path (reveal/wipe mask). Missing sides default to 0.
+    if (Object.keys(clip).length > 0) {
+      const t = clip.clipTop ?? 0
+      const r = clip.clipRight ?? 0
+      const b = clip.clipBottom ?? 0
+      const l = clip.clipLeft ?? 0
+      ;(element as SVGElement & { style: CSSStyleDeclaration }).style.clipPath = `inset(${t}% ${r}% ${b}% ${l}%)`
     }
   }
 

@@ -9,6 +9,12 @@ export interface AnimationPreset {
   duration: number
   /** Tracks to create, relative to element position */
   tracks: PresetTrack[]
+  /**
+   * Suggested delay (ms) between successive targets when this preset is applied
+   * across a split (per-letter) text element. Purely a UI default — the stagger
+   * itself is data, produced by offsetting each target's keyframe times.
+   */
+  recommendedStagger?: number
 }
 
 export interface PresetTrack {
@@ -880,6 +886,223 @@ export const textLightSpeed: AnimationPreset = {
 }
 
 // ============================================
+// REVEAL / WIPE (CLIP MASK) ANIMATIONS
+// These animate clip-inset percentages, wiping the element into view. They work
+// on any element, and combine with per-letter stagger for mask-reveal text.
+// ============================================
+
+export const revealRight: AnimationPreset = {
+  id: 'reveal-right',
+  name: 'Reveal Right',
+  description: 'Wipe into view from left to right (clip mask)',
+  category: 'entrance',
+  duration: 600,
+  recommendedStagger: 55,
+  tracks: [
+    {
+      property: 'clipRight',
+      keyframes: [
+        { timePercent: 0, value: 100 },
+        { timePercent: 1, value: 0, easing: 'ease-out' },
+      ],
+    },
+  ],
+}
+
+export const revealLeft: AnimationPreset = {
+  id: 'reveal-left',
+  name: 'Reveal Left',
+  description: 'Wipe into view from right to left (clip mask)',
+  category: 'entrance',
+  duration: 600,
+  recommendedStagger: 55,
+  tracks: [
+    {
+      property: 'clipLeft',
+      keyframes: [
+        { timePercent: 0, value: 100 },
+        { timePercent: 1, value: 0, easing: 'ease-out' },
+      ],
+    },
+  ],
+}
+
+export const revealDown: AnimationPreset = {
+  id: 'reveal-down',
+  name: 'Reveal Down',
+  description: 'Wipe into view from top to bottom (clip mask)',
+  category: 'entrance',
+  duration: 600,
+  recommendedStagger: 55,
+  tracks: [
+    {
+      property: 'clipBottom',
+      keyframes: [
+        { timePercent: 0, value: 100 },
+        { timePercent: 1, value: 0, easing: 'ease-out' },
+      ],
+    },
+  ],
+}
+
+export const revealUp: AnimationPreset = {
+  id: 'reveal-up',
+  name: 'Reveal Up',
+  description: 'Wipe into view from bottom to top (clip mask)',
+  category: 'entrance',
+  duration: 600,
+  recommendedStagger: 55,
+  tracks: [
+    {
+      property: 'clipTop',
+      keyframes: [
+        { timePercent: 0, value: 100 },
+        { timePercent: 1, value: 0, easing: 'ease-out' },
+      ],
+    },
+  ],
+}
+
+// ============================================
+// PER-LETTER (STAGGER) TEXT ANIMATIONS
+// These are ordinary presets, but they are tuned to look their best when fanned
+// out across the letters of a split text element with a small per-letter delay.
+// ============================================
+
+export const letterDropBounce: AnimationPreset = {
+  id: 'letter-drop-bounce',
+  name: 'Letter Drop & Bounce',
+  description: 'Letters drop in from above and bounce to a stop — great when staggered',
+  category: 'text',
+  duration: 700,
+  recommendedStagger: 70,
+  tracks: [
+    {
+      property: 'y',
+      keyframes: [
+        { timePercent: 0, value: '-140' },
+        { timePercent: 0.5, value: '+16', easing: 'ease-in-quad' },
+        { timePercent: 0.72, value: '-8', easing: 'ease-out-quad' },
+        { timePercent: 0.88, value: '+3', easing: 'ease-in-quad' },
+        { timePercent: 1, value: 0, easing: 'ease-out-quad' },
+      ],
+    },
+    {
+      property: 'opacity',
+      keyframes: [
+        { timePercent: 0, value: 0 },
+        { timePercent: 0.25, value: 1, easing: 'ease-out' },
+      ],
+    },
+  ],
+}
+
+export const letterCascadeUp: AnimationPreset = {
+  id: 'letter-cascade-up',
+  name: 'Letter Cascade Up',
+  description: 'Letters fade and rise into place one after another',
+  category: 'text',
+  duration: 500,
+  recommendedStagger: 55,
+  tracks: [
+    {
+      property: 'y',
+      keyframes: [
+        { timePercent: 0, value: '+40' },
+        { timePercent: 1, value: 0, easing: { type: 'cubic-bezier', points: [0.22, 1, 0.36, 1] } },
+      ],
+    },
+    {
+      property: 'opacity',
+      keyframes: [
+        { timePercent: 0, value: 0 },
+        { timePercent: 1, value: 1, easing: 'ease-out' },
+      ],
+    },
+  ],
+}
+
+export const letterWave: AnimationPreset = {
+  id: 'letter-wave',
+  name: 'Letter Wave',
+  description: 'A rolling wave travels across the letters — loops seamlessly',
+  category: 'text',
+  duration: 900,
+  recommendedStagger: 60,
+  tracks: [
+    {
+      property: 'y',
+      keyframes: [
+        { timePercent: 0, value: 0 },
+        { timePercent: 0.25, value: '-22', easing: 'ease-in-out' },
+        { timePercent: 0.5, value: 0, easing: 'ease-in-out' },
+        { timePercent: 1, value: 0 },
+      ],
+    },
+  ],
+}
+
+export const letterAssemble: AnimationPreset = {
+  id: 'letter-assemble',
+  name: 'Letter Assemble',
+  description: 'Letters spin and scale in from nothing to assemble the word',
+  category: 'text',
+  duration: 650,
+  recommendedStagger: 65,
+  tracks: [
+    {
+      property: 'scale',
+      keyframes: [
+        { timePercent: 0, value: 0 },
+        { timePercent: 0.7, value: 1.15, easing: 'ease-out' },
+        { timePercent: 1, value: 1, easing: 'ease-in-out' },
+      ],
+    },
+    {
+      property: 'rotate',
+      keyframes: [
+        { timePercent: 0, value: -120 },
+        { timePercent: 1, value: 0, easing: { type: 'cubic-bezier', points: [0.34, 1.56, 0.64, 1] } },
+      ],
+    },
+    {
+      property: 'opacity',
+      keyframes: [
+        { timePercent: 0, value: 0 },
+        { timePercent: 0.4, value: 1, easing: 'ease-out' },
+      ],
+    },
+  ],
+}
+
+export const letterPopIn: AnimationPreset = {
+  id: 'letter-pop-in',
+  name: 'Letter Pop In',
+  description: 'Letters pop in with a springy overshoot',
+  category: 'text',
+  duration: 450,
+  recommendedStagger: 45,
+  tracks: [
+    {
+      property: 'scale',
+      keyframes: [
+        { timePercent: 0, value: 0 },
+        { timePercent: 0.6, value: 1.25, easing: 'ease-out' },
+        { timePercent: 0.8, value: 0.92, easing: 'ease-in-out' },
+        { timePercent: 1, value: 1, easing: 'ease-in-out' },
+      ],
+    },
+    {
+      property: 'opacity',
+      keyframes: [
+        { timePercent: 0, value: 0 },
+        { timePercent: 0.3, value: 1, easing: 'ease-out' },
+      ],
+    },
+  ],
+}
+
+// ============================================
 // ALL PRESETS
 // ============================================
 
@@ -891,6 +1114,10 @@ export const allPresets: AnimationPreset[] = [
   slideInLeft,
   slideInRight,
   scaleIn,
+  revealRight,
+  revealLeft,
+  revealDown,
+  revealUp,
   // Emphasis
   pulse,
   bounce,
@@ -921,6 +1148,12 @@ export const allPresets: AnimationPreset[] = [
   textSwingIn,
   textTada,
   textLightSpeed,
+  // Per-letter (stagger) text
+  letterDropBounce,
+  letterCascadeUp,
+  letterWave,
+  letterAssemble,
+  letterPopIn,
 ]
 
 export const presetsByCategory = {

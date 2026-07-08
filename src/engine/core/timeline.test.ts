@@ -77,6 +77,40 @@ describe('Timeline', () => {
 
       expect(timeline.duration).toBe(5000)
     })
+
+    it('setDuration overrides the duration', () => {
+      const track = createTrack({
+        id: 'track-1',
+        target: 'box',
+        property: 'opacity',
+        keyframes: [
+          { time: 0, value: 0 },
+          { time: 1000, value: 1 },
+        ],
+      })
+      const timeline = new Timeline({ id: 'test', tracks: [track] })
+      expect(timeline.duration).toBe(1000) // auto-calculated
+
+      timeline.setDuration(3000)
+      expect(timeline.duration).toBe(3000)
+    })
+
+    it('setDuration(undefined) reverts to the auto-calculated duration', () => {
+      const track = createTrack({
+        id: 'track-1',
+        target: 'box',
+        property: 'opacity',
+        keyframes: [
+          { time: 0, value: 0 },
+          { time: 1000, value: 1 },
+        ],
+      })
+      const timeline = new Timeline({ id: 'test', tracks: [track], config: { duration: 5000 } })
+      expect(timeline.duration).toBe(5000)
+
+      timeline.setDuration(undefined)
+      expect(timeline.duration).toBe(1000)
+    })
   })
 
   describe('playback state', () => {

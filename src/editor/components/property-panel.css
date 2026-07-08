@@ -21,6 +21,13 @@
   overflow-y: auto;
 }
 
+/* When the property panel shares the sidebar with the preset panel it can be
+   height-constrained; let its content scroll internally rather than clip. */
+.property-panel > .panel-content {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .no-selection {
   color: #666;
   font-size: 12px;
@@ -61,6 +68,9 @@
 .property-row input,
 .property-row select {
   flex: 1;
+  /* Without this, inputs keep their intrinsic min width and overflow the
+     narrow sidebar, producing a stray horizontal scrollbar. */
+  min-width: 0;
   padding: 6px 8px;
   background: #252525;
   border: 1px solid #333;

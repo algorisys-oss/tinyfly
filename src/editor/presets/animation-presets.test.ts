@@ -39,15 +39,16 @@ describe('animation presets', () => {
     })
 
     it('contains expected number of presets', () => {
-      expect(allPresets.length).toBe(32) // 17 original + 15 text presets
+      expect(allPresets.length).toBe(41) // 17 original + 15 text + 5 per-letter stagger + 4 reveal presets
     })
   })
 
   describe('presetsByCategory', () => {
     it('categorizes entrance presets correctly', () => {
-      expect(presetsByCategory.entrance.length).toBe(6)
+      expect(presetsByCategory.entrance.length).toBe(10)
       expect(presetsByCategory.entrance.map((p) => p.id)).toContain('fade-in')
       expect(presetsByCategory.entrance.map((p) => p.id)).toContain('slide-in-left')
+      expect(presetsByCategory.entrance.map((p) => p.id)).toContain('reveal-right')
     })
 
     it('categorizes emphasis presets correctly', () => {

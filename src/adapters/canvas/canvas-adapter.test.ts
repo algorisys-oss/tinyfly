@@ -39,6 +39,7 @@ describe('CanvasAdapter', () => {
       textBaseline: 'alphabetic',
       beginPath: vi.fn(),
       rect: vi.fn(),
+      clip: vi.fn(),
       arc: vi.fn(),
       arcTo: vi.fn(),
       moveTo: vi.fn(),
@@ -165,6 +166,30 @@ describe('CanvasAdapter', () => {
       expect(mockCtx.rect).toHaveBeenCalledWith(10, 20, 100, 50)
       expect(mockCtx.fill).toHaveBeenCalled()
       expect(mockCtx.restore).toHaveBeenCalled()
+    })
+
+    it('should clip a rect target by its clip-inset (reveal mask)', () => {
+      adapter.registerTarget('box', { type: 'rect', x: 10, y: 20, width: 100, height: 50 })
+      // Reveal wipe: half the element clipped from the right.
+      adapter.applyState({
+        values: new Map([['box', new Map([['clipRight', 50]])]]),
+        currentTime: 0,
+        playbackState: 'playing',
+        direction: 'forward',
+        loopIteration: 0,
+      })
+
+      adapter.render(mockCtx)
+
+      // Visible region: x 10..(10+100-50) = 10..60, full height.
+      expect(mockCtx.rect).toHaveBeenCalledWith(10, 20, 50, 50)
+      expect(mockCtx.clip).toHaveBeenCalled()
+    })
+
+    it('should not clip when no clip-inset is set', () => {
+      adapter.registerTarget('box', { type: 'rect', x: 0, y: 0, width: 50, height: 50 })
+      adapter.render(mockCtx)
+      expect(mockCtx.clip).not.toHaveBeenCalled()
     })
 
     it('should render a circle target', () => {

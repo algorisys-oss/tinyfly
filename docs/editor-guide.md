@@ -356,6 +356,11 @@ The Preset Panel provides ready-made animation templates that you can apply to a
 | Text Color Cycle | 2000ms | Smooth color transition |
 | Text Glow | 1500ms | Glow effect with shadow |
 | Text Bounce In | 800ms | Bounce in with scale |
+| Letter Drop & Bounce | 700ms | Letters drop in and bounce (best with per-letter stagger) |
+| Letter Cascade Up | 500ms | Letters fade and rise into place |
+| Letter Wave | 900ms | A rolling wave travels across the letters |
+| Letter Assemble | 650ms | Letters spin and scale in to assemble the word |
+| Letter Pop In | 450ms | Letters pop in with a springy overshoot |
 
 **To apply a preset:**
 1. Select an element on the canvas
@@ -364,6 +369,53 @@ The Preset Panel provides ready-made animation templates that you can apply to a
 4. Click a preset to apply it to the selected element
 
 The preset creates the appropriate tracks and keyframes automatically.
+
+### Per-letter stagger (text)
+
+Select a **text** element (or multiple elements) and the Preset Panel shows a
+**Per-letter stagger** toggle with a delay control. With it enabled, applying a
+preset:
+
+- **Splits the text into one element per letter** (like Adobe Animate's "break
+  apart"), positioned to match the original layout, then
+- **Fans the preset across the letters**, each starting `delay` ms after the
+  previous one.
+
+This is how Animate-style **drop & bounce**, **cascade**, and **wave** text
+effects are built. The `Text` category includes purpose-built letter presets —
+**Letter Drop & Bounce**, **Cascade Up**, **Wave**, **Assemble**, and **Pop
+In** — tuned to look their best when staggered. The stagger is pure data (offset
+keyframe tracks), so it exports to JSON and plays anywhere the engine runs.
+
+> Tip: with several elements selected, the stagger fans across the selection in
+> selection order instead of splitting text — handy for animating rows of
+> icons or cards.
+
+### Typewriter (text)
+
+Select a **text** element and the Preset Panel shows a **Typewriter** section.
+Set the typing **Speed** (ms per character), optionally enable the **Blinking
+cursor**, and click **Apply Typewriter**. This:
+
+- Splits the text into letters, then reveals each one instantly in sequence
+  (a crisp character-by-character type-on, not a fade),
+- Optionally adds a thin cursor element that **steps to each letter as it is
+  typed** and blinks, and
+- **Extends the timeline automatically** to fit the full reveal plus the cursor
+  hold.
+
+Like everything else, the result is plain keyframe tracks — it exports to JSON
+and plays anywhere the engine runs.
+
+### Reveal / mask wipe
+
+The **Entrance** category includes **Reveal Right / Left / Up / Down** presets.
+These animate a clip-inset that wipes the element into view like a mask — no
+extra layer required. Reveal works on any element (text, shapes, images) and is
+rendered consistently across the DOM, SVG, and Canvas renderers.
+
+Combine a Reveal preset with **Per-letter stagger** to get a cascading,
+letter-by-letter mask reveal (each glyph wipes in a moment after the last).
 
 ## Sample Animations
 

@@ -27,9 +27,104 @@ export interface SampleDefinition {
 }
 
 /**
+ * Build a per-letter "drop & bounce" text sample.
+ *
+ * Each glyph is an independent text element and gets its own y/opacity tracks,
+ * offset by `stagger` ms — the same shape the editor produces when you split a
+ * text element and apply a staggered preset. Authored as data so it plays
+ * anywhere the engine runs.
+ */
+function makeLetterDropBounce(
+  text: string,
+  opts: {
+    id: string
+    name: string
+    description: string
+    fontSize?: number
+    boxWidth?: number
+    canvasWidth?: number
+    canvasHeight?: number
+    stagger?: number
+    fill?: string
+  }
+): SampleDefinition {
+  const fontSize = opts.fontSize ?? 44
+  const boxWidth = opts.boxWidth ?? 46
+  const canvasWidth = opts.canvasWidth ?? 300
+  const canvasHeight = opts.canvasHeight ?? 200
+  const stagger = opts.stagger ?? 70
+  const fill = opts.fill ?? '#4a9eff'
+
+  const chars = [...text]
+  const boxHeight = Math.round(fontSize * 1.2)
+  const totalWidth = chars.length * boxWidth
+  const startX = Math.round((canvasWidth - totalWidth) / 2)
+  const y = Math.round((canvasHeight - boxHeight) / 2)
+
+  const elements: Partial<SceneElement>[] = chars.map((char, i) => ({
+    type: 'text',
+    name: `Letter ${i + 1}`,
+    text: char,
+    x: startX + i * boxWidth,
+    y,
+    width: boxWidth,
+    height: boxHeight,
+    fontSize,
+    fontWeight: 700,
+    fill,
+    textAlign: 'center',
+  }))
+
+  const tracks: SampleTrack[] = []
+  chars.forEach((_char, i) => {
+    const s = i * stagger
+    const target = `Letter ${i + 1}`
+    tracks.push({
+      target,
+      property: 'y',
+      keyframes: [
+        { time: s + 0, value: -(canvasHeight + 20) },
+        { time: s + 350, value: 14, easing: 'ease-in-quad' },
+        { time: s + 504, value: -7, easing: 'ease-out-quad' },
+        { time: s + 616, value: 3, easing: 'ease-in-quad' },
+        { time: s + 700, value: 0, easing: 'ease-out-quad' },
+      ],
+    })
+    tracks.push({
+      target,
+      property: 'opacity',
+      keyframes: [
+        { time: s + 0, value: 0 },
+        { time: s + 175, value: 1, easing: 'ease-out' },
+      ],
+    })
+  })
+
+  const duration = (chars.length - 1) * stagger + 700 + 400 // settle + hold
+
+  return {
+    id: opts.id,
+    name: opts.name,
+    description: opts.description,
+    category: 'text',
+    thumbnail: '🔤',
+    duration,
+    elements,
+    tracks,
+  }
+}
+
+/**
  * All available sample animations
  */
 export const sampleDefinitions: SampleDefinition[] = [
+  makeLetterDropBounce('WORLD', {
+    id: 'letter-drop-bounce',
+    name: 'Letter Drop & Bounce',
+    description: 'Per-letter staggered drop with a bounce settle',
+    fill: '#4a9eff',
+  }),
+
   // === BASIC ===
   {
     id: 'fade-in-out',

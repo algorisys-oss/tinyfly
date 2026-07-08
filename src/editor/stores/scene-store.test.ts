@@ -498,4 +498,64 @@ describe('gradient utilities', () => {
       expect(gradient.stops.length).toBe(2)
     })
   })
+
+  describe('splitTextElement', () => {
+    it('replaces a text element with one element per glyph', () => {
+      const store = createSceneStore()
+      const text = store.addElement('text', { text: 'AB' }) as TextElement
+
+      const result = store.splitTextElement(text.id)
+
+      expect(result).not.toBeNull()
+      expect(result!.letterIds).toHaveLength(2)
+      expect(result!.chars).toEqual(['A', 'B'])
+
+      // The original element is gone, replaced by the letters.
+      const ids = store.elements().map((el) => el.id)
+      expect(ids).not.toContain(text.id)
+      expect(ids).toEqual(expect.arrayContaining(result!.letterIds))
+    })
+
+    it('creates single-character text elements inheriting style', () => {
+      const store = createSceneStore()
+      const text = store.addElement('text', {
+        text: 'Hi',
+        fontSize: 40,
+        fill: '#ff0000',
+      }) as TextElement
+
+      const result = store.splitTextElement(text.id)!
+      const letters = store
+        .elements()
+        .filter((el) => result.letterIds.includes(el.id)) as TextElement[]
+
+      expect(letters.map((l) => l.text).sort()).toEqual(['H', 'i'])
+      for (const letter of letters) {
+        expect(letter.type).toBe('text')
+        expect(letter.fontSize).toBe(40)
+        expect(letter.fill).toBe('#ff0000')
+      }
+    })
+
+    it('selects the created letters', () => {
+      const store = createSceneStore()
+      const text = store.addElement('text', { text: 'XY' }) as TextElement
+
+      const result = store.splitTextElement(text.id)!
+
+      expect(store.selectedElementIds()).toEqual(result.letterIds)
+    })
+
+    it('returns null for non-text elements', () => {
+      const store = createSceneStore()
+      const rect = store.addElement('rect')
+      expect(store.splitTextElement(rect.id)).toBeNull()
+    })
+
+    it('returns null for empty or whitespace-only text', () => {
+      const store = createSceneStore()
+      const blank = store.addElement('text', { text: '   ' }) as TextElement
+      expect(store.splitTextElement(blank.id)).toBeNull()
+    })
+  })
 })

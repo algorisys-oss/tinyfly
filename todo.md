@@ -187,12 +187,29 @@
 
 - [ ] Audio/video sync support
 - [x] Motion path (animate along SVG path)
-- [ ] Mask/clip support
+- [x] Mask/clip support (animatable clip-inset reveal/wipe across all adapters — see Phase 23)
 - [x] Multiple scenes/artboards
 - [x] Scene transitions (fade, slide-left, slide-right, slide-up, slide-down)
 - [x] Multi-scene player/sequencer (TinyflySequencer)
 - [ ] Collaborative editing
 - [x] Custom easing curve editor
+
+## Phase 23: Text Animation (Adobe Animate parity)
+
+Reference: Adobe Animate text-animation techniques (drop & bounce, cascade,
+wave, assemble, typewriter, shine/mask reveal, blur-in).
+
+- [x] Split text into per-letter elements (Animate-style "break apart")
+- [x] Staggered preset application (fan one preset across letters/selection with a per-letter delay)
+- [x] Per-letter stagger UI in the preset panel (toggle + delay control)
+- [x] Purpose-built letter presets: Drop & Bounce, Cascade Up, Wave, Assemble, Pop In
+- [x] "Letter Drop & Bounce" showcase sample (data-authored, plays anywhere)
+- [x] Typewriter / character-by-character reveal (with blinking, stepping cursor)
+- [x] Timeline `setDuration` (auto-extends to fit generated effects)
+- [x] Clip/mask reveal — animatable clip-inset in DOM, SVG, and Canvas adapters
+- [x] Reveal/wipe presets (Reveal Right/Left/Up/Down); combine with stagger for per-letter mask reveal
+- [ ] Shine sweep (highlight clipped to text glyphs — needs shape/text masking)
+- [ ] Animatable filters (blur, glow, drop-shadow)
 
 ## Phase 22: Distribution
 
@@ -205,7 +222,7 @@
 
 ## Test Coverage
 
-- 429 tests passing
+- 467 tests passing
 - Easing functions: 48 tests
 - Interpolators: 21 tests
 - Clock: 19 tests
@@ -219,7 +236,11 @@
 - Project store: 58 tests
 - Player: 30 tests
 - Sequencer: 30 tests
-- Scene store: 45 tests
+- Scene store: 45 tests (incl. split-text)
+- Editor store: 6 tests (staggered presets)
+- Split-text util: 8 tests
+- Typewriter builder: 9 tests
+- Letter-stagger sample (engine integration): 4 tests
 - Animation presets: 18 tests
 - CSS export: 10 tests
 - Lottie export: 10 tests

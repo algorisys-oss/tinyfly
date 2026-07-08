@@ -20,14 +20,23 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Looping** - Finite loops, infinite loops, and ping-pong (alternate) mode
 
 ### Render Adapters
-- **DOM** - CSS transforms, opacity, colors
-- **Canvas** - Shapes with position, size, rotation, colors
-- **SVG** - Attributes and transforms
+- **DOM** - CSS transforms, opacity, colors, clip-path reveal
+- **Canvas** - Shapes with position, size, rotation, colors, clip reveal
+- **SVG** - Attributes, transforms, clip-path reveal
+- **Clip/mask reveal** - Animatable clip-inset (`clipTop/Right/Bottom/Left`) wipes elements into view, consistently across all three renderers
+
+### Text Animation
+- **Split text into letters** - Break a text element into per-letter elements (Animate-style "break apart"), positioned to match the original layout
+- **Staggered animation** - Fan any preset across the letters (or a multi-selection) with a per-letter delay — the primitive behind Animate-style drop, cascade, and wave effects
+- **Per-letter presets** - Drop & Bounce, Cascade Up, Wave, Assemble, and Pop In, tuned to shine when staggered
+- **Typewriter reveal** - Character-by-character typing with an optional blinking cursor that steps along; the timeline auto-extends to fit
+- **All JSON** - A stagger or typewriter is just offset keyframe tracks, so it serializes, persists, and plays anywhere the engine runs
 
 ### Visual Editor
 - **Timeline view** - Visual keyframe editing with drag-and-drop
 - **Property panel** - Edit keyframe values and easing
 - **Track management** - Add, remove, and organize animation tracks
+- **Per-letter stagger** - Toggle in the preset panel to split text and fan a preset across its letters
 - **Playback controls** - Preview animations in real-time
 - **Undo/Redo** - Full history support with keyboard shortcuts
 - **Multiple scenes** - Organize animations into separate scenes with independent elements and timelines
@@ -279,6 +288,10 @@ tinyfly/
 ### Future
 - [x] Scene transitions (fade, slide between scenes)
 - [x] Multi-scene player/sequencer
+- [x] Per-letter text animation (split + stagger)
+- [x] Typewriter reveal (char-by-char + blinking cursor)
+- [x] Clip/mask reveal (wipe presets, all adapters)
+- [ ] Shine sweep (highlight clipped to glyphs), animatable filters
 - [ ] WebGL adapter
 - [ ] React Native adapter
 - [ ] Collaborative editing
@@ -301,10 +314,13 @@ npm run build
 
 ### Test Coverage
 
-- 429 tests passing
-- Core engine: 134 tests
-- Adapters: 57 tests
-- Editor stores: 135 tests
+- 467 tests passing
+- Core engine: 136 tests
+- Adapters: 61 tests (incl. clip/mask reveal)
+- Editor stores: 147 tests (incl. split-text, staggered presets)
+- Split-text util: 8 tests
+- Typewriter builder: 9 tests
+- Letter-stagger sample (engine integration): 4 tests
 - Player: 30 tests
 - Sequencer: 30 tests
 - Export formats: 30 tests

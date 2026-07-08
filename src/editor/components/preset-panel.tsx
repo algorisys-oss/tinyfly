@@ -2,7 +2,9 @@ import { For, Show, createSignal } from 'solid-js'
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
 import type { SceneStore } from '../stores/scene-store'
+import type { TextElement } from '../stores/scene-store'
 import { presetsByCategory, type AnimationPreset } from '../presets'
+import { buildTypewriter, type TypewriterLetter, type TypewriterCursor } from '../utils/build-typewriter'
 import { HelpIcon } from './tooltip'
 import './preset-panel.css'
 
@@ -24,12 +26,114 @@ const categoryLabels: Record<Category, string> = {
 export const PresetPanel: Component<PresetPanelProps> = (props) => {
   const [activeCategory, setActiveCategory] = createSignal<Category>('entrance')
   const [appliedMessage, setAppliedMessage] = createSignal<string | null>(null)
+  const [staggerEnabled, setStaggerEnabled] = createSignal(false)
+  const [staggerMs, setStaggerMs] = createSignal(60)
+  const [typeDelay, setTypeDelay] = createSignal(90)
+  const [cursorEnabled, setCursorEnabled] = createSignal(true)
 
   const selectedElement = () => props.sceneStore.selectedElement()
+
+  // The typewriter effect operates on a single text element.
+  const canTypewriter = () => {
+    const el = selectedElement()
+    return !!el && el.type === 'text' && props.sceneStore.selectedElementIds().length <= 1
+  }
+
+  const handleTypewriter = () => {
+    const element = selectedElement()
+    if (!element || element.type !== 'text') return
+
+    // Capture what we need before the source element is replaced by its letters.
+    const source = element as TextElement
+    const fill = source.fill
+
+    const result = props.sceneStore.splitTextElement(source.id)
+    if (!result || result.letterIds.length === 0) return
+
+    const elements = props.sceneStore.elements()
+    const letterEls = result.letterIds
+      .map((id) => elements.find((e) => e.id === id) as TextElement | undefined)
+      .filter((e): e is TextElement => !!e)
+
+    const letters: TypewriterLetter[] = letterEls.map((el) => ({
+      target: el.id,
+      x: el.x,
+      width: el.width,
+    }))
+
+    let cursor: TypewriterCursor | undefined
+    if (cursorEnabled() && letterEls.length > 0) {
+      const first = letterEls[0]
+      const cursorEl = props.sceneStore.addElement('rect', {
+        name: `${source.name} Cursor`,
+        x: first.x,
+        y: first.y,
+        width: 2,
+        height: first.height,
+        fill,
+        stroke: 'transparent',
+        strokeWidth: 0,
+        borderRadius: 0,
+      })
+      cursor = { target: cursorEl.id, baseX: first.x, blink: true }
+    }
+
+    const { tracks, duration } = buildTypewriter(letters, {
+      charDelay: typeDelay(),
+      cursor,
+    })
+
+    props.store.addTracks(tracks)
+    if (duration > props.store.duration()) {
+      props.store.setDuration(Math.ceil(duration))
+    }
+
+    setAppliedMessage(`Typewriter applied to ${letters.length} letters`)
+    setTimeout(() => setAppliedMessage(null), 2000)
+  }
+
+  // Stagger is offered when there is a single text element to split into letters,
+  // or when several elements are selected to fan the animation across.
+  const canStagger = () => {
+    const el = selectedElement()
+    if (!el) return false
+    return el.type === 'text' || props.sceneStore.selectedElementIds().length > 1
+  }
 
   const handleApplyPreset = (preset: AnimationPreset) => {
     const element = selectedElement()
     if (!element) return
+
+    // Staggered application: fan the preset across many targets with a delay.
+    if (staggerEnabled() && canStagger()) {
+      const selectedIds = props.sceneStore.selectedElementIds()
+      let targets: string[]
+      let label: string
+
+      if (selectedIds.length > 1) {
+        // Fan across the currently selected elements, in selection order.
+        targets = selectedIds
+        label = `Applied "${preset.name}" to ${targets.length} elements`
+      } else if (element.type === 'text') {
+        // Break the text into per-letter elements, then fan across them.
+        const result = props.sceneStore.splitTextElement(element.id)
+        targets = result?.letterIds ?? [element.id]
+        label = `Applied "${preset.name}" across ${targets.length} letters`
+      } else {
+        targets = [element.id]
+        label = `Applied "${preset.name}"`
+      }
+
+      const trackIds = props.store.applyPresetStaggered(preset, targets, {
+        staggerMs: staggerMs(),
+      })
+
+      if (trackIds.length > 0) {
+        setAppliedMessage(label)
+        setTimeout(() => setAppliedMessage(null), 2000)
+      }
+      return
+    }
 
     // Apply preset to the selected element
     const trackIds = props.store.applyPreset(preset, element.name)
@@ -67,6 +171,74 @@ export const PresetPanel: Component<PresetPanelProps> = (props) => {
             <span class="preset-target-label">Target:</span>
             <span class="preset-target-name">{selectedElement()?.name}</span>
           </div>
+
+          <Show when={canStagger()}>
+            <div class="preset-stagger">
+              <label class="preset-stagger-toggle">
+                <input
+                  type="checkbox"
+                  checked={staggerEnabled()}
+                  onChange={(e) => setStaggerEnabled(e.currentTarget.checked)}
+                />
+                <span>Per-letter stagger</span>
+                <HelpIcon
+                  content="Splits the text into individual letters (or uses your multi-selection) and fans the animation across them, each starting a little later. This is how Animate-style drop, cascade and wave text effects are built."
+                  position="left"
+                />
+              </label>
+              <Show when={staggerEnabled()}>
+                <div class="preset-stagger-amount">
+                  <span>Delay</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="1000"
+                    step="5"
+                    value={staggerMs()}
+                    onInput={(e) => setStaggerMs(Math.max(0, Number(e.currentTarget.value) || 0))}
+                  />
+                  <span class="preset-stagger-unit">ms / letter</span>
+                </div>
+              </Show>
+            </div>
+          </Show>
+
+          <Show when={canTypewriter()}>
+            <div class="preset-typewriter">
+              <div class="preset-typewriter-title">
+                <span>Typewriter</span>
+                <HelpIcon
+                  content="Reveals the text one character at a time, like it's being typed. Splits the text into letters and optionally adds a blinking cursor that steps along. The timeline extends automatically to fit."
+                  position="left"
+                />
+              </div>
+              <div class="preset-typewriter-controls">
+                <label class="preset-typewriter-speed">
+                  <span>Speed</span>
+                  <input
+                    type="number"
+                    min="10"
+                    max="1000"
+                    step="10"
+                    value={typeDelay()}
+                    onInput={(e) => setTypeDelay(Math.max(10, Number(e.currentTarget.value) || 0))}
+                  />
+                  <span class="preset-stagger-unit">ms / char</span>
+                </label>
+                <label class="preset-typewriter-cursor">
+                  <input
+                    type="checkbox"
+                    checked={cursorEnabled()}
+                    onChange={(e) => setCursorEnabled(e.currentTarget.checked)}
+                  />
+                  <span>Blinking cursor</span>
+                </label>
+              </div>
+              <button class="preset-typewriter-btn" onClick={handleTypewriter}>
+                Apply Typewriter
+              </button>
+            </div>
+          </Show>
 
           <div class="preset-categories">
             <For each={categories}>

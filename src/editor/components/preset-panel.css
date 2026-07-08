@@ -33,7 +33,9 @@
 
 .preset-panel-content {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 12px;
 }
 
@@ -58,20 +60,137 @@
   font-weight: 500;
 }
 
+.preset-stagger {
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: #252525;
+  border: 1px solid #333;
+  border-radius: 4px;
+}
+
+.preset-stagger-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ccc;
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.preset-stagger-toggle input[type='checkbox'] {
+  accent-color: #4a9eff;
+  cursor: pointer;
+}
+
+.preset-stagger-amount {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  color: #888;
+  font-size: 12px;
+}
+
+.preset-stagger-amount input[type='number'] {
+  width: 60px;
+  padding: 4px 6px;
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 12px;
+}
+
+.preset-stagger-unit {
+  color: #666;
+}
+
+.preset-typewriter {
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: #252525;
+  border: 1px solid #333;
+  border-radius: 4px;
+}
+
+.preset-typewriter-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ccc;
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.preset-typewriter-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.preset-typewriter-speed,
+.preset-typewriter-cursor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #888;
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.preset-typewriter-speed input[type='number'] {
+  width: 60px;
+  padding: 4px 6px;
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 12px;
+}
+
+.preset-typewriter-cursor input[type='checkbox'] {
+  accent-color: #4a9eff;
+  cursor: pointer;
+}
+
+.preset-typewriter-btn {
+  width: 100%;
+  padding: 8px;
+  background: #4a9eff;
+  border: 1px solid #4a9eff;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.preset-typewriter-btn:hover {
+  background: #3a8eef;
+}
+
 .preset-categories {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   margin-bottom: 12px;
 }
 
 .preset-category-btn {
-  flex: 1;
-  padding: 6px 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 6px 6px;
   background: #252525;
   border: 1px solid #333;
   border-radius: 4px;
   color: #888;
   font-size: 11px;
+  white-space: nowrap;
   cursor: pointer;
   transition: all 0.1s;
 }

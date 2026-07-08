@@ -50,6 +50,12 @@ const TRANSFORM_PROPERTIES = new Set([
   'motionPathRotate',
 ])
 
+/**
+ * Clip-inset properties (percent 0-100 from each edge). They compose into a
+ * single `clip-path: inset(...)`, which drives reveal/wipe "mask" animations.
+ */
+const CLIP_PROPERTIES = new Set(['clipTop', 'clipRight', 'clipBottom', 'clipLeft'])
+
 /** Map animation property names to CSS property names */
 const PROPERTY_MAP: Record<string, string> = {
   fill: 'backgroundColor',
@@ -116,6 +122,7 @@ export class DOMAdapter {
     properties: Map<string, AnimatableValue>
   ): void {
     const transformParts: string[] = []
+    const clip: Record<string, number> = {}
 
     // Check if motion path values are present (they take priority over x/y/rotate)
     const hasMotionPathX = properties.has('motionPathX')
@@ -133,6 +140,8 @@ export class DOMAdapter {
         if (transformValue) {
           transformParts.push(transformValue)
         }
+      } else if (CLIP_PROPERTIES.has(property)) {
+        if (typeof value === 'number') clip[property] = value
       } else {
         this.applyStyleProperty(element, property, value)
       }
@@ -141,6 +150,15 @@ export class DOMAdapter {
     // Apply composed transform
     if (transformParts.length > 0) {
       element.style.transform = transformParts.join(' ')
+    }
+
+    // Apply composed clip-path (reveal/wipe mask). Missing sides default to 0.
+    if (Object.keys(clip).length > 0) {
+      const t = clip.clipTop ?? 0
+      const r = clip.clipRight ?? 0
+      const b = clip.clipBottom ?? 0
+      const l = clip.clipLeft ?? 0
+      element.style.clipPath = `inset(${t}% ${r}% ${b}% ${l}%)`
     }
   }
 

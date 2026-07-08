@@ -99,6 +99,29 @@ describe('DOMAdapter', () => {
       expect(mockElement.style.transform).toContain('scale(1.5)')
     })
 
+    it('should compose clip-path from clip-inset properties', () => {
+      adapter.registerTarget('box', mockElement)
+
+      const state = createMockState({
+        box: { clipTop: 10, clipRight: 20, clipBottom: 30, clipLeft: 40 },
+      })
+
+      adapter.applyState(state)
+
+      expect(mockElement.style.clipPath).toBe('inset(10% 20% 30% 40%)')
+    })
+
+    it('should default missing clip sides to 0 (reveal wipe)', () => {
+      adapter.registerTarget('box', mockElement)
+
+      // Only clipRight animated — the other sides should be 0.
+      adapter.applyState(createMockState({ box: { clipRight: 100 } }))
+      expect(mockElement.style.clipPath).toBe('inset(0% 100% 0% 0%)')
+
+      adapter.applyState(createMockState({ box: { clipRight: 0 } }))
+      expect(mockElement.style.clipPath).toBe('inset(0% 0% 0% 0%)')
+    })
+
     it('should apply scaleX and scaleY separately', () => {
       adapter.registerTarget('box', mockElement)
 

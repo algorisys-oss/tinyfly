@@ -32,7 +32,9 @@ const initialState: EditorState = {
  * Create the editor store for managing animation editor state.
  */
 export function createEditorStore() {
-  const [state, setState] = createStore<EditorState>(initialState)
+  // Clone the defaults so each store instance owns its state — createStore writes
+  // through to the object it is given, and `initialState` is a shared constant.
+  const [state, setState] = createStore<EditorState>({ ...initialState })
   const [currentTime, setCurrentTime] = createSignal(0)
   const [isPlaying, setIsPlaying] = createSignal(false)
   // Version counter to force reactivity on timeline mutations
@@ -149,6 +151,85 @@ export function createEditorStore() {
       state.timeline.addTrack(track)
       createdTrackIds.push(trackId)
     }
+
+    bumpVersion()
+    return createdTrackIds
+  }
+
+  // Add several tracks in one history step. Returns the created track ids.
+  // Used by higher-level builders (e.g. typewriter) that emit a batch of tracks.
+  function addTracks(
+    inputs: Array<{ target: string; property: string; keyframes: Keyframe[] }>
+  ): string[] {
+    if (!state.timeline || inputs.length === 0) return []
+
+    pushHistory()
+
+    const stamp = Date.now()
+    const ids: string[] = []
+    inputs.forEach((input, i) => {
+      const id = `${input.target}-${input.property}-${stamp}-${i}-${Math.random().toString(36).slice(2, 5)}`
+      state.timeline!.addTrack(
+        createTrack({ id, target: input.target, property: input.property, keyframes: input.keyframes })
+      )
+      ids.push(id)
+    })
+
+    bumpVersion()
+    return ids
+  }
+
+  // Set (or extend) the timeline's explicit duration in ms.
+  function setDuration(duration: number | undefined) {
+    if (!state.timeline) return
+    state.timeline.setDuration(duration)
+    bumpVersion()
+  }
+
+  // Apply a preset across many targets with a per-target time offset.
+  // This is the primitive behind staggered text (letter-by-letter) animation:
+  // the same preset is fanned out over an ordered list of targets, each starting
+  // `staggerMs` later than the previous one. The stagger is pure data — every
+  // resulting track is an ordinary keyframe track, fully serializable to JSON.
+  function applyPresetStaggered(
+    preset: AnimationPreset,
+    targetNames: string[],
+    options?: { startTime?: number; duration?: number; staggerMs?: number }
+  ): string[] {
+    if (!state.timeline || targetNames.length === 0) return []
+
+    pushHistory()
+
+    const startTime = options?.startTime ?? 0
+    const duration = options?.duration ?? preset.duration
+    const staggerMs = options?.staggerMs ?? 60
+    const createdTrackIds: string[] = []
+
+    targetNames.forEach((targetName, targetIndex) => {
+      const targetStart = startTime + targetIndex * staggerMs
+
+      for (const presetTrack of preset.tracks) {
+        const trackId = `${targetName}-${presetTrack.property}-${Date.now()}-${targetIndex}-${Math.random().toString(36).slice(2, 5)}`
+
+        const keyframes: Keyframe[] = presetTrack.keyframes.map((kf) => {
+          const resolved = resolvePresetKeyframe(kf, duration, 0)
+          return {
+            ...resolved,
+            time: resolved.time + targetStart,
+          }
+        })
+
+        const track = createTrack({
+          id: trackId,
+          target: targetName,
+          property: presetTrack.property,
+          keyframes,
+        })
+
+        state.timeline!.addTrack(track)
+        createdTrackIds.push(trackId)
+      }
+    })
 
     bumpVersion()
     return createdTrackIds
@@ -448,6 +529,9 @@ export function createEditorStore() {
     removeTrack,
     selectTrack,
     applyPreset,
+    applyPresetStaggered,
+    addTracks,
+    setDuration,
     createMotionPathAnimation,
 
     // Keyframe actions

@@ -95,6 +95,26 @@
 
 .editor-sidebar-right {
   border-left: 1px solid #333;
+  /* PropertyPanel and PresetPanel each scroll internally, so the outer sidebar
+     must not add a second scrollbar (matches the left sidebar fix). */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Property panel sizes to its content, but never takes more than half the
+   sidebar — beyond that it scrolls internally so the preset panel stays visible. */
+.editor-sidebar-right > .property-panel {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 50%;
+}
+
+/* Preset panel fills the remaining height and scrolls within itself. */
+.editor-sidebar-right > .preset-panel {
+  flex: 1 1 0;
+  min-height: 0;
+  height: auto;
 }
 
 .editor-center {

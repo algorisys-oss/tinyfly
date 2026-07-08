@@ -49,6 +49,11 @@ export interface CanvasTargetBase {
   fillStyle?: FillValue
   strokeStyle?: string
   lineWidth?: number
+  // Clip-inset (percent 0-100 from each edge) for reveal/wipe "mask" animations.
+  clipTop?: number
+  clipRight?: number
+  clipBottom?: number
+  clipLeft?: number
 }
 
 /** Rectangle target */
@@ -317,6 +322,23 @@ export class CanvasAdapter {
 
     if (target.lineWidth !== undefined) {
       ctx.lineWidth = target.lineWidth
+    }
+
+    // Apply clip-inset (reveal/wipe mask) in the target's own coordinate space.
+    if (
+      target.clipTop !== undefined ||
+      target.clipRight !== undefined ||
+      target.clipBottom !== undefined ||
+      target.clipLeft !== undefined
+    ) {
+      const bounds = this.getTargetBounds(target)
+      const l = bounds.x + ((target.clipLeft ?? 0) / 100) * bounds.width
+      const r = bounds.x + bounds.width - ((target.clipRight ?? 0) / 100) * bounds.width
+      const t = bounds.y + ((target.clipTop ?? 0) / 100) * bounds.height
+      const b = bounds.y + bounds.height - ((target.clipBottom ?? 0) / 100) * bounds.height
+      ctx.beginPath()
+      ctx.rect(l, t, Math.max(0, r - l), Math.max(0, b - t))
+      ctx.clip()
     }
 
     // Draw based on target type
