@@ -4,8 +4,9 @@ import { DOMAdapter } from '../../adapters/dom'
 import { CanvasAdapter, type CanvasTarget } from '../../adapters/canvas'
 import { SVGAdapter } from '../../adapters/svg'
 import type { EditorStore } from '../stores/editor-store'
-import { fillToCss, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type GroupElement } from '../stores/scene-store'
+import { fillToCss, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type GroupElement } from '../stores/scene-store'
 import { parsePathForEditing, buildPathString, updatePathPoint, getControlLines, type EditablePoint, type EditableCommand } from '../utils/path-editor'
+import { MediaSync, syncMediaElement } from '../../player/media-sync'
 import './preview-panel.css'
 
 type RendererType = 'dom' | 'canvas' | 'svg'
@@ -70,6 +71,41 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
   let svgAdapter: SVGAdapter | undefined
   let animationFrameId: number | undefined
   let lastTime: number | undefined
+
+  // Media (audio/video) elements: DOM refs and their MediaSync bindings.
+  const mediaEls = new Map<string, HTMLMediaElement>()
+  const mediaSyncs = new Map<string, MediaSync>()
+
+  const registerMedia = (id: string, el: HTMLMediaElement) => {
+    mediaEls.set(id, el)
+    if (!mediaSyncs.has(id)) mediaSyncs.set(id, new MediaSync(el))
+  }
+
+  // Keep every audio/video element aligned with the timeline. Media starts at
+  // its `startTime`; before that it stays silent at 0.
+  const syncMedia = (timeMs: number, isPlaying: boolean) => {
+    for (const element of props.sceneStore.elements()) {
+      if (element.type !== 'audio' && element.type !== 'video') continue
+      const media = element as AudioElement | VideoElement
+      const el = mediaEls.get(media.id)
+      if (!el) continue
+
+      el.volume = Math.max(0, Math.min(1, media.volume))
+      el.muted = media.muted
+      el.loop = media.loop
+
+      const sync = mediaSyncs.get(media.id)
+      if (!sync) continue
+
+      syncMediaElement(sync, el, timeMs, isPlaying, media.startTime)
+    }
+  }
+
+  const pauseAllMedia = () => {
+    for (const el of mediaEls.values()) {
+      if (!el.paused) el.pause()
+    }
+  }
 
   // Renderer type
   const [rendererType, setRendererType] = createSignal<RendererType>('dom')
@@ -309,6 +345,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
 
         // Apply state to preview based on renderer type
         applyStateToRenderer()
+        syncMedia(props.store.currentTime(), true)
 
         animationFrameId = requestAnimationFrame(animate)
       }
@@ -319,15 +356,18 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
         cancelAnimationFrame(animationFrameId)
         animationFrameId = undefined
       }
+      // Paused/stopped: hold the audio aligned to the current time, not playing.
+      syncMedia(props.store.currentTime(), false)
     }
   })
 
   // Update preview when scrubbing
   createEffect(() => {
     // Track time changes to trigger effect
-    props.store.currentTime()
+    const time = props.store.currentTime()
     if (!props.store.isPlaying() && props.store.state.timeline) {
       applyStateToRenderer()
+      syncMedia(time, false)
     }
   })
 
@@ -933,6 +973,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     if (animationFrameId) {
       cancelAnimationFrame(animationFrameId)
     }
+    pauseAllMedia()
     adapter?.clearTargets()
     document.removeEventListener('keydown', handleKeyDown)
     document.removeEventListener('mousemove', handleDragMove)
@@ -1035,6 +1076,30 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
       case 'group': {
         base.background = 'transparent'
         base.overflow = 'visible'
+        break
+      }
+      case 'audio': {
+        // Non-visual element shown as a speaker badge in the editor.
+        base.background = 'rgba(74, 158, 255, 0.12)'
+        base.border = '1px solid rgba(74, 158, 255, 0.5)'
+        base['border-radius'] = '6px'
+        base.display = 'flex'
+        base['align-items'] = 'center'
+        base['justify-content'] = 'center'
+        base['font-size'] = '18px'
+        break
+      }
+      case 'video': {
+        const video = element as VideoElement
+        base.background = 'transparent'
+        base.overflow = 'hidden'
+        if (!video.src) {
+          base.background = '#222'
+          base.border = '2px dashed #666'
+          base.display = 'flex'
+          base['align-items'] = 'center'
+          base['justify-content'] = 'center'
+        }
         break
       }
     }
@@ -1345,6 +1410,47 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
                         'font-size': '12px',
                       }}>
                         No image
+                      </div>
+                    )
+                  })()}
+                </Show>
+                <Show when={element.type === 'audio'}>
+                  {(() => {
+                    const audio = element as AudioElement
+                    return (
+                      <>
+                        <span style={{ 'pointer-events': 'none' }}>🔊</span>
+                        <Show when={audio.src}>
+                          <audio
+                            preload="auto"
+                            src={audio.src}
+                            ref={(el) => registerMedia(audio.id, el)}
+                            style={{ display: 'none' }}
+                          />
+                        </Show>
+                      </>
+                    )
+                  })()}
+                </Show>
+                <Show when={element.type === 'video'}>
+                  {(() => {
+                    const video = element as VideoElement
+                    return video.src ? (
+                      <video
+                        src={video.src}
+                        preload="auto"
+                        playsinline
+                        ref={(el) => registerMedia(video.id, el)}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          'object-fit': video.objectFit,
+                          'pointer-events': 'none',
+                        }}
+                      />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', 'align-items': 'center', 'justify-content': 'center', color: '#666', 'font-size': '12px' }}>
+                        🎬 No video
                       </div>
                     )
                   })()}

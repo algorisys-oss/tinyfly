@@ -185,7 +185,7 @@
 
 ## Phase 21: Advanced Features
 
-- [x] Audio/video sync support (`MediaSync` + `player.attachMedia()` — media follows the timeline clock; see Phase 22)
+- [x] Audio/video sync support (`MediaSync` + `player.attachMedia()`; editor **Audio & Video elements** synced in the preview; media carried into embeds and auto-synced by the player via `[data-tinyfly-media]`)
 - [x] Motion path (animate along SVG path)
 - [x] Mask/clip support (animatable clip-inset reveal/wipe across all adapters — see Phase 23)
 - [x] Multiple scenes/artboards
@@ -225,7 +225,7 @@ wave, assemble, typewriter, shine/mask reveal, blur-in).
 
 ## Test Coverage
 
-- 500 tests passing
+- 514 tests passing
 - Easing functions: 48 tests
 - Interpolators: 21 tests
 - Clock: 19 tests

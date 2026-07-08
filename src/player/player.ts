@@ -1,7 +1,13 @@
 import { Timeline, deserializeTimeline } from '../engine'
 import { DOMAdapter } from '../adapters/dom'
 import type { TimelineDefinition, AnimationState } from '../engine'
-import { MediaSync, type SyncableMedia, type MediaSyncOptions } from './media-sync'
+import { MediaSync, syncMediaElement, type SyncableMedia, type MediaSyncOptions } from './media-sync'
+
+interface MediaTarget {
+  el: HTMLMediaElement
+  startTime: number
+  sync: MediaSync
+}
 
 export interface PlayerOptions {
   /** Playback speed multiplier (default: 1) */
@@ -42,6 +48,7 @@ export class TinyflyPlayer {
   private targets: TargetMapping = {}
   private isDestroyed = false
   private mediaSync: MediaSync | undefined
+  private mediaTargets: MediaTarget[] = []
 
   constructor(container: HTMLElement | string, options: PlayerOptions = {}) {
     // Resolve container
@@ -101,9 +108,36 @@ export class TinyflyPlayer {
     // Auto-register targets from container
     this.autoRegisterTargets()
 
+    // Discover embedded media (audio/video) to sync with the timeline
+    this.scanMedia()
+
     // Auto-play if enabled
     if (this.options.autoplay) {
       this.play()
+    }
+  }
+
+  /**
+   * Find embedded media elements (`[data-tinyfly-media]`) in the container and
+   * bind each to the timeline. Emitted by the editor's export for audio/video
+   * scene elements; the `data-tinyfly-start` attribute sets when each begins.
+   */
+  private scanMedia(): void {
+    this.mediaTargets = []
+    const nodes = this.container.querySelectorAll('[data-tinyfly-media]')
+    nodes.forEach((node) => {
+      const el = node as HTMLMediaElement
+      const startTime = Number(el.getAttribute('data-tinyfly-start') ?? '0') || 0
+      const vol = el.getAttribute('data-volume')
+      if (vol !== null) el.volume = Math.max(0, Math.min(1, Number(vol) || 0))
+      this.mediaTargets.push({ el, startTime, sync: new MediaSync(el) })
+    })
+  }
+
+  /** Sync all discovered media targets to a timeline time. */
+  private syncAllMedia(timeMs: number, isPlaying: boolean): void {
+    for (const target of this.mediaTargets) {
+      syncMediaElement(target.sync, target.el, timeMs, isPlaying, target.startTime)
     }
   }
 
@@ -190,6 +224,7 @@ export class TinyflyPlayer {
 
     this.timeline.play()
     this.mediaSync?.update(this.timeline.currentTime, true)
+    this.syncAllMedia(this.timeline.currentTime, true)
     this.startAnimationLoop()
   }
 
@@ -200,6 +235,7 @@ export class TinyflyPlayer {
     if (!this.timeline) return
     this.timeline.pause()
     this.mediaSync?.update(this.timeline.currentTime, false)
+    this.syncAllMedia(this.timeline.currentTime, false)
     this.stopAnimationLoop()
   }
 
@@ -212,6 +248,7 @@ export class TinyflyPlayer {
     this.stopAnimationLoop()
     this.applyState()
     this.mediaSync?.update(this.timeline.currentTime, false)
+    this.syncAllMedia(this.timeline.currentTime, false)
   }
 
   /**
@@ -222,6 +259,7 @@ export class TinyflyPlayer {
     this.timeline.seek(time)
     this.applyState()
     this.mediaSync?.seek(this.timeline.currentTime)
+    this.syncAllMedia(this.timeline.currentTime, this.isPlaying)
   }
 
   /**
@@ -270,6 +308,10 @@ export class TinyflyPlayer {
     this.stopAnimationLoop()
     this.mediaSync?.dispose()
     this.mediaSync = undefined
+    for (const target of this.mediaTargets) {
+      if (!target.el.paused) target.el.pause()
+    }
+    this.mediaTargets = []
     this.adapter.clearTargets()
     this.timeline = null
   }
@@ -287,7 +329,9 @@ export class TinyflyPlayer {
 
       this.timeline.tick(delta)
       this.applyState()
-      this.mediaSync?.update(this.timeline.currentTime, this.timeline.playbackState === 'playing')
+      const playing = this.timeline.playbackState === 'playing'
+      this.mediaSync?.update(this.timeline.currentTime, playing)
+      this.syncAllMedia(this.timeline.currentTime, playing)
 
       if (this.timeline.playbackState === 'playing') {
         this.animationFrameId = requestAnimationFrame(animate)

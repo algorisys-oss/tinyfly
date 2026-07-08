@@ -4,8 +4,18 @@ import type {
   CircleElement,
   TextElement,
   ImageElement,
+  AudioElement,
+  VideoElement,
 } from '../stores/scene-store'
 import type { LineElement, ArrowElement, PathElement } from '../stores/scene-store'
+
+/** Common media attributes (volume/muted/loop) for embedded <audio>/<video>. */
+function mediaAttrs(media: AudioElement | VideoElement): string {
+  const parts = [`data-volume="${media.volume}"`, 'preload="auto"']
+  if (media.muted) parts.push('muted')
+  if (media.loop) parts.push('loop')
+  return parts.join(' ')
+}
 
 /**
  * Generate CSS style string for an element.
@@ -64,6 +74,17 @@ export function generateElementStyle(element: SceneElement): string {
       styles.push('overflow: hidden')
       break
     }
+    case 'audio': {
+      styles.push('display: none')
+      break
+    }
+    case 'video': {
+      const video = element as VideoElement
+      styles.push('background: transparent')
+      styles.push('overflow: hidden')
+      styles.push(`object-fit: ${video.objectFit}`)
+      break
+    }
     case 'line':
     case 'arrow':
     case 'path':
@@ -99,6 +120,20 @@ ${indent}  <img src="${img.src}" style="width: 100%; height: 100%; object-fit: $
 ${indent}</div>`
       }
       return `${indent}<div data-tinyfly="${element.name}" style="${style}"></div>`
+    }
+
+    case 'audio': {
+      const audio = element as AudioElement
+      if (!audio.src) return ''
+      return `${indent}<audio data-tinyfly-media data-tinyfly-start="${audio.startTime}" ${mediaAttrs(audio)} src="${audio.src}" style="display: none;"></audio>`
+    }
+
+    case 'video': {
+      const video = element as VideoElement
+      if (!video.src) {
+        return `${indent}<div data-tinyfly="${element.name}" style="${style}"></div>`
+      }
+      return `${indent}<video data-tinyfly="${element.name}" data-tinyfly-media data-tinyfly-start="${video.startTime}" ${mediaAttrs(video)} src="${video.src}" playsinline style="${style}"></video>`
     }
 
     case 'line': {

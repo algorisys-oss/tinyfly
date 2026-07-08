@@ -16,14 +16,16 @@ const ELEMENT_TYPES: { type: ElementType; icon: string; label: string }[] = [
   { type: 'arrow', icon: '➔', label: 'Arrow' },
   { type: 'path', icon: '⌇', label: 'Path' },
   { type: 'image', icon: '🖼', label: 'Image' },
+  { type: 'audio', icon: '🔊', label: 'Audio' },
+  { type: 'video', icon: '🎬', label: 'Video' },
 ]
 
 export const ElementPanel: Component<ElementPanelProps> = (props) => {
   const handleAddElement = (type: ElementType) => {
     // Center the element in the canvas (assuming 300x200 default canvas)
     const overrides: Record<string, number | string> = {
-      x: type === 'text' ? 100 : (type === 'line' || type === 'arrow') ? 50 : type === 'image' ? 100 : type === 'path' ? 100 : 120,
-      y: type === 'text' ? 85 : (type === 'line' || type === 'arrow') ? 100 : type === 'image' ? 50 : type === 'path' ? 50 : 70,
+      x: type === 'audio' ? 12 : type === 'text' ? 100 : (type === 'line' || type === 'arrow') ? 50 : type === 'image' ? 100 : type === 'path' ? 100 : 120,
+      y: type === 'audio' ? 12 : type === 'text' ? 85 : (type === 'line' || type === 'arrow') ? 100 : type === 'image' ? 50 : type === 'path' ? 50 : 70,
     }
     if (type === 'line' || type === 'arrow') {
       overrides.x2 = 250
@@ -182,6 +184,8 @@ export const ElementPanel: Component<ElementPanelProps> = (props) => {
                       {element.type === 'circle' && '○'}
                       {element.type === 'text' && 'T'}
                       {element.type === 'image' && '🖼'}
+                      {element.type === 'audio' && '🔊'}
+                      {element.type === 'video' && '🎬'}
                       {element.type === 'line' && '/'}
                       {element.type === 'arrow' && '➔'}
                       {element.type === 'path' && '⌇'}

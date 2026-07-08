@@ -47,6 +47,8 @@ The toolbar at the top provides:
 | **Circle** | Elliptical shape with fill and stroke |
 | **Text** | Text with font, size, weight, alignment controls |
 | **Image** | Image element with URL source |
+| **Audio** | Audio clip synced to the timeline (source, start time, volume, mute, loop) |
+| **Video** | Video clip synced to the timeline (source, fit, start time, volume, mute, loop) |
 | **Line** | Straight line with stroke and line cap options |
 | **Arrow** | Line with arrowhead(s) at start/end |
 | **Path** | Custom SVG path defined by path data (d attribute) |
@@ -59,6 +61,26 @@ Click any shape button in the toolbar. The element appears at the center of the 
 - **Drag** to reposition it on the canvas
 - **Resize** using the 8 handles around the element (corners and midpoints)
 - **Rotate** using the rotation handle above the element
+
+### Audio
+
+Add an **Audio** element to play a sound in time with the animation (background
+music, a voiceover, or an effect). It shows as a small speaker badge on the
+canvas and does not render visually in the output.
+
+In the property panel you can set:
+
+- **Source** — choose a file (embedded as a data URI) or paste a URL
+- **Start (ms)** — the timeline time at which the audio begins
+- **Volume**, **Muted**, **Loop**
+
+The clip follows the timeline as you play, pause, and scrub — the timeline stays
+the clock, and the audio is kept in sync (drift is corrected as it plays).
+
+A **Video** element works the same way but also renders its frames on the canvas
+(with a **Fit** option). Both audio and video are carried into exported/embedded
+HTML, where the player discovers them (`[data-tinyfly-media]`) and keeps them in
+sync during playback.
 
 ### Selecting Elements
 

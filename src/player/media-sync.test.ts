@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { MediaSync, type SyncableMedia } from './media-sync'
+import { MediaSync, syncMediaElement, type SyncableMedia } from './media-sync'
 
 interface FakeMedia {
   currentTime: number
@@ -95,5 +95,32 @@ describe('MediaSync', () => {
     const media = makeMedia({ play: vi.fn(() => Promise.reject(new Error('blocked'))) })
     const sync = new MediaSync(asMedia(media))
     expect(() => sync.update(0, true)).not.toThrow()
+  })
+})
+
+describe('syncMediaElement (start-time gated)', () => {
+  it('keeps media silent at 0 before its start time', () => {
+    const media = makeMedia({ paused: false })
+    media.currentTime = 5
+    const sync = new MediaSync(asMedia(media))
+    syncMediaElement(sync, asMedia(media), 500, true, 1000) // 500 < start 1000
+    expect(media.pause).toHaveBeenCalled()
+    expect(media.currentTime).toBe(0)
+  })
+
+  it('plays synced to elapsed time once past the start time', () => {
+    const media = makeMedia()
+    const sync = new MediaSync(asMedia(media))
+    // timeline 1500ms, start 1000ms -> effective 500ms -> media 0.5s
+    syncMediaElement(sync, asMedia(media), 1500, true, 1000)
+    expect(media.play).toHaveBeenCalled()
+    expect(media.currentTime).toBe(0.5)
+  })
+
+  it('starts exactly at the start time', () => {
+    const media = makeMedia()
+    const sync = new MediaSync(asMedia(media))
+    syncMediaElement(sync, asMedia(media), 1000, true, 1000) // effective 0
+    expect(media.play).toHaveBeenCalled()
   })
 })

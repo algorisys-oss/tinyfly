@@ -38,6 +38,8 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 ### Playback & Sync
 - **Standalone player** - `TinyflyPlayer` loads animation JSON and plays it onto DOM elements; ships as an ESM/UMD/IIFE bundle for npm or CDN
 - **Audio/video sync** - `MediaSync` / `player.attachMedia()` locks an audio or video element to the timeline clock (play/pause/seek/rate), correcting drift as it plays
+- **Audio & video in the editor** - Add an **Audio** or **Video** element (source, start time, volume, mute, loop; video also has object-fit); it plays in sync while you scrub and preview the timeline
+- **Media in embeds** - Exported/embedded HTML carries the media, and the player auto-discovers and syncs it (`[data-tinyfly-media]`), so audio/video play in time wherever the animation is embedded
 
 ### Visual Editor
 - **Timeline view** - Visual keyframe editing with drag-and-drop

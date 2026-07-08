@@ -98,3 +98,26 @@ export class MediaSync {
     }
   }
 }
+
+/**
+ * Reconcile a media element that begins at a timeline offset.
+ *
+ * Before `startMs` the media stays silent at 0; from `startMs` onward it is
+ * synced (via `sync`) to the elapsed time. Shared by the editor preview and the
+ * embed player so both behave identically.
+ */
+export function syncMediaElement(
+  sync: MediaSync,
+  media: SyncableMedia,
+  timelineMs: number,
+  isPlaying: boolean,
+  startMs: number
+): void {
+  const effective = timelineMs - startMs
+  if (effective < 0) {
+    if (!media.paused) media.pause()
+    media.currentTime = 0
+    return
+  }
+  sync.update(effective, isPlaying)
+}

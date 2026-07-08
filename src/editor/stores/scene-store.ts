@@ -2,7 +2,7 @@ import { createSignal } from 'solid-js'
 import { createStore } from 'solid-js/store'
 import { measureTextLetters } from '../utils/split-text'
 
-export type ElementType = 'rect' | 'circle' | 'text' | 'image' | 'line' | 'arrow' | 'path' | 'group'
+export type ElementType = 'rect' | 'circle' | 'text' | 'image' | 'audio' | 'video' | 'line' | 'arrow' | 'path' | 'group'
 
 // Gradient types
 export interface GradientStop {
@@ -130,6 +130,36 @@ export interface ImageElement extends BaseElement {
   objectFit: 'contain' | 'cover' | 'fill'
 }
 
+export interface AudioElement extends BaseElement {
+  type: 'audio'
+  /** Audio source (URL or data URI). */
+  src: string
+  /** Volume 0..1. */
+  volume: number
+  /** Muted while previewing. */
+  muted: boolean
+  /** Loop the clip. */
+  loop: boolean
+  /** Timeline time (ms) at which the audio begins playing. */
+  startTime: number
+}
+
+export interface VideoElement extends BaseElement {
+  type: 'video'
+  /** Video source (URL or data URI). */
+  src: string
+  /** How the frame fits the element box. */
+  objectFit: 'contain' | 'cover' | 'fill'
+  /** Volume 0..1. */
+  volume: number
+  /** Muted while previewing. */
+  muted: boolean
+  /** Loop the clip. */
+  loop: boolean
+  /** Timeline time (ms) at which the video begins playing. */
+  startTime: number
+}
+
 export interface LineElement extends BaseElement {
   type: 'line'
   x2: number
@@ -168,7 +198,7 @@ export interface GroupElement extends BaseElement {
   childIds: string[]
 }
 
-export type SceneElement = RectElement | CircleElement | TextElement | ImageElement | LineElement | ArrowElement | PathElement | GroupElement
+export type SceneElement = RectElement | CircleElement | TextElement | ImageElement | AudioElement | VideoElement | LineElement | ArrowElement | PathElement | GroupElement
 
 export interface SceneState {
   elements: SceneElement[]
@@ -281,6 +311,41 @@ const DEFAULT_PATH: Omit<PathElement, 'id' | 'name'> = {
   closed: false,
 }
 
+const DEFAULT_AUDIO: Omit<AudioElement, 'id' | 'name'> = {
+  type: 'audio',
+  x: 20,
+  y: 20,
+  width: 40,
+  height: 40,
+  rotation: 0,
+  opacity: 1,
+  visible: true,
+  locked: false,
+  src: '',
+  volume: 1,
+  muted: false,
+  loop: false,
+  startTime: 0,
+}
+
+const DEFAULT_VIDEO: Omit<VideoElement, 'id' | 'name'> = {
+  type: 'video',
+  x: 60,
+  y: 40,
+  width: 180,
+  height: 120,
+  rotation: 0,
+  opacity: 1,
+  visible: true,
+  locked: false,
+  src: '',
+  objectFit: 'contain',
+  volume: 1,
+  muted: false,
+  loop: false,
+  startTime: 0,
+}
+
 function generateId(): string {
   return `el-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 }
@@ -292,6 +357,8 @@ function generateName(type: ElementType, elements: SceneElement[]): string {
     circle: 'Circle',
     text: 'Text',
     image: 'Image',
+    audio: 'Audio',
+    video: 'Video',
     line: 'Line',
     arrow: 'Arrow',
     path: 'Path',
@@ -363,6 +430,12 @@ export function createSceneStore() {
         break
       case 'path':
         element = { ...DEFAULT_PATH, ...overrides, id, name } as PathElement
+        break
+      case 'audio':
+        element = { ...DEFAULT_AUDIO, ...overrides, id, name } as AudioElement
+        break
+      case 'video':
+        element = { ...DEFAULT_VIDEO, ...overrides, id, name } as VideoElement
         break
       case 'group':
         // Groups are created via groupElements(), not addElement()

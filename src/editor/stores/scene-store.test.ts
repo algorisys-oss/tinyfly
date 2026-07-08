@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { createSceneStore } from './scene-store'
-import type { RectElement, CircleElement, TextElement } from './scene-store'
+import type { RectElement, CircleElement, TextElement, AudioElement, VideoElement } from './scene-store'
 
 describe('SceneStore', () => {
   describe('addElement', () => {
@@ -496,6 +496,68 @@ describe('gradient utilities', () => {
       expect(gradient.centerX).toBe(0.5)
       expect(gradient.centerY).toBe(0.5)
       expect(gradient.stops.length).toBe(2)
+    })
+  })
+
+  describe('audio element', () => {
+    it('adds an audio element with default properties', () => {
+      const store = createSceneStore()
+      const el = store.addElement('audio') as AudioElement
+      expect(el.type).toBe('audio')
+      expect(el.name).toBe('Audio 1')
+      expect(el.src).toBe('')
+      expect(el.volume).toBe(1)
+      expect(el.muted).toBe(false)
+      expect(el.loop).toBe(false)
+      expect(el.startTime).toBe(0)
+    })
+
+    it('applies overrides (src, startTime, volume)', () => {
+      const store = createSceneStore()
+      const el = store.addElement('audio', {
+        src: 'track.mp3',
+        startTime: 500,
+        volume: 0.5,
+      }) as AudioElement
+      expect(el.src).toBe('track.mp3')
+      expect(el.startTime).toBe(500)
+      expect(el.volume).toBe(0.5)
+    })
+
+    it('serializes and reloads audio elements', () => {
+      const store = createSceneStore()
+      store.addElement('audio', { src: 'a.mp3', startTime: 250 })
+      const exported = store.exportElements()
+      const store2 = createSceneStore()
+      store2.loadElements(exported)
+      const audio = store2.elements().find((e) => e.type === 'audio') as AudioElement
+      expect(audio.src).toBe('a.mp3')
+      expect(audio.startTime).toBe(250)
+    })
+  })
+
+  describe('video element', () => {
+    it('adds a video element with default properties', () => {
+      const store = createSceneStore()
+      const el = store.addElement('video') as VideoElement
+      expect(el.type).toBe('video')
+      expect(el.name).toBe('Video 1')
+      expect(el.objectFit).toBe('contain')
+      expect(el.volume).toBe(1)
+      expect(el.startTime).toBe(0)
+      expect(el.width).toBe(180)
+    })
+
+    it('applies overrides (src, objectFit, startTime)', () => {
+      const store = createSceneStore()
+      const el = store.addElement('video', {
+        src: 'clip.mp4',
+        objectFit: 'cover',
+        startTime: 1000,
+      }) as VideoElement
+      expect(el.src).toBe('clip.mp4')
+      expect(el.objectFit).toBe('cover')
+      expect(el.startTime).toBe(1000)
     })
   })
 

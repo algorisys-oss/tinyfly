@@ -1,7 +1,7 @@
 import { createMemo, createSignal, createEffect, Show, Switch, Match, For } from 'solid-js'
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
-import { isGradient, createLinearGradient, createRadialGradient, type SceneStore, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type FillValue, type LinearGradient, type RadialGradient } from '../stores/scene-store'
+import { isGradient, createLinearGradient, createRadialGradient, type SceneStore, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type FillValue, type LinearGradient, type RadialGradient } from '../stores/scene-store'
 import type { EasingType, BuiltInEasingType, CubicBezierPoints } from '../../engine'
 import { isCubicBezierEasing } from '../../engine'
 import { HelpIcon } from './tooltip'
@@ -207,6 +207,40 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
   const handleSrcChange = (e: Event) => {
     const input = e.target as HTMLInputElement
     updateElement({ src: input.value })
+  }
+
+  const handleAudioFileSelect = (e: Event) => {
+    const input = e.target as HTMLInputElement
+    const file = input.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('audio/')) {
+      alert('Please select an audio file')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = () => updateElement({ src: reader.result as string })
+    reader.onerror = () => alert('Failed to read audio file')
+    reader.readAsDataURL(file)
+    input.value = ''
+  }
+
+  const handleVideoFileSelect = (e: Event) => {
+    const input = e.target as HTMLInputElement
+    const file = input.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('video/')) {
+      alert('Please select a video file')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = () => updateElement({ src: reader.result as string })
+    reader.onerror = () => alert('Failed to read video file')
+    reader.readAsDataURL(file)
+    input.value = ''
   }
 
   const handleImageFileSelect = (e: Event) => {
@@ -937,6 +971,154 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
     )
   }
 
+  const renderAudioProperties = (element: AudioElement) => {
+    let fileInputRef: HTMLInputElement | undefined
+
+    return (
+      <div class="property-section">
+        <h4>Audio</h4>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="audio/*"
+          onChange={handleAudioFileSelect}
+          style={{ display: 'none' }}
+        />
+        <div class="property-row">
+          <label>Source</label>
+          <button class="image-upload-btn" onClick={() => fileInputRef?.click()}>
+            Choose File
+          </button>
+        </div>
+        <div class="property-row">
+          <label>URL</label>
+          <input
+            type="text"
+            value={element.src.startsWith('data:') ? '(embedded)' : element.src}
+            onInput={handleSrcChange}
+            placeholder="https://..."
+            disabled={element.src.startsWith('data:')}
+          />
+        </div>
+        <Show when={element.src.startsWith('data:')}>
+          <div class="property-row">
+            <label></label>
+            <button class="image-clear-btn" onClick={() => updateElement({ src: '' })}>
+              Clear Audio
+            </button>
+          </div>
+        </Show>
+        <div class="property-row">
+          <label>Start (ms)</label>
+          <input
+            type="number"
+            min="0"
+            step="50"
+            value={element.startTime}
+            onInput={(e) => updateElement({ startTime: Math.max(0, Number(e.currentTarget.value) || 0) })}
+          />
+        </div>
+        <div class="property-row">
+          <label>Volume</label>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={element.volume}
+            onInput={(e) => updateElement({ volume: Number(e.currentTarget.value) })}
+          />
+        </div>
+        <div class="property-row">
+          <label>Muted</label>
+          <input type="checkbox" checked={element.muted} onChange={handleCheckboxChange('muted')} />
+        </div>
+        <div class="property-row">
+          <label>Loop</label>
+          <input type="checkbox" checked={element.loop} onChange={handleCheckboxChange('loop')} />
+        </div>
+      </div>
+    )
+  }
+
+  const renderVideoProperties = (element: VideoElement) => {
+    let fileInputRef: HTMLInputElement | undefined
+
+    return (
+      <div class="property-section">
+        <h4>Video</h4>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="video/*"
+          onChange={handleVideoFileSelect}
+          style={{ display: 'none' }}
+        />
+        <div class="property-row">
+          <label>Source</label>
+          <button class="image-upload-btn" onClick={() => fileInputRef?.click()}>
+            Choose File
+          </button>
+        </div>
+        <div class="property-row">
+          <label>URL</label>
+          <input
+            type="text"
+            value={element.src.startsWith('data:') ? '(embedded)' : element.src}
+            onInput={handleSrcChange}
+            placeholder="https://..."
+            disabled={element.src.startsWith('data:')}
+          />
+        </div>
+        <Show when={element.src.startsWith('data:')}>
+          <div class="property-row">
+            <label></label>
+            <button class="image-clear-btn" onClick={() => updateElement({ src: '' })}>
+              Clear Video
+            </button>
+          </div>
+        </Show>
+        <div class="property-row">
+          <label>Fit</label>
+          <select value={element.objectFit} onChange={handleObjectFitChange}>
+            {OBJECT_FIT_OPTIONS.map((fit) => (
+              <option value={fit}>{fit}</option>
+            ))}
+          </select>
+        </div>
+        <div class="property-row">
+          <label>Start (ms)</label>
+          <input
+            type="number"
+            min="0"
+            step="50"
+            value={element.startTime}
+            onInput={(e) => updateElement({ startTime: Math.max(0, Number(e.currentTarget.value) || 0) })}
+          />
+        </div>
+        <div class="property-row">
+          <label>Volume</label>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={element.volume}
+            onInput={(e) => updateElement({ volume: Number(e.currentTarget.value) })}
+          />
+        </div>
+        <div class="property-row">
+          <label>Muted</label>
+          <input type="checkbox" checked={element.muted} onChange={handleCheckboxChange('muted')} />
+        </div>
+        <div class="property-row">
+          <label>Loop</label>
+          <input type="checkbox" checked={element.loop} onChange={handleCheckboxChange('loop')} />
+        </div>
+      </div>
+    )
+  }
+
   // Path segment helpers
   const addPathSegment = (segmentType: 'L' | 'Q' | 'C') => {
     const element = selectedElement() as PathElement
@@ -1341,6 +1523,12 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
                 </Match>
                 <Match when={element().type === 'image'}>
                   {renderImageProperties(element() as ImageElement)}
+                </Match>
+                <Match when={element().type === 'audio'}>
+                  {renderAudioProperties(element() as AudioElement)}
+                </Match>
+                <Match when={element().type === 'video'}>
+                  {renderVideoProperties(element() as VideoElement)}
                 </Match>
               </Switch>
 

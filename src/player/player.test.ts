@@ -175,6 +175,42 @@ describe('TinyflyPlayer', () => {
 
       player.destroy()
     })
+
+    it('discovers and syncs embedded [data-tinyfly-media] elements on load', async () => {
+      // Simulate the editor's exported HTML: a media element in the container.
+      const audio = document.createElement('audio')
+      audio.setAttribute('data-tinyfly-media', '')
+      audio.setAttribute('data-tinyfly-start', '0')
+      audio.setAttribute('data-volume', '0.5')
+      container.appendChild(audio)
+
+      const player = new TinyflyPlayer(container)
+      await player.load(sampleAnimation)
+
+      // data-volume applied on scan.
+      expect(audio.volume).toBeCloseTo(0.5)
+
+      // Seeking drives the embedded media to the timeline position.
+      player.seek(1000)
+      expect(audio.currentTime).toBeCloseTo(1)
+
+      player.destroy()
+    })
+
+    it('gates embedded media by its start time', async () => {
+      const audio = document.createElement('audio')
+      audio.setAttribute('data-tinyfly-media', '')
+      audio.setAttribute('data-tinyfly-start', '2000')
+      container.appendChild(audio)
+
+      const player = new TinyflyPlayer(container)
+      await player.load(sampleAnimation)
+
+      player.seek(500) // before the 2000ms start -> stays at 0
+      expect(audio.currentTime).toBe(0)
+
+      player.destroy()
+    })
   })
 
   describe('registerTarget', () => {
