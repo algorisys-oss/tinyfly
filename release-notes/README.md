@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.9.0](v0.9.0.md) | 2026-07-08 | Fit-to-view preview stage and a full-window Maximize mode |
 | [v0.8.0](v0.8.0.md) | 2026-07-08 | Keyframe multi-select, copy/paste, and batch delete |
 | [v0.7.0](v0.7.0.md) | 2026-07-08 | Video element and audio/video in embeds (player auto-syncs media) |
 | [v0.6.0](v0.6.0.md) | 2026-07-08 | NPM engine package, CDN player bundle, audio/video sync, shine on all renderers |

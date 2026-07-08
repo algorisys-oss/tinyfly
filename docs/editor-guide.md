@@ -543,6 +543,13 @@ The preview panel supports three rendering modes, switchable via the renderer se
 
 All three renderers play the same animation — switch between them to verify cross-renderer compatibility.
 
+### Maximizing the preview
+
+The stage automatically scales up to fill the available preview area. For a much
+larger view, click **⛶ Maximize** in the preview header — the preview fills the
+whole window with a floating play / stop / exit bar. Press **Esc** (or **Restore**)
+to return. Selection and dragging stay pixel-accurate at any scale.
+
 ## Project Management
 
 ### Auto-Save

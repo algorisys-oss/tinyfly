@@ -114,6 +114,28 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
   // the right thing.
   const [lastCopyKind, setLastCopyKind] = createSignal<'element' | 'keyframe'>('element')
 
+  // Scale the 300x200 stage up to fill the available preview area (fit-to-view).
+  // Pointer handlers divide client-space deltas by this so dragging stays exact.
+  const ARTBOARD_W = 300
+  const ARTBOARD_H = 200
+  const [previewScale, setPreviewScale] = createSignal(1)
+  // Maximize expands the preview to fill the window so the stage can scale up.
+  const [maximized, setMaximized] = createSignal(false)
+  const recomputeScale = () => {
+    if (!containerRef) return
+    const availW = containerRef.clientWidth - 40 // container has 20px padding
+    const availH = containerRef.clientHeight - 40
+    if (availW <= 0 || availH <= 0) return
+    const s = Math.min(availW / ARTBOARD_W, availH / ARTBOARD_H)
+    setPreviewScale(Math.max(1, Math.min(8, s)))
+  }
+  const toggleMaximized = () => {
+    setMaximized((m) => !m)
+    // The container resizes; recompute after the layout/class settles.
+    setTimeout(recomputeScale, 0)
+    setTimeout(recomputeScale, 60)
+  }
+
   // Drag state
   const [dragState, setDragState] = createSignal<DragState | null>(null)
   const [isDragging, setIsDragging] = createSignal(false)
@@ -301,13 +323,22 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
   }
 
   // Register elements after initial mount
+  let resizeObserver: ResizeObserver | undefined
+
   onMount(() => {
     // Small delay to ensure DOM is fully rendered
     setTimeout(() => {
       registerDOMElements()
       registerCanvasElements()
       registerSVGElements()
+      recomputeScale()
     }, 0)
+
+    // Keep the stage fitted as the preview area resizes.
+    if (containerRef && typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(() => recomputeScale())
+      resizeObserver.observe(containerRef)
+    }
   })
 
   // Re-register when elements change or renderer changes
@@ -424,8 +455,9 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     const state = dragState()
     if (!state || !canvasRef) return
 
-    const deltaX = e.clientX - state.startMouseX
-    const deltaY = e.clientY - state.startMouseY
+    const s = previewScale()
+    const deltaX = (e.clientX - state.startMouseX) / s
+    const deltaY = (e.clientY - state.startMouseY) / s
 
     // Only start dragging after a small threshold
     if (!isDragging() && (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3)) {
@@ -502,8 +534,9 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     const state = resizeState()
     if (!state) return
 
-    const deltaX = e.clientX - state.startMouseX
-    const deltaY = e.clientY - state.startMouseY
+    const s = previewScale()
+    const deltaX = (e.clientX - state.startMouseX) / s
+    const deltaY = (e.clientY - state.startMouseY) / s
 
     if (!isResizing() && (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2)) {
       setIsResizing(true)
@@ -702,8 +735,9 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     const canvasRect = canvasRef?.getBoundingClientRect()
     if (!canvasRect) return
 
-    const mouseX = e.clientX - canvasRect.left
-    const mouseY = e.clientY - canvasRect.top
+    const s = previewScale()
+    const mouseX = (e.clientX - canvasRect.left) / s
+    const mouseY = (e.clientY - canvasRect.top) / s
 
     // Calculate starting angle from center to mouse
     const startAngle = Math.atan2(mouseY - centerY, mouseX - centerX) * (180 / Math.PI)
@@ -726,8 +760,9 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     if (!state || !canvasRef) return
 
     const canvasRect = canvasRef.getBoundingClientRect()
-    const mouseX = e.clientX - canvasRect.left
-    const mouseY = e.clientY - canvasRect.top
+    const s = previewScale()
+    const mouseX = (e.clientX - canvasRect.left) / s
+    const mouseY = (e.clientY - canvasRect.top) / s
 
     // Calculate current angle from center to mouse
     const currentAngle = Math.atan2(mouseY - state.centerY, mouseX - state.centerX) * (180 / Math.PI)
@@ -799,8 +834,9 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     const element = props.sceneStore.elements().find((el) => el.id === state.elementId) as PathElement
     if (!element) return
 
-    const deltaX = e.clientX - state.startMouseX
-    const deltaY = e.clientY - state.startMouseY
+    const s = previewScale()
+    const deltaX = (e.clientX - state.startMouseX) / s
+    const deltaY = (e.clientY - state.startMouseY) / s
 
     if (!isDraggingPathPoint() && (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2)) {
       setIsDraggingPathPoint(true)
@@ -845,6 +881,13 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
   const handleKeyDown = (e: KeyboardEvent) => {
     // Ignore if typing in an input field
     if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+      return
+    }
+
+    // Esc exits the maximized preview.
+    if (e.key === 'Escape' && maximized()) {
+      e.preventDefault()
+      toggleMaximized()
       return
     }
 
@@ -998,6 +1041,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
       cancelAnimationFrame(animationFrameId)
     }
     pauseAllMedia()
+    resizeObserver?.disconnect()
     adapter?.clearTargets()
     document.removeEventListener('keydown', handleKeyDown)
     document.removeEventListener('mousemove', handleDragMove)
@@ -1265,7 +1309,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
   }
 
   return (
-    <div class="preview-panel">
+    <div class="preview-panel" classList={{ maximized: maximized() }}>
       <div class="preview-header">
         <span>Preview</span>
         <select
@@ -1281,8 +1325,24 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
         <span class="preview-element-count">
           {props.sceneStore.elementCount()} elements
         </span>
+        <button
+          class="preview-maximize-btn"
+          onClick={toggleMaximized}
+          title={maximized() ? 'Restore preview (Esc)' : 'Maximize preview'}
+        >
+          {maximized() ? '🗗 Restore' : '⛶ Maximize'}
+        </button>
       </div>
-      <div class="preview-container" ref={containerRef}>
+      <Show when={maximized()}>
+        <div class="preview-maximized-controls">
+          <button onClick={() => (props.store.isPlaying() ? props.store.pause() : props.store.play())} title="Play/Pause">
+            {props.store.isPlaying() ? '❚❚' : '▶'}
+          </button>
+          <button onClick={() => props.store.stop()} title="Stop">■</button>
+          <button onClick={toggleMaximized} title="Exit maximize (Esc)">✕</button>
+        </div>
+      </Show>
+      <div class="preview-container" ref={containerRef} style={{ '--preview-scale': String(previewScale()) }}>
         {/* DOM Renderer */}
         <Show when={rendererType() === 'dom'}>
           <div class="preview-canvas" ref={canvasRef} onClick={handleCanvasClick}>
