@@ -1,5 +1,7 @@
 export { TinyflyPlayer, play, create } from './player'
 export type { PlayerOptions, TargetMapping } from './player'
+export { MediaSync } from './media-sync'
+export type { SyncableMedia, MediaSyncOptions } from './media-sync'
 export { TinyflySequencer, playSequence } from './sequencer'
 export type {
   TransitionType,

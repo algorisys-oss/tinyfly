@@ -1,6 +1,7 @@
 import { Timeline, deserializeTimeline } from '../engine'
 import { DOMAdapter } from '../adapters/dom'
 import type { TimelineDefinition, AnimationState } from '../engine'
+import { MediaSync, type SyncableMedia, type MediaSyncOptions } from './media-sync'
 
 export interface PlayerOptions {
   /** Playback speed multiplier (default: 1) */
@@ -40,6 +41,7 @@ export class TinyflyPlayer {
   private options: PlayerOptions
   private targets: TargetMapping = {}
   private isDestroyed = false
+  private mediaSync: MediaSync | undefined
 
   constructor(container: HTMLElement | string, options: PlayerOptions = {}) {
     // Resolve container
@@ -161,12 +163,33 @@ export class TinyflyPlayer {
   }
 
   /**
+   * Attach an audio/video element (or any {@link SyncableMedia}) that should
+   * stay in sync with the animation timeline. The timeline remains the clock;
+   * the media follows its play/pause/seek and rate, with drift corrected as it
+   * plays. Pass `{ offset }` to start the media at a timeline offset.
+   */
+  attachMedia(media: SyncableMedia, options?: MediaSyncOptions): void {
+    this.mediaSync = new MediaSync(media, options)
+    if (this.timeline) {
+      this.mediaSync.setRate(this.timeline.speed)
+      this.mediaSync.update(this.timeline.currentTime, this.isPlaying)
+    }
+  }
+
+  /** Detach and pause the currently synced media, if any. */
+  detachMedia(): void {
+    this.mediaSync?.dispose()
+    this.mediaSync = undefined
+  }
+
+  /**
    * Start or resume playback.
    */
   play(): void {
     if (!this.timeline || this.isDestroyed) return
 
     this.timeline.play()
+    this.mediaSync?.update(this.timeline.currentTime, true)
     this.startAnimationLoop()
   }
 
@@ -176,6 +199,7 @@ export class TinyflyPlayer {
   pause(): void {
     if (!this.timeline) return
     this.timeline.pause()
+    this.mediaSync?.update(this.timeline.currentTime, false)
     this.stopAnimationLoop()
   }
 
@@ -187,6 +211,7 @@ export class TinyflyPlayer {
     this.timeline.stop()
     this.stopAnimationLoop()
     this.applyState()
+    this.mediaSync?.update(this.timeline.currentTime, false)
   }
 
   /**
@@ -196,6 +221,7 @@ export class TinyflyPlayer {
     if (!this.timeline) return
     this.timeline.seek(time)
     this.applyState()
+    this.mediaSync?.seek(this.timeline.currentTime)
   }
 
   /**
@@ -204,6 +230,7 @@ export class TinyflyPlayer {
   setSpeed(speed: number): void {
     if (!this.timeline) return
     this.timeline.speed = speed
+    this.mediaSync?.setRate(speed)
   }
 
   /**
@@ -241,6 +268,8 @@ export class TinyflyPlayer {
   destroy(): void {
     this.isDestroyed = true
     this.stopAnimationLoop()
+    this.mediaSync?.dispose()
+    this.mediaSync = undefined
     this.adapter.clearTargets()
     this.timeline = null
   }
@@ -258,6 +287,7 @@ export class TinyflyPlayer {
 
       this.timeline.tick(delta)
       this.applyState()
+      this.mediaSync?.update(this.timeline.currentTime, this.timeline.playbackState === 'playing')
 
       if (this.timeline.playbackState === 'playing') {
         this.animationFrameId = requestAnimationFrame(animate)

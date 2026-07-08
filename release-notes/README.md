@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.6.0](v0.6.0.md) | 2026-07-08 | NPM engine package, CDN player bundle, audio/video sync, shine on all renderers |
 | [v0.5.0](v0.5.0.md) | 2026-07-08 | Animatable filters (blur/glow/drop-shadow) and text shine sweep |
 | [v0.4.0](v0.4.0.md) | 2026-07-08 | Text animation: per-letter stagger, typewriter, clip/mask reveal; sidebar scrollbar fixes |
 | [v0.3.1](v0.3.1.md) | 2026-07-07 | Fix double scrollbar on the editor left panel |

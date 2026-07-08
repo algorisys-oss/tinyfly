@@ -1044,7 +1044,7 @@ export const dropShadowPop: AnimationPreset = {
 export const textShine: AnimationPreset = {
   id: 'text-shine',
   name: 'Shine Sweep',
-  description: 'A highlight sweeps across the text, clipped to the glyphs (DOM renderer)',
+  description: 'A highlight sweeps across the text, clipped to the glyphs',
   category: 'text',
   duration: 1600,
   tracks: [

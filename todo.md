@@ -185,7 +185,7 @@
 
 ## Phase 21: Advanced Features
 
-- [ ] Audio/video sync support
+- [x] Audio/video sync support (`MediaSync` + `player.attachMedia()` — media follows the timeline clock; see Phase 22)
 - [x] Motion path (animate along SVG path)
 - [x] Mask/clip support (animatable clip-inset reveal/wipe across all adapters — see Phase 23)
 - [x] Multiple scenes/artboards
@@ -210,21 +210,22 @@ wave, assemble, typewriter, shine/mask reveal, blur-in).
 - [x] Reveal/wipe presets (Reveal Right/Left/Up/Down); combine with stagger for per-letter mask reveal
 - [x] Animatable filters (blur, glow, drop-shadow) — shared `composeFilter` across DOM, SVG, Canvas
 - [x] Filter presets (Blur In, Drop Shadow, real Glow Pulse)
-- [x] Shine sweep — highlight clipped to text glyphs via background-clip:text (DOM); `text-shine` preset
-- [ ] Shine sweep for SVG/Canvas renderers (currently DOM-only)
+- [x] Shine sweep — highlight clipped to text glyphs; `text-shine` preset
+- [x] Shine sweep across all renderers (DOM via background-clip:text; SVG/Canvas via gradient fill)
 
 ## Phase 22: Distribution
 
-- [ ] NPM package for the engine
+- [x] NPM package for the engine (`vite.config.engine.ts`, `build:engine` → `lib/engine`; `exports` map + type declarations)
+- [x] CDN hosted player script (`build:player` → `lib/player/tinyfly-player.iife.js`, global `tinyfly`)
+- [x] Audio/video sync (`MediaSync`, `player.attachMedia()`; exported from the player bundle)
 - [x] Documentation (getting started, editor guide, API reference, examples, in-app viewer)
 - [x] Example gallery (14 professional examples with DOM/Canvas renderer toggle)
-- [ ] CDN hosted player script
 
 ---
 
 ## Test Coverage
 
-- 481 tests passing
+- 500 tests passing
 - Easing functions: 48 tests
 - Interpolators: 21 tests
 - Clock: 19 tests

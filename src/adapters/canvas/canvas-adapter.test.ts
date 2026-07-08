@@ -50,6 +50,7 @@ describe('CanvasAdapter', () => {
       clearRect: vi.fn(),
       fillText: vi.fn(),
       strokeText: vi.fn(),
+      measureText: vi.fn(() => ({ width: 80 })),
       drawImage: vi.fn(),
       createLinearGradient: vi.fn(() => mockGradient),
       createRadialGradient: vi.fn(() => mockGradient),
@@ -203,6 +204,28 @@ describe('CanvasAdapter', () => {
       })
       adapter.render(mockCtx)
       expect(mockCtx.filter).toBe('blur(5px)')
+    })
+
+    it('should fill text with a shine gradient when shine is set', () => {
+      adapter.registerTarget('label', {
+        type: 'text',
+        x: 0,
+        y: 0,
+        text: 'HI',
+        fillStyle: '#123456',
+      })
+      adapter.applyState({
+        values: new Map([['label', new Map<string, AnimatableValue>([['shine', 0.5]])]]),
+        currentTime: 0,
+        playbackState: 'playing',
+        direction: 'forward',
+        loopIteration: 0,
+      })
+      adapter.render(mockCtx)
+      // A gradient fill (clipped to glyphs by fillText) is built from the base colour.
+      expect(mockCtx.createLinearGradient).toHaveBeenCalled()
+      expect(mockGradient.addColorStop).toHaveBeenCalledWith(0, '#123456')
+      expect(mockCtx.fillText).toHaveBeenCalledWith('HI', 0, 0)
     })
 
     it('should render a circle target', () => {

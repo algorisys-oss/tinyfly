@@ -4,6 +4,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { TinyflyPlayer, play, create } from './player'
 import type { TimelineDefinition } from '../engine'
+import type { SyncableMedia } from './media-sync'
 
 // Mock DOM
 function createContainer(): HTMLDivElement {
@@ -103,6 +104,76 @@ describe('TinyflyPlayer', () => {
       await player.load(sampleAnimation)
 
       expect(player.isPlaying).toBe(false)
+    })
+  })
+
+  describe('media sync', () => {
+    function fakeMedia() {
+      const media = { currentTime: 0, paused: true, playbackRate: 1 } as {
+        currentTime: number
+        paused: boolean
+        playbackRate: number
+        play: ReturnType<typeof vi.fn>
+        pause: ReturnType<typeof vi.fn>
+      }
+      media.play = vi.fn(() => {
+        media.paused = false
+      })
+      media.pause = vi.fn(() => {
+        media.paused = true
+      })
+      return media as unknown as SyncableMedia & {
+        currentTime: number
+        paused: boolean
+        playbackRate: number
+        play: ReturnType<typeof vi.fn>
+        pause: ReturnType<typeof vi.fn>
+      }
+    }
+
+    it('plays and pauses attached media with the timeline', async () => {
+      const player = new TinyflyPlayer(container)
+      await player.load(sampleAnimation)
+      const media = fakeMedia()
+      player.attachMedia(media)
+
+      player.play()
+      expect(media.play).toHaveBeenCalled()
+      expect(media.paused).toBe(false)
+
+      player.pause()
+      expect(media.pause).toHaveBeenCalled()
+      expect(media.paused).toBe(true)
+
+      player.destroy()
+    })
+
+    it('seeks attached media to the timeline position', async () => {
+      const player = new TinyflyPlayer(container)
+      await player.load(sampleAnimation)
+      const media = fakeMedia()
+      player.attachMedia(media, { offset: 0 })
+
+      player.seek(500)
+      expect(media.currentTime).toBe(0.5)
+
+      player.destroy()
+    })
+
+    it('mirrors playback rate and stops the media on detach', async () => {
+      const player = new TinyflyPlayer(container)
+      await player.load(sampleAnimation)
+      const media = fakeMedia()
+      player.attachMedia(media)
+
+      player.setSpeed(2)
+      expect(media.playbackRate).toBe(2)
+
+      player.play() // media now playing
+      player.detachMedia() // disposes -> pauses the playing media
+      expect(media.pause).toHaveBeenCalled()
+
+      player.destroy()
     })
   })
 

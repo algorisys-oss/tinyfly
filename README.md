@@ -32,8 +32,12 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Per-letter presets** - Drop & Bounce, Cascade Up, Wave, Assemble, and Pop In, tuned to shine when staggered
 - **Typewriter reveal** - Character-by-character typing with an optional blinking cursor that steps along; the timeline auto-extends to fit
 - **Filters** - Animatable blur, glow, and drop-shadow (Blur In, Glow Pulse, Drop Shadow presets)
-- **Shine sweep** - A highlight sweeps across the text, clipped to the glyphs (DOM renderer)
+- **Shine sweep** - A highlight sweeps across the text, clipped to the glyphs, on all three renderers
 - **All JSON** - A stagger, typewriter, or filter is just keyframe tracks, so it serializes, persists, and plays anywhere the engine runs
+
+### Playback & Sync
+- **Standalone player** - `TinyflyPlayer` loads animation JSON and plays it onto DOM elements; ships as an ESM/UMD/IIFE bundle for npm or CDN
+- **Audio/video sync** - `MediaSync` / `player.attachMedia()` locks an audio or video element to the timeline clock (play/pause/seek/rate), correcting drift as it plays
 
 ### Visual Editor
 - **Timeline view** - Visual keyframe editing with drag-and-drop
@@ -64,10 +68,35 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 npm install tinyfly
 ```
 
-Or use via CDN:
+The package ships two entry points:
+
+```js
+// The framework-agnostic engine (browser, Web Worker, or Node)
+import { Timeline, createTrack } from 'tinyfly'
+
+// The DOM player + media sync (browser)
+import { TinyflyPlayer, MediaSync } from 'tinyfly/player'
+```
+
+### Build the distributable libraries
+
+```bash
+npm run build:libs   # engine + player bundles + type declarations -> lib/
+```
+
+This produces:
+
+- `lib/engine/tinyfly-engine.js` (ESM) and `.umd.cjs` — the engine
+- `lib/player/tinyfly-player.{es,umd,iife}.js` — the standalone DOM player
+- `lib/types/**` — TypeScript declarations
+
+### Use via CDN (no build step)
+
 ```html
-<script type="module">
-  import { play } from 'https://unpkg.com/tinyfly/dist/player.js';
+<script src="https://unpkg.com/tinyfly/lib/player/tinyfly-player.iife.js"></script>
+<script>
+  const player = new tinyfly.TinyflyPlayer('#stage')
+  player.load('animation.json').then(() => player.play())
 </script>
 ```
 
@@ -231,6 +260,29 @@ player.setSpeed(2);
 player.destroy();
 ```
 
+### Audio / Video Sync
+
+Attach a media element so it stays locked to the timeline clock (the timeline
+stays the source of truth; the media follows play/pause/seek/rate and drift is
+corrected as it plays).
+
+```typescript
+const player = new TinyflyPlayer('#container');
+await player.load('animation.json');
+
+const audio = document.querySelector('audio');
+player.attachMedia(audio, { offset: 0 });  // start media at timeline t=0
+
+player.play();     // audio plays in sync
+player.seek(2000); // audio jumps to 2s
+player.detachMedia();
+
+// Or use the primitive directly with any { currentTime, paused, play, pause }:
+import { MediaSync } from 'tinyfly/player';
+const sync = new MediaSync(audio, { driftTolerance: 0.15 });
+sync.update(timelineMs, isPlaying);
+```
+
 ### Sequencer (Multi-Scene)
 
 ```typescript
@@ -286,7 +338,7 @@ tinyfly/
 - [ ] Copy/paste keyframes
 - [ ] Multi-select keyframes
 - [x] Visual curve editor for custom easing
-- [ ] npm package publishing
+- [x] npm engine package + CDN player build (`npm run build:libs`)
 
 ### Future
 - [x] Scene transitions (fade, slide between scenes)
@@ -295,8 +347,8 @@ tinyfly/
 - [x] Typewriter reveal (char-by-char + blinking cursor)
 - [x] Clip/mask reveal (wipe presets, all adapters)
 - [x] Animatable filters (blur, glow, drop-shadow)
-- [x] Shine sweep (highlight clipped to glyphs, DOM)
-- [ ] Shine sweep for SVG/Canvas renderers
+- [x] Shine sweep (highlight clipped to glyphs, all renderers)
+- [x] Audio/video sync (`MediaSync` / `player.attachMedia()`)
 - [ ] WebGL adapter
 - [ ] React Native adapter
 - [ ] Collaborative editing
@@ -319,14 +371,14 @@ npm run build
 
 ### Test Coverage
 
-- 481 tests passing
+- 500 tests passing
 - Core engine: 136 tests
-- Adapters: 74 tests (incl. clip/mask reveal, filters, shine)
+- Adapters: 87 tests (incl. clip/mask reveal, filters, shine across DOM/SVG/Canvas)
 - Editor stores: 147 tests (incl. split-text, staggered presets)
 - Split-text util: 8 tests
 - Typewriter builder: 9 tests
 - Letter-stagger sample (engine integration): 4 tests
-- Player: 30 tests
+- Player + media sync: 45 tests
 - Sequencer: 30 tests
 - Export formats: 30 tests
 - Animation presets: 18 tests

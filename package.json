@@ -1,7 +1,32 @@
 {
   "name": "tinyfly",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "type": "module",
+  "description": "Lightweight, API-driven animation engine and editor. The engine is framework-agnostic and runs in browsers, Web Workers, and Node.",
+  "license": "MIT",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "main": "./lib/engine/tinyfly-engine.umd.cjs",
+  "module": "./lib/engine/tinyfly-engine.js",
+  "types": "./lib/types/engine/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/engine/index.d.ts",
+      "import": "./lib/engine/tinyfly-engine.js",
+      "require": "./lib/engine/tinyfly-engine.umd.cjs"
+    },
+    "./player": {
+      "types": "./lib/types/player/index.d.ts",
+      "import": "./lib/player/tinyfly-player.es.js",
+      "require": "./lib/player/tinyfly-player.umd.js"
+    }
+  },
+  "files": [
+    "lib/engine",
+    "lib/player",
+    "lib/types"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

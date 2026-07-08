@@ -430,7 +430,7 @@ DOM, SVG, and Canvas renderers:
 
 The **Shine Sweep** text preset sends a bright highlight travelling across the
 text, clipped to the glyph shapes (like a metallic sheen). The base text colour
-stays visible underneath. Shine currently renders on the **DOM** renderer.
+stays visible underneath. Shine renders on the DOM, SVG, and Canvas renderers.
 
 ## Sample Animations
 

@@ -1,5 +1,6 @@
 import type { AnimationState, AnimatableValue } from '../../engine/types'
 import { composeFilter } from '../filter-utils'
+import { shineStops } from '../shine-utils'
 
 /** Gradient stop definition */
 export interface GradientStop {
@@ -64,6 +65,8 @@ export interface CanvasTargetBase {
   shadowY?: number
   shadowBlur?: number
   shadowColor?: string
+  // Shine sweep progress (0..1); rendered as a moving highlight in the fill.
+  shine?: number
 }
 
 /** Rectangle target */
@@ -550,6 +553,18 @@ export class CanvasAdapter {
     ctx.textBaseline = target.textBaseline ?? 'top'
 
     if (target.fillStyle) {
+      // Shine sweep: a linear gradient fill is naturally clipped to the glyphs
+      // by fillText, so a moving highlight band reads as a sheen across the text.
+      if (target.shine !== undefined && typeof target.fillStyle === 'string') {
+        const width = ctx.measureText(target.text).width
+        const align = target.textAlign ?? 'left'
+        const left = align === 'center' ? target.x - width / 2 : align === 'right' ? target.x - width : target.x
+        const gradient = ctx.createLinearGradient(left, target.y, left + width, target.y)
+        for (const stop of shineStops(target.shine, target.fillStyle)) {
+          gradient.addColorStop(stop.offset, stop.color)
+        }
+        ctx.fillStyle = gradient
+      }
       ctx.fillText(target.text, target.x, target.y)
     }
     if (target.strokeStyle) {

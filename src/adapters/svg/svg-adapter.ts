@@ -1,5 +1,8 @@
 import type { AnimationState, AnimatableValue } from '../../engine/types'
 import { FILTER_PROPERTIES, composeFilter, type FilterValues } from '../filter-utils'
+import { shineStops } from '../shine-utils'
+
+const SVG_NS = 'http://www.w3.org/2000/svg'
 
 /** SVG attributes that should be set directly */
 const SVG_ATTRIBUTES = new Set([
@@ -128,6 +131,8 @@ export class SVGAdapter {
       } else if (FILTER_PROPERTIES.has(property)) {
         ;(filter as Record<string, AnimatableValue>)[property] = value
         hasFilter = true
+      } else if (property === 'shine') {
+        if (typeof value === 'number') this.applyShine(element, value)
       } else if (property === 'opacity') {
         // Apply opacity to both fill and stroke
         element.setAttribute('fill-opacity', String(value))
@@ -211,6 +216,51 @@ export class SVGAdapter {
   /**
    * Apply a single attribute to an SVG element.
    */
+  /**
+   * Apply a shine sweep to an SVG (text) element by filling it with an injected
+   * linear gradient whose highlight band moves with `progress` (0..1). The
+   * gradient lives in the owner SVG's <defs> and is reused across frames.
+   */
+  private applyShine(element: SVGElement, progress: number): void {
+    const svg = element.ownerSVGElement
+    const doc = element.ownerDocument
+    if (!svg || !doc) return
+
+    // Capture the base fill colour once, before we swap to the gradient.
+    const el = element as SVGElement & { dataset: DOMStringMap }
+    if (!el.dataset.shineBase) {
+      el.dataset.shineBase = element.getAttribute('fill') || '#000000'
+    }
+    const base = el.dataset.shineBase
+
+    // Ensure a <defs> and a gradient element for this target.
+    let defs = svg.querySelector('defs')
+    if (!defs) {
+      defs = doc.createElementNS(SVG_NS, 'defs')
+      svg.insertBefore(defs, svg.firstChild)
+    }
+    let gradId = el.dataset.shineGrad
+    let gradient = gradId ? (defs.querySelector(`#${gradId}`) as SVGElement | null) : null
+    if (!gradient) {
+      gradId = `tinyfly-shine-${Math.random().toString(36).slice(2, 9)}`
+      el.dataset.shineGrad = gradId
+      gradient = doc.createElementNS(SVG_NS, 'linearGradient')
+      gradient.setAttribute('id', gradId)
+      defs.appendChild(gradient)
+    }
+
+    // Rebuild the stops for this frame.
+    while (gradient.firstChild) gradient.removeChild(gradient.firstChild)
+    for (const stop of shineStops(progress, base)) {
+      const s = doc.createElementNS(SVG_NS, 'stop')
+      s.setAttribute('offset', String(stop.offset))
+      s.setAttribute('stop-color', stop.color)
+      gradient.appendChild(s)
+    }
+
+    element.setAttribute('fill', `url(#${gradId})`)
+  }
+
   private applyAttribute(
     element: SVGElement,
     property: string,
