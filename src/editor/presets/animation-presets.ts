@@ -41,14 +41,16 @@ export function resolvePresetKeyframe(
   const time = Math.round(presetKf.timePercent * duration)
   let value = presetKf.value
 
-  // Handle relative values (e.g., "+100" or "-50")
+  // Handle relative values (e.g., "+100" or "-50"). Non-numeric strings such as
+  // colours (e.g. "#66d9ff") are passed through unchanged.
   if (typeof value === 'string' && typeof baseValue === 'number') {
     if (value.startsWith('+')) {
       value = baseValue + parseFloat(value.slice(1))
     } else if (value.startsWith('-')) {
       value = baseValue - parseFloat(value.slice(1))
     } else {
-      value = parseFloat(value)
+      const numeric = Number(value)
+      value = Number.isNaN(numeric) ? value : numeric
     }
   }
 
@@ -457,10 +459,22 @@ export const textColorCycle: AnimationPreset = {
 export const textGlow: AnimationPreset = {
   id: 'text-glow',
   name: 'Glow Pulse',
-  description: 'Pulsing glow effect with scale',
+  description: 'Pulsing neon glow with a gentle scale',
   category: 'text',
   duration: 2000,
   tracks: [
+    {
+      property: 'glowColor',
+      keyframes: [{ timePercent: 0, value: '#66d9ff' }],
+    },
+    {
+      property: 'glow',
+      keyframes: [
+        { timePercent: 0, value: 2 },
+        { timePercent: 0.5, value: 18, easing: 'ease-in-out' },
+        { timePercent: 1, value: 2, easing: 'ease-in-out' },
+      ],
+    },
     {
       property: 'scale',
       keyframes: [
@@ -472,9 +486,9 @@ export const textGlow: AnimationPreset = {
     {
       property: 'opacity',
       keyframes: [
-        { timePercent: 0, value: 0.8 },
+        { timePercent: 0, value: 0.85 },
         { timePercent: 0.5, value: 1, easing: 'ease-in-out' },
-        { timePercent: 1, value: 0.8, easing: 'ease-in-out' },
+        { timePercent: 1, value: 0.85, easing: 'ease-in-out' },
       ],
     },
   ],
@@ -964,6 +978,87 @@ export const revealUp: AnimationPreset = {
 }
 
 // ============================================
+// FILTER ANIMATIONS (blur / glow / drop-shadow)
+// ============================================
+
+export const blurIn: AnimationPreset = {
+  id: 'blur-in',
+  name: 'Blur In',
+  description: 'Sharpen into focus from a blur while fading in',
+  category: 'entrance',
+  duration: 600,
+  recommendedStagger: 55,
+  tracks: [
+    {
+      property: 'blur',
+      keyframes: [
+        { timePercent: 0, value: 12 },
+        { timePercent: 1, value: 0, easing: 'ease-out' },
+      ],
+    },
+    {
+      property: 'opacity',
+      keyframes: [
+        { timePercent: 0, value: 0 },
+        { timePercent: 1, value: 1, easing: 'ease-out' },
+      ],
+    },
+  ],
+}
+
+export const dropShadowPop: AnimationPreset = {
+  id: 'drop-shadow-pop',
+  name: 'Drop Shadow',
+  description: 'Lift the element with an animated drop shadow',
+  category: 'emphasis',
+  duration: 800,
+  tracks: [
+    {
+      property: 'shadowColor',
+      keyframes: [{ timePercent: 0, value: 'rgba(0, 0, 0, 0.45)' }],
+    },
+    {
+      property: 'shadowX',
+      keyframes: [
+        { timePercent: 0, value: 0 },
+        { timePercent: 1, value: 6, easing: 'ease-out' },
+      ],
+    },
+    {
+      property: 'shadowY',
+      keyframes: [
+        { timePercent: 0, value: 0 },
+        { timePercent: 1, value: 6, easing: 'ease-out' },
+      ],
+    },
+    {
+      property: 'shadowBlur',
+      keyframes: [
+        { timePercent: 0, value: 0 },
+        { timePercent: 1, value: 10, easing: 'ease-out' },
+      ],
+    },
+  ],
+}
+
+export const textShine: AnimationPreset = {
+  id: 'text-shine',
+  name: 'Shine Sweep',
+  description: 'A highlight sweeps across the text, clipped to the glyphs (DOM renderer)',
+  category: 'text',
+  duration: 1600,
+  tracks: [
+    {
+      property: 'shine',
+      keyframes: [
+        { timePercent: 0, value: 0 },
+        { timePercent: 1, value: 1, easing: 'ease-in-out' },
+      ],
+    },
+  ],
+}
+
+// ============================================
 // PER-LETTER (STAGGER) TEXT ANIMATIONS
 // These are ordinary presets, but they are tuned to look their best when fanned
 // out across the letters of a split text element with a small per-letter delay.
@@ -1118,12 +1213,14 @@ export const allPresets: AnimationPreset[] = [
   revealLeft,
   revealDown,
   revealUp,
+  blurIn,
   // Emphasis
   pulse,
   bounce,
   shake,
   spin,
   flash,
+  dropShadowPop,
   // Exit
   fadeOut,
   fadeOutDown,
@@ -1148,6 +1245,7 @@ export const allPresets: AnimationPreset[] = [
   textSwingIn,
   textTada,
   textLightSpeed,
+  textShine,
   // Per-letter (stagger) text
   letterDropBounce,
   letterCascadeUp,

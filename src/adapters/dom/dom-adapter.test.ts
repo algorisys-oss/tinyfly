@@ -17,6 +17,7 @@ function createMockElement(): HTMLElement {
         return target[prop as string] ?? ''
       },
     }),
+    dataset: {} as DOMStringMap,
     setAttribute: vi.fn(),
     getAttribute: vi.fn(),
   } as unknown as HTMLElement
@@ -120,6 +121,36 @@ describe('DOMAdapter', () => {
 
       adapter.applyState(createMockState({ box: { clipRight: 0 } }))
       expect(mockElement.style.clipPath).toBe('inset(0% 0% 0% 0%)')
+    })
+
+    it('should compose a filter from blur', () => {
+      adapter.registerTarget('box', mockElement)
+      adapter.applyState(createMockState({ box: { blur: 6 } }))
+      expect(mockElement.style.filter).toBe('blur(6px)')
+    })
+
+    it('should compose a glow filter with its colour', () => {
+      adapter.registerTarget('box', mockElement)
+      adapter.applyState(
+        createMockState({ box: { glow: 14, glowColor: '#66d9ff' } as Record<string, AnimatableValue> })
+      )
+      expect(mockElement.style.filter).toBe('drop-shadow(0 0 14px #66d9ff)')
+    })
+
+    it('should apply a shine sweep as a text-clipped gradient', () => {
+      mockElement.style.color = '#c0c0c0'
+      adapter.registerTarget('box', mockElement)
+
+      adapter.applyState(createMockState({ box: { shine: 0.5 } }))
+
+      // Base colour captured, text made transparent, background clipped to text.
+      expect(mockElement.dataset.shineBase).toBe('#c0c0c0')
+      expect(mockElement.style.color).toBe('transparent')
+      expect(mockElement.style.backgroundClip).toBe('text')
+      // Highlight position tracks progress: -20 + 0.5*140 = 50%.
+      expect(mockElement.style.backgroundPosition).toContain('50% 0')
+      // Base colour is used for the solid layer.
+      expect(mockElement.style.backgroundImage).toContain('#c0c0c0')
     })
 
     it('should apply scaleX and scaleY separately', () => {

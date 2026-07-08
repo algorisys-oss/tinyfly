@@ -1,4 +1,5 @@
 import type { AnimationState, AnimatableValue } from '../../engine/types'
+import { FILTER_PROPERTIES, composeFilter, type FilterValues } from '../filter-utils'
 
 /** SVG attributes that should be set directly */
 const SVG_ATTRIBUTES = new Set([
@@ -116,12 +117,17 @@ export class SVGAdapter {
   ): void {
     const transforms: Record<string, number> = {}
     const clip: Record<string, number> = {}
+    const filter: FilterValues = {}
+    let hasFilter = false
 
     for (const [property, value] of properties) {
       if (TRANSFORM_PROPERTIES.has(property)) {
         transforms[property] = value as number
       } else if (CLIP_PROPERTIES.has(property)) {
         if (typeof value === 'number') clip[property] = value
+      } else if (FILTER_PROPERTIES.has(property)) {
+        ;(filter as Record<string, AnimatableValue>)[property] = value
+        hasFilter = true
       } else if (property === 'opacity') {
         // Apply opacity to both fill and stroke
         element.setAttribute('fill-opacity', String(value))
@@ -144,6 +150,14 @@ export class SVGAdapter {
       const b = clip.clipBottom ?? 0
       const l = clip.clipLeft ?? 0
       ;(element as SVGElement & { style: CSSStyleDeclaration }).style.clipPath = `inset(${t}% ${r}% ${b}% ${l}%)`
+    }
+
+    // Apply composed filter (blur / glow / drop-shadow).
+    if (hasFilter) {
+      const composed = composeFilter(filter)
+      if (composed) {
+        ;(element as SVGElement & { style: CSSStyleDeclaration }).style.filter = composed
+      }
     }
   }
 

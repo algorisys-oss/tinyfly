@@ -1,4 +1,5 @@
 import type { AnimationState, AnimatableValue } from '../../engine/types'
+import { FILTER_PROPERTIES, composeFilter, type FilterValues } from '../filter-utils'
 
 /** Properties that need px units when numeric */
 const PX_PROPERTIES = new Set([
@@ -123,6 +124,8 @@ export class DOMAdapter {
   ): void {
     const transformParts: string[] = []
     const clip: Record<string, number> = {}
+    const filter: FilterValues = {}
+    let hasFilter = false
 
     // Check if motion path values are present (they take priority over x/y/rotate)
     const hasMotionPathX = properties.has('motionPathX')
@@ -142,9 +145,21 @@ export class DOMAdapter {
         }
       } else if (CLIP_PROPERTIES.has(property)) {
         if (typeof value === 'number') clip[property] = value
+      } else if (FILTER_PROPERTIES.has(property)) {
+        ;(filter as Record<string, AnimatableValue>)[property] = value
+        hasFilter = true
+      } else if (property === 'shine') {
+        // Handled after the loop (needs the composed base colour).
       } else {
         this.applyStyleProperty(element, property, value)
       }
+    }
+
+    // Shine sweep: a highlight band travels across the text, clipped to the
+    // glyphs via background-clip:text, while the base colour stays visible.
+    const shine = properties.get('shine')
+    if (typeof shine === 'number') {
+      this.applyShine(element, shine)
     }
 
     // Apply composed transform
@@ -159,6 +174,12 @@ export class DOMAdapter {
       const b = clip.clipBottom ?? 0
       const l = clip.clipLeft ?? 0
       element.style.clipPath = `inset(${t}% ${r}% ${b}% ${l}%)`
+    }
+
+    // Apply composed filter (blur / glow / drop-shadow).
+    if (hasFilter) {
+      const composed = composeFilter(filter)
+      if (composed) element.style.filter = composed
     }
   }
 
@@ -203,6 +224,34 @@ export class DOMAdapter {
       default:
         return null
     }
+  }
+
+  /**
+   * Apply a shine sweep to a (text) element.
+   *
+   * `progress` runs 0..1 as the highlight travels from just off the left edge to
+   * just off the right. Two layered, text-clipped gradients are used: a moving
+   * white highlight band on top of a solid layer of the element's base colour,
+   * so the text stays visible while the sheen passes over the glyphs.
+   */
+  private applyShine(element: HTMLElement, progress: number): void {
+    // Capture the base colour once, before we switch the text to transparent.
+    if (!element.dataset.shineBase) {
+      element.dataset.shineBase = element.style.color || 'currentColor'
+    }
+    const base = element.dataset.shineBase
+    const position = -20 + progress * 140 // -20% (off left) .. 120% (off right)
+
+    const style = element.style as CSSStyleDeclaration & { webkitBackgroundClip?: string }
+    style.color = 'transparent'
+    style.backgroundImage =
+      `linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.9) 50%, transparent 60%), ` +
+      `linear-gradient(${base}, ${base})`
+    style.backgroundSize = '250% 100%, 100% 100%'
+    style.backgroundPosition = `${position}% 0, 0 0`
+    style.backgroundRepeat = 'no-repeat'
+    style.webkitBackgroundClip = 'text'
+    style.backgroundClip = 'text'
   }
 
   /**

@@ -20,17 +20,20 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Looping** - Finite loops, infinite loops, and ping-pong (alternate) mode
 
 ### Render Adapters
-- **DOM** - CSS transforms, opacity, colors, clip-path reveal
-- **Canvas** - Shapes with position, size, rotation, colors, clip reveal
-- **SVG** - Attributes, transforms, clip-path reveal
+- **DOM** - CSS transforms, opacity, colors, clip-path reveal, filters, shine
+- **Canvas** - Shapes with position, size, rotation, colors, clip reveal, filters
+- **SVG** - Attributes, transforms, clip-path reveal, filters
 - **Clip/mask reveal** - Animatable clip-inset (`clipTop/Right/Bottom/Left`) wipes elements into view, consistently across all three renderers
+- **Filters** - Animatable `blur`, `glow`, and drop-shadow, composed identically across DOM, SVG, and Canvas
 
 ### Text Animation
 - **Split text into letters** - Break a text element into per-letter elements (Animate-style "break apart"), positioned to match the original layout
 - **Staggered animation** - Fan any preset across the letters (or a multi-selection) with a per-letter delay — the primitive behind Animate-style drop, cascade, and wave effects
 - **Per-letter presets** - Drop & Bounce, Cascade Up, Wave, Assemble, and Pop In, tuned to shine when staggered
 - **Typewriter reveal** - Character-by-character typing with an optional blinking cursor that steps along; the timeline auto-extends to fit
-- **All JSON** - A stagger or typewriter is just offset keyframe tracks, so it serializes, persists, and plays anywhere the engine runs
+- **Filters** - Animatable blur, glow, and drop-shadow (Blur In, Glow Pulse, Drop Shadow presets)
+- **Shine sweep** - A highlight sweeps across the text, clipped to the glyphs (DOM renderer)
+- **All JSON** - A stagger, typewriter, or filter is just keyframe tracks, so it serializes, persists, and plays anywhere the engine runs
 
 ### Visual Editor
 - **Timeline view** - Visual keyframe editing with drag-and-drop
@@ -291,7 +294,9 @@ tinyfly/
 - [x] Per-letter text animation (split + stagger)
 - [x] Typewriter reveal (char-by-char + blinking cursor)
 - [x] Clip/mask reveal (wipe presets, all adapters)
-- [ ] Shine sweep (highlight clipped to glyphs), animatable filters
+- [x] Animatable filters (blur, glow, drop-shadow)
+- [x] Shine sweep (highlight clipped to glyphs, DOM)
+- [ ] Shine sweep for SVG/Canvas renderers
 - [ ] WebGL adapter
 - [ ] React Native adapter
 - [ ] Collaborative editing
@@ -314,9 +319,9 @@ npm run build
 
 ### Test Coverage
 
-- 467 tests passing
+- 481 tests passing
 - Core engine: 136 tests
-- Adapters: 61 tests (incl. clip/mask reveal)
+- Adapters: 74 tests (incl. clip/mask reveal, filters, shine)
 - Editor stores: 147 tests (incl. split-text, staggered presets)
 - Split-text util: 8 tests
 - Typewriter builder: 9 tests

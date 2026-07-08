@@ -1,4 +1,5 @@
 import type { AnimationState, AnimatableValue } from '../../engine/types'
+import { composeFilter } from '../filter-utils'
 
 /** Gradient stop definition */
 export interface GradientStop {
@@ -54,6 +55,15 @@ export interface CanvasTargetBase {
   clipRight?: number
   clipBottom?: number
   clipLeft?: number
+  // Filter properties (composed into ctx.filter): blur / glow / drop-shadow.
+  blur?: number
+  brightness?: number
+  glow?: number
+  glowColor?: string
+  shadowX?: number
+  shadowY?: number
+  shadowBlur?: number
+  shadowColor?: string
 }
 
 /** Rectangle target */
@@ -322,6 +332,12 @@ export class CanvasAdapter {
 
     if (target.lineWidth !== undefined) {
       ctx.lineWidth = target.lineWidth
+    }
+
+    // Apply composed filter (blur / glow / drop-shadow) if any are set.
+    const composedFilter = composeFilter(target)
+    if (composedFilter) {
+      ctx.filter = composedFilter
     }
 
     // Apply clip-inset (reveal/wipe mask) in the target's own coordinate space.

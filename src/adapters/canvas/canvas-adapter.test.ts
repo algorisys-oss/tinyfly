@@ -192,6 +192,19 @@ describe('CanvasAdapter', () => {
       expect(mockCtx.clip).not.toHaveBeenCalled()
     })
 
+    it('should set ctx.filter from filter properties', () => {
+      adapter.registerTarget('box', { type: 'rect', x: 0, y: 0, width: 50, height: 50 })
+      adapter.applyState({
+        values: new Map([['box', new Map<string, AnimatableValue>([['blur', 5]])]]),
+        currentTime: 0,
+        playbackState: 'playing',
+        direction: 'forward',
+        loopIteration: 0,
+      })
+      adapter.render(mockCtx)
+      expect(mockCtx.filter).toBe('blur(5px)')
+    })
+
     it('should render a circle target', () => {
       adapter.registerTarget('circle', {
         type: 'circle',

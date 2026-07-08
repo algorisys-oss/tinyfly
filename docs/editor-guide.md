@@ -417,6 +417,21 @@ rendered consistently across the DOM, SVG, and Canvas renderers.
 Combine a Reveal preset with **Per-letter stagger** to get a cascading,
 letter-by-letter mask reveal (each glyph wipes in a moment after the last).
 
+### Filters (blur, glow, drop-shadow)
+
+Elements support animatable filter properties, composed the same way across the
+DOM, SVG, and Canvas renderers:
+
+- `blur` (px) — used by the **Blur In** entrance preset (sharpen into focus)
+- `glow` (+ `glowColor`) — a coloured halo; used by **Glow Pulse**
+- `shadowX` / `shadowY` / `shadowBlur` (+ `shadowColor`) — used by **Drop Shadow**
+
+### Shine sweep
+
+The **Shine Sweep** text preset sends a bright highlight travelling across the
+text, clipped to the glyph shapes (like a metallic sheen). The base text colour
+stays visible underneath. Shine currently renders on the **DOM** renderer.
+
 ## Sample Animations
 
 Tinyfly includes 42 sample animations organized into 6 categories. Access them from the **Samples** button in the toolbar.

@@ -208,8 +208,10 @@ wave, assemble, typewriter, shine/mask reveal, blur-in).
 - [x] Timeline `setDuration` (auto-extends to fit generated effects)
 - [x] Clip/mask reveal — animatable clip-inset in DOM, SVG, and Canvas adapters
 - [x] Reveal/wipe presets (Reveal Right/Left/Up/Down); combine with stagger for per-letter mask reveal
-- [ ] Shine sweep (highlight clipped to text glyphs — needs shape/text masking)
-- [ ] Animatable filters (blur, glow, drop-shadow)
+- [x] Animatable filters (blur, glow, drop-shadow) — shared `composeFilter` across DOM, SVG, Canvas
+- [x] Filter presets (Blur In, Drop Shadow, real Glow Pulse)
+- [x] Shine sweep — highlight clipped to text glyphs via background-clip:text (DOM); `text-shine` preset
+- [ ] Shine sweep for SVG/Canvas renderers (currently DOM-only)
 
 ## Phase 22: Distribution
 
@@ -222,7 +224,7 @@ wave, assemble, typewriter, shine/mask reveal, blur-in).
 
 ## Test Coverage
 
-- 467 tests passing
+- 481 tests passing
 - Easing functions: 48 tests
 - Interpolators: 21 tests
 - Clock: 19 tests
