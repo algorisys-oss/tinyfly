@@ -110,6 +110,10 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
   // Renderer type
   const [rendererType, setRendererType] = createSignal<RendererType>('dom')
 
+  // Tracks whether the last copy was keyframes or elements, so Ctrl+V pastes
+  // the right thing.
+  const [lastCopyKind, setLastCopyKind] = createSignal<'element' | 'keyframe'>('element')
+
   // Drag state
   const [dragState, setDragState] = createSignal<DragState | null>(null)
   const [isDragging, setIsDragging] = createSignal(false)
@@ -847,6 +851,20 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     const selectedId = props.sceneStore.state.selectedElementId
     const selectedIds = props.sceneStore.state.selectedElementIds
     const hasSelection = selectedId || selectedIds.length > 0
+    const keyframesSelected = props.store.state.selectedKeyframes.length > 0
+
+    // --- Keyframe shortcuts take precedence when keyframes are selected ---
+    if (keyframesSelected && (e.key === 'Delete' || e.key === 'Backspace')) {
+      e.preventDefault()
+      props.store.deleteSelectedKeyframes()
+      return
+    }
+    if (keyframesSelected && (e.ctrlKey || e.metaKey) && e.key === 'c') {
+      e.preventDefault()
+      props.store.copySelectedKeyframes()
+      setLastCopyKind('keyframe')
+      return
+    }
 
     // Delete/Backspace - Delete selected element(s)
     if ((e.key === 'Delete' || e.key === 'Backspace') && hasSelection) {
@@ -872,6 +890,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
       e.preventDefault()
       const idsToCopy = selectedIds.length > 0 ? selectedIds : selectedId ? [selectedId] : []
       props.sceneStore.copyElements(idsToCopy)
+      setLastCopyKind('element')
       return
     }
 
@@ -880,13 +899,18 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
       e.preventDefault()
       const idsToCut = selectedIds.length > 0 ? selectedIds : selectedId ? [selectedId] : []
       props.sceneStore.cutElements(idsToCut)
+      setLastCopyKind('element')
       return
     }
 
-    // Ctrl/Cmd + V - Paste elements
+    // Ctrl/Cmd + V - Paste keyframes or elements, based on the last copy
     if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
       e.preventDefault()
-      props.sceneStore.pasteElements()
+      if (lastCopyKind() === 'keyframe' && props.store.hasKeyframeClipboard()) {
+        props.store.pasteKeyframes(props.store.currentTime())
+      } else {
+        props.sceneStore.pasteElements()
+      }
       return
     }
 

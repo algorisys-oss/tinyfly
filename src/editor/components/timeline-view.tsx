@@ -59,6 +59,18 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
     const keyframe = track.keyframes[index]
     if (!keyframe) return
 
+    // Ctrl/Cmd-click toggles the keyframe in the multi-selection (no drag).
+    if (e.ctrlKey || e.metaKey) {
+      props.store.toggleKeyframeSelection(track.id, index)
+      return
+    }
+
+    // Plain click on a keyframe that isn't already part of a multi-selection
+    // selects just it; then it can be dragged.
+    if (!props.store.isKeyframeSelected(track.id, index)) {
+      props.store.selectKeyframe(track.id, index)
+    }
+
     setDragState({
       trackId: track.id,
       keyframeIndex: index,
@@ -66,8 +78,6 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
       startTime: keyframe.time,
       currentTime: keyframe.time,
     })
-
-    props.store.selectKeyframe(track.id, index)
   }
 
   const handleMouseMove = (e: MouseEvent) => {
@@ -171,9 +181,7 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
                       <div
                         class="keyframe"
                         classList={{
-                          selected:
-                            props.store.state.selectedTrackId === track.id &&
-                            props.store.state.selectedKeyframeIndex === index(),
+                          selected: props.store.isKeyframeSelected(track.id, index()),
                           dragging: isDragging(),
                         }}
                         style={{

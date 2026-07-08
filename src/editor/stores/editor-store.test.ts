@@ -90,3 +90,89 @@ describe('applyPresetStaggered', () => {
     expect(startOf('b') - startOf('a')).toBe(60)
   })
 })
+
+describe('keyframe multi-select + copy/paste', () => {
+  function setupWithTrack() {
+    const { store, tracks } = setup()
+    store.addTrack({
+      id: 'trk',
+      target: 'box',
+      property: 'opacity',
+      keyframes: [
+        { time: 0, value: 0 },
+        { time: 500, value: 1 },
+        { time: 1000, value: 0 },
+      ],
+    })
+    return { store, tracks }
+  }
+
+  it('toggles keyframes in and out of the multi-selection', () => {
+    const { store } = setupWithTrack()
+    store.toggleKeyframeSelection('trk', 0)
+    store.toggleKeyframeSelection('trk', 2)
+    expect(store.state.selectedKeyframes).toEqual([
+      { trackId: 'trk', index: 0 },
+      { trackId: 'trk', index: 2 },
+    ])
+    expect(store.isKeyframeSelected('trk', 0)).toBe(true)
+    expect(store.isKeyframeSelected('trk', 1)).toBe(false)
+
+    store.toggleKeyframeSelection('trk', 0) // toggle off
+    expect(store.isKeyframeSelected('trk', 0)).toBe(false)
+    expect(store.state.selectedKeyframes).toHaveLength(1)
+  })
+
+  it('copies selected keyframes and pastes them at the playhead', () => {
+    const { store, tracks } = setupWithTrack()
+    store.selectKeyframes([
+      { trackId: 'trk', index: 0 },
+      { trackId: 'trk', index: 1 },
+    ])
+    expect(store.copySelectedKeyframes()).toBe(2)
+    expect(store.hasKeyframeClipboard()).toBe(true)
+
+    // Paste at 2000ms: earliest copied time is 0, so offset = 2000.
+    store.pasteKeyframes(2000)
+    const times = tracks()[0].keyframes.map((k) => k.time)
+    // Original 0/500/1000 plus pasted 2000/2500.
+    expect(times).toEqual([0, 500, 1000, 2000, 2500])
+  })
+
+  it('selects the pasted keyframes', () => {
+    const { store } = setupWithTrack()
+    store.selectKeyframes([{ trackId: 'trk', index: 1 }]) // time 500
+    store.copySelectedKeyframes()
+    store.pasteKeyframes(1000) // 500 -> 1000, merges next to existing 1000
+    // Two keyframes now sit at 1000ms; the pasted one is selected.
+    expect(store.state.selectedKeyframes).toHaveLength(1)
+  })
+
+  it('deletes all selected keyframes', () => {
+    const { store, tracks } = setupWithTrack()
+    store.selectKeyframes([
+      { trackId: 'trk', index: 0 },
+      { trackId: 'trk', index: 2 },
+    ])
+    expect(store.deleteSelectedKeyframes()).toBe(2)
+    expect(tracks()[0].keyframes.map((k) => k.time)).toEqual([500])
+    expect(store.state.selectedKeyframes).toHaveLength(0)
+  })
+
+  it('pastes onto multiple source tracks preserving relative timing', () => {
+    const { store, tracks } = setup()
+    store.addTrack({ id: 'a', target: 'x', property: 'x', keyframes: [{ time: 100, value: 0 }] })
+    store.addTrack({ id: 'b', target: 'y', property: 'y', keyframes: [{ time: 300, value: 0 }] })
+    store.selectKeyframes([
+      { trackId: 'a', index: 0 },
+      { trackId: 'b', index: 0 },
+    ])
+    store.copySelectedKeyframes()
+    // Earliest = 100; paste at 1000 -> offset 900. a:100->1000, b:300->1200.
+    store.pasteKeyframes(1000)
+    const a = tracks().find((t) => t.id === 'a')!.keyframes.map((k) => k.time)
+    const b = tracks().find((t) => t.id === 'b')!.keyframes.map((k) => k.time)
+    expect(a).toEqual([100, 1000])
+    expect(b).toEqual([300, 1200])
+  })
+})

@@ -43,6 +43,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 
 ### Visual Editor
 - **Timeline view** - Visual keyframe editing with drag-and-drop
+- **Multi-select keyframes** - Ctrl/Cmd-click to select many keyframes; copy/paste (at the playhead) and delete them together
 - **Property panel** - Edit keyframe values and easing
 - **Track management** - Add, remove, and organize animation tracks
 - **Per-letter stagger** - Toggle in the preset panel to split text and fan a preset across its letters
@@ -337,8 +338,8 @@ tinyfly/
 ### Coming Soon
 - [x] Multiple preview elements (shapes, images, text)
 - [x] More animatable properties (colors, borders, shadows)
-- [ ] Copy/paste keyframes
-- [ ] Multi-select keyframes
+- [x] Copy/paste keyframes
+- [x] Multi-select keyframes
 - [x] Visual curve editor for custom easing
 - [x] npm engine package + CDN player build (`npm run build:libs`)
 
@@ -376,7 +377,7 @@ npm run build
 - 500 tests passing
 - Core engine: 136 tests
 - Adapters: 87 tests (incl. clip/mask reveal, filters, shine across DOM/SVG/Canvas)
-- Editor stores: 147 tests (incl. split-text, staggered presets)
+- Editor stores: 158 tests (incl. split-text, staggered presets, keyframe copy/paste)
 - Split-text util: 8 tests
 - Typewriter builder: 9 tests
 - Letter-stagger sample (engine integration): 4 tests

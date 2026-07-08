@@ -243,9 +243,23 @@ Alternatively, with an element selected:
 
 Drag a keyframe diamond left or right to change its time. The keyframe snaps to the nearest millisecond on release.
 
-### Deleting Keyframes
+### Selecting Multiple Keyframes
 
-Select a keyframe and press **Delete**, or right-click and choose "Delete Keyframe".
+**Ctrl/Cmd-click** keyframes to add or remove them from a selection (across
+tracks). Selected keyframes are highlighted.
+
+### Copy, Paste & Delete Keyframes
+
+With one or more keyframes selected:
+
+- **Ctrl/Cmd+C** — copy the selected keyframes
+- **Ctrl/Cmd+V** — paste them starting at the playhead (relative timing between
+  copied keyframes is preserved; they return to their source tracks). The pasted
+  keyframes become the new selection.
+- **Delete / Backspace** — remove all selected keyframes
+
+Keyframe shortcuts take precedence while keyframes are selected; otherwise the
+same shortcuts act on selected elements.
 
 ### Easing Between Keyframes
 

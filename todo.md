@@ -225,7 +225,7 @@ wave, assemble, typewriter, shine/mask reveal, blur-in).
 
 ## Test Coverage
 
-- 514 tests passing
+- 519 tests passing
 - Easing functions: 48 tests
 - Interpolators: 21 tests
 - Clock: 19 tests

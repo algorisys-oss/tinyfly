@@ -12,10 +12,18 @@ import type {
 import { createHistoryStore } from './history-store'
 import { type AnimationPreset, resolvePresetKeyframe } from '../presets'
 
+/** A keyframe identified by its track and position. */
+export interface KeyframeRef {
+  trackId: string
+  index: number
+}
+
 export interface EditorState {
   timeline: Timeline | null
   selectedTrackId: string | null
   selectedKeyframeIndex: number | null
+  /** Multi-selection of keyframes (superset of the primary selection above). */
+  selectedKeyframes: KeyframeRef[]
   zoom: number
   scrollPosition: number
 }
@@ -24,8 +32,17 @@ const initialState: EditorState = {
   timeline: null,
   selectedTrackId: null,
   selectedKeyframeIndex: null,
+  selectedKeyframes: [],
   zoom: 1,
   scrollPosition: 0,
+}
+
+/** A keyframe copied to the clipboard, retaining its source track. */
+interface CopiedKeyframe {
+  trackId: string
+  time: number
+  value: AnimatableValue
+  easing?: EasingType
 }
 
 /**
@@ -42,6 +59,9 @@ export function createEditorStore() {
 
   // History for undo/redo
   const history = createHistoryStore<TimelineDefinition>()
+
+  // Clipboard for keyframe copy/paste (kept out of the reactive store)
+  const [keyframeClipboard, setKeyframeClipboard] = createSignal<CopiedKeyframe[]>([])
 
   // Bump version to trigger reactivity
   function bumpVersion() {
@@ -113,6 +133,9 @@ export function createEditorStore() {
     if (state.selectedTrackId === trackId) {
       setState('selectedTrackId', null)
       setState('selectedKeyframeIndex', null)
+    }
+    if (state.selectedKeyframes.some((k) => k.trackId === trackId)) {
+      setState('selectedKeyframes', state.selectedKeyframes.filter((k) => k.trackId !== trackId))
     }
   }
 
@@ -286,6 +309,129 @@ export function createEditorStore() {
   function selectKeyframe(trackId: string, keyframeIndex: number | null) {
     setState('selectedTrackId', trackId)
     setState('selectedKeyframeIndex', keyframeIndex)
+    setState('selectedKeyframes', keyframeIndex === null ? [] : [{ trackId, index: keyframeIndex }])
+  }
+
+  // Toggle a keyframe in the multi-selection (Ctrl/Cmd-click).
+  function toggleKeyframeSelection(trackId: string, keyframeIndex: number) {
+    const existing = state.selectedKeyframes
+    const at = existing.findIndex((k) => k.trackId === trackId && k.index === keyframeIndex)
+    if (at === -1) {
+      setState('selectedKeyframes', [...existing, { trackId, index: keyframeIndex }])
+      setState('selectedTrackId', trackId)
+      setState('selectedKeyframeIndex', keyframeIndex)
+    } else {
+      const next = existing.filter((_, i) => i !== at)
+      setState('selectedKeyframes', next)
+      const last = next[next.length - 1] ?? null
+      setState('selectedTrackId', last?.trackId ?? null)
+      setState('selectedKeyframeIndex', last?.index ?? null)
+    }
+  }
+
+  // Replace the multi-selection (e.g. after a box/rubber-band select).
+  function selectKeyframes(refs: KeyframeRef[]) {
+    setState('selectedKeyframes', [...refs])
+    const last = refs[refs.length - 1] ?? null
+    setState('selectedTrackId', last?.trackId ?? null)
+    setState('selectedKeyframeIndex', last?.index ?? null)
+  }
+
+  function isKeyframeSelected(trackId: string, keyframeIndex: number): boolean {
+    return state.selectedKeyframes.some((k) => k.trackId === trackId && k.index === keyframeIndex)
+  }
+
+  function clearKeyframeSelection() {
+    setState('selectedKeyframes', [])
+    setState('selectedKeyframeIndex', null)
+  }
+
+  // Copy the currently selected keyframes to the clipboard.
+  function copySelectedKeyframes(): number {
+    if (!state.timeline) return 0
+    const tracks = state.timeline.tracks
+    const copied: CopiedKeyframe[] = []
+    for (const ref of state.selectedKeyframes) {
+      const track = tracks.find((t) => t.id === ref.trackId)
+      const kf = track?.keyframes[ref.index]
+      if (track && kf) {
+        copied.push({ trackId: track.id, time: kf.time, value: kf.value, ...(kf.easing && { easing: kf.easing }) })
+      }
+    }
+    setKeyframeClipboard(copied)
+    return copied.length
+  }
+
+  function hasKeyframeClipboard(): boolean {
+    return keyframeClipboard().length > 0
+  }
+
+  // Paste clipboard keyframes back onto their source tracks, shifted so the
+  // earliest one lands at `atTime` (defaults to the current playhead).
+  function pasteKeyframes(atTime?: number): number {
+    if (!state.timeline) return 0
+    const clip = keyframeClipboard()
+    if (clip.length === 0) return 0
+
+    const earliest = Math.min(...clip.map((k) => k.time))
+    const offset = (atTime ?? currentTime()) - earliest
+
+    // Group new keyframes by their target track.
+    const byTrack = new Map<string, Keyframe[]>()
+    for (const k of clip) {
+      const list = byTrack.get(k.trackId) ?? []
+      list.push({ time: Math.max(0, Math.round(k.time + offset)), value: k.value, ...(k.easing && { easing: k.easing }) })
+      byTrack.set(k.trackId, list)
+    }
+
+    pushHistory()
+
+    const newSelection: KeyframeRef[] = []
+    for (const [trackId, additions] of byTrack) {
+      const track = state.timeline.tracks.find((t) => t.id === trackId)
+      if (!track) continue
+      const merged = [...track.keyframes, ...additions].sort((a, b) => a.time - b.time)
+      state.timeline.removeTrack(track.id)
+      state.timeline.addTrack(createTrack({ ...track, keyframes: merged }))
+      // Select the pasted keyframes by locating them post-sort.
+      for (const added of additions) {
+        const idx = merged.findIndex((kf) => kf === added)
+        if (idx !== -1) newSelection.push({ trackId, index: idx })
+      }
+    }
+
+    bumpVersion()
+    selectKeyframes(newSelection)
+    return clip.length
+  }
+
+  // Delete every keyframe in the multi-selection.
+  function deleteSelectedKeyframes(): number {
+    if (!state.timeline || state.selectedKeyframes.length === 0) return 0
+
+    // Group indices to remove per track.
+    const byTrack = new Map<string, Set<number>>()
+    for (const ref of state.selectedKeyframes) {
+      const set = byTrack.get(ref.trackId) ?? new Set<number>()
+      set.add(ref.index)
+      byTrack.set(ref.trackId, set)
+    }
+
+    pushHistory()
+
+    let removed = 0
+    for (const [trackId, indices] of byTrack) {
+      const track = state.timeline.tracks.find((t) => t.id === trackId)
+      if (!track) continue
+      const kept = track.keyframes.filter((_, i) => !indices.has(i))
+      removed += track.keyframes.length - kept.length
+      state.timeline.removeTrack(track.id)
+      state.timeline.addTrack(createTrack({ ...track, keyframes: kept }))
+    }
+
+    bumpVersion()
+    clearKeyframeSelection()
+    return removed
   }
 
   // Add keyframe to selected track
@@ -373,6 +519,10 @@ export function createEditorStore() {
 
     if (state.selectedKeyframeIndex === keyframeIndex) {
       setState('selectedKeyframeIndex', null)
+    }
+    // Indices shift on removal — drop the multi-selection to avoid stale refs.
+    if (state.selectedKeyframes.length > 0) {
+      setState('selectedKeyframes', [])
     }
   }
 
@@ -536,6 +686,14 @@ export function createEditorStore() {
 
     // Keyframe actions
     selectKeyframe,
+    toggleKeyframeSelection,
+    selectKeyframes,
+    isKeyframeSelected,
+    clearKeyframeSelection,
+    copySelectedKeyframes,
+    hasKeyframeClipboard,
+    pasteKeyframes,
+    deleteSelectedKeyframes,
     addKeyframe,
     updateKeyframe,
     removeKeyframe,
