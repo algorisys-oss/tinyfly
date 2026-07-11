@@ -4,6 +4,7 @@ import { DOMAdapter } from '../../adapters/dom'
 import { CanvasAdapter, type CanvasTarget } from '../../adapters/canvas'
 import { SVGAdapter } from '../../adapters/svg'
 import type { EditorStore } from '../stores/editor-store'
+import type { ProjectStore } from '../stores/project-store'
 import { fillToCss, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type GroupElement } from '../stores/scene-store'
 import { parsePathForEditing, buildPathString, updatePathPoint, getControlLines, type EditablePoint, type EditableCommand } from '../utils/path-editor'
 import { MediaSync, syncMediaElement } from '../../player/media-sync'
@@ -14,6 +15,7 @@ type RendererType = 'dom' | 'canvas' | 'svg'
 interface PreviewPanelProps {
   store: EditorStore
   sceneStore: SceneStore
+  projectStore: ProjectStore
 }
 
 interface DragState {
@@ -114,10 +116,12 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
   // the right thing.
   const [lastCopyKind, setLastCopyKind] = createSignal<'element' | 'keyframe'>('element')
 
-  // Scale the 300x200 stage up to fill the available preview area (fit-to-view).
-  // Pointer handlers divide client-space deltas by this so dragging stays exact.
-  const ARTBOARD_W = 300
-  const ARTBOARD_H = 200
+  // The artboard matches the project canvas so any aspect ratio (e.g. a vertical
+  // 9:16 promo) previews at its true proportions. The stage is fitted into the
+  // available preview area; pointer handlers divide client-space deltas by the
+  // resulting scale so dragging stays exact.
+  const artboardW = () => props.projectStore.currentProject().canvas.width
+  const artboardH = () => props.projectStore.currentProject().canvas.height
   const [previewScale, setPreviewScale] = createSignal(1)
   // Maximize expands the preview to fill the window so the stage can scale up.
   const [maximized, setMaximized] = createSignal(false)
@@ -126,9 +130,17 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     const availW = containerRef.clientWidth - 40 // container has 20px padding
     const availH = containerRef.clientHeight - 40
     if (availW <= 0 || availH <= 0) return
-    const s = Math.min(availW / ARTBOARD_W, availH / ARTBOARD_H)
-    setPreviewScale(Math.max(1, Math.min(8, s)))
+    const s = Math.min(availW / artboardW(), availH / artboardH())
+    // Allow scaling down (tall canvases) as well as up, within sane bounds.
+    setPreviewScale(Math.max(0.1, Math.min(8, s)))
   }
+  // Refit whenever the canvas dimensions change (e.g. loading a sample that
+  // declares its own aspect ratio).
+  createEffect(() => {
+    artboardW()
+    artboardH()
+    recomputeScale()
+  })
   const toggleMaximized = () => {
     setMaximized((m) => !m)
     // The container resizes; recompute after the layout/class settles.
@@ -1345,7 +1357,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
       <div class="preview-container" ref={containerRef} style={{ '--preview-scale': String(previewScale()) }}>
         {/* DOM Renderer */}
         <Show when={rendererType() === 'dom'}>
-          <div class="preview-canvas" ref={canvasRef} onClick={handleCanvasClick}>
+          <div class="preview-canvas" ref={canvasRef} onClick={handleCanvasClick} style={{ width: `${artboardW()}px`, height: `${artboardH()}px` }}>
           <For each={props.sceneStore.elements().filter((el) => !isGroupChild(el.id))}>
             {(element) => (
               <div
@@ -1765,7 +1777,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
 
         {/* Canvas Renderer */}
         <Show when={rendererType() === 'canvas'}>
-          <div class="preview-canvas preview-canvas-renderer">
+          <div class="preview-canvas preview-canvas-renderer" style={{ width: `${artboardW()}px`, height: `${artboardH()}px` }}>
             <canvas
               ref={(el) => {
                 canvas2dRef = el
@@ -1776,8 +1788,8 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
                   applyStateToRenderer()
                 }, 0)
               }}
-              width={300}
-              height={200}
+              width={artboardW()}
+              height={artboardH()}
               style={{ width: '100%', height: '100%' }}
             />
             <Show when={props.sceneStore.elements().length === 0}>
@@ -1792,7 +1804,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
 
         {/* SVG Renderer */}
         <Show when={rendererType() === 'svg'}>
-          <div class="preview-canvas preview-svg-renderer">
+          <div class="preview-canvas preview-svg-renderer" style={{ width: `${artboardW()}px`, height: `${artboardH()}px` }}>
             <svg
               ref={(el) => {
                 svgRef = el
@@ -1804,7 +1816,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
               }}
               width="100%"
               height="100%"
-              viewBox="0 0 300 200"
+              viewBox={`0 0 ${artboardW()} ${artboardH()}`}
               preserveAspectRatio="xMidYMid meet"
             >
               <For each={props.sceneStore.elements().filter((el) => !isGroupChild(el.id))}>

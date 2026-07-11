@@ -2,6 +2,7 @@ import { createSignal, For, Show } from 'solid-js'
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
 import type { SceneStore } from '../stores/scene-store'
+import type { ProjectStore } from '../stores/project-store'
 import type { MotionPathTrack } from '../../engine/types'
 import {
   sampleDefinitions,
@@ -25,6 +26,7 @@ function isMotionPathSampleTrack(track: unknown): track is Omit<MotionPathTrack,
 interface SamplesDialogProps {
   store: EditorStore
   sceneStore: SceneStore
+  projectStore: ProjectStore
   isOpen: boolean
   onClose: () => void
 }
@@ -44,6 +46,12 @@ export const SamplesDialog: Component<SamplesDialogProps> = (props) => {
     existingTracks.forEach((track) => {
       props.store.removeTrack(track.id)
     })
+
+    // Resize the canvas if the sample declares its own aspect ratio (e.g. a
+    // vertical 9:16 promo); otherwise keep the current canvas.
+    if (sample.canvas) {
+      props.projectStore.setCanvas({ ...sample.canvas })
+    }
 
     // Create new timeline
     props.store.createNewTimeline(sample.id, sample.name, { duration: sample.duration })

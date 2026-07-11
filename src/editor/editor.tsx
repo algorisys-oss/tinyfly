@@ -269,7 +269,7 @@ export const Editor: Component = () => {
 
         <div class="editor-center">
           <section class={`editor-preview ${sceneTransitionClass()}`}>
-            <PreviewPanel store={store} sceneStore={sceneStore} />
+            <PreviewPanel store={store} sceneStore={sceneStore} projectStore={projectStore} />
           </section>
 
           <section class="editor-controls">
@@ -329,6 +329,7 @@ export const Editor: Component = () => {
       <SamplesDialog
         store={store}
         sceneStore={sceneStore}
+        projectStore={projectStore}
         isOpen={showSamples()}
         onClose={() => setShowSamples(false)}
       />

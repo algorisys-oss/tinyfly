@@ -204,6 +204,9 @@ wave, assemble, typewriter, shine/mask reveal, blur-in).
 - [x] Per-letter stagger UI in the preset panel (toggle + delay control)
 - [x] Purpose-built letter presets: Drop & Bounce, Cascade Up, Wave, Assemble, Pop In
 - [x] "Letter Drop & Bounce" showcase sample (data-authored, plays anywhere)
+- [x] "Draw · Guess · Repeat" showcase sample — vertical app-promo beat (colour-swap scenes, staggered per-letter words, drawn underline)
+- [x] Canvas-aware preview — the preview artboard (DOM/Canvas/SVG) now sizes to the project canvas and refits, so non-default aspect ratios (e.g. vertical 9:16) render at true proportions
+- [x] Samples can declare their own `canvas` size; loading one resizes the project canvas (the promo sample loads as 360×640)
 - [x] Typewriter / character-by-character reveal (with blinking, stepping cursor)
 - [x] Timeline `setDuration` (auto-extends to fit generated effects)
 - [x] Clip/mask reveal — animatable clip-inset in DOM, SVG, and Canvas adapters
@@ -220,6 +223,16 @@ wave, assemble, typewriter, shine/mask reveal, blur-in).
 - [x] Audio/video sync (`MediaSync`, `player.attachMedia()`; exported from the player bundle)
 - [x] Documentation (getting started, editor guide, API reference, examples, in-app viewer)
 - [x] Example gallery (14 professional examples with DOM/Canvas renderer toggle)
+
+## Phase 24: 2D Animation (planned)
+
+Gap analysis vs a full Adobe Animate workflow and a phased plan — see
+[docs/2d-animation-roadmap.md](docs/2d-animation-roadmap.md). On-brand next steps:
+
+- [ ] Phase A — Symbols + Library (reusable instances, nested timelines; enables lip-sync-style swapping)
+- [ ] Phase B — Camera (animated pan/zoom/rotate), onion skinning, guides/grid/snapping
+- [ ] Phase C — Pen tool + polygon/star, shape-tween morph tooling, video/sprite-sheet export
+- [ ] Out of scope: bone/IK rigging, frame-by-frame drawing, natural-media brushes
 
 ---
 

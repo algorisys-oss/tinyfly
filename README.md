@@ -42,6 +42,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Media in embeds** - Exported/embedded HTML carries the media, and the player auto-discovers and syncs it (`[data-tinyfly-media]`), so audio/video play in time wherever the animation is embedded
 
 ### Visual Editor
+- **Any canvas / aspect ratio** - The preview artboard follows the project canvas (DOM, Canvas, and SVG renderers) and fits-to-view, so a vertical 9:16 promo or any custom size previews at true proportions; samples can declare their own canvas size
 - **Timeline view** - Visual keyframe editing with drag-and-drop
 - **Multi-select keyframes** - Ctrl/Cmd-click to select many keyframes; copy/paste (at the playhead) and delete them together
 - **Property panel** - Edit keyframe values and easing
@@ -64,6 +65,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - [API Reference](docs/api-reference.md) — Full engine, player, adapter, and export API documentation
 - [Examples](docs/examples.md) — Code examples for common animation patterns
 - [Deployment](docs/DEPLOYMENT.md) — Hosting, Docker, and CDN configuration
+- [2D Animation Roadmap](docs/2d-animation-roadmap.md) — Adobe Animate gap analysis and phased plan (symbols/library, camera, onion skinning, …)
 
 ## Installation
 

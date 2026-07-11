@@ -20,6 +20,8 @@ export interface SampleDefinition {
   thumbnail: string
   /** Animation duration in ms */
   duration: number
+  /** Optional canvas size; when set, loading the sample resizes the project canvas (e.g. a vertical 9:16 promo). Defaults to the current canvas. */
+  canvas?: { width: number; height: number }
   /** Scene elements to create */
   elements: Partial<SceneElement>[]
   /** Animation tracks (regular or motion path) */
@@ -115,9 +117,225 @@ function makeLetterDropBounce(
 }
 
 /**
+ * Build the "Draw · Guess · Repeat" kinetic-typography promo.
+ *
+ * Recreates the core beat of a vertical (9:16) app-promo video: a full-screen
+ * background that swaps colour per word, each word split into per-letter text
+ * elements that pop/drop in with a staggered overshoot, and a left-to-right
+ * "drawn" underline that writes on under each word. Authored purely as data
+ * (elements + keyframe tracks), so it plays on the DOM, Canvas, or SVG renderer
+ * and serialises like any other animation.
+ *
+ * Everything here uses cross-renderer properties (opacity, y, scale, rotate,
+ * fill, width). A true vector stroke write-on (SVG `path` + strokeDashoffset)
+ * is available too, but only animates on the SVG renderer, so this default demo
+ * uses a growing underline rect instead.
+ */
+function makeDrawGuessPromo(): SampleDefinition {
+  // Authored for a vertical 9:16 (360x640) canvas — the sample declares this
+  // size and loading it resizes the preview to match, just like a phone promo.
+  const W = 360
+  const H = 640
+  const SEG = 2000 // ms each word owns the screen
+  const OUT = 1450 // when a word starts exiting, within its segment
+  const stagger = 70
+  const fontSize = 62
+
+  const words = [
+    { text: 'DRAW', bg: '#f5c518', fill: '#1b1b1b', accent: '#1b1b1b' },
+    { text: 'LAUGH', bg: '#2f6bff', fill: '#ffffff', accent: '#ffe14d' },
+    { text: 'REPEAT', bg: '#18b866', fill: '#ffffff', accent: '#0c1b12' },
+  ]
+
+  const elements: Partial<SceneElement>[] = []
+  const tracks: SampleTrack[] = []
+
+  // Full-screen background that crossfades between each word's colour.
+  elements.push({
+    type: 'rect',
+    name: 'BG',
+    x: 0,
+    y: 0,
+    width: W,
+    height: H,
+    fill: words[0].bg,
+    stroke: 'transparent',
+    strokeWidth: 0,
+    borderRadius: 0,
+  })
+  const bgKfs = words.map((w, wi) => ({ time: wi * SEG, value: w.bg, easing: 'ease-in-out' as const }))
+  // Hold each colour until just before the next word, so the swap is a quick crossfade.
+  const bgHold = words.map((w, wi) => ({ time: wi * SEG + SEG - 180, value: w.bg }))
+  tracks.push({
+    target: 'BG',
+    property: 'fill',
+    keyframes: [bgKfs[0], bgHold[0], bgKfs[1], bgHold[1], bgKfs[2], bgHold[2]],
+  })
+
+  words.forEach((w, wi) => {
+    const t0 = wi * SEG
+    const chars = [...w.text]
+    const boxW = Math.round(fontSize * 0.66)
+    const wordW = chars.length * boxW
+    const startX = Math.round((W - wordW) / 2)
+    const boxH = Math.round(fontSize * 1.2)
+    const yTop = Math.round((H - boxH) / 2) - 12
+
+    chars.forEach((ch, ci) => {
+      const name = `w${wi}c${ci}`
+      elements.push({
+        type: 'text',
+        name,
+        text: ch,
+        x: startX + ci * boxW,
+        y: yTop,
+        width: boxW,
+        height: boxH,
+        fontSize,
+        fontWeight: 800,
+        fill: w.fill,
+        textAlign: 'center',
+      })
+
+      const s = t0 + ci * stagger // entrance start (staggered)
+      const hStart = s + 300 // wave begins once the letter has landed
+      const exitStart = t0 + OUT + ci * 45 // staggered slide-out
+      const exitEnd = exitStart + 340
+      const rot = ci % 2 === 0 ? -9 : 9
+
+      // Traveling wave during the hold — a per-letter phase offset makes the
+      // whole word ripple instead of sitting perfectly still.
+      const waveW = (2 * Math.PI) / 720
+      const amp = 8
+      const waveY = (t: number) => Number((amp * Math.sin(waveW * (t - hStart) + ci * 0.7)).toFixed(2))
+      const yWave = []
+      for (let t = hStart; t < exitStart; t += 110) {
+        yWave.push({ time: Math.round(t), value: waveY(t), easing: 'ease-in-out' as const })
+      }
+
+      // opacity: fade in, hold, fade out as it slides away
+      tracks.push({
+        target: name,
+        property: 'opacity',
+        keyframes: [
+          { time: t0, value: 0 },
+          { time: s, value: 0 },
+          { time: s + 140, value: 1, easing: 'ease-out' },
+          { time: exitStart, value: 1 },
+          { time: exitEnd, value: 0, easing: 'ease-in' },
+        ],
+      })
+      // scale: pop overshoot in, hold, shrink out
+      tracks.push({
+        target: name,
+        property: 'scale',
+        keyframes: [
+          { time: s, value: 0.35 },
+          { time: s + 170, value: 1.16, easing: 'ease-out' },
+          { time: s + 300, value: 1, easing: 'ease-in-out' },
+          { time: exitStart, value: 1 },
+          { time: exitEnd, value: 0.7, easing: 'ease-in' },
+        ],
+      })
+      // y: drop in, ride the traveling wave through the hold, ease back on exit
+      tracks.push({
+        target: name,
+        property: 'y',
+        keyframes: [
+          { time: s, value: -34 },
+          { time: s + 260, value: waveY(hStart), easing: 'ease-out' },
+          ...yWave,
+          { time: exitStart, value: waveY(exitStart), easing: 'ease-in-out' },
+          { time: exitEnd, value: 0, easing: 'ease-in' },
+        ],
+      })
+      // x: slide-through exit to the right
+      tracks.push({
+        target: name,
+        property: 'x',
+        keyframes: [
+          { time: exitStart, value: 0 },
+          { time: exitEnd, value: 260, easing: 'ease-in' },
+        ],
+      })
+      // rotate: wobble straight on entry, tumble as it leaves
+      tracks.push({
+        target: name,
+        property: 'rotate',
+        keyframes: [
+          { time: s, value: rot },
+          { time: s + 300, value: 0, easing: 'ease-out' },
+          { time: exitStart, value: 0 },
+          { time: exitEnd, value: ci % 2 === 0 ? -16 : 16, easing: 'ease-in' },
+        ],
+      })
+    })
+
+    // "Drawn" underline: a rect whose width writes on left-to-right once the
+    // letters have landed, then slides out with the word.
+    const ulName = `ul${wi}`
+    const ulY = yTop + boxH + 4
+    const drawStart = t0 + chars.length * stagger + 120
+    const ulExit = t0 + OUT
+    elements.push({
+      type: 'rect',
+      name: ulName,
+      x: startX,
+      y: ulY,
+      width: wordW,
+      height: 8,
+      fill: w.accent,
+      stroke: 'transparent',
+      strokeWidth: 0,
+      borderRadius: 4,
+    })
+    tracks.push({
+      target: ulName,
+      property: 'width',
+      keyframes: [
+        { time: t0, value: 0 },
+        { time: drawStart, value: 0 },
+        { time: drawStart + 320, value: wordW, easing: 'ease-out' },
+      ],
+    })
+    tracks.push({
+      target: ulName,
+      property: 'x',
+      keyframes: [
+        { time: ulExit, value: 0 },
+        { time: ulExit + 340, value: 260, easing: 'ease-in' },
+      ],
+    })
+    tracks.push({
+      target: ulName,
+      property: 'opacity',
+      keyframes: [
+        { time: t0, value: 0 },
+        { time: drawStart, value: 1 },
+        { time: ulExit, value: 1 },
+        { time: ulExit + 340, value: 0, easing: 'ease-in' },
+      ],
+    })
+  })
+
+  return {
+    id: 'draw-guess-promo',
+    name: 'Draw · Guess · Repeat',
+    description: 'Vertical app-promo beat: colour-swap scenes, per-letter words that pop in, ripple on a traveling wave, then slide out, with a drawn underline',
+    category: 'showcase',
+    thumbnail: '✏️',
+    duration: words.length * SEG,
+    canvas: { width: W, height: H },
+    elements,
+    tracks,
+  }
+}
+
+/**
  * All available sample animations
  */
 export const sampleDefinitions: SampleDefinition[] = [
+  makeDrawGuessPromo(),
   makeLetterDropBounce('WORLD', {
     id: 'letter-drop-bounce',
     name: 'Letter Drop & Bounce',

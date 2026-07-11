@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.10.0](v0.10.0.md) | 2026-07-11 | Canvas-aware preview (any aspect ratio, e.g. vertical 9:16) and a "Draw · Guess · Repeat" promo sample |
 | [v0.9.0](v0.9.0.md) | 2026-07-08 | Fit-to-view preview stage and a full-window Maximize mode |
 | [v0.8.0](v0.8.0.md) | 2026-07-08 | Keyframe multi-select, copy/paste, and batch delete |
 | [v0.7.0](v0.7.0.md) | 2026-07-08 | Video element and audio/video in embeds (player auto-syncs media) |
