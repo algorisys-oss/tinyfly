@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.14.0](v0.14.0.md) | 2026-07-11 | Video export composites image & video layers (device screens captured, seeked in sync) |
 | [v0.13.0](v0.13.0.md) | 2026-07-11 | Unified undo/redo across the timeline and scene elements (drags collapse to one step) |
 | [v0.12.0](v0.12.0.md) | 2026-07-11 | MP4/WebM video export, stroke write-on on the DOM renderer, and a resizable preview/timeline split |
 | [v0.11.0](v0.11.0.md) | 2026-07-11 | Device-frame preset (Phone/Landscape/Tablet with a rounded video screen) and a reload-button version chip |

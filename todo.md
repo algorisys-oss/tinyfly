@@ -212,6 +212,7 @@ wave, assemble, typewriter, shine/mask reveal, blur-in).
   - [x] Rounded screen corners — `borderRadius` on the Video element (preview + export)
 - [x] Version chip in the status bar restyled as an obvious reload button (pill + ⟳ icon, hover spin)
 - [x] MP4 / WebM video export — records the Canvas renderer via MediaRecorder (size/FPS/codec picker, progress); `exportToVideo` in the engine
+  - [x] Composite DOM-only layers (image + video) into the export — video frames are seeked in sync so a device screen's recording appears in the file
 - [x] SVG stroke "write-on" on the DOM renderer — animated `strokeDasharray`/`strokeDashoffset` bound on the path, plus a one-click "Write On" preset
 - [x] Resizable preview / timeline split — drag the splitter (double-click to reset)
 - [x] **Unified undo/redo** — history now snapshots the timeline AND the scene
@@ -249,6 +250,13 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
 
 ## Backlog / For Review
 
+- [ ] **Video export fidelity refinements** — the exported video composites
+  image/video layers now, but the Canvas draw path doesn't yet honour a video/
+  image `objectFit` (always fills the box) or a rounded-corner clip
+  (`borderRadius`), so a device screen's video won't show rounded corners or
+  cover-cropping in the exported file. Also, video sync uses per-frame seeking
+  (approximate for long clips) — consider play-based sync. Custom webfonts must
+  be loaded before export or Canvas falls back to a default face.
 - [ ] **IndexedDB persistence + animation library** — today projects auto-save to
   LocalStorage (single project). Move persistence to IndexedDB and add a
   document/animation list (like HappyPaint): browse saved animations, open one,

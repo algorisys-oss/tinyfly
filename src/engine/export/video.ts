@@ -55,8 +55,8 @@ export interface VideoExportOptions {
   mimeType?: string
   /** Solid colour painted behind every frame (default white). Pass `null` to keep transparent. */
   background?: string | null
-  /** Draw the animation at `timeMs` onto the given context (already cleared + background-filled). */
-  renderFrame: (ctx: CanvasRenderingContext2D, timeMs: number) => void
+  /** Draw the animation at `timeMs` onto the given context (already cleared + background-filled). May be async (e.g. to seek video frames). */
+  renderFrame: (ctx: CanvasRenderingContext2D, timeMs: number) => void | Promise<void>
   /** Progress callback, 0..1. */
   onProgress?: (fraction: number) => void
   /** Abort the export early. */
@@ -120,7 +120,7 @@ export async function exportToVideo(opts: VideoExportOptions): Promise<Blob> {
         ctx.fillStyle = background
         ctx.fillRect(0, 0, width, height)
       }
-      renderFrame(ctx, t)
+      await renderFrame(ctx, t)
       track?.requestFrame?.()
       opts.onProgress?.(i / totalFrames)
       await new Promise((r) => setTimeout(r, frameDuration))

@@ -56,7 +56,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Multi-scene sequencer** - Play all scenes in order with transitions
 - **Project management** - Auto-save to LocalStorage
 - **Export/Import** - JSON file support
-- **Video export** - Record the animation to an MP4/WebM file (via MediaRecorder) with a size, FPS, and codec picker
+- **Video export** - Record the animation to an MP4/WebM file (via MediaRecorder) with a size, FPS, and codec picker; composites image and video layers too (a device screen's recording is captured, seeked in sync)
 - **Resizable preview** - Drag the splitter between the preview and the timeline to resize (double-click to reset)
 - **Stroke write-on** - Animate a path's stroke drawing itself on (DOM + SVG renderers); one-click "Write On" preset
 - **Embed code** - Generate copy-paste code for websites (single scene or full sequence)

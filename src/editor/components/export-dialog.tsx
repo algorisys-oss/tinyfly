@@ -4,8 +4,7 @@ import type { EditorStore } from '../stores/editor-store'
 import type { SceneStore } from '../stores/scene-store'
 import type { ProjectStore } from '../stores/project-store'
 import { exportToCSS, exportToLottieJSON, exportToVideo, getSupportedVideoCodecs, downloadVideo } from '../../engine/export'
-import { CanvasAdapter } from '../../adapters/canvas'
-import { sceneElementToCanvasTarget } from '../utils/scene-to-canvas'
+import { buildExportComposite } from '../utils/export-composite'
 import './export-dialog.css'
 
 interface ExportDialogProps {
@@ -55,19 +54,12 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
     const scaleX = outW / canvas.width
     const scaleY = outH / canvas.height
 
-    // Build a canvas renderer over a snapshot of the current scene elements.
-    const adapter = new CanvasAdapter()
-    for (const element of props.sceneStore.elements()) {
-      const target = sceneElementToCanvasTarget(element)
-      if (target) {
-        adapter.registerTarget(element.name, target)
-        adapter.registerTarget(element.id, target, element.name)
-      }
-    }
-
     setVideoError('')
     setExporting(true)
     setProgress(0)
+    // Build a renderer that also composites image/video layers (device screens,
+    // screenshots) that the Canvas renderer skips on its own.
+    const composite = await buildExportComposite(props.sceneStore.elements())
     try {
       const codec = codecs.find((c) => c.mimeType === videoMime()) ?? codecs[0]
       const blob = await exportToVideo({
@@ -76,11 +68,12 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
         fps: videoFps(),
         durationMs: timeline.duration,
         mimeType: codec?.mimeType,
-        renderFrame: (ctx, t) => {
-          adapter.applyState(timeline.getStateAtTime(t))
+        renderFrame: async (ctx, t) => {
+          await composite.prepareFrame(t)
+          composite.adapter.applyState(timeline.getStateAtTime(t))
           ctx.save()
           ctx.scale(scaleX, scaleY)
-          adapter.render(ctx)
+          composite.adapter.render(ctx)
           ctx.restore()
         },
         onProgress: (f) => setProgress(f),
@@ -89,6 +82,7 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
     } catch (err) {
       setVideoError(err instanceof Error ? err.message : String(err))
     } finally {
+      composite.dispose()
       setExporting(false)
     }
   }
@@ -239,7 +233,7 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
                 <p>Export as animated GIF. Requires programmatic usage with canvas rendering.</p>
               )}
               {format() === 'video' && (
-                <p>Record the animation to an MP4/WebM video. Renders via the Canvas renderer, so shapes, text, lines, and paths are captured (video/image layers are DOM-only and won't appear).</p>
+                <p>Record the animation to an MP4/WebM video — shapes, text, paths, images, and video layers (e.g. a device screen) are all composited in. Video layers are seeked in sync with the timeline.</p>
               )}
             </div>
 
