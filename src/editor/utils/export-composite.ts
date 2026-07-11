@@ -118,6 +118,8 @@ export async function buildExportComposite(elements: SceneElement[]): Promise<Ex
 }
 
 function registerImageTarget(adapter: CanvasAdapter, el: SceneElement, image: CanvasImageSource) {
+  // Both image and video carry objectFit; only video carries a borderRadius.
+  const fitted = el as ImageElement | VideoElement
   const target: CanvasTarget = {
     type: 'image',
     x: el.x,
@@ -127,6 +129,8 @@ function registerImageTarget(adapter: CanvasAdapter, el: SceneElement, image: Ca
     opacity: el.opacity,
     rotate: el.rotation,
     image,
+    objectFit: fitted.objectFit,
+    borderRadius: el.type === 'video' ? (el as VideoElement).borderRadius : 0,
   }
   adapter.registerTarget(el.name, target)
   adapter.registerTarget(el.id, target, el.name)

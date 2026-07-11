@@ -250,13 +250,12 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
 
 ## Backlog / For Review
 
-- [ ] **Video export fidelity refinements** — the exported video composites
-  image/video layers now, but the Canvas draw path doesn't yet honour a video/
-  image `objectFit` (always fills the box) or a rounded-corner clip
-  (`borderRadius`), so a device screen's video won't show rounded corners or
-  cover-cropping in the exported file. Also, video sync uses per-frame seeking
-  (approximate for long clips) — consider play-based sync. Custom webfonts must
-  be loaded before export or Canvas falls back to a default face.
+- [x] **Video export fidelity** — the Canvas image/video draw path now honours
+  `objectFit` (cover/contain/fill) and a rounded-corner clip (`borderRadius`), so
+  a device screen's video exports with cover-cropping and rounded corners. Fonts
+  are awaited (`document.fonts.ready`) before export.
+  - [ ] Remaining: video sync uses per-frame seeking (approximate for long
+    clips) — consider play-based sync.
 - [ ] **IndexedDB persistence + animation library** — today projects auto-save to
   LocalStorage (single project). Move persistence to IndexedDB and add a
   document/animation list (like HappyPaint): browse saved animations, open one,

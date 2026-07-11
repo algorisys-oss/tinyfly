@@ -57,6 +57,10 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
     setVideoError('')
     setExporting(true)
     setProgress(0)
+    // Make sure any custom webfonts are loaded so Canvas text renders correctly.
+    if (typeof document !== 'undefined' && document.fonts?.ready) {
+      try { await document.fonts.ready } catch { /* ignore */ }
+    }
     // Build a renderer that also composites image/video layers (device screens,
     // screenshots) that the Canvas renderer skips on its own.
     const composite = await buildExportComposite(props.sceneStore.elements())

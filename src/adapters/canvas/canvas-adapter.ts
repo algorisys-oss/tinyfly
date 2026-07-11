@@ -116,6 +116,10 @@ export interface ImageTarget extends CanvasTargetBase {
   width: number
   height: number
   image: CanvasImageSource | null
+  /** How the source fits the box (default 'fill'). */
+  objectFit?: 'contain' | 'cover' | 'fill'
+  /** Rounded-corner clip radius in px (default 0). */
+  borderRadius?: number
 }
 
 /** Union of all canvas target types */
@@ -625,7 +629,37 @@ export class CanvasAdapter {
       ctx.globalAlpha = target.opacity
     }
 
-    ctx.drawImage(target.image, target.x, target.y, target.width, target.height)
+    const { x, y, width: bw, height: bh } = target
+    const fit = target.objectFit ?? 'fill'
+    const radius = target.borderRadius ?? 0
+
+    // Intrinsic source size (image / video / canvas), duck-typed to stay
+    // framework-agnostic.
+    const src = target.image as unknown as { naturalWidth?: number; videoWidth?: number; width?: number; naturalHeight?: number; videoHeight?: number; height?: number }
+    const iw = src.naturalWidth || src.videoWidth || src.width || bw
+    const ih = src.naturalHeight || src.videoHeight || src.height || bh
+
+    // Destination rect honouring object-fit (cover crops, contain letterboxes).
+    let dx = x, dy = y, dw = bw, dh = bh
+    if (fit !== 'fill' && iw > 0 && ih > 0) {
+      const scale = fit === 'cover' ? Math.max(bw / iw, bh / ih) : Math.min(bw / iw, bh / ih)
+      dw = iw * scale
+      dh = ih * scale
+      dx = x + (bw - dw) / 2
+      dy = y + (bh - dh) / 2
+    }
+
+    ctx.save()
+    // Clip to the (optionally rounded) box so cover-crop and rounded corners work.
+    ctx.beginPath()
+    if (radius > 0 && typeof (ctx as CanvasRenderingContext2D & { roundRect?: unknown }).roundRect === 'function') {
+      ctx.roundRect(x, y, bw, bh, radius)
+    } else {
+      ctx.rect(x, y, bw, bh)
+    }
+    ctx.clip()
+    ctx.drawImage(target.image, dx, dy, dw, dh)
+    ctx.restore()
   }
 
   /**

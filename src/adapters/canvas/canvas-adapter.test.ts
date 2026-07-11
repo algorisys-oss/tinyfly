@@ -582,3 +582,50 @@ function createMockState(
     loopIteration: 0,
   }
 }
+
+describe('CanvasAdapter image object-fit + rounded clip', () => {
+  function makeCtx() {
+    const calls: { drawImage: any[]; roundRect: any[]; rect: any[]; clip: number } = {
+      drawImage: [], roundRect: [], rect: [], clip: 0,
+    }
+    const ctx = {
+      save: vi.fn(), restore: vi.fn(), translate: vi.fn(), rotate: vi.fn(), scale: vi.fn(),
+      beginPath: vi.fn(),
+      globalAlpha: 1,
+      rect: vi.fn((...a: any[]) => calls.rect.push(a)),
+      roundRect: vi.fn((...a: any[]) => calls.roundRect.push(a)),
+      clip: vi.fn(() => { calls.clip++ }),
+      drawImage: vi.fn((...a: any[]) => calls.drawImage.push(a)),
+    } as unknown as CanvasRenderingContext2D
+    return { ctx, calls }
+  }
+  // A fake image with intrinsic 200x100.
+  const image = { naturalWidth: 200, naturalHeight: 100 } as unknown as CanvasImageSource
+
+  it('cover scales to fill the box and centre-crops', () => {
+    const adapter = new CanvasAdapter()
+    adapter.registerTarget('img', { type: 'image', x: 0, y: 0, width: 100, height: 100, image, objectFit: 'cover' } as CanvasTarget)
+    const { ctx, calls } = makeCtx()
+    adapter.render(ctx)
+    // scale = max(100/200,100/100)=1 -> 200x100 drawn, centred: dx=-50, dy=0
+    expect(calls.drawImage[0].slice(1)).toEqual([-50, 0, 200, 100])
+    expect(calls.clip).toBe(1)
+  })
+
+  it('contain scales to fit inside the box (letterbox)', () => {
+    const adapter = new CanvasAdapter()
+    adapter.registerTarget('img', { type: 'image', x: 0, y: 0, width: 100, height: 100, image, objectFit: 'contain' } as CanvasTarget)
+    const { ctx, calls } = makeCtx()
+    adapter.render(ctx)
+    // scale = min(0.5,1)=0.5 -> 100x50 drawn, centred: dx=0, dy=25
+    expect(calls.drawImage[0].slice(1)).toEqual([0, 25, 100, 50])
+  })
+
+  it('uses roundRect for a rounded clip', () => {
+    const adapter = new CanvasAdapter()
+    adapter.registerTarget('img', { type: 'image', x: 0, y: 0, width: 100, height: 100, image, borderRadius: 12 } as CanvasTarget)
+    const { ctx, calls } = makeCtx()
+    adapter.render(ctx)
+    expect(calls.roundRect[0]).toEqual([0, 0, 100, 100, 12])
+  })
+})
