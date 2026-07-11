@@ -1173,6 +1173,9 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
         const video = element as VideoElement
         base.background = 'transparent'
         base.overflow = 'hidden'
+        if (video.borderRadius) {
+          base['border-radius'] = `${video.borderRadius}px`
+        }
         if (!video.src) {
           base.background = '#222'
           base.border = '2px dashed #666'

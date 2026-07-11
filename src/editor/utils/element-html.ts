@@ -83,6 +83,7 @@ export function generateElementStyle(element: SceneElement): string {
       styles.push('background: transparent')
       styles.push('overflow: hidden')
       styles.push(`object-fit: ${video.objectFit}`)
+      if (video.borderRadius) styles.push(`border-radius: ${video.borderRadius}px`)
       break
     }
     case 'line':

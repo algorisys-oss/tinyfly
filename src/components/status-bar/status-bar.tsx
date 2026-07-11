@@ -17,21 +17,30 @@ export const StatusBar: Component<StatusBarProps> = (props) => {
   return (
     <div class="status-bar">
       <div class="status-bar-left">
-        <span
+        <button
+          type="button"
           class="status-bar-version"
-          role="button"
-          tabindex="0"
-          title="Click to hard reload the app"
+          title="Reload the app (fetches the latest build)"
+          aria-label={`Version ${__APP_VERSION__} — click to hard reload`}
           onClick={hardReload}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault()
-              hardReload()
-            }
-          }}
         >
-          v{__APP_VERSION__}
-        </span>
+          <svg
+            class="status-bar-version-icon"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+            <path d="M21 3v6h-6" />
+          </svg>
+          <span class="status-bar-version-label">v{__APP_VERSION__}</span>
+        </button>
         {props.leftContent}
       </div>
       <div class="status-bar-right">

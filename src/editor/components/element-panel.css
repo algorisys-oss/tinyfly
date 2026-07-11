@@ -61,6 +61,18 @@
   color: #fff;
 }
 
+.element-type-btn.preset {
+  background: rgba(74, 158, 255, 0.1);
+  border-color: rgba(74, 158, 255, 0.35);
+  color: #cfe6ff;
+}
+
+.element-type-btn.preset:hover {
+  background: rgba(74, 158, 255, 0.2);
+  border-color: rgba(74, 158, 255, 0.6);
+  color: #fff;
+}
+
 .element-type-icon {
   font-size: 18px;
   line-height: 1;

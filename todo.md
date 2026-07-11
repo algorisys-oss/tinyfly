@@ -207,6 +207,10 @@ wave, assemble, typewriter, shine/mask reveal, blur-in).
 - [x] "Draw · Guess · Repeat" showcase sample — vertical app-promo beat (colour-swap scenes, staggered per-letter words, drawn underline)
 - [x] Canvas-aware preview — the preview artboard (DOM/Canvas/SVG) now sizes to the project canvas and refits, so non-default aspect ratios (e.g. vertical 9:16) render at true proportions
 - [x] Samples can declare their own `canvas` size; loading one resizes the project canvas (the promo sample loads as 360×640)
+- [x] Device-frame preset — one-click phone mockup (body + rounded video screen + notch), canvas-aware sized and multi-selected; drop a screen-recording into the screen's `src`
+  - [x] Phone (portrait), Landscape, and Tablet variants
+  - [x] Rounded screen corners — `borderRadius` on the Video element (preview + export)
+- [x] Version chip in the status bar restyled as an obvious reload button (pill + ⟳ icon, hover spin)
 - [x] Typewriter / character-by-character reveal (with blinking, stepping cursor)
 - [x] Timeline `setDuration` (auto-extends to fit generated effects)
 - [x] Clip/mask reveal — animatable clip-inset in DOM, SVG, and Canvas adapters

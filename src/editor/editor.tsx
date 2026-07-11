@@ -263,7 +263,7 @@ export const Editor: Component = () => {
         />
 
         <aside class={`editor-sidebar editor-sidebar-left ${leftSidebarOpen() ? 'open' : ''}`}>
-          <ElementPanel sceneStore={sceneStore} />
+          <ElementPanel sceneStore={sceneStore} projectStore={projectStore} />
           <TrackPanel store={store} />
         </aside>
 

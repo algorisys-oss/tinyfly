@@ -1,11 +1,13 @@
 import { For, Show, createMemo } from 'solid-js'
 import type { Component } from 'solid-js'
-import type { SceneStore, ElementType, GroupElement } from '../stores/scene-store'
+import type { SceneStore, ElementType, GroupElement, DeviceVariant } from '../stores/scene-store'
+import type { ProjectStore } from '../stores/project-store'
 import { HelpIcon } from './tooltip'
 import './element-panel.css'
 
 interface ElementPanelProps {
   sceneStore: SceneStore
+  projectStore: ProjectStore
 }
 
 const ELEMENT_TYPES: { type: ElementType; icon: string; label: string }[] = [
@@ -32,6 +34,17 @@ export const ElementPanel: Component<ElementPanelProps> = (props) => {
       overrides.y2 = 100
     }
     props.sceneStore.addElement(type, overrides)
+  }
+
+  const handleAddDevice = (variant: DeviceVariant) => {
+    const canvas = props.projectStore.currentProject().canvas
+    props.sceneStore.addDeviceFrame({
+      variant,
+      centerX: canvas.width / 2,
+      centerY: canvas.height / 2,
+      canvasWidth: canvas.width,
+      canvasHeight: canvas.height,
+    })
   }
 
   const handleSelectElement = (elementId: string, e?: MouseEvent) => {
@@ -127,6 +140,34 @@ export const ElementPanel: Component<ElementPanelProps> = (props) => {
                 </button>
               )}
             </For>
+          </div>
+
+          <span class="section-label">Presets · Device</span>
+          <div class="element-type-buttons">
+            <button
+              class="element-type-btn preset"
+              onClick={() => handleAddDevice('phone')}
+              title="Phone mockup (portrait) with a video screen, sized to the canvas"
+            >
+              <span class="element-type-icon">📱</span>
+              <span class="element-type-label">Phone</span>
+            </button>
+            <button
+              class="element-type-btn preset"
+              onClick={() => handleAddDevice('landscape')}
+              title="Phone mockup (landscape) with a video screen, sized to the canvas"
+            >
+              <span class="element-type-icon">🖥</span>
+              <span class="element-type-label">Landscape</span>
+            </button>
+            <button
+              class="element-type-btn preset"
+              onClick={() => handleAddDevice('tablet')}
+              title="Tablet mockup with a video screen, sized to the canvas"
+            >
+              <span class="element-type-icon">▭</span>
+              <span class="element-type-label">Tablet</span>
+            </button>
           </div>
         </div>
 

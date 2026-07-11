@@ -17,22 +17,54 @@
 }
 
 .status-bar-version {
-  color: #4a9eff;
-  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  padding: 2px 9px;
+  font: inherit;
+  font-weight: 600;
+  line-height: 1;
+  color: #6ab0ff;
+  background: rgba(74, 158, 255, 0.12);
+  border: 1px solid rgba(74, 158, 255, 0.35);
+  border-radius: 999px;
   cursor: pointer;
   user-select: none;
-  transition: color 0.2s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .status-bar-version:hover {
-  color: #6ab0ff;
-  text-decoration: underline;
+  color: #cfe6ff;
+  background: rgba(74, 158, 255, 0.24);
+  border-color: rgba(74, 158, 255, 0.65);
+  box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.1);
+}
+
+.status-bar-version:active {
+  background: rgba(74, 158, 255, 0.34);
 }
 
 .status-bar-version:focus-visible {
-  outline: 1px solid #4a9eff;
+  outline: 2px solid #4a9eff;
   outline-offset: 2px;
-  border-radius: 2px;
+}
+
+.status-bar-version-icon {
+  flex: none;
+  transition: transform 0.4s ease;
+}
+
+.status-bar-version:hover .status-bar-version-icon {
+  transform: rotate(-180deg);
+}
+
+.status-bar-version:active .status-bar-version-icon {
+  transform: rotate(-360deg);
+}
+
+.status-bar-version-label {
+  letter-spacing: 0.2px;
 }
 
 .status-bar-right {

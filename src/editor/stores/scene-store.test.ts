@@ -67,6 +67,83 @@ describe('SceneStore', () => {
     })
   })
 
+  describe('addDeviceFrame', () => {
+    it('stamps a body, video screen, and notch, all multi-selected', () => {
+      const store = createSceneStore()
+
+      const [body, screen, notch] = store.addDeviceFrame({
+        centerX: 180,
+        centerY: 320,
+        canvasWidth: 360,
+        canvasHeight: 640,
+      })
+
+      expect(body.type).toBe('rect')
+      expect(body.name).toBe('Phone Body')
+      expect(screen.type).toBe('video')
+      expect(screen.name).toBe('Phone Screen')
+      expect((screen as VideoElement).objectFit).toBe('cover')
+      expect(notch.type).toBe('rect')
+      expect(notch.name).toBe('Notch')
+
+      // Screen has rounded corners.
+      expect((screen as VideoElement).borderRadius).toBeGreaterThan(0)
+
+      // All three added to the scene and multi-selected.
+      expect(store.elements()).toHaveLength(3)
+      expect(store.selectedElementIds()).toEqual([body.id, screen.id, notch.id])
+
+      // Screen sits inside the body (bezel inset on every side).
+      expect(screen.x).toBeGreaterThan(body.x)
+      expect(screen.y).toBeGreaterThan(body.y)
+      expect(screen.x + screen.width).toBeLessThan(body.x + body.width)
+      expect(screen.y + screen.height).toBeLessThan(body.y + body.height)
+    })
+
+    it('supports landscape and tablet variants', () => {
+      const store = createSceneStore()
+
+      const [landBody, , landCam] = store.addDeviceFrame({
+        variant: 'landscape',
+        centerX: 320,
+        centerY: 180,
+        canvasWidth: 640,
+        canvasHeight: 360,
+      })
+      // Landscape body is wider than tall, camera is a dot (circle).
+      expect(landBody.width).toBeGreaterThan(landBody.height)
+      expect(landCam.type).toBe('circle')
+      expect(landCam.name).toBe('Camera')
+
+      store.clearElements()
+
+      const [tabletBody] = store.addDeviceFrame({
+        variant: 'tablet',
+        centerX: 180,
+        centerY: 320,
+        canvasWidth: 360,
+        canvasHeight: 640,
+      })
+      expect(tabletBody.name).toBe('Tablet Body')
+      // Tablet is less elongated than a phone (wider aspect).
+      expect(tabletBody.width / tabletBody.height).toBeGreaterThan(0.49)
+    })
+
+    it('shrinks the body to fit a narrow canvas', () => {
+      const store = createSceneStore()
+
+      // A tall but narrow canvas forces the width-clamp branch.
+      const [body] = store.addDeviceFrame({
+        centerX: 50,
+        centerY: 300,
+        canvasWidth: 100,
+        canvasHeight: 600,
+      })
+
+      expect(body.width).toBeLessThanOrEqual(Math.ceil(100 * 0.92))
+    })
+  })
+
   describe('removeElement', () => {
     it('removes an element by id', () => {
       const store = createSceneStore()

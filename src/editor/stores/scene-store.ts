@@ -4,6 +4,9 @@ import { measureTextLetters } from '../utils/split-text'
 
 export type ElementType = 'rect' | 'circle' | 'text' | 'image' | 'audio' | 'video' | 'line' | 'arrow' | 'path' | 'group'
 
+/** Device-frame preset silhouettes. */
+export type DeviceVariant = 'phone' | 'landscape' | 'tablet'
+
 // Gradient types
 export interface GradientStop {
   offset: number // 0-1
@@ -150,6 +153,8 @@ export interface VideoElement extends BaseElement {
   src: string
   /** How the frame fits the element box. */
   objectFit: 'contain' | 'cover' | 'fill'
+  /** Corner radius in px (rounds the video frame, e.g. a device screen). */
+  borderRadius: number
   /** Volume 0..1. */
   volume: number
   /** Muted while previewing. */
@@ -340,6 +345,7 @@ const DEFAULT_VIDEO: Omit<VideoElement, 'id' | 'name'> = {
   locked: false,
   src: '',
   objectFit: 'contain',
+  borderRadius: 0,
   volume: 1,
   muted: false,
   loop: false,
@@ -447,6 +453,114 @@ export function createSceneStore() {
     bumpVersion()
 
     return element
+  }
+
+  /**
+   * Stamp a device mockup: a dark rounded body, a rounded video "screen" (drop
+   * your screen-recording in via its `src`), and a camera cutout. The three
+   * elements are created at the top level (video renders on the DOM target /
+   * export / player) and multi-selected so they can be moved or grouped as one.
+   *
+   * The `variant` picks the silhouette; sizing is derived from the canvas so the
+   * device fits whatever aspect ratio the project uses.
+   */
+  function addDeviceFrame(opts: {
+    variant?: DeviceVariant
+    centerX: number
+    centerY: number
+    canvasWidth: number
+    canvasHeight: number
+  }): SceneElement[] {
+    const variant = opts.variant ?? 'phone'
+    // Silhouette parameters per variant.
+    const spec = {
+      phone: { aspect: 0.49, cornerFactor: 0.16, notch: 'pill' as const, label: 'Phone' },
+      landscape: { aspect: 0.49, cornerFactor: 0.16, notch: 'dot' as const, label: 'Phone' },
+      tablet: { aspect: 0.72, cornerFactor: 0.06, notch: 'dot' as const, label: 'Tablet' },
+    }[variant]
+
+    // Long side fits the canvas dimension it runs along; then scale to fit both.
+    const landscape = variant === 'landscape'
+    const longMax = (landscape ? opts.canvasWidth : opts.canvasHeight) * 0.92
+    let longSide = Math.min(longMax, 640)
+    let shortSide = Math.round(longSide * spec.aspect)
+    let w = landscape ? Math.round(longSide) : shortSide
+    let h = landscape ? shortSide : Math.round(longSide)
+    const fit = Math.min(1, (opts.canvasWidth * 0.92) / w, (opts.canvasHeight * 0.92) / h)
+    w = Math.round(w * fit)
+    h = Math.round(h * fit)
+
+    const bx = Math.round(opts.centerX - w / 2)
+    const by = Math.round(opts.centerY - h / 2)
+    const minSide = Math.min(w, h)
+    const bezel = Math.max(5, Math.round(minSide * 0.05))
+    const bodyRadius = Math.round(minSide * spec.cornerFactor)
+    const screenRadius = Math.max(2, bodyRadius - Math.round(bezel * 0.7))
+
+    const body = addElement('rect', {
+      name: `${spec.label} Body`,
+      x: bx,
+      y: by,
+      width: w,
+      height: h,
+      fill: '#0b0b0f',
+      stroke: '#2a2a33',
+      strokeWidth: 2,
+      borderRadius: bodyRadius,
+    })
+
+    const sx = bx + bezel
+    const sy = by + bezel
+    const screen = addElement('video', {
+      name: `${spec.label} Screen`,
+      x: sx,
+      y: sy,
+      width: w - bezel * 2,
+      height: h - bezel * 2,
+      objectFit: 'cover',
+      borderRadius: screenRadius,
+      muted: true,
+      loop: true,
+    })
+
+    // Camera: a wide pill notch for a portrait phone, otherwise a small dot.
+    let camera: SceneElement
+    if (spec.notch === 'pill') {
+      const nw = Math.round(w * 0.36)
+      const nh = Math.max(10, Math.round(bezel * 1.5))
+      camera = addElement('rect', {
+        name: 'Notch',
+        x: Math.round(opts.centerX - nw / 2),
+        y: sy + 3,
+        width: nw,
+        height: nh,
+        fill: '#0b0b0f',
+        stroke: 'transparent',
+        strokeWidth: 0,
+        borderRadius: Math.round(nh / 2),
+      })
+    } else {
+      const d = Math.max(5, Math.round(bezel * 0.8))
+      // Landscape front camera sits on the left short edge; else top-centre.
+      const cx = landscape ? bx + Math.round(bezel / 2) + d / 2 : opts.centerX
+      const cy = landscape ? opts.centerY : by + Math.round(bezel / 2) + d / 2
+      camera = addElement('circle', {
+        name: 'Camera',
+        x: Math.round(cx - d / 2),
+        y: Math.round(cy - d / 2),
+        width: d,
+        height: d,
+        fill: '#1c1c22',
+        stroke: 'transparent',
+        strokeWidth: 0,
+      })
+    }
+
+    setState('selectedElementId', screen.id)
+    setState('selectedElementIds', [body.id, screen.id, camera.id])
+    bumpVersion()
+
+    return [body, screen, camera]
   }
 
   /**
@@ -889,6 +1003,7 @@ export function createSceneStore() {
 
     // Actions
     addElement,
+    addDeviceFrame,
     removeElement,
     updateElement,
     selectElement,
