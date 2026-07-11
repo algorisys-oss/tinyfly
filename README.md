@@ -56,6 +56,9 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Multi-scene sequencer** - Play all scenes in order with transitions
 - **Project management** - Auto-save to LocalStorage
 - **Export/Import** - JSON file support
+- **Video export** - Record the animation to an MP4/WebM file (via MediaRecorder) with a size, FPS, and codec picker
+- **Resizable preview** - Drag the splitter between the preview and the timeline to resize (double-click to reset)
+- **Stroke write-on** - Animate a path's stroke drawing itself on (DOM + SVG renderers); one-click "Write On" preset
 - **Embed code** - Generate copy-paste code for websites (single scene or full sequence)
 - **Sample library** - One-click starter animations across Basic, Motion, Text, UI, Effects, Showcase, and **Algorisys** product-showcase categories (viral infographic demos for TinyFly, YappyDraw, HappyPaint, ProPeak, SkillzEngine, and the full ecosystem)
 

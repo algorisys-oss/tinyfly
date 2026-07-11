@@ -196,7 +196,31 @@
 .editor-timeline {
   flex-shrink: 0;
   height: 200px;
-  min-height: 150px;
+  min-height: 120px;
+}
+
+/* Draggable splitter between the preview and the timeline. */
+.editor-vsplit {
+  flex-shrink: 0;
+  height: 10px;
+  margin: -8px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: row-resize;
+  touch-action: none;
+}
+
+.editor-vsplit-grip {
+  width: 44px;
+  height: 4px;
+  border-radius: 999px;
+  background: #333;
+  transition: background 0.15s ease;
+}
+
+.editor-vsplit:hover .editor-vsplit-grip {
+  background: #4a9eff;
 }
 
 /* Mobile sidebar toggle buttons */

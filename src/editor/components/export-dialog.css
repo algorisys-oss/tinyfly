@@ -163,6 +163,45 @@
   border-color: #4a9eff;
 }
 
+.export-option-row select {
+  padding: 6px 8px;
+  background: #252525;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 12px;
+}
+
+.export-video-panel {
+  padding: 12px 0;
+}
+
+.export-progress {
+  height: 8px;
+  background: #252525;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.export-progress-bar {
+  height: 100%;
+  background: #4a9eff;
+  border-radius: 999px;
+  transition: width 0.1s linear;
+}
+
+.export-video-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #888;
+}
+
+.export-video-unsupported {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #ff6b6b;
+}
+
 .export-code-container {
   background: #0d0d0d;
   border: 1px solid #333;

@@ -2,9 +2,10 @@ import { For, Show, createSignal } from 'solid-js'
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
 import type { SceneStore } from '../stores/scene-store'
-import type { TextElement } from '../stores/scene-store'
+import type { TextElement, PathElement } from '../stores/scene-store'
 import { presetsByCategory, type AnimationPreset } from '../presets'
 import { buildTypewriter, type TypewriterLetter, type TypewriterCursor } from '../utils/build-typewriter'
+import { getPathLength } from '../../engine/path'
 import { HelpIcon } from './tooltip'
 import './preset-panel.css'
 
@@ -89,6 +90,47 @@ export const PresetPanel: Component<PresetPanelProps> = (props) => {
     }
 
     setAppliedMessage(`Typewriter applied to ${letters.length} letters`)
+    setTimeout(() => setAppliedMessage(null), 2000)
+  }
+
+  // Write-on (stroke draw) operates on a single path element.
+  const canWriteOn = () => {
+    const el = selectedElement()
+    return !!el && el.type === 'path' && props.sceneStore.selectedElementIds().length <= 1
+  }
+
+  const [writeOnMs, setWriteOnMs] = createSignal(900)
+
+  const handleWriteOn = () => {
+    const element = selectedElement()
+    if (!element || element.type !== 'path') return
+    const path = element as PathElement
+    const length = Math.max(1, Math.round(getPathLength(path.d)))
+    const duration = writeOnMs()
+
+    // stroke-dasharray = full length; stroke-dashoffset animates length -> 0 so
+    // the stroke "draws" itself on. The DOM/SVG renderers both honour these.
+    props.store.addTracks([
+      {
+        target: element.name,
+        property: 'strokeDasharray',
+        keyframes: [{ time: 0, value: length }],
+      },
+      {
+        target: element.name,
+        property: 'strokeDashoffset',
+        keyframes: [
+          { time: 0, value: length },
+          { time: duration, value: 0, easing: 'ease-out' },
+        ],
+      },
+    ])
+
+    if (duration > props.store.duration()) {
+      props.store.setDuration(Math.ceil(duration))
+    }
+
+    setAppliedMessage('Write-on applied')
     setTimeout(() => setAppliedMessage(null), 2000)
   }
 
@@ -236,6 +278,35 @@ export const PresetPanel: Component<PresetPanelProps> = (props) => {
               </div>
               <button class="preset-typewriter-btn" onClick={handleTypewriter}>
                 Apply Typewriter
+              </button>
+            </div>
+          </Show>
+
+          <Show when={canWriteOn()}>
+            <div class="preset-typewriter">
+              <div class="preset-typewriter-title">
+                <span>Write On</span>
+                <HelpIcon
+                  content="Draws the path's stroke on, as if hand-drawn, by animating stroke-dashoffset from the full length to zero. Works on the DOM and SVG renderers; the timeline extends to fit."
+                  position="left"
+                />
+              </div>
+              <div class="preset-typewriter-controls">
+                <label class="preset-typewriter-speed">
+                  <span>Duration</span>
+                  <input
+                    type="number"
+                    min="100"
+                    max="10000"
+                    step="50"
+                    value={writeOnMs()}
+                    onInput={(e) => setWriteOnMs(Math.max(100, Number(e.currentTarget.value) || 0))}
+                  />
+                  <span class="preset-stagger-unit">ms</span>
+                </label>
+              </div>
+              <button class="preset-typewriter-btn" onClick={handleWriteOn}>
+                Apply Write-On
               </button>
             </div>
           </Show>

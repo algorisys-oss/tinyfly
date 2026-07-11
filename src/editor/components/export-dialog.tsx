@@ -1,19 +1,23 @@
-import { createSignal, createMemo, Show } from 'solid-js'
+import { createSignal, createMemo, Show, For } from 'solid-js'
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
 import type { SceneStore } from '../stores/scene-store'
-import { exportToCSS, exportToLottieJSON } from '../../engine/export'
+import type { ProjectStore } from '../stores/project-store'
+import { exportToCSS, exportToLottieJSON, exportToVideo, getSupportedVideoCodecs, downloadVideo } from '../../engine/export'
+import { CanvasAdapter } from '../../adapters/canvas'
+import { sceneElementToCanvasTarget } from '../utils/scene-to-canvas'
 import './export-dialog.css'
 
 interface ExportDialogProps {
   store: EditorStore
   sceneStore: SceneStore
+  projectStore: ProjectStore
   isOpen: boolean
   onClose: () => void
   sceneName?: string
 }
 
-type ExportFormat = 'css' | 'lottie' | 'gif'
+type ExportFormat = 'css' | 'lottie' | 'gif' | 'video'
 
 export const ExportDialog: Component<ExportDialogProps> = (props) => {
   const [format, setFormat] = createSignal<ExportFormat>('css')
@@ -22,6 +26,72 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
   const [lottieWidth, setLottieWidth] = createSignal(512)
   const [lottieHeight, setLottieHeight] = createSignal(512)
   const [lottieFrameRate, setLottieFrameRate] = createSignal(60)
+
+  // Video export
+  const codecs = getSupportedVideoCodecs()
+  const [videoWidth, setVideoWidth] = createSignal(0)
+  const [videoHeight, setVideoHeight] = createSignal(0)
+  const [videoFps, setVideoFps] = createSignal(30)
+  const [videoMime, setVideoMime] = createSignal(codecs[0]?.mimeType ?? '')
+  const [exporting, setExporting] = createSignal(false)
+  const [progress, setProgress] = createSignal(0)
+  const [videoError, setVideoError] = createSignal('')
+
+  // Default the video size to the project canvas the first time the tab is opened.
+  const ensureVideoSize = () => {
+    if (videoWidth() === 0 || videoHeight() === 0) {
+      const canvas = props.projectStore.currentProject().canvas
+      setVideoWidth(canvas.width)
+      setVideoHeight(canvas.height)
+    }
+  }
+
+  const handleExportVideo = async () => {
+    const timeline = props.store.state.timeline
+    if (!timeline || exporting()) return
+    const canvas = props.projectStore.currentProject().canvas
+    const outW = videoWidth() || canvas.width
+    const outH = videoHeight() || canvas.height
+    const scaleX = outW / canvas.width
+    const scaleY = outH / canvas.height
+
+    // Build a canvas renderer over a snapshot of the current scene elements.
+    const adapter = new CanvasAdapter()
+    for (const element of props.sceneStore.elements()) {
+      const target = sceneElementToCanvasTarget(element)
+      if (target) {
+        adapter.registerTarget(element.name, target)
+        adapter.registerTarget(element.id, target, element.name)
+      }
+    }
+
+    setVideoError('')
+    setExporting(true)
+    setProgress(0)
+    try {
+      const codec = codecs.find((c) => c.mimeType === videoMime()) ?? codecs[0]
+      const blob = await exportToVideo({
+        width: outW,
+        height: outH,
+        fps: videoFps(),
+        durationMs: timeline.duration,
+        mimeType: codec?.mimeType,
+        renderFrame: (ctx, t) => {
+          adapter.applyState(timeline.getStateAtTime(t))
+          ctx.save()
+          ctx.scale(scaleX, scaleY)
+          adapter.render(ctx)
+          ctx.restore()
+        },
+        onProgress: (f) => setProgress(f),
+      })
+      downloadVideo(blob, `${(timeline.name || 'animation').replace(/\s+/g, '-').toLowerCase()}.${codec?.extension ?? 'webm'}`)
+    } catch (err) {
+      setVideoError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setExporting(false)
+    }
+  }
 
   const cssOutput = createMemo(() => {
     const timeline = props.store.state.timeline
@@ -146,6 +216,16 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
                 </svg>
                 GIF
               </button>
+              <button
+                class="export-format-btn"
+                classList={{ active: format() === 'video' }}
+                onClick={() => { setFormat('video'); ensureVideoSize() }}
+              >
+                <svg viewBox="0 0 24 24" width="20" height="20">
+                  <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z" fill="currentColor"/>
+                </svg>
+                Video
+              </button>
             </div>
 
             <div class="export-description">
@@ -157,6 +237,9 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
               )}
               {format() === 'gif' && (
                 <p>Export as animated GIF. Requires programmatic usage with canvas rendering.</p>
+              )}
+              {format() === 'video' && (
+                <p>Record the animation to an MP4/WebM video. Renders via the Canvas renderer, so shapes, text, lines, and paths are captured (video/image layers are DOM-only and won't appear).</p>
               )}
             </div>
 
@@ -201,19 +284,89 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
                   </label>
                 </div>
               )}
+
+              {format() === 'video' && (
+                <div class="export-option-row">
+                  <label>
+                    Width:
+                    <input
+                      type="number"
+                      value={videoWidth()}
+                      disabled={exporting()}
+                      onChange={(e) => setVideoWidth(parseInt(e.target.value) || 0)}
+                    />
+                  </label>
+                  <label>
+                    Height:
+                    <input
+                      type="number"
+                      value={videoHeight()}
+                      disabled={exporting()}
+                      onChange={(e) => setVideoHeight(parseInt(e.target.value) || 0)}
+                    />
+                  </label>
+                  <label>
+                    FPS:
+                    <input
+                      type="number"
+                      value={videoFps()}
+                      disabled={exporting()}
+                      onChange={(e) => setVideoFps(parseInt(e.target.value) || 30)}
+                    />
+                  </label>
+                  <Show when={codecs.length > 0}>
+                    <label>
+                      Format:
+                      <select value={videoMime()} disabled={exporting()} onChange={(e) => setVideoMime(e.currentTarget.value)}>
+                        <For each={codecs}>
+                          {(c) => <option value={c.mimeType}>{c.label}</option>}
+                        </For>
+                      </select>
+                    </label>
+                  </Show>
+                </div>
+              )}
             </div>
 
-            <div class="export-code-container">
-              <pre class="export-code">{currentOutput()}</pre>
-            </div>
+            <Show when={format() === 'css' || format() === 'lottie'}>
+              <div class="export-code-container">
+                <pre class="export-code">{currentOutput()}</pre>
+              </div>
+            </Show>
+
+            <Show when={format() === 'video'}>
+              <div class="export-video-panel">
+                <Show when={codecs.length === 0}>
+                  <p class="export-video-unsupported">This browser can't record video (MediaRecorder unavailable). Try Chrome or Edge.</p>
+                </Show>
+                <Show when={exporting()}>
+                  <div class="export-progress">
+                    <div class="export-progress-bar" style={{ width: `${Math.round(progress() * 100)}%` }} />
+                  </div>
+                  <p class="export-video-hint">Recording… {Math.round(progress() * 100)}% (plays through in real time)</p>
+                </Show>
+                <Show when={videoError()}>
+                  <p class="export-video-unsupported">{videoError()}</p>
+                </Show>
+              </div>
+            </Show>
 
             <div class="export-actions">
-              <Show when={format() !== 'gif'}>
+              <Show when={format() === 'css' || format() === 'lottie'}>
                 <button class="export-btn export-btn-primary" onClick={handleCopy}>
                   {copied() ? 'Copied!' : 'Copy'}
                 </button>
                 <button class="export-btn" onClick={handleDownload}>
                   Download
+                </button>
+              </Show>
+              <Show when={format() === 'video'}>
+                <button
+                  class="export-btn export-btn-primary"
+                  disabled={exporting() || codecs.length === 0}
+                  onClick={handleExportVideo}
+                >
+                  {exporting() ? 'Recording…' : 'Export Video'}
                 </button>
               </Show>
               <Show when={format() === 'gif'}>
@@ -258,6 +411,13 @@ exportToGIF(timeline, {
                   <li>Import the exportToGIF function</li>
                   <li>Provide a renderFrame callback that draws to canvas</li>
                   <li>The function returns a Promise with the GIF Blob</li>
+                </ol>
+              )}
+              {format() === 'video' && (
+                <ol>
+                  <li>Pick a size (defaults to the canvas), FPS, and format</li>
+                  <li>Click <strong>Export Video</strong> — the animation plays through once while recording</li>
+                  <li>The file downloads when recording finishes</li>
                 </ol>
               )}
             </div>

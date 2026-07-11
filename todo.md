@@ -211,6 +211,9 @@ wave, assemble, typewriter, shine/mask reveal, blur-in).
   - [x] Phone (portrait), Landscape, and Tablet variants
   - [x] Rounded screen corners — `borderRadius` on the Video element (preview + export)
 - [x] Version chip in the status bar restyled as an obvious reload button (pill + ⟳ icon, hover spin)
+- [x] MP4 / WebM video export — records the Canvas renderer via MediaRecorder (size/FPS/codec picker, progress); `exportToVideo` in the engine
+- [x] SVG stroke "write-on" on the DOM renderer — animated `strokeDasharray`/`strokeDashoffset` bound on the path, plus a one-click "Write On" preset
+- [x] Resizable preview / timeline split — drag the splitter (double-click to reset)
 - [x] Typewriter / character-by-character reveal (with blinking, stepping cursor)
 - [x] Timeline `setDuration` (auto-extends to fit generated effects)
 - [x] Clip/mask reveal — animatable clip-inset in DOM, SVG, and Canvas adapters

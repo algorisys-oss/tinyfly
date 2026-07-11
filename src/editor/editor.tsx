@@ -34,6 +34,30 @@ export const Editor: Component = () => {
   const [showSamples, setShowSamples] = createSignal(false)
   const [showShortcuts, setShowShortcuts] = createSignal(false)
 
+  // Resizable split between the preview (flex:1) and the timeline. Dragging the
+  // splitter changes the timeline height, so the preview grows/shrinks inversely.
+  const [timelineHeight, setTimelineHeight] = createSignal(200)
+  const startPreviewResize = (e: PointerEvent) => {
+    e.preventDefault()
+    const startY = e.clientY
+    const startHeight = timelineHeight()
+    const onMove = (ev: PointerEvent) => {
+      // Drag up → timeline grows (preview shrinks); drag down → preview grows.
+      const next = startHeight - (ev.clientY - startY)
+      setTimelineHeight(Math.max(120, Math.min(560, next)))
+    }
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    document.body.style.cursor = 'row-resize'
+    document.body.style.userSelect = 'none'
+  }
+
   // Guard to prevent auto-save during scene switching
   let isSwitchingScene = false
 
@@ -276,7 +300,16 @@ export const Editor: Component = () => {
             <PlaybackControls store={store} />
           </section>
 
-          <section class="editor-timeline">
+          <div
+            class="editor-vsplit"
+            title="Drag to resize the preview"
+            onPointerDown={startPreviewResize}
+            onDblClick={() => setTimelineHeight(200)}
+          >
+            <span class="editor-vsplit-grip" />
+          </div>
+
+          <section class="editor-timeline" style={{ height: `${timelineHeight()}px` }}>
             <TimelineView store={store} />
           </section>
         </div>
@@ -321,6 +354,7 @@ export const Editor: Component = () => {
       <ExportDialog
         store={store}
         sceneStore={sceneStore}
+        projectStore={projectStore}
         isOpen={showExportAs()}
         onClose={() => setShowExportAs(false)}
         sceneName={projectStore.getActiveScene().name}

@@ -7,6 +7,7 @@ import type { EditorStore } from '../stores/editor-store'
 import type { ProjectStore } from '../stores/project-store'
 import { fillToCss, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type GroupElement } from '../stores/scene-store'
 import { parsePathForEditing, buildPathString, updatePathPoint, getControlLines, type EditablePoint, type EditableCommand } from '../utils/path-editor'
+import { sceneElementToCanvasTarget } from '../utils/scene-to-canvas'
 import { MediaSync, syncMediaElement } from '../../player/media-sync'
 import './preview-panel.css'
 
@@ -225,82 +226,6 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
         svgAdapter!.registerTarget(element.id, el)
       }
     })
-  }
-
-  // Convert scene element to canvas target
-  const sceneElementToCanvasTarget = (element: SceneElement): CanvasTarget | null => {
-    const base = {
-      x: element.x,
-      y: element.y,
-      opacity: element.opacity,
-      rotate: element.rotation,
-    }
-
-    switch (element.type) {
-      case 'rect': {
-        const rect = element as RectElement
-        return {
-          ...base,
-          type: 'rect',
-          width: rect.width,
-          height: rect.height,
-          fillStyle: typeof rect.fill === 'string' ? rect.fill : undefined,
-          strokeStyle: rect.stroke,
-          lineWidth: rect.strokeWidth,
-          borderRadius: rect.borderRadius,
-        }
-      }
-      case 'circle': {
-        const circle = element as CircleElement
-        return {
-          ...base,
-          type: 'circle',
-          x: circle.x + circle.width / 2,
-          y: circle.y + circle.height / 2,
-          radius: Math.min(circle.width, circle.height) / 2,
-          fillStyle: typeof circle.fill === 'string' ? circle.fill : undefined,
-          strokeStyle: circle.stroke,
-          lineWidth: circle.strokeWidth,
-        }
-      }
-      case 'text': {
-        const text = element as TextElement
-        return {
-          ...base,
-          type: 'text',
-          text: text.text,
-          fontSize: text.fontSize,
-          fontFamily: text.fontFamily,
-          fontWeight: text.fontWeight,
-          fillStyle: typeof text.fill === 'string' ? text.fill : undefined,
-        }
-      }
-      case 'line': {
-        const line = element as LineElement
-        return {
-          ...base,
-          type: 'line',
-          x2: line.x2,
-          y2: line.y2,
-          strokeStyle: line.stroke,
-          lineWidth: line.strokeWidth,
-          lineCap: line.lineCap as CanvasLineCap,
-        }
-      }
-      case 'path': {
-        const path = element as PathElement
-        return {
-          ...base,
-          type: 'path',
-          d: path.d,
-          fillStyle: typeof path.fill === 'string' ? path.fill : undefined,
-          strokeStyle: path.stroke,
-          lineWidth: path.strokeWidth,
-        }
-      }
-      default:
-        return null
-    }
   }
 
   // Render canvas elements (call after registering or updating)
@@ -1466,6 +1391,18 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
                     // For SVG paths, we need a string fill value
                     // If fill is a gradient object, fall back to 'transparent'
                     const svgFill = typeof pathEl.fill === 'string' ? pathEl.fill : 'transparent'
+                    // Animated stroke dash (write-on): the DOM adapter styles the
+                    // wrapping div, so the dash props are bound here on the <path>
+                    // itself, read from the timeline at the current time.
+                    const strokeDash = createMemo(() => {
+                      props.store.tracks() // recompute when tracks are added/removed
+                      const tl = props.store.state.timeline
+                      const vals = tl?.getStateAtTime(props.store.currentTime()).values.get(element.name)
+                      return {
+                        dasharray: vals?.get('strokeDasharray') as number | undefined,
+                        dashoffset: vals?.get('strokeDashoffset') as number | undefined,
+                      }
+                    })
                     return (
                       <svg
                         width="100%"
@@ -1479,6 +1416,8 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
                           stroke-width={pathEl.strokeWidth}
                           stroke-linecap={pathEl.lineCap}
                           stroke-linejoin={pathEl.lineJoin}
+                          stroke-dasharray={strokeDash().dasharray}
+                          stroke-dashoffset={strokeDash().dashoffset}
                         />
                       </svg>
                     )
