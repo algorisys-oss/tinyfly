@@ -9,8 +9,23 @@ import type {
   MotionPathTrack,
   EasingType,
 } from '../../engine'
-import { createHistoryStore } from './history-store'
 import { type AnimationPreset, resolvePresetKeyframe } from '../presets'
+import type { SceneElement } from './scene-store'
+
+/**
+ * A full editor snapshot for undo/redo: the timeline AND the scene elements, so a
+ * single undo reverses whichever changed (an element edit or a keyframe edit).
+ */
+export interface EditorSnapshot {
+  timeline: TimelineDefinition | null
+  elements: SceneElement[]
+}
+
+/** Hooks that let the editor snapshot/restore scene elements it doesn't own. */
+export interface SceneHistoryHooks {
+  getElements: () => SceneElement[]
+  setElements: (elements: SceneElement[]) => void
+}
 
 /** A keyframe identified by its track and position. */
 export interface KeyframeRef {
@@ -57,8 +72,27 @@ export function createEditorStore() {
   // Version counter to force reactivity on timeline mutations
   const [timelineVersion, setTimelineVersion] = createSignal(0)
 
-  // History for undo/redo
-  const history = createHistoryStore<TimelineDefinition>()
+  // Unified undo/redo history: each entry is a full { timeline, elements }
+  // snapshot, so one Ctrl+Z reverses whatever changed last — a keyframe edit or
+  // an element edit. Scene elements are read/written through injected hooks.
+  const HISTORY_LIMIT = 100
+  const [undoStack, setUndoStack] = createSignal<EditorSnapshot[]>([])
+  const [redoStack, setRedoStack] = createSignal<EditorSnapshot[]>([])
+  let sceneHooks: SceneHistoryHooks | null = null
+
+  /** Wire in the scene store so element state participates in undo/redo. */
+  function attachScene(hooks: SceneHistoryHooks) {
+    sceneHooks = hooks
+  }
+
+  const deepCopy = <T,>(v: T): T => JSON.parse(JSON.stringify(v))
+
+  function captureSnapshot(): EditorSnapshot {
+    return {
+      timeline: state.timeline ? serializeTimeline(state.timeline) : null,
+      elements: sceneHooks ? deepCopy(sceneHooks.getElements()) : [],
+    }
+  }
 
   // Clipboard for keyframe copy/paste (kept out of the reactive store)
   const [keyframeClipboard, setKeyframeClipboard] = createSignal<CopiedKeyframe[]>([])
@@ -68,16 +102,25 @@ export function createEditorStore() {
     setTimelineVersion((v) => v + 1)
   }
 
-  // Snapshot current timeline state to history
+  // Record the current state before a mutation, and clear the redo stack.
   function pushHistory() {
-    if (!state.timeline) return
-    history.push(serializeTimeline(state.timeline))
+    setUndoStack((s) => {
+      const next = [...s, captureSnapshot()]
+      return next.length > HISTORY_LIMIT ? next.slice(next.length - HISTORY_LIMIT) : next
+    })
+    setRedoStack([])
   }
 
-  // Restore timeline from a snapshot
-  function restoreFromSnapshot(snapshot: TimelineDefinition) {
-    const timeline = deserializeTimeline(snapshot)
-    setState('timeline', timeline)
+  // Restore a full snapshot (timeline + elements).
+  function restoreFromSnapshot(snapshot: EditorSnapshot) {
+    if (snapshot.timeline) {
+      setState('timeline', deserializeTimeline(snapshot.timeline))
+    } else {
+      setState('timeline', null)
+    }
+    sceneHooks?.setElements(deepCopy(snapshot.elements))
+    setState('selectedTrackId', null)
+    setState('selectedKeyframeIndex', null)
     bumpVersion()
   }
 
@@ -575,23 +618,28 @@ export function createEditorStore() {
 
   // Undo last action
   function undo() {
-    const snapshot = history.undo()
-    if (snapshot) {
-      restoreFromSnapshot(snapshot)
-    }
+    const stack = undoStack()
+    if (stack.length === 0) return
+    setRedoStack((r) => [...r, captureSnapshot()])
+    const prev = stack[stack.length - 1]
+    setUndoStack(stack.slice(0, -1))
+    restoreFromSnapshot(prev)
   }
 
   // Redo last undone action
   function redo() {
-    const snapshot = history.redo()
-    if (snapshot) {
-      restoreFromSnapshot(snapshot)
-    }
+    const stack = redoStack()
+    if (stack.length === 0) return
+    setUndoStack((u) => [...u, captureSnapshot()])
+    const next = stack[stack.length - 1]
+    setRedoStack(stack.slice(0, -1))
+    restoreFromSnapshot(next)
   }
 
   // Clear undo history
   function clearHistory() {
-    history.clear()
+    setUndoStack([])
+    setRedoStack([])
   }
 
   // Export timeline as JSON string
@@ -656,8 +704,8 @@ export function createEditorStore() {
     timelineVersion()
     return tracks().find((t) => t.id === state.selectedTrackId) ?? null
   })
-  const canUndo = () => history.canUndo()
-  const canRedo = () => history.canRedo()
+  const canUndo = () => undoStack().length > 0
+  const canRedo = () => redoStack().length > 0
 
   return {
     // State
@@ -715,6 +763,8 @@ export function createEditorStore() {
     canUndo,
     canRedo,
     clearHistory,
+    pushHistory,
+    attachScene,
 
     // Import/Export actions
     exportJSON,

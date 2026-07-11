@@ -362,6 +362,9 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     const element = props.sceneStore.elements().find((el) => el.id === elementId)
     if (!element || element.locked) return
 
+    // One undo step for the whole drag (snapshot taken on first move).
+    props.sceneStore.beginInteraction()
+
     // Select the element
     props.sceneStore.selectElement(elementId)
 
@@ -426,6 +429,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     // Clean up listeners
     document.removeEventListener('mousemove', handleDragMove)
     document.removeEventListener('mouseup', handleDragEnd)
+    props.sceneStore.endInteraction()
 
     // Reset drag state after a small delay to prevent click firing
     setTimeout(() => {
@@ -441,6 +445,8 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
 
     const element = props.sceneStore.elements().find((el) => el.id === elementId)
     if (!element || element.locked) return
+
+    props.sceneStore.beginInteraction()
 
     const state: ResizeState = {
       elementId,
@@ -625,6 +631,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
   const handleResizeEnd = () => {
     document.removeEventListener('mousemove', handleResizeMove)
     document.removeEventListener('mouseup', handleResizeEnd)
+    props.sceneStore.endInteraction()
 
     setTimeout(() => {
       setResizeState(null)
@@ -663,6 +670,8 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
 
     const element = props.sceneStore.elements().find((el) => el.id === elementId)
     if (!element || element.locked) return
+
+    props.sceneStore.beginInteraction()
 
     // Calculate element center in canvas coordinates
     const centerX = element.x + element.width / 2
@@ -726,6 +735,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
   const handleRotateEnd = () => {
     document.removeEventListener('mousemove', handleRotateMove)
     document.removeEventListener('mouseup', handleRotateEnd)
+    props.sceneStore.endInteraction()
 
     setTimeout(() => {
       setRotateState(null)
@@ -747,6 +757,8 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
 
     const element = props.sceneStore.elements().find((el) => el.id === elementId)
     if (!element || element.locked) return
+
+    props.sceneStore.beginInteraction()
 
     setPathPointDragState({
       elementId,
@@ -795,6 +807,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
   const handlePathPointDragEnd = () => {
     document.removeEventListener('mousemove', handlePathPointDragMove)
     document.removeEventListener('mouseup', handlePathPointDragEnd)
+    props.sceneStore.endInteraction()
 
     setTimeout(() => {
       setPathPointDragState(null)

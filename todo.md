@@ -214,6 +214,10 @@ wave, assemble, typewriter, shine/mask reveal, blur-in).
 - [x] MP4 / WebM video export — records the Canvas renderer via MediaRecorder (size/FPS/codec picker, progress); `exportToVideo` in the engine
 - [x] SVG stroke "write-on" on the DOM renderer — animated `strokeDasharray`/`strokeDashoffset` bound on the path, plus a one-click "Write On" preset
 - [x] Resizable preview / timeline split — drag the splitter (double-click to reset)
+- [x] **Unified undo/redo** — history now snapshots the timeline AND the scene
+  elements, so one Ctrl+Z reverses the last change of either kind (add/delete/
+  move/resize/rotate/group/device/property edits + keyframe/track edits).
+  Continuous gestures collapse into a single undo step.
 - [x] Typewriter / character-by-character reveal (with blinking, stepping cursor)
 - [x] Timeline `setDuration` (auto-extends to fit generated effects)
 - [x] Clip/mask reveal — animatable clip-inset in DOM, SVG, and Canvas adapters
@@ -242,6 +246,14 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
 - [ ] Out of scope: bone/IK rigging, frame-by-frame drawing, natural-media brushes
 
 ---
+
+## Backlog / For Review
+
+- [ ] **IndexedDB persistence + animation library** — today projects auto-save to
+  LocalStorage (single project). Move persistence to IndexedDB and add a
+  document/animation list (like HappyPaint): browse saved animations, open one,
+  continue editing, duplicate, delete. Include thumbnails and last-modified, and
+  migrate existing LocalStorage projects on first run.
 
 ## Test Coverage
 

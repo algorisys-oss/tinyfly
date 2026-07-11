@@ -387,6 +387,41 @@ export function createSceneStore() {
   const [version, setVersion] = createSignal(0)
   const bumpVersion = () => setVersion((v) => v + 1)
 
+  // Undo/redo integration: the editor store injects a hook that snapshots the
+  // full editor state before a mutation. Continuous gestures (drag/resize/rotate)
+  // wrap their many updates in begin/endInteraction so they form ONE undo step.
+  let historyHook: (() => void) | null = null
+  let interactionActive = false
+  let interactionSnapshotTaken = false
+  const setHistoryHook = (fn: (() => void) | null) => {
+    historyHook = fn
+  }
+  /**
+   * Snapshot the current state for undo. During a continuous gesture, exactly one
+   * snapshot is taken — on the first mutation — so the whole gesture is one undo
+   * step (and a gesture with no mutation records nothing).
+   */
+  const snapshot = () => {
+    if (interactionActive) {
+      if (!interactionSnapshotTaken) {
+        historyHook?.()
+        interactionSnapshotTaken = true
+      }
+      return
+    }
+    historyHook?.()
+  }
+  /** Begin a continuous gesture (drag/resize/rotate) or a compound operation. */
+  const beginInteraction = () => {
+    interactionActive = true
+    interactionSnapshotTaken = false
+  }
+  /** End the current gesture/compound operation. */
+  const endInteraction = () => {
+    interactionActive = false
+    interactionSnapshotTaken = false
+  }
+
   // Clipboard for copy/paste operations
   const [clipboard, setClipboard] = createSignal<SceneElement[]>([])
 
@@ -394,6 +429,7 @@ export function createSceneStore() {
    * Add a new element to the scene.
    */
   function addElement(type: ElementType, overrides: Partial<SceneElement> = {}): SceneElement {
+    snapshot()
     const id = generateId()
     // Use override name if provided, otherwise generate one
     const name = overrides.name ?? generateName(type, state.elements)
@@ -471,6 +507,8 @@ export function createSceneStore() {
     canvasWidth: number
     canvasHeight: number
   }): SceneElement[] {
+    // One undo step for the whole device (three elements added below).
+    beginInteraction()
     const variant = opts.variant ?? 'phone'
     // Silhouette parameters per variant.
     const spec = {
@@ -558,6 +596,7 @@ export function createSceneStore() {
 
     setState('selectedElementId', screen.id)
     setState('selectedElementIds', [body.id, screen.id, camera.id])
+    endInteraction()
     bumpVersion()
 
     return [body, screen, camera]
@@ -567,6 +606,7 @@ export function createSceneStore() {
    * Remove an element from the scene.
    */
   function removeElement(elementId: string): void {
+    snapshot()
     setState('elements', (elements) => elements.filter((el) => el.id !== elementId))
 
     if (state.selectedElementId === elementId) {
@@ -580,6 +620,7 @@ export function createSceneStore() {
    * Update an element's properties.
    */
   function updateElement(elementId: string, updates: Partial<SceneElement>): void {
+    snapshot()
     setState('elements', (elements) =>
       elements.map((el) => (el.id === elementId ? { ...el, ...updates } as SceneElement : el))
     )
@@ -635,6 +676,7 @@ export function createSceneStore() {
     const elements = [...state.elements]
     const index = elements.findIndex((el) => el.id === elementId)
     if (index === -1) return
+    snapshot()
 
     const element = elements[index]
     elements.splice(index, 1)
@@ -664,6 +706,7 @@ export function createSceneStore() {
   function duplicateElement(elementId: string): SceneElement | null {
     const element = state.elements.find((el) => el.id === elementId)
     if (!element) return null
+    snapshot()
 
     const newId = generateId()
     const newName = `${element.name} copy`
@@ -708,10 +751,12 @@ export function createSceneStore() {
    * Cut selected elements (copy to clipboard and remove).
    */
   function cutElements(elementIds: string[]): void {
+    beginInteraction() // one undo step for the whole cut
     copyElements(elementIds)
     elementIds.forEach((id) => removeElement(id))
     setState('selectedElementId', null)
     setState('selectedElementIds', [])
+    endInteraction()
   }
 
   /**
@@ -720,6 +765,7 @@ export function createSceneStore() {
   function pasteElements(): SceneElement[] {
     const clipboardContent = clipboard()
     if (clipboardContent.length === 0) return []
+    snapshot()
 
     const pastedElements: SceneElement[] = []
     const newIds: string[] = []
@@ -762,6 +808,7 @@ export function createSceneStore() {
     // Get elements to group
     const elementsToGroup = state.elements.filter((el) => elementIds.includes(el.id))
     if (elementsToGroup.length < 2) return null
+    snapshot()
 
     // Calculate bounding box
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
@@ -830,6 +877,7 @@ export function createSceneStore() {
   function ungroupElement(groupId: string): SceneElement[] | null {
     const group = state.elements.find((el) => el.id === groupId && el.type === 'group') as GroupElement | undefined
     if (!group) return null
+    snapshot()
 
     // Get child elements
     const children = state.elements.filter((el) => group.childIds.includes(el.id))
@@ -1017,6 +1065,9 @@ export function createSceneStore() {
     exportElements,
     groupElements,
     ungroupElement,
+    setHistoryHook,
+    beginInteraction,
+    endInteraction,
     splitTextElement,
     getParentGroup,
     getTopLevelElements,

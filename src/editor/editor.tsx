@@ -28,6 +28,15 @@ export const Editor: Component = () => {
   const projectStore = createProjectStore()
   const sceneStore = createSceneStore()
   const onboardingStore = createOnboardingStore()
+
+  // Unify undo/redo across the timeline and the scene: element edits snapshot the
+  // same history the editor store uses, so one Ctrl+Z reverses the last change of
+  // either kind.
+  store.attachScene({
+    getElements: sceneStore.exportElements,
+    setElements: sceneStore.loadElements,
+  })
+  sceneStore.setHistoryHook(store.pushHistory)
   const [showSettings, setShowSettings] = createSignal(false)
   const [showEmbed, setShowEmbed] = createSignal(false)
   const [showExportAs, setShowExportAs] = createSignal(false)

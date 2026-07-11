@@ -50,7 +50,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Track management** - Add, remove, and organize animation tracks
 - **Per-letter stagger** - Toggle in the preset panel to split text and fan a preset across its letters
 - **Playback controls** - Preview animations in real-time
-- **Undo/Redo** - Full history support with keyboard shortcuts
+- **Undo/Redo** - Unified history across the timeline and the scene: one Ctrl+Z reverses the last change of either kind (element add/move/resize/group/property edits or keyframe/track edits); drags collapse to a single step
 - **Multiple scenes** - Organize animations into separate scenes with independent elements and timelines
 - **Scene transitions** - Configurable transitions between scenes (fade, slide)
 - **Multi-scene sequencer** - Play all scenes in order with transitions
