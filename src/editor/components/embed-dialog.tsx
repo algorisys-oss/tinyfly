@@ -5,6 +5,7 @@ import type { SceneStore } from '../stores/scene-store'
 import type { ProjectStore } from '../stores/project-store'
 import { serializeTimeline } from '../../engine'
 import { generateElementHtml } from '../utils/element-html'
+import { useEscapeClose } from '../utils/use-escape-close'
 import './embed-dialog.css'
 
 interface EmbedDialogProps {
@@ -20,6 +21,7 @@ type EmbedType = 'inline' | 'external'
 type EmbedScope = 'single' | 'sequence'
 
 export const EmbedDialog: Component<EmbedDialogProps> = (props) => {
+  useEscapeClose(() => props.isOpen, () => props.onClose())
   const [embedType, setEmbedType] = createSignal<EmbedType>('inline')
   const [embedScope, setEmbedScope] = createSignal<EmbedScope>('single')
   const [copied, setCopied] = createSignal(false)

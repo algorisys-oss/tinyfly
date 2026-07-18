@@ -1,0 +1,37 @@
+/* Reuses the shared .settings-dialog-* classes from project-settings-dialog.css;
+   only AI-specific extras live here. */
+
+.ai-settings-blurb {
+  margin: -8px 0 20px;
+  color: #888;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+select.settings-input {
+  appearance: none;
+  cursor: pointer;
+}
+
+.ai-key-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.ai-key-row .settings-input {
+  flex: 1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.ai-reveal-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.ai-key-hint {
+  display: block;
+  margin-top: 6px;
+  color: #666;
+  font-size: 11px;
+}

@@ -1,6 +1,7 @@
 import { createSignal, createEffect, Show, For } from 'solid-js'
 import type { Component } from 'solid-js'
 import type { TransitionType, SceneTransition } from '../../player/sequence-types'
+import { useEscapeClose } from '../utils/use-escape-close'
 import './transition-dialog.css'
 
 interface TransitionDialogProps {
@@ -21,6 +22,7 @@ const TRANSITION_OPTIONS: { value: TransitionType; label: string }[] = [
 ]
 
 export const TransitionDialog: Component<TransitionDialogProps> = (props) => {
+  useEscapeClose(() => props.isOpen, () => props.onClose())
   const [type, setType] = createSignal<TransitionType>('none')
   const [duration, setDuration] = createSignal(500)
   const [previewKey, setPreviewKey] = createSignal(0)

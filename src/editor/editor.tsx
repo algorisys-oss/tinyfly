@@ -17,6 +17,8 @@ import {
   OnboardingOverlay,
   Tooltip,
   SceneBar,
+  AIPromptBar,
+  AISettingsDialog,
 } from './components'
 import { createEditorStore, createProjectStore, createSceneStore, createOnboardingStore } from './stores'
 import { serializeTimeline, deserializeTimeline } from '../engine'
@@ -42,6 +44,7 @@ export const Editor: Component = () => {
   const [showExportAs, setShowExportAs] = createSignal(false)
   const [showSamples, setShowSamples] = createSignal(false)
   const [showShortcuts, setShowShortcuts] = createSignal(false)
+  const [showAISettings, setShowAISettings] = createSignal(false)
 
   // Resizable split between the preview (flex:1) and the timeline. Dragging the
   // splitter changes the timeline height, so the preview grows/shrinks inversely.
@@ -288,6 +291,13 @@ export const Editor: Component = () => {
 
       <SceneBar projectStore={projectStore} onSwitchScene={switchScene} />
 
+      <AIPromptBar
+        store={store}
+        sceneStore={sceneStore}
+        projectStore={projectStore}
+        onOpenSettings={() => setShowAISettings(true)}
+      />
+
       <main class="editor-main">
         {/* Mobile sidebar overlay */}
         <div
@@ -376,6 +386,8 @@ export const Editor: Component = () => {
         isOpen={showSamples()}
         onClose={() => setShowSamples(false)}
       />
+
+      <AISettingsDialog isOpen={showAISettings()} onClose={() => setShowAISettings(false)} />
 
       <ShortcutsDialog isOpen={showShortcuts()} onClose={() => setShowShortcuts(false)} />
 

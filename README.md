@@ -42,6 +42,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Media in embeds** - Exported/embedded HTML carries the media, and the player auto-discovers and syncs it (`[data-tinyfly-media]`), so audio/video play in time wherever the animation is embedded
 
 ### Visual Editor
+- **AI prompt → animation** - Describe an animation in plain language ("a title that fades up with a shine", "three cards sliding in one after another") and generate a fully editable timeline. Bring your own API key for **OpenAI, Google Gemini, or Anthropic** — keys stay in your browser and are sent directly to the provider. The model emits tinyfly's JSON schema, which loads through the same path as the sample library, so generated animations are ordinary keyframes you can tweak
 - **Any canvas / aspect ratio** - The preview artboard follows the project canvas (DOM, Canvas, and SVG renderers) and fits-to-view, so a vertical 9:16 promo or any custom size previews at true proportions; samples can declare their own canvas size
 - **Device-frame preset** - One click stamps a device mockup (rounded body, camera/notch, and a rounded video "screen") sized to the canvas, in **Phone / Landscape / Tablet** variants — drop a screen-recording into the screen's source for an app promo
 - **Timeline view** - Visual keyframe editing with drag-and-drop

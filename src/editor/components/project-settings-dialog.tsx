@@ -1,6 +1,7 @@
 import { createSignal, Show } from 'solid-js'
 import type { Component } from 'solid-js'
 import type { ProjectStore } from '../stores/project-store'
+import { useEscapeClose } from '../utils/use-escape-close'
 import './project-settings-dialog.css'
 
 interface ProjectSettingsDialogProps {
@@ -19,6 +20,7 @@ const PRESET_SIZES = [
 ]
 
 export const ProjectSettingsDialog: Component<ProjectSettingsDialogProps> = (props) => {
+  useEscapeClose(() => props.isOpen, () => props.onClose())
   const [name, setName] = createSignal('')
   const [width, setWidth] = createSignal(300)
   const [height, setHeight] = createSignal(200)

@@ -10,6 +10,7 @@ import {
   categoryNames,
   type SampleDefinition,
 } from '../samples'
+import { useEscapeClose } from '../utils/use-escape-close'
 import './samples-dialog.css'
 
 // Check if a track is a motion path track
@@ -32,6 +33,7 @@ interface SamplesDialogProps {
 }
 
 export const SamplesDialog: Component<SamplesDialogProps> = (props) => {
+  useEscapeClose(() => props.isOpen, () => props.onClose())
   const [selectedCategory, setSelectedCategory] = createSignal<SampleDefinition['category']>('basic')
   const [hoveredSample, setHoveredSample] = createSignal<string | null>(null)
 

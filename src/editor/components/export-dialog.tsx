@@ -5,6 +5,7 @@ import type { SceneStore } from '../stores/scene-store'
 import type { ProjectStore } from '../stores/project-store'
 import { exportToCSS, exportToLottieJSON, exportToVideo, getSupportedVideoCodecs, downloadVideo } from '../../engine/export'
 import { buildExportComposite } from '../utils/export-composite'
+import { useEscapeClose } from '../utils/use-escape-close'
 import './export-dialog.css'
 
 interface ExportDialogProps {
@@ -19,6 +20,7 @@ interface ExportDialogProps {
 type ExportFormat = 'css' | 'lottie' | 'gif' | 'video'
 
 export const ExportDialog: Component<ExportDialogProps> = (props) => {
+  useEscapeClose(() => props.isOpen, () => props.onClose())
   const [format, setFormat] = createSignal<ExportFormat>('css')
   const [copied, setCopied] = createSignal(false)
   const [minify, setMinify] = createSignal(false)

@@ -1,0 +1,128 @@
+.ai-prompt-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #191919;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.ai-prompt-spark {
+  color: #4a9eff;
+  font-size: 14px;
+  flex: 0 0 auto;
+}
+
+.ai-prompt-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 8px 12px;
+  background: #202020;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 13px;
+}
+
+.ai-prompt-input:focus {
+  outline: none;
+  border-color: #4a9eff;
+}
+
+.ai-prompt-input:disabled {
+  opacity: 0.6;
+}
+
+.ai-prompt-example {
+  flex: 0 0 auto;
+  padding: 7px 12px;
+  background: transparent;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #888;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.ai-prompt-example:hover {
+  color: #ccc;
+  border-color: #444;
+}
+
+.ai-prompt-generate {
+  flex: 0 0 auto;
+  padding: 8px 18px;
+  background: #4a9eff;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.ai-prompt-generate:hover:not(:disabled) {
+  background: #6ab0ff;
+}
+
+.ai-prompt-generate:disabled {
+  background: #333;
+  color: #777;
+  cursor: not-allowed;
+}
+
+.ai-prompt-settings {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #252525;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #aaa;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.ai-prompt-settings:hover {
+  background: #333;
+  color: #fff;
+}
+
+.ai-prompt-message {
+  flex: 0 0 auto;
+  font-size: 12px;
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-prompt-message.error {
+  color: #ff6b6b;
+}
+
+.ai-prompt-message.ok {
+  color: #4ade80;
+}
+
+@media (max-width: 768px) {
+  .ai-prompt-bar {
+    flex-wrap: wrap;
+  }
+
+  .ai-prompt-input {
+    flex: 1 1 100%;
+    order: -1;
+  }
+
+  .ai-prompt-message {
+    max-width: 100%;
+    white-space: normal;
+  }
+}

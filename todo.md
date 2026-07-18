@@ -250,6 +250,28 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
 
 ## Backlog / For Review
 
+- [x] **Esc closes any dialog** — every dialog (AI Settings, Project Settings,
+  Export, Embed, Samples, Shortcuts, Transition) closes on Escape from anywhere
+  on the page, via a shared `useEscapeClose(isOpen, onClose)` hook. It listens on
+  `document` in the capture phase and stops propagation on close, so dialog
+  dismissal takes precedence over the editor's other Escape handlers
+  (exit-maximized-preview, deselect-all, cancel-rename).
+
+- [x] **AI animation generation (prompt → timeline)** — an editor-layer AI
+  feature (mirrors YappyDraw's): a prompt bar under the scene bar takes a
+  natural-language brief and generates a fully editable animation. Multi-provider
+  and dependency-free (raw `fetch`), bring-your-own-key for **OpenAI / Gemini /
+  Anthropic**; keys live in `localStorage` (base64-obfuscated) and go straight to
+  the provider. The LLM emits tinyfly's sample JSON schema
+  (`{ elements, tracks, duration }`), which is validated and loaded through the
+  same path as the sample library — so output is ordinary keyframes.
+  - Engine untouched (loose coupling): all code lives in `src/editor/ai/` +
+    `ai-prompt-bar` / `ai-settings-dialog` components.
+  - System prompt documents element types, animatable properties, and easing
+    names — kept in sync with the DOM adapter + engine types.
+  - [ ] Remaining: image/video elements (needs media sources), streaming
+    responses, and a "refine this animation" follow-up turn.
+
 - [x] **Video export fidelity** — the Canvas image/video draw path now honours
   `objectFit` (cover/contain/fill) and a rounded-corner clip (`borderRadius`), so
   a device screen's video exports with cover-cropping and rounded corners. Fonts
@@ -264,7 +286,7 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
 
 ## Test Coverage
 
-- 519 tests passing
+- 544 tests passing
 - Easing functions: 48 tests
 - Interpolators: 21 tests
 - Clock: 19 tests
@@ -287,3 +309,4 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
 - CSS export: 10 tests
 - Lottie export: 10 tests
 - GIF export: 10 tests
+- AI animation generator (parse/validate): 10 tests

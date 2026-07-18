@@ -1,5 +1,6 @@
 import { Show, For } from 'solid-js'
 import type { Component } from 'solid-js'
+import { useEscapeClose } from '../utils/use-escape-close'
 import './shortcuts-dialog.css'
 
 interface ShortcutsDialogProps {
@@ -60,21 +61,17 @@ const shortcutCategories: ShortcutCategory[] = [
 ]
 
 export const ShortcutsDialog: Component<ShortcutsDialogProps> = (props) => {
+  useEscapeClose(() => props.isOpen, () => props.onClose())
+
   const handleOverlayClick = (e: MouseEvent) => {
     if (e.target === e.currentTarget) {
       props.onClose()
     }
   }
 
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      props.onClose()
-    }
-  }
-
   return (
     <Show when={props.isOpen}>
-      <div class="shortcuts-dialog-overlay" onClick={handleOverlayClick} onKeyDown={handleKeyDown}>
+      <div class="shortcuts-dialog-overlay" onClick={handleOverlayClick}>
         <div class="shortcuts-dialog">
           <div class="shortcuts-dialog-header">
             <h2>Keyboard Shortcuts</h2>
