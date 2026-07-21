@@ -24,6 +24,26 @@
   color: #4a9eff;
 }
 
+/* Beta badge next to the wordmark. Gradient + subtle glow so it reads as a
+   deliberate label rather than a warning. */
+.editor-beta-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  margin-left: -2px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #4a9eff, #9b59b6);
+  box-shadow: 0 0 10px rgba(74, 158, 255, 0.35);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  cursor: default;
+  user-select: none;
+}
+
 .editor-subtitle {
   font-size: 12px;
   color: #666;
@@ -296,6 +316,11 @@
 
   .editor-subtitle {
     display: none;
+  }
+
+  .editor-beta-tag {
+    padding: 1px 5px;
+    font-size: 8px;
   }
 
   .settings-btn {

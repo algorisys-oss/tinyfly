@@ -295,6 +295,9 @@ export const Editor: Component = () => {
     <div class="editor">
       <header class="editor-header">
         <h1>tinyfly</h1>
+        <span class="editor-beta-tag" title="tinyfly is in beta — expect rough edges">
+          BETA
+        </span>
         <span class="editor-subtitle">Animation Editor</span>
         <Tooltip content="Take the tour again" position="bottom">
           <button

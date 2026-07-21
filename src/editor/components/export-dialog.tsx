@@ -17,6 +17,7 @@ import {
 } from '../../engine/export'
 import { buildExportComposite } from '../utils/export-composite'
 import { useEscapeClose } from '../utils/use-escape-close'
+import { slugifyFilename } from '../utils/filename'
 import './export-dialog.css'
 
 interface ExportDialogProps {
@@ -83,10 +84,33 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
   const selectedVideoFormat = () =>
     videoFormats.find((f) => f.id === videoFormat()) ?? videoFormats[0]
 
-  const baseFilename = () => {
-    const timeline = props.store.state.timeline
-    return (timeline?.name || 'animation').replace(/\s+/g, '-').toLowerCase()
+  /** Extension the current format will produce, shown next to the name field. */
+  const currentExtension = () => {
+    switch (format()) {
+      case 'css':
+        return 'css'
+      case 'lottie':
+        return 'json'
+      case 'gif':
+        return 'gif'
+      case 'webp':
+        return 'webp'
+      default:
+        return selectedVideoFormat()?.extension ?? 'mp4'
+    }
   }
+
+  // Null until the user types, so the field tracks the project name until it is
+  // deliberately overridden.
+  const [filenameOverride, setFilenameOverride] = createSignal<string | null>(null)
+  const defaultFilename = () =>
+    slugifyFilename(
+      props.projectStore.currentProject().name || props.store.state.timeline?.name || ''
+    )
+  /** What the field shows: the user's text, or the project-derived default. */
+  const filenameInput = () => filenameOverride() ?? defaultFilename()
+  /** What actually gets written to disk, always safe. */
+  const baseFilename = () => slugifyFilename(filenameInput())
 
   /**
    * Run a frame-based export.
@@ -234,7 +258,7 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = isCSS ? 'animation.css' : 'animation.json'
+    a.download = `${baseFilename()}.${isCSS ? 'css' : 'json'}`
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -343,6 +367,38 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
                   </Show>
                 </p>
               )}
+            </div>
+
+            {/* Applies to every format, so it sits above the per-format options. */}
+            <div class="export-options">
+              <div class="export-option-row">
+                <label class="export-filename-label">
+                  Filename:
+                  <input
+                    type="text"
+                    class="export-filename-input"
+                    value={filenameInput()}
+                    disabled={exporting()}
+                    placeholder={defaultFilename()}
+                    onInput={(e) => setFilenameOverride(e.currentTarget.value)}
+                  />
+                  <span class="export-filename-ext">.{currentExtension()}</span>
+                </label>
+                <Show when={filenameOverride() !== null}>
+                  <button
+                    class="export-btn export-btn-inline"
+                    disabled={exporting()}
+                    onClick={() => setFilenameOverride(null)}
+                  >
+                    Reset
+                  </button>
+                </Show>
+              </div>
+              <Show when={baseFilename() !== filenameInput()}>
+                <p class="export-video-hint">
+                  Saved as <strong>{baseFilename()}.{currentExtension()}</strong>
+                </p>
+              </Show>
             </div>
 
             {/* Format-specific options */}

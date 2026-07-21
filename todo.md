@@ -316,6 +316,16 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
   editable in Project Settings, serializes with the project, and is the default
   background for GIF/WebP/MP4 export. Older projects are migrated on load.
 
+- [x] **Name your export file** — the Export dialog has a Filename field used by
+  all five formats, defaulting to the project name and sanitized via
+  `slugifyFilename` (path separators, reserved characters and awkward
+  punctuation stripped; Windows device names avoided; capped at 100 chars).
+  Previously the name came from `Timeline.name`, which is set once at creation
+  and never updated — so a fresh project always exported as `scene-1.*` and
+  renaming the scene or project had no effect. `Timeline.name` stays readonly.
+
+- [x] **BETA badge** in the editor header next to the wordmark.
+
 - [ ] **Drag-to-resize preview panel** — the preview area is small and today the
   only escape is the Maximize button. Add a draggable splitter on the preview's
   edge so its height/width can be adjusted freely, and persist the chosen size.
@@ -329,7 +339,7 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
 
 ## Test Coverage
 
-- 590 tests passing
+- 604 tests passing
 - Easing functions: 48 tests
 - Interpolators: 21 tests
 - Clock: 19 tests

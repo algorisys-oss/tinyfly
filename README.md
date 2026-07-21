@@ -57,6 +57,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Multi-scene sequencer** - Play all scenes in order with transitions
 - **Project management** - Auto-save to LocalStorage
 - **Export/Import** - JSON file support
+- **Named exports** - Choose the download filename in the Export dialog for every format; it defaults to the project name and is sanitized for any filesystem
 - **MP4 export** - Encode the animation to a real MP4 (H.264) via WebCodecs, with a hand-written muxer and no dependencies. Frame-by-frame rather than real-time, so it's faster than playback and reproducible; MediaRecorder (WebM) is the fallback where WebCodecs is missing
 - **Animated GIF export** - Median-cut colour quantization with optional Floyd–Steinberg dithering, per-frame palettes, and transparency
 - **Animated WebP export** - Roughly 3× smaller than GIF at true colour, with full alpha
@@ -394,6 +395,7 @@ npm run build
 - Player + media sync: 45 tests
 - Sequencer: 30 tests
 - Export formats: 71 tests (CSS 10, Lottie 10, GIF 19, MP4 16, WebP 16)
+- Export filename sanitizer: 14 tests
 - Animation presets: 18 tests
 
 ## Contributing
