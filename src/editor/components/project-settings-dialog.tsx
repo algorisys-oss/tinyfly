@@ -1,6 +1,7 @@
 import { createSignal, Show } from 'solid-js'
 import type { Component } from 'solid-js'
 import type { ProjectStore } from '../stores/project-store'
+import { DEFAULT_CANVAS_BACKGROUND } from '../stores/project-store'
 import { useEscapeClose } from '../utils/use-escape-close'
 import './project-settings-dialog.css'
 
@@ -24,6 +25,7 @@ export const ProjectSettingsDialog: Component<ProjectSettingsDialogProps> = (pro
   const [name, setName] = createSignal('')
   const [width, setWidth] = createSignal(300)
   const [height, setHeight] = createSignal(200)
+  const [background, setBackground] = createSignal(DEFAULT_CANVAS_BACKGROUND)
 
   // Reset form when dialog opens
   const resetForm = () => {
@@ -31,6 +33,7 @@ export const ProjectSettingsDialog: Component<ProjectSettingsDialogProps> = (pro
     setName(project.name)
     setWidth(project.canvas.width)
     setHeight(project.canvas.height)
+    setBackground(project.canvas.background)
   }
 
   const handleSave = () => {
@@ -38,7 +41,11 @@ export const ProjectSettingsDialog: Component<ProjectSettingsDialogProps> = (pro
     if (trimmedName) {
       props.projectStore.rename(trimmedName)
     }
-    props.projectStore.setCanvas({ width: width(), height: height() })
+    props.projectStore.setCanvas({
+      width: width(),
+      height: height(),
+      background: background(),
+    })
     props.onClose()
   }
 
@@ -119,6 +126,35 @@ export const ProjectSettingsDialog: Component<ProjectSettingsDialogProps> = (pro
                     <span class="settings-unit">px</span>
                   </div>
                 </div>
+              </div>
+
+              <div class="settings-section">
+                <label class="settings-label">Background</label>
+                <div class="settings-dimensions">
+                  <input
+                    type="color"
+                    class="settings-input settings-input-color"
+                    value={background()}
+                    onInput={(e) => setBackground(e.currentTarget.value)}
+                  />
+                  <input
+                    type="text"
+                    class="settings-input settings-input-small"
+                    value={background()}
+                    onInput={(e) => setBackground(e.currentTarget.value)}
+                    aria-label="Background colour"
+                  />
+                  <button
+                    class="settings-preset-btn"
+                    onClick={() => setBackground(DEFAULT_CANVAS_BACKGROUND)}
+                  >
+                    Reset
+                  </button>
+                </div>
+                <p class="settings-hint">
+                  Used for the preview artboard and as the default background when
+                  exporting to GIF, WebP, or MP4.
+                </p>
               </div>
 
               <div class="settings-actions">

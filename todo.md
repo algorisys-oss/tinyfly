@@ -163,8 +163,25 @@
 - [x] Lottie JSON exporter (bodymovin-compatible)
 - [x] Animated transform properties (position, rotation, scale, opacity)
 - [x] GIF exporter with frame extraction
-- [x] Simple LZW encoder for GIF compression
-- [x] Color quantization for palette-based GIF
+- [x] **Real animated GIF encoder** — median-cut quantization + Floyd–Steinberg
+  dithering, per-frame local colour tables, transparency, and a spec-conformant
+  LZW coder. Fixes the previous encoder, which wrote a hardcoded **greyscale**
+  palette (every GIF came out grey) and desynced decoders at the 512-code
+  boundary. Verified by decoding output back to pixels in the tests.
+- [x] **Animated WebP exporter** — `canvas.toBlob('image/webp')` per frame,
+  re-muxed into a `VP8X`/`ANIM`/`ANMF` container. ~3× smaller than GIF with true
+  colour and full alpha.
+- [x] **MP4 exporter via WebCodecs + hand-written ISO BMFF muxer** — H.264
+  samples into `ftyp`/`mdat`/`moov` with full sample tables. Deterministic and
+  faster than real time; MediaRecorder kept as fallback.
+- [x] Shared `ByteWriter` + `quantize` modules; export dialog covers GIF/WebP/MP4
+  with resolution multiplier, background/transparency, progress and cancel.
+- [x] Browser verification harness (`export-check.html`) — exports all three
+  formats in headless Chrome and validates them (GIF decoded to pixels, WebP
+  decoded by the browser, MP4 loaded and seeked in a `<video>`).
+- [ ] Remaining: MP4 needs WebCodecs (Firefox falls back to real-time WebM);
+  WebP needs canvas WebP encoding; MP4 has no alpha; 32-bit `mdat` caps output
+  at 4GB. Consider a Web Worker so large exports don't block the UI thread.
 
 ## All Core Features Complete ✓
 
@@ -278,15 +295,41 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
   are awaited (`document.fonts.ready`) before export.
   - [ ] Remaining: video sync uses per-frame seeking (approximate for long
     clips) — consider play-based sync.
-- [ ] **IndexedDB persistence + animation library** — today projects auto-save to
+- [x] **BUG (fixed): restored animation doesn't play after a page reload** — with a saved
+  project present, reloading leaves the animation unplayable (loading a sample
+  works). **Root cause: timeline edits are never auto-saved.** The auto-save
+  effect in `editor.tsx` reads `store.state.timeline` — a reference that never
+  changes, because `addTrack`/keyframe edits mutate the *same* `Timeline`
+  instance and signal via the separate `timelineVersion` counter in
+  `editor-store.ts`. So adding tracks or keyframes schedules no save, and the
+  reload restores a stale/empty timeline (duration 0 → `timeline.tick()` returns
+  early, or demo tracks targeting a non-existent `'box'` that the DOM adapter
+  silently skips). Serialization, `deserializeTimeline` and adapter
+  re-registration are all correct — only the save trigger is wrong.
+  - [x] Fixed: the auto-save effect now reads `store.tracks()` /
+    `store.duration()` so it subscribes to the mutation counter.
+  - [x] Hardened: the scene is flushed on `beforeunload` + `visibilitychange`, so
+    the 1000 ms auto-save debounce can't swallow the last edit on a fast reload.
+
+- [x] **Artboard background is project data** — `ProjectCanvas.background`
+  (default `#252525`) drives the preview instead of a hard-coded CSS rule, is
+  editable in Project Settings, serializes with the project, and is the default
+  background for GIF/WebP/MP4 export. Older projects are migrated on load.
+
+- [ ] **Drag-to-resize preview panel** — the preview area is small and today the
+  only escape is the Maximize button. Add a draggable splitter on the preview's
+  edge so its height/width can be adjusted freely, and persist the chosen size.
+
+- [ ] **IndexedDB persistence + animation gallery** — today projects auto-save to
   LocalStorage (single project). Move persistence to IndexedDB and add a
-  document/animation list (like HappyPaint): browse saved animations, open one,
-  continue editing, duplicate, delete. Include thumbnails and last-modified, and
-  migrate existing LocalStorage projects on first run.
+  **gallery view showing every previously saved animation** (like HappyPaint):
+  browse saved animations, open one, continue editing, duplicate, delete.
+  Include thumbnails and last-modified, and migrate existing LocalStorage
+  projects on first run.
 
 ## Test Coverage
 
-- 544 tests passing
+- 590 tests passing
 - Easing functions: 48 tests
 - Interpolators: 21 tests
 - Clock: 19 tests
@@ -308,5 +351,7 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
 - Animation presets: 18 tests
 - CSS export: 10 tests
 - Lottie export: 10 tests
-- GIF export: 10 tests
+- GIF export: 19 tests (decode round-trip)
+- MP4 muxer: 16 tests
+- WebP muxer: 16 tests
 - AI animation generator (parse/validate): 10 tests

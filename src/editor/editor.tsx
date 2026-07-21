@@ -241,14 +241,50 @@ export const Editor: Component = () => {
     document.removeEventListener('keydown', handleKeyDown)
   })
 
-  // Auto-save: sync timeline and elements to active scene in project store
+  // Auto-save: sync timeline and elements to active scene in project store.
+  //
+  // Track and keyframe edits mutate the *same* Timeline instance and announce
+  // themselves through the store's version counter, so `state.timeline` is a
+  // reference that never changes. Reading the version-backed memos below is what
+  // subscribes this effect to those edits — without them the timeline is only
+  // ever saved when the element list happens to change, and a reload restores a
+  // stale (often empty) timeline that cannot play.
   createEffect(() => {
     if (isSwitchingScene) return
+
+    store.tracks()
+    store.duration()
 
     const timeline = store.state.timeline
     const elements = sceneStore.exportElements()
     const serializedTimeline = timeline ? serializeTimeline(timeline) : null
     projectStore.saveActiveSceneState(elements, serializedTimeline)
+  })
+
+  /** Push the current scene straight to storage, bypassing the save debounce. */
+  const flushSave = () => {
+    if (isSwitchingScene) return
+    const timeline = store.state.timeline
+    projectStore.saveActiveSceneState(
+      sceneStore.exportElements(),
+      timeline ? serializeTimeline(timeline) : null
+    )
+    projectStore.saveNow()
+  }
+
+  // A reload can land inside the auto-save debounce window and lose the last
+  // edit, so flush on the way out. `visibilitychange` covers mobile, where
+  // `beforeunload` is unreliable.
+  onMount(() => {
+    const onHide = () => {
+      if (document.visibilityState === 'hidden') flushSave()
+    }
+    window.addEventListener('beforeunload', flushSave)
+    document.addEventListener('visibilitychange', onHide)
+    onCleanup(() => {
+      window.removeEventListener('beforeunload', flushSave)
+      document.removeEventListener('visibilitychange', onHide)
+    })
   })
 
   const handleSettingsClick = () => {

@@ -202,3 +202,17 @@
     font-size: 11px;
   }
 }
+
+.settings-input-color {
+  width: 44px;
+  height: 32px;
+  padding: 2px;
+  cursor: pointer;
+}
+
+.settings-hint {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: #888;
+  line-height: 1.4;
+}

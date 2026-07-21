@@ -3,7 +3,18 @@ import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
 import type { SceneStore } from '../stores/scene-store'
 import type { ProjectStore } from '../stores/project-store'
-import { exportToCSS, exportToLottieJSON, exportToVideo, getSupportedVideoCodecs, downloadVideo } from '../../engine/export'
+import {
+  exportToCSS,
+  exportToLottieJSON,
+  exportToGIF,
+  downloadGIF,
+  exportToWebP,
+  downloadWebP,
+  isWebPExportSupported,
+  exportVideo,
+  getVideoExportFormats,
+  downloadVideo,
+} from '../../engine/export'
 import { buildExportComposite } from '../utils/export-composite'
 import { useEscapeClose } from '../utils/use-escape-close'
 import './export-dialog.css'
@@ -17,7 +28,10 @@ interface ExportDialogProps {
   sceneName?: string
 }
 
-type ExportFormat = 'css' | 'lottie' | 'gif' | 'video'
+type ExportFormat = 'css' | 'lottie' | 'gif' | 'webp' | 'video'
+
+/** Formats that rasterise the scene frame by frame. */
+const RASTER_FORMATS: ExportFormat[] = ['gif', 'webp', 'video']
 
 export const ExportDialog: Component<ExportDialogProps> = (props) => {
   useEscapeClose(() => props.isOpen, () => props.onClose())
@@ -28,70 +42,144 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
   const [lottieHeight, setLottieHeight] = createSignal(512)
   const [lottieFrameRate, setLottieFrameRate] = createSignal(60)
 
-  // Video export
-  const codecs = getSupportedVideoCodecs()
-  const [videoWidth, setVideoWidth] = createSignal(0)
-  const [videoHeight, setVideoHeight] = createSignal(0)
-  const [videoFps, setVideoFps] = createSignal(30)
-  const [videoMime, setVideoMime] = createSignal(codecs[0]?.mimeType ?? '')
+  // Shared raster settings. Exporting at 2x and letting the player downscale
+  // keeps text and edges crisp, which a 1x export visibly loses.
+  const [scale, setScale] = createSignal(2)
+  const [fps, setFps] = createSignal(30)
+  const [transparent, setTransparent] = createSignal(false)
+  const canvasSize = () => props.projectStore.currentProject().canvas
+  // Null until the user picks a colour, so the artboard background is followed
+  // by default and exports match what the preview shows.
+  const [backgroundOverride, setBackgroundOverride] = createSignal<string | null>(null)
+  const background = () => backgroundOverride() ?? canvasSize().background
+  const setBackground = (value: string) => setBackgroundOverride(value)
+
+  // GIF settings
+  const [gifColors, setGifColors] = createSignal(255)
+  const [gifDither, setGifDither] = createSignal(true)
+
+  // WebP settings
+  const [webpQuality, setWebpQuality] = createSignal(0.85)
+
+  // Video settings
+  const videoFormats = getVideoExportFormats()
+  const [videoFormat, setVideoFormat] = createSignal(videoFormats[0]?.id ?? '')
+
   const [exporting, setExporting] = createSignal(false)
   const [progress, setProgress] = createSignal(0)
-  const [videoError, setVideoError] = createSignal('')
+  const [exportError, setExportError] = createSignal('')
+  const [abortController, setAbortController] = createSignal<AbortController | null>(null)
 
-  // Default the video size to the project canvas the first time the tab is opened.
-  const ensureVideoSize = () => {
-    if (videoWidth() === 0 || videoHeight() === 0) {
-      const canvas = props.projectStore.currentProject().canvas
-      setVideoWidth(canvas.width)
-      setVideoHeight(canvas.height)
-    }
+  const webpSupported = isWebPExportSupported()
+
+  const outputWidth = () => Math.max(2, Math.round(canvasSize().width * scale()))
+  const outputHeight = () => Math.max(2, Math.round(canvasSize().height * scale()))
+
+  /** MP4 has no alpha channel, so transparency only applies to GIF and WebP. */
+  const supportsTransparency = () => format() === 'gif' || format() === 'webp'
+  const effectiveBackground = () =>
+    supportsTransparency() && transparent() ? undefined : background()
+
+  const selectedVideoFormat = () =>
+    videoFormats.find((f) => f.id === videoFormat()) ?? videoFormats[0]
+
+  const baseFilename = () => {
+    const timeline = props.store.state.timeline
+    return (timeline?.name || 'animation').replace(/\s+/g, '-').toLowerCase()
   }
 
-  const handleExportVideo = async () => {
+  /**
+   * Run a frame-based export.
+   *
+   * Builds the composite renderer once (so image and video layers are drawn
+   * too), scales the context up to the output resolution, and hands a single
+   * draw callback to whichever encoder was chosen.
+   */
+  const runRasterExport = async () => {
     const timeline = props.store.state.timeline
     if (!timeline || exporting()) return
-    const canvas = props.projectStore.currentProject().canvas
-    const outW = videoWidth() || canvas.width
-    const outH = videoHeight() || canvas.height
+
+    const canvas = canvasSize()
+    const outW = outputWidth()
+    const outH = outputHeight()
     const scaleX = outW / canvas.width
     const scaleY = outH / canvas.height
 
-    setVideoError('')
+    const controller = new AbortController()
+    setAbortController(controller)
+    setExportError('')
     setExporting(true)
     setProgress(0)
+
     // Make sure any custom webfonts are loaded so Canvas text renders correctly.
     if (typeof document !== 'undefined' && document.fonts?.ready) {
       try { await document.fonts.ready } catch { /* ignore */ }
     }
-    // Build a renderer that also composites image/video layers (device screens,
-    // screenshots) that the Canvas renderer skips on its own.
+
+    // Composite the DOM-only layers (image + video) the Canvas renderer skips.
     const composite = await buildExportComposite(props.sceneStore.elements())
+
+    const draw = async (ctx: CanvasRenderingContext2D, timeMs: number) => {
+      await composite.prepareFrame(timeMs)
+      composite.adapter.applyState(timeline.getStateAtTime(timeMs))
+      ctx.save()
+      ctx.imageSmoothingEnabled = true
+      ctx.imageSmoothingQuality = 'high'
+      ctx.scale(scaleX, scaleY)
+      composite.adapter.render(ctx)
+      ctx.restore()
+    }
+
     try {
-      const codec = codecs.find((c) => c.mimeType === videoMime()) ?? codecs[0]
-      const blob = await exportToVideo({
-        width: outW,
-        height: outH,
-        fps: videoFps(),
-        durationMs: timeline.duration,
-        mimeType: codec?.mimeType,
-        renderFrame: async (ctx, t) => {
-          await composite.prepareFrame(t)
-          composite.adapter.applyState(timeline.getStateAtTime(t))
-          ctx.save()
-          ctx.scale(scaleX, scaleY)
-          composite.adapter.render(ctx)
-          ctx.restore()
-        },
-        onProgress: (f) => setProgress(f),
-      })
-      downloadVideo(blob, `${(timeline.name || 'animation').replace(/\s+/g, '-').toLowerCase()}.${codec?.extension ?? 'webm'}`)
+      if (format() === 'gif') {
+        const blob = await exportToGIF(timeline, {
+          width: outW,
+          height: outH,
+          frameRate: fps(),
+          backgroundColor: effectiveBackground(),
+          dither: gifDither(),
+          maxColors: gifColors(),
+          renderFrame: (ctx, _values, time) => draw(ctx, time),
+          onProgress: setProgress,
+          signal: controller.signal,
+        })
+        downloadGIF(blob, `${baseFilename()}.gif`)
+      } else if (format() === 'webp') {
+        const blob = await exportToWebP(timeline, {
+          width: outW,
+          height: outH,
+          frameRate: fps(),
+          quality: webpQuality(),
+          backgroundColor: effectiveBackground(),
+          renderFrame: (ctx, _values, time) => draw(ctx, time),
+          onProgress: setProgress,
+          signal: controller.signal,
+        })
+        downloadWebP(blob, `${baseFilename()}.webp`)
+      } else {
+        const { blob, extension } = await exportVideo({
+          width: outW,
+          height: outH,
+          fps: fps(),
+          durationMs: timeline.duration,
+          format: videoFormat(),
+          background: background(),
+          renderFrame: draw,
+          onProgress: setProgress,
+          signal: controller.signal,
+        })
+        downloadVideo(blob, `${baseFilename()}.${extension}`)
+      }
     } catch (err) {
-      setVideoError(err instanceof Error ? err.message : String(err))
+      setExportError(err instanceof Error ? err.message : String(err))
     } finally {
       composite.dispose()
+      setAbortController(null)
       setExporting(false)
     }
   }
+
+  const cancelExport = () => abortController()?.abort()
 
   const cssOutput = createMemo(() => {
     const timeline = props.store.state.timeline
@@ -120,12 +208,12 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
         return cssOutput()
       case 'lottie':
         return lottieOutput()
-      case 'gif':
-        return '// GIF export requires canvas rendering.\n// Use the exportToGIF() function programmatically with a render callback.'
       default:
         return ''
     }
   })
+
+  const isTextFormat = () => format() === 'css' || format() === 'lottie'
 
   const handleCopy = async () => {
     try {
@@ -141,27 +229,12 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
     const output = currentOutput()
     if (!output) return
 
-    let filename: string
-    let mimeType: string
-
-    switch (format()) {
-      case 'css':
-        filename = 'animation.css'
-        mimeType = 'text/css'
-        break
-      case 'lottie':
-        filename = 'animation.json'
-        mimeType = 'application/json'
-        break
-      default:
-        return
-    }
-
-    const blob = new Blob([output], { type: mimeType })
+    const isCSS = format() === 'css'
+    const blob = new Blob([output], { type: isCSS ? 'text/css' : 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = filename
+    a.download = isCSS ? 'animation.css' : 'animation.json'
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -170,6 +243,17 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
     if (e.target === e.currentTarget) {
       props.onClose()
     }
+  }
+
+  /** Whether the chosen format can run in this browser. */
+  const exportBlockedReason = () => {
+    if (format() === 'webp' && !webpSupported) {
+      return "This browser can't encode WebP from a canvas. Try Chrome, Edge, or Firefox."
+    }
+    if (format() === 'video' && videoFormats.length === 0) {
+      return "This browser can't export video (no WebCodecs or MediaRecorder). Try Chrome or Edge."
+    }
+    return ''
   }
 
   return (
@@ -218,13 +302,23 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
               </button>
               <button
                 class="export-format-btn"
+                classList={{ active: format() === 'webp' }}
+                onClick={() => setFormat('webp')}
+              >
+                <svg viewBox="0 0 24 24" width="20" height="20">
+                  <path d="M12 2l8.66 5v10L12 22l-8.66-5V7L12 2zm0 4.2L7.2 9v6l4.8 2.8 4.8-2.8V9L12 6.2z" fill="currentColor"/>
+                </svg>
+                WebP
+              </button>
+              <button
+                class="export-format-btn"
                 classList={{ active: format() === 'video' }}
-                onClick={() => { setFormat('video'); ensureVideoSize() }}
+                onClick={() => setFormat('video')}
               >
                 <svg viewBox="0 0 24 24" width="20" height="20">
                   <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z" fill="currentColor"/>
                 </svg>
-                Video
+                MP4
               </button>
             </div>
 
@@ -236,10 +330,18 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
                 <p>Export as Lottie JSON for use with lottie-web, Bodymovin, or After Effects.</p>
               )}
               {format() === 'gif' && (
-                <p>Export as animated GIF. Requires programmatic usage with canvas rendering.</p>
+                <p>Export a real animated GIF — frames are quantized to a 255-colour palette per frame and LZW-compressed. Supports a transparent background.</p>
+              )}
+              {format() === 'webp' && (
+                <p>Export an animated WebP. Much smaller and truer in colour than GIF, with full alpha, and supported by every modern browser.</p>
               )}
               {format() === 'video' && (
-                <p>Record the animation to an MP4/WebM video — shapes, text, paths, images, and video layers (e.g. a device screen) are all composited in. Video layers are seeked in sync with the timeline.</p>
+                <p>
+                  Export an MP4 (H.264). Shapes, text, paths, images, and video layers are all composited in, with video layers seeked in sync with the timeline.
+                  <Show when={selectedVideoFormat()?.deterministic}>
+                    {' '}Encoded frame by frame via WebCodecs — faster than real time and reproducible.
+                  </Show>
+                </p>
               )}
             </div>
 
@@ -285,74 +387,145 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
                 </div>
               )}
 
-              {format() === 'video' && (
+              <Show when={RASTER_FORMATS.includes(format())}>
                 <div class="export-option-row">
                   <label>
-                    Width:
-                    <input
-                      type="number"
-                      value={videoWidth()}
+                    Resolution:
+                    <select
+                      value={String(scale())}
                       disabled={exporting()}
-                      onChange={(e) => setVideoWidth(parseInt(e.target.value) || 0)}
-                    />
-                  </label>
-                  <label>
-                    Height:
-                    <input
-                      type="number"
-                      value={videoHeight()}
-                      disabled={exporting()}
-                      onChange={(e) => setVideoHeight(parseInt(e.target.value) || 0)}
-                    />
+                      onChange={(e) => setScale(parseFloat(e.currentTarget.value))}
+                    >
+                      <option value="1">1x</option>
+                      <option value="2">2x</option>
+                      <option value="3">3x</option>
+                      <option value="4">4x</option>
+                    </select>
                   </label>
                   <label>
                     FPS:
                     <input
                       type="number"
-                      value={videoFps()}
+                      value={fps()}
                       disabled={exporting()}
-                      onChange={(e) => setVideoFps(parseInt(e.target.value) || 30)}
+                      onChange={(e) => setFps(parseInt(e.target.value) || 30)}
                     />
                   </label>
-                  <Show when={codecs.length > 0}>
+                  <Show when={format() === 'video' && videoFormats.length > 1}>
                     <label>
                       Format:
-                      <select value={videoMime()} disabled={exporting()} onChange={(e) => setVideoMime(e.currentTarget.value)}>
-                        <For each={codecs}>
-                          {(c) => <option value={c.mimeType}>{c.label}</option>}
+                      <select
+                        value={videoFormat()}
+                        disabled={exporting()}
+                        onChange={(e) => setVideoFormat(e.currentTarget.value)}
+                      >
+                        <For each={videoFormats}>
+                          {(f) => <option value={f.id}>{f.label}</option>}
                         </For>
                       </select>
                     </label>
                   </Show>
+                  <Show when={format() === 'gif'}>
+                    <label>
+                      Colors:
+                      <input
+                        type="number"
+                        min="2"
+                        max="255"
+                        value={gifColors()}
+                        disabled={exporting()}
+                        onChange={(e) => setGifColors(Math.max(2, Math.min(255, parseInt(e.target.value) || 255)))}
+                      />
+                    </label>
+                  </Show>
+                  <Show when={format() === 'webp'}>
+                    <label>
+                      Quality:
+                      <input
+                        type="number"
+                        min="0.1"
+                        max="1"
+                        step="0.05"
+                        value={webpQuality()}
+                        disabled={exporting()}
+                        onChange={(e) => setWebpQuality(Math.max(0.1, Math.min(1, parseFloat(e.target.value) || 0.85)))}
+                      />
+                    </label>
+                  </Show>
                 </div>
-              )}
+
+                <div class="export-option-row">
+                  <Show when={!transparent() || !supportsTransparency()}>
+                    <label>
+                      Background:
+                      <input
+                        type="color"
+                        value={background()}
+                        disabled={exporting()}
+                        onChange={(e) => setBackground(e.currentTarget.value)}
+                      />
+                    </label>
+                  </Show>
+                  <Show when={supportsTransparency()}>
+                    <label class="export-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={transparent()}
+                        disabled={exporting()}
+                        onChange={(e) => setTransparent(e.target.checked)}
+                      />
+                      Transparent background
+                    </label>
+                  </Show>
+                  <Show when={format() === 'gif'}>
+                    <label class="export-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={gifDither()}
+                        disabled={exporting()}
+                        onChange={(e) => setGifDither(e.target.checked)}
+                      />
+                      Dither
+                    </label>
+                  </Show>
+                </div>
+              </Show>
             </div>
 
-            <Show when={format() === 'css' || format() === 'lottie'}>
+            <Show when={isTextFormat()}>
               <div class="export-code-container">
                 <pre class="export-code">{currentOutput()}</pre>
               </div>
             </Show>
 
-            <Show when={format() === 'video'}>
+            <Show when={RASTER_FORMATS.includes(format())}>
               <div class="export-video-panel">
-                <Show when={codecs.length === 0}>
-                  <p class="export-video-unsupported">This browser can't record video (MediaRecorder unavailable). Try Chrome or Edge.</p>
+                <p class="export-video-hint">
+                  Output: {outputWidth()}×{outputHeight()} at {fps()} fps
+                  <Show when={scale() > 1}> ({scale()}x the {canvasSize().width}×{canvasSize().height} canvas)</Show>
+                </p>
+                <Show when={exportBlockedReason()}>
+                  <p class="export-video-unsupported">{exportBlockedReason()}</p>
                 </Show>
                 <Show when={exporting()}>
                   <div class="export-progress">
                     <div class="export-progress-bar" style={{ width: `${Math.round(progress() * 100)}%` }} />
                   </div>
-                  <p class="export-video-hint">Recording… {Math.round(progress() * 100)}% (plays through in real time)</p>
+                  <p class="export-video-hint">
+                    Rendering… {Math.round(progress() * 100)}%
+                    <Show when={format() === 'video' && !selectedVideoFormat()?.deterministic}>
+                      {' '}(records in real time)
+                    </Show>
+                  </p>
                 </Show>
-                <Show when={videoError()}>
-                  <p class="export-video-unsupported">{videoError()}</p>
+                <Show when={exportError()}>
+                  <p class="export-video-unsupported">{exportError()}</p>
                 </Show>
               </div>
             </Show>
 
             <div class="export-actions">
-              <Show when={format() === 'css' || format() === 'lottie'}>
+              <Show when={isTextFormat()}>
                 <button class="export-btn export-btn-primary" onClick={handleCopy}>
                   {copied() ? 'Copied!' : 'Copy'}
                 </button>
@@ -360,33 +533,19 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
                   Download
                 </button>
               </Show>
-              <Show when={format() === 'video'}>
+              <Show when={RASTER_FORMATS.includes(format())}>
                 <button
                   class="export-btn export-btn-primary"
-                  disabled={exporting() || codecs.length === 0}
-                  onClick={handleExportVideo}
+                  disabled={exporting() || !!exportBlockedReason()}
+                  onClick={runRasterExport}
                 >
-                  {exporting() ? 'Recording…' : 'Export Video'}
+                  {exporting() ? 'Exporting…' : `Export ${format().toUpperCase()}`}
                 </button>
-              </Show>
-              <Show when={format() === 'gif'}>
-                <div class="export-gif-note">
-                  <p>GIF export is available programmatically:</p>
-                  <code>
-                    {`import { exportToGIF } from 'tinyfly/export'
-
-exportToGIF(timeline, {
-  width: 300,
-  height: 200,
-  frameRate: 30,
-  renderFrame: (ctx, values, time) => {
-    // Draw your animation frame
-  }
-}).then(blob => {
-  // Download or use the GIF blob
-})`}
-                  </code>
-                </div>
+                <Show when={exporting()}>
+                  <button class="export-btn" onClick={cancelExport}>
+                    Cancel
+                  </button>
+                </Show>
               </Show>
             </div>
 
@@ -408,16 +567,23 @@ exportToGIF(timeline, {
               )}
               {format() === 'gif' && (
                 <ol>
-                  <li>Import the exportToGIF function</li>
-                  <li>Provide a renderFrame callback that draws to canvas</li>
-                  <li>The function returns a Promise with the GIF Blob</li>
+                  <li>Pick a resolution and frame rate — higher FPS means a bigger file</li>
+                  <li>Lower <strong>Colors</strong> for a smaller file; turn off <strong>Dither</strong> for flat, banded colour</li>
+                  <li>Click <strong>Export GIF</strong> — the file downloads when encoding finishes</li>
+                </ol>
+              )}
+              {format() === 'webp' && (
+                <ol>
+                  <li>Pick a resolution, frame rate, and quality (0.1–1)</li>
+                  <li>Enable <strong>Transparent background</strong> for a WebP with alpha</li>
+                  <li>Click <strong>Export WEBP</strong> — use it in an <code>&lt;img&gt;</code> just like a GIF</li>
                 </ol>
               )}
               {format() === 'video' && (
                 <ol>
-                  <li>Pick a size (defaults to the canvas), FPS, and format</li>
-                  <li>Click <strong>Export Video</strong> — the animation plays through once while recording</li>
-                  <li>The file downloads when recording finishes</li>
+                  <li>Pick a resolution — <strong>2x</strong> keeps text and edges crisp</li>
+                  <li>Choose a frame rate and format</li>
+                  <li>Click <strong>Export MP4</strong> — the file downloads when encoding finishes</li>
                 </ol>
               )}
             </div>

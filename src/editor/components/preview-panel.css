@@ -132,12 +132,14 @@
   justify-content: center;
 }
 
+/* The artboard colour is set inline from the project canvas, so the renderer
+   surfaces stay transparent and let it show through. */
 .preview-canvas-renderer canvas {
-  background: #252525;
+  background: transparent;
 }
 
 .preview-svg-renderer svg {
-  background: #252525;
+  background: transparent;
 }
 
 .renderer-badge {

@@ -1,9 +1,19 @@
+import { exportToMP4, isWebCodecsMP4Supported } from './mp4'
+
 /**
- * Video export via the browser's MediaRecorder.
+ * Video export.
  *
- * Renders animation frames onto a canvas and records the canvas stream to a
- * WebM or (where supported) MP4 blob. Like the GIF exporter, this needs a DOM
- * environment (canvas + MediaRecorder) and a `renderFrame` callback that draws
+ * Two engines sit behind this module:
+ *
+ * - **WebCodecs** (preferred) — frames are encoded one at a time and muxed into
+ *   an MP4 by {@link exportToMP4}. It runs as fast as the machine allows and
+ *   timestamps every frame exactly, so the same timeline always produces the
+ *   same file.
+ * - **MediaRecorder** (fallback) — records a canvas stream in real time. It is
+ *   used only where WebCodecs is unavailable; because it is wall-clock paced it
+ *   can drop frames and is not deterministic.
+ *
+ * Both need a DOM environment (canvas) and a `renderFrame` callback that draws
  * the animation state at a given time.
  */
 
@@ -35,11 +45,58 @@ export function getSupportedVideoCodecs(): VideoCodec[] {
 
 /** Whether the current environment can export video at all. */
 export function isVideoExportSupported(): boolean {
-  return (
-    typeof document !== 'undefined' &&
-    typeof MediaRecorder !== 'undefined' &&
-    getSupportedVideoCodecs().length > 0
-  )
+  if (typeof document === 'undefined') return false
+  return isWebCodecsMP4Supported() || getSupportedVideoCodecs().length > 0
+}
+
+/** A video output the current browser can actually produce. */
+export interface VideoExportFormat {
+  /** Stable identifier to pass back to {@link exportVideo}. */
+  id: string
+  /** Human-readable label for a picker. */
+  label: string
+  /** File extension without the dot. */
+  extension: string
+  /**
+   * True when frames are encoded individually rather than recorded in real
+   * time — faster and reproducible.
+   */
+  deterministic: boolean
+}
+
+/** Identifier for the WebCodecs MP4 path. */
+export const MP4_WEBCODECS = 'mp4-webcodecs'
+
+/**
+ * Video formats available here, best first.
+ *
+ * The WebCodecs MP4 encoder leads when present; MediaRecorder codecs follow as
+ * real-time fallbacks.
+ */
+export function getVideoExportFormats(): VideoExportFormat[] {
+  const formats: VideoExportFormat[] = []
+
+  if (isWebCodecsMP4Supported()) {
+    formats.push({
+      id: MP4_WEBCODECS,
+      label: 'MP4 (H.264)',
+      extension: 'mp4',
+      deterministic: true,
+    })
+  }
+
+  for (const codec of getSupportedVideoCodecs()) {
+    // Skip a real-time MP4 recorder when we already have the WebCodecs one.
+    if (codec.extension === 'mp4' && isWebCodecsMP4Supported()) continue
+    formats.push({
+      id: codec.mimeType,
+      label: `${codec.label} (real-time)`,
+      extension: codec.extension,
+      deterministic: false,
+    })
+  }
+
+  return formats
 }
 
 export interface VideoExportOptions {
@@ -53,6 +110,12 @@ export interface VideoExportOptions {
   durationMs: number
   /** Mime type to record with; defaults to the best supported codec. */
   mimeType?: string
+  /**
+   * Recording bitrate in bits/sec. Defaults to roughly 0.25 bits per pixel per
+   * frame — MediaRecorder's own default is far too low for flat vector art and
+   * visibly smears edges and text.
+   */
+  bitrate?: number
   /** Solid colour painted behind every frame (default white). Pass `null` to keep transparent. */
   background?: string | null
   /** Draw the animation at `timeMs` onto the given context (already cleared + background-filled). May be async (e.g. to seek video frames). */
@@ -94,7 +157,8 @@ export async function exportToVideo(opts: VideoExportOptions): Promise<Blob> {
 
   const stream = canvas.captureStream(0)
   const track = stream.getVideoTracks()[0] as CanvasCaptureTrack | undefined
-  const recorder = new MediaRecorder(stream, { mimeType })
+  const bitrate = opts.bitrate ?? Math.round(width * height * fps * 0.25)
+  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: bitrate })
   const chunks: BlobPart[] = []
   recorder.ondataavailable = (e) => {
     if (e.data && e.data.size > 0) chunks.push(e.data)
@@ -132,6 +196,42 @@ export async function exportToVideo(opts: VideoExportOptions): Promise<Blob> {
 
   await stopped
   return new Blob(chunks, { type: mimeType })
+}
+
+/**
+ * Export a video using the best available engine.
+ *
+ * Pass a `format` id from {@link getVideoExportFormats}; omit it to take the
+ * first (best) format. WebCodecs MP4 is used when selected, otherwise the
+ * MediaRecorder path records the chosen mime type in real time.
+ */
+export async function exportVideo(
+  opts: VideoExportOptions & { format?: string }
+): Promise<{ blob: Blob; extension: string }> {
+  const formats = getVideoExportFormats()
+  if (formats.length === 0) {
+    throw new Error('This browser cannot export video')
+  }
+
+  const chosen = formats.find((f) => f.id === opts.format) ?? formats[0]
+
+  if (chosen.id === MP4_WEBCODECS) {
+    const blob = await exportToMP4({
+      width: opts.width,
+      height: opts.height,
+      fps: opts.fps,
+      durationMs: opts.durationMs,
+      background: opts.background,
+      bitrate: opts.bitrate,
+      renderFrame: opts.renderFrame,
+      onProgress: opts.onProgress,
+      signal: opts.signal,
+    })
+    return { blob, extension: chosen.extension }
+  }
+
+  const blob = await exportToVideo({ ...opts, mimeType: chosen.id })
+  return { blob, extension: chosen.extension }
 }
 
 /** Trigger a browser download of an exported video blob. */

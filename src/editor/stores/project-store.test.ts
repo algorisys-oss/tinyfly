@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { createProjectStore } from './project-store'
-import type { ProjectCanvas } from './project-store'
+import type { ProjectCanvasInput } from './project-store'
+import { DEFAULT_CANVAS_BACKGROUND } from './project-store'
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -115,6 +116,26 @@ describe('ProjectStore', () => {
       expect(project.activeSceneId).toBe(project.scenes[0].id)
     })
 
+    it('gives projects saved without a background the default one', () => {
+      const saved = {
+        id: 'no-bg',
+        name: 'No Background',
+        created: 1000,
+        modified: 2000,
+        canvas: { width: 640, height: 480 },
+        scenes: [{ id: 's1', name: 'Scene 1', order: 0, elements: [], timeline: null }],
+        activeSceneId: 's1',
+      }
+
+      localStorageMock.setItem('tinyfly-projects', JSON.stringify({ 'no-bg': saved }))
+      localStorageMock.setItem('tinyfly-current-project', 'no-bg')
+
+      const canvas = createProjectStore().currentProject().canvas
+
+      expect(canvas.background).toBe(DEFAULT_CANVAS_BACKGROUND)
+      expect(canvas.width).toBe(640)
+    })
+
     it('migrates old format project with null timeline', () => {
       const oldProject = {
         id: 'old-project',
@@ -194,11 +215,29 @@ describe('ProjectStore', () => {
 
     it('creates a new project with custom canvas', () => {
       const store = createProjectStore()
-      const canvas: ProjectCanvas = { width: 800, height: 600 }
+      const canvas: ProjectCanvasInput = { width: 800, height: 600 }
       const project = store.createNew('Custom Canvas', canvas)
 
       expect(project.canvas.width).toBe(800)
       expect(project.canvas.height).toBe(600)
+    })
+
+    it('fills in the default background when a canvas omits it', () => {
+      const store = createProjectStore()
+      const project = store.createNew('No Background', { width: 800, height: 600 })
+
+      expect(project.canvas.background).toBe(DEFAULT_CANVAS_BACKGROUND)
+    })
+
+    it('keeps a canvas background that was supplied', () => {
+      const store = createProjectStore()
+      const project = store.createNew('Branded', {
+        width: 800,
+        height: 600,
+        background: '#ff8800',
+      })
+
+      expect(project.canvas.background).toBe('#ff8800')
     })
 
     it('saves to localStorage', () => {
@@ -280,6 +319,25 @@ describe('ProjectStore', () => {
       store.setCanvas({ width: 500, height: 500 })
 
       expect(store.isDirty()).toBe(true)
+    })
+
+    it('updates the artboard background', () => {
+      const store = createProjectStore()
+      store.setCanvas({ width: 300, height: 200, background: '#123456' })
+
+      expect(store.currentProject().canvas.background).toBe('#123456')
+    })
+
+    it('preserves the background when only dimensions are set', () => {
+      const store = createProjectStore()
+      store.setCanvas({ width: 300, height: 200, background: '#abcdef' })
+
+      // Samples and AI output supply dimensions only; that must not wipe the
+      // chosen background.
+      store.setCanvas({ width: 1080, height: 1920 })
+
+      expect(store.currentProject().canvas.background).toBe('#abcdef')
+      expect(store.currentProject().canvas.width).toBe(1080)
     })
   })
 

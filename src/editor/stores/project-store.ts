@@ -13,7 +13,23 @@ const AUTO_SAVE_DELAY = 1000 // ms
 export interface ProjectCanvas {
   width: number
   height: number
+  /**
+   * Artboard background colour. Drives the preview and is the default
+   * background for raster exports, so what you see is what you export.
+   */
+  background: string
 }
+
+/**
+ * Canvas as callers supply it — `background` may be omitted (samples and AI
+ * output only declare dimensions) and is filled in with the default.
+ */
+export type ProjectCanvasInput = Omit<ProjectCanvas, 'background'> & {
+  background?: string
+}
+
+/** Artboard background used by projects saved before it was configurable. */
+export const DEFAULT_CANVAS_BACKGROUND = '#252525'
 
 export interface Project {
   id: string
@@ -35,6 +51,17 @@ export interface ProjectMetadata {
 const DEFAULT_CANVAS: ProjectCanvas = {
   width: 300,
   height: 200,
+  background: DEFAULT_CANVAS_BACKGROUND,
+}
+
+/** Fill in canvas fields added after a project was saved. */
+function normalizeCanvas(canvas: unknown): ProjectCanvas {
+  const source = (canvas ?? {}) as Partial<ProjectCanvas>
+  return {
+    width: source.width ?? DEFAULT_CANVAS.width,
+    height: source.height ?? DEFAULT_CANVAS.height,
+    background: source.background ?? DEFAULT_CANVAS_BACKGROUND,
+  }
 }
 
 function generateId(): string {
@@ -73,9 +100,11 @@ function createDefaultProject(name = 'Untitled Animation'): Project {
  * Migrate old project format (single timeline) to new format (scenes array).
  */
 function migrateProject(project: Record<string, unknown>): Project {
-  // Already migrated: has scenes array
+  // Already migrated: has scenes array. The canvas is still normalized, so
+  // projects saved before `background` existed pick up the default.
   if (Array.isArray(project.scenes) && project.scenes.length > 0) {
-    return project as unknown as Project
+    const migrated = project as unknown as Project
+    return { ...migrated, canvas: normalizeCanvas(migrated.canvas) }
   }
 
   // Old format: has timeline field, no scenes
@@ -93,7 +122,7 @@ function migrateProject(project: Record<string, unknown>): Project {
     name: project.name as string,
     created: project.created as number,
     modified: project.modified as number,
-    canvas: (project.canvas as ProjectCanvas) ?? { ...DEFAULT_CANVAS },
+    canvas: normalizeCanvas(project.canvas),
     scenes: [scene],
     activeSceneId: sceneId,
   }
@@ -210,10 +239,10 @@ export function createProjectStore() {
   /**
    * Create a new project
    */
-  function createNew(name?: string, canvas?: ProjectCanvas): Project {
+  function createNew(name?: string, canvas?: ProjectCanvasInput): Project {
     const project = createDefaultProject(name)
     if (canvas) {
-      project.canvas = { ...canvas }
+      project.canvas = normalizeCanvas(canvas)
     }
 
     setProjects((prev) => {
@@ -274,10 +303,12 @@ export function createProjectStore() {
   /**
    * Update canvas dimensions
    */
-  function setCanvas(canvas: ProjectCanvas): void {
+  function setCanvas(canvas: ProjectCanvasInput): void {
     setCurrentProject((prev) => ({
       ...prev,
-      canvas: { ...canvas },
+      // Merge onto the existing canvas so a caller that only sets dimensions
+      // (samples, AI output) doesn't reset the chosen background.
+      canvas: normalizeCanvas({ ...prev.canvas, ...canvas }),
       modified: Date.now(),
     }))
     setIsDirty(true)

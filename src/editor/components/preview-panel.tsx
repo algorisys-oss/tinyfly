@@ -123,6 +123,8 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
   // resulting scale so dragging stays exact.
   const artboardW = () => props.projectStore.currentProject().canvas.width
   const artboardH = () => props.projectStore.currentProject().canvas.height
+  /** Artboard background comes from the project, so preview matches export. */
+  const artboardBg = () => props.projectStore.currentProject().canvas.background
   const [previewScale, setPreviewScale] = createSignal(1)
   // Maximize expands the preview to fill the window so the stage can scale up.
   const [maximized, setMaximized] = createSignal(false)
@@ -1298,7 +1300,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
       <div class="preview-container" ref={containerRef} style={{ '--preview-scale': String(previewScale()) }}>
         {/* DOM Renderer */}
         <Show when={rendererType() === 'dom'}>
-          <div class="preview-canvas" ref={canvasRef} onClick={handleCanvasClick} style={{ width: `${artboardW()}px`, height: `${artboardH()}px` }}>
+          <div class="preview-canvas" ref={canvasRef} onClick={handleCanvasClick} style={{ width: `${artboardW()}px`, height: `${artboardH()}px`, background: artboardBg() }}>
           <For each={props.sceneStore.elements().filter((el) => !isGroupChild(el.id))}>
             {(element) => (
               <div
@@ -1732,7 +1734,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
 
         {/* Canvas Renderer */}
         <Show when={rendererType() === 'canvas'}>
-          <div class="preview-canvas preview-canvas-renderer" style={{ width: `${artboardW()}px`, height: `${artboardH()}px` }}>
+          <div class="preview-canvas preview-canvas-renderer" style={{ width: `${artboardW()}px`, height: `${artboardH()}px`, background: artboardBg() }}>
             <canvas
               ref={(el) => {
                 canvas2dRef = el
@@ -1759,7 +1761,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
 
         {/* SVG Renderer */}
         <Show when={rendererType() === 'svg'}>
-          <div class="preview-canvas preview-svg-renderer" style={{ width: `${artboardW()}px`, height: `${artboardH()}px` }}>
+          <div class="preview-canvas preview-svg-renderer" style={{ width: `${artboardW()}px`, height: `${artboardH()}px`, background: artboardBg() }}>
             <svg
               ref={(el) => {
                 svgRef = el

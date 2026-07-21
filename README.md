@@ -57,7 +57,10 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Multi-scene sequencer** - Play all scenes in order with transitions
 - **Project management** - Auto-save to LocalStorage
 - **Export/Import** - JSON file support
-- **Video export** - Record the animation to an MP4/WebM file (via MediaRecorder) with a size, FPS, and codec picker; composites image and video layers too — a device screen's recording is captured with `object-fit` cover/contain and rounded corners, seeked in sync
+- **MP4 export** - Encode the animation to a real MP4 (H.264) via WebCodecs, with a hand-written muxer and no dependencies. Frame-by-frame rather than real-time, so it's faster than playback and reproducible; MediaRecorder (WebM) is the fallback where WebCodecs is missing
+- **Animated GIF export** - Median-cut colour quantization with optional Floyd–Steinberg dithering, per-frame palettes, and transparency
+- **Animated WebP export** - Roughly 3× smaller than GIF at true colour, with full alpha
+- **Rich raster export options** - Resolution multiplier (2x by default, so text and edges stay crisp), FPS, background colour or transparency, progress and cancel. Image and video layers are composited too — a device screen's recording is captured with `object-fit` cover/contain and rounded corners, seeked in sync
 - **Resizable preview** - Drag the splitter between the preview and the timeline to resize (double-click to reset)
 - **Stroke write-on** - Animate a path's stroke drawing itself on (DOM + SVG renderers); one-click "Write On" preset
 - **Embed code** - Generate copy-paste code for websites (single scene or full sequence)
@@ -390,7 +393,7 @@ npm run build
 - Letter-stagger sample (engine integration): 4 tests
 - Player + media sync: 45 tests
 - Sequencer: 30 tests
-- Export formats: 30 tests
+- Export formats: 71 tests (CSS 10, Lottie 10, GIF 19, MP4 16, WebP 16)
 - Animation presets: 18 tests
 
 ## Contributing
