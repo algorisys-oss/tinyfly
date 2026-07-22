@@ -282,3 +282,9 @@
     padding: 5px 6px;
   }
 }
+
+.toolbar-btn-ai.active {
+  background: linear-gradient(135deg, #4a9eff, #9b59b6);
+  color: #fff;
+  border-color: transparent;
+}

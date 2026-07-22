@@ -6,7 +6,7 @@
   background: #141414;
   border-bottom: 1px solid #333;
   flex-shrink: 0;
-  height: 36px;
+  height: 30px;
   overflow-x: auto;
   overflow-y: hidden;
 }

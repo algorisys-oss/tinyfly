@@ -9,15 +9,21 @@
 
 .editor-header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 12px;
-  padding: 12px 20px;
+  padding: 7px 16px;
   background: #1a1a1a;
   border-bottom: 1px solid #333;
   flex-shrink: 0;
   /* Wrap toolbar buttons to a second row rather than overflowing the viewport
      (which used to force a horizontal page scroll). */
   flex-wrap: wrap;
+}
+
+/* Compact scene bar shown when there's only one scene (just an add button). */
+.scene-bar-slim {
+  height: 26px;
+  padding: 0 12px;
 }
 
 .editor-header h1 {

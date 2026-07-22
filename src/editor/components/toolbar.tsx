@@ -14,6 +14,8 @@ interface ToolbarProps {
   onSamples?: () => void
   onOpenGallery?: () => void
   onSave?: () => void
+  onToggleAI?: () => void
+  aiOpen?: boolean
   onShowShortcuts?: () => void
 }
 
@@ -240,6 +242,23 @@ export const Toolbar: Component<ToolbarProps> = (props) => {
         </svg>
         <span>New</span>
       </button>
+
+      <Show when={props.onToggleAI}>
+        <button
+          class="toolbar-btn toolbar-btn-ai"
+          classList={{ active: props.aiOpen }}
+          onClick={() => props.onToggleAI?.()}
+          title={props.aiOpen ? 'Hide the AI prompt bar' : 'Generate an animation with AI'}
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <path
+              d="M12 2l1.9 4.6L18.5 8.5 13.9 10.4 12 15l-1.9-4.6L5.5 8.5l4.6-1.9L12 2zm6 11l.95 2.3L21.5 16.5l-2.55 1.2L18 20l-.95-2.3L14.5 16.5l2.55-1.2L18 13z"
+              fill="currentColor"
+            />
+          </svg>
+          <span>AI</span>
+        </button>
+      </Show>
 
       <Show when={props.projectStore && props.onOpenGallery}>
         <button

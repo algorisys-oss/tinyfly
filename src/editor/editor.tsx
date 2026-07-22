@@ -82,6 +82,20 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
   const [leftCollapsed, setLeftCollapsed] = createSignal(false)
   const [rightCollapsed, setRightCollapsed] = createSignal(false)
 
+  // Collapse the AI prompt bar to reclaim vertical space (persisted). Hidden by
+  // default; the toolbar's AI button reveals it.
+  const AI_BAR_KEY = 'tinyfly-ai-bar-open'
+  const [aiBarOpen, setAiBarOpen] = createSignal(localStorage.getItem(AI_BAR_KEY) === '1')
+  const toggleAiBar = () => {
+    const next = !aiBarOpen()
+    setAiBarOpen(next)
+    try {
+      localStorage.setItem(AI_BAR_KEY, next ? '1' : '0')
+    } catch {
+      /* ignore */
+    }
+  }
+
   // Resizable split between the preview (flex:1) and the timeline. Dragging the
   // splitter changes the timeline height, so the preview grows/shrinks inversely.
   const TIMELINE_HEIGHT_KEY = 'tinyfly-timeline-height'
@@ -603,12 +617,29 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
             />
           </svg>
         </button>
-        <Toolbar store={store} projectStore={projectStore} sceneStore={sceneStore} onEmbed={() => setShowEmbed(true)} onExportAs={() => setShowExportAs(true)} onSamples={() => setShowSamples(true)} onOpenGallery={() => void openGallery()} onSave={flushSave} onShowShortcuts={() => setShowShortcuts(true)} />
+        <Toolbar store={store} projectStore={projectStore} sceneStore={sceneStore} onEmbed={() => setShowEmbed(true)} onExportAs={() => setShowExportAs(true)} onSamples={() => setShowSamples(true)} onOpenGallery={() => void openGallery()} onSave={flushSave} onToggleAI={toggleAiBar} aiOpen={aiBarOpen()} onShowShortcuts={() => setShowShortcuts(true)} />
       </header>
 
       <Show
         when={editContext().type === 'symbol'}
-        fallback={<SceneBar projectStore={projectStore} onSwitchScene={switchScene} />}
+        fallback={
+          <Show
+            when={projectStore.getScenes().length > 1}
+            fallback={
+              <div class="scene-bar scene-bar-slim">
+                <button
+                  class="scene-add-btn"
+                  title="Add a scene"
+                  onClick={() => switchScene(projectStore.addScene().id)}
+                >
+                  + Scene
+                </button>
+              </div>
+            }
+          >
+            <SceneBar projectStore={projectStore} onSwitchScene={switchScene} />
+          </Show>
+        }
       >
         <div class="symbol-breadcrumb">
           <button class="symbol-breadcrumb-back" onClick={exitToScene} title="Back to the scene">
@@ -625,12 +656,15 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
         </div>
       </Show>
 
-      <AIPromptBar
-        store={store}
-        sceneStore={sceneStore}
-        projectStore={projectStore}
-        onOpenSettings={() => setShowAISettings(true)}
-      />
+      <Show when={aiBarOpen()}>
+        <AIPromptBar
+          store={store}
+          sceneStore={sceneStore}
+          projectStore={projectStore}
+          onOpenSettings={() => setShowAISettings(true)}
+          onCollapse={toggleAiBar}
+        />
+      </Show>
 
       <main class="editor-main">
         {/* Mobile sidebar overlay */}

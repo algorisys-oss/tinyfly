@@ -13,6 +13,8 @@ interface AIPromptBarProps {
   projectStore: ProjectStore
   /** Open the AI Settings dialog (to add an API key / pick a model). */
   onOpenSettings: () => void
+  /** Collapse (hide) the prompt bar to reclaim space. */
+  onCollapse?: () => void
 }
 
 const EXAMPLES = [
@@ -93,6 +95,15 @@ export const AIPromptBar: Component<AIPromptBarProps> = (props) => {
       >
         ⚙
       </button>
+      <Show when={props.onCollapse}>
+        <button
+          class="ai-prompt-collapse"
+          onClick={() => props.onCollapse?.()}
+          title="Hide the AI prompt bar"
+        >
+          ×
+        </button>
+      </Show>
       <Show when={message()}>
         {(m) => (
           <span class="ai-prompt-message" classList={{ error: m().kind === 'error', ok: m().kind === 'ok' }}>
