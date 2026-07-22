@@ -16,7 +16,7 @@ interface DragState {
   currentTime: number
 }
 
-const TIME_SCALE = 0.1 // pixels per millisecond at zoom 1
+export const TIME_SCALE = 0.1 // pixels per millisecond at zoom 1
 
 export const TimelineView: Component<TimelineViewProps> = (props) => {
   const pixelsPerMs = createMemo(() => TIME_SCALE * props.store.state.zoom)
@@ -202,13 +202,13 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
   )
 }
 
-interface TimeRulerProps {
+export interface TimeRulerProps {
   duration: number
   pixelsPerMs: number
   scrollPosition: number
 }
 
-const TimeRuler: Component<TimeRulerProps> = (props) => {
+export const TimeRuler: Component<TimeRulerProps> = (props) => {
   const markers = createMemo(() => {
     const result: { time: number; label: string; major: boolean }[] = []
     const visibleDuration = Math.max(props.duration, 5000)

@@ -9,6 +9,11 @@ body,
   padding: 0;
   width: 100%;
   height: 100%;
+  /* Never scroll the page horizontally — the editor manages its own layout and
+     internal scroll areas. Without this, a header/toolbar wider than the
+     viewport pushes the page wide and reveals a blank strip on the right when
+     you scroll or resize. */
+  overflow-x: hidden;
 }
 
 body {

@@ -46,6 +46,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Any canvas / aspect ratio** - The preview artboard follows the project canvas (DOM, Canvas, and SVG renderers) and fits-to-view, so a vertical 9:16 promo or any custom size previews at true proportions; samples can declare their own canvas size
 - **Device-frame preset** - One click stamps a device mockup (rounded body, camera/notch, and a rounded video "screen") sized to the canvas, in **Phone / Landscape / Tablet** variants — drop a screen-recording into the screen's source for an app promo
 - **Timeline view** - Visual keyframe editing with drag-and-drop
+- **Curve editor** - Switch the timeline between the **Dope Sheet** (keyframes & timing) and a **Curves** graph view where each numeric track is a value-over-time curve with the real easing drawn between keyframes; drag points in 2D (time + value), drag the easing handles to shape the cubic-bezier, double-click a lane to add a keyframe, Ctrl/Cmd-click to multi-select
 - **Multi-select keyframes** - Ctrl/Cmd-click to select many keyframes; copy/paste (at the playhead) and delete them together
 - **Property panel** - Edit keyframe values and easing
 - **Track management** - Add, remove, and organize animation tracks

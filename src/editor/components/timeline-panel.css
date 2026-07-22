@@ -1,0 +1,54 @@
+.timeline-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.timeline-panel-header {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-bottom: 1px solid #2a2a2a;
+  background: #161616;
+  flex-shrink: 0;
+}
+
+.timeline-view-switch {
+  display: inline-flex;
+  gap: 2px;
+  background: #202020;
+  border: 1px solid #2f2f2f;
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.timeline-view-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #999;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.timeline-view-tab:hover {
+  color: #ddd;
+}
+
+.timeline-view-tab.active {
+  background: #4a9eff;
+  color: #fff;
+}
+
+.timeline-panel-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}

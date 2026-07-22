@@ -1,4 +1,6 @@
 export { TimelineView } from './timeline-view'
+export { CurveView } from './curve-view'
+export { TimelinePanel } from './timeline-panel'
 export { PreviewPanel } from './preview-panel'
 export { PlaybackControls } from './playback-controls'
 export { PropertyPanel } from './property-panel'

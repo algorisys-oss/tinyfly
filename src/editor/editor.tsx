@@ -1,7 +1,7 @@
 import { onMount, onCleanup, createSignal, createEffect, createResource, Show } from 'solid-js'
 import type { Component } from 'solid-js'
 import {
-  TimelineView,
+  TimelinePanel,
   PreviewPanel,
   PlaybackControls,
   PropertyPanel,
@@ -488,7 +488,7 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
           </div>
 
           <section class="editor-timeline" style={{ height: `${timelineHeight()}px` }}>
-            <TimelineView store={store} />
+            <TimelinePanel store={store} />
           </section>
         </div>
 

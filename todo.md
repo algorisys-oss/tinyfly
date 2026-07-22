@@ -210,6 +210,19 @@
 - [x] Multi-scene player/sequencer (TinyflySequencer)
 - [ ] Collaborative editing
 - [x] Custom easing curve editor
+- [x] **Curve / graph timeline view** — a Dope Sheet | Curves switcher
+  (`timeline-panel.tsx`). The Curves view (`curve-view.tsx`) draws each numeric
+  track as a value-over-time curve, normalized per-track, with the real easing
+  sampled between keyframes (`curve-math.ts`, `getEasingFunction`). Keyframe
+  points drag in 2D (time + value); double-click a lane adds a keyframe. Both
+  views share the same store (playhead/zoom/scroll/selection), so switching is
+  lossless. Non-numeric tracks (colour/motion-path/array) are noted, not drawn.
+  - [x] Draggable **easing handles** on the selected keyframe — shape the
+    cubic-bezier right on the curve (`easingToBezierPoints` seeds handles from
+    built-in easings; a named easing converts to custom on grab).
+  - [x] Ctrl/Cmd-click **multi-select** of curve points (parity with dope sheet).
+  - [ ] Follow-up: horizontal timeline zoom + scroll; all-curves-overlaid mode;
+    box drag-select of points.
 
 ## Phase 23: Text Animation (Adobe Animate parity)
 
@@ -356,7 +369,7 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
 
 ## Test Coverage
 
-- 613 tests passing
+- 627 tests passing
 - Easing functions: 48 tests
 - Interpolators: 21 tests
 - Clock: 19 tests
@@ -384,3 +397,4 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
 - AI animation generator (parse/validate): 10 tests
 - Project backend injection (IndexedDB seam): 5 tests
 - Scene thumbnail render guards: 4 tests
+- Curve-math (numeric detection, padded range, eased sampling, easing→bezier): 14 tests

@@ -15,6 +15,9 @@
   background: #1a1a1a;
   border-bottom: 1px solid #333;
   flex-shrink: 0;
+  /* Wrap toolbar buttons to a second row rather than overflowing the viewport
+     (which used to force a horizontal page scroll). */
+  flex-wrap: wrap;
 }
 
 .editor-header h1 {

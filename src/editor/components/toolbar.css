@@ -3,6 +3,10 @@
   align-items: center;
   gap: 8px;
   margin-left: auto;
+  /* Wrap buttons instead of forcing the header (and page) wider than the
+     viewport. */
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .toolbar-project-name {
