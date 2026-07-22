@@ -214,14 +214,14 @@ Symbol swap plays in the **DOM** preview.
 
 ### Symbols in export & embeds
 
-Symbol instances are **flattened** into their shapes for **GIF / WebP / MP4**
-export, **embed** code, scene **thumbnails**, and the **Canvas** preview — so what
-you build with symbols also ships in your output. (Exports use the symbol's
-poster frame; a symbol's *nested* animation baked into export is still to come.)
+Symbol instances render in your output too. **Raster export (GIF / WebP / MP4)**
+bakes in a symbol's **nested animation and swaps** — the exported file matches
+what plays in the preview, including lip-sync. **Embeds, thumbnails and the
+Canvas preview** show the symbol's poster frame (static).
 
-> **Still to come:** **SVG** preview rendering of instances, and a symbol's
-> nested animation / swap **baked into export** (exports use the base symbol's
-> poster frame) — see [symbols-and-library.md](symbols-and-library.md).
+> **Still to come:** nested animation/swaps baked into **embeds** (raster export
+> already does), **SVG** preview rendering of instances, and instance-opacity
+> compositing in export — see [symbols-and-library.md](symbols-and-library.md).
 
 ## Property Panel
 

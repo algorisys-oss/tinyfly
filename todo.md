@@ -293,8 +293,11 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
     (DOM preview, synced to the scene playhead via per-instance DOM adapters).
   - [x] Symbol-swap (lip-sync) — instance `swapSet` + `swapIndex` track; DOM preview shows `set[floor(swapIndex)]`; property-panel swap editor.
   - [x] Export/embed/thumbnail + Canvas expansion of instances via
-    `expandSymbolInstances` (flatten to shapes). SVG preview + nested-animation-
-    in-export still pending.
+    `expandSymbolInstances` (flatten to shapes).
+  - [x] **Raster export (GIF/WebP/MP4) bakes in nested animation + swaps** via
+    `symbol-export-layer` (per-symbol composites rendered under a ctx transform
+    that honours the instance's own scene animation). Embeds still static; SVG
+    preview + instance-opacity compositing pending.
   - [ ] Undo of Convert also removes the orphaned symbol.
   - See [docs/symbols-and-library.md](docs/symbols-and-library.md).
 - [ ] Phase B — Camera (animated pan/zoom/rotate), onion skinning, guides/grid/snapping

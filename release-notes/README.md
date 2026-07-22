@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.28.0](v0.28.0.md) | 2026-07-22 | Symbols animate in export — GIF/WebP/MP4 bake in a symbol's nested animation and swaps (lip-sync) |
 | [v0.27.0](v0.27.0.md) | 2026-07-22 | Symbol swap (lip-sync) — a swap set + swapIndex track animates which symbol an instance shows |
 | [v0.26.0](v0.26.0.md) | 2026-07-22 | Symbols render everywhere — instances flatten into raster export, embeds, thumbnails, and the Canvas preview |
 | [v0.25.0](v0.25.0.md) | 2026-07-22 | Nested symbol playback — a symbol's own timeline animates inside every instance, synced to the scene playhead |

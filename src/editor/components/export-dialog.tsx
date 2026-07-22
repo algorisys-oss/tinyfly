@@ -16,7 +16,7 @@ import {
   downloadVideo,
 } from '../../engine/export'
 import { buildExportComposite } from '../utils/export-composite'
-import { expandSymbolInstances } from '../utils/expand-symbols'
+import { buildSymbolExportLayer } from '../utils/symbol-export-layer'
 import { useEscapeClose } from '../utils/use-escape-close'
 import { slugifyFilename } from '../utils/filename'
 import './export-dialog.css'
@@ -141,19 +141,23 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
       try { await document.fonts.ready } catch { /* ignore */ }
     }
 
-    // Flatten symbol instances, then composite the DOM-only layers (image +
-    // video) the Canvas renderer skips.
-    const flattened = expandSymbolInstances(props.sceneStore.elements(), props.projectStore.getSymbol)
-    const composite = await buildExportComposite(flattened)
+    // Non-symbol elements composite as usual (scene-animated). Symbol instances
+    // are rendered by a dedicated layer that bakes in their nested animation and
+    // swaps.
+    const allElements = props.sceneStore.elements()
+    const composite = await buildExportComposite(allElements.filter((el) => el.type !== 'symbol'))
+    const symbolLayer = await buildSymbolExportLayer(allElements, props.projectStore.getSymbol)
 
     const draw = async (ctx: CanvasRenderingContext2D, timeMs: number) => {
+      const sceneState = timeline.getStateAtTime(timeMs)
       await composite.prepareFrame(timeMs)
-      composite.adapter.applyState(timeline.getStateAtTime(timeMs))
+      composite.adapter.applyState(sceneState)
       ctx.save()
       ctx.imageSmoothingEnabled = true
       ctx.imageSmoothingQuality = 'high'
       ctx.scale(scaleX, scaleY)
       composite.adapter.render(ctx)
+      await symbolLayer.draw(ctx, timeMs, sceneState)
       ctx.restore()
     }
 
@@ -201,6 +205,7 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
       setExportError(err instanceof Error ? err.message : String(err))
     } finally {
       composite.dispose()
+      symbolLayer.dispose()
       setAbortController(null)
       setExporting(false)
     }
