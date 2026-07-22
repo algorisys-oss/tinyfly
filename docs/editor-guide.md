@@ -214,8 +214,7 @@ Symbol swap plays in the **DOM** preview.
 
 ### Symbols in export & embeds
 
-Symbol instances render in your output too. **Raster export (GIF / WebP / MP4)**
-bakes in a symbol's **nested animation and swaps** — the exported file matches
+Symbol instances render in the **DOM**, **Canvas** and **SVG** previews, and in your output too. **Raster export (GIF / WebP / MP4)** bakes in a symbol's **nested animation and swaps** — the exported file matches
 what plays in the preview, including lip-sync. **Embeds, thumbnails and the
 Canvas preview** show the symbol's poster frame (static).
 

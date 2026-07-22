@@ -1887,7 +1887,11 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
               viewBox={`0 0 ${artboardW()} ${artboardH()}`}
               preserveAspectRatio="xMidYMid meet"
             >
-              <For each={props.sceneStore.elements().filter((el) => !isGroupChild(el.id))}>
+              <For
+                each={expandSymbolInstances(props.sceneStore.elements(), props.projectStore.getSymbol).filter(
+                  (el) => el.type !== 'symbol' && !isGroupChild(el.id)
+                )}
+              >
                 {(element) => renderSVGElement(element)}
               </For>
             </svg>

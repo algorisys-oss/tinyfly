@@ -298,7 +298,12 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
     `symbol-export-layer` (per-symbol composites rendered under a ctx transform
     that honours the instance's own scene animation). Embeds still static; SVG
     preview + instance-opacity compositing pending.
-  - [ ] Undo of Convert also removes the orphaned symbol.
+  - [x] SVG preview rendering of instances (flattened, matches Canvas).
+  - [ ] Undo of Convert also removes the orphaned symbol (deferred — clean fix
+    would deep-copy the library on every history push; harmless + deletable).
+  - [ ] Instance-opacity compositing in export (rare; needs offscreen canvas).
+  - [ ] Nested animation/swaps baked into **embeds** (needs runtime nested
+    playback in the player — largest remaining item).
   - See [docs/symbols-and-library.md](docs/symbols-and-library.md).
 - [ ] Phase B — Camera (animated pan/zoom/rotate), onion skinning, guides/grid/snapping
 - [ ] Phase C — Pen tool + polygon/star, shape-tween morph tooling, video/sprite-sheet export
