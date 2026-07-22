@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.41.0](v0.41.0.md) | 2026-07-22 | Rulers & draggable guides — 📏 pull guide lines out of the rulers; elements snap to them |
 | [v0.40.0](v0.40.0.md) | 2026-07-22 | Resize snapping — the dragged edge/corner snaps to grid/elements/artboard (Shift-aspect-lock disables) |
 | [v0.39.0](v0.39.0.md) | 2026-07-22 | Grid & snapping — ▦ grid overlay + 🧲 snap dragged elements to grid/edges/centre with pink guides |
 | [v0.38.0](v0.38.0.md) | 2026-07-22 | Onion skinning — 🧅 faint ghost frames before/after the playhead (Canvas renderer) |

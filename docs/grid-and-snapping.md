@@ -47,7 +47,18 @@ showing what caught. Each handle drives specific edges (e.g. **e** snaps the
 right edge, **se** snaps right + bottom, **n** snaps the top). Holding **Shift**
 to lock the aspect ratio turns snapping off for that drag so the two don't fight.
 
+## Rulers & guides
+
+Toggle **📏 Rulers** to show rulers along the top and left of the stage. **Drag
+out of a ruler** to drop a guide line — down from the top ruler for a vertical
+guide, right from the left ruler for a horizontal one. Guides are cyan, can be
+**dragged to reposition**, and are removed by **dropping them off the stage**.
+
+While the rulers are shown, dragged and resized elements **snap to your guides**
+too (alongside the grid, elements, and artboard). Guides are editor-only — never
+part of the animation or the saved JSON.
+
 ## Limitations / later
 
-- Draggable ruler guides and rulers along the edges are not yet implemented.
+- Rulers show tick marks but not numeric labels yet.
 - Grid size (20px) is fixed for now.

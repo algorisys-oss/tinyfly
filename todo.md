@@ -317,7 +317,7 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
   - [x] Onion skinning (Canvas renderer): 🧅 toggle draws faint ghost frames before/after the playhead. Pure `onion.ts` helper (tested). See [docs/onion-skinning.md](docs/onion-skinning.md).
   - [x] Grid + snapping: ▦ Grid overlay + 🧲 Snap (drag snaps to grid/element edges/centre/artboard) with live pink guides. Pure `snap.ts` helper (tested). See [docs/grid-and-snapping.md](docs/grid-and-snapping.md).
   - [x] Resize snapping: the dragged edge/corner snaps to the same targets (Shift-aspect-lock disables it).
-  - [ ] Draggable ruler guides + rulers.
+  - [x] Rulers + draggable guides: 📏 Rulers toggle; drag guides out of the rulers, reposition, drop off-stage to remove; elements snap to guides. See [docs/grid-and-snapping.md](docs/grid-and-snapping.md).
 - [ ] Phase C — Pen tool + polygon/star, shape-tween morph tooling, video/sprite-sheet export
 - [ ] Out of scope: bone/IK rigging, frame-by-frame drawing, natural-media brushes
 

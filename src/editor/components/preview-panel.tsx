@@ -160,6 +160,68 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
   const [guideX, setGuideX] = createSignal<number | null>(null)
   const [guideY, setGuideY] = createSignal<number | null>(null)
 
+  // Rulers + persistent user guides. Guides are editor-only lines dragged out of
+  // the rulers; elements snap to them. Positions are in artboard units.
+  const [showRulers, setShowRulers] = createSignal(false)
+  const [guidesX, setGuidesX] = createSignal<number[]>([])
+  const [guidesY, setGuidesY] = createSignal<number[]>([])
+  const [draggingGuide, setDraggingGuide] = createSignal<{ axis: 'x' | 'y'; index: number } | null>(null)
+
+  // Map client (screen) coords to artboard coords via the canvas rect, so it's
+  // correct at any preview scale / scroll position.
+  const clientToStage = (cx: number, cy: number) => {
+    const r = canvasRef?.getBoundingClientRect()
+    const sc = previewScale()
+    if (!r) return { x: 0, y: 0 }
+    return { x: (cx - r.left) / sc, y: (cy - r.top) / sc }
+  }
+
+  const moveGuide = (e: MouseEvent) => {
+    const d = draggingGuide()
+    if (!d) return
+    const p = clientToStage(e.clientX, e.clientY)
+    if (d.axis === 'x') setGuidesX((g) => g.map((v, i) => (i === d.index ? Math.round(p.x) : v)))
+    else setGuidesY((g) => g.map((v, i) => (i === d.index ? Math.round(p.y) : v)))
+  }
+
+  const endGuide = (e: MouseEvent) => {
+    document.removeEventListener('mousemove', moveGuide)
+    document.removeEventListener('mouseup', endGuide)
+    const d = draggingGuide()
+    if (d) {
+      // Drop off the stage to delete the guide.
+      const p = clientToStage(e.clientX, e.clientY)
+      const off = d.axis === 'x' ? p.x < 0 || p.x > artboardW() : p.y < 0 || p.y > artboardH()
+      if (off) {
+        if (d.axis === 'x') setGuidesX((g) => g.filter((_, i) => i !== d.index))
+        else setGuidesY((g) => g.filter((_, i) => i !== d.index))
+      }
+    }
+    setDraggingGuide(null)
+  }
+
+  const startGuideDrag = (axis: 'x' | 'y', index: number, e: MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDraggingGuide({ axis, index })
+    document.addEventListener('mousemove', moveGuide)
+    document.addEventListener('mouseup', endGuide)
+  }
+
+  // Drag out of a ruler: create a guide at the press point and start moving it.
+  const createGuideFromRuler = (axis: 'x' | 'y', e: MouseEvent) => {
+    const p = clientToStage(e.clientX, e.clientY)
+    if (axis === 'x') {
+      const index = guidesX().length
+      setGuidesX((g) => [...g, Math.round(p.x)])
+      startGuideDrag('x', index, e)
+    } else {
+      const index = guidesY().length
+      setGuidesY((g) => [...g, Math.round(p.y)])
+      startGuideDrag('y', index, e)
+    }
+  }
+
   const handleCameraPanStart = (e: MouseEvent) => {
     if (!props.store.hasCamera()) return
     e.preventDefault()
@@ -548,6 +610,11 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
       const b = elementsBounds([el])
       xs.push(b.x, b.x + b.width / 2, b.x + b.width)
       ys.push(b.y, b.y + b.height / 2, b.y + b.height)
+    }
+    // Snap to user guides while the rulers are shown.
+    if (showRulers()) {
+      xs.push(...guidesX())
+      ys.push(...guidesY())
     }
     return { xs, ys }
   }
@@ -1560,6 +1627,14 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
           >
             🧲 Snap
           </button>
+          <button
+            class="preview-camera-btn"
+            classList={{ active: showRulers() }}
+            onClick={() => setShowRulers((r) => !r)}
+            title="Show rulers — drag out guide lines that elements snap to (drop off-stage to remove)"
+          >
+            📏 Rulers
+          </button>
         </Show>
         <button
           class="preview-maximize-btn"
@@ -2092,6 +2167,29 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
           </Show>
           <Show when={guideY() !== null}>
             <div class="preview-guide preview-guide-h" style={{ top: `${guideY()}px` }} />
+          </Show>
+          {/* Rulers + persistent user guides (drag out of a ruler; drop off-stage to remove). */}
+          <Show when={showRulers()}>
+            <div class="preview-ruler preview-ruler-h" onMouseDown={(e) => createGuideFromRuler('x', e)} title="Drag down for a vertical guide" />
+            <div class="preview-ruler preview-ruler-v" onMouseDown={(e) => createGuideFromRuler('y', e)} title="Drag right for a horizontal guide" />
+            <For each={guidesX()}>
+              {(gx, i) => (
+                <div
+                  class="preview-user-guide preview-user-guide-v"
+                  style={{ left: `${gx}px` }}
+                  onMouseDown={(e) => startGuideDrag('x', i(), e)}
+                />
+              )}
+            </For>
+            <For each={guidesY()}>
+              {(gy, i) => (
+                <div
+                  class="preview-user-guide preview-user-guide-h"
+                  style={{ top: `${gy}px` }}
+                  onMouseDown={(e) => startGuideDrag('y', i(), e)}
+                />
+              )}
+            </For>
           </Show>
           {/* Camera pan overlay: covers the stage while "✋ Pan" is on, so dragging
               pans the camera instead of hitting elements. Zoom/rotate stay numeric. */}
