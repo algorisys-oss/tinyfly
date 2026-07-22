@@ -15,7 +15,7 @@ export interface SampleDefinition {
   /** Short description */
   description: string
   /** Category for organization */
-  category: 'basic' | 'motion' | 'text' | 'ui' | 'effects' | 'showcase' | 'products'
+  category: 'basic' | 'motion' | 'text' | 'ui' | 'effects' | 'showcase' | 'products' | 'camera'
   /** Preview thumbnail (emoji for now, could be image URL) */
   thumbnail: string
   /** Animation duration in ms */
@@ -2117,6 +2117,70 @@ export const sampleDefinitions: SampleDefinition[] = [
       { target: 'Node5', property: 'x', keyframes: [{ time: 2200, value: 0 }, { time: 3100, value: -5, easing: 'ease-in-out' }, { time: 4000, value: 0, easing: 'ease-in-out' }] },
     ],
   },
+
+  // ── Camera demos ─────────────────────────────────────────────
+  // The camera is animated by tracks targeting the reserved "Camera" target
+  // (x/y = pan, scale = zoom, rotate = rotate the whole stage).
+  {
+    id: 'camera-push-in',
+    name: 'Camera: Push In',
+    description: 'A cinematic zoom into the title',
+    category: 'camera',
+    thumbnail: '🔍',
+    duration: 3000,
+    canvas: { width: 400, height: 300 },
+    elements: [
+      { type: 'rect', name: 'BG', x: 0, y: 0, width: 400, height: 300, fill: '#141a24' },
+      { type: 'text', name: 'Title', x: 40, y: 118, width: 320, height: 60, text: 'tinyfly', fontSize: 52, fill: '#ffffff', textAlign: 'center', fontWeight: 800 },
+      { type: 'text', name: 'Sub', x: 40, y: 182, width: 320, height: 24, text: 'camera · push in', fontSize: 15, fill: '#7f9bbd', textAlign: 'center' },
+    ],
+    tracks: [
+      { target: 'Camera', property: 'scale', keyframes: [{ time: 0, value: 1 }, { time: 3000, value: 2.4, easing: 'ease-in-out' }] },
+      { target: 'Title', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 500, value: 1, easing: 'ease-out' }] },
+      { target: 'Sub', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 900, value: 1, easing: 'ease-out' }] },
+    ],
+  },
+  {
+    id: 'camera-pan-across',
+    name: 'Camera: Pan Across',
+    description: 'The camera pans across a row of cards',
+    category: 'camera',
+    thumbnail: '↔️',
+    duration: 3500,
+    canvas: { width: 420, height: 220 },
+    elements: [
+      { type: 'rect', name: 'BG', x: 0, y: 0, width: 420, height: 220, fill: '#12161c' },
+      { type: 'rect', name: 'Card1', x: 20, y: 35, width: 110, height: 150, fill: '#4a9eff', borderRadius: 12 },
+      { type: 'rect', name: 'Card2', x: 170, y: 35, width: 110, height: 150, fill: '#ff6b6b', borderRadius: 12 },
+      { type: 'rect', name: 'Card3', x: 320, y: 35, width: 110, height: 150, fill: '#3ecf7a', borderRadius: 12 },
+      { type: 'rect', name: 'Card4', x: 470, y: 35, width: 110, height: 150, fill: '#ffcc44', borderRadius: 12 },
+      { type: 'rect', name: 'Card5', x: 620, y: 35, width: 110, height: 150, fill: '#b98cff', borderRadius: 12 },
+    ],
+    tracks: [
+      { target: 'Camera', property: 'x', keyframes: [{ time: 0, value: 0 }, { time: 400, value: 0 }, { time: 3200, value: -310, easing: 'ease-in-out' }] },
+    ],
+  },
+  {
+    id: 'camera-orbit',
+    name: 'Camera: Orbit Reveal',
+    description: 'Rotate and zoom out to reveal an emblem',
+    category: 'camera',
+    thumbnail: '🌀',
+    duration: 4000,
+    canvas: { width: 360, height: 360 },
+    elements: [
+      { type: 'rect', name: 'BG', x: 0, y: 0, width: 360, height: 360, fill: '#0f1420' },
+      { type: 'circle', name: 'Ring', x: 90, y: 90, width: 180, height: 180, fill: '#1c2740', stroke: '#4a9eff', strokeWidth: 4 },
+      { type: 'circle', name: 'Emblem', x: 120, y: 120, width: 120, height: 120, fill: '#4a9eff' },
+      { type: 'circle', name: 'Core', x: 156, y: 156, width: 48, height: 48, fill: '#ffffff' },
+    ],
+    tracks: [
+      { target: 'Camera', property: 'rotate', keyframes: [{ time: 0, value: -12 }, { time: 4000, value: 12, easing: 'ease-in-out' }] },
+      { target: 'Camera', property: 'scale', keyframes: [{ time: 0, value: 1.6 }, { time: 4000, value: 1, easing: 'ease-in-out' }] },
+      { target: 'Emblem', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 700, value: 1, easing: 'ease-out' }] },
+      { target: 'Core', property: 'scale', keyframes: [{ time: 700, value: 0 }, { time: 1200, value: 1, easing: 'ease-out' }] },
+    ],
+  },
 ]
 
 /**
@@ -2151,4 +2215,5 @@ export const categoryNames: Record<SampleDefinition['category'], string> = {
   effects: 'Effects',
   showcase: 'Showcase',
   products: 'Algorisys',
+  camera: 'Camera',
 }
