@@ -685,6 +685,29 @@ larger view, click **⛶ Maximize** in the preview header — the preview fills 
 whole window with a floating play / stop / exit bar. Press **Esc** (or **Restore**)
 to return. Selection and dragging stay pixel-accurate at any scale.
 
+## Camera
+
+A **camera** animates a **pan / zoom / rotate** over the whole stage — cinematic
+moves without touching your elements. Click **🎥 Camera** in the preview header to
+add one (click again to remove it).
+
+Adding a camera creates four tracks on a reserved **`Camera`** target:
+
+- `x`, `y` — pan the stage
+- `scale` — zoom (around the centre)
+- `rotate` — rotate (around the centre)
+
+They're seeded at identity with a keyframe at the start and end, so the camera
+starts still. Keyframe it like any track: select a Camera track in the timeline,
+add/drag keyframes, and set values in the Property Panel — e.g. keyframe `scale`
+from `1` to `2` for a push-in, or `x` across the frame for a pan.
+
+> **This release (v0.34.0)** covers the camera in the **DOM preview**. Coming
+> next: the camera in the Canvas/SVG previews, **raster export** and **embeds**,
+> plus an on-stage draggable camera frame. Tip: set up your elements first, then
+> keyframe the camera (editing while the camera is mid-move is approximate for
+> now). See [camera.md](camera.md).
+
 ## Project Management
 
 ### Saving & auto-save

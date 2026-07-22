@@ -164,6 +164,47 @@ export function createEditorStore() {
     bumpVersion()
   }
 
+  /** Whether a camera (tracks targeting the reserved "Camera" layer) exists. */
+  function hasCamera(): boolean {
+    return !!state.timeline?.tracks.some((t) => t.target === 'Camera')
+  }
+
+  /**
+   * Add a camera: pan/zoom/rotate tracks on the reserved "Camera" target, which
+   * the preview/export/embed apply to the whole stage. Seeded at identity with a
+   * keyframe at each end so it's ready to keyframe. No-op if a camera exists.
+   */
+  function addCamera(): void {
+    if (!state.timeline || hasCamera()) return
+    const dur = duration() || 2000
+    const props: [string, number][] = [
+      ['x', 0],
+      ['y', 0],
+      ['scale', 1],
+      ['rotate', 0],
+    ]
+    const base = Date.now()
+    for (const [prop, val] of props) {
+      addTrack({
+        id: `camera-${prop}-${base}`,
+        target: 'Camera',
+        property: prop,
+        keyframes: [
+          { time: 0, value: val },
+          { time: dur, value: val },
+        ],
+      })
+    }
+  }
+
+  /** Remove all camera tracks. */
+  function removeCamera(): void {
+    if (!state.timeline) return
+    for (const t of [...state.timeline.tracks]) {
+      if (t.target === 'Camera') removeTrack(t.id)
+    }
+  }
+
   // Remove a track
   function removeTrack(trackId: string) {
     if (!state.timeline) return
@@ -725,6 +766,9 @@ export function createEditorStore() {
     // Track actions
     addTrack,
     removeTrack,
+    addCamera,
+    removeCamera,
+    hasCamera,
     selectTrack,
     applyPreset,
     applyPresetStaggered,

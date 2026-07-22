@@ -199,6 +199,10 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
         adapter!.registerTarget(element.id, el)
       }
     })
+
+    // The camera layer is animated by tracks targeting "Camera".
+    const cam = canvasRef!.querySelector('[data-element-id="__camera__"]') as HTMLElement
+    if (cam) adapter!.registerTarget('Camera', cam)
   }
 
   // --- Nested symbol playback (DOM preview) ---
@@ -1327,6 +1331,15 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
           {props.sceneStore.elementCount()} elements
         </span>
         <button
+          class="preview-camera-btn"
+          classList={{ active: props.store.hasCamera() }}
+          onClick={() => (props.store.hasCamera() ? props.store.removeCamera() : props.store.addCamera())}
+          title={props.store.hasCamera() ? 'Remove the camera' : 'Add a camera (pan / zoom / rotate the whole stage)'}
+          disabled={!props.store.state.timeline}
+        >
+          🎥 Camera
+        </button>
+        <button
           class="preview-maximize-btn"
           onClick={toggleMaximized}
           title={maximized() ? 'Restore preview (Esc)' : 'Maximize preview'}
@@ -1347,6 +1360,9 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
         {/* DOM Renderer */}
         <Show when={rendererType() === 'dom'}>
           <div class="preview-canvas" ref={canvasRef} onClick={handleCanvasClick} style={{ width: `${artboardW()}px`, height: `${artboardH()}px`, background: artboardBg() }}>
+          {/* Camera layer: an animated "Camera" target transforms the whole stage.
+              Identity (no transform) until camera tracks exist, so it's inert otherwise. */}
+          <div class="preview-camera-layer" data-element-id="__camera__" data-tinyfly="Camera">
           <For each={props.sceneStore.elements().filter((el) => !isGroupChild(el.id))}>
             {(element) => (
               <div
@@ -1840,6 +1856,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
               <p class="hint">Add elements from the left panel</p>
             </div>
           </Show>
+          </div>{/* /preview-camera-layer */}
           </div>
         </Show>
 

@@ -176,3 +176,39 @@ describe('keyframe multi-select + copy/paste', () => {
     expect(b).toEqual([300, 1200])
   })
 })
+
+describe('camera', () => {
+  // store.tracks() is a memo that only updates in a reactive root — read the
+  // timeline directly in tests (see setup()).
+  const rawTracks = (store: ReturnType<typeof createEditorStore>) => store.state.timeline!.tracks
+
+  it('adds pan/zoom/rotate tracks on the "Camera" target', () => {
+    const store = createEditorStore()
+    store.createNewTimeline('tl', 'Cam', { duration: 2000 })
+    expect(store.hasCamera()).toBe(false)
+    store.addCamera()
+    expect(store.hasCamera()).toBe(true)
+    const cam = rawTracks(store).filter((t) => t.target === 'Camera')
+    expect(cam.map((t) => t.property).sort()).toEqual(['rotate', 'scale', 'x', 'y'])
+    const scale = cam.find((t) => t.property === 'scale')!
+    expect(scale.keyframes.map((k) => k.value)).toEqual([1, 1])
+  })
+
+  it('is a no-op when a camera already exists', () => {
+    const store = createEditorStore()
+    store.createNewTimeline('tl', 'Cam', { duration: 2000 })
+    store.addCamera()
+    const n = rawTracks(store).length
+    store.addCamera()
+    expect(rawTracks(store).length).toBe(n)
+  })
+
+  it('removes all camera tracks', () => {
+    const store = createEditorStore()
+    store.createNewTimeline('tl', 'Cam', { duration: 2000 })
+    store.addCamera()
+    store.removeCamera()
+    expect(store.hasCamera()).toBe(false)
+    expect(rawTracks(store).some((t) => t.target === 'Camera')).toBe(false)
+  })
+})

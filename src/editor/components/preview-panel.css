@@ -280,3 +280,37 @@
     font-size: 11px;
   }
 }
+
+/* Camera layer — an animated "Camera" target transforms the whole stage. */
+.preview-camera-layer {
+  position: absolute;
+  inset: 0;
+  transform-origin: center center;
+}
+
+.preview-camera-btn {
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 5px;
+  color: #ccc;
+  font-size: 12px;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.preview-camera-btn:hover:not(:disabled) {
+  background: #333;
+  color: #fff;
+}
+
+.preview-camera-btn.active {
+  background: #4a9eff;
+  color: #fff;
+  border-color: #4a9eff;
+}
+
+.preview-camera-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
