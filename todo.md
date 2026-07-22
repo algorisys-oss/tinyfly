@@ -314,7 +314,8 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
   - [x] Camera inspector (slice 3a): 🎥 Camera section in the Property Panel — Pan X/Y, Zoom, Rotation keyframed at the playhead via `setCameraValue`; Reset / Remove.
   - [x] On-stage pan + timeline camera lane (slice 3b): ✋ Pan drag overlay in the DOM preview pans the camera (x/y keyframes at playhead); Camera tracks float to the top of the timeline as a distinct 🎥 lane.
   - [ ] Full on-stage frame (corner-zoom + rotate handle) + edit-in-camera coords (slice 4).
-  - [ ] Onion skinning; guides/grid/rulers/snapping.
+  - [x] Onion skinning (Canvas renderer): 🧅 toggle draws faint ghost frames before/after the playhead. Pure `onion.ts` helper (tested). See [docs/onion-skinning.md](docs/onion-skinning.md).
+  - [ ] Guides/grid/rulers/snapping.
 - [ ] Phase C — Pen tool + polygon/star, shape-tween morph tooling, video/sprite-sheet export
 - [ ] Out of scope: bone/IK rigging, frame-by-frame drawing, natural-media brushes
 

@@ -6,6 +6,7 @@ import { SVGAdapter } from '../../adapters/svg'
 import { deserializeTimeline, type Timeline } from '../../engine'
 import { expandSymbolInstances, shownSymbolId } from '../utils/expand-symbols'
 import { cameraFromState, applyCameraToCtx, cameraSvgTransform } from '../utils/camera'
+import { onionGhostTimes } from '../utils/onion'
 import type { EditorStore } from '../stores/editor-store'
 import type { ProjectStore } from '../stores/project-store'
 import { fillToCss, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type GroupElement, type SymbolInstanceElement } from '../stores/scene-store'
@@ -138,6 +139,10 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
   // and rotate stay in the Property Panel's Camera inspector.
   const [cameraPanMode, setCameraPanMode] = createSignal(false)
   let cameraPanStart: { mx: number; my: number; x: number; y: number } | null = null
+
+  // Onion skinning: faint ghost frames before/after the playhead in the Canvas
+  // renderer. Editor-only visualization — not part of the animation JSON.
+  const [onionSkin, setOnionSkin] = createSignal(false)
 
   const handleCameraPanStart = (e: MouseEvent) => {
     if (!props.store.hasCamera()) return
@@ -322,14 +327,36 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
   const renderCanvas = () => {
     if (!canvasAdapter || !canvas2dRef) return
     const ctx = canvas2dRef.getContext('2d')
-    if (ctx) {
-      ctx.clearRect(0, 0, canvas2dRef.width, canvas2dRef.height)
-      const cam = cameraFromState(props.store.state.timeline?.getStateAtTime(props.store.currentTime()))
-      ctx.save()
-      if (cam) applyCameraToCtx(ctx, cam, canvas2dRef.width / 2, canvas2dRef.height / 2)
-      canvasAdapter.render(ctx)
-      ctx.restore()
+    if (!ctx) return
+    const cx = canvas2dRef.width / 2
+    const cy = canvas2dRef.height / 2
+    const tl = props.store.state.timeline
+    const now = props.store.currentTime()
+    ctx.clearRect(0, 0, canvas2dRef.width, canvas2dRef.height)
+
+    // Onion skin: draw faint ghosts at nearby times first (paused, timeline only).
+    // Each ghost uses its own camera + state so it lands where it truly appears.
+    if (onionSkin() && tl && !props.store.isPlaying()) {
+      for (const ghost of onionGhostTimes(now, tl.duration)) {
+        const state = tl.getStateAtTime(ghost.time)
+        canvasAdapter.applyState(state)
+        const gcam = cameraFromState(state)
+        ctx.save()
+        ctx.globalAlpha = ghost.alpha
+        if (gcam) applyCameraToCtx(ctx, gcam, cx, cy)
+        canvasAdapter.render(ctx)
+        ctx.restore()
+      }
+      // Restore the adapter to the current frame before the main draw.
+      canvasAdapter.applyState(tl.getStateAtTime(now))
     }
+
+    const cam = cameraFromState(tl?.getStateAtTime(now))
+    ctx.save()
+    ctx.globalAlpha = 1
+    if (cam) applyCameraToCtx(ctx, cam, cx, cy)
+    canvasAdapter.render(ctx)
+    ctx.restore()
   }
 
   // Apply state based on current renderer
@@ -435,6 +462,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
   createEffect(() => {
     // Track time changes to trigger effect
     const time = props.store.currentTime()
+    onionSkin() // re-render the Canvas ghosts when the toggle flips
     if (!props.store.isPlaying() && props.store.state.timeline) {
       applyStateToRenderer()
       syncMedia(time, false)
@@ -1393,6 +1421,16 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
             title="Drag the stage to pan the camera (keyframes at the playhead). Zoom/rotate in the Properties panel."
           >
             ✋ Pan
+          </button>
+        </Show>
+        <Show when={rendererType() === 'canvas'}>
+          <button
+            class="preview-camera-btn"
+            classList={{ active: onionSkin() }}
+            onClick={() => setOnionSkin((o) => !o)}
+            title="Onion skin: show faint ghost frames before and after the playhead (Canvas renderer)"
+          >
+            🧅 Onion
           </button>
         </Show>
         <button
