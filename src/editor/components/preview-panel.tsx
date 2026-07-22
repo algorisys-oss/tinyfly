@@ -1672,8 +1672,9 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
               <div
                 class="preview-element"
                 classList={{
-                  // Don't show selection box for paths - they have control points
-                  selected: element.type !== 'path' && (props.sceneStore.state.selectedElementId === element.id ||
+                  // Don't show selection box for free paths (they use control
+                  // points); parametric polygon/star paths behave like boxes.
+                  selected: (element.type !== 'path' || !!(element as PathElement).shape) && (props.sceneStore.state.selectedElementId === element.id ||
                            props.sceneStore.state.selectedElementIds.includes(element.id)),
                   locked: element.locked,
                   dragging: isDragging() && dragState()?.elementId === element.id,
@@ -2018,8 +2019,9 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
             )}
           </For>
 
-          {/* Resize handles for selected element (not shown for paths - they have control points) */}
-          <Show when={props.sceneStore.selectedElement() && !props.sceneStore.selectedElement()?.locked && props.sceneStore.selectedElement()?.type !== 'path'}>
+          {/* Resize handles for selected element (free paths use control points;
+              parametric polygon/star paths get box handles). */}
+          <Show when={props.sceneStore.selectedElement() && !props.sceneStore.selectedElement()?.locked && (props.sceneStore.selectedElement()?.type !== 'path' || !!(props.sceneStore.selectedElement() as PathElement | undefined)?.shape)}>
             {(() => {
               const element = props.sceneStore.selectedElement()!
               const handles = getResizeHandles(element)
@@ -2086,8 +2088,8 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
             })()}
           </Show>
 
-          {/* Path control points for selected path element */}
-          <Show when={props.sceneStore.selectedElement()?.type === 'path' && selectedPathData()}>
+          {/* Path control points — free paths only (polygon/star resize as boxes). */}
+          <Show when={props.sceneStore.selectedElement()?.type === 'path' && !(props.sceneStore.selectedElement() as PathElement | undefined)?.shape && selectedPathData()}>
             {(() => {
               const element = props.sceneStore.selectedElement() as PathElement
               const pathData = selectedPathData()!

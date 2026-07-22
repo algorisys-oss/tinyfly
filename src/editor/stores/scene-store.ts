@@ -1,6 +1,9 @@
 import { createSignal } from 'solid-js'
 import { createStore } from 'solid-js/store'
 import { measureTextLetters } from '../utils/split-text'
+import { polyStarPath, type PolyStarSpec } from '../utils/poly-star'
+
+export type { PolyStarSpec }
 
 export type ElementType = 'rect' | 'circle' | 'text' | 'image' | 'audio' | 'video' | 'line' | 'arrow' | 'path' | 'group' | 'symbol'
 
@@ -196,6 +199,12 @@ export interface PathElement extends BaseElement {
   lineJoin: 'miter' | 'round' | 'bevel'
   /** Whether the path is closed */
   closed: boolean
+  /**
+   * Present when this path is a parametric polygon/star. `d` is regenerated from
+   * the spec + the element's width/height, so it stays a plain path everywhere
+   * while still being editable (sides/points/inner ratio) and resizable.
+   */
+  shape?: PolyStarSpec
 }
 
 export interface GroupElement extends BaseElement {
@@ -515,6 +524,37 @@ export function createSceneStore() {
   }
 
   /**
+   * Add a parametric polygon or star as a closed path. The `d` is generated from
+   * the spec + box so it renders/exports like any path, while `shape` keeps it
+   * editable and re-generated on resize.
+   */
+  function addPolyStar(spec: PolyStarSpec, overrides: Partial<PathElement> = {}): SceneElement {
+    const width = overrides.width ?? 120
+    const height = overrides.height ?? 120
+    return addElement('path', {
+      x: 80,
+      y: 80,
+      width,
+      height,
+      fill: '#4a9eff',
+      stroke: '#2b6cb0',
+      strokeWidth: 0,
+      closed: true,
+      ...overrides,
+      shape: spec,
+      d: polyStarPath(spec, overrides.width ?? width, overrides.height ?? height),
+    } as Partial<PathElement>)
+  }
+
+  /** Update a polygon/star's spec (sides/points/inner ratio), regenerating `d`. */
+  function updateShape(elementId: string, patch: Partial<PolyStarSpec>): void {
+    const el = state.elements.find((e) => e.id === elementId) as PathElement | undefined
+    if (!el || el.type !== 'path' || !el.shape) return
+    const shape = { ...el.shape, ...patch }
+    updateElement(elementId, { shape, d: polyStarPath(shape, el.width, el.height) } as Partial<SceneElement>)
+  }
+
+  /**
    * Stamp a device mockup: a dark rounded body, a rounded video "screen" (drop
    * your screen-recording in via its `src`), and a camera cutout. The three
    * elements are created at the top level (video renders on the DOM target /
@@ -702,7 +742,20 @@ export function createSceneStore() {
   function updateElement(elementId: string, updates: Partial<SceneElement>): void {
     snapshot()
     setState('elements', (elements) =>
-      elements.map((el) => (el.id === elementId ? { ...el, ...updates } as SceneElement : el))
+      elements.map((el) => {
+        if (el.id !== elementId) return el
+        const merged = { ...el, ...updates } as SceneElement
+        // Keep a parametric polygon/star's `d` in sync with its box + spec.
+        if (
+          merged.type === 'path' &&
+          (merged as PathElement).shape &&
+          ('width' in updates || 'height' in updates || 'shape' in updates)
+        ) {
+          const p = merged as PathElement
+          p.d = polyStarPath(p.shape!, p.width, p.height)
+        }
+        return merged
+      })
     )
     bumpVersion()
   }
@@ -1131,6 +1184,8 @@ export function createSceneStore() {
 
     // Actions
     addElement,
+    addPolyStar,
+    updateShape,
     addDeviceFrame,
     addSymbolInstance,
     replaceElementsWithSymbol,

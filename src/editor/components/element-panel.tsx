@@ -146,6 +146,22 @@ export const ElementPanel: Component<ElementPanelProps> = (props) => {
                 </button>
               )}
             </For>
+            <button
+              class="element-type-btn"
+              onClick={() => props.sceneStore.addPolyStar({ kind: 'polygon', points: 6 })}
+              title="Add a regular polygon (edit sides in Properties)"
+            >
+              <span class="element-type-icon">⬡</span>
+              <span class="element-type-label">Polygon</span>
+            </button>
+            <button
+              class="element-type-btn"
+              onClick={() => props.sceneStore.addPolyStar({ kind: 'star', points: 5, innerRatio: 0.5 })}
+              title="Add a star (edit points / inner ratio in Properties)"
+            >
+              <span class="element-type-icon">★</span>
+              <span class="element-type-label">Star</span>
+            </button>
           </div>
 
           <span class="section-label">Presets · Device</span>

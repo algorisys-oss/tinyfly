@@ -1283,6 +1283,44 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
 
     return (
     <>
+      <Show when={element.shape}>
+        {(shape) => (
+          <div class="property-section">
+            <h4>{shape().kind === 'star' ? '★ Star' : '⬡ Polygon'}</h4>
+            <div class="property-row">
+              <label>{shape().kind === 'star' ? 'Points' : 'Sides'}</label>
+              <input
+                type="number"
+                min={shape().kind === 'star' ? 2 : 3}
+                max="20"
+                step="1"
+                value={shape().points}
+                onInput={(e) =>
+                  props.sceneStore.updateShape(element.id, { points: Number(e.currentTarget.value) })
+                }
+              />
+            </div>
+            <Show when={shape().kind === 'star'}>
+              <div class="property-row">
+                <label>Inner %</label>
+                <input
+                  type="number"
+                  min="5"
+                  max="100"
+                  step="5"
+                  value={Math.round((shape().innerRatio ?? 0.5) * 100)}
+                  onInput={(e) =>
+                    props.sceneStore.updateShape(element.id, {
+                      innerRatio: Math.min(1, Math.max(0.05, Number(e.currentTarget.value) / 100)),
+                    })
+                  }
+                />
+              </div>
+            </Show>
+            <p class="property-hint">Resize the shape on the stage; sides/points stay parametric.</p>
+          </div>
+        )}
+      </Show>
       <div class="property-section">
         <h4>Path Data</h4>
         <div class="property-row">

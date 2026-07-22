@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { createSceneStore } from './scene-store'
-import type { RectElement, CircleElement, TextElement, AudioElement, VideoElement } from './scene-store'
+import type { RectElement, CircleElement, TextElement, AudioElement, VideoElement, PathElement } from './scene-store'
 
 describe('SceneStore', () => {
   describe('addElement', () => {
@@ -64,6 +64,54 @@ describe('SceneStore', () => {
       const element = store.addElement('rect')
 
       expect(store.state.selectedElementId).toBe(element.id)
+    })
+  })
+
+  describe('addPolyStar / updateShape', () => {
+    it('creates a closed polygon path with a shape spec', () => {
+      const store = createSceneStore()
+      const el = store.addPolyStar({ kind: 'polygon', points: 6 }) as PathElement
+      expect(el.type).toBe('path')
+      expect(el.closed).toBe(true)
+      expect(el.shape).toEqual({ kind: 'polygon', points: 6 })
+      // d is generated (M + 5 L + Z for 6 vertices).
+      expect((el.d.match(/L/g) || []).length).toBe(5)
+    })
+
+    it('creates a star with the right vertex count', () => {
+      const store = createSceneStore()
+      const el = store.addPolyStar({ kind: 'star', points: 5, innerRatio: 0.5 }) as PathElement
+      expect(el.shape?.kind).toBe('star')
+      // 10 vertices → M + 9 L + Z.
+      expect((el.d.match(/L/g) || []).length).toBe(9)
+    })
+
+    it('updateShape changes the point count and regenerates d', () => {
+      const store = createSceneStore()
+      const el = store.addPolyStar({ kind: 'polygon', points: 3 }) as PathElement
+      store.updateShape(el.id, { points: 8 })
+      const updated = store.state.elements.find((e) => e.id === el.id) as PathElement
+      expect(updated.shape?.points).toBe(8)
+      expect((updated.d.match(/L/g) || []).length).toBe(7)
+    })
+
+    it('regenerates d when the box is resized', () => {
+      const store = createSceneStore()
+      const el = store.addPolyStar({ kind: 'polygon', points: 4 }, { width: 100, height: 100 }) as PathElement
+      const before = el.d
+      store.updateElement(el.id, { width: 200, height: 200 })
+      const after = (store.state.elements.find((e) => e.id === el.id) as PathElement).d
+      expect(after).not.toBe(before)
+      // A 4-gon in a 200 box reaches x=200.
+      expect(after).toContain('200')
+    })
+
+    it('updateShape is a no-op on a plain (non-shape) path', () => {
+      const store = createSceneStore()
+      const el = store.addElement('path') as PathElement
+      const before = el.d
+      store.updateShape(el.id, { points: 9 })
+      expect((store.state.elements.find((e) => e.id === el.id) as PathElement).d).toBe(before)
     })
   })
 
