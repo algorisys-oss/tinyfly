@@ -289,7 +289,9 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
     and DOM-preview instance rendering (expand + scale via `generateElementHtml`).
   - [x] Edit-in-place (breadcrumb + nested-timeline editing) — double-click an
     instance or the Library pencil; auto-save branches to `updateSymbol`.
-  - [ ] Nested playback + symbol-swap (lip-sync).
+  - [x] Nested playback — a symbol's own timeline animates inside every instance
+    (DOM preview, synced to the scene playhead via per-instance DOM adapters).
+  - [ ] Symbol-swap (lip-sync).
   - [ ] Canvas/SVG adapter rendering + embed/export expansion of instances.
   - [ ] Undo of Convert also removes the orphaned symbol.
   - See [docs/symbols-and-library.md](docs/symbols-and-library.md).

@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.25.0](v0.25.0.md) | 2026-07-22 | Nested symbol playback — a symbol's own timeline animates inside every instance, synced to the scene playhead |
 | [v0.24.0](v0.24.0.md) | 2026-07-22 | Symbol edit-in-place: double-click an instance to edit the symbol; a breadcrumb + save-to-definition so all instances update |
 | [v0.23.0](v0.23.0.md) | 2026-07-22 | Symbols + Library (Phase A): convert selection to a reusable symbol, place instances, DOM-preview rendering |
 | [v0.22.0](v0.22.0.md) | 2026-07-22 | Box-select in both timeline views, a curve Overlay (shared-axis) mode, and per-scene tab thumbnails |

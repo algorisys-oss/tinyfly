@@ -188,10 +188,18 @@ the scene. Everything auto-saves.
 - **Delete** — the `×` button. Blocked while instances of it are still in use
   (the `×N` badge shows the instance count).
 
-> **Still to come:** **nested playback** (a symbol's own timeline playing inside
-> an instance), **symbol-swap** (lip-sync), and Canvas/SVG instance rendering —
-> see [symbols-and-library.md](symbols-and-library.md). Symbol instances render
-> in the **DOM** preview today.
+### Nested animation
+
+A symbol can have its **own timeline**. When it does, every instance **plays that
+animation** inside its box as the scene plays — synced to the scene playhead and
+looped over the symbol's duration. Combine it with animating the *instance*
+(move/scale/rotate the whole thing on the scene timeline) for true nested motion:
+the instance travels while its insides animate. Nested playback runs in the
+**DOM** preview.
+
+> **Still to come:** **symbol-swap** (change which symbol an instance shows over
+> time — the lip-sync primitive) and Canvas/SVG instance rendering — see
+> [symbols-and-library.md](symbols-and-library.md).
 
 ## Property Panel
 

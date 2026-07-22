@@ -3,6 +3,7 @@ import type { Component } from 'solid-js'
 import { DOMAdapter } from '../../adapters/dom'
 import { CanvasAdapter } from '../../adapters/canvas'
 import { SVGAdapter } from '../../adapters/svg'
+import { deserializeTimeline, type Timeline } from '../../engine'
 import type { EditorStore } from '../stores/editor-store'
 import type { ProjectStore } from '../stores/project-store'
 import { fillToCss, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type GroupElement, type SymbolInstanceElement } from '../stores/scene-store'
@@ -199,6 +200,42 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     })
   }
 
+  // --- Nested symbol playback (DOM preview) ---
+  // Each symbol instance with its own timeline gets a private DOMAdapter bound to
+  // its expanded inner elements, driven by the symbol's timeline synced to the
+  // parent playhead (looped over the symbol's duration). Deterministic; all
+  // instances of a symbol show the same nested frame at a given parent time.
+  const instanceAdapters = new Map<string, { adapter: DOMAdapter; timeline: Timeline }>()
+
+  const rebuildInstanceAdapters = () => {
+    instanceAdapters.clear()
+    if (!canvasRef) return
+    for (const el of props.sceneStore.elements()) {
+      if (el.type !== 'symbol') continue
+      const sym = props.projectStore.getSymbol((el as SymbolInstanceElement).symbolId)
+      if (!sym || !sym.timeline || sym.timeline.tracks.length === 0) continue
+      const container = canvasRef.querySelector(
+        `[data-element-id="${el.id}"] .symbol-instance-inner`
+      ) as HTMLElement | null
+      if (!container) continue
+      const adapter = new DOMAdapter()
+      container.querySelectorAll('[data-tinyfly]').forEach((node) => {
+        const name = node.getAttribute('data-tinyfly')
+        if (name) adapter.registerTarget(name, node as HTMLElement)
+      })
+      instanceAdapters.set(el.id, { adapter, timeline: deserializeTimeline(sym.timeline) })
+    }
+  }
+
+  const applyInstanceStates = () => {
+    if (rendererType() !== 'dom' || instanceAdapters.size === 0) return
+    const t = props.store.currentTime()
+    for (const { adapter, timeline } of instanceAdapters.values()) {
+      const dur = timeline.duration
+      adapter.applyState(timeline.getStateAtTime(dur > 0 ? t % dur : t))
+    }
+  }
+
   // Function to register elements with Canvas adapter
   const registerCanvasElements = () => {
     if (!canvasAdapter) return
@@ -252,6 +289,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
 
       if (renderer === 'dom' && adapter) {
         adapter.applyState(state)
+        applyInstanceStates()
       } else if (renderer === 'canvas' && canvasAdapter) {
         canvasAdapter.applyState(state)
         renderCanvas()
@@ -271,6 +309,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     // Small delay to ensure DOM is fully rendered
     setTimeout(() => {
       registerDOMElements()
+      rebuildInstanceAdapters()
       registerCanvasElements()
       registerSVGElements()
       recomputeScale()
@@ -285,8 +324,9 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
 
   // Re-register when elements change or renderer changes
   createEffect(() => {
-    // Track elements and renderer for reactivity
+    // Track elements, symbols (for nested playback) and renderer for reactivity
     props.sceneStore.elements()
+    props.projectStore.getSymbols()
     const renderer = rendererType()
 
     // Canvas can render immediately for real-time property updates
@@ -298,6 +338,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
       requestAnimationFrame(() => {
         if (renderer === 'dom') {
           registerDOMElements()
+          rebuildInstanceAdapters()
         } else if (renderer === 'svg') {
           registerSVGElements()
         }
