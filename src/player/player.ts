@@ -22,6 +22,24 @@ export interface PlayerOptions {
   onComplete?: () => void
   /** Callback on each frame update */
   onUpdate?: (state: AnimationState) => void
+  /**
+   * Nested-symbol timelines keyed by symbol id. When the container has symbol
+   * instances (`[data-tinyfly-symbol="id"]`), each instance's inner elements are
+   * animated by the matching symbol timeline, looped over its duration and synced
+   * to the main playhead. Emitted by the editor's embed export.
+   */
+  symbols?: SymbolAnimation[]
+}
+
+/** A symbol's nested timeline, keyed by its id (for embedded symbol instances). */
+export interface SymbolAnimation {
+  id: string
+  timeline: TimelineDefinition
+}
+
+interface SymbolInstance {
+  adapter: DOMAdapter
+  timeline: Timeline
 }
 
 export interface TargetMapping {
@@ -49,6 +67,7 @@ export class TinyflyPlayer {
   private isDestroyed = false
   private mediaSync: MediaSync | undefined
   private mediaTargets: MediaTarget[] = []
+  private symbolInstances: SymbolInstance[] = []
 
   constructor(container: HTMLElement | string, options: PlayerOptions = {}) {
     // Resolve container
@@ -107,6 +126,9 @@ export class TinyflyPlayer {
 
     // Auto-register targets from container
     this.autoRegisterTargets()
+
+    // Set up nested playback for any embedded symbol instances
+    this.setupSymbolInstances()
 
     // Discover embedded media (audio/video) to sync with the timeline
     this.scanMedia()
@@ -169,9 +191,15 @@ export class TinyflyPlayer {
    * Auto-register targets using data-tinyfly attribute.
    */
   private autoRegisterTargets(): void {
-    // Find elements with data-tinyfly attribute
+    // Find elements with data-tinyfly attribute. Skip elements *inside* a symbol
+    // instance container — those are driven by the instance's own nested timeline
+    // (see setupSymbolInstances), not the main one. The instance container itself
+    // (which carries both data-tinyfly and data-tinyfly-symbol) is still
+    // registered so the scene timeline can move the whole instance.
     const elements = this.container.querySelectorAll('[data-tinyfly]')
     elements.forEach((el) => {
+      const symContainer = el.closest('[data-tinyfly-symbol]')
+      if (symContainer && symContainer !== el) return
       const name = el.getAttribute('data-tinyfly')
       if (name) {
         this.registerTarget(name, el as HTMLElement)
@@ -194,6 +222,32 @@ export class TinyflyPlayer {
         }
       })
     }
+  }
+
+  /**
+   * Bind each embedded symbol instance (`[data-tinyfly-symbol="id"]`) to its
+   * symbol's nested timeline: a private adapter drives the instance's inner
+   * elements, looped over the symbol's duration and synced to the main playhead.
+   */
+  private setupSymbolInstances(): void {
+    this.symbolInstances = []
+    const symbols = this.options.symbols
+    if (!symbols || symbols.length === 0) return
+    const byId = new Map(symbols.map((s) => [s.id, s]))
+
+    this.container.querySelectorAll('[data-tinyfly-symbol]').forEach((container) => {
+      const id = container.getAttribute('data-tinyfly-symbol')
+      if (!id) return
+      const sym = byId.get(id)
+      if (!sym || !sym.timeline.tracks?.length) return
+
+      const adapter = new DOMAdapter()
+      container.querySelectorAll('[data-tinyfly]').forEach((node) => {
+        const name = node.getAttribute('data-tinyfly')
+        if (name) adapter.registerTarget(name, node as HTMLElement)
+      })
+      this.symbolInstances.push({ adapter, timeline: deserializeTimeline(sym.timeline) })
+    })
   }
 
   /**
@@ -313,6 +367,8 @@ export class TinyflyPlayer {
     }
     this.mediaTargets = []
     this.adapter.clearTargets()
+    for (const inst of this.symbolInstances) inst.adapter.clearTargets()
+    this.symbolInstances = []
     this.timeline = null
   }
 
@@ -352,8 +408,14 @@ export class TinyflyPlayer {
 
   private applyState(): void {
     if (!this.timeline) return
-    const state = this.timeline.getStateAtTime(this.timeline.currentTime)
-    this.adapter.applyState(state)
+    const t = this.timeline.currentTime
+    this.adapter.applyState(this.timeline.getStateAtTime(t))
+
+    // Drive nested symbol instances, looped over each symbol's duration.
+    for (const inst of this.symbolInstances) {
+      const dur = inst.timeline.duration
+      inst.adapter.applyState(inst.timeline.getStateAtTime(dur > 0 ? t % dur : t))
+    }
   }
 }
 

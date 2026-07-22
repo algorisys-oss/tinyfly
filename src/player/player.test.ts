@@ -480,3 +480,65 @@ describe('create helper function', () => {
     expect(player).toBeInstanceOf(TinyflyPlayer)
   })
 })
+
+describe('nested symbol instances', () => {
+  let container: HTMLDivElement
+
+  beforeEach(() => {
+    container = createContainer()
+  })
+  afterEach(() => container.remove())
+
+  function buildInstance(): HTMLDivElement {
+    // <div data-tinyfly="Inst" data-tinyfly-symbol="s1"><div><div data-tinyfly="Head"/></div></div>
+    const inst = document.createElement('div')
+    inst.setAttribute('data-tinyfly', 'Inst')
+    inst.setAttribute('data-tinyfly-symbol', 's1')
+    const wrapper = document.createElement('div')
+    const head = document.createElement('div')
+    head.setAttribute('data-tinyfly', 'Head')
+    wrapper.appendChild(head)
+    inst.appendChild(wrapper)
+    container.appendChild(inst)
+    return head
+  }
+
+  // Longer than the symbol so the main playhead can pass the symbol's loop point.
+  const mainTimeline: TimelineDefinition = { id: 'main', config: { duration: 3000 }, tracks: [] }
+  const symbolTimeline: TimelineDefinition = {
+    id: 's1',
+    config: { duration: 1000 },
+    tracks: [
+      { id: 't', target: 'Head', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 1000, value: 1 }] },
+    ],
+  }
+
+  it("drives an instance's inner element from its symbol timeline", async () => {
+    const head = buildInstance()
+    const player = new TinyflyPlayer(container, { symbols: [{ id: 's1', timeline: symbolTimeline }] })
+    await player.load(mainTimeline)
+    player.seek(500) // nested 500/1000 → opacity ~0.5
+    expect(Number(head.style.opacity)).toBeGreaterThan(0.3)
+    expect(Number(head.style.opacity)).toBeLessThan(0.7)
+    player.destroy()
+  })
+
+  it('loops the nested timeline over the symbol duration', async () => {
+    const head = buildInstance()
+    const player = new TinyflyPlayer(container, { symbols: [{ id: 's1', timeline: symbolTimeline }] })
+    await player.load(mainTimeline)
+    player.seek(1500) // 1500 % 1000 = 500 → ~0.5 again
+    expect(Number(head.style.opacity)).toBeGreaterThan(0.3)
+    expect(Number(head.style.opacity)).toBeLessThan(0.7)
+    player.destroy()
+  })
+
+  it('does nothing without a matching symbol timeline', async () => {
+    const head = buildInstance()
+    const player = new TinyflyPlayer(container) // no symbols option
+    await player.load(mainTimeline)
+    player.seek(500)
+    expect(head.style.opacity).toBe('') // untouched
+    player.destroy()
+  })
+})

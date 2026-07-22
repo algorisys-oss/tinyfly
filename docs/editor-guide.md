@@ -218,9 +218,10 @@ Symbol instances render in the **DOM**, **Canvas** and **SVG** previews, and in 
 what plays in the preview, including lip-sync. **Embeds, thumbnails and the
 Canvas preview** show the symbol's poster frame (static).
 
-> **Still to come:** nested animation/swaps baked into **embeds** (raster export
-> already does), **SVG** preview rendering of instances, and instance-opacity
-> compositing in export — see [symbols-and-library.md](symbols-and-library.md).
+> **Single-scene embeds now animate symbols** — the player runs each instance's
+> nested timeline. Still to come: symbols in **multi-scene sequence** embeds,
+> **swap** in embeds, and instance-opacity compositing in export — see
+> [symbols-and-library.md](symbols-and-library.md).
 
 ## Property Panel
 

@@ -4,8 +4,8 @@ import type { EditorStore } from '../stores/editor-store'
 import type { SceneStore } from '../stores/scene-store'
 import type { ProjectStore } from '../stores/project-store'
 import { serializeTimeline } from '../../engine'
-import { generateElementHtml } from '../utils/element-html'
-import { expandSymbolInstances } from '../utils/expand-symbols'
+import { generateElementHtml, generateSymbolInstanceHtml } from '../utils/element-html'
+import type { SymbolInstanceElement } from '../stores/scene-store'
 import { useEscapeClose } from '../utils/use-escape-close'
 import './embed-dialog.css'
 
@@ -43,21 +43,47 @@ export const EmbedDialog: Component<EmbedDialogProps> = (props) => {
     return JSON.stringify(serializeTimeline(props.store.state.timeline))
   })
 
-  // Generate HTML for all scene elements (symbol instances flattened)
+  // Symbol instances used in the scene that have a nested timeline — shipped to
+  // the player so it can animate them.
+  const embedSymbols = createMemo(() => {
+    const ids = new Set<string>()
+    for (const el of props.sceneStore.getTopLevelElements()) {
+      if (el.type === 'symbol') ids.add((el as SymbolInstanceElement).symbolId)
+    }
+    const out: { id: string; timeline: unknown }[] = []
+    for (const id of ids) {
+      const sym = props.projectStore.getSymbol(id)
+      if (sym && sym.timeline && sym.timeline.tracks.length > 0) {
+        out.push({ id: sym.id, timeline: sym.timeline })
+      }
+    }
+    return out
+  })
+
+  // Generate HTML for all scene elements. Symbol instances become containers the
+  // player animates (see generateSymbolInstanceHtml + embedSymbols).
   const elementsHtml = createMemo(() => {
-    const elements = expandSymbolInstances(
-      props.sceneStore.getTopLevelElements(),
-      props.projectStore.getSymbol
-    )
+    const elements = props.sceneStore.getTopLevelElements()
     if (elements.length === 0) {
       return '  <!-- Add your target elements here -->\n  <div data-tinyfly="Box" style="position: absolute; left: 40px; top: 70px; width: 60px; height: 60px; background: #4a9eff; border-radius: 4px;"></div>'
     }
     return elements
-      .filter(el => el.visible && el.type !== 'group' && el.type !== 'symbol')
-      .map(el => generateElementHtml(el))
+      .filter((el) => el.visible && el.type !== 'group')
+      .map((el) => {
+        if (el.type === 'symbol') {
+          const sym = props.projectStore.getSymbol((el as SymbolInstanceElement).symbolId)
+          return sym ? generateSymbolInstanceHtml(el as SymbolInstanceElement, sym) : ''
+        }
+        return generateElementHtml(el)
+      })
       .filter(Boolean)
       .join('\n')
   })
+
+  /** The `symbols: [...]` option line for the play() call, if any. */
+  const symbolsOption = createMemo(() =>
+    embedSymbols().length > 0 ? `,\n  symbols: ${JSON.stringify(embedSymbols())}` : ''
+  )
 
   const containerStyle = createMemo(() => {
     return 'position: relative; width: 300px; height: 200px; background: #252525; overflow: hidden;'
@@ -96,7 +122,7 @@ const animation = ${json};
 
 tinyfly.play('#tinyfly-container', animation, {
   loop: -1,  // -1 for infinite loop
-  autoplay: true
+  autoplay: true${symbolsOption()}
 });
 </script>`
   })
@@ -116,7 +142,7 @@ ${elementsHtml()}
 // Load animation from external JSON file
 tinyfly.play('#tinyfly-container', './animation.json', {
   loop: -1,  // -1 for infinite loop
-  autoplay: true
+  autoplay: true${symbolsOption()}
 });
 </script>`
   })

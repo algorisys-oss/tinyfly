@@ -7,7 +7,8 @@ import type {
   AudioElement,
   VideoElement,
 } from '../stores/scene-store'
-import type { LineElement, ArrowElement, PathElement } from '../stores/scene-store'
+import type { LineElement, ArrowElement, PathElement, SymbolInstanceElement } from '../stores/scene-store'
+import type { SymbolDefinition } from '../stores/scene-types'
 
 /** Common media attributes (volume/muted/loop) for embedded <audio>/<video>. */
 function mediaAttrs(media: AudioElement | VideoElement): string {
@@ -200,4 +201,40 @@ ${indent}</svg>`
     default:
       return ''
   }
+}
+
+/**
+ * HTML for a symbol instance: a positioned container tagged with
+ * `data-tinyfly-symbol` (so the player can drive its nested timeline) plus a
+ * scaled inner wrapper holding the symbol's contents. The container also carries
+ * `data-tinyfly="<name>"` so the scene timeline can move the whole instance.
+ */
+export function generateSymbolInstanceHtml(
+  inst: SymbolInstanceElement,
+  symbol: SymbolDefinition,
+  indent: string = '  '
+): string {
+  if (!inst.visible) return ''
+  const sx = symbol.width ? inst.width / symbol.width : 1
+  const sy = symbol.height ? inst.height / symbol.height : 1
+  const inner = symbol.elements
+    .filter((e) => e.visible)
+    .map((e) => generateElementHtml(e, ''))
+    .join('')
+
+  const outer = [
+    'position: absolute',
+    `left: ${inst.x}px`,
+    `top: ${inst.y}px`,
+    `width: ${inst.width}px`,
+    `height: ${inst.height}px`,
+    `opacity: ${inst.opacity}`,
+    inst.rotation ? `transform: rotate(${inst.rotation}deg)` : '',
+    'overflow: hidden',
+  ]
+    .filter(Boolean)
+    .join('; ')
+  const innerStyle = `position:absolute;left:0;top:0;width:${symbol.width}px;height:${symbol.height}px;transform-origin:0 0;transform:scale(${sx},${sy})`
+
+  return `${indent}<div data-tinyfly="${inst.name}" data-tinyfly-symbol="${symbol.id}" style="${outer}"><div style="${innerStyle}">${inner}</div></div>`
 }
