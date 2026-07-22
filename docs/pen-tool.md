@@ -44,9 +44,18 @@ Before finishing, you can grab what you've already placed:
 - **Drag an anchor** to move that point (its handles move with it).
 - **Drag a handle** to reshape the curve; the opposite handle mirrors it, keeping
   the anchor smooth.
+- **Hold Alt while dragging a handle** to break symmetry — the opposite handle
+  stays put, giving a corner (cusp) instead of a smooth point.
 
 Handles take priority over anchors when they overlap, so you can always grab a
 handle sitting on its point.
+
+## Snapping
+
+When **🧲 Snap** is on, pen **points** snap to the grid (**▦ Grid**), your guides
+(**📏 Rulers**), other elements' edges/centres, and the artboard — with the same
+pink alignment guides as element editing. Bezier **handles** stay free so curves
+aren't constrained.
 
 ## Limitations / later
 

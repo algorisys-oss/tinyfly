@@ -219,12 +219,16 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     setPenCursor(null)
     setPenMode(false)
     penDrag = null
+    setGuideX(null)
+    setGuideY(null)
   }
 
   const cancelPen = () => {
     setPenNodes([])
     setPenCursor(null)
     penDrag = null
+    setGuideX(null)
+    setGuideY(null)
   }
 
   // Hit-test the existing pen nodes: a handle endpoint, or an anchor, within
@@ -250,14 +254,33 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     return -1
   }
 
+  // Snap a pen point to the grid / guides / element edges / artboard, publishing
+  // the alignment guides that caught (same targets as element snapping).
+  const snapPenPoint = (raw: { x: number; y: number }) => {
+    if (!snapEnabled()) {
+      setGuideX(null)
+      setGuideY(null)
+      return raw
+    }
+    const threshold = SNAP_PX / previewScale()
+    const { xs, ys } = collectStaticSnapLines('')
+    const gx = showGrid() ? gridLinesFor([raw.x], GRID_SIZE) : []
+    const gy = showGrid() ? gridLinesFor([raw.y], GRID_SIZE) : []
+    const sx = snapAxis([raw.x], [...xs, ...gx], threshold)
+    const sy = snapAxis([raw.y], [...ys, ...gy], threshold)
+    setGuideX(sx.line)
+    setGuideY(sy.line)
+    return { x: raw.x + sx.delta, y: raw.y + sy.delta }
+  }
+
   const handlePenMouseDown = (e: MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    const p = clientToStage(e.clientX, e.clientY)
+    const raw = clientToStage(e.clientX, e.clientY)
     const nodes = penNodes()
 
     // 1. Grab an existing handle endpoint to reshape a curve.
-    const handle = hitPenHandle(p)
+    const handle = hitPenHandle(raw)
     if (handle) {
       penDrag = { kind: 'handle', index: handle.index, which: handle.which }
       return
@@ -265,18 +288,19 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     // 2. Click near the first anchor closes the path.
     if (nodes.length >= 2) {
       const first = nodes[0]
-      if (Math.hypot(p.x - first.x, p.y - first.y) <= PEN_CLOSE_DIST / previewScale()) {
+      if (Math.hypot(raw.x - first.x, raw.y - first.y) <= PEN_CLOSE_DIST / previewScale()) {
         finishPen(true)
         return
       }
     }
     // 3. Grab an existing anchor to move it (with its handles).
-    const anchor = hitPenAnchor(p)
+    const anchor = hitPenAnchor(raw)
     if (anchor >= 0) {
-      penDrag = { kind: 'anchor', index: anchor, offx: p.x - nodes[anchor].x, offy: p.y - nodes[anchor].y }
+      penDrag = { kind: 'anchor', index: anchor, offx: raw.x - nodes[anchor].x, offy: raw.y - nodes[anchor].y }
       return
     }
-    // 4. Otherwise place a new point; dragging pulls out its bezier handles.
+    // 4. Otherwise place a new point (snapped); dragging pulls out its handles.
+    const p = snapPenPoint(raw)
     const index = nodes.length
     setPenNodes([...nodes, { x: p.x, y: p.y }])
     penDrag = { kind: 'new', index, ax: p.x, ay: p.y }
@@ -286,35 +310,44 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     const p = clientToStage(e.clientX, e.clientY)
     setPenCursor(p)
     const drag = penDrag
-    if (!drag) return
+    if (!drag) {
+      setGuideX(null)
+      setGuideY(null)
+      return
+    }
+    // Alt breaks handle symmetry (a corner/cusp) while dragging handles.
+    const cusp = e.altKey
     if (drag.kind === 'new') {
+      // Handles aren't snapped, so the curve stays free.
       const hOut = { x: p.x, y: p.y }
-      const hIn = mirrorHandle(drag.ax, drag.ay, hOut)
-      setPenNodes((ns) => ns.map((n, i) => (i === drag.index ? { ...n, hOut, hIn } : n)))
+      setPenNodes((ns) =>
+        ns.map((n, i) =>
+          i === drag.index ? { x: n.x, y: n.y, hOut, ...(cusp ? {} : { hIn: mirrorHandle(drag.ax, drag.ay, hOut) }) } : n
+        )
+      )
     } else if (drag.kind === 'handle') {
-      // Move the grabbed handle; mirror its opposite for a smooth anchor.
       setPenNodes((ns) =>
         ns.map((n, i) => {
           if (i !== drag.index) return n
           const moved = { x: p.x, y: p.y }
+          if (cusp) {
+            return drag.which === 'hOut' ? { ...n, hOut: moved } : { ...n, hIn: moved }
+          }
           const other = mirrorHandle(n.x, n.y, moved)
-          return drag.which === 'hOut'
-            ? { ...n, hOut: moved, hIn: other }
-            : { ...n, hIn: moved, hOut: other }
+          return drag.which === 'hOut' ? { ...n, hOut: moved, hIn: other } : { ...n, hIn: moved, hOut: other }
         })
       )
     } else {
-      // Move the anchor and shift its handles by the same delta.
+      // Move the anchor (snapped) and shift its handles by the same delta.
+      const snapped = snapPenPoint({ x: p.x - drag.offx, y: p.y - drag.offy })
       setPenNodes((ns) =>
         ns.map((n, i) => {
           if (i !== drag.index) return n
-          const nx = p.x - drag.offx
-          const ny = p.y - drag.offy
-          const dx = nx - n.x
-          const dy = ny - n.y
+          const dx = snapped.x - n.x
+          const dy = snapped.y - n.y
           return {
-            x: nx,
-            y: ny,
+            x: snapped.x,
+            y: snapped.y,
             ...(n.hIn && { hIn: { x: n.hIn.x + dx, y: n.hIn.y + dy } }),
             ...(n.hOut && { hOut: { x: n.hOut.x + dx, y: n.hOut.y + dy } }),
           }
@@ -325,6 +358,8 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
 
   const handlePenMouseUp = () => {
     penDrag = null
+    setGuideX(null)
+    setGuideY(null)
   }
 
   const moveGuide = (e: MouseEvent) => {
@@ -2442,7 +2477,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
               <span class="preview-pen-hint">
                 {penNearFirst()
                   ? '✒️ Click to close the path'
-                  : '✒️ Click to add points · drag for curves · first point / Enter to finish · Backspace undo · Esc cancel'}
+                  : '✒️ Click to add points · drag for curves (Alt = corner) · drag points/handles to adjust · Enter finish · Backspace undo · Esc cancel'}
               </span>
             </div>
           </Show>
