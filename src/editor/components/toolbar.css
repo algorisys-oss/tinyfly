@@ -288,3 +288,61 @@
   color: #fff;
   border-color: transparent;
 }
+
+/* Overflow "More" menu */
+.toolbar-more {
+  position: relative;
+}
+
+.toolbar-btn.active {
+  background: #333;
+  color: #fff;
+}
+
+.toolbar-more-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 180px;
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  padding: 6px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.toolbar-more-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 7px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  color: #ddd;
+  font-size: 13px;
+  font-family: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+
+.toolbar-more-item:hover:not(:disabled) {
+  background: #4a9eff;
+  color: #fff;
+}
+
+.toolbar-more-item:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.toolbar-more-sep {
+  height: 1px;
+  background: #333;
+  margin: 4px 2px;
+}

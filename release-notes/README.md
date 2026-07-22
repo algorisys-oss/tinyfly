@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.31.0](v0.31.0.md) | 2026-07-22 | Top toolbar: More overflow menu + merged the two Export buttons (one row, no wrapping) |
 | [v0.30.0](v0.30.0.md) | 2026-07-22 | Collapsible Elements/Tracks/Library panels + working timeline resizer (real range on short windows) |
 | [v0.29.0](v0.29.0.md) | 2026-07-22 | Reclaim top vertical space: collapsible AI prompt bar, auto-hiding scene bar, slimmer header |
 | [v0.28.4](v0.28.4.md) | 2026-07-22 | Fix: Dope Sheet track list now scrolls (was clipping rows) |

@@ -1,4 +1,4 @@
-import { createSignal, Show } from 'solid-js'
+import { createSignal, Show, onCleanup } from 'solid-js'
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
 import type { ProjectStore } from '../stores/project-store'
@@ -22,7 +22,16 @@ interface ToolbarProps {
 export const Toolbar: Component<ToolbarProps> = (props) => {
   const [importing, setImporting] = createSignal(false)
   const [showNewConfirm, setShowNewConfirm] = createSignal(false)
+  const [showMore, setShowMore] = createSignal(false)
   let fileInputRef: HTMLInputElement | undefined
+  let moreRef: HTMLDivElement | undefined
+
+  // Close the More menu on an outside click.
+  const handleDocClick = (e: MouseEvent) => {
+    if (showMore() && moreRef && !moreRef.contains(e.target as Node)) setShowMore(false)
+  }
+  document.addEventListener('click', handleDocClick)
+  onCleanup(() => document.removeEventListener('click', handleDocClick))
 
   // Inline rename of the project title (double-click the name to edit).
   const [renaming, setRenaming] = createSignal(false)
@@ -229,16 +238,9 @@ export const Toolbar: Component<ToolbarProps> = (props) => {
 
       <div class="toolbar-divider" />
 
-      <button
-        class="toolbar-btn"
-        onClick={handleNewProject}
-        title="New Animation"
-      >
+      <button class="toolbar-btn" onClick={handleNewProject} title="New Animation">
         <svg viewBox="0 0 24 24" width="16" height="16">
-          <path
-            d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 9v4h-2v-4H7v-2h4V5h2v4h4v2h-4z"
-            fill="currentColor"
-          />
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 9v4h-2v-4H7v-2h4V5h2v4h4v2h-4z" fill="currentColor" />
         </svg>
         <span>New</span>
       </button>
@@ -251,10 +253,7 @@ export const Toolbar: Component<ToolbarProps> = (props) => {
           title={props.aiOpen ? 'Hide the AI prompt bar' : 'Generate an animation with AI'}
         >
           <svg viewBox="0 0 24 24" width="16" height="16">
-            <path
-              d="M12 2l1.9 4.6L18.5 8.5 13.9 10.4 12 15l-1.9-4.6L5.5 8.5l4.6-1.9L12 2zm6 11l.95 2.3L21.5 16.5l-2.55 1.2L18 20l-.95-2.3L14.5 16.5l2.55-1.2L18 13z"
-              fill="currentColor"
-            />
+            <path d="M12 2l1.9 4.6L18.5 8.5 13.9 10.4 12 15l-1.9-4.6L5.5 8.5l4.6-1.9L12 2zm6 11l.95 2.3L21.5 16.5l-2.55 1.2L18 20l-.95-2.3L14.5 16.5l2.55-1.2L18 13z" fill="currentColor" />
           </svg>
           <span>AI</span>
         </button>
@@ -267,134 +266,88 @@ export const Toolbar: Component<ToolbarProps> = (props) => {
           title="My Animations — browse, open and manage your saved projects"
         >
           <svg viewBox="0 0 24 24" width="16" height="16">
-            <path
-              d="M4 4h6l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm0 6v8h16v-8H4z"
-              fill="currentColor"
-            />
+            <path d="M4 4h6l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm0 6v8h16v-8H4z" fill="currentColor" />
           </svg>
           <span>My Animations</span>
         </button>
       </Show>
 
       <Show when={props.sceneStore}>
-        <button
-          class="toolbar-btn toolbar-btn-sample"
-          onClick={() => props.onSamples?.()}
-          title="Browse Sample Animations"
-        >
+        <button class="toolbar-btn toolbar-btn-sample" onClick={() => props.onSamples?.()} title="Browse Sample Animations">
           <svg viewBox="0 0 24 24" width="16" height="16">
-            <path
-              d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12zM10 9h8v2h-8zm0 3h4v2h-4zm0-6h8v2h-8z"
-              fill="currentColor"
-            />
+            <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12zM10 9h8v2h-8zm0 3h4v2h-4zm0-6h8v2h-8z" fill="currentColor" />
           </svg>
           <span>Samples</span>
         </button>
       </Show>
 
-      <a
-        href="/gallery"
-        class="toolbar-btn toolbar-btn-gallery"
-        title="View Animation Gallery"
-      >
-        <svg viewBox="0 0 24 24" width="16" height="16">
-          <path
-            d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z"
-            fill="currentColor"
-          />
-        </svg>
-        <span>Gallery</span>
-      </a>
-
-      <a
-        href="/docs"
-        class="toolbar-btn toolbar-btn-docs"
-        title="View Documentation"
-      >
-        <svg viewBox="0 0 24 24" width="16" height="16">
-          <path
-            d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"
-            fill="currentColor"
-          />
-        </svg>
-        <span>Docs</span>
-      </a>
-
-      <button
-        class="toolbar-btn"
-        onClick={handleImportClick}
-        disabled={importing()}
-        title="Import Animation (JSON)"
-      >
-        <svg viewBox="0 0 24 24" width="16" height="16">
-          <path
-            d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"
-            fill="currentColor"
-          />
-        </svg>
-        <span>Import</span>
-      </button>
-
-      <button
-        class="toolbar-btn"
-        onClick={handleExport}
-        disabled={!props.store.state.timeline}
-        title="Export Animation (JSON)"
-      >
-        <svg viewBox="0 0 24 24" width="16" height="16">
-          <path
-            d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"
-            fill="currentColor"
-          />
-        </svg>
-        <span>Export</span>
-      </button>
-
+      {/* Single Export = the format dialog (GIF/WebP/MP4/CSS/Lottie). JSON
+          export lives in the More menu. */}
       <button
         class="toolbar-btn"
         onClick={() => props.onExportAs?.()}
         disabled={!props.store.state.timeline}
-        title="Export as CSS, Lottie, or GIF"
+        title="Export as GIF, WebP, MP4, CSS or Lottie"
       >
         <svg viewBox="0 0 24 24" width="16" height="16">
-          <path
-            d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"
-            fill="currentColor"
-          />
+          <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" fill="currentColor" />
         </svg>
-        <span>Export As</span>
+        <span>Export</span>
       </button>
 
-      <div class="toolbar-divider" />
+      {/* Overflow menu for secondary actions */}
+      <div class="toolbar-more" ref={moreRef}>
+        <button
+          class="toolbar-btn"
+          classList={{ active: showMore() }}
+          onClick={() => setShowMore((v) => !v)}
+          title="More actions"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <path d="M6 10a2 2 0 100 4 2 2 0 000-4zm6 0a2 2 0 100 4 2 2 0 000-4zm6 0a2 2 0 100 4 2 2 0 000-4z" fill="currentColor" />
+          </svg>
+          <span>More</span>
+        </button>
 
-      <button
-        class="toolbar-btn toolbar-btn-embed"
-        onClick={() => props.onEmbed?.()}
-        disabled={!props.store.state.timeline}
-        title="Get Embed Code"
-      >
-        <svg viewBox="0 0 24 24" width="16" height="16">
-          <path
-            d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"
-            fill="currentColor"
-          />
-        </svg>
-        <span>Embed</span>
-      </button>
-
-      <button
-        class="toolbar-btn toolbar-btn-help"
-        onClick={() => props.onShowShortcuts?.()}
-        title="Keyboard Shortcuts (?)"
-      >
-        <svg viewBox="0 0 24 24" width="16" height="16">
-          <path
-            d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"
-            fill="currentColor"
-          />
-        </svg>
-        <span>Help</span>
-      </button>
+        <Show when={showMore()}>
+          <div class="toolbar-more-menu">
+            <button
+              class="toolbar-more-item"
+              disabled={importing()}
+              onClick={() => { handleImportClick(); setShowMore(false) }}
+            >
+              Import JSON…
+            </button>
+            <button
+              class="toolbar-more-item"
+              disabled={!props.store.state.timeline}
+              onClick={() => { handleExport(); setShowMore(false) }}
+            >
+              Export JSON
+            </button>
+            <button
+              class="toolbar-more-item"
+              disabled={!props.store.state.timeline}
+              onClick={() => { props.onEmbed?.(); setShowMore(false) }}
+            >
+              Embed…
+            </button>
+            <div class="toolbar-more-sep" />
+            <a class="toolbar-more-item" href="/gallery" onClick={() => setShowMore(false)}>
+              Examples Gallery
+            </a>
+            <a class="toolbar-more-item" href="/docs" onClick={() => setShowMore(false)}>
+              Docs
+            </a>
+            <button
+              class="toolbar-more-item"
+              onClick={() => { props.onShowShortcuts?.(); setShowMore(false) }}
+            >
+              Keyboard Shortcuts
+            </button>
+          </div>
+        </Show>
+      </div>
 
       {/* New project confirmation dialog */}
       <Show when={showNewConfirm()}>
