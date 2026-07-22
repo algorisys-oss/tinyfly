@@ -1,7 +1,8 @@
 import { createMemo, createSignal, createEffect, Show, Switch, Match, For } from 'solid-js'
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
-import { isGradient, createLinearGradient, createRadialGradient, type SceneStore, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type FillValue, type LinearGradient, type RadialGradient } from '../stores/scene-store'
+import type { ProjectStore } from '../stores/project-store'
+import { isGradient, createLinearGradient, createRadialGradient, type SceneStore, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type SymbolInstanceElement, type FillValue, type LinearGradient, type RadialGradient } from '../stores/scene-store'
 import type { EasingType, BuiltInEasingType, CubicBezierPoints } from '../../engine'
 import { isCubicBezierEasing } from '../../engine'
 import { HelpIcon } from './tooltip'
@@ -12,6 +13,7 @@ import './property-panel.css'
 interface PropertyPanelProps {
   store: EditorStore
   sceneStore: SceneStore
+  projectStore: ProjectStore
 }
 
 const BUILTIN_EASING_OPTIONS: BuiltInEasingType[] = [
@@ -1119,6 +1121,104 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
     )
   }
 
+  // --- Symbol instance (swap / lip-sync) ---
+  const symbolName = (id: string) => props.projectStore.getSymbol(id)?.name ?? '(missing)'
+
+  const setSwapSet = (inst: SymbolInstanceElement, set: string[]) => {
+    props.sceneStore.updateElement(inst.id, { swapSet: set.length ? set : undefined })
+  }
+
+  const addToSwapSet = (inst: SymbolInstanceElement, symbolId: string) => {
+    if (!symbolId) return
+    const set = [...(inst.swapSet ?? [])]
+    // Seed with the base symbol as index 0 if the set is empty.
+    if (set.length === 0 && inst.symbolId !== symbolId) set.push(inst.symbolId)
+    set.push(symbolId)
+    setSwapSet(inst, set)
+  }
+
+  const removeFromSwapSet = (inst: SymbolInstanceElement, index: number) => {
+    const set = [...(inst.swapSet ?? [])]
+    set.splice(index, 1)
+    setSwapSet(inst, set)
+  }
+
+  const moveInSwapSet = (inst: SymbolInstanceElement, index: number, dir: -1 | 1) => {
+    const set = [...(inst.swapSet ?? [])]
+    const j = index + dir
+    if (j < 0 || j >= set.length) return
+    ;[set[index], set[j]] = [set[j], set[index]]
+    setSwapSet(inst, set)
+  }
+
+  const addSwapTrack = (inst: SymbolInstanceElement) => {
+    const count = inst.swapSet?.length ?? 0
+    const dur = props.store.duration() || 1000
+    // Step through each swap-set entry across the timeline.
+    const keyframes = Array.from({ length: Math.max(2, count) }, (_, i) => ({
+      time: Math.round((dur * i) / Math.max(1, count)),
+      value: i,
+    }))
+    props.store.addTrack({
+      id: `${inst.name}-swapIndex-${Date.now()}`,
+      target: inst.name,
+      property: 'swapIndex',
+      keyframes,
+    })
+  }
+
+  const renderSymbolProperties = (element: SymbolInstanceElement) => {
+    const set = () => element.swapSet ?? []
+    const available = () => props.projectStore.getSymbols().filter((s) => s.id !== element.symbolId)
+    return (
+      <div class="property-section">
+        <h4>Symbol Swap (lip-sync)</h4>
+        <p class="property-hint">
+          Build an ordered set of symbols, add a <code>swapIndex</code> track, and animate it —
+          the instance shows <code>set[floor(swapIndex)]</code> at each moment.
+        </p>
+
+        <Show
+          when={set().length > 0}
+          fallback={<div class="property-hint">Base symbol: <strong>{symbolName(element.symbolId)}</strong></div>}
+        >
+          <div class="swap-set-list">
+            <For each={set()}>
+              {(id, i) => (
+                <div class="swap-set-item">
+                  <span class="swap-set-index">{i()}</span>
+                  <span class="swap-set-name">{symbolName(id)}</span>
+                  <button class="swap-mini-btn" title="Move up" onClick={() => moveInSwapSet(element, i(), -1)}>↑</button>
+                  <button class="swap-mini-btn" title="Move down" onClick={() => moveInSwapSet(element, i(), 1)}>↓</button>
+                  <button class="swap-mini-btn" title="Remove" onClick={() => removeFromSwapSet(element, i())}>×</button>
+                </div>
+              )}
+            </For>
+          </div>
+        </Show>
+
+        <div class="property-row">
+          <label>Add symbol</label>
+          <select
+            onChange={(e) => {
+              addToSwapSet(element, e.currentTarget.value)
+              e.currentTarget.value = ''
+            }}
+          >
+            <option value="">Choose…</option>
+            <For each={available()}>{(s) => <option value={s.id}>{s.name}</option>}</For>
+          </select>
+        </div>
+
+        <Show when={set().length >= 2}>
+          <button class="swap-add-track-btn" onClick={() => addSwapTrack(element)}>
+            + Add swap track (steps through the set)
+          </button>
+        </Show>
+      </div>
+    )
+  }
+
   // Path segment helpers
   const addPathSegment = (segmentType: 'L' | 'Q' | 'C') => {
     const element = selectedElement() as PathElement
@@ -1529,6 +1629,9 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
                 </Match>
                 <Match when={element().type === 'video'}>
                   {renderVideoProperties(element() as VideoElement)}
+                </Match>
+                <Match when={element().type === 'symbol'}>
+                  {renderSymbolProperties(element() as SymbolInstanceElement)}
                 </Match>
               </Switch>
 

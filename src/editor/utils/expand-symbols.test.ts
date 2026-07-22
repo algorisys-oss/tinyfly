@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { expandSymbolInstances, hasSymbolInstances } from './expand-symbols'
+import { expandSymbolInstances, hasSymbolInstances, shownSymbolId } from './expand-symbols'
 import type { SceneElement } from '../stores/scene-store'
 import type { SymbolDefinition } from '../stores/scene-types'
 
@@ -100,6 +100,32 @@ describe('expandSymbolInstances', () => {
     const out = expandSymbolInstances([instance('outer')], lookup)
     expect(out).toHaveLength(1)
     expect(out[0].type).toBe('rect')
+  })
+})
+
+describe('shownSymbolId (symbol swap)', () => {
+  const inst = { symbolId: 'base', swapSet: ['a', 'b', 'c'] }
+
+  it('returns the base symbol when there is no swap set', () => {
+    expect(shownSymbolId({ symbolId: 'base' }, 2)).toBe('base')
+    expect(shownSymbolId({ symbolId: 'base', swapSet: [] }, 2)).toBe('base')
+  })
+
+  it('returns the base symbol when swapIndex is missing', () => {
+    expect(shownSymbolId(inst, undefined)).toBe('base')
+  })
+
+  it('floors the index (step / hold behaviour)', () => {
+    expect(shownSymbolId(inst, 0)).toBe('a')
+    expect(shownSymbolId(inst, 0.9)).toBe('a')
+    expect(shownSymbolId(inst, 1)).toBe('b')
+    expect(shownSymbolId(inst, 1.99)).toBe('b')
+    expect(shownSymbolId(inst, 2)).toBe('c')
+  })
+
+  it('clamps out-of-range indices to the set', () => {
+    expect(shownSymbolId(inst, -5)).toBe('a')
+    expect(shownSymbolId(inst, 99)).toBe('c')
   })
 })
 

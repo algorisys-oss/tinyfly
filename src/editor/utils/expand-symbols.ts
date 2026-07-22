@@ -103,3 +103,21 @@ function transformIntoInstance(
 export function hasSymbolInstances(elements: SceneElement[]): boolean {
   return elements.some((el) => el.type === 'symbol')
 }
+
+/**
+ * Which symbol a swap-enabled instance shows at a given `swapIndex`. Picks
+ * `swapSet[floor(swapIndex)]` (clamped to the set); falls back to the instance's
+ * base `symbolId` when there's no swap set or index. This gives step ("hold")
+ * behaviour from a plain numeric track — the lip-sync primitive.
+ */
+export function shownSymbolId(
+  inst: { symbolId: string; swapSet?: string[] },
+  swapIndex: number | undefined
+): string {
+  const set = inst.swapSet
+  if (set && set.length > 0 && typeof swapIndex === 'number' && Number.isFinite(swapIndex)) {
+    const i = Math.max(0, Math.min(set.length - 1, Math.floor(swapIndex)))
+    return set[i]
+  }
+  return inst.symbolId
+}

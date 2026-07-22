@@ -291,7 +291,7 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
     instance or the Library pencil; auto-save branches to `updateSymbol`.
   - [x] Nested playback — a symbol's own timeline animates inside every instance
     (DOM preview, synced to the scene playhead via per-instance DOM adapters).
-  - [ ] Symbol-swap (lip-sync).
+  - [x] Symbol-swap (lip-sync) — instance `swapSet` + `swapIndex` track; DOM preview shows `set[floor(swapIndex)]`; property-panel swap editor.
   - [x] Export/embed/thumbnail + Canvas expansion of instances via
     `expandSymbolInstances` (flatten to shapes). SVG preview + nested-animation-
     in-export still pending.
@@ -394,7 +394,7 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
 
 ## Test Coverage
 
-- 641 tests passing
+- 645 tests passing
 - Easing functions: 48 tests
 - Interpolators: 21 tests
 - Clock: 19 tests

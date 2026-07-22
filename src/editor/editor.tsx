@@ -656,7 +656,7 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
           >
             »
           </button>
-          <PropertyPanel store={store} sceneStore={sceneStore} />
+          <PropertyPanel store={store} sceneStore={sceneStore} projectStore={projectStore} />
           <PresetPanel store={store} sceneStore={sceneStore} />
         </aside>
 

@@ -197,6 +197,21 @@ looped over the symbol's duration. Combine it with animating the *instance*
 the instance travels while its insides animate. Nested playback runs in the
 **DOM** preview.
 
+### Symbol swap (lip-sync)
+
+An instance can **swap between several symbols over time** — the primitive behind
+lip-sync (mouth shapes) and any "which drawing shows now" effect, no bones needed.
+With a symbol instance selected, in the Property Panel's **Symbol Swap** section:
+
+1. Build an ordered **swap set** (add symbols from the Library, reorder with ↑/↓).
+2. Click **+ Add swap track** — it adds a `swapIndex` track that steps through the
+   set across the timeline.
+3. Edit the `swapIndex` keyframes (Dope Sheet / Curves) to time the swaps. The
+   instance shows `set[floor(swapIndex)]` at each moment (a plain numeric track
+   gives step/hold behaviour).
+
+Symbol swap plays in the **DOM** preview.
+
 ### Symbols in export & embeds
 
 Symbol instances are **flattened** into their shapes for **GIF / WebP / MP4**
@@ -204,10 +219,9 @@ export, **embed** code, scene **thumbnails**, and the **Canvas** preview — so 
 you build with symbols also ships in your output. (Exports use the symbol's
 poster frame; a symbol's *nested* animation baked into export is still to come.)
 
-> **Still to come:** **symbol-swap** (change which symbol an instance shows over
-> time — the lip-sync primitive), **SVG** preview rendering of instances, and
-> nested-animation baked into export — see
-> [symbols-and-library.md](symbols-and-library.md).
+> **Still to come:** **SVG** preview rendering of instances, and a symbol's
+> nested animation / swap **baked into export** (exports use the base symbol's
+> poster frame) — see [symbols-and-library.md](symbols-and-library.md).
 
 ## Property Panel
 

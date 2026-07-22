@@ -387,3 +387,71 @@
   padding-top: 12px;
   border-top: 1px solid #333;
 }
+
+/* Symbol swap (lip-sync) editor */
+.swap-set-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.swap-set-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  background: #202020;
+  border: 1px solid #2f2f2f;
+  border-radius: 5px;
+}
+
+.swap-set-index {
+  width: 16px;
+  text-align: center;
+  color: #4a9eff;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.swap-set-name {
+  flex: 1;
+  font-size: 12px;
+  color: #ddd;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.swap-mini-btn {
+  background: transparent;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.swap-mini-btn:hover {
+  background: #333;
+  color: #fff;
+}
+
+.swap-add-track-btn {
+  width: 100%;
+  margin-top: 6px;
+  padding: 6px;
+  background: #4a9eff;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.swap-add-track-btn:hover {
+  background: #3d8ae0;
+}

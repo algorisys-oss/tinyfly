@@ -212,7 +212,13 @@ export interface SymbolInstanceElement extends BaseElement {
   type: 'symbol'
   /** References `SymbolDefinition.id` in the project Library. */
   symbolId: string
-  /** Reserved for later per-instance property overrides / symbol-swap. */
+  /**
+   * Ordered symbol ids this instance can swap between over time (the lip-sync
+   * primitive). When set, a `swapIndex` track picks which one shows:
+   * `swapSet[floor(swapIndex)]`. Empty/undefined → always shows `symbolId`.
+   */
+  swapSet?: string[]
+  /** Reserved for later per-instance property overrides. */
   overrides?: Record<string, unknown>
 }
 

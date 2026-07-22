@@ -4,7 +4,7 @@ import { DOMAdapter } from '../../adapters/dom'
 import { CanvasAdapter } from '../../adapters/canvas'
 import { SVGAdapter } from '../../adapters/svg'
 import { deserializeTimeline, type Timeline } from '../../engine'
-import { expandSymbolInstances } from '../utils/expand-symbols'
+import { expandSymbolInstances, shownSymbolId } from '../utils/expand-symbols'
 import type { EditorStore } from '../stores/editor-store'
 import type { ProjectStore } from '../stores/project-store'
 import { fillToCss, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type GroupElement, type SymbolInstanceElement } from '../stores/scene-store'
@@ -1563,37 +1563,59 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
                 <Show when={element.type === 'symbol'}>
                   {(() => {
                     const inst = element as SymbolInstanceElement
-                    const sym = props.projectStore.getSymbol(inst.symbolId)
-                    if (!sym) {
-                      return (
-                        <div class="symbol-missing" style={{ width: '100%', height: '100%', display: 'flex', 'align-items': 'center', 'justify-content': 'center', color: '#c0392b', 'font-size': '11px' }}>
-                          ⚠ missing symbol
-                        </div>
-                      )
+                    // Symbol-swap: with a swap set, the shown symbol follows the
+                    // animated `swapIndex` at the playhead (reactive on currentTime
+                    // only when a swap set exists, so plain instances stay static).
+                    const shownId = () => {
+                      if (!inst.swapSet || inst.swapSet.length === 0) return inst.symbolId
+                      const tl = props.store.state.timeline
+                      const idx = tl
+                        ?.getStateAtTime(props.store.currentTime())
+                        .values.get(inst.name)
+                        ?.get('swapIndex')
+                      return shownSymbolId(inst, typeof idx === 'number' ? idx : undefined)
                     }
-                    // Expand the symbol's contents (poster frame) scaled into the
-                    // instance box. Static for now — nested playback is a later slice.
-                    const sx = sym.width ? inst.width / sym.width : 1
-                    const sy = sym.height ? inst.height / sym.height : 1
-                    const html = sym.elements
-                      .filter((e) => e.visible)
-                      .map((e) => generateElementHtml(e, ''))
-                      .join('')
+                    const sym = () => props.projectStore.getSymbol(shownId())
+                    const sx = () => {
+                      const s = sym()
+                      return s && s.width ? inst.width / s.width : 1
+                    }
+                    const sy = () => {
+                      const s = sym()
+                      return s && s.height ? inst.height / s.height : 1
+                    }
+                    const html = () => {
+                      const s = sym()
+                      if (!s) return ''
+                      return s.elements
+                        .filter((e) => e.visible)
+                        .map((e) => generateElementHtml(e, ''))
+                        .join('')
+                    }
                     return (
-                      <div
-                        class="symbol-instance-inner"
-                        style={{
-                          position: 'absolute',
-                          left: '0',
-                          top: '0',
-                          width: `${sym.width}px`,
-                          height: `${sym.height}px`,
-                          'transform-origin': '0 0',
-                          transform: `scale(${sx}, ${sy})`,
-                          'pointer-events': 'none',
-                        }}
-                        innerHTML={html}
-                      />
+                      <Show
+                        when={sym()}
+                        fallback={
+                          <div class="symbol-missing" style={{ width: '100%', height: '100%', display: 'flex', 'align-items': 'center', 'justify-content': 'center', color: '#c0392b', 'font-size': '11px' }}>
+                            ⚠ missing symbol
+                          </div>
+                        }
+                      >
+                        <div
+                          class="symbol-instance-inner"
+                          style={{
+                            position: 'absolute',
+                            left: '0',
+                            top: '0',
+                            width: `${sym()!.width}px`,
+                            height: `${sym()!.height}px`,
+                            'transform-origin': '0 0',
+                            transform: `scale(${sx()}, ${sy()})`,
+                            'pointer-events': 'none',
+                          }}
+                          innerHTML={html()}
+                        />
+                      </Show>
                     )
                   })()}
                 </Show>
