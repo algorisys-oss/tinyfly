@@ -49,6 +49,27 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
     setElements: sceneStore.loadElements,
   })
   sceneStore.setHistoryHook(store.pushHistory)
+
+  // Edit context: normally a scene; "edit in place" swaps in a symbol's contents.
+  type EditContext = { type: 'scene' } | { type: 'symbol'; symbolId: string }
+  const [editContext, setEditContext] = createSignal<EditContext>({ type: 'scene' })
+  const editingSymbol = () => {
+    const ctx = editContext()
+    return ctx.type === 'symbol' ? projectStore.getSymbol(ctx.symbolId) ?? null : null
+  }
+
+  // Backstop: if the project changes by any path (e.g. the toolbar "New" button,
+  // which bypasses the editor's own flows) while a symbol is open, drop back to
+  // scene editing so we never write to a symbol from the wrong project.
+  let lastProjectId = projectStore.currentProject().id
+  createEffect(() => {
+    const id = projectStore.currentProject().id
+    if (id !== lastProjectId) {
+      lastProjectId = id
+      if (editContext().type === 'symbol') setEditContext({ type: 'scene' })
+    }
+  })
+
   const [showSettings, setShowSettings] = createSignal(false)
   const [showEmbed, setShowEmbed] = createSignal(false)
   const [showExportAs, setShowExportAs] = createSignal(false)
@@ -273,17 +294,27 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
     const timeline = store.state.timeline
     const elements = sceneStore.exportElements()
     const serializedTimeline = timeline ? serializeTimeline(timeline) : null
-    projectStore.saveActiveSceneState(elements, serializedTimeline)
+    const ctx = editContext()
+    if (ctx.type === 'symbol') {
+      // Editing a symbol in place → write back to the Library definition.
+      projectStore.updateSymbol(ctx.symbolId, { elements, timeline: serializedTimeline })
+    } else {
+      projectStore.saveActiveSceneState(elements, serializedTimeline)
+    }
   })
 
-  /** Push the current scene straight to storage, bypassing the save debounce. */
+  /** Push the current scene/symbol straight to storage, bypassing the debounce. */
   const flushSave = () => {
     if (isSwitchingScene) return
     const timeline = store.state.timeline
-    projectStore.saveActiveSceneState(
-      sceneStore.exportElements(),
-      timeline ? serializeTimeline(timeline) : null
-    )
+    const elements = sceneStore.exportElements()
+    const serialized = timeline ? serializeTimeline(timeline) : null
+    const ctx = editContext()
+    if (ctx.type === 'symbol') {
+      projectStore.updateSymbol(ctx.symbolId, { elements, timeline: serialized })
+    } else {
+      projectStore.saveActiveSceneState(elements, serialized)
+    }
     projectStore.saveNow()
   }
 
@@ -327,6 +358,56 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
   }
 
   /**
+   * Enter "edit in place" for a symbol: swap the stage + timeline to the symbol's
+   * own contents. Saving now writes to the symbol definition, so every instance
+   * updates. Use `exitToScene()` (the breadcrumb) to return.
+   */
+  const enterSymbol = (symbolId: string) => {
+    if (editContext().type === 'symbol') return // already editing a symbol
+    const sym = projectStore.getSymbol(symbolId)
+    if (!sym) return
+
+    flushSave() // persist the scene before leaving it
+    isSwitchingScene = true
+    try {
+      store.stop()
+      setEditContext({ type: 'symbol', symbolId })
+      sceneStore.loadElements(sym.elements)
+      if (sym.timeline) {
+        store.loadTimeline(deserializeTimeline(sym.timeline))
+      } else {
+        store.createNewTimeline(sym.id, sym.name, { duration: 2000 })
+      }
+      store.clearHistory()
+    } finally {
+      isSwitchingScene = false
+    }
+  }
+
+  /** Leave symbol edit mode, saving the symbol and reloading the active scene. */
+  const exitToScene = () => {
+    const ctx = editContext()
+    if (ctx.type !== 'symbol') return
+
+    // Save the symbol's current state before leaving.
+    const timeline = store.state.timeline
+    projectStore.updateSymbol(ctx.symbolId, {
+      elements: sceneStore.exportElements(),
+      timeline: timeline ? serializeTimeline(timeline) : null,
+    })
+
+    isSwitchingScene = true
+    try {
+      store.stop()
+      setEditContext({ type: 'scene' })
+      loadSceneIntoEditor(projectStore.currentProject().activeSceneId)
+      store.clearHistory()
+    } finally {
+      isSwitchingScene = false
+    }
+  }
+
+  /**
    * Render one thumbnail for the given scene and store it under BOTH the
    * project id (gallery card) and the scene id (scene-bar tab). They share the
    * same image because the gallery shows a project's active scene.
@@ -346,6 +427,9 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
 
   /** Snapshot the current (active) scene as gallery + scene-tab thumbnail. */
   const captureThumbnail = () => {
+    // While editing a symbol the stage shows the symbol, not the scene — don't
+    // overwrite the scene/gallery thumbnail with symbol contents.
+    if (editContext().type === 'symbol') return Promise.resolve()
     const project = projectStore.currentProject()
     return captureThumbnailFor(
       project.id,
@@ -405,6 +489,7 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
     isSwitchingScene = true
     try {
       store.stop()
+      setEditContext({ type: 'scene' }) // leave any symbol edit before switching
       projectStore.open(id)
       const project = projectStore.currentProject()
       loadSceneIntoEditor(project.activeSceneId)
@@ -422,6 +507,7 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
     isSwitchingScene = true
     try {
       store.stop()
+      setEditContext({ type: 'scene' }) // leave any symbol edit before switching
       const project = projectStore.createNew()
       sceneStore.clearElements()
       store.createNewTimeline(project.id, project.name, { duration: 2000 })
@@ -469,7 +555,24 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
         <Toolbar store={store} projectStore={projectStore} sceneStore={sceneStore} onEmbed={() => setShowEmbed(true)} onExportAs={() => setShowExportAs(true)} onSamples={() => setShowSamples(true)} onOpenGallery={() => void openGallery()} onSave={flushSave} onShowShortcuts={() => setShowShortcuts(true)} />
       </header>
 
-      <SceneBar projectStore={projectStore} onSwitchScene={switchScene} />
+      <Show
+        when={editContext().type === 'symbol'}
+        fallback={<SceneBar projectStore={projectStore} onSwitchScene={switchScene} />}
+      >
+        <div class="symbol-breadcrumb">
+          <button class="symbol-breadcrumb-back" onClick={exitToScene} title="Back to the scene">
+            ‹ {projectStore.getActiveScene().name}
+          </button>
+          <span class="symbol-breadcrumb-sep">▸</span>
+          <span class="symbol-breadcrumb-current">
+            <svg viewBox="0 0 24 24" width="13" height="13" style={{ 'vertical-align': '-2px' }}>
+              <path d="M12 2 2 8v8l10 6 10-6V8L12 2zm0 2.3 7 4.2v.02L12 12.7 5 8.52 12 4.3z" fill="currentColor" />
+            </svg>
+            {editingSymbol()?.name ?? 'Symbol'}
+          </span>
+          <span class="symbol-breadcrumb-hint">editing symbol — changes apply to all instances</span>
+        </div>
+      </Show>
 
       <AIPromptBar
         store={store}
@@ -497,7 +600,7 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
           </button>
           <ElementPanel sceneStore={sceneStore} projectStore={projectStore} />
           <TrackPanel store={store} />
-          <LibraryPanel sceneStore={sceneStore} projectStore={projectStore} onConvert={convertToSymbol} />
+          <LibraryPanel sceneStore={sceneStore} projectStore={projectStore} onConvert={convertToSymbol} onEdit={enterSymbol} />
         </aside>
 
         <Show when={leftCollapsed()}>
@@ -512,7 +615,7 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
 
         <div class="editor-center">
           <section class={`editor-preview ${sceneTransitionClass()}`}>
-            <PreviewPanel store={store} sceneStore={sceneStore} projectStore={projectStore} />
+            <PreviewPanel store={store} sceneStore={sceneStore} projectStore={projectStore} onEditSymbol={enterSymbol} />
           </section>
 
           <section class="editor-controls">

@@ -150,6 +150,21 @@
   font-variant-numeric: tabular-nums;
 }
 
+.library-item-edit {
+  background: transparent;
+  border: none;
+  color: #777;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 1px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.library-item-edit:hover {
+  color: #4a9eff;
+}
+
 .library-item-delete {
   background: transparent;
   border: none;

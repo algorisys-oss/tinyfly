@@ -168,17 +168,30 @@ current scene. Move and resize an instance like any element; resizing scales the
 symbol's contents to fit. Because every instance references the same symbol,
 they'll all reflect changes to the definition.
 
+### Edit a symbol (in place)
+
+**Double-click an instance** on the stage, or click the **pencil** on a Library
+item, to open the symbol for editing. The stage and timeline switch to the
+symbol's own contents, and a **breadcrumb** appears at the top:
+
+```
+‹ Scene 1  ▸  🔷 My Symbol      editing symbol — changes apply to all instances
+```
+
+Edit the elements and the symbol's own timeline as usual; **every instance
+updates** to match. Click the breadcrumb's scene name (or the `‹`) to return to
+the scene. Everything auto-saves.
+
 ### Manage symbols
 
 - **Rename** — double-click a symbol's name.
 - **Delete** — the `×` button. Blocked while instances of it are still in use
   (the `×N` badge shows the instance count).
 
-> **This release (v0.23.0)** covers create / place / render (in the DOM preview).
-> **Edit-in-place** (opening a symbol to edit its contents and its own nested
-> timeline), **nested playback**, **symbol-swap** (lip-sync), and Canvas/SVG
-> instance rendering are the next slices — see
-> [symbols-and-library.md](symbols-and-library.md).
+> **Still to come:** **nested playback** (a symbol's own timeline playing inside
+> an instance), **symbol-swap** (lip-sync), and Canvas/SVG instance rendering —
+> see [symbols-and-library.md](symbols-and-library.md). Symbol instances render
+> in the **DOM** preview today.
 
 ## Property Panel
 

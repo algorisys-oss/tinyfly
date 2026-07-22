@@ -195,6 +195,51 @@
   }
 }
 
+/* Symbol edit-in-place breadcrumb (replaces the Scene Bar while editing). */
+.symbol-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #1d2530;
+  border-bottom: 1px solid #2c3a4a;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+
+.symbol-breadcrumb-back {
+  background: transparent;
+  border: none;
+  color: #8ab6e5;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.symbol-breadcrumb-back:hover {
+  background: #26313f;
+  color: #fff;
+}
+
+.symbol-breadcrumb-sep {
+  color: #556;
+}
+
+.symbol-breadcrumb-current {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #fff;
+  font-weight: 600;
+}
+
+.symbol-breadcrumb-hint {
+  margin-left: auto;
+  color: #7a8aa0;
+  font-size: 11px;
+}
+
 /* Loading splash shown while the IndexedDB backend hydrates. */
 .editor-loading {
   align-items: center;

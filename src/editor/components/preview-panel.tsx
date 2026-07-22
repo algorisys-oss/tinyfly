@@ -18,6 +18,8 @@ interface PreviewPanelProps {
   store: EditorStore
   sceneStore: SceneStore
   projectStore: ProjectStore
+  /** Double-clicking a symbol instance enters edit-in-place for its symbol. */
+  onEditSymbol?: (symbolId: string) => void
 }
 
 interface DragState {
@@ -1319,6 +1321,12 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
                 style={getElementStyle(element)}
                 onMouseDown={(e) => !element.locked && handleDragStart(element.id, e)}
                 onClick={(e) => !element.locked && !isDragging() && handleElementClick(element.id, e)}
+                onDblClick={(e) => {
+                  if (element.type === 'symbol' && props.onEditSymbol) {
+                    e.stopPropagation()
+                    props.onEditSymbol((element as SymbolInstanceElement).symbolId)
+                  }
+                }}
               >
                 <Show when={element.type === 'text'}>
                   {(element as TextElement).text}
