@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.43.0](v0.43.0.md) | 2026-07-22 | Shape morphing — 🌀 tween one path into another; engine-level path interpolation, renders everywhere |
 | [v0.42.0](v0.42.0.md) | 2026-07-22 | Phase C: polygon & star shapes — ⬡/★ parametric shapes (sides/points/inner %), resizable, export everywhere |
 | [v0.41.0](v0.41.0.md) | 2026-07-22 | Rulers & draggable guides — 📏 pull guide lines out of the rulers; elements snap to them |
 | [v0.40.0](v0.40.0.md) | 2026-07-22 | Resize snapping — the dragged edge/corner snaps to grid/elements/artboard (Shift-aspect-lock disables) |

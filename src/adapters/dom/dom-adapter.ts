@@ -150,6 +150,17 @@ export class DOMAdapter {
         hasFilter = true
       } else if (property === 'shine') {
         // Handled after the loop (needs the composed base colour).
+      } else if (property === 'd' && typeof value === 'string') {
+        // Shape morph: drive the child <path>'s geometry (the registered target
+        // is the element wrapper; the actual path is inside its <svg>). Avoid
+        // `instanceof SVGPathElement` so this is safe in non-DOM environments.
+        const el = element as unknown as {
+          tagName?: string
+          setAttribute?: (n: string, v: string) => void
+          querySelector?: (s: string) => { setAttribute?: (n: string, v: string) => void } | null
+        }
+        const path = el.tagName?.toLowerCase() === 'path' ? el : el.querySelector?.('path')
+        path?.setAttribute?.('d', value)
       } else {
         this.applyStyleProperty(element, property, value)
       }

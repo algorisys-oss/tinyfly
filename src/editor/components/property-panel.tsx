@@ -8,6 +8,7 @@ import { isCubicBezierEasing } from '../../engine'
 import { HelpIcon } from './tooltip'
 import { presetsByCategory, type AnimationPreset } from '../presets'
 import { CurveEditor } from './curve-editor'
+import { polyStarPath, type PolyStarKind } from '../utils/poly-star'
 import './property-panel.css'
 
 interface PropertyPanelProps {
@@ -70,6 +71,23 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
     setCam('y', 0)
     setCam('scale', 1)
     setCam('rotate', 0)
+  }
+
+  // Shape-morph target (the end shape a path tweens into).
+  const [morphKind, setMorphKind] = createSignal<PolyStarKind>('star')
+  const [morphPoints, setMorphPoints] = createSignal(5)
+  const [morphInner, setMorphInner] = createSignal(0.5)
+  const createShapeMorph = (element: PathElement) => {
+    const toD = polyStarPath(
+      { kind: morphKind(), points: morphPoints(), innerRatio: morphInner() },
+      element.width,
+      element.height
+    )
+    props.store.addShapeMorph(element.name, element.d, toD)
+  }
+  const hasMorph = (element: PathElement) => {
+    props.store.timelineVersion()
+    return !!props.store.state.timeline?.tracks.some((t) => t.target === element.name && t.property === 'd')
   }
 
   // Text effect applied message
@@ -1321,6 +1339,59 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
           </div>
         )}
       </Show>
+
+      {/* Shape morph: tween this path into a target polygon/star over the timeline. */}
+      <div class="property-section">
+        <h4>🌀 Shape Morph</h4>
+        <Show
+          when={!hasMorph(element)}
+          fallback={
+            <p class="property-hint">
+              A shape-morph track is on this element. Edit or remove it from the timeline
+              (the <code>d</code> track).
+            </p>
+          }
+        >
+          <div class="property-row">
+            <label>Morph to</label>
+            <select value={morphKind()} onChange={(e) => setMorphKind(e.currentTarget.value as PolyStarKind)}>
+              <option value="polygon">Polygon</option>
+              <option value="star">Star</option>
+            </select>
+          </div>
+          <div class="property-row">
+            <label>{morphKind() === 'star' ? 'Points' : 'Sides'}</label>
+            <input
+              type="number"
+              min={morphKind() === 'star' ? 2 : 3}
+              max="20"
+              step="1"
+              value={morphPoints()}
+              onInput={(e) => setMorphPoints(Math.max(2, Number(e.currentTarget.value)))}
+            />
+          </div>
+          <Show when={morphKind() === 'star'}>
+            <div class="property-row">
+              <label>Inner %</label>
+              <input
+                type="number"
+                min="5"
+                max="100"
+                step="5"
+                value={Math.round(morphInner() * 100)}
+                onInput={(e) => setMorphInner(Math.min(1, Math.max(0.05, Number(e.currentTarget.value) / 100)))}
+              />
+            </div>
+          </Show>
+          <div class="property-actions">
+            <button type="button" class="secondary-button" onClick={() => createShapeMorph(element)}>
+              Create shape morph →
+            </button>
+          </div>
+          <p class="property-hint">Tweens the current shape into the target across the timeline. Play to see it.</p>
+        </Show>
+      </div>
+
       <div class="property-section">
         <h4>Path Data</h4>
         <div class="property-row">

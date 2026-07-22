@@ -74,6 +74,21 @@ describe('DOMAdapter', () => {
       expect(mockElement.style.backgroundColor).toBe('#ff0000')
     })
 
+    it('should drive a child <path> d attribute for shape morphs', () => {
+      const setAttr = vi.fn()
+      const wrapper = {
+        style: {},
+        dataset: {},
+        tagName: 'DIV',
+        querySelector: (s: string) => (s === 'path' ? { setAttribute: setAttr } : null),
+      } as unknown as HTMLElement
+      adapter.registerTarget('poly', wrapper)
+
+      adapter.applyState(createMockState({ poly: { d: 'M 0 0 L 10 10 Z' } }))
+
+      expect(setAttr).toHaveBeenCalledWith('d', 'M 0 0 L 10 10 Z')
+    })
+
     it('should apply transform values', () => {
       adapter.registerTarget('box', mockElement)
 

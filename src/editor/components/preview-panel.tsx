@@ -1791,6 +1791,14 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
                         dashoffset: vals?.get('strokeDashoffset') as number | undefined,
                       }
                     })
+                    // A `d` track (shape morph) drives the rendered path; otherwise
+                    // fall back to the element's own path data.
+                    const animatedD = createMemo(() => {
+                      props.store.tracks()
+                      const tl = props.store.state.timeline
+                      const v = tl?.getStateAtTime(props.store.currentTime()).values.get(element.name)?.get('d')
+                      return typeof v === 'string' ? v : pathEl.d
+                    })
                     return (
                       <svg
                         width="100%"
@@ -1798,7 +1806,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
                         style={{ position: 'absolute', top: 0, left: 0, overflow: 'visible' }}
                       >
                         <path
-                          d={pathEl.d}
+                          d={animatedD()}
                           fill={svgFill}
                           stroke={pathEl.stroke}
                           stroke-width={pathEl.strokeWidth}

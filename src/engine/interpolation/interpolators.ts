@@ -1,4 +1,5 @@
 import type { AnimatableValue, Interpolator } from '../types'
+import { morphPath, isPathData } from '../path/path-morph'
 
 /**
  * Interpolate between two numbers.
@@ -106,6 +107,13 @@ export const interpolateString: Interpolator<string> = (from, to, progress) => {
 }
 
 /**
+ * Morph between two SVG path `d` strings (shape tween).
+ */
+export const interpolatePathString: Interpolator<string> = (from, to, progress) => {
+  return morphPath(from, to, progress)
+}
+
+/**
  * Detect value type and return appropriate interpolator.
  */
 export function getInterpolator<T extends AnimatableValue>(
@@ -126,6 +134,10 @@ export function getInterpolator<T extends AnimatableValue>(
       sampleValue.startsWith('rgb')
     ) {
       return interpolateColor as unknown as Interpolator<T>
+    }
+    // SVG path data → shape morph
+    if (isPathData(sampleValue)) {
+      return interpolatePathString as unknown as Interpolator<T>
     }
     return interpolateString as unknown as Interpolator<T>
   }

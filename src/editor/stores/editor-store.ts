@@ -205,6 +205,25 @@ export function createEditorStore() {
     }
   }
 
+  /**
+   * Create a shape-morph: a `d` track on `target` that tweens the path data from
+   * `fromD` to `toD` across the timeline. The engine interpolates path strings by
+   * sampling, so any shapes morph smoothly.
+   */
+  function addShapeMorph(target: string, fromD: string, toD: string): void {
+    if (!state.timeline) return
+    const dur = duration() || 2000
+    addTrack({
+      id: `${target}-d-${Date.now()}`,
+      target,
+      property: 'd',
+      keyframes: [
+        { time: 0, value: fromD },
+        { time: dur, value: toD },
+      ],
+    })
+  }
+
   /** Current camera value for a prop (x/y/scale/rotate) at the playhead. */
   function getCameraValue(prop: 'x' | 'y' | 'scale' | 'rotate'): number {
     const fallback = prop === 'scale' ? 1 : 0
@@ -805,6 +824,7 @@ export function createEditorStore() {
     hasCamera,
     getCameraValue,
     setCameraValue,
+    addShapeMorph,
     selectTrack,
     applyPreset,
     applyPresetStaggered,
