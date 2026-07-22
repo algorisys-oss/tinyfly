@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.39.0](v0.39.0.md) | 2026-07-22 | Grid & snapping — ▦ grid overlay + 🧲 snap dragged elements to grid/edges/centre with pink guides |
 | [v0.38.0](v0.38.0.md) | 2026-07-22 | Onion skinning — 🧅 faint ghost frames before/after the playhead (Canvas renderer) |
 | [v0.37.0](v0.37.0.md) | 2026-07-22 | On-stage camera pan (✋ Pan drag) + a dedicated 🎥 Camera lane at the top of the timeline |
 | [v0.36.0](v0.36.0.md) | 2026-07-22 | Camera inspector — pan/zoom/rotate the stage from the Property Panel, keyframed at the playhead |

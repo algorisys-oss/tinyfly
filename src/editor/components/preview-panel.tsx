@@ -7,6 +7,8 @@ import { deserializeTimeline, type Timeline } from '../../engine'
 import { expandSymbolInstances, shownSymbolId } from '../utils/expand-symbols'
 import { cameraFromState, applyCameraToCtx, cameraSvgTransform } from '../utils/camera'
 import { onionGhostTimes } from '../utils/onion'
+import { snapAxis, gridLinesFor } from '../utils/snap'
+import { elementsBounds } from '../utils/element-bounds'
 import type { EditorStore } from '../stores/editor-store'
 import type { ProjectStore } from '../stores/project-store'
 import { fillToCss, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type GroupElement, type SymbolInstanceElement } from '../stores/scene-store'
@@ -34,6 +36,11 @@ interface DragState {
   startElementY: number
   startX2?: number
   startY2?: number
+  // Axis-aligned bounds at drag start, for edge/grid snapping.
+  startBoundsX: number
+  startBoundsY: number
+  startBoundsW: number
+  startBoundsH: number
 }
 
 type ResizeHandle = 'nw' | 'n' | 'ne' | 'w' | 'e' | 'sw' | 's' | 'se'
@@ -143,6 +150,15 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
   // Onion skinning: faint ghost frames before/after the playhead in the Canvas
   // renderer. Editor-only visualization — not part of the animation JSON.
   const [onionSkin, setOnionSkin] = createSignal(false)
+
+  // Grid + snapping (editor-only). Snap-to-grid, snap-to-element-edges and
+  // snap-to-artboard-center during element drag, with live alignment guides.
+  const GRID_SIZE = 20
+  const SNAP_PX = 6
+  const [showGrid, setShowGrid] = createSignal(false)
+  const [snapEnabled, setSnapEnabled] = createSignal(true)
+  const [guideX, setGuideX] = createSignal<number | null>(null)
+  const [guideY, setGuideY] = createSignal<number | null>(null)
 
   const handleCameraPanStart = (e: MouseEvent) => {
     if (!props.store.hasCamera()) return
@@ -494,12 +510,17 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     // Select the element
     props.sceneStore.selectElement(elementId)
 
+    const b = elementsBounds([element])
     const state: DragState = {
       elementId,
       startMouseX: e.clientX,
       startMouseY: e.clientY,
       startElementX: element.x,
       startElementY: element.y,
+      startBoundsX: b.x,
+      startBoundsY: b.y,
+      startBoundsW: b.width,
+      startBoundsH: b.height,
     }
 
     // For line/arrow elements, also store x2, y2
@@ -517,21 +538,59 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     document.addEventListener('mouseup', handleDragEnd)
   }
 
+  // Static snap lines on each axis: artboard edges/centre + every other element's
+  // edges/centre. Grid lines are added per-move (they depend on the moving pos).
+  const collectStaticSnapLines = (movingId: string) => {
+    const xs = [0, artboardW() / 2, artboardW()]
+    const ys = [0, artboardH() / 2, artboardH()]
+    for (const el of props.sceneStore.elements()) {
+      if (el.id === movingId || isGroupChild(el.id)) continue
+      const b = elementsBounds([el])
+      xs.push(b.x, b.x + b.width / 2, b.x + b.width)
+      ys.push(b.y, b.y + b.height / 2, b.y + b.height)
+    }
+    return { xs, ys }
+  }
+
+  // Adjust a drag delta so the moving element snaps to grid/edges/centre, and
+  // publish the guide lines that caught. Returns the (possibly nudged) delta.
+  const applySnap = (state: DragState, dx: number, dy: number) => {
+    if (!snapEnabled()) {
+      setGuideX(null)
+      setGuideY(null)
+      return { dx, dy }
+    }
+    const threshold = SNAP_PX / previewScale()
+    const left = state.startBoundsX + dx
+    const top = state.startBoundsY + dy
+    const movingX = [left, left + state.startBoundsW / 2, left + state.startBoundsW]
+    const movingY = [top, top + state.startBoundsH / 2, top + state.startBoundsH]
+    const { xs, ys } = collectStaticSnapLines(state.elementId)
+    const gridX = showGrid() ? gridLinesFor(movingX, GRID_SIZE) : []
+    const gridY = showGrid() ? gridLinesFor(movingY, GRID_SIZE) : []
+    const sx = snapAxis(movingX, [...xs, ...gridX], threshold)
+    const sy = snapAxis(movingY, [...ys, ...gridY], threshold)
+    setGuideX(sx.line)
+    setGuideY(sy.line)
+    return { dx: dx + sx.delta, dy: dy + sy.delta }
+  }
+
   const handleDragMove = (e: MouseEvent) => {
     const state = dragState()
     if (!state || !canvasRef) return
 
     const s = previewScale()
-    const deltaX = (e.clientX - state.startMouseX) / s
-    const deltaY = (e.clientY - state.startMouseY) / s
+    const rawX = (e.clientX - state.startMouseX) / s
+    const rawY = (e.clientY - state.startMouseY) / s
 
     // Only start dragging after a small threshold
-    if (!isDragging() && (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3)) {
+    if (!isDragging() && (Math.abs(rawX) > 3 || Math.abs(rawY) > 3)) {
       setIsDragging(true)
     }
 
     if (!isDragging()) return
 
+    const { dx: deltaX, dy: deltaY } = applySnap(state, rawX, rawY)
     const newX = state.startElementX + deltaX
     const newY = state.startElementY + deltaY
 
@@ -556,6 +615,8 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     document.removeEventListener('mousemove', handleDragMove)
     document.removeEventListener('mouseup', handleDragEnd)
     props.sceneStore.endInteraction()
+    setGuideX(null)
+    setGuideY(null)
 
     // Reset drag state after a small delay to prevent click firing
     setTimeout(() => {
@@ -1433,6 +1494,24 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
             🧅 Onion
           </button>
         </Show>
+        <Show when={rendererType() === 'dom'}>
+          <button
+            class="preview-camera-btn"
+            classList={{ active: showGrid() }}
+            onClick={() => setShowGrid((g) => !g)}
+            title={`Toggle a ${GRID_SIZE}px grid overlay`}
+          >
+            ▦ Grid
+          </button>
+          <button
+            class="preview-camera-btn"
+            classList={{ active: snapEnabled() }}
+            onClick={() => setSnapEnabled((s) => !s)}
+            title="Snap dragged elements to the grid, other elements' edges/centre, and the artboard centre"
+          >
+            🧲 Snap
+          </button>
+        </Show>
         <button
           class="preview-maximize-btn"
           onClick={toggleMaximized}
@@ -1454,6 +1533,13 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
         {/* DOM Renderer */}
         <Show when={rendererType() === 'dom'}>
           <div class="preview-canvas" ref={canvasRef} onClick={handleCanvasClick} style={{ width: `${artboardW()}px`, height: `${artboardH()}px`, background: artboardBg() }}>
+          {/* Grid overlay (behind elements, in artboard space). */}
+          <Show when={showGrid()}>
+            <div
+              class="preview-grid"
+              style={{ 'background-size': `${GRID_SIZE}px ${GRID_SIZE}px` }}
+            />
+          </Show>
           {/* Camera layer: an animated "Camera" target transforms the whole stage.
               Identity (no transform) until camera tracks exist, so it's inert otherwise. */}
           <div class="preview-camera-layer" data-element-id="__camera__" data-tinyfly="Camera">
@@ -1951,6 +2037,13 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
             </div>
           </Show>
           </div>{/* /preview-camera-layer */}
+          {/* Alignment guides shown while a snap catches during drag (artboard space). */}
+          <Show when={guideX() !== null}>
+            <div class="preview-guide preview-guide-v" style={{ left: `${guideX()}px` }} />
+          </Show>
+          <Show when={guideY() !== null}>
+            <div class="preview-guide preview-guide-h" style={{ top: `${guideY()}px` }} />
+          </Show>
           {/* Camera pan overlay: covers the stage while "✋ Pan" is on, so dragging
               pans the camera instead of hitting elements. Zoom/rotate stay numeric. */}
           <Show when={cameraPanMode() && props.store.hasCamera()}>

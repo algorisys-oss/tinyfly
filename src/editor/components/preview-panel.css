@@ -315,6 +315,37 @@
   cursor: not-allowed;
 }
 
+/* Grid overlay (behind elements, in artboard space). */
+.preview-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+}
+
+/* Alignment guides while snapping during a drag. */
+.preview-guide {
+  position: absolute;
+  z-index: 15;
+  pointer-events: none;
+  background: #ff3b8b;
+}
+
+.preview-guide-v {
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+
+.preview-guide-h {
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
 /* On-stage camera pan overlay (shown while "✋ Pan" is active). */
 .preview-camera-pan-overlay {
   position: absolute;
