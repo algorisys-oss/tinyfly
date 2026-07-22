@@ -97,6 +97,124 @@
   flex-direction: row;
   flex: 1;
   overflow: hidden;
+  position: relative;
+}
+
+/* Desktop show/hide for the side panels. The collapse button lives in the
+   panel's inner-top corner; when collapsed a slim reveal tab pins to the edge. */
+.sidebar-collapse-btn {
+  position: absolute;
+  top: 6px;
+  z-index: 6;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid #3a3a3a;
+  border-radius: 5px;
+  background: #262626;
+  color: #aaa;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s, color 0.12s;
+}
+
+.sidebar-collapse-btn:hover {
+  background: #333;
+  color: #fff;
+}
+
+.sidebar-collapse-btn.left {
+  right: 6px;
+}
+
+.sidebar-collapse-btn.right {
+  left: 6px;
+}
+
+.editor-sidebar.collapsed {
+  width: 0 !important;
+  border: none;
+  overflow: visible;
+}
+
+.editor-sidebar.collapsed > * {
+  display: none;
+}
+
+.sidebar-reveal-btn {
+  align-self: stretch;
+  flex-shrink: 0;
+  width: 28px;
+  border: none;
+  background: #202020;
+  color: #9a9a9a;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 12px;
+  transition: background 0.12s, color 0.12s;
+}
+
+.sidebar-reveal-btn:hover {
+  background: #282828;
+  color: #fff;
+}
+
+.sidebar-reveal-btn.left {
+  border-right: 1px solid #333;
+}
+
+.sidebar-reveal-btn.right {
+  border-left: 1px solid #333;
+}
+
+.sidebar-reveal-btn span {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+/* On mobile the off-canvas toggles handle show/hide, so the desktop
+   collapse/reveal affordances are hidden there. */
+@media (max-width: 768px) {
+  .sidebar-collapse-btn,
+  .sidebar-reveal-btn {
+    display: none;
+  }
+}
+
+/* Loading splash shown while the IndexedDB backend hydrates. */
+.editor-loading {
+  align-items: center;
+  justify-content: center;
+}
+
+.editor-loading-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.editor-loading-logo {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: #4a9eff;
+}
+
+.editor-loading-text {
+  font-size: 13px;
+  color: #777;
 }
 
 .editor-sidebar {
@@ -104,6 +222,10 @@
   flex-shrink: 0;
   border-color: #333;
   overflow-y: auto;
+  /* Positioning context for the absolutely-positioned collapse button, so it
+     anchors to its own sidebar rather than to .editor-main (which would place
+     the left button over the right panel and vice-versa). */
+  position: relative;
 }
 
 .editor-sidebar-left {

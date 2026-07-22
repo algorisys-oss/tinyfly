@@ -6,8 +6,8 @@ import type { SceneTransition, SequenceDefinition, SerializedElement } from '../
 import { DEFAULT_TRANSITION } from '../../player/sequence-types'
 import { generateElementHtml } from '../utils/element-html'
 
-const STORAGE_KEY = 'tinyfly-projects'
-const CURRENT_PROJECT_KEY = 'tinyfly-current-project'
+export const STORAGE_KEY = 'tinyfly-projects'
+export const CURRENT_PROJECT_KEY = 'tinyfly-current-project'
 const AUTO_SAVE_DELAY = 1000 // ms
 
 export interface ProjectCanvas {
@@ -99,7 +99,7 @@ function createDefaultProject(name = 'Untitled Animation'): Project {
 /**
  * Migrate old project format (single timeline) to new format (scenes array).
  */
-function migrateProject(project: Record<string, unknown>): Project {
+export function migrateProject(project: Record<string, unknown>): Project {
   // Already migrated: has scenes array. The canvas is still normalized, so
   // projects saved before `background` existed pick up the default.
   if (Array.isArray(project.scenes) && project.scenes.length > 0) {
@@ -189,12 +189,59 @@ function saveCurrentProjectId(id: string | null): void {
 }
 
 /**
- * Create a project store for managing animation projects with persistence.
+ * Pluggable persistence backend. The store keeps its projects in an in-memory
+ * `Map` (the source of truth for the running session, read synchronously) and
+ * writes through a backend. The default backend is LocalStorage (synchronous);
+ * the editor injects an IndexedDB-backed one (see `project-persistence.ts`)
+ * that also stores per-project thumbnails.
  */
-export function createProjectStore() {
-  // Load initial state from LocalStorage
-  const initialProjects = loadProjects()
-  const initialCurrentId = loadCurrentProjectId()
+export interface ProjectBackend {
+  loadProjects(): Map<string, Project>
+  saveProjects(projects: Map<string, Project>): void
+  loadCurrentProjectId(): string | null
+  saveCurrentProjectId(id: string | null): void
+  /** Persist a project thumbnail (data URL). Optional — LocalStorage skips it. */
+  saveThumbnail?(id: string, dataUrl: string): void
+  /** Read a previously stored thumbnail, if any. */
+  getThumbnail?(id: string): string | undefined
+  /** Drop a thumbnail when its project is deleted. */
+  deleteThumbnail?(id: string): void
+  /** Wipe everything (used by `clearAll`). */
+  clear?(): void
+}
+
+/**
+ * Default backend: the original LocalStorage persistence. Kept as the fallback
+ * when IndexedDB is unavailable and as the zero-config path used by tests.
+ * Thumbnails are intentionally unsupported here to stay inside the ~5 MB quota.
+ */
+export const localStorageBackend: ProjectBackend = {
+  loadProjects,
+  saveProjects,
+  loadCurrentProjectId,
+  saveCurrentProjectId,
+  clear() {
+    try {
+      localStorage.removeItem(STORAGE_KEY)
+      localStorage.removeItem(CURRENT_PROJECT_KEY)
+    } catch {
+      // ignore
+    }
+  },
+}
+
+/**
+ * Create a project store for managing animation projects with persistence.
+ *
+ * Pass a `backend` (e.g. the IndexedDB one) to control where projects live;
+ * without one it falls back to synchronous LocalStorage.
+ */
+export function createProjectStore(options?: { backend?: ProjectBackend }) {
+  const backend = options?.backend ?? localStorageBackend
+
+  // Load initial state from the backend
+  const initialProjects = backend.loadProjects()
+  const initialCurrentId = backend.loadCurrentProjectId()
 
   // If there's a saved current project, use it; otherwise create a default
   let initialProject: Project
@@ -209,7 +256,7 @@ export function createProjectStore() {
     // Create a new default project
     initialProject = createDefaultProject()
     initialProjects.set(initialProject.id, initialProject)
-    saveProjects(initialProjects)
+    backend.saveProjects(initialProjects)
   }
 
   const [projects, setProjects] = createSignal<Map<string, Project>>(initialProjects)
@@ -221,7 +268,7 @@ export function createProjectStore() {
 
   // Save current project ID when it changes
   createEffect(() => {
-    saveCurrentProjectId(currentProject().id)
+    backend.saveCurrentProjectId(currentProject().id)
   })
 
   // Auto-save when dirty
@@ -248,7 +295,7 @@ export function createProjectStore() {
     setProjects((prev) => {
       const next = new Map(prev)
       next.set(project.id, project)
-      saveProjects(next)
+      backend.saveProjects(next)
       return next
     })
 
@@ -280,7 +327,7 @@ export function createProjectStore() {
     setProjects((prev) => {
       const next = new Map(prev)
       next.set(project.id, project)
-      saveProjects(next)
+      backend.saveProjects(next)
       return next
     })
 
@@ -499,11 +546,25 @@ export function createProjectStore() {
     setProjects((prev) => {
       const next = new Map(prev)
       next.delete(projectId)
-      saveProjects(next)
+      backend.saveProjects(next)
       return next
     })
+    backend.deleteThumbnail?.(projectId)
 
     return true
+  }
+
+  /**
+   * Store a thumbnail (data URL) for a project. Best-effort — no-op on backends
+   * (e.g. LocalStorage) that don't support thumbnails.
+   */
+  function setThumbnail(projectId: string, dataUrl: string): void {
+    backend.saveThumbnail?.(projectId, dataUrl)
+  }
+
+  /** Read a stored thumbnail for a project, if the backend has one. */
+  function getThumbnail(projectId: string): string | undefined {
+    return backend.getThumbnail?.(projectId)
   }
 
   /**
@@ -535,7 +596,7 @@ export function createProjectStore() {
     setProjects((prev) => {
       const next = new Map(prev)
       next.set(newProject.id, newProject)
-      saveProjects(next)
+      backend.saveProjects(next)
       return next
     })
 
@@ -549,8 +610,7 @@ export function createProjectStore() {
    * Clear all stored projects (for testing/reset)
    */
   function clearAll(): void {
-    localStorage.removeItem(STORAGE_KEY)
-    localStorage.removeItem(CURRENT_PROJECT_KEY)
+    backend.clear?.()
 
     const defaultProject = createDefaultProject()
     setProjects(new Map([[defaultProject.id, defaultProject]]))
@@ -653,6 +713,8 @@ export function createProjectStore() {
     deleteProject,
     duplicate,
     getProjectList,
+    setThumbnail,
+    getThumbnail,
     clearAll,
     setAutoSaveEnabled,
   }

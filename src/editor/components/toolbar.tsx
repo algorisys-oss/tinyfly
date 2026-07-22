@@ -12,6 +12,8 @@ interface ToolbarProps {
   onEmbed?: () => void
   onExportAs?: () => void
   onSamples?: () => void
+  onOpenGallery?: () => void
+  onSave?: () => void
   onShowShortcuts?: () => void
 }
 
@@ -19,6 +21,63 @@ export const Toolbar: Component<ToolbarProps> = (props) => {
   const [importing, setImporting] = createSignal(false)
   const [showNewConfirm, setShowNewConfirm] = createSignal(false)
   let fileInputRef: HTMLInputElement | undefined
+
+  // Inline rename of the project title (double-click the name to edit).
+  const [renaming, setRenaming] = createSignal(false)
+  const [renameValue, setRenameValue] = createSignal('')
+  let renameInputRef: HTMLInputElement | undefined
+
+  const startRename = () => {
+    if (!props.projectStore) return
+    setRenameValue(props.projectStore.currentProject().name)
+    setRenaming(true)
+    // Focus + select once the input is in the DOM.
+    queueMicrotask(() => {
+      renameInputRef?.focus()
+      renameInputRef?.select()
+    })
+  }
+
+  const commitRename = () => {
+    if (!renaming()) return
+    const value = renameValue().trim()
+    if (value && props.projectStore) {
+      props.projectStore.rename(value)
+    }
+    setRenaming(false)
+  }
+
+  const cancelRename = () => setRenaming(false)
+
+  const handleRenameKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      commitRename()
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      e.stopPropagation()
+      cancelRename()
+    }
+  }
+
+  // Explicit save with a short "Saving…" flash, then a "Saved ✓" resting state.
+  // Auto-save still runs; this is a reassuring, tap-friendly manual trigger.
+  const [saving, setSaving] = createSignal(false)
+  const isDirty = () => props.projectStore?.isDirty() ?? false
+
+  const saveState = (): 'saving' | 'dirty' | 'saved' => {
+    if (saving()) return 'saving'
+    return isDirty() ? 'dirty' : 'saved'
+  }
+
+  const saveLabel = () => ({ saving: 'Saving…', dirty: 'Save', saved: 'Saved' }[saveState()])
+
+  const handleSave = () => {
+    if (saving()) return
+    setSaving(true)
+    props.onSave?.()
+    window.setTimeout(() => setSaving(false), 500)
+  }
 
   const handleExport = () => {
     props.store.exportToFile()
@@ -108,14 +167,62 @@ export const Toolbar: Component<ToolbarProps> = (props) => {
         style={{ display: 'none' }}
       />
 
-      {/* Project name display */}
+      {/* Project name — double-click to rename inline */}
       <Show when={props.projectStore}>
-        <span class="toolbar-project-name" title="Project name">
-          {props.projectStore!.currentProject().name}
-          <Show when={props.projectStore!.isDirty()}>
-            <span class="toolbar-dirty-indicator">*</span>
+        <Show
+          when={renaming()}
+          fallback={
+            <span
+              class="toolbar-project-name"
+              title="Double-click to rename"
+              onDblClick={startRename}
+            >
+              {props.projectStore!.currentProject().name}
+              <Show when={props.projectStore!.isDirty()}>
+                <span class="toolbar-dirty-indicator" title="Unsaved changes — auto-saving…">*</span>
+              </Show>
+            </span>
+          }
+        >
+          <input
+            ref={renameInputRef}
+            class="toolbar-project-name-input"
+            value={renameValue()}
+            onInput={(e) => setRenameValue(e.currentTarget.value)}
+            onKeyDown={handleRenameKeyDown}
+            onBlur={commitRename}
+            maxLength={100}
+            aria-label="Project name"
+          />
+        </Show>
+      </Show>
+
+      {/* Explicit save + status. Auto-save still runs; this is a tap-friendly
+          manual trigger with a clear Saved/Saving/Unsaved state. */}
+      <Show when={props.projectStore && props.onSave}>
+        <button
+          class={`toolbar-save-btn ${saveState()}`}
+          onClick={handleSave}
+          disabled={saving()}
+          title={saveState() === 'saved' ? 'All changes saved' : 'Save now'}
+        >
+          <Show
+            when={saveState() === 'saved'}
+            fallback={
+              <svg viewBox="0 0 24 24" width="15" height="15">
+                <path
+                  d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm3-10H5V5h10v4z"
+                  fill="currentColor"
+                />
+              </svg>
+            }
+          >
+            <svg viewBox="0 0 24 24" width="15" height="15">
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" fill="currentColor" />
+            </svg>
           </Show>
-        </span>
+          <span>{saveLabel()}</span>
+        </button>
       </Show>
 
       <div class="toolbar-divider" />
@@ -133,6 +240,22 @@ export const Toolbar: Component<ToolbarProps> = (props) => {
         </svg>
         <span>New</span>
       </button>
+
+      <Show when={props.projectStore && props.onOpenGallery}>
+        <button
+          class="toolbar-btn toolbar-btn-myfiles"
+          onClick={() => props.onOpenGallery?.()}
+          title="My Animations — browse, open and manage your saved projects"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <path
+              d="M4 4h6l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm0 6v8h16v-8H4z"
+              fill="currentColor"
+            />
+          </svg>
+          <span>My Animations</span>
+        </button>
+      </Show>
 
       <Show when={props.sceneStore}>
         <button

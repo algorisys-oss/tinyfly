@@ -23,6 +23,36 @@
   margin-bottom: 8px;
 }
 
+.gallery-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+}
+
+.gallery-wordmark {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: #4a9eff;
+}
+
+.gallery-beta-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #4a9eff, #9b59b6);
+  box-shadow: 0 0 10px rgba(74, 158, 255, 0.35);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  user-select: none;
+}
+
 .back-link {
   display: flex;
   align-items: center;

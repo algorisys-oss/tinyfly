@@ -1,0 +1,231 @@
+.gallery-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.gallery-dialog {
+  background: #1a1a1a;
+  border-radius: 12px;
+  width: 880px;
+  max-width: 92vw;
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  border: 1px solid #2c2c2c;
+}
+
+.gallery-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #333;
+  flex-shrink: 0;
+}
+
+.gallery-dialog-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.gallery-count {
+  font-size: 12px;
+  color: #777;
+}
+
+.gallery-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gallery-new-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #4a9eff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.gallery-new-btn:hover {
+  background: #3d8ae0;
+}
+
+.gallery-close-btn {
+  background: transparent;
+  border: none;
+  color: #888;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.1s, color 0.1s;
+}
+
+.gallery-close-btn:hover {
+  background: #333;
+  color: #fff;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.gallery-card {
+  background: #232323;
+  border: 1px solid #2f2f2f;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.12s, transform 0.12s, box-shadow 0.12s;
+}
+
+.gallery-card:hover {
+  border-color: #4a9eff;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.gallery-card-current {
+  border-color: #4a9eff;
+}
+
+.gallery-thumb {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  background:
+    linear-gradient(45deg, #1c1c1c 25%, transparent 25%),
+    linear-gradient(-45deg, #1c1c1c 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #1c1c1c 75%),
+    linear-gradient(-45deg, transparent 75%, #1c1c1c 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  background-color: #202020;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.gallery-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.gallery-thumb-empty {
+  color: #4a4a4a;
+}
+
+.gallery-current-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: #4a9eff;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 3px 7px;
+  border-radius: 4px;
+}
+
+.gallery-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px 8px;
+}
+
+.gallery-card-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #eee;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gallery-card-meta {
+  font-size: 11px;
+  color: #777;
+}
+
+.gallery-card-actions,
+.gallery-confirm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px 10px;
+}
+
+.gallery-confirm {
+  font-size: 12px;
+  color: #d88;
+}
+
+.gallery-confirm span {
+  margin-right: auto;
+}
+
+.gallery-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: #2e2e2e;
+  color: #bbb;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 9px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+
+.gallery-action:hover {
+  background: #3a3a3a;
+  color: #fff;
+}
+
+.gallery-action-danger:hover {
+  background: #c0392b;
+  color: #fff;
+}
+
+@media (max-width: 600px) {
+  .gallery-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    padding: 14px;
+  }
+}

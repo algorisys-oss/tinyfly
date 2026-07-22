@@ -1,7 +1,7 @@
 import { onMount, onCleanup, createEffect, createSignal, createMemo, For, Show } from 'solid-js'
 import type { Component } from 'solid-js'
 import { DOMAdapter } from '../../adapters/dom'
-import { CanvasAdapter, type CanvasTarget } from '../../adapters/canvas'
+import { CanvasAdapter } from '../../adapters/canvas'
 import { SVGAdapter } from '../../adapters/svg'
 import type { EditorStore } from '../stores/editor-store'
 import type { ProjectStore } from '../stores/project-store'
@@ -1431,8 +1431,8 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
                           stroke-width={pathEl.strokeWidth}
                           stroke-linecap={pathEl.lineCap}
                           stroke-linejoin={pathEl.lineJoin}
-                          stroke-dasharray={strokeDash().dasharray}
-                          stroke-dashoffset={strokeDash().dashoffset}
+                          stroke-dasharray={strokeDash().dasharray?.toString()}
+                          stroke-dashoffset={strokeDash().dashoffset?.toString()}
                         />
                       </svg>
                     )

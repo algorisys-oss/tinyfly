@@ -1,4 +1,4 @@
-import { onMount, onCleanup, createSignal, createEffect } from 'solid-js'
+import { onMount, onCleanup, createSignal, createEffect, createResource, Show } from 'solid-js'
 import type { Component } from 'solid-js'
 import {
   TimelineView,
@@ -11,6 +11,7 @@ import {
   EmbedDialog,
   ExportDialog,
   SamplesDialog,
+  GalleryDialog,
   ShortcutsDialog,
   ElementPanel,
   PresetPanel,
@@ -21,13 +22,20 @@ import {
   AISettingsDialog,
 } from './components'
 import { createEditorStore, createProjectStore, createSceneStore, createOnboardingStore } from './stores'
+import type { ProjectBackend } from './stores/project-store'
+import { openIndexedDbBackend } from './stores/project-persistence'
+import { renderSceneThumbnail } from './utils/scene-thumbnail'
 import { serializeTimeline, deserializeTimeline } from '../engine'
 import { StatusBar } from '../components'
 import './editor.css'
 
-export const Editor: Component = () => {
+interface EditorInnerProps {
+  backend: ProjectBackend
+}
+
+const EditorInner: Component<EditorInnerProps> = (props) => {
   const store = createEditorStore()
-  const projectStore = createProjectStore()
+  const projectStore = createProjectStore({ backend: props.backend })
   const sceneStore = createSceneStore()
   const onboardingStore = createOnboardingStore()
 
@@ -43,8 +51,13 @@ export const Editor: Component = () => {
   const [showEmbed, setShowEmbed] = createSignal(false)
   const [showExportAs, setShowExportAs] = createSignal(false)
   const [showSamples, setShowSamples] = createSignal(false)
+  const [showGallery, setShowGallery] = createSignal(false)
   const [showShortcuts, setShowShortcuts] = createSignal(false)
   const [showAISettings, setShowAISettings] = createSignal(false)
+
+  // Desktop show/hide for the side panels (Elements/Tracks and Properties/Presets).
+  const [leftCollapsed, setLeftCollapsed] = createSignal(false)
+  const [rightCollapsed, setRightCollapsed] = createSignal(false)
 
   // Resizable split between the preview (flex:1) and the timeline. Dragging the
   // splitter changes the timeline height, so the preview grows/shrinks inversely.
@@ -291,6 +304,52 @@ export const Editor: Component = () => {
     setShowSettings(true)
   }
 
+  /** Snapshot the current scene as a gallery thumbnail (best-effort). */
+  const captureThumbnail = async () => {
+    const project = projectStore.currentProject()
+    const url = await renderSceneThumbnail(sceneStore.exportElements(), project.canvas)
+    if (url) projectStore.setThumbnail(project.id, url)
+  }
+
+  /** Refresh the current thumbnail, then open the gallery. */
+  const openGallery = async () => {
+    flushSave()
+    await captureThumbnail()
+    setShowGallery(true)
+  }
+
+  /** Switch to a saved project and reload the editor around it. */
+  const openProjectFromGallery = (id: string) => {
+    flushSave()
+    isSwitchingScene = true
+    try {
+      store.stop()
+      projectStore.open(id)
+      const project = projectStore.currentProject()
+      loadSceneIntoEditor(project.activeSceneId)
+      store.clearHistory()
+    } finally {
+      isSwitchingScene = false
+    }
+    setShowGallery(false)
+  }
+
+  /** Create a brand-new project from the gallery and load it. */
+  const newProjectFromGallery = () => {
+    flushSave()
+    isSwitchingScene = true
+    try {
+      store.stop()
+      const project = projectStore.createNew()
+      sceneStore.clearElements()
+      store.createNewTimeline(project.id, project.name, { duration: 2000 })
+      store.clearHistory()
+    } finally {
+      isSwitchingScene = false
+    }
+    setShowGallery(false)
+  }
+
   return (
     <div class="editor">
       <header class="editor-header">
@@ -325,7 +384,7 @@ export const Editor: Component = () => {
             />
           </svg>
         </button>
-        <Toolbar store={store} projectStore={projectStore} sceneStore={sceneStore} onEmbed={() => setShowEmbed(true)} onExportAs={() => setShowExportAs(true)} onSamples={() => setShowSamples(true)} onShowShortcuts={() => setShowShortcuts(true)} />
+        <Toolbar store={store} projectStore={projectStore} sceneStore={sceneStore} onEmbed={() => setShowEmbed(true)} onExportAs={() => setShowExportAs(true)} onSamples={() => setShowSamples(true)} onOpenGallery={() => void openGallery()} onSave={flushSave} onShowShortcuts={() => setShowShortcuts(true)} />
       </header>
 
       <SceneBar projectStore={projectStore} onSwitchScene={switchScene} />
@@ -344,10 +403,29 @@ export const Editor: Component = () => {
           onClick={closeSidebars}
         />
 
-        <aside class={`editor-sidebar editor-sidebar-left ${leftSidebarOpen() ? 'open' : ''}`}>
+        <aside
+          class={`editor-sidebar editor-sidebar-left ${leftSidebarOpen() ? 'open' : ''} ${leftCollapsed() ? 'collapsed' : ''}`}
+        >
+          <button
+            class="sidebar-collapse-btn left"
+            onClick={() => setLeftCollapsed(true)}
+            title="Hide Elements & Tracks"
+          >
+            «
+          </button>
           <ElementPanel sceneStore={sceneStore} projectStore={projectStore} />
           <TrackPanel store={store} />
         </aside>
+
+        <Show when={leftCollapsed()}>
+          <button
+            class="sidebar-reveal-btn left"
+            onClick={() => setLeftCollapsed(false)}
+            title="Show Elements & Tracks"
+          >
+            <span>Elements</span> »
+          </button>
+        </Show>
 
         <div class="editor-center">
           <section class={`editor-preview ${sceneTransitionClass()}`}>
@@ -372,7 +450,26 @@ export const Editor: Component = () => {
           </section>
         </div>
 
-        <aside class={`editor-sidebar editor-sidebar-right ${rightSidebarOpen() ? 'open' : ''}`}>
+        <Show when={rightCollapsed()}>
+          <button
+            class="sidebar-reveal-btn right"
+            onClick={() => setRightCollapsed(false)}
+            title="Show Properties & Presets"
+          >
+            « <span>Properties</span>
+          </button>
+        </Show>
+
+        <aside
+          class={`editor-sidebar editor-sidebar-right ${rightSidebarOpen() ? 'open' : ''} ${rightCollapsed() ? 'collapsed' : ''}`}
+        >
+          <button
+            class="sidebar-collapse-btn right"
+            onClick={() => setRightCollapsed(true)}
+            title="Hide Properties & Presets"
+          >
+            »
+          </button>
           <PropertyPanel store={store} sceneStore={sceneStore} />
           <PresetPanel store={store} sceneStore={sceneStore} />
         </aside>
@@ -426,6 +523,14 @@ export const Editor: Component = () => {
         onClose={() => setShowSamples(false)}
       />
 
+      <GalleryDialog
+        projectStore={projectStore}
+        isOpen={showGallery()}
+        onClose={() => setShowGallery(false)}
+        onOpenProject={openProjectFromGallery}
+        onNewProject={newProjectFromGallery}
+      />
+
       <AISettingsDialog isOpen={showAISettings()} onClose={() => setShowAISettings(false)} />
 
       <ShortcutsDialog isOpen={showShortcuts()} onClose={() => setShowShortcuts(false)} />
@@ -434,6 +539,32 @@ export const Editor: Component = () => {
 
       <StatusBar />
     </div>
+  )
+}
+
+/**
+ * Public editor entry point. Opens the (async) IndexedDB persistence backend
+ * before mounting the editor, so the project store hydrates from durable
+ * storage. Falls back to LocalStorage inside `openIndexedDbBackend` when
+ * IndexedDB isn't available.
+ */
+export const Editor: Component = () => {
+  const [backend] = createResource(openIndexedDbBackend)
+
+  return (
+    <Show
+      when={backend()}
+      fallback={
+        <div class="editor editor-loading">
+          <div class="editor-loading-inner">
+            <span class="editor-loading-logo">tinyfly</span>
+            <span class="editor-loading-text">Loading your animations…</span>
+          </div>
+        </div>
+      }
+    >
+      {(ready) => <EditorInner backend={ready()} />}
+    </Show>
   )
 }
 

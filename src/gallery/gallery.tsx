@@ -235,6 +235,10 @@ export const Gallery: Component = () => {
       <header class="gallery-header">
         <div class="header-content">
           <div class="header-left">
+            <A href="/" class="gallery-brand" title="tinyfly — back to editor">
+              <span class="gallery-wordmark">tinyfly</span>
+              <span class="gallery-beta-tag">BETA</span>
+            </A>
             <A href="/" class="back-link">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M19 12H5M12 19l-7-7 7-7" />

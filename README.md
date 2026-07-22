@@ -55,7 +55,10 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Multiple scenes** - Organize animations into separate scenes with independent elements and timelines
 - **Scene transitions** - Configurable transitions between scenes (fade, slide)
 - **Multi-scene sequencer** - Play all scenes in order with transitions
-- **Project management** - Auto-save to LocalStorage
+- **My Animations gallery** - Every project you make is saved and browsable in a thumbnail grid; open one to keep editing, duplicate, or delete it. Persisted to **IndexedDB** (LocalStorage projects are migrated automatically on first run), so you can accumulate many animations without the old single-slot limit
+- **Collapsible panels** - Hide the Elements/Tracks and Properties/Presets columns to give the canvas more room; a slim tab brings each back
+- **Rename & save** - Double-click the project title to rename it inline; a Save button shows a clear Save / Saving… / Saved ✓ status (handy on touch devices) on top of continuous auto-save
+- **Project management** - Auto-save to IndexedDB (with LocalStorage fallback)
 - **Export/Import** - JSON file support
 - **Named exports** - Choose the download filename in the Export dialog for every format; it defaults to the project name and is sanitized for any filesystem
 - **MP4 export** - Encode the animation to a real MP4 (H.264) via WebCodecs, with a hand-written muxer and no dependencies. Frame-by-frame rather than real-time, so it's faster than playback and reproducible; MediaRecorder (WebM) is the fallback where WebCodecs is missing

@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.19.0](v0.19.0.md) | 2026-07-22 | My Animations gallery (IndexedDB persistence, thumbnails, open/duplicate/delete) and collapsible side panels |
 | [v0.18.0](v0.18.0.md) | 2026-07-22 | Name your export file (all five formats, sanitized, defaults to the project name) and a BETA badge |
 | [v0.17.0](v0.17.0.md) | 2026-07-22 | Real raster export (animated GIF fixed, new animated WebP, deterministic MP4 via WebCodecs); project artboard background; reload-doesn't-play fix |
 | [v0.16.0](v0.16.0.md) | 2026-07-18 | AI animation generation (prompt → editable timeline; OpenAI/Gemini/Anthropic, BYO key) and Esc-closes-any-dialog |

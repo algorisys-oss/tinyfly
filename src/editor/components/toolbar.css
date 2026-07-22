@@ -19,10 +19,67 @@
   white-space: nowrap;
 }
 
+.toolbar-project-name {
+  cursor: text;
+}
+
+.toolbar-project-name-input {
+  padding: 4px 8px;
+  background: #1c1c1c;
+  border: 1px solid #4a9eff;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 13px;
+  font-family: inherit;
+  max-width: 200px;
+  outline: none;
+}
+
 .toolbar-dirty-indicator {
   margin-left: 4px;
   color: #ff9944;
   font-weight: bold;
+}
+
+.toolbar-save-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+
+/* Unsaved: accented, inviting a tap. */
+.toolbar-save-btn.dirty {
+  background: #4a9eff;
+  color: #fff;
+}
+
+.toolbar-save-btn.dirty:hover {
+  background: #3d8ae0;
+}
+
+/* Saving: muted while the write flushes. */
+.toolbar-save-btn.saving {
+  background: #2a2a2a;
+  color: #aaa;
+  cursor: default;
+}
+
+/* Saved: calm green tick, no urgency. */
+.toolbar-save-btn.saved {
+  background: transparent;
+  color: #3ecf7a;
+  border-color: #2c5c40;
+}
+
+.toolbar-save-btn.saved:hover {
+  background: rgba(62, 207, 122, 0.08);
 }
 
 .toolbar-divider {

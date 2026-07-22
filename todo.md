@@ -330,16 +330,29 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
   only escape is the Maximize button. Add a draggable splitter on the preview's
   edge so its height/width can be adjusted freely, and persist the chosen size.
 
-- [ ] **IndexedDB persistence + animation gallery** — today projects auto-save to
-  LocalStorage (single project). Move persistence to IndexedDB and add a
-  **gallery view showing every previously saved animation** (like HappyPaint):
-  browse saved animations, open one, continue editing, duplicate, delete.
-  Include thumbnails and last-modified, and migrate existing LocalStorage
-  projects on first run.
+- [x] **IndexedDB persistence + animation gallery** — projects (and thumbnails)
+  now persist to **IndexedDB** via a pluggable `ProjectBackend`
+  (`project-persistence.ts`); the store keeps its in-memory `Map` for
+  synchronous reads and writes through asynchronously. A new **My Animations**
+  gallery (`gallery-dialog.tsx`) shows every saved animation with a live
+  thumbnail (`scene-thumbnail.ts`, Canvas poster frame → WebP) and
+  last-modified, and supports open / duplicate / delete / new. Existing
+  LocalStorage projects are migrated on first run; the backend falls back to
+  LocalStorage where IndexedDB is unavailable. The default (test) path stays on
+  synchronous LocalStorage, so the store's public API is unchanged.
+  - [x] Collapsible **Elements/Tracks** and **Properties/Presets** side panels
+    (desktop show/hide with reveal tabs).
+  - [x] Inline project-title rename (double-click the toolbar title) and an
+    explicit **Save** button with Save / Saving… / Saved ✓ status (auto-save
+    still runs; the button is the tap-friendly manual trigger for mobile/tablet).
+  - [x] tinyfly wordmark + BETA badge added to the `/gallery` examples route.
+  - [ ] Remaining: gallery thumbnails refresh on gallery-open and project
+    switch — consider a lightweight periodic refresh while editing; per-scene
+    thumbnails for multi-scene projects.
 
 ## Test Coverage
 
-- 604 tests passing
+- 613 tests passing
 - Easing functions: 48 tests
 - Interpolators: 21 tests
 - Clock: 19 tests
@@ -365,3 +378,5 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
 - MP4 muxer: 16 tests
 - WebP muxer: 16 tests
 - AI animation generator (parse/validate): 10 tests
+- Project backend injection (IndexedDB seam): 5 tests
+- Scene thumbnail render guards: 4 tests

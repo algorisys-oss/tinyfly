@@ -20,7 +20,7 @@ function audio(overrides: Partial<AudioElement> = {}): AudioElement {
 }
 
 function video(overrides: Partial<VideoElement> = {}): VideoElement {
-  return { ...base, type: 'video', src: 'v.mp4', objectFit: 'cover', volume: 1, muted: true, loop: true, startTime: 0, ...overrides }
+  return { ...base, type: 'video', src: 'v.mp4', objectFit: 'cover', borderRadius: 0, volume: 1, muted: true, loop: true, startTime: 0, ...overrides }
 }
 
 describe('generateElementHtml — media', () => {
