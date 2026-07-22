@@ -575,6 +575,43 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     return { dx: dx + sx.delta, dy: dy + sy.delta }
   }
 
+  // Which box edge each resize handle drives per axis ('min' = left/top edge,
+  // 'max' = right/bottom edge, null = no movement on that axis).
+  const RESIZE_EDGE: Record<ResizeHandle, { x: 'min' | 'max' | null; y: 'min' | 'max' | null }> = {
+    nw: { x: 'min', y: 'min' }, n: { x: null, y: 'min' }, ne: { x: 'max', y: 'min' },
+    w: { x: 'min', y: null }, e: { x: 'max', y: null },
+    sw: { x: 'min', y: 'max' }, s: { x: null, y: 'max' }, se: { x: 'max', y: 'max' },
+  }
+
+  // Snap the edge a resize handle drives to grid/element/artboard lines, nudging
+  // the resize delta and publishing the guide that caught.
+  const snapResizeDelta = (state: ResizeState, dx: number, dy: number) => {
+    const threshold = SNAP_PX / previewScale()
+    const { xs, ys } = collectStaticSnapLines(state.elementId)
+    const edge = RESIZE_EDGE[state.handle]
+    let outX = dx
+    let outY = dy
+    let lineX: number | null = null
+    let lineY: number | null = null
+    if (edge.x) {
+      const pos = (edge.x === 'min' ? state.startX : state.startX + state.startWidth) + dx
+      const grid = showGrid() ? gridLinesFor([pos], GRID_SIZE) : []
+      const snap = snapAxis([pos], [...xs, ...grid], threshold)
+      outX = dx + snap.delta
+      lineX = snap.line
+    }
+    if (edge.y) {
+      const pos = (edge.y === 'min' ? state.startY : state.startY + state.startHeight) + dy
+      const grid = showGrid() ? gridLinesFor([pos], GRID_SIZE) : []
+      const snap = snapAxis([pos], [...ys, ...grid], threshold)
+      outY = dy + snap.delta
+      lineY = snap.line
+    }
+    setGuideX(lineX)
+    setGuideY(lineY)
+    return { dx: outX, dy: outY }
+  }
+
   const handleDragMove = (e: MouseEvent) => {
     const state = dragState()
     if (!state || !canvasRef) return
@@ -665,10 +702,10 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     if (!state) return
 
     const s = previewScale()
-    const deltaX = (e.clientX - state.startMouseX) / s
-    const deltaY = (e.clientY - state.startMouseY) / s
+    const rawX = (e.clientX - state.startMouseX) / s
+    const rawY = (e.clientY - state.startMouseY) / s
 
-    if (!isResizing() && (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2)) {
+    if (!isResizing() && (Math.abs(rawX) > 2 || Math.abs(rawY) > 2)) {
       setIsResizing(true)
     }
 
@@ -677,22 +714,32 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     const element = props.sceneStore.elements().find((el) => el.id === state.elementId)
     if (!element) return
 
-    // For line/arrow elements, resize means moving endpoints
+    // For line/arrow elements, resize means moving endpoints (no edge snapping)
     if ((element.type === 'line' || element.type === 'arrow') && state.startX2 !== undefined && state.startY2 !== undefined) {
       // 'w' or 'nw' or 'sw' moves start point, 'e' or 'ne' or 'se' moves end point
       if (state.handle === 'w' || state.handle === 'nw' || state.handle === 'sw') {
         props.sceneStore.updateElement(state.elementId, {
-          x: state.startX + deltaX,
-          y: state.startY + deltaY,
+          x: state.startX + rawX,
+          y: state.startY + rawY,
         })
       } else {
         props.sceneStore.updateElement(state.elementId, {
-          x2: state.startX2 + deltaX,
-          y2: state.startY2 + deltaY,
+          x2: state.startX2 + rawX,
+          y2: state.startY2 + rawY,
         })
       }
       return
     }
+
+    // Snap the driven edge (skip while Shift locks aspect ratio).
+    const { dx: deltaX, dy: deltaY } =
+      snapEnabled() && !e.shiftKey
+        ? snapResizeDelta(state, rawX, rawY)
+        : ((): { dx: number; dy: number } => {
+            setGuideX(null)
+            setGuideY(null)
+            return { dx: rawX, dy: rawY }
+          })()
 
     // For regular elements, calculate new bounds based on handle
     let newX = state.startX
@@ -819,6 +866,8 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     document.removeEventListener('mousemove', handleResizeMove)
     document.removeEventListener('mouseup', handleResizeEnd)
     props.sceneStore.endInteraction()
+    setGuideX(null)
+    setGuideY(null)
 
     setTimeout(() => {
       setResizeState(null)

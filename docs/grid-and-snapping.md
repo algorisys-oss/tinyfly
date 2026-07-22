@@ -39,8 +39,15 @@ and asks `snapAxis` for the smallest nudge on each axis. The caught line is
 published to `guideX` / `guideY` and drawn as a guide. The pixel threshold is
 divided by the preview scale so the feel is constant at any zoom.
 
+## Resize snapping
+
+Resizing snaps too: the edge (or corner) you drag snaps to the same targets —
+grid, other elements' edges/centres, and the artboard — with the pink guide
+showing what caught. Each handle drives specific edges (e.g. **e** snaps the
+right edge, **se** snaps right + bottom, **n** snaps the top). Holding **Shift**
+to lock the aspect ratio turns snapping off for that drag so the two don't fight.
+
 ## Limitations / later
 
-- Snapping applies to **drag** today; **resize** snapping is a later addition.
 - Draggable ruler guides and rulers along the edges are not yet implemented.
 - Grid size (20px) is fixed for now.
