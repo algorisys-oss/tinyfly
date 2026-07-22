@@ -25,11 +25,11 @@
   align-items: center;
   gap: 6px;
   padding: 0 12px;
-  height: 28px;
-  background: transparent;
-  border: 1px solid transparent;
+  height: 22px;
+  background: #1b1b1b;
+  border: 1px solid #2c2c2c;
   border-radius: 4px;
-  color: #888;
+  color: #9a9a9a;
   font-size: 12px;
   font-family: inherit;
   cursor: pointer;
@@ -81,18 +81,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   padding: 0;
-  background: transparent;
-  border: 1px dashed #444;
+  background: #1b1b1b;
+  border: 1px solid #2c2c2c;
   border-radius: 4px;
-  color: #666;
-  font-size: 14px;
+  color: #777;
+  font-size: 15px;
+  line-height: 1;
   cursor: pointer;
   transition: background 0.1s, color 0.1s, border-color 0.1s;
   flex-shrink: 0;
-  margin-left: 4px;
+  margin-left: 6px;
 }
 
 .scene-add-btn:hover {

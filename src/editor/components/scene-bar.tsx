@@ -44,6 +44,9 @@ export const SceneBar: Component<SceneBarProps> = (props) => {
 
   const scenes = () => props.projectStore.getScenes()
   const activeSceneId = () => props.projectStore.currentProject().activeSceneId
+  // Tab thumbnails only earn their space when there's more than one scene to tell
+  // apart — a lone default scene reads cleaner as a plain named tab.
+  const showThumbs = () => scenes().length > 1
 
   // Per-scene tab thumbnails. Generate a thumbnail once for any scene that
   // doesn't already have one (the editor keeps the *active* scene's thumbnail
@@ -206,7 +209,7 @@ export const SceneBar: Component<SceneBarProps> = (props) => {
                 onContextMenu={(e) => handleContextMenu(e, scene.id)}
                 title={scene.name}
               >
-                <Show when={thumbOf(scene.id)}>
+                <Show when={showThumbs() && thumbOf(scene.id)}>
                   <img class="scene-tab-thumb" src={thumbOf(scene.id)!} alt="" />
                 </Show>
                 <Show
