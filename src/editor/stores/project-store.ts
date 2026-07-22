@@ -5,6 +5,7 @@ import type { SceneDefinition, SymbolDefinition } from './scene-types'
 import type { SceneTransition, SequenceDefinition, SerializedElement } from '../../player/sequence-types'
 import { DEFAULT_TRANSITION } from '../../player/sequence-types'
 import { generateElementHtml } from '../utils/element-html'
+import { expandSymbolInstances } from '../utils/expand-symbols'
 
 export const STORAGE_KEY = 'tinyfly-projects'
 export const CURRENT_PROJECT_KEY = 'tinyfly-current-project'
@@ -768,8 +769,8 @@ export function createProjectStore(options?: { backend?: ProjectBackend }) {
       scenes: orderedScenes.map((scene) => ({
         id: scene.id,
         name: scene.name,
-        elements: scene.elements
-          .filter((el) => el.visible && el.type !== 'group')
+        elements: expandSymbolInstances(scene.elements, getSymbol)
+          .filter((el) => el.visible && el.type !== 'group' && el.type !== 'symbol')
           .map((el): SerializedElement => ({
             type: el.type,
             name: el.name,

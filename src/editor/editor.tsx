@@ -418,7 +418,7 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
     elements: ReturnType<typeof sceneStore.exportElements>,
     canvas: ReturnType<typeof projectStore.currentProject>['canvas']
   ) => {
-    const url = await renderSceneThumbnail(elements, canvas)
+    const url = await renderSceneThumbnail(elements, canvas, 360, projectStore.getSymbol)
     if (url) {
       projectStore.setThumbnail(projectId, url)
       projectStore.setThumbnail(sceneId, url)

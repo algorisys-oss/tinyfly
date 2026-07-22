@@ -5,6 +5,7 @@ import type { SceneStore } from '../stores/scene-store'
 import type { ProjectStore } from '../stores/project-store'
 import { serializeTimeline } from '../../engine'
 import { generateElementHtml } from '../utils/element-html'
+import { expandSymbolInstances } from '../utils/expand-symbols'
 import { useEscapeClose } from '../utils/use-escape-close'
 import './embed-dialog.css'
 
@@ -42,14 +43,17 @@ export const EmbedDialog: Component<EmbedDialogProps> = (props) => {
     return JSON.stringify(serializeTimeline(props.store.state.timeline))
   })
 
-  // Generate HTML for all scene elements
+  // Generate HTML for all scene elements (symbol instances flattened)
   const elementsHtml = createMemo(() => {
-    const elements = props.sceneStore.getTopLevelElements()
+    const elements = expandSymbolInstances(
+      props.sceneStore.getTopLevelElements(),
+      props.projectStore.getSymbol
+    )
     if (elements.length === 0) {
       return '  <!-- Add your target elements here -->\n  <div data-tinyfly="Box" style="position: absolute; left: 40px; top: 70px; width: 60px; height: 60px; background: #4a9eff; border-radius: 4px;"></div>'
     }
     return elements
-      .filter(el => el.visible && el.type !== 'group')
+      .filter(el => el.visible && el.type !== 'group' && el.type !== 'symbol')
       .map(el => generateElementHtml(el))
       .filter(Boolean)
       .join('\n')

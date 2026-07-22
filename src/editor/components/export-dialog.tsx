@@ -16,6 +16,7 @@ import {
   downloadVideo,
 } from '../../engine/export'
 import { buildExportComposite } from '../utils/export-composite'
+import { expandSymbolInstances } from '../utils/expand-symbols'
 import { useEscapeClose } from '../utils/use-escape-close'
 import { slugifyFilename } from '../utils/filename'
 import './export-dialog.css'
@@ -140,8 +141,10 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
       try { await document.fonts.ready } catch { /* ignore */ }
     }
 
-    // Composite the DOM-only layers (image + video) the Canvas renderer skips.
-    const composite = await buildExportComposite(props.sceneStore.elements())
+    // Flatten symbol instances, then composite the DOM-only layers (image +
+    // video) the Canvas renderer skips.
+    const flattened = expandSymbolInstances(props.sceneStore.elements(), props.projectStore.getSymbol)
+    const composite = await buildExportComposite(flattened)
 
     const draw = async (ctx: CanvasRenderingContext2D, timeMs: number) => {
       await composite.prepareFrame(timeMs)

@@ -197,8 +197,16 @@ looped over the symbol's duration. Combine it with animating the *instance*
 the instance travels while its insides animate. Nested playback runs in the
 **DOM** preview.
 
+### Symbols in export & embeds
+
+Symbol instances are **flattened** into their shapes for **GIF / WebP / MP4**
+export, **embed** code, scene **thumbnails**, and the **Canvas** preview — so what
+you build with symbols also ships in your output. (Exports use the symbol's
+poster frame; a symbol's *nested* animation baked into export is still to come.)
+
 > **Still to come:** **symbol-swap** (change which symbol an instance shows over
-> time — the lip-sync primitive) and Canvas/SVG instance rendering — see
+> time — the lip-sync primitive), **SVG** preview rendering of instances, and
+> nested-animation baked into export — see
 > [symbols-and-library.md](symbols-and-library.md).
 
 ## Property Panel

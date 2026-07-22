@@ -292,7 +292,9 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
   - [x] Nested playback — a symbol's own timeline animates inside every instance
     (DOM preview, synced to the scene playhead via per-instance DOM adapters).
   - [ ] Symbol-swap (lip-sync).
-  - [ ] Canvas/SVG adapter rendering + embed/export expansion of instances.
+  - [x] Export/embed/thumbnail + Canvas expansion of instances via
+    `expandSymbolInstances` (flatten to shapes). SVG preview + nested-animation-
+    in-export still pending.
   - [ ] Undo of Convert also removes the orphaned symbol.
   - See [docs/symbols-and-library.md](docs/symbols-and-library.md).
 - [ ] Phase B — Camera (animated pan/zoom/rotate), onion skinning, guides/grid/snapping
@@ -392,7 +394,7 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
 
 ## Test Coverage
 
-- 634 tests passing
+- 641 tests passing
 - Easing functions: 48 tests
 - Interpolators: 21 tests
 - Clock: 19 tests

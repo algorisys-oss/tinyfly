@@ -1,5 +1,7 @@
 import type { SceneElement } from '../stores/scene-store'
+import type { SymbolDefinition } from '../stores/scene-types'
 import { buildExportComposite } from './export-composite'
+import { expandSymbolInstances } from './expand-symbols'
 
 /**
  * Render a static "poster" thumbnail of a scene to a data URL.
@@ -15,9 +17,12 @@ import { buildExportComposite } from './export-composite'
 export async function renderSceneThumbnail(
   elements: SceneElement[],
   canvas: { width: number; height: number; background: string },
-  maxWidth = 360
+  maxWidth = 360,
+  getSymbol?: (id: string) => SymbolDefinition | undefined
 ): Promise<string | null> {
-  const drawable = elements.filter((el) => el.visible && el.type !== 'group')
+  // Flatten symbol instances so they appear in the thumbnail.
+  const flat = getSymbol ? expandSymbolInstances(elements, getSymbol) : elements
+  const drawable = flat.filter((el) => el.visible && el.type !== 'group' && el.type !== 'symbol')
   if (drawable.length === 0) return null
   if (canvas.width <= 0 || canvas.height <= 0) return null
 

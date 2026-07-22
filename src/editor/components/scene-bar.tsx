@@ -58,7 +58,7 @@ export const SceneBar: Component<SceneBarProps> = (props) => {
       if (attempted.has(scene.id)) continue
       attempted.add(scene.id)
       if (props.projectStore.getThumbnail(scene.id)) continue
-      renderSceneThumbnail(scene.elements, canvas).then((url) => {
+      renderSceneThumbnail(scene.elements, canvas, 360, props.projectStore.getSymbol).then((url) => {
         if (url) {
           props.projectStore.setThumbnail(scene.id, url)
           setThumbVersion((v) => v + 1)

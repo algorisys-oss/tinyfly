@@ -4,6 +4,7 @@ import { DOMAdapter } from '../../adapters/dom'
 import { CanvasAdapter } from '../../adapters/canvas'
 import { SVGAdapter } from '../../adapters/svg'
 import { deserializeTimeline, type Timeline } from '../../engine'
+import { expandSymbolInstances } from '../utils/expand-symbols'
 import type { EditorStore } from '../stores/editor-store'
 import type { ProjectStore } from '../stores/project-store'
 import { fillToCss, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type GroupElement, type SymbolInstanceElement } from '../stores/scene-store'
@@ -241,7 +242,8 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     if (!canvasAdapter) return
 
     canvasAdapter.clearTargets()
-    const elements = props.sceneStore.elements()
+    // Flatten symbol instances so the Canvas renderer draws them (static).
+    const elements = expandSymbolInstances(props.sceneStore.elements(), props.projectStore.getSymbol)
 
     elements.forEach((element) => {
       const target = sceneElementToCanvasTarget(element)

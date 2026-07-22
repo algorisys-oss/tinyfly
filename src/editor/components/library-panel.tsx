@@ -35,7 +35,7 @@ export const LibraryPanel: Component<LibraryPanelProps> = (props) => {
       const key = `${sym.id}:${sym.modified}`
       if (attempted.has(key)) continue
       attempted.add(key)
-      renderSceneThumbnail(sym.elements, { width: sym.width, height: sym.height, background: bg }).then(
+      renderSceneThumbnail(sym.elements, { width: sym.width, height: sym.height, background: bg }, 360, props.projectStore.getSymbol).then(
         (url) => {
           if (url) {
             props.projectStore.setThumbnail(sym.id, url)
