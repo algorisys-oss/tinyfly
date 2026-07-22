@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.44.0](v0.44.0.md) | 2026-07-22 | Sprite-sheet export — every frame in one PNG grid + JSON metadata for game engines |
 | [v0.43.0](v0.43.0.md) | 2026-07-22 | Shape morphing — 🌀 tween one path into another; engine-level path interpolation, renders everywhere |
 | [v0.42.0](v0.42.0.md) | 2026-07-22 | Phase C: polygon & star shapes — ⬡/★ parametric shapes (sides/points/inner %), resizable, export everywhere |
 | [v0.41.0](v0.41.0.md) | 2026-07-22 | Rulers & draggable guides — 📏 pull guide lines out of the rulers; elements snap to them |

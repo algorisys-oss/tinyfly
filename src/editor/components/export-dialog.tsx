@@ -14,6 +14,10 @@ import {
   exportVideo,
   getVideoExportFormats,
   downloadVideo,
+  spriteSheetLayout,
+  frameCell,
+  spriteFrameTimes,
+  spriteSheetMeta,
 } from '../../engine/export'
 import { buildExportComposite } from '../utils/export-composite'
 import { buildSymbolExportLayer } from '../utils/symbol-export-layer'
@@ -31,10 +35,13 @@ interface ExportDialogProps {
   sceneName?: string
 }
 
-type ExportFormat = 'css' | 'lottie' | 'gif' | 'webp' | 'video'
+type ExportFormat = 'css' | 'lottie' | 'gif' | 'webp' | 'video' | 'sprite'
 
 /** Formats that rasterise the scene frame by frame. */
-const RASTER_FORMATS: ExportFormat[] = ['gif', 'webp', 'video']
+const RASTER_FORMATS: ExportFormat[] = ['gif', 'webp', 'video', 'sprite']
+
+/** Max columns in an exported sprite sheet. */
+const SPRITE_MAX_COLUMNS = 8
 
 export const ExportDialog: Component<ExportDialogProps> = (props) => {
   useEscapeClose(() => props.isOpen, () => props.onClose())
@@ -79,7 +86,7 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
   const outputHeight = () => Math.max(2, Math.round(canvasSize().height * scale()))
 
   /** MP4 has no alpha channel, so transparency only applies to GIF and WebP. */
-  const supportsTransparency = () => format() === 'gif' || format() === 'webp'
+  const supportsTransparency = () => format() === 'gif' || format() === 'webp' || format() === 'sprite'
   const effectiveBackground = () =>
     supportsTransparency() && transparent() ? undefined : background()
 
@@ -113,6 +120,67 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
   const filenameInput = () => filenameOverride() ?? defaultFilename()
   /** What actually gets written to disk, always safe. */
   const baseFilename = () => slugifyFilename(filenameInput())
+
+  /**
+   * Render every frame into a grid PNG (sprite sheet) plus a JSON metadata file.
+   * Reuses the same per-frame `draw` as the other raster exports, translated and
+   * clipped into each cell.
+   */
+  const runSpriteSheet = async (
+    draw: (ctx: CanvasRenderingContext2D, timeMs: number) => Promise<void>,
+    frameW: number,
+    frameH: number,
+    signal: AbortSignal
+  ) => {
+    const timeline = props.store.state.timeline!
+    const frames = Math.max(1, Math.round((timeline.duration / 1000) * fps()))
+    const layout = spriteSheetLayout(frames, frameW, frameH, SPRITE_MAX_COLUMNS)
+    const times = spriteFrameTimes(frames, timeline.duration)
+
+    const sheet = document.createElement('canvas')
+    sheet.width = layout.sheetWidth
+    sheet.height = layout.sheetHeight
+    const ctx = sheet.getContext('2d')
+    if (!ctx) throw new Error('Could not create the sprite-sheet canvas.')
+
+    const bg = effectiveBackground()
+    for (let i = 0; i < frames; i++) {
+      if (signal.aborted) throw new Error('Export cancelled')
+      const cell = frameCell(i, layout)
+      ctx.save()
+      ctx.beginPath()
+      ctx.rect(cell.x, cell.y, frameW, frameH)
+      ctx.clip()
+      ctx.translate(cell.x, cell.y)
+      if (bg) {
+        ctx.fillStyle = bg
+        ctx.fillRect(0, 0, frameW, frameH)
+      }
+      await draw(ctx, times[i])
+      ctx.restore()
+      setProgress((i + 1) / frames)
+    }
+
+    // Download the PNG.
+    const blob = await new Promise<Blob | null>((resolve) => sheet.toBlob(resolve, 'image/png'))
+    if (!blob) throw new Error('Could not encode the sprite sheet.')
+    const downloadFile = (data: Blob, name: string) => {
+      const url = URL.createObjectURL(data)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = name
+      a.click()
+      URL.revokeObjectURL(url)
+    }
+    downloadFile(blob, `${baseFilename()}-spritesheet.png`)
+
+    // Download matching metadata (portable to game engines / custom players).
+    const meta = spriteSheetMeta(layout, fps(), timeline.duration)
+    downloadFile(
+      new Blob([JSON.stringify(meta, null, 2)], { type: 'application/json' }),
+      `${baseFilename()}-spritesheet.json`
+    )
+  }
 
   /**
    * Run a frame-based export.
@@ -166,7 +234,9 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
     }
 
     try {
-      if (format() === 'gif') {
+      if (format() === 'sprite') {
+        await runSpriteSheet(draw, outW, outH, controller.signal)
+      } else if (format() === 'gif') {
         const blob = await exportToGIF(timeline, {
           width: outW,
           height: outH,
@@ -356,6 +426,16 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
                 </svg>
                 MP4
               </button>
+              <button
+                class="export-format-btn"
+                classList={{ active: format() === 'sprite' }}
+                onClick={() => setFormat('sprite')}
+              >
+                <svg viewBox="0 0 24 24" width="20" height="20">
+                  <path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z" fill="currentColor"/>
+                </svg>
+                Sprite
+              </button>
             </div>
 
             <div class="export-description">
@@ -370,6 +450,9 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
               )}
               {format() === 'webp' && (
                 <p>Export an animated WebP. Much smaller and truer in colour than GIF, with full alpha, and supported by every modern browser.</p>
+              )}
+              {format() === 'sprite' && (
+                <p>Export a sprite sheet: every frame packed into one PNG grid (up to {SPRITE_MAX_COLUMNS} across) plus a JSON with frame size, columns/rows, count and fps — ready for game engines or a custom player. Alpha is kept when Transparent is on.</p>
               )}
               {format() === 'video' && (
                 <p>

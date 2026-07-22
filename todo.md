@@ -321,7 +321,8 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
 - [~] Phase C — Pen tool + polygon/star, shape-tween morph tooling, video/sprite-sheet export
   - [x] Polygon + star shapes: ⬡/★ in the Elements panel; parametric `shape` spec (sides/points/inner ratio) that regenerates the path `d` on edit + resize. Pure `poly-star.ts` (tested). See [docs/polygon-star.md](docs/polygon-star.md).
   - [x] Shape-tween morphing: engine morphs path `d` strings (sample-and-lerp), routed via `getInterpolator`; 🌀 Shape Morph authoring in Properties; renders in DOM/SVG/Canvas/export/embeds. Pure `path-morph.ts` (tested). See [docs/shape-morph.md](docs/shape-morph.md).
-  - [ ] Pen tool (click-to-place bezier authoring); video/sprite-sheet export.
+  - [x] Sprite-sheet export: frames packed into one PNG grid + JSON metadata (frame size, columns/rows, count, fps). Pure `sprite-sheet.ts` layout (tested); reuses the raster `draw`. See [docs/sprite-sheet-export.md](docs/sprite-sheet-export.md).
+  - [ ] Pen tool (click-to-place bezier authoring).
 - [ ] Out of scope: bone/IK rigging, frame-by-frame drawing, natural-media brushes
 
 ---
