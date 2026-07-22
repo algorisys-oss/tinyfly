@@ -346,9 +346,13 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
     explicit **Save** button with Save / Saving… / Saved ✓ status (auto-save
     still runs; the button is the tap-friendly manual trigger for mobile/tablet).
   - [x] tinyfly wordmark + BETA badge added to the `/gallery` examples route.
-  - [ ] Remaining: gallery thumbnails refresh on gallery-open and project
-    switch — consider a lightweight periodic refresh while editing; per-scene
-    thumbnails for multi-scene projects.
+  - [x] Live thumbnail refresh — a debounced capture re-renders the thumbnail
+    while editing and when leaving a project, so a brand-new project shows its
+    thumbnail in the gallery without opening it first.
+  - [x] **File-format docs** (`docs/file-format.md` + in-app docs viewer) — full
+    tinyfly JSON reference (animation documents, timelines, projects, sequences)
+    for third-party integrations.
+  - [ ] Remaining: per-scene thumbnails for multi-scene projects.
 
 ## Test Coverage
 

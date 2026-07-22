@@ -75,6 +75,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - [Getting Started](docs/getting-started.md) — Installation, setup, and your first animation
 - [Editor Guide](docs/editor-guide.md) — Complete guide to the visual editor (elements, timeline, scenes, presets, shortcuts)
 - [API Reference](docs/api-reference.md) — Full engine, player, adapter, and export API documentation
+- [File Format](docs/file-format.md) — The tinyfly JSON format (animation documents, timelines, projects, sequences) for integrations
 - [Examples](docs/examples.md) — Code examples for common animation patterns
 - [Deployment](docs/DEPLOYMENT.md) — Hosting, Docker, and CDN configuration
 - [2D Animation Roadmap](docs/2d-animation-roadmap.md) — Adobe Animate gap analysis and phased plan (symbols/library, camera, onion skinning, …)

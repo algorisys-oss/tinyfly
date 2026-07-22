@@ -8,6 +8,7 @@ import './docs-viewer.css'
 import gettingStartedMd from '../../docs/getting-started.md?raw'
 import editorGuideMd from '../../docs/editor-guide.md?raw'
 import apiReferenceMd from '../../docs/api-reference.md?raw'
+import fileFormatMd from '../../docs/file-format.md?raw'
 import examplesMd from '../../docs/examples.md?raw'
 
 interface DocPage {
@@ -20,6 +21,7 @@ const pages: DocPage[] = [
   { id: 'getting-started', title: 'Getting Started', content: gettingStartedMd },
   { id: 'editor-guide', title: 'Editor Guide', content: editorGuideMd },
   { id: 'api-reference', title: 'API Reference', content: apiReferenceMd },
+  { id: 'file-format', title: 'File Format', content: fileFormatMd },
   { id: 'examples', title: 'Examples', content: examplesMd },
 ]
 

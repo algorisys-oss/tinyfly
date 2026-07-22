@@ -304,12 +304,52 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
     setShowSettings(true)
   }
 
-  /** Snapshot the current scene as a gallery thumbnail (best-effort). */
-  const captureThumbnail = async () => {
-    const project = projectStore.currentProject()
-    const url = await renderSceneThumbnail(sceneStore.exportElements(), project.canvas)
-    if (url) projectStore.setThumbnail(project.id, url)
+  /** Render + store a thumbnail for a specific project (best-effort). */
+  const captureThumbnailFor = async (
+    id: string,
+    elements: ReturnType<typeof sceneStore.exportElements>,
+    canvas: ReturnType<typeof projectStore.currentProject>['canvas']
+  ) => {
+    const url = await renderSceneThumbnail(elements, canvas)
+    if (url) projectStore.setThumbnail(id, url)
   }
+
+  /** Snapshot the current scene as a gallery thumbnail (best-effort). */
+  const captureThumbnail = () => {
+    const project = projectStore.currentProject()
+    return captureThumbnailFor(project.id, sceneStore.exportElements(), project.canvas)
+  }
+
+  /**
+   * Fire a thumbnail capture for the project we're about to leave, using its
+   * state snapshotted *now* (before the scene store is reloaded), so a project
+   * always has a current thumbnail even if you switch away immediately.
+   */
+  const captureOutgoingThumbnail = () => {
+    const project = projectStore.currentProject()
+    void captureThumbnailFor(project.id, sceneStore.exportElements(), project.canvas)
+  }
+
+  // Keep gallery thumbnails fresh while editing. Rendering a thumbnail is a bit
+  // heavy (it composites the scene to a canvas), so this is debounced well past
+  // the auto-save delay — the goal is that a project you've been working on has
+  // a current thumbnail by the time you open the gallery, without capturing on
+  // every keystroke.
+  let thumbTimeout: number | undefined
+  createEffect(() => {
+    if (isSwitchingScene) return
+    // Subscribe to the same edit signals the auto-save effect watches.
+    store.tracks()
+    store.duration()
+    sceneStore.exportElements()
+    projectStore.currentProject().id
+
+    if (thumbTimeout) clearTimeout(thumbTimeout)
+    thumbTimeout = window.setTimeout(() => void captureThumbnail(), 2500)
+  })
+  onCleanup(() => {
+    if (thumbTimeout) clearTimeout(thumbTimeout)
+  })
 
   /** Refresh the current thumbnail, then open the gallery. */
   const openGallery = async () => {
@@ -321,6 +361,7 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
   /** Switch to a saved project and reload the editor around it. */
   const openProjectFromGallery = (id: string) => {
     flushSave()
+    captureOutgoingThumbnail()
     isSwitchingScene = true
     try {
       store.stop()
@@ -337,6 +378,7 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
   /** Create a brand-new project from the gallery and load it. */
   const newProjectFromGallery = () => {
     flushSave()
+    captureOutgoingThumbnail()
     isSwitchingScene = true
     try {
       store.stop()
