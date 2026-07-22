@@ -408,3 +408,54 @@ describe('playSequence helper', () => {
     seq.destroy()
   })
 })
+
+describe('nested symbol instances', () => {
+  let container: HTMLElement
+  beforeEach(() => { container = createContainer() })
+  afterEach(() => container.remove())
+
+  function symbolScene(): SequenceScene {
+    return {
+      id: 's', name: 'S',
+      elements: [{
+        type: 'symbol', name: 'Inst', x: 0, y: 0, width: 100, height: 100, rotation: 0, opacity: 1,
+        html: '<div data-tinyfly="Inst" data-tinyfly-symbol="sym1" style="position:absolute"><div><div data-tinyfly="Head"></div></div></div>',
+      }],
+      timeline: { id: 't', config: { duration: 1000, loop: 0 }, tracks: [] },
+      transition: { type: 'none', duration: 0 },
+    }
+  }
+
+  const sym1 = {
+    id: 'sym1',
+    timeline: {
+      id: 'sym1', config: { duration: 1000 },
+      tracks: [{ id: 'o', target: 'Head', property: 'opacity', keyframes: [{ time: 0, value: 0.5 }, { time: 1000, value: 0.5 }] }],
+    },
+  }
+
+  it("applies a scene's symbol instance nested state", async () => {
+    const seq: SequenceDefinition = {
+      id: 'seq', name: 'Seq', canvas: { width: 100, height: 100 }, symbols: [sym1], scenes: [symbolScene()],
+    }
+    const s = new TinyflySequencer(container)
+    await s.load(seq)
+    s.goToScene(0) // applies initial scene + nested state
+    const head = container.querySelector('[data-tinyfly="Head"]') as HTMLElement
+    expect(head).toBeTruthy()
+    expect(head.style.opacity).toBe('0.5')
+    s.destroy()
+  })
+
+  it('leaves inner elements untouched without a matching symbol', async () => {
+    const seq: SequenceDefinition = {
+      id: 'seq', name: 'Seq', canvas: { width: 100, height: 100 }, scenes: [symbolScene()],
+    }
+    const s = new TinyflySequencer(container)
+    await s.load(seq)
+    s.goToScene(0)
+    const head = container.querySelector('[data-tinyfly="Head"]') as HTMLElement
+    expect(head.style.opacity).toBe('')
+    s.destroy()
+  })
+})

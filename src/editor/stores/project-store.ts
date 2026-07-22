@@ -1,11 +1,10 @@
 import { createSignal, createEffect } from 'solid-js'
 import type { TimelineDefinition } from '../../engine'
-import type { SceneElement } from './scene-store'
+import type { SceneElement, SymbolInstanceElement } from './scene-store'
 import type { SceneDefinition, SymbolDefinition } from './scene-types'
 import type { SceneTransition, SequenceDefinition, SerializedElement } from '../../player/sequence-types'
 import { DEFAULT_TRANSITION } from '../../player/sequence-types'
-import { generateElementHtml } from '../utils/element-html'
-import { expandSymbolInstances } from '../utils/expand-symbols'
+import { generateElementHtml, generateSymbolInstanceHtml } from '../utils/element-html'
 
 export const STORAGE_KEY = 'tinyfly-projects'
 export const CURRENT_PROJECT_KEY = 'tinyfly-current-project'
@@ -762,15 +761,29 @@ export function createProjectStore(options?: { backend?: ProjectBackend }) {
     const project = currentProject()
     const orderedScenes = [...project.scenes].sort((a, b) => a.order - b.order)
 
+    // Collect symbols used by instances that have a nested timeline, so the
+    // sequencer can animate them.
+    const usedSymbolIds = new Set<string>()
+    for (const scene of project.scenes) {
+      for (const el of scene.elements) {
+        if (el.type === 'symbol') usedSymbolIds.add((el as { symbolId: string }).symbolId)
+      }
+    }
+    const symbols = [...usedSymbolIds]
+      .map((id) => getSymbol(id))
+      .filter((s): s is SymbolDefinition => !!s && !!s.timeline && s.timeline.tracks.length > 0)
+      .map((s) => ({ id: s.id, timeline: s.timeline as TimelineDefinition }))
+
     return {
       id: project.id,
       name: project.name,
       canvas: { ...project.canvas },
+      symbols: symbols.length ? symbols : undefined,
       scenes: orderedScenes.map((scene) => ({
         id: scene.id,
         name: scene.name,
-        elements: expandSymbolInstances(scene.elements, getSymbol)
-          .filter((el) => el.visible && el.type !== 'group' && el.type !== 'symbol')
+        elements: scene.elements
+          .filter((el) => el.visible && el.type !== 'group')
           .map((el): SerializedElement => ({
             type: el.type,
             name: el.name,
@@ -780,7 +793,13 @@ export function createProjectStore(options?: { backend?: ProjectBackend }) {
             height: el.height,
             rotation: el.rotation,
             opacity: el.opacity,
-            html: generateElementHtml(el, ''),
+            html:
+              el.type === 'symbol'
+                ? (() => {
+                    const sym = getSymbol((el as { symbolId: string }).symbolId)
+                    return sym ? generateSymbolInstanceHtml(el as SymbolInstanceElement, sym, '') : ''
+                  })()
+                : generateElementHtml(el, ''),
           })),
         timeline: scene.timeline,
         transition: scene.transition ?? { ...DEFAULT_TRANSITION },

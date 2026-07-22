@@ -303,7 +303,7 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
     would deep-copy the library on every history push; harmless + deletable).
   - [ ] Instance-opacity compositing in export (rare; needs offscreen canvas).
   - [x] Nested animation baked into **single-scene embeds** (player runs each
-    instance's nested timeline; `generateSymbolInstanceHtml` + `PlayerOptions.symbols`). Multi-scene sequence embeds + swap-in-embed still pending.
+    instance's nested timeline (single-scene: PlayerOptions.symbols; multi-scene: SequenceDefinition.symbols + sequencer). Swap-in-embed still pending.
   - [ ] (was) Nested animation/swaps baked into embeds (needs runtime nested
     playback in the player — largest remaining item).
   - See [docs/symbols-and-library.md](docs/symbols-and-library.md).

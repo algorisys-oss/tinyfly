@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.33.0](v0.33.0.md) | 2026-07-22 | Multi-scene sequence embeds animate symbols too (sequencer runs nested timelines) |
 | [v0.32.0](v0.32.0.md) | 2026-07-22 | Animated symbols in single-scene embeds — the player runs each instance's nested timeline |
 | [v0.31.1](v0.31.1.md) | 2026-07-22 | Symbol instances now render in the SVG preview too (were DOM + Canvas only) |
 | [v0.31.0](v0.31.0.md) | 2026-07-22 | Top toolbar: More overflow menu + merged the two Export buttons (one row, no wrapping) |

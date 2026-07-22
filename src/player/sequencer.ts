@@ -1,4 +1,5 @@
 import { Timeline, deserializeTimeline } from '../engine'
+import type { TimelineDefinition } from '../engine'
 import { DOMAdapter } from '../adapters/dom'
 import type {
   SequenceDefinition,
@@ -24,6 +25,11 @@ export class TinyflySequencer {
   private adapterB: DOMAdapter
   private timelineA: Timeline | null = null
   private timelineB: Timeline | null = null
+  /** Symbol nested timelines by id (from the sequence). */
+  private symbolDefs = new Map<string, TimelineDefinition>()
+  /** Per-scene-slot symbol instances (nested adapter + timeline), keyed by the
+   *  slot's scene adapter. */
+  private nestedByAdapter = new Map<DOMAdapter, { adapter: DOMAdapter; timeline: Timeline }[]>()
   private sequence: SequenceDefinition | null = null
   private options: SequencerOptions
 
@@ -82,6 +88,12 @@ export class TinyflySequencer {
     }
 
     this.sequence = definition
+
+    // Index the symbol nested timelines by id for the scenes to use.
+    this.symbolDefs.clear()
+    for (const s of definition.symbols ?? []) {
+      if (s.timeline?.tracks?.length) this.symbolDefs.set(s.id, s.timeline)
+    }
 
     // Set container dimensions from canvas
     this.container.style.width = `${definition.canvas.width}px`
@@ -176,6 +188,7 @@ export class TinyflySequencer {
       if (this.timelineA) {
         const state = this.timelineA.getStateAtTime(0)
         this.adapterA.applyState(state)
+        this.applyNested(this.adapterA, 0)
       }
     }
   }
@@ -227,6 +240,7 @@ export class TinyflySequencer {
     } else if (this.timelineA) {
       const state = this.timelineA.getStateAtTime(0)
       this.adapterA.applyState(state)
+      this.applyNested(this.adapterA, 0)
     }
   }
 
@@ -245,6 +259,10 @@ export class TinyflySequencer {
 
     this.adapterA.clearTargets()
     this.adapterB.clearTargets()
+    for (const nested of this.nestedByAdapter.values()) {
+      for (const inst of nested) inst.adapter.clearTargets()
+    }
+    this.nestedByAdapter.clear()
 
     if (this.timelineA) this.timelineA.stop()
     if (this.timelineB) this.timelineB.stop()
@@ -306,6 +324,41 @@ export class TinyflySequencer {
           adapter.registerTarget(tinyflyAttr, node)
         }
       }
+    }
+
+    // Bind nested symbol instances in this slot to their symbol timelines.
+    this.setupNested(container, adapter)
+  }
+
+  /**
+   * For each symbol instance container (`[data-tinyfly-symbol]`) in a scene slot,
+   * bind its inner elements to a private adapter driven by the symbol's timeline.
+   */
+  private setupNested(container: HTMLElement, adapter: DOMAdapter): void {
+    const nested: { adapter: DOMAdapter; timeline: Timeline }[] = []
+    container.querySelectorAll('[data-tinyfly-symbol]').forEach((el) => {
+      const id = el.getAttribute('data-tinyfly-symbol')
+      if (!id) return
+      const def = this.symbolDefs.get(id)
+      if (!def) return
+      const a = new DOMAdapter()
+      el.querySelectorAll('[data-tinyfly]').forEach((inner) => {
+        const name = inner.getAttribute('data-tinyfly')
+        if (name) a.registerTarget(name, inner as HTMLElement)
+      })
+      nested.push({ adapter: a, timeline: deserializeTimeline(def) })
+    })
+    if (nested.length) this.nestedByAdapter.set(adapter, nested)
+    else this.nestedByAdapter.delete(adapter)
+  }
+
+  /** Apply the nested symbol states for a slot at a given scene time. */
+  private applyNested(adapter: DOMAdapter, sceneTime: number): void {
+    const nested = this.nestedByAdapter.get(adapter)
+    if (!nested) return
+    for (const inst of nested) {
+      const dur = inst.timeline.duration
+      inst.adapter.applyState(inst.timeline.getStateAtTime(dur > 0 ? sceneTime % dur : sceneTime))
     }
   }
 
@@ -532,12 +585,14 @@ export class TinyflySequencer {
         this.timelineA.tick(delta)
         const stateA = this.timelineA.getStateAtTime(this.timelineA.currentTime)
         this.adapterA.applyState(stateA)
+        this.applyNested(this.adapterA, this.timelineA.currentTime)
       }
 
       if (this._state === 'transitioning' && this.timelineB && this.timelineB.playbackState === 'playing') {
         this.timelineB.tick(delta)
         const stateB = this.timelineB.getStateAtTime(this.timelineB.currentTime)
         this.adapterB.applyState(stateB)
+        this.applyNested(this.adapterB, this.timelineB.currentTime)
       }
 
       if (this._isPlaying) {

@@ -218,9 +218,9 @@ Symbol instances render in the **DOM**, **Canvas** and **SVG** previews, and in 
 what plays in the preview, including lip-sync. **Embeds, thumbnails and the
 Canvas preview** show the symbol's poster frame (static).
 
-> **Single-scene embeds now animate symbols** — the player runs each instance's
-> nested timeline. Still to come: symbols in **multi-scene sequence** embeds,
-> **swap** in embeds, and instance-opacity compositing in export — see
+> **Embeds now animate symbols** — both single-scene (player) and multi-scene
+> sequence (sequencer) embeds run each instance's nested timeline. Still to come:
+> **swap** in embeds and instance-opacity compositing in export — see
 > [symbols-and-library.md](symbols-and-library.md).
 
 ## Property Panel

@@ -39,6 +39,12 @@ export interface SequenceScene {
 }
 
 /** Serializable sequence definition for the multi-scene player */
+/** A symbol's nested timeline, keyed by id, for embedded symbol instances. */
+export interface SequenceSymbol {
+  id: string
+  timeline: TimelineDefinition
+}
+
 export interface SequenceDefinition {
   id: string
   name: string
@@ -46,6 +52,12 @@ export interface SequenceDefinition {
   scenes: SequenceScene[]
   /** Loop count: -1 for infinite, 0 for no loop, n for n times */
   loop?: number
+  /**
+   * Nested-symbol timelines used by scene elements tagged with
+   * `data-tinyfly-symbol`. The sequencer animates each instance's inner elements
+   * from the matching symbol timeline.
+   */
+  symbols?: SequenceSymbol[]
 }
 
 /** Options for the TinyflySequencer */
