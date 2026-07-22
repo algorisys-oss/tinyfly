@@ -26,6 +26,19 @@
   padding: 0 12px;
 }
 
+/* The slim (single-scene) bar's button carries the text "+ Scene", so it must be
+   an auto-width pill — not the fixed icon square used inside the multi-scene bar,
+   which would wrap the label onto two lines. */
+.scene-bar-slim .scene-add-btn {
+  width: auto;
+  height: 20px;
+  padding: 0 10px;
+  gap: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  margin-left: 0;
+}
+
 .editor-header h1 {
   margin: 0;
   font-size: 18px;
