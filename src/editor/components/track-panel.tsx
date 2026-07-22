@@ -1,6 +1,7 @@
 import { createSignal, For } from 'solid-js'
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
+import { createCollapsed } from '../utils/use-collapsed'
 import './track-panel.css'
 
 interface TrackPanelProps {
@@ -39,10 +40,15 @@ export const TrackPanel: Component<TrackPanelProps> = (props) => {
     props.store.removeTrack(trackId)
   }
 
+  const [collapsed, toggleCollapsed] = createCollapsed('tinyfly-panel-tracks')
+
   return (
-    <div class="track-panel">
+    <div class="track-panel" classList={{ collapsed: collapsed() }}>
       <div class="panel-header">
-        <span>Tracks</span>
+        <button class="panel-toggle" onClick={toggleCollapsed} title={collapsed() ? 'Expand' : 'Collapse'}>
+          <span class="panel-chevron" classList={{ collapsed: collapsed() }}>▾</span>
+          Tracks
+        </button>
         <button
           class="add-btn"
           onClick={() => setShowAddForm(!showAddForm())}

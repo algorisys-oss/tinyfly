@@ -3,6 +3,7 @@ import type { Component } from 'solid-js'
 import type { ProjectStore } from '../stores/project-store'
 import type { SceneStore } from '../stores/scene-store'
 import { renderSceneThumbnail } from '../utils/scene-thumbnail'
+import { createCollapsed } from '../utils/use-collapsed'
 import './library-panel.css'
 
 interface LibraryPanelProps {
@@ -82,10 +83,15 @@ export const LibraryPanel: Component<LibraryPanelProps> = (props) => {
     setThumbVersion((v) => v + 1)
   }
 
+  const [collapsed, toggleCollapsed] = createCollapsed('tinyfly-panel-library')
+
   return (
-    <div class="library-panel">
+    <div class="library-panel" classList={{ collapsed: collapsed() }}>
       <div class="library-panel-header">
-        <span class="library-panel-title">Library</span>
+        <button class="panel-toggle" onClick={toggleCollapsed} title={collapsed() ? 'Expand' : 'Collapse'}>
+          <span class="panel-chevron" classList={{ collapsed: collapsed() }}>▾</span>
+          Library
+        </button>
         <button
           class="library-convert-btn"
           onClick={() => props.onConvert()}

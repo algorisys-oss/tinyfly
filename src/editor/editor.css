@@ -308,6 +308,14 @@
   min-height: 0;
 }
 
+/* A collapsed section shrinks to just its header so the others get the space. */
+.editor-sidebar-left > .element-panel.collapsed,
+.editor-sidebar-left > .track-panel.collapsed,
+.editor-sidebar-left > .library-panel.collapsed {
+  flex: 0 0 auto;
+  min-height: 0;
+}
+
 .editor-sidebar-right {
   border-left: 1px solid #333;
   /* PropertyPanel and PresetPanel each scroll internally, so the outer sidebar
@@ -344,9 +352,10 @@
 
 .editor-preview {
   flex: 1;
-  /* Keep this modest so a short window still leaves the timeline room for its
-     track rows (which scroll internally) instead of clipping them off-screen. */
-  min-height: 120px;
+  /* Keep this small so the splitter has real range on short windows: dragging
+     the timeline taller shrinks the preview down to here instead of hitting a
+     wall (which made the resizer look like it did nothing). */
+  min-height: 80px;
   overflow: hidden;
 }
 
@@ -437,13 +446,19 @@
 /* Draggable splitter between the preview and the timeline. */
 .editor-vsplit {
   flex-shrink: 0;
-  height: 10px;
-  margin: -8px 0;
+  height: 14px;
+  margin: -6px 0;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: row-resize;
   touch-action: none;
+}
+
+.editor-vsplit:hover .editor-vsplit-grip,
+.editor-vsplit:active .editor-vsplit-grip {
+  background: #4a9eff;
+  width: 60px;
 }
 
 .editor-vsplit-grip {

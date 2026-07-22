@@ -3,6 +3,7 @@ import type { Component } from 'solid-js'
 import type { SceneStore, ElementType, GroupElement, DeviceVariant } from '../stores/scene-store'
 import type { ProjectStore } from '../stores/project-store'
 import { HelpIcon } from './tooltip'
+import { createCollapsed } from '../utils/use-collapsed'
 import './element-panel.css'
 
 interface ElementPanelProps {
@@ -113,10 +114,15 @@ export const ElementPanel: Component<ElementPanelProps> = (props) => {
     }
   }
 
+  const [collapsed, toggleCollapsed] = createCollapsed('tinyfly-panel-elements')
+
   return (
-    <div class="element-panel">
+    <div class="element-panel" classList={{ collapsed: collapsed() }}>
       <div class="panel-header">
-        <span>Elements</span>
+        <button class="panel-toggle" onClick={toggleCollapsed} title={collapsed() ? 'Expand' : 'Collapse'}>
+          <span class="panel-chevron" classList={{ collapsed: collapsed() }}>▾</span>
+          Elements
+        </button>
         <HelpIcon
           content="Add shapes, text, and images to your canvas. Click an element type to add it, then use the canvas to position and resize."
           position="right"
