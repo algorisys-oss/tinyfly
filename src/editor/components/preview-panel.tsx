@@ -9,6 +9,7 @@ import { cameraFromState, applyCameraToCtx, cameraSvgTransform } from '../utils/
 import { onionGhostTimes } from '../utils/onion'
 import { snapAxis, gridLinesFor } from '../utils/snap'
 import { elementsBounds } from '../utils/element-bounds'
+import { buildPenPath, localizePenPath, mirrorHandle, type PenNode } from '../utils/pen-path'
 import type { EditorStore } from '../stores/editor-store'
 import type { ProjectStore } from '../stores/project-store'
 import { fillToCss, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type GroupElement, type SymbolInstanceElement } from '../stores/scene-store'
@@ -174,6 +175,77 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     const sc = previewScale()
     if (!r) return { x: 0, y: 0 }
     return { x: (cx - r.left) / sc, y: (cy - r.top) / sc }
+  }
+
+  // Pen tool: click to place anchors, click-drag for smooth bezier handles, click
+  // the first point (or Enter/double-click) to finish. Nodes are in stage coords.
+  const [penMode, setPenMode] = createSignal(false)
+  const [penNodes, setPenNodes] = createSignal<PenNode[]>([])
+  const [penCursor, setPenCursor] = createSignal<{ x: number; y: number } | null>(null)
+  let penDrag: { index: number; ax: number; ay: number } | null = null
+  const PEN_CLOSE_DIST = 12 // screen px to the first anchor that closes the path
+
+  const finishPen = (closed: boolean) => {
+    const nodes = penNodes()
+    if (nodes.length >= 2) {
+      const { x, y, width, height, d } = localizePenPath(nodes, closed)
+      props.sceneStore.addElement('path', {
+        x,
+        y,
+        width,
+        height,
+        d,
+        closed,
+        fill: closed ? '#4a9eff' : 'transparent',
+        stroke: '#4a9eff',
+        strokeWidth: 2,
+        lineCap: 'round',
+        lineJoin: 'round',
+      } as Partial<import('../stores/scene-store').PathElement>)
+    }
+    setPenNodes([])
+    setPenCursor(null)
+    setPenMode(false)
+    penDrag = null
+  }
+
+  const cancelPen = () => {
+    setPenNodes([])
+    setPenCursor(null)
+    penDrag = null
+  }
+
+  const handlePenMouseDown = (e: MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const p = clientToStage(e.clientX, e.clientY)
+    const nodes = penNodes()
+    // Click near the first anchor to close (threshold in stage units, scale-aware).
+    if (nodes.length >= 2) {
+      const first = nodes[0]
+      if (Math.hypot(p.x - first.x, p.y - first.y) <= PEN_CLOSE_DIST / previewScale()) {
+        finishPen(true)
+        return
+      }
+    }
+    const index = nodes.length
+    setPenNodes([...nodes, { x: p.x, y: p.y }])
+    penDrag = { index, ax: p.x, ay: p.y }
+  }
+
+  const handlePenMouseMove = (e: MouseEvent) => {
+    const p = clientToStage(e.clientX, e.clientY)
+    setPenCursor(p)
+    if (penDrag) {
+      const { index, ax, ay } = penDrag
+      const hOut = { x: p.x, y: p.y }
+      const hIn = mirrorHandle(ax, ay, hOut)
+      setPenNodes((ns) => ns.map((n, i) => (i === index ? { ...n, hOut, hIn } : n)))
+    }
+  }
+
+  const handlePenMouseUp = () => {
+    penDrag = null
   }
 
   const moveGuide = (e: MouseEvent) => {
@@ -1137,6 +1209,21 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
       return
     }
 
+    // Pen tool: Enter finishes the open path, Escape cancels.
+    if (penMode()) {
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        finishPen(false)
+        return
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        cancelPen()
+        setPenMode(false)
+        return
+      }
+    }
+
     // Esc exits the maximized preview.
     if (e.key === 'Escape' && maximized()) {
       e.preventDefault()
@@ -1634,6 +1721,14 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
             title="Show rulers — drag out guide lines that elements snap to (drop off-stage to remove)"
           >
             📏 Rulers
+          </button>
+          <button
+            class="preview-camera-btn"
+            classList={{ active: penMode() }}
+            onClick={() => (penMode() ? (cancelPen(), setPenMode(false)) : setPenMode(true))}
+            title="Pen tool — click to place points, click-drag for curves, click the first point (or Enter) to finish, Esc to cancel"
+          >
+            ✒️ Pen
           </button>
         </Show>
         <button
@@ -2210,6 +2305,55 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
               title="Drag to pan the camera"
             >
               <span class="preview-camera-pan-hint">✋ Drag to pan · keyframes at the playhead</span>
+            </div>
+          </Show>
+          {/* Pen tool: capture clicks and draw the in-progress path + handles. */}
+          <Show when={penMode()}>
+            <div
+              class="preview-pen-overlay"
+              onMouseDown={handlePenMouseDown}
+              onMouseMove={handlePenMouseMove}
+              onMouseUp={handlePenMouseUp}
+              onDblClick={() => finishPen(false)}
+            >
+              <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0, overflow: 'visible' }}>
+                {/* Committed path + rubber-band to the cursor. */}
+                <path
+                  d={buildPenPath(penCursor() ? [...penNodes(), penCursor()!] : penNodes(), false)}
+                  fill="none"
+                  stroke="#4a9eff"
+                  stroke-width={1.5}
+                />
+                {/* Bezier handle lines + dots. */}
+                <For each={penNodes()}>
+                  {(n) => (
+                    <>
+                      <Show when={n.hIn}>
+                        <line x1={n.x} y1={n.y} x2={n.hIn!.x} y2={n.hIn!.y} stroke="#888" stroke-width={1} />
+                        <circle cx={n.hIn!.x} cy={n.hIn!.y} r={2.5} fill="#888" />
+                      </Show>
+                      <Show when={n.hOut}>
+                        <line x1={n.x} y1={n.y} x2={n.hOut!.x} y2={n.hOut!.y} stroke="#888" stroke-width={1} />
+                        <circle cx={n.hOut!.x} cy={n.hOut!.y} r={2.5} fill="#888" />
+                      </Show>
+                    </>
+                  )}
+                </For>
+                {/* Anchor dots; first one is highlighted (click it to close). */}
+                <For each={penNodes()}>
+                  {(n, i) => (
+                    <circle
+                      cx={n.x}
+                      cy={n.y}
+                      r={i() === 0 ? 4 : 3}
+                      fill={i() === 0 ? '#4a9eff' : '#fff'}
+                      stroke="#4a9eff"
+                      stroke-width={1.5}
+                    />
+                  )}
+                </For>
+              </svg>
+              <span class="preview-pen-hint">✒️ Click to add points · drag for curves · click the first point or Enter to finish · Esc to cancel</span>
             </div>
           </Show>
           </div>

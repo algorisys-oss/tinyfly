@@ -410,6 +410,28 @@
   background: linear-gradient(to bottom, transparent 3px, #22d3ee 3px, #22d3ee 4px, transparent 4px);
 }
 
+/* Pen-tool overlay (shown while "✒️ Pen" is active). */
+.preview-pen-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  cursor: crosshair;
+}
+
+.preview-pen-hint {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(74, 158, 255, 0.92);
+  color: #fff;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 /* On-stage camera pan overlay (shown while "✋ Pan" is active). */
 .preview-camera-pan-overlay {
   position: absolute;

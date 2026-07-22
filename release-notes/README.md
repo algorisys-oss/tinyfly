@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.45.0](v0.45.0.md) | 2026-07-22 | Pen tool — ✒️ click/drag to draw custom bezier paths; completes Phase C |
 | [v0.44.0](v0.44.0.md) | 2026-07-22 | Sprite-sheet export — every frame in one PNG grid + JSON metadata for game engines |
 | [v0.43.0](v0.43.0.md) | 2026-07-22 | Shape morphing — 🌀 tween one path into another; engine-level path interpolation, renders everywhere |
 | [v0.42.0](v0.42.0.md) | 2026-07-22 | Phase C: polygon & star shapes — ⬡/★ parametric shapes (sides/points/inner %), resizable, export everywhere |

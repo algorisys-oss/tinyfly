@@ -318,11 +318,11 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
   - [x] Grid + snapping: ▦ Grid overlay + 🧲 Snap (drag snaps to grid/element edges/centre/artboard) with live pink guides. Pure `snap.ts` helper (tested). See [docs/grid-and-snapping.md](docs/grid-and-snapping.md).
   - [x] Resize snapping: the dragged edge/corner snaps to the same targets (Shift-aspect-lock disables it).
   - [x] Rulers + draggable guides: 📏 Rulers toggle; drag guides out of the rulers, reposition, drop off-stage to remove; elements snap to guides. See [docs/grid-and-snapping.md](docs/grid-and-snapping.md).
-- [~] Phase C — Pen tool + polygon/star, shape-tween morph tooling, video/sprite-sheet export
+- [x] Phase C — Pen tool + polygon/star, shape-tween morph tooling, video/sprite-sheet export (all shipped)
   - [x] Polygon + star shapes: ⬡/★ in the Elements panel; parametric `shape` spec (sides/points/inner ratio) that regenerates the path `d` on edit + resize. Pure `poly-star.ts` (tested). See [docs/polygon-star.md](docs/polygon-star.md).
   - [x] Shape-tween morphing: engine morphs path `d` strings (sample-and-lerp), routed via `getInterpolator`; 🌀 Shape Morph authoring in Properties; renders in DOM/SVG/Canvas/export/embeds. Pure `path-morph.ts` (tested). See [docs/shape-morph.md](docs/shape-morph.md).
   - [x] Sprite-sheet export: frames packed into one PNG grid + JSON metadata (frame size, columns/rows, count, fps). Pure `sprite-sheet.ts` layout (tested); reuses the raster `draw`. See [docs/sprite-sheet-export.md](docs/sprite-sheet-export.md).
-  - [ ] Pen tool (click-to-place bezier authoring).
+  - [x] Pen tool: ✒️ click to place anchors, click-drag for smooth bezier handles, click first point / Enter to finish, Esc to cancel; produces a normal PathElement. Pure `pen-path.ts` (tested). See [docs/pen-tool.md](docs/pen-tool.md).
 - [ ] Out of scope: bone/IK rigging, frame-by-frame drawing, natural-media brushes
 
 ---
