@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.28.1](v0.28.1.md) | 2026-07-22 | Taller/resizable/persistent timeline pane + one-click Expand (fixes the cramped bottom pane) |
 | [v0.28.0](v0.28.0.md) | 2026-07-22 | Symbols animate in export — GIF/WebP/MP4 bake in a symbol's nested animation and swaps (lip-sync) |
 | [v0.27.0](v0.27.0.md) | 2026-07-22 | Symbol swap (lip-sync) — a swap set + swapIndex track animates which symbol an instance shows |
 | [v0.26.0](v0.26.0.md) | 2026-07-22 | Symbols render everywhere — instances flatten into raster export, embeds, thumbnails, and the Canvas preview |

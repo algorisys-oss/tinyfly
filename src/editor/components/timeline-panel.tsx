@@ -7,6 +7,10 @@ import './timeline-panel.css'
 
 interface TimelinePanelProps {
   store: EditorStore
+  /** Whether the timeline is in the tall, expanded layout. */
+  expanded?: boolean
+  /** Toggle the expanded layout (grows the timeline, shrinks the preview). */
+  onToggleExpand?: () => void
 }
 
 type ViewMode = 'dope' | 'curves'
@@ -158,16 +162,35 @@ export const TimelinePanel: Component<TimelinePanelProps> = (props) => {
           </button>
         </div>
 
-        <div class="timeline-zoom" title="Zoom (Ctrl/⌘ + scroll)">
-          <button class="timeline-zoom-btn" onClick={() => zoomBy(1 / 1.25)} title="Zoom out" aria-label="Zoom out">
-            −
-          </button>
-          <button class="timeline-zoom-label" onClick={fit} title="Reset zoom & scroll">
-            {zoomPct()}
-          </button>
-          <button class="timeline-zoom-btn" onClick={() => zoomBy(1.25)} title="Zoom in" aria-label="Zoom in">
-            +
-          </button>
+        <div class="timeline-header-right">
+          <div class="timeline-zoom" title="Zoom (Ctrl/⌘ + scroll)">
+            <button class="timeline-zoom-btn" onClick={() => zoomBy(1 / 1.25)} title="Zoom out" aria-label="Zoom out">
+              −
+            </button>
+            <button class="timeline-zoom-label" onClick={fit} title="Reset zoom & scroll">
+              {zoomPct()}
+            </button>
+            <button class="timeline-zoom-btn" onClick={() => zoomBy(1.25)} title="Zoom in" aria-label="Zoom in">
+              +
+            </button>
+          </div>
+          <Show when={props.onToggleExpand}>
+            <button
+              class="timeline-expand-btn"
+              onClick={() => props.onToggleExpand?.()}
+              title={props.expanded ? 'Restore timeline height' : 'Expand the timeline'}
+              aria-label={props.expanded ? 'Restore timeline' : 'Expand timeline'}
+            >
+              <svg viewBox="0 0 24 24" width="15" height="15">
+                <Show
+                  when={props.expanded}
+                  fallback={<path d="M4 20h16v-2H4v2zM4 4v2h16V4H4zm3 9h3v3h2v-3h3l-4-4-4 4z" fill="currentColor" />}
+                >
+                  <path d="M4 20h16v-2H4v2zM4 4v2h16V4H4zm4 8h8l-4 4-4-4z" fill="currentColor" />
+                </Show>
+              </svg>
+            </button>
+          </Show>
         </div>
       </div>
 

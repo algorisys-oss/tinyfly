@@ -84,15 +84,51 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
 
   // Resizable split between the preview (flex:1) and the timeline. Dragging the
   // splitter changes the timeline height, so the preview grows/shrinks inversely.
-  const [timelineHeight, setTimelineHeight] = createSignal(200)
+  const TIMELINE_HEIGHT_KEY = 'tinyfly-timeline-height'
+  const DEFAULT_TIMELINE_HEIGHT = 260
+  const loadTimelineHeight = () => {
+    const saved = Number(localStorage.getItem(TIMELINE_HEIGHT_KEY))
+    return Number.isFinite(saved) && saved >= 120 ? saved : DEFAULT_TIMELINE_HEIGHT
+  }
+  /** Upper bound for the timeline: leave room for the preview (min ~160px). */
+  const maxTimelineHeight = () =>
+    Math.max(280, (typeof window !== 'undefined' ? window.innerHeight : 800) - 260)
+
+  const [timelineHeight, setTimelineHeight] = createSignal(loadTimelineHeight())
+  // Remember the chosen height across sessions (skip the expanded state).
+  createEffect(() => {
+    if (!timelineExpanded()) {
+      try {
+        localStorage.setItem(TIMELINE_HEIGHT_KEY, String(timelineHeight()))
+      } catch {
+        /* ignore */
+      }
+    }
+  })
+
+  // One-click expand: flip to a tall, timeline-focused layout and back.
+  const [timelineExpanded, setTimelineExpanded] = createSignal(false)
+  let heightBeforeExpand = DEFAULT_TIMELINE_HEIGHT
+  const toggleTimelineExpand = () => {
+    if (timelineExpanded()) {
+      setTimelineExpanded(false)
+      setTimelineHeight(heightBeforeExpand)
+    } else {
+      heightBeforeExpand = timelineHeight()
+      setTimelineExpanded(true)
+      setTimelineHeight(maxTimelineHeight())
+    }
+  }
+
   const startPreviewResize = (e: PointerEvent) => {
     e.preventDefault()
+    setTimelineExpanded(false)
     const startY = e.clientY
     const startHeight = timelineHeight()
     const onMove = (ev: PointerEvent) => {
       // Drag up → timeline grows (preview shrinks); drag down → preview grows.
       const next = startHeight - (ev.clientY - startY)
-      setTimelineHeight(Math.max(120, Math.min(560, next)))
+      setTimelineHeight(Math.max(120, Math.min(maxTimelineHeight(), next)))
     }
     const onUp = () => {
       window.removeEventListener('pointermove', onMove)
@@ -626,13 +662,16 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
             class="editor-vsplit"
             title="Drag to resize the preview"
             onPointerDown={startPreviewResize}
-            onDblClick={() => setTimelineHeight(200)}
+            onDblClick={() => {
+              setTimelineExpanded(false)
+              setTimelineHeight(DEFAULT_TIMELINE_HEIGHT)
+            }}
           >
             <span class="editor-vsplit-grip" />
           </div>
 
           <section class="editor-timeline" style={{ height: `${timelineHeight()}px` }}>
-            <TimelinePanel store={store} />
+            <TimelinePanel store={store} expanded={timelineExpanded()} onToggleExpand={toggleTimelineExpand} />
           </section>
         </div>
 

@@ -127,3 +127,28 @@
   cursor: grabbing;
   background: #4a9eff;
 }
+
+.timeline-header-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.timeline-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 22px;
+  border: 1px solid #2f2f2f;
+  border-radius: 4px;
+  background: #202020;
+  color: #bbb;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.timeline-expand-btn:hover {
+  background: #2c2c2c;
+  color: #fff;
+}
