@@ -182,7 +182,11 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
   const [penMode, setPenMode] = createSignal(false)
   const [penNodes, setPenNodes] = createSignal<PenNode[]>([])
   const [penCursor, setPenCursor] = createSignal<{ x: number; y: number } | null>(null)
-  let penDrag: { index: number; ax: number; ay: number } | null = null
+  type PenDrag =
+    | { kind: 'new'; index: number; ax: number; ay: number }
+    | { kind: 'handle'; index: number; which: 'hIn' | 'hOut' }
+    | { kind: 'anchor'; index: number; offx: number; offy: number }
+  let penDrag: PenDrag | null = null
   const PEN_CLOSE_DIST = 12 // screen px to the first anchor that closes the path
 
   // True when the cursor is hovering the first anchor (so a click will close).
@@ -223,12 +227,42 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     penDrag = null
   }
 
+  // Hit-test the existing pen nodes: a handle endpoint, or an anchor, within
+  // HIT px of the cursor. Handles win over anchors so you can grab a handle that
+  // sits on top of its anchor.
+  const penHitThreshold = () => 8 / previewScale()
+  const hitPenHandle = (p: { x: number; y: number }) => {
+    const t = penHitThreshold()
+    const nodes = penNodes()
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i]
+      if (n.hOut && Math.hypot(p.x - n.hOut.x, p.y - n.hOut.y) <= t) return { index: i, which: 'hOut' as const }
+      if (n.hIn && Math.hypot(p.x - n.hIn.x, p.y - n.hIn.y) <= t) return { index: i, which: 'hIn' as const }
+    }
+    return null
+  }
+  const hitPenAnchor = (p: { x: number; y: number }) => {
+    const t = penHitThreshold()
+    const nodes = penNodes()
+    for (let i = 0; i < nodes.length; i++) {
+      if (Math.hypot(p.x - nodes[i].x, p.y - nodes[i].y) <= t) return i
+    }
+    return -1
+  }
+
   const handlePenMouseDown = (e: MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     const p = clientToStage(e.clientX, e.clientY)
     const nodes = penNodes()
-    // Click near the first anchor to close (threshold in stage units, scale-aware).
+
+    // 1. Grab an existing handle endpoint to reshape a curve.
+    const handle = hitPenHandle(p)
+    if (handle) {
+      penDrag = { kind: 'handle', index: handle.index, which: handle.which }
+      return
+    }
+    // 2. Click near the first anchor closes the path.
     if (nodes.length >= 2) {
       const first = nodes[0]
       if (Math.hypot(p.x - first.x, p.y - first.y) <= PEN_CLOSE_DIST / previewScale()) {
@@ -236,19 +270,56 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
         return
       }
     }
+    // 3. Grab an existing anchor to move it (with its handles).
+    const anchor = hitPenAnchor(p)
+    if (anchor >= 0) {
+      penDrag = { kind: 'anchor', index: anchor, offx: p.x - nodes[anchor].x, offy: p.y - nodes[anchor].y }
+      return
+    }
+    // 4. Otherwise place a new point; dragging pulls out its bezier handles.
     const index = nodes.length
     setPenNodes([...nodes, { x: p.x, y: p.y }])
-    penDrag = { index, ax: p.x, ay: p.y }
+    penDrag = { kind: 'new', index, ax: p.x, ay: p.y }
   }
 
   const handlePenMouseMove = (e: MouseEvent) => {
     const p = clientToStage(e.clientX, e.clientY)
     setPenCursor(p)
-    if (penDrag) {
-      const { index, ax, ay } = penDrag
+    const drag = penDrag
+    if (!drag) return
+    if (drag.kind === 'new') {
       const hOut = { x: p.x, y: p.y }
-      const hIn = mirrorHandle(ax, ay, hOut)
-      setPenNodes((ns) => ns.map((n, i) => (i === index ? { ...n, hOut, hIn } : n)))
+      const hIn = mirrorHandle(drag.ax, drag.ay, hOut)
+      setPenNodes((ns) => ns.map((n, i) => (i === drag.index ? { ...n, hOut, hIn } : n)))
+    } else if (drag.kind === 'handle') {
+      // Move the grabbed handle; mirror its opposite for a smooth anchor.
+      setPenNodes((ns) =>
+        ns.map((n, i) => {
+          if (i !== drag.index) return n
+          const moved = { x: p.x, y: p.y }
+          const other = mirrorHandle(n.x, n.y, moved)
+          return drag.which === 'hOut'
+            ? { ...n, hOut: moved, hIn: other }
+            : { ...n, hIn: moved, hOut: other }
+        })
+      )
+    } else {
+      // Move the anchor and shift its handles by the same delta.
+      setPenNodes((ns) =>
+        ns.map((n, i) => {
+          if (i !== drag.index) return n
+          const nx = p.x - drag.offx
+          const ny = p.y - drag.offy
+          const dx = nx - n.x
+          const dy = ny - n.y
+          return {
+            x: nx,
+            y: ny,
+            ...(n.hIn && { hIn: { x: n.hIn.x + dx, y: n.hIn.y + dy } }),
+            ...(n.hOut && { hOut: { x: n.hOut.x + dx, y: n.hOut.y + dy } }),
+          }
+        })
+      )
     }
   }
 

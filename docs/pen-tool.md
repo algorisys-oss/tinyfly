@@ -37,9 +37,20 @@ canvas rect, so it's correct at any zoom), draws the in-progress path, anchors,
 and handles live, and on finish localises the nodes into an element box via
 `localizePenPath` and adds a `PathElement`.
 
+## Adjusting as you draw
+
+Before finishing, you can grab what you've already placed:
+
+- **Drag an anchor** to move that point (its handles move with it).
+- **Drag a handle** to reshape the curve; the opposite handle mirrors it, keeping
+  the anchor smooth.
+
+Handles take priority over anchors when they overlap, so you can always grab a
+handle sitting on its point.
+
 ## Limitations / later
 
 - After finishing, edit the path with the existing path control points, or the
   raw SVG field in Properties.
-- Backspace removes points from the end only; re-adjusting an earlier point's
-  handle mid-draw is a later refinement.
+- Backspace removes points from the end; the first anchor is reserved for closing,
+  so it can't be repositioned mid-draw (its handle still can).
