@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.30.0](v0.30.0.md) | 2026-07-22 | Collapsible Elements/Tracks/Library panels + working timeline resizer (real range on short windows) |
 | [v0.29.0](v0.29.0.md) | 2026-07-22 | Reclaim top vertical space: collapsible AI prompt bar, auto-hiding scene bar, slimmer header |
 | [v0.28.4](v0.28.4.md) | 2026-07-22 | Fix: Dope Sheet track list now scrolls (was clipping rows) |
 | [v0.28.3](v0.28.3.md) | 2026-07-22 | Timeline Expand button now truly maximizes (hides preview) for a full timeline view on any window height |
