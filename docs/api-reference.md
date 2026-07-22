@@ -427,6 +427,19 @@ function interpolateString(from: string, to: string, progress: number): string
 
 Discrete interpolation — returns `from` when `progress < 1`, `to` when `progress >= 1`.
 
+### morphPath (shape tween)
+
+```typescript
+function morphPath(from: string, to: string, progress: number, samples?: number): string
+function isPathData(value: string): boolean
+```
+
+Interpolate between two SVG path `d` strings. Both paths are sampled uniformly
+along their length and the points are blended by `progress`, so **any** two shapes
+morph smoothly and deterministically (no DOM required). `isPathData` recognises a
+string that starts with a moveto. A `d` track animates a path's shape — see
+[shape-morph.md](shape-morph.md).
+
 ### getInterpolator
 
 ```typescript
@@ -436,6 +449,7 @@ function getInterpolator<T extends AnimatableValue>(sampleValue: T): Interpolato
 Auto-detect and return the appropriate interpolator based on a sample value:
 - Numbers → `interpolateNumber`
 - Strings starting with `#` or `rgb` → `interpolateColor`
+- **SVG path data** (a moveto) → `morphPath` (shape morph)
 - Other strings → `interpolateString`
 - Arrays → `interpolateArray`
 
@@ -1112,3 +1126,25 @@ const result = extractFrames(timeline, {
 ```
 
 Extracts individual frames from the animation. Use with a GIF encoder library (like gif.js or gifenc) to create the actual GIF file. The `renderFrame` callback lets you customize how each frame is drawn.
+
+The engine also ships real encoders used by the editor: `exportToGIF`,
+`exportToWebP`, and `exportVideo` (H.264 via WebCodecs/MediaRecorder), each taking
+a `renderFrame` callback and returning a `Blob`.
+
+### Sprite-sheet layout
+
+```typescript
+import {
+  spriteSheetLayout, frameCell, spriteFrameTimes, spriteSheetMeta
+} from 'tinyfly/engine/export'
+
+const layout = spriteSheetLayout(frames, frameWidth, frameHeight, maxColumns) // grid + sheet size
+const cell   = frameCell(index, layout)          // { index, col, row, x, y }
+const times  = spriteFrameTimes(frames, durationMs) // even sample times (loop-safe)
+const meta   = spriteSheetMeta(layout, fps, durationMs) // portable JSON metadata
+```
+
+Pure helpers for packing animation frames into a grid PNG and writing matching
+metadata (frame size, columns/rows, count, fps). The editor's **Sprite** export
+uses them to render each frame into its cell and download `…-spritesheet.png` +
+`…-spritesheet.json`. See [sprite-sheet-export.md](sprite-sheet-export.md).

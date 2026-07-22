@@ -68,8 +68,14 @@ Shapes, text, images, video, lines, arrows and paths are added from the
 | **Video** | Video clip synced to the timeline (source, fit, start time, volume, mute, loop) |
 | **Line** | Straight line with stroke and line cap options |
 | **Arrow** | Line with arrowhead(s) at start/end |
-| **Path** | Custom SVG path defined by path data (d attribute) |
+| **Path** | Custom SVG path defined by path data (d attribute) — draw one with the ✒️ Pen tool |
+| **⬡ Polygon** | Regular polygon; edit the number of **sides** in Properties |
+| **★ Star** | Star; edit the number of **points** and the **inner %** in Properties |
 | **Group** | Container that groups multiple elements |
+
+Polygon and star are **parametric** paths: change the sides/points/inner ratio in
+the Property Panel and the shape regenerates, and they rescale cleanly when you
+resize the box. See [polygon-star.md](polygon-star.md).
 
 ### Adding Elements
 
@@ -114,6 +120,37 @@ sync during playback.
 - **Shift+Arrow keys** nudge by 10px
 - **Shift+Drag resize handle** for proportionate resize
 - **Shift+Rotate** to snap to 15-degree increments
+
+### Pen Tool (draw paths)
+
+In the **DOM** preview, click **✒️ Pen** to draw a custom path:
+
+- **Click** to place anchor points (straight segments).
+- **Click-drag** to pull out a smooth bezier curve as you place a point; hold
+  **Alt** while dragging a handle for a **corner** (cusp) instead of a smooth point.
+- **Drag an existing anchor or handle** to adjust it before finishing.
+- With **🧲 Snap** on, pen points snap to the grid, guides, elements, and artboard.
+- **Finish**: click the highlighted **first point** to close (filled), or press
+  **Enter** / double-click for an open path (stroked). **Backspace** removes the
+  last point; **Esc** cancels.
+
+The result is a normal Path element. See [pen-tool.md](pen-tool.md).
+
+### Grid, Snapping, Rulers & Guides
+
+In the **DOM** preview header:
+
+- **▦ Grid** — overlay a 20px grid on the artboard.
+- **🧲 Snap** (on by default) — while dragging or resizing, an element's
+  edges/centre snap to the grid, to other elements' edges/centres, and to the
+  artboard centre, with a **pink guide** showing what caught. Hold **Shift** for
+  aspect-lock resize (snapping pauses so the two don't fight).
+- **📏 Rulers** — show rulers along the top and left. **Drag out of a ruler** to
+  drop a **guide** line (cyan); reposition by dragging, delete by dropping it off
+  the stage. Elements snap to your guides too.
+
+Grid, guides, and snapping are **editor-only** — they never appear in the saved
+JSON or exports. See [grid-and-snapping.md](grid-and-snapping.md).
 
 ### Copy, Paste & Duplicate
 
@@ -294,6 +331,15 @@ For text elements:
 | Stroke Width | Outline thickness |
 | Line Cap | End cap style |
 | Line Join | Corner join style: miter, round, bevel |
+
+For a **⬡ Polygon / ★ Star**, the panel also shows a **Shape** section (Sides /
+Points / Inner %) that regenerates the path as you change it.
+
+**🌀 Shape Morph.** For any path, the Properties panel has a Shape Morph section:
+pick a target shape (Polygon/Star + points/inner %) and click **Create shape
+morph →** to add a `d` track that **tweens the shape** across the timeline. Press
+Play to watch it morph — it plays in every preview, export, and embed. See
+[shape-morph.md](shape-morph.md).
 
 ## Timeline & Keyframes
 
@@ -605,18 +651,19 @@ stays visible underneath. Shine renders on the DOM, SVG, and Canvas renderers.
 
 ## Sample Animations
 
-Tinyfly includes 42 sample animations organized into 6 categories. Access them from the **Samples** button in the toolbar.
+Tinyfly includes sample animations organized into categories. Access them from the **Samples** button in the toolbar.
 
 ### Categories
 
-| Category | Count | Examples |
-|----------|-------|---------|
-| **Basic** | 4 | Fade in/out, scale pulse, rotation, morph |
-| **Motion** | 7 | Bounce, slide-in, orbit, pendulum, wave, zigzag, motion path |
-| **Text** | 12 | Text fade, slide, scale, bounce, typewriter, wave, glitch, highlight |
-| **UI** | 7 | Button hover, loader spinner, progress bar, notification, modal, tooltip, menu |
-| **Effects** | 5 | Glow pulse, shake, parallax, particle burst, color cycle |
-| **Showcase** | 5 | Logo reveal, hero animation, card flip, scroll indicator, call to action |
+| Category | Examples |
+|----------|---------|
+| **Basic** | Fade in/out, scale pulse, rotation, morph |
+| **Motion** | Bounce, slide-in, orbit, pendulum, wave, zigzag, motion path |
+| **Text** | Text fade, slide, scale, bounce, typewriter, wave, glitch, highlight |
+| **UI** | Button hover, loader spinner, progress bar, notification, modal, tooltip, menu |
+| **Effects** | Glow pulse, shake, parallax, particle burst, color cycle |
+| **Camera** | Push In, Pan Across, Orbit Reveal |
+| **Showcase** | Logo reveal, hero animation, card flip, scroll indicator, call to action |
 
 Loading a sample replaces your current project. Samples are a great way to learn animation techniques — study how they use tracks, keyframes, and easing to achieve different effects.
 
@@ -659,10 +706,19 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 
 Click **Export** in the toolbar for additional formats:
 
-- **JSON** — Standard tinyfly animation format (can be re-imported)
 - **CSS** — Generates CSS `@keyframes` animations
 - **Lottie** — Exports bodymovin-compatible Lottie JSON
-- **GIF** — Extracts frames for GIF creation
+- **GIF** — A real animated GIF (per-frame palette, transparent background option)
+- **WebP** — Animated WebP — smaller and truer in colour than GIF, with full alpha
+- **MP4** — H.264 video (via WebCodecs where available, else MediaRecorder)
+- **Sprite** — Every frame packed into one **PNG grid** plus a **JSON** metadata
+  file (frame size, columns/rows, count, fps) — ready for game engines or a custom
+  `<canvas>` player. Alpha is kept when Transparent is on. See
+  [sprite-sheet-export.md](sprite-sheet-export.md).
+
+**JSON** export/import lives in the **More** (⋯) menu — the standard tinyfly
+format, which can be re-imported. GIF/WebP/MP4/Sprite composite shapes, text,
+paths, images, video layers, symbols, **and the camera**.
 
 ### Import
 
@@ -677,6 +733,14 @@ The preview panel supports three rendering modes, switchable via the renderer se
 - **SVG** — Elements rendered as SVG shapes
 
 All three renderers play the same animation — switch between them to verify cross-renderer compatibility.
+
+### Onion skinning
+
+In the **Canvas** renderer, click **🧅 Onion** to show faint **ghost frames**
+before and after the playhead — brightest nearest the current time — so you can
+see the arc of a move (a bounce, a swing) while editing a single frame. It draws
+only while paused and is editor-only (never exported). See
+[onion-skinning.md](onion-skinning.md).
 
 ### Maximizing the preview
 
@@ -698,15 +762,23 @@ Adding a camera creates four tracks on a reserved **`Camera`** target:
 - `rotate` — rotate (around the centre)
 
 They're seeded at identity with a keyframe at the start and end, so the camera
-starts still. Keyframe it like any track: select a Camera track in the timeline,
-add/drag keyframes, and set values in the Property Panel — e.g. keyframe `scale`
-from `1` to `2` for a push-in, or `x` across the frame for a pan.
+starts still. There are three ways to author it:
 
-> The camera applies in **all previews (DOM/Canvas/SVG)**, **raster export**
-> (GIF/WebP/MP4) and **embeds** (single & multi-scene). Coming next: an on-stage
-> draggable camera frame. Tip: set up your elements first, then keyframe the
-> camera (editing while the camera is mid-move is approximate for now). See
-> [camera.md](camera.md).
+- **Camera inspector.** With a camera present and nothing selected, the Property
+  Panel shows a **🎥 Camera** section (Pan X/Y, Zoom, Rotation). Editing a field
+  sets a keyframe **at the playhead** — scrub to a time, dial in the framing, done.
+  "Reset to identity" and "Remove camera" live there too.
+- **On-stage pan.** Click **✋ Pan** in the preview header, then drag the stage to
+  pan the camera (also keyframed at the playhead).
+- **Timeline lane.** The Camera tracks float to the top of the timeline as a
+  distinct **🎥 Camera** lane — keyframe/drag them like any track (e.g. `scale`
+  `1`→`2` for a push-in, or `x` across the frame for a pan).
+
+The camera applies in **all previews (DOM/Canvas/SVG)**, **raster export**
+(GIF/WebP/MP4/Sprite) and **embeds** (single & multi-scene). Ready-made **Camera**
+samples (Push In, Pan Across, Orbit Reveal) are in the Samples dialog. Tip: set up
+your elements first, then keyframe the camera (editing while the camera is mid-move
+is approximate for now). See [camera.md](camera.md).
 
 ## Project Management
 

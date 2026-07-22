@@ -240,6 +240,22 @@ The full list is in the [File Format](file-format.md#animatable-properties) doc.
 
 ---
 
+## Going further
+
+Once you're comfortable, tinyfly has a lot more built in:
+
+- **Shapes & drawing** — ⬡ polygons, ★ stars (parametric sides/points), and a
+  ✒️ **Pen** tool for custom bezier paths.
+- **🌀 Shape morph** — tween one shape into another over the timeline.
+- **🎥 Camera** — animate a pan / zoom / rotate over the whole stage (drag to pan
+  on stage, or keyframe it in the timeline).
+- **Precision** — ▦ grid, 🧲 snapping, and 📏 rulers with draggable guides.
+- **🧅 Onion skinning** — see ghost frames around the playhead while you edit.
+- **Export** — GIF, WebP, MP4, a **sprite sheet** (PNG grid + JSON), CSS, or
+  Lottie — plus copy-paste **embed** code.
+
+Each is covered in the **[Editor Guide](editor-guide.md)**.
+
 ## Where to next
 
 - **[Editor Guide](editor-guide.md)** — every panel, button, and shortcut in depth.

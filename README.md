@@ -46,7 +46,12 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Any canvas / aspect ratio** - The preview artboard follows the project canvas (DOM, Canvas, and SVG renderers) and fits-to-view, so a vertical 9:16 promo or any custom size previews at true proportions; samples can declare their own canvas size
 - **Device-frame preset** - One click stamps a device mockup (rounded body, camera/notch, and a rounded video "screen") sized to the canvas, in **Phone / Landscape / Tablet** variants — drop a screen-recording into the screen's source for an app promo
 - **Timeline view** - Visual keyframe editing with drag-and-drop
-- **Camera** - Animate a pan/zoom/rotate over the whole stage (a reserved `Camera` layer driven by ordinary tracks); one-click add from the preview header
+- **Camera** - Animate a pan/zoom/rotate over the whole stage (a reserved `Camera` layer driven by ordinary tracks). One-click add, a **🎥 Camera inspector** (Pan/Zoom/Rotation keyframed at the playhead), on-stage **✋ Pan** dragging, and a dedicated 🎥 lane at the top of the timeline; applies in every preview, export, and embed. Ready-made Push In / Pan Across / Orbit Reveal samples
+- **Polygon & star shapes** - ⬡ Polygon and ★ Star elements are parametric paths — edit sides / points / inner ratio in Properties and they regenerate and rescale; they render and export like any path
+- **Pen tool** - ✒️ Draw custom bezier paths: click for corners, click-drag for curves (Alt for a cusp), drag existing anchors/handles to adjust, snap points to grid/guides, click the first point or Enter to finish
+- **Shape morph** - 🌀 Tween one path into another over the timeline (engine-level path interpolation); plays in every renderer, export, and embed
+- **Grid, snapping & guides** - ▦ 20px grid, 🧲 snapping of drag/resize to grid/element-edges/artboard with live alignment guides, and 📏 rulers with draggable guides
+- **Onion skinning** - 🧅 Faint ghost frames before/after the playhead (Canvas renderer) to see the arc of a move while editing one frame
 - **Curve editor** - Switch the timeline between the **Dope Sheet** (keyframes & timing) and a **Curves** graph view where each numeric track is a value-over-time curve with the real easing drawn between keyframes; drag points in 2D (time + value), drag the easing handles to shape the cubic-bezier, double-click a lane to add a keyframe, Ctrl/Cmd-click to multi-select
 - **Timeline zoom & scroll** - Zoom the timeline with Ctrl/⌘+scroll or the −/+ control and pan with the scrollbar or Shift+scroll (shared across both views)
 - **Box-select & curve overlay** - Rubber-band-select keyframes in either timeline view; in Curves, toggle **Overlay** to compare all tracks on one shared axis. Scene tabs show live per-scene thumbnails
@@ -69,6 +74,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **MP4 export** - Encode the animation to a real MP4 (H.264) via WebCodecs, with a hand-written muxer and no dependencies. Frame-by-frame rather than real-time, so it's faster than playback and reproducible; MediaRecorder (WebM) is the fallback where WebCodecs is missing
 - **Animated GIF export** - Median-cut colour quantization with optional Floyd–Steinberg dithering, per-frame palettes, and transparency
 - **Animated WebP export** - Roughly 3× smaller than GIF at true colour, with full alpha
+- **Sprite-sheet export** - Every frame packed into one PNG grid plus a JSON metadata file (frame size, columns/rows, count, fps) — ready for game engines or a custom `<canvas>` player; alpha kept when transparent
 - **Rich raster export options** - Resolution multiplier (2x by default, so text and edges stay crisp), FPS, background colour or transparency, progress and cancel. Image and video layers are composited too — a device screen's recording is captured with `object-fit` cover/contain and rounded corners, seeked in sync
 - **Resizable preview** - Drag the splitter between the preview and the timeline to resize (double-click to reset)
 - **Stroke write-on** - Animate a path's stroke drawing itself on (DOM + SVG renderers); one-click "Write On" preset
@@ -84,6 +90,8 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - [Examples](docs/examples.md) — Code examples for common animation patterns
 - [Deployment](docs/DEPLOYMENT.md) — Hosting, Docker, and CDN configuration
 - [2D Animation Roadmap](docs/2d-animation-roadmap.md) — Adobe Animate gap analysis and phased plan (symbols/library, camera, onion skinning, …)
+
+**Feature guides:** [Symbols & Library](docs/symbols-and-library.md) · [Camera](docs/camera.md) · [Polygon & Star](docs/polygon-star.md) · [Pen tool](docs/pen-tool.md) · [Shape morph](docs/shape-morph.md) · [Grid & snapping](docs/grid-and-snapping.md) · [Onion skinning](docs/onion-skinning.md) · [Sprite-sheet export](docs/sprite-sheet-export.md)
 
 ## Installation
 
