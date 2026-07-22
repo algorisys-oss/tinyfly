@@ -250,14 +250,37 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
       sceneStore.loadElements(activeScene.elements)
     }
 
+    // The "box" element the demo tracks animate. Without it the timeline plays
+    // but nothing moves (the adapter silently skips the missing target).
+    const addDemoBox = () =>
+      sceneStore.addElement('rect', {
+        name: 'box',
+        x: 120,
+        y: 70,
+        width: 60,
+        height: 60,
+        fill: '#a855f7',
+        borderRadius: 8,
+      })
+
     if (activeScene.timeline) {
       const timeline = deserializeTimeline(activeScene.timeline)
       store.loadTimeline(timeline)
+      // Repair older projects (and the original demo) that saved 'box' tracks
+      // with no 'box' element — the timeline ran but nothing animated. Recreate
+      // the box so the animation is visible again.
+      if (activeScene.elements.length === 0 && timeline.tracks.some((t) => t.target === 'box')) {
+        addDemoBox()
+        store.clearHistory()
+      }
     } else {
-      // Create a demo timeline for new projects
+      // Create a demo timeline for new projects (a first-run showcase you can
+      // delete or edit).
       store.createNewTimeline(activeScene.id, activeScene.name, {
         duration: 2000,
       })
+
+      addDemoBox()
 
       // Add some demo tracks
       store.addTrack({

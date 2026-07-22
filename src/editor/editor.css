@@ -338,7 +338,9 @@
 
 .editor-preview {
   flex: 1;
-  min-height: 200px;
+  /* Keep this modest so a short window still leaves the timeline room for its
+     track rows (which scroll internally) instead of clipping them off-screen. */
+  min-height: 120px;
   overflow: hidden;
 }
 
@@ -403,9 +405,14 @@
 }
 
 .editor-timeline {
-  flex-shrink: 0;
+  /* Prefer the chosen height (set inline), but allow shrinking on short windows
+     so the pane never overflows the editor — the track area scrolls internally.
+     min-height keeps the ruler + a couple of rows visible. */
+  flex-shrink: 1;
   height: 200px;
   min-height: 120px;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Draggable splitter between the preview and the timeline. */
