@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.45.1](v0.45.1.md) | 2026-07-22 | Pen-tool polish — Backspace undoes the last point; first-anchor close-hover cue |
 | [v0.45.0](v0.45.0.md) | 2026-07-22 | Pen tool — ✒️ click/drag to draw custom bezier paths; completes Phase C |
 | [v0.44.0](v0.44.0.md) | 2026-07-22 | Sprite-sheet export — every frame in one PNG grid + JSON metadata for game engines |
 | [v0.43.0](v0.43.0.md) | 2026-07-22 | Shape morphing — 🌀 tween one path into another; engine-level path interpolation, renders everywhere |

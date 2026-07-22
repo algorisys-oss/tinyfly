@@ -10,8 +10,10 @@ in the DOM preview.
 3. **Click-drag** to pull out a curve handle as you place a point (a smooth
    bezier, with symmetric handles).
 4. **Finish**:
-   - **Click the first point** (highlighted) to close the path (filled).
+   - **Click the first point** to close the path (filled). It grows and turns cyan
+     when the cursor is close enough to close.
    - **Enter** or **double-click** to finish an open path (stroked).
+   - **Backspace / Delete** removes the last point you placed.
    - **Esc** to cancel.
 
 The result is a normal `PathElement`, so it animates, morphs, and exports like any
@@ -39,5 +41,5 @@ and handles live, and on finish localises the nodes into an element box via
 
 - After finishing, edit the path with the existing path control points, or the
   raw SVG field in Properties.
-- Per-anchor handle editing during drawing (adjusting an earlier point) is a later
-  refinement; today each point's curve is set as you place it.
+- Backspace removes points from the end only; re-adjusting an earlier point's
+  handle mid-draw is a later refinement.

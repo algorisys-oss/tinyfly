@@ -185,6 +185,14 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
   let penDrag: { index: number; ax: number; ay: number } | null = null
   const PEN_CLOSE_DIST = 12 // screen px to the first anchor that closes the path
 
+  // True when the cursor is hovering the first anchor (so a click will close).
+  const penNearFirst = createMemo(() => {
+    const nodes = penNodes()
+    const c = penCursor()
+    if (nodes.length < 2 || !c) return false
+    return Math.hypot(c.x - nodes[0].x, c.y - nodes[0].y) <= PEN_CLOSE_DIST / previewScale()
+  })
+
   const finishPen = (closed: boolean) => {
     const nodes = penNodes()
     if (nodes.length >= 2) {
@@ -1209,11 +1217,18 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
       return
     }
 
-    // Pen tool: Enter finishes the open path, Escape cancels.
+    // Pen tool: Enter finishes the open path, Backspace removes the last point,
+    // Escape cancels.
     if (penMode()) {
       if (e.key === 'Enter') {
         e.preventDefault()
         finishPen(false)
+        return
+      }
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault()
+        setPenNodes((ns) => ns.slice(0, -1))
+        penDrag = null
         return
       }
       if (e.key === 'Escape') {
@@ -2339,21 +2354,25 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
                     </>
                   )}
                 </For>
-                {/* Anchor dots; first one is highlighted (click it to close). */}
+                {/* Anchor dots; first one highlights when the cursor can close it. */}
                 <For each={penNodes()}>
                   {(n, i) => (
                     <circle
                       cx={n.x}
                       cy={n.y}
-                      r={i() === 0 ? 4 : 3}
-                      fill={i() === 0 ? '#4a9eff' : '#fff'}
+                      r={i() === 0 ? (penNearFirst() ? 6 : 4) : 3}
+                      fill={i() === 0 ? (penNearFirst() ? '#22d3ee' : '#4a9eff') : '#fff'}
                       stroke="#4a9eff"
                       stroke-width={1.5}
                     />
                   )}
                 </For>
               </svg>
-              <span class="preview-pen-hint">✒️ Click to add points · drag for curves · click the first point or Enter to finish · Esc to cancel</span>
+              <span class="preview-pen-hint">
+                {penNearFirst()
+                  ? '✒️ Click to close the path'
+                  : '✒️ Click to add points · drag for curves · first point / Enter to finish · Backspace undo · Esc cancel'}
+              </span>
             </div>
           </Show>
           </div>
