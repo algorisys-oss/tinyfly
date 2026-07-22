@@ -106,6 +106,28 @@
   background: #2a3a4a;
 }
 
+/* Camera tracks read as a distinct lane, floated to the top. */
+.timeline-track.camera-track {
+  background: #241f33;
+}
+
+.timeline-track.camera-track:hover {
+  background: #2c2640;
+}
+
+.timeline-track.camera-track.selected {
+  background: #3a3357;
+}
+
+.timeline-track.camera-track .track-label {
+  background: #2a2340;
+  border-left: 2px solid #7c5cff;
+}
+
+.timeline-track.camera-track .track-target {
+  color: #c9bcff;
+}
+
 .track-label {
   display: flex;
   flex-direction: column;

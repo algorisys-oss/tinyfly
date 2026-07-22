@@ -314,3 +314,32 @@
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+/* On-stage camera pan overlay (shown while "✋ Pan" is active). */
+.preview-camera-pan-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  cursor: grab;
+  border: 2px dashed #7c5cff;
+  box-shadow: inset 0 0 0 9999px rgba(124, 92, 255, 0.06);
+  box-sizing: border-box;
+}
+
+.preview-camera-pan-overlay:active {
+  cursor: grabbing;
+}
+
+.preview-camera-pan-hint {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(124, 92, 255, 0.9);
+  color: #fff;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+}

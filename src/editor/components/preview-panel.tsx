@@ -133,6 +133,41 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
   const artboardBg = () => props.projectStore.currentProject().canvas.background
   const [previewScale, setPreviewScale] = createSignal(1)
 
+  // On-stage camera panning: when active, dragging the stage pans the camera
+  // (writing x/y keyframes at the playhead) instead of selecting elements. Zoom
+  // and rotate stay in the Property Panel's Camera inspector.
+  const [cameraPanMode, setCameraPanMode] = createSignal(false)
+  let cameraPanStart: { mx: number; my: number; x: number; y: number } | null = null
+
+  const handleCameraPanStart = (e: MouseEvent) => {
+    if (!props.store.hasCamera()) return
+    e.preventDefault()
+    e.stopPropagation()
+    cameraPanStart = {
+      mx: e.clientX,
+      my: e.clientY,
+      x: props.store.getCameraValue('x'),
+      y: props.store.getCameraValue('y'),
+    }
+    document.addEventListener('mousemove', handleCameraPanMove)
+    document.addEventListener('mouseup', handleCameraPanEnd)
+  }
+
+  const handleCameraPanMove = (e: MouseEvent) => {
+    if (!cameraPanStart) return
+    // Screen delta → stage units (the camera's pan is added in stage space after
+    // scale/rotate, so a screen drag translates the framing 1:1 at any zoom).
+    const s = previewScale()
+    props.store.setCameraValue('x', cameraPanStart.x + (e.clientX - cameraPanStart.mx) / s)
+    props.store.setCameraValue('y', cameraPanStart.y + (e.clientY - cameraPanStart.my) / s)
+  }
+
+  const handleCameraPanEnd = () => {
+    cameraPanStart = null
+    document.removeEventListener('mousemove', handleCameraPanMove)
+    document.removeEventListener('mouseup', handleCameraPanEnd)
+  }
+
   /** SVG camera transform at the current playhead (undefined = no camera). */
   const svgCameraTransform = () => {
     const cam = cameraFromState(props.store.state.timeline?.getStateAtTime(props.store.currentTime()))
@@ -1350,6 +1385,16 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
         >
           🎥 Camera
         </button>
+        <Show when={props.store.hasCamera() && rendererType() === 'dom'}>
+          <button
+            class="preview-camera-btn"
+            classList={{ active: cameraPanMode() }}
+            onClick={() => setCameraPanMode((m) => !m)}
+            title="Drag the stage to pan the camera (keyframes at the playhead). Zoom/rotate in the Properties panel."
+          >
+            ✋ Pan
+          </button>
+        </Show>
         <button
           class="preview-maximize-btn"
           onClick={toggleMaximized}
@@ -1868,6 +1913,17 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
             </div>
           </Show>
           </div>{/* /preview-camera-layer */}
+          {/* Camera pan overlay: covers the stage while "✋ Pan" is on, so dragging
+              pans the camera instead of hitting elements. Zoom/rotate stay numeric. */}
+          <Show when={cameraPanMode() && props.store.hasCamera()}>
+            <div
+              class="preview-camera-pan-overlay"
+              onMouseDown={handleCameraPanStart}
+              title="Drag to pan the camera"
+            >
+              <span class="preview-camera-pan-hint">✋ Drag to pan · keyframes at the playhead</span>
+            </div>
+          </Show>
           </div>
         </Show>
 

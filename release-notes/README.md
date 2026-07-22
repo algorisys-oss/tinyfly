@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.37.0](v0.37.0.md) | 2026-07-22 | On-stage camera pan (✋ Pan drag) + a dedicated 🎥 Camera lane at the top of the timeline |
 | [v0.36.0](v0.36.0.md) | 2026-07-22 | Camera inspector — pan/zoom/rotate the stage from the Property Panel, keyframed at the playhead |
 | [v0.35.1](v0.35.1.md) | 2026-07-22 | Camera demo samples (Push In, Pan Across, Orbit Reveal) in a new Camera category |
 | [v0.35.0](v0.35.0.md) | 2026-07-22 | Camera everywhere — Canvas/SVG previews, raster export, and embeds (single + multi-scene) |

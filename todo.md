@@ -312,7 +312,8 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
   - [x] Camera in Canvas/SVG preview + raster export + embeds (slice 2) — shared `camera.ts` transform; sequencer per-scene camera layer.
   - [x] Camera demo templates (Push In, Pan Across, Orbit Reveal).
   - [x] Camera inspector (slice 3a): 🎥 Camera section in the Property Panel — Pan X/Y, Zoom, Rotation keyframed at the playhead via `setCameraValue`; Reset / Remove.
-  - [ ] On-stage draggable camera frame + timeline camera row (slice 3b); edit-in-camera coords (slice 4).
+  - [x] On-stage pan + timeline camera lane (slice 3b): ✋ Pan drag overlay in the DOM preview pans the camera (x/y keyframes at playhead); Camera tracks float to the top of the timeline as a distinct 🎥 lane.
+  - [ ] Full on-stage frame (corner-zoom + rotate handle) + edit-in-camera coords (slice 4).
   - [ ] Onion skinning; guides/grid/rulers/snapping.
 - [ ] Phase C — Pen tool + polygon/star, shape-tween morph tooling, video/sprite-sheet export
 - [ ] Out of scope: bone/IK rigging, frame-by-frame drawing, natural-media brushes

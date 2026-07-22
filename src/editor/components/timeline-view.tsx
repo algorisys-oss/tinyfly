@@ -21,7 +21,13 @@ export const TIME_SCALE = 0.1 // pixels per millisecond at zoom 1
 export const TimelineView: Component<TimelineViewProps> = (props) => {
   const pixelsPerMs = createMemo(() => TIME_SCALE * props.store.state.zoom)
   const duration = createMemo(() => props.store.duration())
-  const tracks = createMemo(() => props.store.tracks())
+  // Float the Camera tracks to the top so they read as a dedicated camera lane.
+  const tracks = createMemo(() => {
+    const all = props.store.tracks()
+    const cam = all.filter((t) => t.target === 'Camera')
+    if (cam.length === 0 || cam.length === all.length) return all
+    return [...cam, ...all.filter((t) => t.target !== 'Camera')]
+  })
 
   // Drag state for keyframes
   const [dragState, setDragState] = createSignal<DragState | null>(null)
@@ -246,12 +252,17 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
           {(track) => (
             <div
               class="timeline-track"
-              classList={{ selected: props.store.state.selectedTrackId === track.id }}
+              classList={{
+                selected: props.store.state.selectedTrackId === track.id,
+                'camera-track': track.target === 'Camera',
+              }}
               onClick={(e) => handleTrackClick(track, e)}
               onDblClick={(e) => handleTrackDoubleClick(track, e)}
             >
               <div class="track-label">
-                <span class="track-target">{track.target}</span>
+                <span class="track-target">
+                  {track.target === 'Camera' ? '🎥 Camera' : track.target}
+                </span>
                 <span class="track-property">{track.property}</span>
               </div>
               <div class="track-keyframes">

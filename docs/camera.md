@@ -68,9 +68,13 @@ recorded. "Reset to identity" and "Remove camera" live there too.
    (shown when a camera exists and nothing is selected) with Pan X/Y, Zoom, and
    Rotation inputs that keyframe at the playhead via `setCameraValue`, plus
    "Reset to identity" / "Remove camera". Unit-tested.
-3b. **On-stage camera frame (next):** a draggable camera rectangle in the preview
-   (drag to pan, corners to zoom, a handle to rotate) that writes the same Camera
-   keyframes, plus a dedicated camera row at the top of the timeline.
+3b. **On-stage pan + timeline camera lane (done):** a **✋ Pan** toggle in the DOM
+   preview drops a drag overlay on the stage — dragging pans the camera 1:1 (its
+   pan is added in stage space after scale/rotate, so no inverse transform is
+   needed), writing x/y keyframes at the playhead via `setCameraValue`. The
+   timeline floats the Camera tracks to the top as a distinct 🎥 lane. Corner-zoom
+   and a rotate handle stay numeric in the inspector (they need the inverse
+   transform); a full draggable frame with those is a later refinement.
 4. **Edit-in-camera correctness:** element drag/resize math accounts for the
    current camera transform (today, edit at the camera's start/identity frame).
 
