@@ -42,13 +42,19 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
 
   const handleTrackDoubleClick = (track: Track, e: MouseEvent) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    const x = e.clientX - rect.left
+    const x = e.clientX - rect.left + props.store.state.scrollPosition
     const time = Math.max(0, xToTime(x))
 
-    // Add keyframe at clicked position
+    // Seed the new keyframe with the track's held value at that time (the last
+    // keyframe at or before it) so adding it doesn't snap the value to 0.
+    const sorted = [...track.keyframes].sort((a, b) => a.time - b.time)
+    const held =
+      [...sorted].reverse().find((kf) => kf.time <= time)?.value ??
+      sorted[0]?.value ??
+      0
+
     props.store.selectTrack(track.id)
-    // Default value - in real editor, would prompt or use last value
-    props.store.addKeyframe(time, 0)
+    props.store.addKeyframe(time, held)
   }
 
   // Keyframe drag handlers

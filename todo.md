@@ -221,8 +221,13 @@
     cubic-bezier right on the curve (`easingToBezierPoints` seeds handles from
     built-in easings; a named easing converts to custom on grab).
   - [x] Ctrl/Cmd-click **multi-select** of curve points (parity with dope sheet).
-  - [ ] Follow-up: horizontal timeline zoom + scroll; all-curves-overlaid mode;
-    box drag-select of points.
+  - [x] **Horizontal timeline zoom + scroll** — shared −/+/reset control,
+    Ctrl/⌘+wheel zoom-to-cursor, Shift/horizontal-wheel pan, and a draggable
+    scrollbar in `timeline-panel.tsx` (drives both views via `zoom`/`scrollPosition`).
+  - [x] Dope-sheet double-click add-keyframe holds the track's value (no more
+    snap-to-0) and is scroll-aware.
+  - [ ] Follow-up: all-curves-overlaid mode; box drag-select of points;
+    per-scene thumbnails in the scene bar.
 
 ## Phase 23: Text Animation (Adobe Animate parity)
 

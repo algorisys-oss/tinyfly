@@ -1,6 +1,6 @@
 {
   "name": "tinyfly",
-  "version": "0.20.0",
+  "version": "0.21.0",
   "type": "module",
   "description": "Lightweight, API-driven animation engine and editor. The engine is framework-agnostic and runs in browsers, Web Workers, and Node.",
   "license": "MIT",

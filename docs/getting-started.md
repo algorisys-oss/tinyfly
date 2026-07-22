@@ -1,199 +1,248 @@
-# Getting Started with Tinyfly
+# Getting Started with tinyfly
 
-Tinyfly is a lightweight, API-driven animation engine and visual editor for creating high-performance, embeddable animations. It follows a **JSON-first, API-first** design — every animation is serializable data, and every action is possible via code.
+Welcome! **tinyfly** is a free, open-source tool for making animations right in
+your browser — then using them anywhere (a website, an app, or as a GIF / video
+file). You don't need to be a programmer to use the editor. This guide walks you
+from "never opened it" to "made and exported your first animation."
 
-## Installation
+> **In a hurry?** Open the editor → click **Samples** → pick one → press **Play**.
+> That's the 30-second version. The rest of this page slows it down.
 
-### From Source
+---
+
+## 1. Open the editor
+
+If someone has given you a link to a hosted version, just open it — nothing to
+install.
+
+To run it on your own machine you need [Node.js](https://nodejs.org) (version 18
+or newer). Then:
 
 ```bash
-# Clone the repository
 git clone https://github.com/algorisys-oss/tinyfly.git
 cd tinyfly
-
-# Install dependencies
-npm install
-
-# Start the development server
-npm run dev
+npm install      # one-time setup
+npm run dev      # start the editor
 ```
 
-Open [http://localhost:5173](http://localhost:5173) to use the visual editor.
+Open the address it prints (usually **http://localhost:5173**). You'll see the
+editor. Nothing you make is uploaded anywhere — it all lives in your browser.
 
-### Build Commands
+---
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server with hot reload |
-| `npm run build` | Build editor for production |
-| `npm run build:player` | Build the embeddable player (`tinyfly-player.iife.js`) |
-| `npm test` | Run tests in watch mode |
-| `npm run test:run` | Run all tests once |
+## 2. The editor at a glance
 
-## Key Concepts
-
-Before diving in, here are the core concepts you'll work with:
-
-### Timeline
-
-A **Timeline** is the main container for an animation. It controls playback (play, pause, stop, seek, reverse) and orchestrates multiple tracks. Think of it as the ruler at the top of a video editor.
+When it opens, here's what you're looking at:
 
 ```
-Timeline (2000ms, loop: infinite)
-├── Track: box.opacity    [0ms: 0] ──────── [1000ms: 1] ──── [2000ms: 0]
-├── Track: box.x          [0ms: 0] ──────── [2000ms: 300]
-└── Track: box.rotation   [0ms: 0] ──────── [2000ms: 360]
+┌─────────────────────────────────────────────────────────────┐
+│  tinyfly  BETA   [ Save ]  New  My Animations  Samples  …     │  ← top toolbar
+├─────────────────────────────────────────────────────────────┤
+│  Describe an animation…                    [ Generate ]       │  ← AI prompt bar
+├────────────┬───────────────────────────────┬────────────────┤
+│  Elements  │                               │   Properties    │
+│  Tracks    │        Preview (the stage)    │   Presets       │  ← side panels
+│  (left)    │                               │   (right)       │
+├────────────┴───────────────────────────────┴────────────────┤
+│        ▶ Play    0.00 / 2.00   ───●───────────────            │  ← playback
+├─────────────────────────────────────────────────────────────┤
+│  [ Dope Sheet | Curves ]         Timeline / keyframes         │  ← timeline
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### Tracks
+- **Preview (the stage)** — where your animation plays.
+- **Elements / Tracks (left)** — the shapes on the stage, and the list of things
+  being animated. You can **hide this panel** with the `«` button to get more room.
+- **Properties / Presets (right)** — edit the selected shape or keyframe, and
+  apply one-click animation presets. Also collapsible.
+- **Timeline (bottom)** — the heart of it: a ruler of time with **keyframes**
+  (diamonds) marking values at moments in time. Two views: **Dope Sheet** (timing)
+  and **Curves** (the shape of the motion). More on these below.
+- **Playback bar** — Play/pause, the current time, and a scrubber you can drag.
 
-A **Track** animates a single property of a single target element. Each track contains keyframes that define values at specific times. Between keyframes, values are interpolated automatically.
+---
 
-### Keyframes
+## 3. The fastest first win: load a sample
 
-A **Keyframe** is a value at a specific point in time. The engine smoothly transitions between keyframes using the specified easing function.
+The quickest way to *feel* how it works:
 
-```typescript
-{ time: 0, value: 0 }                          // Start at 0
-{ time: 500, value: 1, easing: 'ease-out' }    // Reach 1 at 500ms, ease out
-{ time: 1000, value: 0, easing: 'ease-in' }    // Return to 0 at 1000ms
-```
+1. Click **Samples** in the toolbar.
+2. Pick one (try "Fade In/Out" or a Showcase demo).
+3. Press the big **▶ Play** button.
 
-### Easing
+Watch the diamonds on the timeline and the shape on the stage move together.
+Drag the scrubber back and forth to "scrub" through time. Congrats — that's an
+animation.
 
-**Easing** controls the acceleration curve of an animation between two keyframes. Tinyfly includes:
+You can also click **My Animations** to see every project you've made (each is
+saved automatically), or type a sentence in the prompt bar (e.g. *"a title that
+fades up with a shine"*) and click **Generate** to have AI build one for you.
 
-- `linear` — constant speed
-- `ease-in`, `ease-out`, `ease-in-out` — cubic acceleration/deceleration
-- `ease-in-quad`, `ease-out-quad`, `ease-in-out-quad` — quadratic variants
-- `ease-in-cubic`, `ease-out-cubic`, `ease-in-out-cubic` — cubic variants
-- Custom **cubic-bezier** curves for fine-tuned control
+---
 
-### Elements
+## 4. Make one from scratch
 
-**Elements** are the visual objects you animate: rectangles, circles, text, images, lines, arrows, and SVG paths. In the editor, you add elements to the canvas and animate their properties.
+Let's build a simple "fade and slide in" by hand.
 
-### Scenes
+**Step 1 — Add a shape.** In the left **Elements** panel, add a **Rectangle**
+(or Circle). It appears on the stage. Drag it where you want, or set exact
+position/size in the **Properties** panel on the right.
 
-A **Scene** is an independent canvas with its own set of elements and timeline. Projects can have multiple scenes, and you can add **transitions** (fade, slide) between them to create multi-step animations.
+**Step 2 — Add something to animate (a track).** In the **Tracks** panel, click
+**+ Add Track** and choose a property — start with **opacity** (how see-through
+it is).
 
-## Create Your First Animation
+**Step 3 — Place keyframes.** A **keyframe** says "at *this* time, the value is
+*this*." On the timeline, **double-click** the track to drop a keyframe, then
+select it and set its value in the Properties panel. Make two:
 
-### Using the Visual Editor
+- At **0 ms**: opacity = **0** (invisible)
+- At **500 ms**: opacity = **1** (fully visible)
 
-1. **Open the editor** — Run `npm run dev` and open the browser.
+Add an **x** (horizontal position) track the same way to make it slide in:
 
-2. **Add an element** — Click the shape buttons in the toolbar (Rectangle, Circle, or Text). A new element appears on the canvas.
+- At **0 ms**: x = **-50**
+- At **500 ms**: x = **60**
 
-3. **Position your element** — Drag it on the canvas, or use the Property Panel on the right to set exact X, Y, Width, and Height values.
+**Step 4 — Play it.** Press **▶**. Your shape fades and slides in. Between the
+two keyframes, tinyfly fills in every in-between value automatically — that's
+*interpolation*.
 
-4. **Add animation tracks** — In the Track Panel (left side), click **+ Add Track** and choose a property to animate (e.g., opacity, x, y, rotation).
+**Step 5 — Make the motion feel nice (easing).** Right now the motion is a
+straight, robotic ramp. Select the keyframe at 500 ms and give it an **easing**
+like `ease-out` (fast then settling). Prefer to *see* it? Switch the timeline to
+the **Curves** view (top-left of the timeline): each track becomes a line showing
+its value over time, and you can drag the **amber handles** to shape the motion
+by eye.
 
-5. **Set keyframes** — Click on the timeline at different time positions to add keyframes. Set the value for each keyframe in the Property Panel. For example:
-   - At 0ms: opacity = 0
-   - At 500ms: opacity = 1
-   - At 1000ms: opacity = 0
+**Step 6 — Save & name it.** tinyfly auto-saves as you go (the **Saved ✓** badge
+confirms it). **Double-click the title** in the toolbar to rename your project.
+On a tablet, tap **Save** any time for peace of mind.
 
-6. **Preview** — Click the Play button to watch your animation. Adjust timing, values, and easing until it looks right.
+**Step 7 — Export.** Click **Export As** to download a **GIF**, **WebP**, or
+**MP4** video, or **CSS** / **Lottie** code. Click **Embed** to get copy-paste
+HTML for a website. Or **Export** to save the raw animation as a `.json` file you
+can re-import later.
 
-7. **Export** — Click the **Embed** button in the toolbar to get copy-paste code for your website, or use **Export** to download the animation as a JSON file.
+That's the whole loop: **add → animate → ease → play → export.**
 
-### Using the API (No Editor)
+---
+
+## 5. The five ideas behind everything
+
+Once these click, the rest of tinyfly makes sense.
+
+| Idea | What it is |
+|------|-----------|
+| **Timeline** | The clock for one animation. It plays, pauses, loops, and holds all the tracks. |
+| **Track** | One property of one shape being animated (e.g. *this circle's opacity*). |
+| **Keyframe** | A value pinned at a moment in time — a diamond on the timeline. |
+| **Easing** | The *feel* of the motion between two keyframes: constant (`linear`), or accelerating/settling (`ease-in`, `ease-out`, `ease-in-out`, …), or a fully custom curve. |
+| **Element** | A thing on the stage you animate: rectangle, circle, text, image, video, line, arrow, or path. |
+
+And two bigger ones:
+
+- **Scene** — an independent stage with its own elements and timeline. A project
+  can have several scenes with **transitions** (fade, slide) between them — like
+  slides in a deck.
+- **Project** — everything together, saved in your browser and listed in **My
+  Animations**.
+
+---
+
+## 6. Dope Sheet vs. Curves (the two timeline views)
+
+The timeline has a switch at its top-left:
+
+- **Dope Sheet** — keyframes as diamonds on a time grid. Best for **timing**:
+  when things happen, dragging them earlier/later, copy/paste.
+- **Curves** — each numeric track drawn as a **line of value over time**, with
+  the real easing shown between keyframes. Best for **feel**: drag points up/down
+  to change values, and drag the easing **handles** to shape acceleration.
+
+Both show the same animation — switch anytime. Use **Ctrl/⌘ + scroll** to zoom
+the timeline and the bottom scrollbar (or Shift + scroll) to pan.
+
+---
+
+## 7. For developers: use it from code
+
+The editor is optional — the engine is a small, framework-free library. Every
+animation is plain JSON, and everything the editor does, you can do in code.
 
 ```typescript
 import { Timeline, createTrack } from 'tinyfly'
 import { DOMAdapter } from 'tinyfly/adapters/dom'
 
-// 1. Create a timeline
-const timeline = new Timeline({
-  id: 'fade-pulse',
-  config: { duration: 1000, loop: -1 }  // Infinite loop
-})
+// 1. A timeline that loops forever
+const timeline = new Timeline({ id: 'fade', config: { duration: 1000, loop: -1 } })
 
-// 2. Add tracks
+// 2. Animate the opacity of a target called "box"
 timeline.addTrack(createTrack({
-  id: 'opacity-track',
+  id: 'opacity',
   target: 'box',
   property: 'opacity',
   keyframes: [
     { time: 0, value: 0 },
     { time: 500, value: 1, easing: 'ease-out' },
-    { time: 1000, value: 0, easing: 'ease-in' }
-  ]
+    { time: 1000, value: 0, easing: 'ease-in' },
+  ],
 }))
 
-// 3. Set up DOM rendering
+// 3. Point "box" at a real DOM element and play
 const adapter = new DOMAdapter()
-const element = document.querySelector('#my-box')
-adapter.registerTarget('box', element)
-
-// 4. Connect timeline to adapter
+adapter.registerTarget('box', document.querySelector('#my-box'))
 timeline.onUpdate = (state) => adapter.applyState(state)
 
-// 5. Start playback with animation loop
 timeline.play()
-function animate() {
-  timeline.tick(16.67)  // ~60fps
-  requestAnimationFrame(animate)
-}
-animate()
+;(function loop() {
+  timeline.tick(16.67)                 // advance ~1 frame (60fps)
+  requestAnimationFrame(loop)
+})()
 ```
 
-### Embedding in a Website
-
-The simplest way to embed an animation:
+Prefer to just play an exported file on a web page? Use the tiny player bundle:
 
 ```html
 <div id="animation">
   <div data-tinyfly="box"
-       style="position: absolute; width: 60px; height: 60px; background: #4a9eff;">
-  </div>
+       style="position:absolute;width:60px;height:60px;background:#4a9eff"></div>
 </div>
 
 <script src="tinyfly-player.iife.js"></script>
 <script>
-  tinyfly.play('#animation', './animation.json', {
-    loop: -1,
-    autoplay: true
-  });
+  tinyfly.play('#animation', './animation.json', { loop: -1, autoplay: true })
 </script>
 ```
 
-Build the player first: `npm run build:player` — this creates `dist/player/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` (outputs
+`lib/player/tinyfly-player.iife.js`).
 
-## Animatable Properties
+For the exact JSON shape, see the **[File Format](file-format.md)** reference.
 
-These properties can be animated on elements:
+---
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `x` | number | Horizontal position (px) |
-| `y` | number | Vertical position (px) |
-| `width` | number | Element width (px) |
-| `height` | number | Element height (px) |
-| `rotation` | number | Rotation angle (degrees) |
-| `opacity` | number | Transparency (0-1) |
-| `scaleX` | number | Horizontal scale |
-| `scaleY` | number | Vertical scale |
-| `fill` | string | Fill color (hex, rgb, rgba) |
-| `stroke` | string | Stroke/border color |
-| `strokeWidth` | number | Border width (px) |
-| `borderRadius` | number | Corner radius (px) |
-| `fontSize` | number | Text size (px) |
-| `shadow` | string | Drop shadow |
+## Common animatable properties
 
-## Render Targets
+| Property | Meaning |
+|----------|---------|
+| `x`, `y` | Position (px) |
+| `width`, `height` | Size (px) |
+| `rotate` | Rotation (degrees) |
+| `scale`, `scaleX`, `scaleY` | Scale |
+| `opacity` | Transparency (0–1) |
+| `fill`, `stroke` | Colours |
+| `strokeWidth`, `borderRadius` | Border width / corner radius (px) |
+| `blur`, `glow`, `dropShadow` | Filters |
+| `clipTop`/`Right`/`Bottom`/`Left` | Reveal / wipe |
 
-Tinyfly supports three rendering backends:
+The full list is in the [File Format](file-format.md#animatable-properties) doc.
 
-- **DOM** — Animates HTML elements using CSS transforms and styles. Best for web embedding.
-- **Canvas** — Draws to a `<canvas>` element. Best for complex scenes with many shapes.
-- **SVG** — Animates SVG elements. Best for vector graphics and scalable animations.
+---
 
-The editor includes a renderer switcher to preview your animation in all three modes.
+## Where to next
 
-## What's Next
-
-- [Editor Guide](editor-guide.md) — Complete guide to using the visual editor
-- [API Reference](api-reference.md) — Full programmatic API documentation
-- [Examples](examples.md) — Code examples for common animation patterns
+- **[Editor Guide](editor-guide.md)** — every panel, button, and shortcut in depth.
+- **[Examples](examples.md)** — ready-made animations to learn from.
+- **[File Format](file-format.md)** — the JSON behind it all, for integrations.
+- **[API Reference](api-reference.md)** — the full engine/player/adapter API.

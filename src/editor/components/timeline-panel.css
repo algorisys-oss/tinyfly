@@ -8,10 +8,54 @@
 .timeline-panel-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   padding: 4px 8px;
   border-bottom: 1px solid #2a2a2a;
   background: #161616;
   flex-shrink: 0;
+}
+
+.timeline-zoom {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.timeline-zoom-btn {
+  width: 24px;
+  height: 22px;
+  border: 1px solid #2f2f2f;
+  border-radius: 4px;
+  background: #202020;
+  color: #bbb;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.timeline-zoom-btn:hover {
+  background: #2c2c2c;
+  color: #fff;
+}
+
+.timeline-zoom-label {
+  min-width: 44px;
+  height: 22px;
+  padding: 0 6px;
+  border: none;
+  background: transparent;
+  color: #999;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.timeline-zoom-label:hover {
+  background: #202020;
+  color: #fff;
 }
 
 .timeline-view-switch {
@@ -51,4 +95,35 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
+}
+
+.timeline-scrollbar {
+  flex-shrink: 0;
+  height: 12px;
+  background: #161616;
+  border-top: 1px solid #2a2a2a;
+}
+
+.timeline-scrollbar-track {
+  position: relative;
+  height: 100%;
+}
+
+.timeline-scrollbar-thumb {
+  position: absolute;
+  top: 2px;
+  height: 8px;
+  background: #3a3a3a;
+  border-radius: 4px;
+  cursor: grab;
+  transition: background 0.12s;
+}
+
+.timeline-scrollbar-thumb:hover {
+  background: #4a9eff;
+}
+
+.timeline-scrollbar-thumb:active {
+  cursor: grabbing;
+  background: #4a9eff;
 }

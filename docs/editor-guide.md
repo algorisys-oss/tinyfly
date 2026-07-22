@@ -8,34 +8,51 @@ The editor is divided into several panels:
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│ Toolbar (top)                                       │
-├──────────┬──────────────────────────┬───────────────┤
-│ Track    │                          │   Property    │
-│ Panel    │     Canvas / Preview     │    Panel      │
-│ (left)   │        (center)          │   (right)     │
-│          │                          │               │
-├──────────┴──────────────────────────┴───────────────┤
-│ Scene Bar                                           │
+│ Header: tinyfly BETA · Save · toolbar buttons        │
 ├─────────────────────────────────────────────────────┤
-│ Timeline (bottom)                                   │
-│ Playback Controls                                   │
+│ AI prompt bar  (describe → Generate)                 │
+├──────────┬──────────────────────────┬───────────────┤
+│ Elements │                          │   Property    │
+│ + Tracks │     Canvas / Preview     │  + Presets    │
+│ (left «) │        (center)          │  (right »)    │
+├──────────┴──────────────────────────┴───────────────┤
+│ Playback Controls                                    │
+├─────────────────────────────────────────────────────┤
+│ Scene Bar                                            │
+├─────────────────────────────────────────────────────┤
+│ Timeline  [ Dope Sheet | Curves ]   zoom −  100%  +  │
 └─────────────────────────────────────────────────────┘
 ```
 
+**Collapsible side panels.** The left (Elements/Tracks) and right
+(Properties/Presets) columns each have a `«` / `»` button to hide them and give
+the canvas more room; a slim tab on the edge brings a hidden panel back. On
+phones/tablets the panels slide in from the edges via the ☰ / ⚙ buttons.
+
 ## Toolbar
 
-The toolbar at the top provides:
+The header/toolbar at the top provides:
 
-- **Shape tools** — Add Rectangle, Circle, or Text elements
-- **Line tools** — Add Line or Arrow elements
-- **Image** — Add an Image element
-- **Path** — Add an SVG Path element
-- **Import/Export** — Load or save animation JSON files
-- **Embed** — Generate embed code for websites
-- **Export** — Export to CSS, Lottie, or GIF formats
-- **Project Settings** — Configure project name and canvas size
-- **Samples** — Browse and load sample animations
-- **Shortcuts** — View keyboard shortcuts (or press `?`)
+- **Project title** — shows the current project's name; **double-click to rename**
+  it inline. A `*` means there are unsaved edits.
+- **Save** — an explicit save with a live status: **Save** (unsaved) →
+  **Saving…** → **Saved ✓**. Auto-save always runs in the background; this button
+  is a reassuring, tap-friendly manual save (handy on tablets).
+- **New** — start a fresh project (prompts if you have unsaved changes).
+- **My Animations** — open the gallery of every project you've saved (thumbnails,
+  open / duplicate / delete). See [Project Management](#project-management).
+- **Samples** — browse and load ready-made animations.
+- **Gallery** — a separate page of curated example animations (opens `/gallery`).
+- **Docs** — open this documentation in-app.
+- **Import / Export** — load or save the animation as a JSON file.
+- **Export As** — render to **GIF / WebP / MP4 / CSS / Lottie**.
+- **Embed** — generate copy-paste embed code for a website.
+- **Help / Shortcuts** — keyboard shortcuts (or press `?`); the `?` tour button
+  replays the onboarding walkthrough.
+- **Project Settings** (gear) — project name, canvas size, and background colour.
+
+Shapes, text, images, video, lines, arrows and paths are added from the
+**Elements** panel on the left (see [Adding Elements](#adding-elements)).
 
 ## Canvas & Elements
 
@@ -219,8 +236,41 @@ box > rotation      │  ◆─────◆───────────�
 ```
 
 - **Tracks** are listed on the left — each controls one property of one element
-- **Keyframes** are shown as diamonds (◆) on the timeline
-- The **playhead** (vertical line) indicates the current time
+- **Keyframes** are shown as diamonds (◆) on the timeline; the **selected** one
+  is highlighted (amber). Click one to edit its value in the Property Panel.
+- The **playhead** (vertical line) indicates the current time. Click the ruler to
+  move it (scrub).
+
+### Two views: Dope Sheet and Curves
+
+A switch at the top-left of the timeline flips between two ways to see the same
+keyframes:
+
+- **Dope Sheet** — the classic keyframe grid (diamonds on a time ruler). Best for
+  **timing**: when things happen, nudging them earlier/later, copy/paste.
+- **Curves** — every *numeric* track (x, y, opacity, scale, rotate, …) is drawn
+  as a **value-over-time curve**, with the real easing shown between keyframes.
+  Best for **feel**:
+  - Drag a point **horizontally** to retime it, **vertically** to change its value.
+  - Select a keyframe and drag its **amber easing handles** to shape the
+    cubic-bezier between it and the previous keyframe (a named easing becomes a
+    custom curve the moment you grab a handle).
+  - **Double-click** an empty lane to add a keyframe there.
+  - **Ctrl/⌘-click** points to multi-select.
+
+  Non-numeric tracks (colours, motion paths, arrays) can't be a single curve, so
+  they're listed at the bottom — edit those in the Dope Sheet.
+
+Both views share the playhead, zoom, scroll and selection, so switching never
+loses your place.
+
+### Zoom & scroll
+
+- **Zoom**: the **− / 100% / +** control at the top-right of the timeline, or
+  **Ctrl/⌘ + scroll** over the timeline (zooms toward the cursor). Click the
+  percentage to reset zoom and scroll to the start.
+- **Scroll (pan)**: drag the **scrollbar** under the timeline, or **Shift + scroll**
+  (or a horizontal trackpad swipe).
 
 ### Adding Tracks
 
@@ -230,14 +280,15 @@ box > rotation      │  ◆─────◆───────────�
 
 ### Adding Keyframes
 
-1. Move the playhead to the desired time
-2. Click on a track row at that position to add a keyframe
-3. Set the keyframe value in the Property Panel
+There are a few ways:
 
-Alternatively, with an element selected:
-1. Move the playhead to the desired time
-2. Change a property value in the Property Panel
-3. A keyframe is automatically created at the playhead position
+- **Double-click** a track row (Dope Sheet) or a lane (Curves) at the time you
+  want. The new keyframe holds the track's current value at that point (in Curves,
+  it takes the value at the height you clicked), so it won't snap to zero.
+- With an element selected, move the playhead and **change a value** in the
+  Property Panel — a keyframe is created at the playhead automatically.
+
+Then fine-tune the value in the Property Panel (or by dragging in the Curves view).
 
 ### Moving Keyframes
 
@@ -552,20 +603,50 @@ to return. Selection and dragging stay pixel-accurate at any scale.
 
 ## Project Management
 
-### Auto-Save
+### Saving & auto-save
 
-Projects auto-save to the browser's LocalStorage as you work. Your animation is preserved between browser sessions.
+tinyfly saves continuously — like Google Docs, there's no "save or lose it":
+
+- **Auto-save.** Every edit is written to the browser's **IndexedDB** a moment
+  after you make it. The `*` next to the title means a save is pending; it clears
+  once written. Nothing is uploaded — it's all local to your browser.
+- **Explicit Save.** The **Save** button shows **Save / Saving… / Saved ✓** and
+  lets you force a save any time (nice on touch devices). It's optional — auto-save
+  already has you covered.
+- **On close.** The latest edit is flushed when you close or reload the tab, so a
+  fast reload can't lose your last change.
+
+Projects made before this used a single LocalStorage slot; those are migrated
+into IndexedDB automatically the first time you open the new version.
+
+### My Animations (the gallery)
+
+Click **My Animations** in the toolbar to see **every project you've made** as a
+grid of cards, each with a live thumbnail and "last modified" time:
+
+- **Open** — click a card to keep editing it (the one you're on is badged).
+- **Duplicate** — make a copy to experiment safely.
+- **Delete** — remove one (with a confirm).
+- **New** — start a fresh project from the gallery.
+
+### Renaming
+
+Two ways: **double-click the project title** in the toolbar to rename it inline,
+or open **Project Settings** (gear icon).
 
 ### Project Settings
 
-Open Project Settings from the toolbar to:
+Open Project Settings (gear icon) from the toolbar to:
 
 - **Rename** the project
 - **Set canvas size** (width and height in pixels)
+- **Set the artboard background** colour (also the default background for GIF/
+  WebP/MP4 export)
 
 ### New Project
 
-Click "New Project" in the toolbar. You'll be asked to confirm since this replaces the current project.
+Click **New** in the toolbar. If you have unsaved changes you'll be asked whether
+to save first. Your previous project isn't lost — it stays in **My Animations**.
 
 ## Keyboard Shortcuts
 
