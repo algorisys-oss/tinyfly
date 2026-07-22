@@ -1,7 +1,7 @@
 import { createSignal, createEffect } from 'solid-js'
 import type { TimelineDefinition } from '../../engine'
 import type { SceneElement } from './scene-store'
-import type { SceneDefinition } from './scene-types'
+import type { SceneDefinition, SymbolDefinition } from './scene-types'
 import type { SceneTransition, SequenceDefinition, SerializedElement } from '../../player/sequence-types'
 import { DEFAULT_TRANSITION } from '../../player/sequence-types'
 import { generateElementHtml } from '../utils/element-html'
@@ -39,6 +39,8 @@ export interface Project {
   canvas: ProjectCanvas
   scenes: SceneDefinition[]
   activeSceneId: string
+  /** Reusable symbol definitions (the Library), shared across scenes. */
+  symbols: SymbolDefinition[]
 }
 
 export interface ProjectMetadata {
@@ -82,6 +84,10 @@ function createDefaultScene(name = 'Scene 1', order = 0): SceneDefinition {
   }
 }
 
+function generateSymbolId(): string {
+  return `symbol-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+}
+
 function createDefaultProject(name = 'Untitled Animation'): Project {
   const now = Date.now()
   const scene = createDefaultScene()
@@ -93,6 +99,7 @@ function createDefaultProject(name = 'Untitled Animation'): Project {
     canvas: { ...DEFAULT_CANVAS },
     scenes: [scene],
     activeSceneId: scene.id,
+    symbols: [],
   }
 }
 
@@ -101,10 +108,15 @@ function createDefaultProject(name = 'Untitled Animation'): Project {
  */
 export function migrateProject(project: Record<string, unknown>): Project {
   // Already migrated: has scenes array. The canvas is still normalized, so
-  // projects saved before `background` existed pick up the default.
+  // projects saved before `background` existed pick up the default; `symbols`
+  // defaults to an empty Library for projects saved before it existed.
   if (Array.isArray(project.scenes) && project.scenes.length > 0) {
     const migrated = project as unknown as Project
-    return { ...migrated, canvas: normalizeCanvas(migrated.canvas) }
+    return {
+      ...migrated,
+      canvas: normalizeCanvas(migrated.canvas),
+      symbols: Array.isArray(migrated.symbols) ? migrated.symbols : [],
+    }
   }
 
   // Old format: has timeline field, no scenes
@@ -125,6 +137,7 @@ export function migrateProject(project: Record<string, unknown>): Project {
     canvas: normalizeCanvas(project.canvas),
     scenes: [scene],
     activeSceneId: sceneId,
+    symbols: [],
   }
 }
 
@@ -524,6 +537,96 @@ export function createProjectStore(options?: { backend?: ProjectBackend }) {
     setIsDirty(true)
   }
 
+  // ---- Symbol Library (Phase A) ----
+
+  /** Create a reusable symbol from a set of elements and add it to the Library. */
+  function createSymbol(
+    name: string,
+    elements: SceneElement[],
+    opts?: { width?: number; height?: number; timeline?: TimelineDefinition | null }
+  ): SymbolDefinition {
+    const now = Date.now()
+    const canvas = currentProject().canvas
+    const symbol: SymbolDefinition = {
+      id: generateSymbolId(),
+      name,
+      width: opts?.width ?? canvas.width,
+      height: opts?.height ?? canvas.height,
+      elements: structuredClone(elements),
+      timeline: opts?.timeline ?? null,
+      created: now,
+      modified: now,
+    }
+    setCurrentProject((prev) => ({
+      ...prev,
+      symbols: [...prev.symbols, symbol],
+      modified: now,
+    }))
+    setIsDirty(true)
+    return symbol
+  }
+
+  /** All symbols in the Library. */
+  function getSymbols(): SymbolDefinition[] {
+    return [...currentProject().symbols]
+  }
+
+  /** Look up a symbol by id. */
+  function getSymbol(id: string): SymbolDefinition | undefined {
+    return currentProject().symbols.find((s) => s.id === id)
+  }
+
+  /** Rename a symbol. */
+  function renameSymbol(id: string, name: string): void {
+    setCurrentProject((prev) => ({
+      ...prev,
+      symbols: prev.symbols.map((s) => (s.id === id ? { ...s, name, modified: Date.now() } : s)),
+      modified: Date.now(),
+    }))
+    setIsDirty(true)
+  }
+
+  /** Update a symbol's contents (used by edit-in-place). */
+  function updateSymbol(
+    id: string,
+    patch: Partial<Pick<SymbolDefinition, 'elements' | 'timeline' | 'width' | 'height' | 'name'>>
+  ): void {
+    setCurrentProject((prev) => ({
+      ...prev,
+      symbols: prev.symbols.map((s) => (s.id === id ? { ...s, ...patch, modified: Date.now() } : s)),
+      modified: Date.now(),
+    }))
+    setIsDirty(true)
+  }
+
+  /**
+   * How many instances of a symbol exist across all scenes. Note: the active
+   * scene is read from the persisted project, so counts can lag the live scene
+   * store by one auto-save — fine for a delete guard.
+   */
+  function symbolInstanceCount(id: string): number {
+    return currentProject().scenes.reduce(
+      (n, scene) =>
+        n +
+        scene.elements.filter((el) => el.type === 'symbol' && (el as { symbolId?: string }).symbolId === id)
+          .length,
+      0
+    )
+  }
+
+  /** Delete a symbol. Blocked while instances of it still exist. */
+  function deleteSymbol(id: string): boolean {
+    if (!currentProject().symbols.some((s) => s.id === id)) return false
+    if (symbolInstanceCount(id) > 0) return false
+    setCurrentProject((prev) => ({
+      ...prev,
+      symbols: prev.symbols.filter((s) => s.id !== id),
+      modified: Date.now(),
+    }))
+    setIsDirty(true)
+    return true
+  }
+
   /**
    * Delete a project
    */
@@ -710,6 +813,14 @@ export function createProjectStore(options?: { backend?: ProjectBackend }) {
     setSceneTransition,
     getSceneTransition,
     exportSequence,
+    // Symbol Library
+    createSymbol,
+    getSymbols,
+    getSymbol,
+    renameSymbol,
+    updateSymbol,
+    symbolInstanceCount,
+    deleteSymbol,
     deleteProject,
     duplicate,
     getProjectList,

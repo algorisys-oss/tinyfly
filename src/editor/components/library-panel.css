@@ -1,0 +1,165 @@
+.library-panel {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid #333;
+  overflow: hidden;
+}
+
+.library-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  flex-shrink: 0;
+}
+
+.library-panel-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ccc;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.library-convert-btn {
+  background: #2e2e2e;
+  color: #ddd;
+  border: 1px solid #3a3a3a;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.library-convert-btn:hover:not(:disabled) {
+  background: #4a9eff;
+  color: #fff;
+  border-color: #4a9eff;
+}
+
+.library-convert-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.library-panel-content {
+  overflow-y: auto;
+  padding: 0 10px 10px;
+}
+
+.library-empty {
+  font-size: 11px;
+  color: #777;
+  line-height: 1.5;
+  padding: 4px 2px;
+}
+
+.library-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
+}
+
+.library-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.library-thumb {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border: 1px solid #333;
+  border-radius: 6px;
+  background: #1c1c1c;
+  cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: border-color 0.12s;
+}
+
+.library-thumb:hover {
+  border-color: #4a9eff;
+}
+
+.library-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.library-thumb-empty {
+  color: #555;
+  font-size: 20px;
+}
+
+.library-place-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(74, 158, 255, 0.85);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.library-thumb:hover .library-place-hint {
+  opacity: 1;
+}
+
+.library-item-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.library-item-name {
+  flex: 1;
+  font-size: 11px;
+  color: #ccc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: text;
+}
+
+.library-item-rename {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  background: #1c1c1c;
+  border: 1px solid #4a9eff;
+  border-radius: 3px;
+  color: #fff;
+  padding: 1px 4px;
+  outline: none;
+}
+
+.library-item-count {
+  font-size: 10px;
+  color: #4a9eff;
+  font-variant-numeric: tabular-nums;
+}
+
+.library-item-delete {
+  background: transparent;
+  border: none;
+  color: #777;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.library-item-delete:hover {
+  color: #c0392b;
+}

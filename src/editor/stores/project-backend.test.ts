@@ -70,6 +70,7 @@ describe('ProjectStore with an injected backend', () => {
       canvas: { width: 300, height: 200, background: '#252525' },
       scenes: [{ id: 's-1', name: 'Scene 1', order: 0, elements: [], timeline: null }],
       activeSceneId: 's-1',
+      symbols: [],
     }
     const seeded = createMemoryBackend(new Map([[p.id, p]]), 'p-1')
     const store = createProjectStore({ backend: seeded.backend })

@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.23.0](v0.23.0.md) | 2026-07-22 | Symbols + Library (Phase A): convert selection to a reusable symbol, place instances, DOM-preview rendering |
 | [v0.22.0](v0.22.0.md) | 2026-07-22 | Box-select in both timeline views, a curve Overlay (shared-axis) mode, and per-scene tab thumbnails |
 | [v0.21.0](v0.21.0.md) | 2026-07-22 | Timeline zoom & scroll (both views), value-holding keyframe add, and a beginner-first docs overhaul |
 | [v0.20.0](v0.20.0.md) | 2026-07-22 | Curves (graph) timeline editor — eased curves, 2D point drag, draggable easing handles; horizontal-overflow white-strip fix |

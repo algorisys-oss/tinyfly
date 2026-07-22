@@ -6,6 +6,7 @@ import {
   PlaybackControls,
   PropertyPanel,
   TrackPanel,
+  LibraryPanel,
   Toolbar,
   ProjectSettingsDialog,
   EmbedDialog,
@@ -25,6 +26,7 @@ import { createEditorStore, createProjectStore, createSceneStore, createOnboardi
 import type { ProjectBackend } from './stores/project-store'
 import { openIndexedDbBackend } from './stores/project-persistence'
 import { renderSceneThumbnail } from './utils/scene-thumbnail'
+import { elementsBounds, shiftElement } from './utils/element-bounds'
 import { serializeTimeline, deserializeTimeline } from '../engine'
 import { StatusBar } from '../components'
 import './editor.css'
@@ -305,6 +307,26 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
   }
 
   /**
+   * Convert the current selection into a reusable symbol: bundle the selected
+   * elements (normalized to the symbol's local origin) into a new Library symbol,
+   * then replace them on the stage with a single instance.
+   */
+  const convertToSymbol = () => {
+    const ids = sceneStore.selectedElementIds()
+    if (ids.length === 0) return
+    const selected = sceneStore.exportElements().filter((el) => ids.includes(el.id) && el.type !== 'group')
+    if (selected.length === 0) return
+
+    const bbox = elementsBounds(selected)
+    // Symbol-local copies: shift so the bbox top-left sits at (0,0).
+    const local = selected.map((el) => shiftElement(structuredClone(el), -bbox.x, -bbox.y))
+
+    const name = `Symbol ${projectStore.getSymbols().length + 1}`
+    const symbol = projectStore.createSymbol(name, local, { width: bbox.width, height: bbox.height })
+    sceneStore.replaceElementsWithSymbol(ids, symbol.id, bbox, name)
+  }
+
+  /**
    * Render one thumbnail for the given scene and store it under BOTH the
    * project id (gallery card) and the scene id (scene-bar tab). They share the
    * same image because the gallery shows a project's active scene.
@@ -475,6 +497,7 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
           </button>
           <ElementPanel sceneStore={sceneStore} projectStore={projectStore} />
           <TrackPanel store={store} />
+          <LibraryPanel sceneStore={sceneStore} projectStore={projectStore} onConvert={convertToSymbol} />
         </aside>
 
         <Show when={leftCollapsed()}>

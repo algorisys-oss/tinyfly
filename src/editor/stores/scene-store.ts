@@ -2,7 +2,7 @@ import { createSignal } from 'solid-js'
 import { createStore } from 'solid-js/store'
 import { measureTextLetters } from '../utils/split-text'
 
-export type ElementType = 'rect' | 'circle' | 'text' | 'image' | 'audio' | 'video' | 'line' | 'arrow' | 'path' | 'group'
+export type ElementType = 'rect' | 'circle' | 'text' | 'image' | 'audio' | 'video' | 'line' | 'arrow' | 'path' | 'group' | 'symbol'
 
 /** Device-frame preset silhouettes. */
 export type DeviceVariant = 'phone' | 'landscape' | 'tablet'
@@ -203,7 +203,20 @@ export interface GroupElement extends BaseElement {
   childIds: string[]
 }
 
-export type SceneElement = RectElement | CircleElement | TextElement | ImageElement | AudioElement | VideoElement | LineElement | ArrowElement | PathElement | GroupElement
+/**
+ * An instance of a reusable {@link SymbolDefinition}. The base transform
+ * (x/y/width/height/rotation/opacity) places and sizes the instance; the
+ * symbol's contents render scaled from its intrinsic size into that box.
+ */
+export interface SymbolInstanceElement extends BaseElement {
+  type: 'symbol'
+  /** References `SymbolDefinition.id` in the project Library. */
+  symbolId: string
+  /** Reserved for later per-instance property overrides / symbol-swap. */
+  overrides?: Record<string, unknown>
+}
+
+export type SceneElement = RectElement | CircleElement | TextElement | ImageElement | AudioElement | VideoElement | LineElement | ArrowElement | PathElement | GroupElement | SymbolInstanceElement
 
 export interface SceneState {
   elements: SceneElement[]
@@ -369,6 +382,7 @@ function generateName(type: ElementType, elements: SceneElement[]): string {
     arrow: 'Arrow',
     path: 'Path',
     group: 'Group',
+    symbol: 'Symbol',
   }
   return `${names[type]} ${count}`
 }
@@ -482,6 +496,9 @@ export function createSceneStore() {
       case 'group':
         // Groups are created via groupElements(), not addElement()
         throw new Error('Use groupElements() to create groups')
+      case 'symbol':
+        // Symbol instances are placed from the Library, not via addElement()
+        throw new Error('Use the Library / Convert to Symbol flow to place symbol instances')
     }
 
     setState('elements', (elements) => [...elements, element])
@@ -614,6 +631,63 @@ export function createSceneStore() {
     }
 
     bumpVersion()
+  }
+
+  /** Build a symbol-instance element (not yet added to the scene). */
+  function makeSymbolInstance(
+    symbolId: string,
+    box: { x: number; y: number; width: number; height: number },
+    name?: string
+  ): SymbolInstanceElement {
+    return {
+      type: 'symbol',
+      id: generateId(),
+      name: name ?? generateName('symbol', state.elements),
+      x: box.x,
+      y: box.y,
+      width: box.width,
+      height: box.height,
+      rotation: 0,
+      opacity: 1,
+      visible: true,
+      locked: false,
+      symbolId,
+    }
+  }
+
+  /** Place an instance of a symbol on the stage and select it. */
+  function addSymbolInstance(
+    symbolId: string,
+    box: { x: number; y: number; width: number; height: number },
+    name?: string
+  ): SymbolInstanceElement {
+    snapshot()
+    const instance = makeSymbolInstance(symbolId, box, name)
+    setState('elements', (els) => [...els, instance])
+    setState('selectedElementId', instance.id)
+    setState('selectedElementIds', [instance.id])
+    bumpVersion()
+    return instance
+  }
+
+  /**
+   * Replace a set of elements with a single symbol instance (the second half of
+   * "Convert to Symbol"). One history step.
+   */
+  function replaceElementsWithSymbol(
+    ids: string[],
+    symbolId: string,
+    box: { x: number; y: number; width: number; height: number },
+    name?: string
+  ): SymbolInstanceElement {
+    snapshot()
+    const idSet = new Set(ids)
+    const instance = makeSymbolInstance(symbolId, box, name)
+    setState('elements', (els) => [...els.filter((el) => !idSet.has(el.id)), instance])
+    setState('selectedElementId', instance.id)
+    setState('selectedElementIds', [instance.id])
+    bumpVersion()
+    return instance
   }
 
   /**
@@ -1052,6 +1126,8 @@ export function createSceneStore() {
     // Actions
     addElement,
     addDeviceFrame,
+    addSymbolInstance,
+    replaceElementsWithSymbol,
     removeElement,
     updateElement,
     selectElement,

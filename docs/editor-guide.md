@@ -147,6 +147,39 @@ In the Element Panel (left side), you can reorder layers:
 
 Select an element and press **Delete** or **Backspace**.
 
+## Symbols & Library
+
+A **symbol** is a reusable bundle of elements you define once and place many
+times. The **Library** panel (bottom of the left sidebar) holds them, shared
+across all scenes in the project.
+
+### Create a symbol
+
+1. Select one or more elements on the stage.
+2. In the **Library** panel, click **+ Symbol**.
+
+The selected elements are bundled into a new symbol and replaced on the stage
+with a single **instance** — it looks identical to what was there.
+
+### Place instances
+
+Click a symbol's thumbnail in the Library to drop another **instance** onto the
+current scene. Move and resize an instance like any element; resizing scales the
+symbol's contents to fit. Because every instance references the same symbol,
+they'll all reflect changes to the definition.
+
+### Manage symbols
+
+- **Rename** — double-click a symbol's name.
+- **Delete** — the `×` button. Blocked while instances of it are still in use
+  (the `×N` badge shows the instance count).
+
+> **This release (v0.23.0)** covers create / place / render (in the DOM preview).
+> **Edit-in-place** (opening a symbol to edit its contents and its own nested
+> timeline), **nested playback**, **symbol-swap** (lip-sync), and Canvas/SVG
+> instance rendering are the next slices — see
+> [symbols-and-library.md](symbols-and-library.md).
+
 ## Property Panel
 
 When an element is selected, the Property Panel on the right shows editable properties:

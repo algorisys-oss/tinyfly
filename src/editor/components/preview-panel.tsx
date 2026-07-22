@@ -5,7 +5,8 @@ import { CanvasAdapter } from '../../adapters/canvas'
 import { SVGAdapter } from '../../adapters/svg'
 import type { EditorStore } from '../stores/editor-store'
 import type { ProjectStore } from '../stores/project-store'
-import { fillToCss, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type GroupElement } from '../stores/scene-store'
+import { fillToCss, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type GroupElement, type SymbolInstanceElement } from '../stores/scene-store'
+import { generateElementHtml } from '../utils/element-html'
 import { parsePathForEditing, buildPathString, updatePathPoint, getControlLines, type EditablePoint, type EditableCommand } from '../utils/path-editor'
 import { sceneElementToCanvasTarget } from '../utils/scene-to-canvas'
 import { MediaSync, syncMediaElement } from '../../player/media-sync'
@@ -1505,6 +1506,43 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
                       <div style={{ width: '100%', height: '100%', display: 'flex', 'align-items': 'center', 'justify-content': 'center', color: '#666', 'font-size': '12px' }}>
                         🎬 No video
                       </div>
+                    )
+                  })()}
+                </Show>
+                <Show when={element.type === 'symbol'}>
+                  {(() => {
+                    const inst = element as SymbolInstanceElement
+                    const sym = props.projectStore.getSymbol(inst.symbolId)
+                    if (!sym) {
+                      return (
+                        <div class="symbol-missing" style={{ width: '100%', height: '100%', display: 'flex', 'align-items': 'center', 'justify-content': 'center', color: '#c0392b', 'font-size': '11px' }}>
+                          ⚠ missing symbol
+                        </div>
+                      )
+                    }
+                    // Expand the symbol's contents (poster frame) scaled into the
+                    // instance box. Static for now — nested playback is a later slice.
+                    const sx = sym.width ? inst.width / sym.width : 1
+                    const sy = sym.height ? inst.height / sym.height : 1
+                    const html = sym.elements
+                      .filter((e) => e.visible)
+                      .map((e) => generateElementHtml(e, ''))
+                      .join('')
+                    return (
+                      <div
+                        class="symbol-instance-inner"
+                        style={{
+                          position: 'absolute',
+                          left: '0',
+                          top: '0',
+                          width: `${sym.width}px`,
+                          height: `${sym.height}px`,
+                          'transform-origin': '0 0',
+                          transform: `scale(${sx}, ${sy})`,
+                          'pointer-events': 'none',
+                        }}
+                        innerHTML={html}
+                      />
                     )
                   })()}
                 </Show>

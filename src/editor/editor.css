@@ -233,9 +233,28 @@
 
 .editor-sidebar-left {
   border-right: 1px solid #333;
-  /* ElementPanel is height:100% and scrolls internally via its own
-     .panel-content, so the outer sidebar must not add a second scrollbar. */
+  /* Stack Elements / Tracks / Library as a flex column so they share the height
+     and each scrolls internally (no double scrollbar on the sidebar). */
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-sidebar-left > .element-panel {
+  flex: 1.6 1 0;
+  min-height: 0;
+  height: auto;
+}
+
+.editor-sidebar-left > .track-panel {
+  flex: 1 1 0;
+  min-height: 0;
+  border-top: 1px solid #333;
+}
+
+.editor-sidebar-left > .library-panel {
+  flex: 1 1 0;
+  min-height: 0;
 }
 
 .editor-sidebar-right {

@@ -280,7 +280,18 @@ wave, assemble, typewriter, shine/mask reveal, blur-in).
 Gap analysis vs a full Adobe Animate workflow and a phased plan — see
 [docs/2d-animation-roadmap.md](docs/2d-animation-roadmap.md). On-brand next steps:
 
-- [ ] Phase A — Symbols + Library (reusable instances, nested timelines; enables lip-sync-style swapping)
+- [~] Phase A — Symbols + Library (reusable instances, nested timelines; enables lip-sync-style swapping)
+  - [x] Foundation: `SymbolDefinition` + `'symbol'` instance type; `project.symbols`
+    Library with migration; project-store Library API (create/get/rename/update/
+    count/delete-guarded); persistence + tests (`symbol-library.test.ts`).
+  - [x] Convert-to-Symbol (bundle selection → symbol + replace with instance,
+    `element-bounds.ts`), `LibraryPanel` (list/place/rename/delete + thumbnails),
+    and DOM-preview instance rendering (expand + scale via `generateElementHtml`).
+  - [ ] Edit-in-place (breadcrumb + nested-timeline editing).
+  - [ ] Nested playback + symbol-swap (lip-sync).
+  - [ ] Canvas/SVG adapter rendering + embed/export expansion of instances.
+  - [ ] Undo of Convert also removes the orphaned symbol.
+  - See [docs/symbols-and-library.md](docs/symbols-and-library.md).
 - [ ] Phase B — Camera (animated pan/zoom/rotate), onion skinning, guides/grid/snapping
 - [ ] Phase C — Pen tool + polygon/star, shape-tween morph tooling, video/sprite-sheet export
 - [ ] Out of scope: bone/IK rigging, frame-by-frame drawing, natural-media brushes
@@ -378,7 +389,7 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
 
 ## Test Coverage
 
-- 627 tests passing
+- 634 tests passing
 - Easing functions: 48 tests
 - Interpolators: 21 tests
 - Clock: 19 tests
@@ -407,3 +418,4 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
 - Project backend injection (IndexedDB seam): 5 tests
 - Scene thumbnail render guards: 4 tests
 - Curve-math (numeric detection, padded range, eased sampling, easing→bezier): 14 tests
+- Symbol Library (create/clone/rename/count-guard/persist): 7 tests
