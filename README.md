@@ -48,6 +48,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Timeline view** - Visual keyframe editing with drag-and-drop
 - **Curve editor** - Switch the timeline between the **Dope Sheet** (keyframes & timing) and a **Curves** graph view where each numeric track is a value-over-time curve with the real easing drawn between keyframes; drag points in 2D (time + value), drag the easing handles to shape the cubic-bezier, double-click a lane to add a keyframe, Ctrl/Cmd-click to multi-select
 - **Timeline zoom & scroll** - Zoom the timeline with Ctrl/⌘+scroll or the −/+ control and pan with the scrollbar or Shift+scroll (shared across both views)
+- **Box-select & curve overlay** - Rubber-band-select keyframes in either timeline view; in Curves, toggle **Overlay** to compare all tracks on one shared axis. Scene tabs show live per-scene thumbnails
 - **Multi-select keyframes** - Ctrl/Cmd-click to select many keyframes; copy/paste (at the playhead) and delete them together
 - **Property panel** - Edit keyframe values and easing
 - **Track management** - Add, remove, and organize animation tracks

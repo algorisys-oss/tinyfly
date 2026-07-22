@@ -226,8 +226,12 @@
     scrollbar in `timeline-panel.tsx` (drives both views via `zoom`/`scrollPosition`).
   - [x] Dope-sheet double-click add-keyframe holds the track's value (no more
     snap-to-0) and is scroll-aware.
-  - [ ] Follow-up: all-curves-overlaid mode; box drag-select of points;
-    per-scene thumbnails in the scene bar.
+  - [x] **Box (rubber-band) select** of keyframes in the Dope Sheet and points in
+    the Curves view (drag across empty space).
+  - [x] **Overlay mode** in the Curves view — all numeric curves on one shared
+    axis with a colour legend (`Lanes | Overlay` toggle).
+  - [x] **Per-scene thumbnails** on the Scene Bar tabs (generated from each
+    scene's elements; the active scene stays fresh via the editor's capture).
 
 ## Phase 23: Text Animation (Adobe Animate parity)
 

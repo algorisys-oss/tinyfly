@@ -74,6 +74,15 @@
 .timeline-tracks {
   flex: 1;
   overflow-y: auto;
+  position: relative;
+}
+
+.selection-box {
+  position: absolute;
+  z-index: 20;
+  background: rgba(74, 158, 255, 0.15);
+  border: 1px solid #4a9eff;
+  pointer-events: none;
 }
 
 .timeline-track {

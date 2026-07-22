@@ -256,13 +256,21 @@ keyframes:
     cubic-bezier between it and the previous keyframe (a named easing becomes a
     custom curve the moment you grab a handle).
   - **Double-click** an empty lane to add a keyframe there.
-  - **Ctrl/⌘-click** points to multi-select.
+  - **Ctrl/⌘-click** points to multi-select, or **drag a box** across empty space
+    to rubber-band-select every point inside it.
+  - **Lanes / Overlay** toggle (top-left of the curve area): *Lanes* gives each
+    track its own editable row; *Overlay* draws every curve on one shared axis
+    with a colour legend — handy for comparing timing across tracks.
 
   Non-numeric tracks (colours, motion paths, arrays) can't be a single curve, so
   they're listed at the bottom — edit those in the Dope Sheet.
 
+The Dope Sheet also supports **box (rubber-band) select** — drag across empty
+track space to select every keyframe inside the rectangle.
+
 Both views share the playhead, zoom, scroll and selection, so switching never
-loses your place.
+loses your place. Scene tabs in the **Scene Bar** show a small live **thumbnail**
+of each scene so you can tell them apart at a glance.
 
 ### Zoom & scroll
 

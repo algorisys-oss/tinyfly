@@ -1,9 +1,10 @@
-import { createSignal, For, Show, onCleanup } from 'solid-js'
+import { createSignal, createEffect, For, Show, onCleanup } from 'solid-js'
 import type { Component } from 'solid-js'
 import type { ProjectStore } from '../stores/project-store'
 import type { SceneDefinition } from '../stores/scene-types'
 import type { SceneTransition } from '../../player/sequence-types'
 import { DEFAULT_TRANSITION } from '../../player/sequence-types'
+import { renderSceneThumbnail } from '../utils/scene-thumbnail'
 import { TransitionDialog } from './transition-dialog'
 import './scene-bar.css'
 
@@ -43,6 +44,40 @@ export const SceneBar: Component<SceneBarProps> = (props) => {
 
   const scenes = () => props.projectStore.getScenes()
   const activeSceneId = () => props.projectStore.currentProject().activeSceneId
+
+  // Per-scene tab thumbnails. Generate a thumbnail once for any scene that
+  // doesn't already have one (the editor keeps the *active* scene's thumbnail
+  // fresh as you edit — see captureThumbnail). `thumbVersion` re-reads the
+  // (non-reactive) backend cache after a generation or a scene switch.
+  const [thumbVersion, setThumbVersion] = createSignal(0)
+  const attempted = new Set<string>()
+
+  createEffect(() => {
+    const canvas = props.projectStore.currentProject().canvas
+    for (const scene of scenes()) {
+      if (attempted.has(scene.id)) continue
+      attempted.add(scene.id)
+      if (props.projectStore.getThumbnail(scene.id)) continue
+      renderSceneThumbnail(scene.elements, canvas).then((url) => {
+        if (url) {
+          props.projectStore.setThumbnail(scene.id, url)
+          setThumbVersion((v) => v + 1)
+        }
+      })
+    }
+  })
+
+  // Nudge a re-read when the active scene changes (its thumbnail may have been
+  // refreshed by the editor while it was active).
+  createEffect(() => {
+    activeSceneId()
+    setThumbVersion((v) => v + 1)
+  })
+
+  const thumbOf = (sceneId: string) => {
+    thumbVersion()
+    return props.projectStore.getThumbnail(sceneId)
+  }
 
   function handleTabClick(sceneId: string) {
     if (sceneId === activeSceneId()) return
@@ -171,6 +206,9 @@ export const SceneBar: Component<SceneBarProps> = (props) => {
                 onContextMenu={(e) => handleContextMenu(e, scene.id)}
                 title={scene.name}
               >
+                <Show when={thumbOf(scene.id)}>
+                  <img class="scene-tab-thumb" src={thumbOf(scene.id)!} alt="" />
+                </Show>
                 <Show
                   when={renamingId() === scene.id}
                   fallback={<span class="scene-tab-name">{scene.name}</span>}

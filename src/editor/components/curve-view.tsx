@@ -74,6 +74,7 @@ export const CurveView: Component<CurveViewProps> = (props) => {
 
   const [drag, setDrag] = createSignal<CurveDrag | null>(null)
   const [hDrag, setHDrag] = createSignal<HandleDrag | null>(null)
+  const [overlay, setOverlay] = createSignal(false)
 
   const handleRulerClick = (e: MouseEvent) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
@@ -81,12 +82,76 @@ export const CurveView: Component<CurveViewProps> = (props) => {
     props.store.seek(Math.max(0, xToTime(x)))
   }
 
+  // ---- Box (rubber-band) selection over the lanes ----
+  const LABEL_W = 120
+  const LANE_ROW_H = LANE_HEIGHT + 1 // + .curve-lane border
+  let tracksRef: HTMLDivElement | undefined
+  let boxStart: { x: number; y: number } | null = null
+  let boxMoved = false
+  const [box, setBox] = createSignal<{ x1: number; y1: number; x2: number; y2: number } | null>(null)
+
+  const trackCoords = (e: MouseEvent) => {
+    // tracksRef is the non-scrolling .curve-lanes; its rect already reflects the
+    // parent's scroll, so client-relative coords are the content coords we want.
+    const rect = tracksRef!.getBoundingClientRect()
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top }
+  }
+
+  const onBoxMove = (e: MouseEvent) => {
+    if (!boxStart) return
+    const { x, y } = trackCoords(e)
+    if (!boxMoved && Math.hypot(x - boxStart.x, y - boxStart.y) < 4) return
+    boxMoved = true
+    setBox({ x1: boxStart.x, y1: boxStart.y, x2: x, y2: y })
+  }
+
+  const onBoxUp = () => {
+    window.removeEventListener('mousemove', onBoxMove)
+    window.removeEventListener('mouseup', onBoxUp)
+    const b = box()
+    if (boxMoved && b) {
+      const minX = Math.min(b.x1, b.x2)
+      const maxX = Math.max(b.x1, b.x2)
+      const minY = Math.min(b.y1, b.y2)
+      const maxY = Math.max(b.y1, b.y2)
+      const refs: { trackId: string; index: number }[] = []
+      numericTracks().forEach((track, r) => {
+        const { vmin, vmax } = rangeOf(track)
+        track.keyframes.forEach((kf, i) => {
+          const cx = LABEL_W + timeToX(kf.time) - scroll()
+          const cy = r * LANE_ROW_H + valueToY(kf.value as number, vmin, vmax)
+          if (cx >= minX && cx <= maxX && cy >= minY && cy <= maxY) {
+            refs.push({ trackId: track.id, index: i })
+          }
+        })
+      })
+      props.store.selectKeyframes(refs)
+    }
+    boxStart = null
+    boxMoved = false
+    setBox(null)
+  }
+
+  const onTracksMouseDown = (e: MouseEvent) => {
+    // Only in lanes mode, and only on empty space (points/handles stopPropagation).
+    if (overlay() || e.button !== 0) return
+    boxStart = trackCoords(e)
+    boxMoved = false
+    window.addEventListener('mousemove', onBoxMove)
+    window.addEventListener('mouseup', onBoxUp)
+  }
+
+  onCleanup(() => {
+    window.removeEventListener('mousemove', onBoxMove)
+    window.removeEventListener('mouseup', onBoxUp)
+  })
+
   // ---- Value range (per track), padded so the curve breathes ----
   const rangeOf = (track: Track) => paddedRange(track.keyframes)
 
-  const valueToY = (v: number, vmin: number, vmax: number) => {
+  const valueToY = (v: number, vmin: number, vmax: number, height = LANE_HEIGHT) => {
     const span = vmax - vmin || 1
-    return LANE_HEIGHT - ((v - vmin) / span) * LANE_HEIGHT
+    return height - ((v - vmin) / span) * height
   }
 
   // ---- Keyframes as displayed (accounts for an in-progress point/handle drag) ----
@@ -106,16 +171,21 @@ export const CurveView: Component<CurveViewProps> = (props) => {
   }
 
   /** Build the SVG path for a track's eased value curve. */
-  const curvePath = (track: Track, vmin: number, vmax: number): string => {
+  const curvePath = (track: Track, vmin: number, vmax: number, height = LANE_HEIGHT): string => {
     const pts = sampleCurve(displayKeyframes(track), Math.max(duration(), 5000), SAMPLES)
     if (pts.length === 0) return ''
     return pts
       .map(
         (pt, i) =>
-          `${i === 0 ? 'M' : 'L'} ${timeToX(pt.time).toFixed(1)} ${valueToY(pt.value, vmin, vmax).toFixed(1)}`
+          `${i === 0 ? 'M' : 'L'} ${timeToX(pt.time).toFixed(1)} ${valueToY(pt.value, vmin, vmax, height).toFixed(1)}`
       )
       .join(' ')
   }
+
+  /** Distinct colours for overlay curves. */
+  const PALETTE = ['#4a9eff', '#ff6b6b', '#3ecf7a', '#ffcc44', '#b98cff', '#ff8f4a', '#4ad6d6', '#f06bd0']
+  const OVERLAY_HEIGHT = 280
+  const colorFor = (i: number) => PALETTE[i % PALETTE.length]
 
   // ---- Keyframe point dragging (time + value) ----
   const onPointDown = (track: Track, index: number, e: MouseEvent) => {
@@ -282,6 +352,69 @@ export const CurveView: Component<CurveViewProps> = (props) => {
 
   const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2))
 
+  // Overlay mode: all numeric curves on one shared axis (each still normalized to
+  // its own range), coloured, with a legend. A comparison view — click a point to
+  // select it, then switch to Lanes to drag/edit.
+  const OverlayBlock: Component = () => (
+    <div class="curve-overlay">
+      <div class="curve-legend">
+        <For each={numericTracks()}>
+          {(t, i) => (
+            <span class="curve-legend-item">
+              <span class="curve-legend-swatch" style={{ background: colorFor(i()) }} />
+              {t.target} · {t.property}
+            </span>
+          )}
+        </For>
+      </div>
+      <div class="curve-lane-area" style={{ height: `${OVERLAY_HEIGHT}px` }}>
+        <svg
+          class="curve-svg"
+          style={{ left: `${-scroll()}px`, width: `${contentWidth()}px`, height: `${OVERLAY_HEIGHT}px` }}
+          width={contentWidth()}
+          height={OVERLAY_HEIGHT}
+        >
+          <line x1="0" y1={OVERLAY_HEIGHT / 2} x2={contentWidth()} y2={OVERLAY_HEIGHT / 2} class="curve-grid" />
+          <For each={numericTracks()}>
+            {(track, i) => {
+              const rng = rangeOf(track)
+              return (
+                <g>
+                  <path
+                    d={curvePath(track, rng.vmin, rng.vmax, OVERLAY_HEIGHT)}
+                    class="curve-path-overlay"
+                    style={{ stroke: colorFor(i()) }}
+                  />
+                  <For each={track.keyframes}>
+                    {(kf, ki) => (
+                      <circle
+                        class="curve-point-overlay"
+                        classList={{ selected: props.store.isKeyframeSelected(track.id, ki()) }}
+                        cx={timeToX(kf.time)}
+                        cy={valueToY(kf.value as number, rng.vmin, rng.vmax, OVERLAY_HEIGHT)}
+                        r={4}
+                        style={{ stroke: colorFor(i()) }}
+                        onMouseDown={(e) => {
+                          e.stopPropagation()
+                          props.store.selectTrack(track.id)
+                          props.store.selectKeyframe(track.id, ki())
+                        }}
+                      />
+                    )}
+                  </For>
+                </g>
+              )
+            }}
+          </For>
+        </svg>
+        <div
+          class="curve-lane-playhead"
+          style={{ left: `${timeToX(props.store.currentTime()) - scroll()}px` }}
+        />
+      </div>
+    </div>
+  )
+
   return (
     <div class="curve-view">
       {/* Shared ruler + playhead (same store, so it stays in sync with the dope sheet) */}
@@ -294,10 +427,41 @@ export const CurveView: Component<CurveViewProps> = (props) => {
       </div>
 
       <div class="curve-tracks">
+        <div class="curve-mode-switch">
+          <button
+            class="curve-mode-btn"
+            classList={{ active: !overlay() }}
+            onClick={() => setOverlay(false)}
+            title="Each track in its own lane (editable)"
+          >
+            Lanes
+          </button>
+          <button
+            class="curve-mode-btn"
+            classList={{ active: overlay() }}
+            onClick={() => setOverlay(true)}
+            title="All curves on one shared axis (compare)"
+          >
+            Overlay
+          </button>
+        </div>
         <Show
           when={numericTracks().length > 0}
           fallback={<div class="curve-empty">No numeric tracks to graph. Animate a value like x, opacity, scale or rotate to see its curve here.</div>}
         >
+          <Show when={!overlay()} fallback={<OverlayBlock />}>
+          <div class="curve-lanes" ref={tracksRef} onMouseDown={onTracksMouseDown}>
+            <Show when={box()}>
+              <div
+                class="selection-box"
+                style={{
+                  left: `${Math.min(box()!.x1, box()!.x2)}px`,
+                  top: `${Math.min(box()!.y1, box()!.y2)}px`,
+                  width: `${Math.abs(box()!.x2 - box()!.x1)}px`,
+                  height: `${Math.abs(box()!.y2 - box()!.y1)}px`,
+                }}
+              />
+            </Show>
           <For each={numericTracks()}>
             {(track) => {
               const range = createMemo(() => {
@@ -412,6 +576,8 @@ export const CurveView: Component<CurveViewProps> = (props) => {
               )
             }}
           </For>
+          </div>
+          </Show>
         </Show>
 
         <Show when={skippedCount() > 0}>

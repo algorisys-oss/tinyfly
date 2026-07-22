@@ -304,30 +304,48 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
     setShowSettings(true)
   }
 
-  /** Render + store a thumbnail for a specific project (best-effort). */
+  /**
+   * Render one thumbnail for the given scene and store it under BOTH the
+   * project id (gallery card) and the scene id (scene-bar tab). They share the
+   * same image because the gallery shows a project's active scene.
+   */
   const captureThumbnailFor = async (
-    id: string,
+    projectId: string,
+    sceneId: string,
     elements: ReturnType<typeof sceneStore.exportElements>,
     canvas: ReturnType<typeof projectStore.currentProject>['canvas']
   ) => {
     const url = await renderSceneThumbnail(elements, canvas)
-    if (url) projectStore.setThumbnail(id, url)
+    if (url) {
+      projectStore.setThumbnail(projectId, url)
+      projectStore.setThumbnail(sceneId, url)
+    }
   }
 
-  /** Snapshot the current scene as a gallery thumbnail (best-effort). */
+  /** Snapshot the current (active) scene as gallery + scene-tab thumbnail. */
   const captureThumbnail = () => {
     const project = projectStore.currentProject()
-    return captureThumbnailFor(project.id, sceneStore.exportElements(), project.canvas)
+    return captureThumbnailFor(
+      project.id,
+      project.activeSceneId,
+      sceneStore.exportElements(),
+      project.canvas
+    )
   }
 
   /**
-   * Fire a thumbnail capture for the project we're about to leave, using its
-   * state snapshotted *now* (before the scene store is reloaded), so a project
+   * Fire a thumbnail capture for the project/scene we're about to leave, using
+   * its state snapshotted *now* (before the scene store is reloaded), so it
    * always has a current thumbnail even if you switch away immediately.
    */
   const captureOutgoingThumbnail = () => {
     const project = projectStore.currentProject()
-    void captureThumbnailFor(project.id, sceneStore.exportElements(), project.canvas)
+    void captureThumbnailFor(
+      project.id,
+      project.activeSceneId,
+      sceneStore.exportElements(),
+      project.canvas
+    )
   }
 
   // Keep gallery thumbnails fresh while editing. Rendering a thumbnail is a bit

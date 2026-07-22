@@ -37,6 +37,12 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
   }
 
   const handleTrackClick = (track: Track, _e: MouseEvent) => {
+    // A just-completed box drag ends with a click on the row; don't let it
+    // collapse the box selection down to a single-track select.
+    if (boxJustFinished) {
+      boxJustFinished = false
+      return
+    }
     props.store.selectTrack(track.id)
   }
 
@@ -144,6 +150,69 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
     cleanupDragListeners()
   })
 
+  // ---- Box (rubber-band) selection over the track area ----
+  const ROW_H = 32 // matches .timeline-track height
+  const LABEL_W = 120 // matches .track-label width
+  let tracksRef: HTMLDivElement | undefined
+  let boxStart: { x: number; y: number } | null = null
+  let boxMoved = false
+  let boxJustFinished = false
+  const [box, setBox] = createSignal<{ x1: number; y1: number; x2: number; y2: number } | null>(null)
+
+  const trackCoords = (e: MouseEvent) => {
+    const rect = tracksRef!.getBoundingClientRect()
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top + tracksRef!.scrollTop }
+  }
+
+  const onBoxMove = (e: MouseEvent) => {
+    if (!boxStart) return
+    const { x, y } = trackCoords(e)
+    if (!boxMoved && Math.hypot(x - boxStart.x, y - boxStart.y) < 4) return
+    boxMoved = true
+    setBox({ x1: boxStart.x, y1: boxStart.y, x2: x, y2: y })
+  }
+
+  const onBoxUp = () => {
+    window.removeEventListener('mousemove', onBoxMove)
+    window.removeEventListener('mouseup', onBoxUp)
+    const b = box()
+    if (boxMoved && b) {
+      const minX = Math.min(b.x1, b.x2)
+      const maxX = Math.max(b.x1, b.x2)
+      const minY = Math.min(b.y1, b.y2)
+      const maxY = Math.max(b.y1, b.y2)
+      const refs: { trackId: string; index: number }[] = []
+      tracks().forEach((track, r) => {
+        const cy = r * ROW_H + ROW_H / 2
+        if (cy < minY || cy > maxY) return
+        track.keyframes.forEach((kf, i) => {
+          const cx = LABEL_W + timeToX(kf.time) - props.store.state.scrollPosition
+          if (cx >= minX && cx <= maxX) refs.push({ trackId: track.id, index: i })
+        })
+      })
+      props.store.selectKeyframes(refs)
+      boxJustFinished = true // suppress the click that follows the drag
+    }
+    boxStart = null
+    boxMoved = false
+    setBox(null)
+  }
+
+  const onTracksMouseDown = (e: MouseEvent) => {
+    // Keyframes stopPropagation on their own mousedown, so this only fires on
+    // empty track area. Left button only.
+    if (e.button !== 0) return
+    boxStart = trackCoords(e)
+    boxMoved = false
+    window.addEventListener('mousemove', onBoxMove)
+    window.addEventListener('mouseup', onBoxUp)
+  }
+
+  onCleanup(() => {
+    window.removeEventListener('mousemove', onBoxMove)
+    window.removeEventListener('mouseup', onBoxUp)
+  })
+
   return (
     <div class="timeline-view">
       {/* Time ruler */}
@@ -161,7 +230,18 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
       </div>
 
       {/* Tracks */}
-      <div class="timeline-tracks">
+      <div class="timeline-tracks" ref={tracksRef} onMouseDown={onTracksMouseDown}>
+        {box() && (
+          <div
+            class="selection-box"
+            style={{
+              left: `${Math.min(box()!.x1, box()!.x2)}px`,
+              top: `${Math.min(box()!.y1, box()!.y2)}px`,
+              width: `${Math.abs(box()!.x2 - box()!.x1)}px`,
+              height: `${Math.abs(box()!.y2 - box()!.y1)}px`,
+            }}
+          />
+        )}
         <For each={tracks()}>
           {(track) => (
             <div
