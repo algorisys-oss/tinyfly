@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.28.3](v0.28.3.md) | 2026-07-22 | Timeline Expand button now truly maximizes (hides preview) for a full timeline view on any window height |
 | [v0.28.2](v0.28.2.md) | 2026-07-22 | Fix demo animation (missing box element) + timeline pane clipping its rows on short windows |
 | [v0.28.1](v0.28.1.md) | 2026-07-22 | Taller/resizable/persistent timeline pane + one-click Expand (fixes the cramped bottom pane) |
 | [v0.28.0](v0.28.0.md) | 2026-07-22 | Symbols animate in export — GIF/WebP/MP4 bake in a symbol's nested animation and swaps (lip-sync) |

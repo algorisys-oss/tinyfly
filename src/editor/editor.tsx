@@ -106,19 +106,11 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
     }
   })
 
-  // One-click expand: flip to a tall, timeline-focused layout and back.
+  // One-click maximize: hide the preview and give the whole centre area to the
+  // timeline (CSS handles the layout via `.timeline-maximized`). Guarantees a
+  // full timeline view regardless of window height.
   const [timelineExpanded, setTimelineExpanded] = createSignal(false)
-  let heightBeforeExpand = DEFAULT_TIMELINE_HEIGHT
-  const toggleTimelineExpand = () => {
-    if (timelineExpanded()) {
-      setTimelineExpanded(false)
-      setTimelineHeight(heightBeforeExpand)
-    } else {
-      heightBeforeExpand = timelineHeight()
-      setTimelineExpanded(true)
-      setTimelineHeight(maxTimelineHeight())
-    }
-  }
+  const toggleTimelineExpand = () => setTimelineExpanded((v) => !v)
 
   const startPreviewResize = (e: PointerEvent) => {
     e.preventDefault()
@@ -672,7 +664,7 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
           </button>
         </Show>
 
-        <div class="editor-center">
+        <div class="editor-center" classList={{ 'timeline-maximized': timelineExpanded() }}>
           <section class={`editor-preview ${sceneTransitionClass()}`}>
             <PreviewPanel store={store} sceneStore={sceneStore} projectStore={projectStore} onEditSymbol={enterSymbol} />
           </section>
@@ -693,7 +685,10 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
             <span class="editor-vsplit-grip" />
           </div>
 
-          <section class="editor-timeline" style={{ height: `${timelineHeight()}px` }}>
+          <section
+            class="editor-timeline"
+            style={{ height: timelineExpanded() ? undefined : `${timelineHeight()}px` }}
+          >
             <TimelinePanel store={store} expanded={timelineExpanded()} onToggleExpand={toggleTimelineExpand} />
           </section>
         </div>

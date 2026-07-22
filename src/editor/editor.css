@@ -415,6 +415,19 @@
   flex-direction: column;
 }
 
+/* Timeline maximized (Expand button): hide the preview + splitter and let the
+   timeline fill the whole centre — a full timeline view on any window height. */
+.editor-center.timeline-maximized .editor-preview,
+.editor-center.timeline-maximized .editor-vsplit {
+  display: none;
+}
+
+.editor-center.timeline-maximized .editor-timeline {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+}
+
 /* Draggable splitter between the preview and the timeline. */
 .editor-vsplit {
   flex-shrink: 0;
