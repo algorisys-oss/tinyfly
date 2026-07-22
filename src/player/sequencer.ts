@@ -308,6 +308,14 @@ export class TinyflySequencer {
     container.innerHTML = ''
     adapter.clearTargets()
 
+    // Camera layer: a "Camera" target the scene timeline can pan/zoom/rotate.
+    // Identity (inert) unless the scene has Camera tracks.
+    const cameraLayer = document.createElement('div')
+    cameraLayer.style.cssText = 'position:absolute;inset:0;transform-origin:center center'
+    cameraLayer.setAttribute('data-tinyfly', 'Camera')
+    container.appendChild(cameraLayer)
+    adapter.registerTarget('Camera', cameraLayer)
+
     for (const element of scene.elements) {
       if (!element.html) continue
 
@@ -316,7 +324,7 @@ export class TinyflySequencer {
       temp.innerHTML = element.html.trim()
       const node = temp.firstElementChild as HTMLElement
       if (node) {
-        container.appendChild(node)
+        cameraLayer.appendChild(node)
 
         // Register target for the adapter
         const tinyflyAttr = node.getAttribute('data-tinyfly')
@@ -327,7 +335,7 @@ export class TinyflySequencer {
     }
 
     // Bind nested symbol instances in this slot to their symbol timelines.
-    this.setupNested(container, adapter)
+    this.setupNested(cameraLayer, adapter)
   }
 
   /**

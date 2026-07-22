@@ -52,10 +52,10 @@ track, add/drag keyframes, edit values in the Property Panel).
 1. **Foundation (this slice):** `Camera` layer in the **DOM preview** + store
    `addCamera` / `removeCamera` / `hasCamera` + a **🎥 Camera** toggle in the
    preview header. Camera animation plays in the DOM preview. Unit-tested.
-2. **Everywhere else:** apply the camera in the **Canvas/SVG previews** and
-   **raster export** (a `ctx`/viewBox transform from the `Camera` state per
-   frame), and emit the `Camera` wrapper in **embeds** (single scene + sequence)
-   so `data-tinyfly="Camera"` animates via the player/sequencer.
+2. **Everywhere else (done):** the camera applies in the **Canvas** and **SVG**
+   previews, **raster export** (GIF/WebP/MP4), and **embeds** (single-scene via a
+   `Camera` wrapper the player animates; multi-scene via a per-scene camera layer
+   in the sequencer). `src/editor/utils/camera.ts` holds the shared transform math.
 3. **On-stage camera frame:** a draggable camera rectangle in the preview (drag to
    pan, corners to zoom, a handle to rotate) that writes Camera keyframes, plus a
    dedicated camera row at the top of the timeline.
@@ -66,8 +66,6 @@ track, add/drag keyframes, edit values in the Property Panel).
 
 ## Known limitations (foundation)
 
-- Camera renders in the **DOM preview** only so far (Canvas/SVG/export/embed are
-  slice 2).
 - Editing elements while the playhead sits on a **camera-transformed** frame is
   approximate — the drag math assumes identity. Set up your scene first, then
   keyframe the camera (slice 4 fixes this).

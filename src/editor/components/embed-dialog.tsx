@@ -67,7 +67,7 @@ export const EmbedDialog: Component<EmbedDialogProps> = (props) => {
     if (elements.length === 0) {
       return '  <!-- Add your target elements here -->\n  <div data-tinyfly="Box" style="position: absolute; left: 40px; top: 70px; width: 60px; height: 60px; background: #4a9eff; border-radius: 4px;"></div>'
     }
-    return elements
+    const inner = elements
       .filter((el) => el.visible && el.type !== 'group')
       .map((el) => {
         if (el.type === 'symbol') {
@@ -78,6 +78,12 @@ export const EmbedDialog: Component<EmbedDialogProps> = (props) => {
       })
       .filter(Boolean)
       .join('\n')
+
+    // Camera: wrap everything in a "Camera" layer the player animates.
+    if (props.store.hasCamera()) {
+      return `  <div data-tinyfly="Camera" style="position: absolute; inset: 0; transform-origin: center center;">\n${inner}\n  </div>`
+    }
+    return inner
   })
 
   /** The `symbols: [...]` option line for the play() call, if any. */

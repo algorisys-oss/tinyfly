@@ -459,3 +459,34 @@ describe('nested symbol instances', () => {
     s.destroy()
   })
 })
+
+describe('camera in sequences', () => {
+  let container: HTMLElement
+  beforeEach(() => { container = createContainer() })
+  afterEach(() => container.remove())
+
+  it('animates the camera layer from the scene timeline', async () => {
+    const seq: SequenceDefinition = {
+      id: 'seq', name: 'Seq', canvas: { width: 300, height: 200 },
+      scenes: [{
+        id: 's', name: 'S',
+        elements: [{
+          type: 'rect', name: 'box', x: 0, y: 0, width: 50, height: 50, rotation: 0, opacity: 1,
+          html: '<div data-tinyfly="box" style="position:absolute"></div>',
+        }],
+        timeline: {
+          id: 't', config: { duration: 1000, loop: 0 },
+          tracks: [{ id: 'cz', target: 'Camera', property: 'scale', keyframes: [{ time: 0, value: 2 }, { time: 1000, value: 2 }] }],
+        },
+        transition: { type: 'none', duration: 0 },
+      }],
+    }
+    const s = new TinyflySequencer(container)
+    await s.load(seq)
+    s.goToScene(0)
+    const cam = container.querySelector('[data-tinyfly="Camera"]') as HTMLElement
+    expect(cam).toBeTruthy()
+    expect(cam.style.transform).toContain('scale(2)')
+    s.destroy()
+  })
+})

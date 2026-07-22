@@ -702,11 +702,11 @@ starts still. Keyframe it like any track: select a Camera track in the timeline,
 add/drag keyframes, and set values in the Property Panel — e.g. keyframe `scale`
 from `1` to `2` for a push-in, or `x` across the frame for a pan.
 
-> **This release (v0.34.0)** covers the camera in the **DOM preview**. Coming
-> next: the camera in the Canvas/SVG previews, **raster export** and **embeds**,
-> plus an on-stage draggable camera frame. Tip: set up your elements first, then
-> keyframe the camera (editing while the camera is mid-move is approximate for
-> now). See [camera.md](camera.md).
+> The camera applies in **all previews (DOM/Canvas/SVG)**, **raster export**
+> (GIF/WebP/MP4) and **embeds** (single & multi-scene). Coming next: an on-stage
+> draggable camera frame. Tip: set up your elements first, then keyframe the
+> camera (editing while the camera is mid-move is approximate for now). See
+> [camera.md](camera.md).
 
 ## Project Management
 

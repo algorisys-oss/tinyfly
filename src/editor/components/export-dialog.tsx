@@ -17,6 +17,7 @@ import {
 } from '../../engine/export'
 import { buildExportComposite } from '../utils/export-composite'
 import { buildSymbolExportLayer } from '../utils/symbol-export-layer'
+import { cameraFromState, applyCameraToCtx } from '../utils/camera'
 import { useEscapeClose } from '../utils/use-escape-close'
 import { slugifyFilename } from '../utils/filename'
 import './export-dialog.css'
@@ -156,6 +157,9 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
       ctx.imageSmoothingEnabled = true
       ctx.imageSmoothingQuality = 'high'
       ctx.scale(scaleX, scaleY)
+      // Camera: pan/zoom/rotate the whole stage (background stays fixed).
+      const cam = cameraFromState(sceneState)
+      if (cam) applyCameraToCtx(ctx, cam, canvas.width / 2, canvas.height / 2)
       composite.adapter.render(ctx)
       await symbolLayer.draw(ctx, timeMs, sceneState)
       ctx.restore()

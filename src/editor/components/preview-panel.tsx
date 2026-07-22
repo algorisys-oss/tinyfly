@@ -5,6 +5,7 @@ import { CanvasAdapter } from '../../adapters/canvas'
 import { SVGAdapter } from '../../adapters/svg'
 import { deserializeTimeline, type Timeline } from '../../engine'
 import { expandSymbolInstances, shownSymbolId } from '../utils/expand-symbols'
+import { cameraFromState, applyCameraToCtx, cameraSvgTransform } from '../utils/camera'
 import type { EditorStore } from '../stores/editor-store'
 import type { ProjectStore } from '../stores/project-store'
 import { fillToCss, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type GroupElement, type SymbolInstanceElement } from '../stores/scene-store'
@@ -131,6 +132,12 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
   /** Artboard background comes from the project, so preview matches export. */
   const artboardBg = () => props.projectStore.currentProject().canvas.background
   const [previewScale, setPreviewScale] = createSignal(1)
+
+  /** SVG camera transform at the current playhead (undefined = no camera). */
+  const svgCameraTransform = () => {
+    const cam = cameraFromState(props.store.state.timeline?.getStateAtTime(props.store.currentTime()))
+    return cam ? cameraSvgTransform(cam, artboardW() / 2, artboardH() / 2) : undefined
+  }
   // Maximize expands the preview to fill the window so the stage can scale up.
   const [maximized, setMaximized] = createSignal(false)
   const recomputeScale = () => {
@@ -282,7 +289,11 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     const ctx = canvas2dRef.getContext('2d')
     if (ctx) {
       ctx.clearRect(0, 0, canvas2dRef.width, canvas2dRef.height)
+      const cam = cameraFromState(props.store.state.timeline?.getStateAtTime(props.store.currentTime()))
+      ctx.save()
+      if (cam) applyCameraToCtx(ctx, cam, canvas2dRef.width / 2, canvas2dRef.height / 2)
       canvasAdapter.render(ctx)
+      ctx.restore()
     }
   }
 
@@ -1904,13 +1915,15 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
               viewBox={`0 0 ${artboardW()} ${artboardH()}`}
               preserveAspectRatio="xMidYMid meet"
             >
-              <For
-                each={expandSymbolInstances(props.sceneStore.elements(), props.projectStore.getSymbol).filter(
-                  (el) => el.type !== 'symbol' && !isGroupChild(el.id)
-                )}
-              >
-                {(element) => renderSVGElement(element)}
-              </For>
+              <g transform={svgCameraTransform()}>
+                <For
+                  each={expandSymbolInstances(props.sceneStore.elements(), props.projectStore.getSymbol).filter(
+                    (el) => el.type !== 'symbol' && !isGroupChild(el.id)
+                  )}
+                >
+                  {(element) => renderSVGElement(element)}
+                </For>
+              </g>
             </svg>
             <Show when={props.sceneStore.elements().length === 0}>
               <div class="preview-placeholder">

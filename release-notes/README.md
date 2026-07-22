@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.35.0](v0.35.0.md) | 2026-07-22 | Camera everywhere — Canvas/SVG previews, raster export, and embeds (single + multi-scene) |
 | [v0.34.0](v0.34.0.md) | 2026-07-22 | Phase B starts: Camera — animate pan/zoom/rotate of the whole stage (DOM preview) |
 | [v0.33.0](v0.33.0.md) | 2026-07-22 | Multi-scene sequence embeds animate symbols too (sequencer runs nested timelines) |
 | [v0.32.0](v0.32.0.md) | 2026-07-22 | Animated symbols in single-scene embeds — the player runs each instance's nested timeline |
