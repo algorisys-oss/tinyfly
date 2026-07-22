@@ -310,7 +310,9 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
 - [~] Phase B — Camera (animated pan/zoom/rotate), onion skinning, guides/grid/snapping
   - [x] Camera foundation: `Camera` layer in the DOM preview + addCamera/removeCamera/hasCamera + preview toggle; keyframe pan/zoom/rotate as ordinary tracks. See [docs/camera.md](docs/camera.md).
   - [x] Camera in Canvas/SVG preview + raster export + embeds (slice 2) — shared `camera.ts` transform; sequencer per-scene camera layer.
-  - [ ] On-stage camera frame + timeline camera row (slice 3); edit-in-camera coords (slice 4).
+  - [x] Camera demo templates (Push In, Pan Across, Orbit Reveal).
+  - [x] Camera inspector (slice 3a): 🎥 Camera section in the Property Panel — Pan X/Y, Zoom, Rotation keyframed at the playhead via `setCameraValue`; Reset / Remove.
+  - [ ] On-stage draggable camera frame + timeline camera row (slice 3b); edit-in-camera coords (slice 4).
   - [ ] Onion skinning; guides/grid/rulers/snapping.
 - [ ] Phase C — Pen tool + polygon/star, shape-tween morph tooling, video/sprite-sheet export
 - [ ] Out of scope: bone/IK rigging, frame-by-frame drawing, natural-media brushes

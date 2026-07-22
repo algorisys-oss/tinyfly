@@ -205,6 +205,39 @@ export function createEditorStore() {
     }
   }
 
+  /** Current camera value for a prop (x/y/scale/rotate) at the playhead. */
+  function getCameraValue(prop: 'x' | 'y' | 'scale' | 'rotate'): number {
+    const fallback = prop === 'scale' ? 1 : 0
+    if (!state.timeline) return fallback
+    const v = state.timeline.getStateAtTime(currentTime()).values.get('Camera')?.get(prop)
+    return typeof v === 'number' ? v : fallback
+  }
+
+  /**
+   * Set a camera prop at the playhead, keyframing it. Upserts a keyframe at the
+   * current time on the matching Camera track (creating the track if needed), so
+   * dragging the camera controls records animation the way a pan/zoom author
+   * expects. No-op cleanup is left to the user.
+   */
+  function setCameraValue(prop: 'x' | 'y' | 'scale' | 'rotate', value: number): void {
+    if (!state.timeline) return
+    const t = Math.round(currentTime())
+    const track = state.timeline.tracks.find((tr) => tr.target === 'Camera' && tr.property === prop)
+    if (!track) {
+      addTrack({ id: `camera-${prop}-${Date.now()}`, target: 'Camera', property: prop, keyframes: [{ time: t, value }] })
+      return
+    }
+    pushHistory()
+    const kfs = [...track.keyframes]
+    const idx = kfs.findIndex((k) => Math.abs(k.time - t) < 1)
+    if (idx >= 0) kfs[idx] = { ...kfs[idx], value }
+    else kfs.push({ time: t, value })
+    kfs.sort((a, b) => a.time - b.time)
+    state.timeline.removeTrack(track.id)
+    state.timeline.addTrack(createTrack({ ...track, keyframes: kfs }))
+    bumpVersion()
+  }
+
   // Remove a track
   function removeTrack(trackId: string) {
     if (!state.timeline) return
@@ -758,6 +791,7 @@ export function createEditorStore() {
     duration,
     tracks,
     selectedTrack,
+    timelineVersion,
 
     // Timeline actions
     createNewTimeline,
@@ -769,6 +803,8 @@ export function createEditorStore() {
     addCamera,
     removeCamera,
     hasCamera,
+    getCameraValue,
+    setCameraValue,
     selectTrack,
     applyPreset,
     applyPresetStaggered,

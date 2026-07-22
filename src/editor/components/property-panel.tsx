@@ -51,6 +51,27 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
 
   const selectedElement = createMemo(() => props.sceneStore.selectedElement())
 
+  // Camera inspector: pan/zoom/rotate at the playhead. Reading timelineVersion +
+  // currentTime keeps the shown value live as the playhead moves or tracks change.
+  const hasCamera = createMemo(() => {
+    props.store.timelineVersion()
+    return props.store.hasCamera()
+  })
+  const camVal = (prop: 'x' | 'y' | 'scale' | 'rotate') => {
+    props.store.timelineVersion()
+    props.store.currentTime()
+    return props.store.getCameraValue(prop)
+  }
+  const setCam = (prop: 'x' | 'y' | 'scale' | 'rotate', v: number) => {
+    if (Number.isFinite(v)) props.store.setCameraValue(prop, v)
+  }
+  const resetCamera = () => {
+    setCam('x', 0)
+    setCam('y', 0)
+    setCam('scale', 1)
+    setCam('rotate', 0)
+  }
+
   // Text effect applied message
   const [textEffectMessage, setTextEffectMessage] = createSignal<string | null>(null)
 
@@ -1644,8 +1665,63 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
           )}
         </Show>
 
+        {/* Camera inspector: shown when a camera exists and nothing else is selected */}
+        <Show when={!selectedKeyframe() && !selectedElement() && hasCamera()}>
+          <div class="property-section">
+            <h4>🎥 Camera</h4>
+            <p class="property-hint">
+              Pan, zoom, and rotate the whole stage. Changes set a keyframe at the playhead.
+            </p>
+            <div class="property-row">
+              <label>Pan X</label>
+              <input
+                type="number"
+                step="1"
+                value={Math.round(camVal('x'))}
+                onInput={(e) => setCam('x', Number(e.currentTarget.value))}
+              />
+            </div>
+            <div class="property-row">
+              <label>Pan Y</label>
+              <input
+                type="number"
+                step="1"
+                value={Math.round(camVal('y'))}
+                onInput={(e) => setCam('y', Number(e.currentTarget.value))}
+              />
+            </div>
+            <div class="property-row">
+              <label>Zoom</label>
+              <input
+                type="number"
+                step="0.05"
+                min="0.05"
+                value={Math.round(camVal('scale') * 100) / 100}
+                onInput={(e) => setCam('scale', Math.max(0.05, Number(e.currentTarget.value)))}
+              />
+            </div>
+            <div class="property-row">
+              <label>Rotation°</label>
+              <input
+                type="number"
+                step="1"
+                value={Math.round(camVal('rotate'))}
+                onInput={(e) => setCam('rotate', Number(e.currentTarget.value))}
+              />
+            </div>
+            <div class="property-actions">
+              <button type="button" class="secondary-button" onClick={resetCamera}>
+                Reset to identity
+              </button>
+              <button type="button" class="secondary-button" onClick={() => props.store.removeCamera()}>
+                Remove camera
+              </button>
+            </div>
+          </div>
+        </Show>
+
         {/* Show no selection message */}
-        <Show when={!selectedKeyframe() && !selectedElement()}>
+        <Show when={!selectedKeyframe() && !selectedElement() && !hasCamera()}>
           <div class="no-selection">
             <p>Select an element or keyframe to edit properties</p>
           </div>

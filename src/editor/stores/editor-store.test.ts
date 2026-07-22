@@ -211,4 +211,46 @@ describe('camera', () => {
     expect(store.hasCamera()).toBe(false)
     expect(rawTracks(store).some((t) => t.target === 'Camera')).toBe(false)
   })
+
+  it('getCameraValue defaults to identity (0/0/1/0) with no camera', () => {
+    const store = createEditorStore()
+    store.createNewTimeline('tl', 'Cam', { duration: 2000 })
+    expect(store.getCameraValue('x')).toBe(0)
+    expect(store.getCameraValue('scale')).toBe(1)
+    expect(store.getCameraValue('rotate')).toBe(0)
+  })
+
+  it('setCameraValue keyframes a camera prop at the playhead', () => {
+    const store = createEditorStore()
+    store.createNewTimeline('tl', 'Cam', { duration: 2000 })
+    store.addCamera()
+    store.seek(1000)
+    store.setCameraValue('scale', 2)
+    const scale = rawTracks(store).find((t) => t.target === 'Camera' && t.property === 'scale')!
+    const kf = scale.keyframes.find((k) => k.time === 1000)!
+    expect(kf.value).toBe(2)
+    expect(store.getCameraValue('scale')).toBe(2)
+  })
+
+  it('setCameraValue updates an existing keyframe at the same time (no dup)', () => {
+    const store = createEditorStore()
+    store.createNewTimeline('tl', 'Cam', { duration: 2000 })
+    store.addCamera()
+    store.seek(1000)
+    store.setCameraValue('x', 50)
+    store.setCameraValue('x', 80)
+    const x = rawTracks(store).find((t) => t.target === 'Camera' && t.property === 'x')!
+    expect(x.keyframes.filter((k) => k.time === 1000)).toHaveLength(1)
+    expect(store.getCameraValue('x')).toBe(80)
+  })
+
+  it('setCameraValue creates the track when the prop has none', () => {
+    const store = createEditorStore()
+    store.createNewTimeline('tl', 'Cam', { duration: 2000 })
+    // No addCamera() — setting a value should create the track from scratch.
+    store.seek(500)
+    store.setCameraValue('rotate', 30)
+    expect(store.hasCamera()).toBe(true)
+    expect(store.getCameraValue('rotate')).toBe(30)
+  })
 })

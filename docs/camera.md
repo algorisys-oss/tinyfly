@@ -36,14 +36,22 @@ emitted — flows through export and embeds via the same adapters.
 ## Store API
 
 ```ts
-addCamera()      // add x/y/scale/rotate tracks on "Camera", seeded at identity
-removeCamera()   // drop all Camera tracks
-hasCamera()      // is a camera present?
+addCamera()                     // add x/y/scale/rotate tracks on "Camera", seeded at identity
+removeCamera()                  // drop all Camera tracks
+hasCamera()                     // is a camera present?
+getCameraValue(prop)            // current pan/zoom/rotate at the playhead
+setCameraValue(prop, value)     // keyframe a camera prop at the playhead (upsert)
 ```
 
 `addCamera` seeds each track with a keyframe at `0` and at the timeline's end, so
 it's ready to keyframe. Keyframe the camera like any track (select a Camera
 track, add/drag keyframes, edit values in the Property Panel).
+
+**Camera inspector.** With a camera present and nothing selected, the Property
+Panel shows a 🎥 **Camera** section with Pan X / Pan Y / Zoom / Rotation inputs.
+Editing a field calls `setCameraValue`, which upserts a keyframe **at the
+playhead** — so you scrub to a time, dial in the framing, and the pan/zoom is
+recorded. "Reset to identity" and "Remove camera" live there too.
 
 ---
 
@@ -56,9 +64,13 @@ track, add/drag keyframes, edit values in the Property Panel).
    previews, **raster export** (GIF/WebP/MP4), and **embeds** (single-scene via a
    `Camera` wrapper the player animates; multi-scene via a per-scene camera layer
    in the sequencer). `src/editor/utils/camera.ts` holds the shared transform math.
-3. **On-stage camera frame:** a draggable camera rectangle in the preview (drag to
-   pan, corners to zoom, a handle to rotate) that writes Camera keyframes, plus a
-   dedicated camera row at the top of the timeline.
+3. **Camera inspector (done):** a 🎥 **Camera** section in the Property Panel
+   (shown when a camera exists and nothing is selected) with Pan X/Y, Zoom, and
+   Rotation inputs that keyframe at the playhead via `setCameraValue`, plus
+   "Reset to identity" / "Remove camera". Unit-tested.
+3b. **On-stage camera frame (next):** a draggable camera rectangle in the preview
+   (drag to pan, corners to zoom, a handle to rotate) that writes the same Camera
+   keyframes, plus a dedicated camera row at the top of the timeline.
 4. **Edit-in-camera correctness:** element drag/resize math accounts for the
    current camera transform (today, edit at the camera's start/identity frame).
 
