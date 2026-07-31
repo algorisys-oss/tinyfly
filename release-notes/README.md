@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.46.0](v0.46.0.md) | 2026-07-31 | Editable scene duration + auto-extend past the end; timeline ruler aligned with the keyframe lanes; end-of-scene marker |
 | [v0.45.4](v0.45.4.md) | 2026-07-22 | Docs refresh — web help & README now cover every feature (pen, shapes, morph, camera, snapping, onion, sprite) |
 | [v0.45.3](v0.45.3.md) | 2026-07-22 | Pen-tool polish — points snap to grid/guides/elements; Alt drags a corner (cusp) |
 | [v0.45.2](v0.45.2.md) | 2026-07-22 | Pen-tool polish — drag existing anchors/handles to adjust points and curves mid-draw |

@@ -199,6 +199,16 @@
 - [x] Renderer switcher (DOM/Canvas/SVG) in preview panel
 - [x] Add "Algorisys" product showcase samples (6 viral-infographic demos: TinyFly, YappyDraw, HappyPaint, ProPeak, SkillzEngine, Ecosystem)
 - [x] Hard-reload the app when the version chip in the status bar is clicked
+- [x] **Scene duration is authorable and self-correcting** — the `2.000 / 2.000`
+  readout is now an editable field (seconds), the timeline auto-extends when a
+  keyframe is added or dragged past the end (so late keyframes always play), and
+  a **Fit** button appears when keyframes sit past the end after a manual trim.
+- [x] **Timeline ruler alignment** — the dope-sheet and curve-editor rulers were
+  offset from the keyframe lanes by the width of the track-label column, so ticks,
+  the playhead and keyframes never lined up. Ruler now sits in its own lane behind
+  a matching gutter; ruler clicks and track double-clicks map to the right time.
+- [x] **End-of-scene marker** — a dashed line at the duration plus dimming past it,
+  so keyframes that will never play are obvious at a glance.
 
 ## Phase 21: Advanced Features
 
@@ -418,7 +428,7 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
 
 ## Test Coverage
 
-- 645 tests passing
+- 722 tests passing
 - Easing functions: 48 tests
 - Interpolators: 21 tests
 - Clock: 19 tests
@@ -433,7 +443,7 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
 - Player: 30 tests
 - Sequencer: 30 tests
 - Scene store: 45 tests (incl. split-text)
-- Editor store: 6 tests (staggered presets)
+- Editor store: 29 tests (staggered presets, camera, scene duration)
 - Split-text util: 8 tests
 - Typewriter builder: 9 tests
 - Letter-stagger sample (engine integration): 4 tests

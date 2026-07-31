@@ -35,6 +35,8 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
   const timeToX = (time: number) => time * pixelsPerMs()
   const xToTime = (x: number) => x / pixelsPerMs()
 
+  // Bound to the ruler *lane* (right of the label gutter), so `rect.left` is
+  // already the zero mark — the same origin the keyframe lanes use.
   const handleRulerClick = (e: MouseEvent) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
     const x = e.clientX - rect.left + props.store.state.scrollPosition
@@ -52,6 +54,8 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
     props.store.selectTrack(track.id)
   }
 
+  // Bound to the keyframe lane, not the whole row: the row includes the label
+  // gutter, which would offset every added keyframe by the gutter's width.
   const handleTrackDoubleClick = (track: Track, e: MouseEvent) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
     const x = e.clientX - rect.left + props.store.state.scrollPosition
@@ -158,8 +162,14 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
 
   // ---- Box (rubber-band) selection over the track area ----
   const ROW_H = 32 // matches .timeline-track height
-  const LABEL_W = 120 // matches .track-label width
   let tracksRef: HTMLDivElement | undefined
+
+  // Distance from the track area's left edge to time zero, i.e. the width of the
+  // label gutter. Measured rather than hard-coded because the gutter narrows at
+  // the mobile breakpoints.
+  const laneOffset = () =>
+    (tracksRef?.querySelector('.track-keyframes') as HTMLElement | null)?.offsetLeft ?? 0
+
   let boxStart: { x: number; y: number } | null = null
   let boxMoved = false
   let boxJustFinished = false
@@ -188,11 +198,12 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
       const minY = Math.min(b.y1, b.y2)
       const maxY = Math.max(b.y1, b.y2)
       const refs: { trackId: string; index: number }[] = []
+      const originX = laneOffset()
       tracks().forEach((track, r) => {
         const cy = r * ROW_H + ROW_H / 2
         if (cy < minY || cy > maxY) return
         track.keyframes.forEach((kf, i) => {
-          const cx = LABEL_W + timeToX(kf.time) - props.store.state.scrollPosition
+          const cx = originX + timeToX(kf.time) - props.store.state.scrollPosition
           if (cx >= minX && cx <= maxX) refs.push({ trackId: track.id, index: i })
         })
       })
@@ -221,18 +232,28 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
 
   return (
     <div class="timeline-view">
-      {/* Time ruler */}
-      <div class="timeline-ruler" onClick={handleRulerClick}>
-        <TimeRuler
-          duration={duration()}
-          pixelsPerMs={pixelsPerMs()}
-          scrollPosition={props.store.state.scrollPosition}
-        />
-        {/* Playhead */}
-        <div
-          class="timeline-playhead"
-          style={{ left: `${timeToX(props.store.currentTime()) - props.store.state.scrollPosition}px` }}
-        />
+      {/* Time ruler. The gutter matches the track-label column so ruler ticks,
+          the playhead and keyframes all share one horizontal origin. */}
+      <div class="timeline-ruler">
+        <div class="ruler-gutter" />
+        <div class="ruler-lane" onClick={handleRulerClick}>
+          <TimeRuler
+            duration={duration()}
+            pixelsPerMs={pixelsPerMs()}
+            scrollPosition={props.store.state.scrollPosition}
+          />
+          {/* End of the scene — nothing past this line plays or exports. */}
+          <div
+            class="scene-end-marker"
+            style={{ left: `${timeToX(duration()) - props.store.state.scrollPosition}px` }}
+            title={`Scene ends at ${(duration() / 1000).toFixed(3)}s`}
+          />
+          {/* Playhead */}
+          <div
+            class="timeline-playhead"
+            style={{ left: `${timeToX(props.store.currentTime()) - props.store.state.scrollPosition}px` }}
+          />
+        </div>
       </div>
 
       {/* Tracks */}
@@ -257,7 +278,6 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
                 'camera-track': track.target === 'Camera',
               }}
               onClick={(e) => handleTrackClick(track, e)}
-              onDblClick={(e) => handleTrackDoubleClick(track, e)}
             >
               <div class="track-label">
                 <span class="track-target">
@@ -265,7 +285,18 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
                 </span>
                 <span class="track-property">{track.property}</span>
               </div>
-              <div class="track-keyframes">
+              <div
+                class="track-keyframes"
+                onDblClick={(e) => handleTrackDoubleClick(track, e)}
+              >
+                {/* Dim the region past the end of the scene — keyframes there
+                    are held, never played. */}
+                <div
+                  class="past-scene-end"
+                  style={{
+                    left: `${timeToX(duration()) - props.store.state.scrollPosition}px`,
+                  }}
+                />
                 <For each={track.keyframes}>
                   {(keyframe, index) => {
                     const isDragging = () => {

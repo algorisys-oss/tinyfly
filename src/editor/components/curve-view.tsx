@@ -417,13 +417,23 @@ export const CurveView: Component<CurveViewProps> = (props) => {
 
   return (
     <div class="curve-view">
-      {/* Shared ruler + playhead (same store, so it stays in sync with the dope sheet) */}
-      <div class="timeline-ruler" onClick={handleRulerClick}>
-        <TimeRuler duration={duration()} pixelsPerMs={pixelsPerMs()} scrollPosition={scroll()} />
-        <div
-          class="timeline-playhead"
-          style={{ left: `${timeToX(props.store.currentTime()) - scroll()}px` }}
-        />
+      {/* Shared ruler + playhead (same store, so it stays in sync with the dope
+          sheet). The gutter matches the lane label column so ticks line up with
+          the keyframes underneath them. */}
+      <div class="timeline-ruler">
+        <div class="ruler-gutter" />
+        <div class="ruler-lane" onClick={handleRulerClick}>
+          <TimeRuler duration={duration()} pixelsPerMs={pixelsPerMs()} scrollPosition={scroll()} />
+          <div
+            class="scene-end-marker"
+            style={{ left: `${timeToX(duration()) - scroll()}px` }}
+            title={`Scene ends at ${(duration() / 1000).toFixed(3)}s`}
+          />
+          <div
+            class="timeline-playhead"
+            style={{ left: `${timeToX(props.store.currentTime()) - scroll()}px` }}
+          />
+        </div>
       </div>
 
       <div class="curve-tracks">

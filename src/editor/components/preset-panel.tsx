@@ -79,15 +79,13 @@ export const PresetPanel: Component<PresetPanelProps> = (props) => {
       cursor = { target: cursorEl.id, baseX: first.x, blink: true }
     }
 
-    const { tracks, duration } = buildTypewriter(letters, {
+    const { tracks } = buildTypewriter(letters, {
       charDelay: typeDelay(),
       cursor,
     })
 
+    // addTracks grows the scene duration to cover the new keyframes.
     props.store.addTracks(tracks)
-    if (duration > props.store.duration()) {
-      props.store.setDuration(Math.ceil(duration))
-    }
 
     setAppliedMessage(`Typewriter applied to ${letters.length} letters`)
     setTimeout(() => setAppliedMessage(null), 2000)
@@ -125,10 +123,6 @@ export const PresetPanel: Component<PresetPanelProps> = (props) => {
         ],
       },
     ])
-
-    if (duration > props.store.duration()) {
-      props.store.setDuration(Math.ceil(duration))
-    }
 
     setAppliedMessage('Write-on applied')
     setTimeout(() => setAppliedMessage(null), 2000)

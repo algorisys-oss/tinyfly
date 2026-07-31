@@ -1,5 +1,6 @@
-import { createMemo, onMount, onCleanup } from 'solid-js'
+import { createMemo, createSignal, onMount, onCleanup, Show } from 'solid-js'
 import type { Component } from 'solid-js'
+import { MIN_DURATION_MS } from '../stores/editor-store'
 import type { EditorStore } from '../stores/editor-store'
 import './playback-controls.css'
 
@@ -20,6 +21,41 @@ export const PlaybackControls: Component<PlaybackControlsProps> = (props) => {
 
   const durationFormatted = createMemo(() =>
     formatTime(props.store.duration())
+  )
+
+  // The duration is edited in seconds, but held as a draft string while typing so
+  // partial input ("1.", "") isn't rounded away under the user's cursor.
+  const [durationDraft, setDurationDraft] = createSignal<string | null>(null)
+
+  const durationValue = () =>
+    durationDraft() ?? (props.store.duration() / 1000).toFixed(3)
+
+  const commitDuration = () => {
+    const draft = durationDraft()
+    setDurationDraft(null)
+    if (draft === null) return
+
+    const seconds = parseFloat(draft)
+    if (!Number.isFinite(seconds)) return
+
+    const ms = Math.round(seconds * 1000)
+    if (ms !== props.store.duration()) props.store.setDuration(ms)
+  }
+
+  const handleDurationKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      ;(e.currentTarget as HTMLInputElement).blur()
+    } else if (e.key === 'Escape') {
+      setDurationDraft(null)
+      ;(e.currentTarget as HTMLInputElement).blur()
+    }
+    // Playback shortcuts live on window; don't fire them while typing here.
+    e.stopPropagation()
+  }
+
+  // Keyframes can sit past the end (e.g. after trimming) — they never play, so say so.
+  const parkedKeyframes = createMemo(
+    () => props.store.lastKeyframeTime() > props.store.duration()
   )
 
   const handleSeek = (e: Event) => {
@@ -109,7 +145,28 @@ export const PlaybackControls: Component<PlaybackControlsProps> = (props) => {
       <div class="time-display">
         <span class="current-time">{currentTimeFormatted()}</span>
         <span class="time-separator">/</span>
-        <span class="duration">{durationFormatted()}</span>
+        <input
+          type="number"
+          class="duration-input"
+          classList={{ 'has-parked-keyframes': parkedKeyframes() }}
+          value={durationValue()}
+          min={MIN_DURATION_MS / 1000}
+          step="0.1"
+          onInput={(e) => setDurationDraft(e.currentTarget.value)}
+          onBlur={commitDuration}
+          onKeyDown={handleDurationKeyDown}
+          title={`Scene duration in seconds (currently ${durationFormatted()}s)`}
+          aria-label="Scene duration in seconds"
+        />
+        <Show when={parkedKeyframes()}>
+          <button
+            class="fit-duration-btn"
+            onClick={() => props.store.fitDurationToKeyframes()}
+            title="Keyframes sit past the end of the scene and will not play. Extend the duration to reach them."
+          >
+            Fit
+          </button>
+        </Show>
       </div>
 
       <div class="seek-bar">

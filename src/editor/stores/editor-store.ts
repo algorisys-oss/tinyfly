@@ -52,6 +52,9 @@ const initialState: EditorState = {
   scrollPosition: 0,
 }
 
+/** Floor for an explicit timeline duration (ms) — a zero-length scene is unusable. */
+export const MIN_DURATION_MS = 100
+
 /** A keyframe copied to the clipboard, retaining its source track. */
 interface CopiedKeyframe {
   trackId: string
@@ -100,6 +103,39 @@ export function createEditorStore() {
   // Bump version to trigger reactivity
   function bumpVersion() {
     setTimelineVersion((v) => v + 1)
+  }
+
+  /** Time of the latest keyframe across all tracks (0 when there are none). */
+  function lastKeyframeTime(): number {
+    timelineVersion() // track mutations so callers can use this reactively
+    if (!state.timeline) return 0
+
+    let last = 0
+    for (const track of state.timeline.tracks) {
+      for (const keyframe of track.keyframes) {
+        if (keyframe.time > last) last = keyframe.time
+      }
+    }
+    return last
+  }
+
+  /**
+   * Commit an edit that added or moved keyframes, growing the timeline so every
+   * keyframe stays reachable.
+   *
+   * Scenes carry an explicit duration, and playback, scrubbing and export all
+   * stop there (`seek` clamps to it; exporters sample `0 -> duration`). A
+   * keyframe dragged past the end would otherwise silently never play.
+   *
+   * This only ever grows. Shortening is deliberate and goes through
+   * `setDuration`, which is why that path does not come through here.
+   */
+  function commitKeyframeEdit() {
+    if (state.timeline) {
+      const last = Math.ceil(lastKeyframeTime())
+      if (last > state.timeline.duration) state.timeline.setDuration(last)
+    }
+    bumpVersion()
   }
 
   // Record the current state before a mutation, and clear the redo stack.
@@ -161,7 +197,7 @@ export function createEditorStore() {
     })
 
     state.timeline.addTrack(track)
-    bumpVersion()
+    commitKeyframeEdit()
   }
 
   /** Whether a camera (tracks targeting the reserved "Camera" layer) exists. */
@@ -254,7 +290,7 @@ export function createEditorStore() {
     kfs.sort((a, b) => a.time - b.time)
     state.timeline.removeTrack(track.id)
     state.timeline.addTrack(createTrack({ ...track, keyframes: kfs }))
-    bumpVersion()
+    commitKeyframeEdit()
   }
 
   // Remove a track
@@ -311,7 +347,7 @@ export function createEditorStore() {
       createdTrackIds.push(trackId)
     }
 
-    bumpVersion()
+    commitKeyframeEdit()
     return createdTrackIds
   }
 
@@ -334,15 +370,36 @@ export function createEditorStore() {
       ids.push(id)
     })
 
-    bumpVersion()
+    commitKeyframeEdit()
     return ids
   }
 
-  // Set (or extend) the timeline's explicit duration in ms.
+  /**
+   * Set the timeline's explicit duration in ms, or pass `undefined` to fall
+   * back to the time of the last keyframe.
+   *
+   * Shortening past existing keyframes is allowed — parking keyframes beyond
+   * the end is a legitimate way to stash work — but the playhead is pulled
+   * back inside the new range so the UI never reports an unreachable time.
+   */
   function setDuration(duration: number | undefined) {
     if (!state.timeline) return
-    state.timeline.setDuration(duration)
+
+    pushHistory()
+    state.timeline.setDuration(
+      duration === undefined ? undefined : Math.max(MIN_DURATION_MS, Math.round(duration))
+    )
+
+    if (currentTime() > state.timeline.duration) {
+      seek(state.timeline.duration)
+    }
+
     bumpVersion()
+  }
+
+  /** Shrink-wrap the duration to the last keyframe (the "Fit" action). */
+  function fitDurationToKeyframes() {
+    setDuration(Math.ceil(lastKeyframeTime()))
   }
 
   // Apply a preset across many targets with a per-target time offset.
@@ -390,7 +447,7 @@ export function createEditorStore() {
       }
     })
 
-    bumpVersion()
+    commitKeyframeEdit()
     return createdTrackIds
   }
 
@@ -430,7 +487,7 @@ export function createEditorStore() {
     }
 
     state.timeline.addTrack(motionPathTrack)
-    bumpVersion()
+    commitKeyframeEdit()
 
     return trackId
   }
@@ -536,7 +593,7 @@ export function createEditorStore() {
       }
     }
 
-    bumpVersion()
+    commitKeyframeEdit()
     selectKeyframes(newSelection)
     return clip.length
   }
@@ -594,7 +651,7 @@ export function createEditorStore() {
       })
     )
 
-    bumpVersion()
+    commitKeyframeEdit()
   }
 
   // Update a keyframe
@@ -628,7 +685,7 @@ export function createEditorStore() {
       })
     )
 
-    bumpVersion()
+    commitKeyframeEdit()
   }
 
   // Remove a keyframe
@@ -685,7 +742,9 @@ export function createEditorStore() {
   function seek(time: number) {
     if (!state.timeline) return
     state.timeline.seek(time)
-    setCurrentTime(time)
+    // Mirror the timeline's clamped value, not the requested one, so the
+    // readout can never show a time past the end of the scene.
+    setCurrentTime(state.timeline.currentTime)
   }
 
   // Tick the timeline (call from animation loop)
@@ -830,6 +889,8 @@ export function createEditorStore() {
     applyPresetStaggered,
     addTracks,
     setDuration,
+    fitDurationToKeyframes,
+    lastKeyframeTime,
     createMotionPathAnimation,
 
     // Keyframe actions

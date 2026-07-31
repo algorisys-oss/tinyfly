@@ -78,8 +78,62 @@
   color: #666;
 }
 
-.duration {
+/* Editable scene duration (seconds). Styled to read as text until interacted with. */
+.duration-input {
+  width: 62px;
+  padding: 2px 4px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: inherit;
   color: #888;
+  cursor: text;
+}
+
+.duration-input:hover {
+  border-color: #444;
+  color: #ccc;
+}
+
+.duration-input:focus {
+  outline: none;
+  background: #1c1c1c;
+  border-color: #4a9eff;
+  color: #fff;
+}
+
+/* Warn while keyframes sit past the end of the scene. */
+.duration-input.has-parked-keyframes {
+  color: #e0a33e;
+}
+
+/* Hide the number spinners — they'd step in whole seconds and crowd the readout. */
+.duration-input::-webkit-outer-spin-button,
+.duration-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.duration-input {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.fit-duration-btn {
+  padding: 2px 6px;
+  background: #3a2f1a;
+  border: 1px solid #e0a33e;
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: 11px;
+  color: #e0a33e;
+  cursor: pointer;
+}
+
+.fit-duration-btn:hover {
+  background: #e0a33e;
+  color: #1a1a1a;
 }
 
 .seek-bar {
@@ -165,6 +219,10 @@
     font-size: 12px;
   }
 
+  .duration-input {
+    width: 54px;
+  }
+
   .seek-bar {
     min-width: 80px;
   }
@@ -189,6 +247,10 @@
 
   .time-display {
     font-size: 11px;
+  }
+
+  .duration-input {
+    width: 48px;
   }
 
   .seek-bar {

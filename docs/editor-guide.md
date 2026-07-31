@@ -362,6 +362,29 @@ box > rotation      │  ◆─────◆───────────�
   is highlighted (amber). Click one to edit its value in the Property Panel.
 - The **playhead** (vertical line) indicates the current time. Click the ruler to
   move it (scrub).
+- The **end of the scene** is drawn as a dashed amber line, and everything past it
+  is dimmed. Nothing in the dimmed region plays or exports — see
+  [Scene duration](#scene-duration) below.
+
+### Scene duration
+
+The readout in the playback bar shows `current / duration` in seconds. **The
+duration is editable** — click it, type a new length, press Enter.
+
+Each scene carries its own duration (new scenes start at 2 seconds), and it is
+the hard end of the animation: playback stops there, the playhead cannot scrub
+past it, and every exporter (GIF, WebP, MP4, sprite sheet, CSS, Lottie) samples
+`0 → duration`.
+
+You rarely need to set it by hand, because **the timeline grows to fit your
+keyframes**: drag a keyframe to 4s in a 2s scene, or apply a preset that runs
+long, and the duration extends to cover it. It never shrinks on its own.
+
+If you *shorten* the duration below your last keyframe, those keyframes stay put
+but become unreachable — the track just holds its last in-range value. The
+duration turns amber and a **Fit** button appears next to it; click it to snap
+the duration back out to the last keyframe. Both are ordinary edits, so
+<kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes them.
 
 ### Two views: Dope Sheet and Curves
 
@@ -464,7 +487,7 @@ In the playback controls area:
 
 | Setting | Description |
 |---------|-------------|
-| Duration | Total animation length in milliseconds |
+| Duration | Total animation length — editable in the `current / duration` readout (seconds). See [Scene duration](#scene-duration) |
 | Loop | Number of repetitions: 0 (none), -1 (infinite), or a specific count |
 | Speed | Playback speed multiplier (0.5x, 1x, 2x, etc.) |
 | Alternate | Ping-pong mode — reverses direction on each loop |

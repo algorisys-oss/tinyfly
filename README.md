@@ -54,6 +54,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Onion skinning** - 🧅 Faint ghost frames before/after the playhead (Canvas renderer) to see the arc of a move while editing one frame
 - **Curve editor** - Switch the timeline between the **Dope Sheet** (keyframes & timing) and a **Curves** graph view where each numeric track is a value-over-time curve with the real easing drawn between keyframes; drag points in 2D (time + value), drag the easing handles to shape the cubic-bezier, double-click a lane to add a keyframe, Ctrl/Cmd-click to multi-select
 - **Timeline zoom & scroll** - Zoom the timeline with Ctrl/⌘+scroll or the −/+ control and pan with the scrollbar or Shift+scroll (shared across both views)
+- **Scene duration you can author** - Click the `current / duration` readout to type an exact length in seconds. The timeline **auto-extends** when a keyframe is added or dragged past the end, so late keyframes always play; the end of the scene is drawn as a dashed marker with the unreachable region dimmed, and a **Fit** button snaps the duration back out to the last keyframe after a manual trim
 - **Box-select & curve overlay** - Rubber-band-select keyframes in either timeline view; in Curves, toggle **Overlay** to compare all tracks on one shared axis. Scene tabs show live per-scene thumbnails
 - **Symbols & Library** - Bundle elements into a reusable **symbol** (Convert to Symbol), place instances across scenes, **edit in place** (double-click an instance), give a symbol its own timeline for **nested animation**, and **swap** which symbol an instance shows over time (lip-sync) — all JSON-serialized
 - **Multi-select keyframes** - Ctrl/Cmd-click to select many keyframes; copy/paste (at the playhead) and delete them together
@@ -402,10 +403,10 @@ npm run build
 
 ### Test Coverage
 
-- 500 tests passing
+- 722 tests passing
 - Core engine: 136 tests
 - Adapters: 87 tests (incl. clip/mask reveal, filters, shine across DOM/SVG/Canvas)
-- Editor stores: 158 tests (incl. split-text, staggered presets, keyframe copy/paste)
+- Editor stores: 181 tests (incl. split-text, staggered presets, keyframe copy/paste, scene duration)
 - Split-text util: 8 tests
 - Typewriter builder: 9 tests
 - Letter-stagger sample (engine integration): 4 tests

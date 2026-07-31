@@ -14,12 +14,27 @@
 
 /* Time Ruler */
 .timeline-ruler {
-  position: relative;
+  display: flex;
   height: 24px;
   background: #252525;
   border-bottom: 1px solid #333;
-  cursor: pointer;
   overflow: hidden;
+}
+
+/* Mirrors .track-label so the ruler starts where the keyframe lanes start. */
+.ruler-gutter {
+  width: 120px;
+  padding: 0 8px;
+  background: #202020;
+  border-right: 1px solid #333;
+  flex-shrink: 0;
+}
+
+.ruler-lane {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
 }
 
 .ruler-markers {
@@ -49,6 +64,27 @@
 
 .ruler-marker.major .ruler-label {
   color: #aaa;
+}
+
+/* End of the scene: playback, scrubbing and export all stop here. */
+.scene-end-marker {
+  position: absolute;
+  top: 0;
+  width: 0;
+  height: 100%;
+  border-left: 1px dashed #e0a33e;
+  pointer-events: none;
+  z-index: 9;
+}
+
+.past-scene-end {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.28);
+  border-left: 1px dashed rgba(224, 163, 62, 0.5);
+  pointer-events: none;
 }
 
 /* Playhead */
@@ -209,7 +245,8 @@
     height: 28px;
   }
 
-  .track-label {
+  .track-label,
+  .ruler-gutter {
     width: 90px;
     padding: 0 6px;
   }
@@ -232,7 +269,8 @@
 
 /* Small phone breakpoint */
 @media (max-width: 480px) {
-  .track-label {
+  .track-label,
+  .ruler-gutter {
     width: 70px;
     padding: 0 4px;
   }

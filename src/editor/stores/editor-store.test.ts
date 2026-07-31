@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { createEditorStore } from './editor-store'
+import { createEditorStore, MIN_DURATION_MS } from './editor-store'
 import type { AnimationPreset } from '../presets'
 
 const FADE_UP: AnimationPreset = {
@@ -252,5 +252,99 @@ describe('camera', () => {
     store.setCameraValue('rotate', 30)
     expect(store.hasCamera()).toBe(true)
     expect(store.getCameraValue('rotate')).toBe(30)
+  })
+})
+
+describe('duration', () => {
+  const track = (store: ReturnType<typeof createEditorStore>, id: string) =>
+    store.state.timeline!.tracks.find((t) => t.id === id)!
+
+  function withTrack(duration = 2000) {
+    const store = createEditorStore()
+    store.createNewTimeline('tl', 'Test', { duration })
+    store.addTrack({
+      id: 'opacity-1',
+      target: 'Box',
+      property: 'opacity',
+      keyframes: [
+        { time: 0, value: 0 },
+        { time: 1000, value: 1 },
+      ],
+    })
+    return store
+  }
+
+  it('extends when a keyframe is dragged past the end', () => {
+    const store = withTrack()
+    store.updateKeyframe('opacity-1', 1, { time: 4000 })
+    expect(store.state.timeline!.duration).toBe(4000)
+  })
+
+  it('extends when a keyframe is added past the end', () => {
+    const store = withTrack()
+    store.selectTrack('opacity-1')
+    store.addKeyframe(3500, 0.5)
+    expect(store.state.timeline!.duration).toBe(3500)
+  })
+
+  it('extends when a new track reaches past the end', () => {
+    const store = withTrack()
+    store.addTracks([
+      { target: 'Box', property: 'x', keyframes: [{ time: 5000, value: 100 }] },
+    ])
+    expect(store.state.timeline!.duration).toBe(5000)
+  })
+
+  it('does not shrink when keyframes move back inside the range', () => {
+    const store = withTrack()
+    store.updateKeyframe('opacity-1', 1, { time: 500 })
+    expect(store.state.timeline!.duration).toBe(2000)
+  })
+
+  it('keeps every keyframe reachable after an extend', () => {
+    const store = withTrack()
+    store.updateKeyframe('opacity-1', 1, { time: 4000 })
+    store.seek(4000)
+    expect(store.currentTime()).toBe(4000)
+    expect(track(store, 'opacity-1').keyframes[1].time).toBe(4000)
+  })
+
+  it('setDuration can trim below the last keyframe', () => {
+    const store = withTrack()
+    store.setDuration(600)
+    expect(store.state.timeline!.duration).toBe(600)
+    expect(store.lastKeyframeTime()).toBe(1000)
+  })
+
+  it('setDuration pulls the playhead back inside the new range', () => {
+    const store = withTrack()
+    store.seek(1800)
+    store.setDuration(600)
+    expect(store.currentTime()).toBe(600)
+  })
+
+  it('setDuration clamps to the minimum', () => {
+    const store = withTrack()
+    store.setDuration(0)
+    expect(store.state.timeline!.duration).toBe(MIN_DURATION_MS)
+  })
+
+  it('setDuration is undoable', () => {
+    const store = withTrack()
+    store.setDuration(5000)
+    store.undo()
+    expect(store.state.timeline!.duration).toBe(2000)
+  })
+
+  it('fitDurationToKeyframes shrink-wraps to the last keyframe', () => {
+    const store = withTrack()
+    store.fitDurationToKeyframes()
+    expect(store.state.timeline!.duration).toBe(1000)
+  })
+
+  it('seek never reports a time past the end', () => {
+    const store = withTrack()
+    store.seek(9999)
+    expect(store.currentTime()).toBe(2000)
   })
 })
