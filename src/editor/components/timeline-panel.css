@@ -3,6 +3,24 @@
   flex-direction: column;
   height: 100%;
   min-height: 0;
+
+  /* Width of the track-label column, and therefore the distance from the left
+     edge of the timeline to time zero. Single source of truth: the dope sheet's
+     labels, the curve lanes' labels, the ruler gutter and the scrollbar all size
+     off this, and `trackLabelWidth()` reads it back for hit-testing. */
+  --track-label-w: 120px;
+}
+
+@media (max-width: 768px) {
+  .timeline-panel {
+    --track-label-w: 90px;
+  }
+}
+
+@media (max-width: 480px) {
+  .timeline-panel {
+    --track-label-w: 70px;
+  }
 }
 
 .timeline-panel-header {
@@ -102,6 +120,8 @@
   height: 12px;
   background: #161616;
   border-top: 1px solid #2a2a2a;
+  /* Start where the lanes start, so the thumb tracks the visible time range. */
+  padding-left: var(--track-label-w, 120px);
 }
 
 .timeline-scrollbar-track {

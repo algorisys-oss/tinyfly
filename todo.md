@@ -215,6 +215,14 @@
   switch. Projects could reopen with an empty canvas. Reads now come first, and
   `vitest.config.ts` resolves solid to its client build so reactive wiring is
   testable at all.
+- [x] **`isSwitchingScene` is a signal** — the effects subscribe to it, so the
+  auto-save skipped during a scene/project switch retries the moment the switch
+  ends instead of waiting for the user's next edit.
+- [x] **One definition of the track-label width** — `--track-label-w` on
+  `.timeline-panel` drives the dope-sheet labels, curve-lane labels, ruler gutter
+  and scrollbar; `trackLabelWidth()` reads it back for hit-testing. The old
+  hard-coded `120` in JS ignored the 90/70 mobile breakpoints, so box-select in
+  Curves, zoom-at-cursor and the scrollbar were all misaligned on phones.
 
 ## Phase 21: Advanced Features
 
@@ -434,7 +442,7 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
 
 ## Test Coverage
 
-- 724 tests passing
+- 731 tests passing
 - Easing functions: 48 tests
 - Interpolators: 21 tests
 - Clock: 19 tests

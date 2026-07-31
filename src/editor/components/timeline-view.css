@@ -23,7 +23,7 @@
 
 /* Mirrors .track-label so the ruler starts where the keyframe lanes start. */
 .ruler-gutter {
-  width: 120px;
+  width: var(--track-label-w, 120px);
   padding: 0 8px;
   background: #202020;
   border-right: 1px solid #333;
@@ -168,7 +168,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  width: 120px;
+  width: var(--track-label-w, 120px);
   padding: 0 8px;
   background: #202020;
   border-right: 1px solid #333;
@@ -247,7 +247,6 @@
 
   .track-label,
   .ruler-gutter {
-    width: 90px;
     padding: 0 6px;
   }
 
@@ -271,7 +270,6 @@
 @media (max-width: 480px) {
   .track-label,
   .ruler-gutter {
-    width: 70px;
     padding: 0 4px;
   }
 

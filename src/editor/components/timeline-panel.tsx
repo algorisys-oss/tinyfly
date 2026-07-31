@@ -3,6 +3,7 @@ import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
 import { TimelineView, TIME_SCALE } from './timeline-view'
 import { CurveView } from './curve-view'
+import { trackLabelWidth } from '../utils/track-label-width'
 import './timeline-panel.css'
 
 interface TimelinePanelProps {
@@ -15,8 +16,6 @@ interface TimelinePanelProps {
 
 type ViewMode = 'dope' | 'curves'
 
-/** Width of the fixed track-label column (matches both views' CSS). */
-const LABEL_W = 120
 /** The ruler/tracks always span at least this many ms. */
 const MIN_DURATION = 5000
 
@@ -49,8 +48,10 @@ export const TimelinePanel: Component<TimelinePanelProps> = (props) => {
   const duration = () => props.store.duration()
   const pixelsPerMs = () => TIME_SCALE * zoom()
   const contentWidth = () => Math.max(duration(), MIN_DURATION) * pixelsPerMs()
+  /** Width of the fixed track-label column (from CSS, narrows on mobile). */
+  const labelW = () => trackLabelWidth(bodyRef)
   /** Visible width of the scrollable track area (excludes the label column). */
-  const viewportW = () => Math.max(0, bodyWidth() - LABEL_W)
+  const viewportW = () => Math.max(0, bodyWidth() - labelW())
   const maxScroll = () => Math.max(0, contentWidth() - viewportW())
 
   // Keep scroll within bounds when zoom / duration / width change.
@@ -61,7 +62,7 @@ export const TimelinePanel: Component<TimelinePanelProps> = (props) => {
 
   /** Zoom by a factor, keeping the time under `anchorClientX` fixed on screen. */
   const zoomBy = (factor: number, anchorClientX?: number) => {
-    const trackLeft = (bodyRef?.getBoundingClientRect().left ?? 0) + LABEL_W
+    const trackLeft = (bodyRef?.getBoundingClientRect().left ?? 0) + labelW()
     const anchorX =
       anchorClientX !== undefined ? anchorClientX - trackLeft : viewportW() / 2
     const timeAtAnchor = (scroll() + anchorX) / pixelsPerMs()
@@ -201,7 +202,7 @@ export const TimelinePanel: Component<TimelinePanelProps> = (props) => {
       </div>
 
       <Show when={hasScroll()}>
-        <div class="timeline-scrollbar" style={{ 'padding-left': `${LABEL_W}px` }}>
+        <div class="timeline-scrollbar">
           <div class="timeline-scrollbar-track">
             <div
               class="timeline-scrollbar-thumb"

@@ -5,6 +5,7 @@ import type { Track } from '../../engine'
 import { isNumericTrack, paddedRange, sampleCurve, easingToBezierPoints } from '../utils/curve-math'
 import type { CubicBezierPoints } from '../../engine'
 import { TIME_SCALE, TimeRuler } from './timeline-view'
+import { trackLabelWidth } from '../utils/track-label-width'
 import './curve-view.css'
 
 interface CurveViewProps {
@@ -83,7 +84,8 @@ export const CurveView: Component<CurveViewProps> = (props) => {
   }
 
   // ---- Box (rubber-band) selection over the lanes ----
-  const LABEL_W = 120
+  /** Distance from the lanes' left edge to time zero (the label column). */
+  const laneOffset = () => trackLabelWidth(tracksRef)
   const LANE_ROW_H = LANE_HEIGHT + 1 // + .curve-lane border
   let tracksRef: HTMLDivElement | undefined
   let boxStart: { x: number; y: number } | null = null
@@ -115,10 +117,11 @@ export const CurveView: Component<CurveViewProps> = (props) => {
       const minY = Math.min(b.y1, b.y2)
       const maxY = Math.max(b.y1, b.y2)
       const refs: { trackId: string; index: number }[] = []
+      const originX = laneOffset()
       numericTracks().forEach((track, r) => {
         const { vmin, vmax } = rangeOf(track)
         track.keyframes.forEach((kf, i) => {
-          const cx = LABEL_W + timeToX(kf.time) - scroll()
+          const cx = originX + timeToX(kf.time) - scroll()
           const cy = r * LANE_ROW_H + valueToY(kf.value as number, vmin, vmax)
           if (cx >= minX && cx <= maxX && cy >= minY && cy <= maxY) {
             refs.push({ trackId: track.id, index: i })

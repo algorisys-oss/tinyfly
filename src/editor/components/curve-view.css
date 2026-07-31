@@ -116,7 +116,10 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  width: 120px;
+  /* Must match .track-label / .ruler-gutter — see --track-label-w in
+     timeline-panel.css. Previously pinned at 120px, so on narrow screens the
+     curve lanes drifted out of line with the shared ruler. */
+  width: var(--track-label-w, 120px);
   padding: 0 8px;
   background: #202020;
   border-right: 1px solid #333;

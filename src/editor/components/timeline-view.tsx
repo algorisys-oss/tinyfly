@@ -2,6 +2,7 @@ import { For, createMemo, createSignal, createEffect, onCleanup } from 'solid-js
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
 import type { Track } from '../../engine'
+import { trackLabelWidth } from '../utils/track-label-width'
 import './timeline-view.css'
 
 interface TimelineViewProps {
@@ -164,11 +165,8 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
   const ROW_H = 32 // matches .timeline-track height
   let tracksRef: HTMLDivElement | undefined
 
-  // Distance from the track area's left edge to time zero, i.e. the width of the
-  // label gutter. Measured rather than hard-coded because the gutter narrows at
-  // the mobile breakpoints.
-  const laneOffset = () =>
-    (tracksRef?.querySelector('.track-keyframes') as HTMLElement | null)?.offsetLeft ?? 0
+  // Distance from the track area's left edge to time zero.
+  const laneOffset = () => trackLabelWidth(tracksRef)
 
   let boxStart: { x: number; y: number } | null = null
   let boxMoved = false

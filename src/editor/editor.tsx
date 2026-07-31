@@ -148,8 +148,12 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
     document.body.style.userSelect = 'none'
   }
 
-  // Guard to prevent auto-save during scene switching
-  let isSwitchingScene = false
+  // Guard to prevent auto-save during scene switching.
+  //
+  // A signal, not a plain flag: the auto-save and thumbnail effects subscribe to
+  // it, so lowering it re-runs them and the save that was skipped mid-switch
+  // happens immediately, rather than waiting for the user's next edit.
+  const [isSwitchingScene, setIsSwitchingScene] = createSignal(false)
 
   // Scene transition preview animation
   const [sceneTransitionClass, setSceneTransitionClass] = createSignal('')
@@ -210,7 +214,7 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
    * Save current editor state into the active scene, then switch to a new scene.
    */
   function switchScene(newSceneId: string) {
-    isSwitchingScene = true
+    setIsSwitchingScene(true)
 
     try {
       // Get the transition for the target scene (for preview animation)
@@ -240,7 +244,7 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
       // Clear undo history (per-scene undo not supported in v1)
       store.clearHistory()
     } finally {
-      isSwitchingScene = false
+      setIsSwitchingScene(false)
     }
   }
 
@@ -367,7 +371,7 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
     const elements = sceneStore.exportElements()
     const ctx = editContext()
 
-    if (isSwitchingScene) return
+    if (isSwitchingScene()) return
 
     const serializedTimeline = timeline ? serializeTimeline(timeline) : null
     if (ctx.type === 'symbol') {
@@ -380,7 +384,7 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
 
   /** Push the current scene/symbol straight to storage, bypassing the debounce. */
   const flushSave = () => {
-    if (isSwitchingScene) return
+    if (isSwitchingScene()) return
     const timeline = store.state.timeline
     const elements = sceneStore.exportElements()
     const serialized = timeline ? serializeTimeline(timeline) : null
@@ -443,7 +447,7 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
     if (!sym) return
 
     flushSave() // persist the scene before leaving it
-    isSwitchingScene = true
+    setIsSwitchingScene(true)
     try {
       store.stop()
       setEditContext({ type: 'symbol', symbolId })
@@ -455,7 +459,7 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
       }
       store.clearHistory()
     } finally {
-      isSwitchingScene = false
+      setIsSwitchingScene(false)
     }
   }
 
@@ -471,14 +475,14 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
       timeline: timeline ? serializeTimeline(timeline) : null,
     })
 
-    isSwitchingScene = true
+    setIsSwitchingScene(true)
     try {
       store.stop()
       setEditContext({ type: 'scene' })
       loadSceneIntoEditor(projectStore.currentProject().activeSceneId)
       store.clearHistory()
     } finally {
-      isSwitchingScene = false
+      setIsSwitchingScene(false)
     }
   }
 
@@ -544,7 +548,7 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
     sceneStore.exportElements()
     projectStore.currentProject().id
 
-    if (isSwitchingScene) return
+    if (isSwitchingScene()) return
 
     if (thumbTimeout) clearTimeout(thumbTimeout)
     thumbTimeout = window.setTimeout(() => void captureThumbnail(), 2500)
@@ -564,7 +568,7 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
   const openProjectFromGallery = (id: string) => {
     flushSave()
     captureOutgoingThumbnail()
-    isSwitchingScene = true
+    setIsSwitchingScene(true)
     try {
       store.stop()
       setEditContext({ type: 'scene' }) // leave any symbol edit before switching
@@ -573,7 +577,7 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
       loadSceneIntoEditor(project.activeSceneId)
       store.clearHistory()
     } finally {
-      isSwitchingScene = false
+      setIsSwitchingScene(false)
     }
     setShowGallery(false)
   }
@@ -582,7 +586,7 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
   const newProjectFromGallery = () => {
     flushSave()
     captureOutgoingThumbnail()
-    isSwitchingScene = true
+    setIsSwitchingScene(true)
     try {
       store.stop()
       setEditContext({ type: 'scene' }) // leave any symbol edit before switching
@@ -591,7 +595,7 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
       store.createNewTimeline(project.id, project.name, { duration: 2000 })
       store.clearHistory()
     } finally {
-      isSwitchingScene = false
+      setIsSwitchingScene(false)
     }
     setShowGallery(false)
   }
