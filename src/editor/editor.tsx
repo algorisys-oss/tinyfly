@@ -351,15 +351,25 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
   // ever saved when the element list happens to change, and a reload restores a
   // stale (often empty) timeline that cannot play.
   createEffect(() => {
-    if (isSwitchingScene) return
-
+    // Read every edit signal BEFORE the isSwitchingScene guard.
+    //
+    // Solid re-tracks an effect's dependencies on each run, so a run that
+    // returns before reading anything is left with no dependencies and never
+    // runs again. Scene/project switches write signals (stop, loadTimeline,
+    // loadElements) outside a batch, which flushes this effect while the flag is
+    // up — bailing first would silently disable auto-save for the rest of the
+    // session, and edits after that point would only reach storage on an
+    // explicit Save.
     store.tracks()
     store.duration()
 
     const timeline = store.state.timeline
     const elements = sceneStore.exportElements()
-    const serializedTimeline = timeline ? serializeTimeline(timeline) : null
     const ctx = editContext()
+
+    if (isSwitchingScene) return
+
+    const serializedTimeline = timeline ? serializeTimeline(timeline) : null
     if (ctx.type === 'symbol') {
       // Editing a symbol in place → write back to the Library definition.
       projectStore.updateSymbol(ctx.symbolId, { elements, timeline: serializedTimeline })
@@ -526,12 +536,15 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
   // every keystroke.
   let thumbTimeout: number | undefined
   createEffect(() => {
-    if (isSwitchingScene) return
-    // Subscribe to the same edit signals the auto-save effect watches.
+    // Subscribe to the same edit signals the auto-save effect watches — and, for
+    // the same reason as there, read them before the guard so a skipped run
+    // doesn't drop the subscriptions permanently.
     store.tracks()
     store.duration()
     sceneStore.exportElements()
     projectStore.currentProject().id
+
+    if (isSwitchingScene) return
 
     if (thumbTimeout) clearTimeout(thumbTimeout)
     thumbTimeout = window.setTimeout(() => void captureThumbnail(), 2500)

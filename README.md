@@ -403,7 +403,7 @@ npm run build
 
 ### Test Coverage
 
-- 722 tests passing
+- 724 tests passing
 - Core engine: 136 tests
 - Adapters: 87 tests (incl. clip/mask reveal, filters, shine across DOM/SVG/Canvas)
 - Editor stores: 181 tests (incl. split-text, staggered presets, keyframe copy/paste, scene duration)

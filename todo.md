@@ -209,6 +209,12 @@
   a matching gutter; ruler clicks and track double-clicks map to the right time.
 - [x] **End-of-scene marker** — a dashed line at the duration plus dimming past it,
   so keyframes that will never play are obvious at a glance.
+- [x] **Auto-save data-loss fix** — the auto-save and thumbnail effects bailed on
+  the `isSwitchingScene` guard *before* reading any signal, so Solid left them
+  with no dependencies and they never ran again after the first scene/project
+  switch. Projects could reopen with an empty canvas. Reads now come first, and
+  `vitest.config.ts` resolves solid to its client build so reactive wiring is
+  testable at all.
 
 ## Phase 21: Advanced Features
 
@@ -428,7 +434,7 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
 
 ## Test Coverage
 
-- 722 tests passing
+- 724 tests passing
 - Easing functions: 48 tests
 - Interpolators: 21 tests
 - Clock: 19 tests
