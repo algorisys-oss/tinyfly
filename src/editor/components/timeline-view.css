@@ -288,3 +288,16 @@
     margin-top: -3.5px;
   }
 }
+
+/* A spring track's active span — parameters, not keyframes, so there is
+   nothing to drag; the bar just shows when it runs. */
+.spring-span {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--accent, #5b9dd9), transparent);
+  opacity: 0.7;
+  pointer-events: none;
+}

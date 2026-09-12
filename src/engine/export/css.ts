@@ -1,6 +1,7 @@
 import type { Timeline } from '../core/timeline'
 import type { Track, EasingType, BuiltInEasingType, Keyframe, AnimatableValue } from '../types'
 import { isCubicBezierEasing } from '../types'
+import { toKeyframedTracks } from '../core/bake'
 
 /**
  * CSS export options
@@ -306,7 +307,7 @@ export function exportToCSS(timeline: Timeline, options: CSSExportOptions = {}):
   }
 
   // Group tracks by target
-  const trackGroups = groupTracksByTarget(timeline.tracks)
+  const trackGroups = groupTracksByTarget(toKeyframedTracks(timeline.tracks))
 
   for (const [target, tracks] of trackGroups) {
     // Generate unique animation name

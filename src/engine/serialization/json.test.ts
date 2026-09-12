@@ -7,7 +7,14 @@ import {
 } from './json'
 import { Timeline } from '../core/timeline'
 import { createTrack } from '../core/track'
-import type { TimelineDefinition, Track } from '../types'
+import type { TimelineDefinition, Track, AnyTrack, Keyframe } from '../types'
+import { hasKeyframes } from '../types'
+
+/** Narrow to a keyframed track. Every track in these tests is keyframed. */
+function kfs(track: AnyTrack): Keyframe[] {
+  if (!hasKeyframes(track)) throw new Error(`track ${track.id} has no keyframes`)
+  return track.keyframes
+}
 
 describe('JSON serialization', () => {
   describe('serializeTrack', () => {
@@ -71,8 +78,8 @@ describe('JSON serialization', () => {
       expect(track.id).toBe('track-1')
       expect(track.target).toBe('box')
       expect(track.property).toBe('opacity')
-      expect(track.keyframes).toHaveLength(2)
-      expect(track.keyframes[1].easing).toBe('ease-in')
+      expect(kfs(track)).toHaveLength(2)
+      expect(kfs(track)[1].easing).toBe('ease-in')
     })
 
     it('should sort keyframes by time', () => {
@@ -89,9 +96,9 @@ describe('JSON serialization', () => {
 
       const track = deserializeTrack(data)
 
-      expect(track.keyframes[0].time).toBe(0)
-      expect(track.keyframes[1].time).toBe(500)
-      expect(track.keyframes[2].time).toBe(1000)
+      expect(kfs(track)[0].time).toBe(0)
+      expect(kfs(track)[1].time).toBe(500)
+      expect(kfs(track)[2].time).toBe(1000)
     })
   })
 
@@ -254,7 +261,7 @@ describe('JSON serialization', () => {
       expect(restored.id).toBe(original.id)
       expect(restored.name).toBe(original.name)
       expect(restored.tracks).toHaveLength(original.tracks.length)
-      expect(restored.tracks[0].keyframes).toHaveLength(3)
+      expect(kfs(restored.tracks[0])).toHaveLength(3)
     })
   })
 

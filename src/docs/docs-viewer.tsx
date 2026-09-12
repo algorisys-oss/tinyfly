@@ -10,6 +10,8 @@ import editorGuideMd from '../../docs/editor-guide.md?raw'
 import apiReferenceMd from '../../docs/api-reference.md?raw'
 import fileFormatMd from '../../docs/file-format.md?raw'
 import examplesMd from '../../docs/examples.md?raw'
+import scrollAnimationMd from '../../docs/scroll-animation.md?raw'
+import gsapCompatMd from '../../docs/gsap-compat.md?raw'
 
 interface DocPage {
   id: string
@@ -23,6 +25,8 @@ const pages: DocPage[] = [
   { id: 'api-reference', title: 'API Reference', content: apiReferenceMd },
   { id: 'file-format', title: 'File Format', content: fileFormatMd },
   { id: 'examples', title: 'Examples', content: examplesMd },
+  { id: 'scroll-animation', title: 'Scroll Animation', content: scrollAnimationMd },
+  { id: 'gsap-compat', title: 'GSAP Compatibility', content: gsapCompatMd },
 ]
 
 export const DocsViewer: Component = () => {

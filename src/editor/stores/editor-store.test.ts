@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import { createEditorStore, MIN_DURATION_MS } from './editor-store'
+import type { AnyTrack, Keyframe } from '../../engine'
+import { hasKeyframes } from '../../engine'
+
+/** Narrow to a keyframed track. Every track in these tests is keyframed. */
+function kfs(track: AnyTrack): Keyframe[] {
+  if (!hasKeyframes(track)) throw new Error(`track ${track.id} has no keyframes`)
+  return track.keyframes
+}
 import type { AnimationPreset } from '../presets'
 
 const FADE_UP: AnimationPreset = {
@@ -50,7 +58,7 @@ describe('applyPresetStaggered', () => {
 
     const startOf = (target: string) => {
       const track = tracks().find((t) => t.target === target && t.property === 'opacity')!
-      return track.keyframes[0].time
+      return kfs(track)[0].time
     }
 
     expect(startOf('a')).toBe(0)
@@ -63,7 +71,7 @@ describe('applyPresetStaggered', () => {
     store.applyPresetStaggered(FADE_UP, ['a', 'b'], { staggerMs: 50, startTime: 1000 })
 
     const startOf = (target: string) =>
-      tracks().find((t) => t.target === target && t.property === 'opacity')!.keyframes[0].time
+      kfs(tracks().find((t) => t.target === target && t.property === 'opacity')!)[0].time
 
     expect(startOf('a')).toBe(1000)
     expect(startOf('b')).toBe(1050)
@@ -85,7 +93,7 @@ describe('applyPresetStaggered', () => {
     const { store, tracks } = setup()
     store.applyPresetStaggered(FADE_UP, ['a', 'b'])
     const startOf = (target: string) =>
-      tracks().find((t) => t.target === target && t.property === 'opacity')!.keyframes[0].time
+      kfs(tracks().find((t) => t.target === target && t.property === 'opacity')!)[0].time
     // Default stagger is 60ms.
     expect(startOf('b') - startOf('a')).toBe(60)
   })
@@ -134,7 +142,7 @@ describe('keyframe multi-select + copy/paste', () => {
 
     // Paste at 2000ms: earliest copied time is 0, so offset = 2000.
     store.pasteKeyframes(2000)
-    const times = tracks()[0].keyframes.map((k) => k.time)
+    const times = kfs(tracks()[0]).map((k) => k.time)
     // Original 0/500/1000 plus pasted 2000/2500.
     expect(times).toEqual([0, 500, 1000, 2000, 2500])
   })
@@ -155,7 +163,7 @@ describe('keyframe multi-select + copy/paste', () => {
       { trackId: 'trk', index: 2 },
     ])
     expect(store.deleteSelectedKeyframes()).toBe(2)
-    expect(tracks()[0].keyframes.map((k) => k.time)).toEqual([500])
+    expect(kfs(tracks()[0]).map((k) => k.time)).toEqual([500])
     expect(store.state.selectedKeyframes).toHaveLength(0)
   })
 
@@ -170,8 +178,8 @@ describe('keyframe multi-select + copy/paste', () => {
     store.copySelectedKeyframes()
     // Earliest = 100; paste at 1000 -> offset 900. a:100->1000, b:300->1200.
     store.pasteKeyframes(1000)
-    const a = tracks().find((t) => t.id === 'a')!.keyframes.map((k) => k.time)
-    const b = tracks().find((t) => t.id === 'b')!.keyframes.map((k) => k.time)
+    const a = kfs(tracks().find((t) => t.id === 'a')!).map((k) => k.time)
+    const b = kfs(tracks().find((t) => t.id === 'b')!).map((k) => k.time)
     expect(a).toEqual([100, 1000])
     expect(b).toEqual([300, 1200])
   })
@@ -191,7 +199,7 @@ describe('camera', () => {
     const cam = rawTracks(store).filter((t) => t.target === 'Camera')
     expect(cam.map((t) => t.property).sort()).toEqual(['rotate', 'scale', 'x', 'y'])
     const scale = cam.find((t) => t.property === 'scale')!
-    expect(scale.keyframes.map((k) => k.value)).toEqual([1, 1])
+    expect(kfs(scale).map((k) => k.value)).toEqual([1, 1])
   })
 
   it('is a no-op when a camera already exists', () => {
@@ -227,7 +235,7 @@ describe('camera', () => {
     store.seek(1000)
     store.setCameraValue('scale', 2)
     const scale = rawTracks(store).find((t) => t.target === 'Camera' && t.property === 'scale')!
-    const kf = scale.keyframes.find((k) => k.time === 1000)!
+    const kf = kfs(scale).find((k) => k.time === 1000)!
     expect(kf.value).toBe(2)
     expect(store.getCameraValue('scale')).toBe(2)
   })
@@ -240,7 +248,7 @@ describe('camera', () => {
     store.setCameraValue('x', 50)
     store.setCameraValue('x', 80)
     const x = rawTracks(store).find((t) => t.target === 'Camera' && t.property === 'x')!
-    expect(x.keyframes.filter((k) => k.time === 1000)).toHaveLength(1)
+    expect(kfs(x).filter((k) => k.time === 1000)).toHaveLength(1)
     expect(store.getCameraValue('x')).toBe(80)
   })
 
@@ -306,7 +314,7 @@ describe('duration', () => {
     store.updateKeyframe('opacity-1', 1, { time: 4000 })
     store.seek(4000)
     expect(store.currentTime()).toBe(4000)
-    expect(track(store, 'opacity-1').keyframes[1].time).toBe(4000)
+    expect(kfs(track(store, 'opacity-1'))[1].time).toBe(4000)
   })
 
   it('setDuration can trim below the last keyframe', () => {

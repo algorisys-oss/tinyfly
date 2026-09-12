@@ -14,15 +14,27 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 
 ### Animation Capabilities
 - **Timeline-based** - Orchestrate multiple tracks with precise timing
-- **Rich easing** - Linear, quad, cubic, and more easing functions
+- **Rich easing** - Linear, quad, cubic, custom cubic-bezier, and more
 - **Interpolation** - Numbers, colors, and arrays
 - **Playback control** - Play, pause, stop, seek, reverse, speed adjustment
-- **Looping** - Finite loops, infinite loops, and ping-pong (alternate) mode
+- **Looping** - Finite loops, infinite loops, ping-pong (alternate), and `repeatDelay` between iterations
+- **Springs** - Physical spring tracks, integrated at a fixed timestep from t=0 so they stay deterministic *and* serializable (the animation is the parameters, not a baked curve)
+- **Runtime stagger** - One track fans across many targets (`each` / `amount` / `from`), producing exactly what baking N tracks would
+- **Track scheduling** - Per-track `delay` and `endDelay` without rewriting keyframes
+- **Track queries** - `getTracks(filter)`, `removeTracks(filter)`, and `findConflicts()` to surface overlapping writes
+- **Compile-time values** - `"+=100"` and `"random(-50, 50)"` resolve at authoring time from a recorded seed, so the JSON holds plain numbers and replays identically
+
+### Scroll & Interaction
+- **Scroll-driven playback** - `ScrollDriver` scrubs a timeline against scroll position with GSAP-style trigger strings (`'top bottom'`, `'top top+=500'`); the geometry is a pure, unit-tested function
+- **Play when visible** - `VisibilityDriver` plays on appearance (`once` / `repeat` / `reset`) via IntersectionObserver
+- **Drag & pointer input** - `Observer` normalises pointer/touch/wheel; `Draggable` supports bounds, axis lock, snapping, and drag-to-scrub
+- **FLIP transitions** - `flip()` measures a layout change in the DOM layer and emits ordinary keyframes, keeping the engine free of live layout reads
 
 ### Render Adapters
-- **DOM** - CSS transforms, opacity, colors, clip-path reveal, filters, shine
-- **Canvas** - Shapes with position, size, rotation, colors, clip reveal, filters
-- **SVG** - Attributes, transforms, clip-path reveal, filters
+- **DOM** - CSS transforms, opacity, colors, clip-path reveal, filters, shine, transform-origin, perspective
+- **Canvas** - Shapes with position, size, rotation, colors, clip reveal, filters, transform-origin pivot
+- **SVG** - Attributes, transforms, clip-path reveal, filters, transform-origin, perspective
+- **WebGL** - Minimal GPU target: textured/solid quads with transform, opacity, and tint
 - **Clip/mask reveal** - Animatable clip-inset (`clipTop/Right/Bottom/Left`) wipes elements into view, consistently across all three renderers
 - **Filters** - Animatable `blur`, `glow`, and drop-shadow, composed identically across DOM, SVG, and Canvas
 
@@ -89,6 +101,8 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - [API Reference](docs/api-reference.md) — Full engine, player, adapter, and export API documentation
 - [File Format](docs/file-format.md) — The tinyfly JSON format (animation documents, timelines, projects, sequences) for integrations
 - [Examples](docs/examples.md) — Code examples for common animation patterns
+- [Scroll Animation](docs/scroll-animation.md) — Scroll-driven and visibility-triggered playback via drivers
+- [GSAP Compatibility](docs/gsap-compat.md) — The GSAP-flavoured API, the mapping table, and what we deliberately don't do
 - [Deployment](docs/DEPLOYMENT.md) — Hosting, Docker, and CDN configuration
 - [2D Animation Roadmap](docs/2d-animation-roadmap.md) — Adobe Animate gap analysis and phased plan (symbols/library, camera, onion skinning, …)
 
@@ -343,6 +357,58 @@ sequencer.isPlaying;         // Playback state
 
 **Transition types:** `none`, `fade`, `slide-left`, `slide-right`, `slide-up`, `slide-down`
 
+## Scroll, springs, and GSAP-style authoring
+
+Three optional entry points sit outside the engine. Each is opt-in and
+tree-shakeable, so an embed that only plays an animation pays nothing for them.
+
+```ts
+import { ScrollDriver, VisibilityDriver } from 'tinyfly/drivers'
+import { Observer, Draggable } from 'tinyfly/interaction'
+import { timeline, quickPlay } from 'tinyfly/gsap-compat'
+```
+
+**Scroll-driven animation** is a *driver*, not a special timeline. The engine is
+a pure function of time; a driver is what decides which time to hand it. So any
+existing animation becomes scroll-driven without changing it:
+
+```ts
+new ScrollDriver({
+  timeline,
+  trigger: document.querySelector('#panel')!,
+  start: 'top bottom',
+  end: 'bottom top',
+  scrub: true,
+}).start()
+```
+
+**Springs** are a track kind, integrated at a fixed timestep from t=0. That is
+what lets them be physical *and* deterministic *and* serializable at once —
+the animation is the parameters, so it exports like any other track:
+
+```ts
+timeline.addTrack({
+  id: 'pop', target: 'box', property: 'scale',
+  kind: 'spring',
+  spring: { from: 0, to: 1, stiffness: 200, damping: 12 },
+})
+```
+
+**GSAP-flavoured authoring** desugars a familiar API into ordinary tracks:
+
+```ts
+const tl = timeline()
+tl.fromTo('box', { x: 0, opacity: 0 }, { x: 200, opacity: 1, duration: 1, ease: 'power2.out' })
+tl.to(['l1', 'l2', 'l3'], { y: 0, duration: 0.5, stagger: 0.08 }, '-=0.25')
+
+quickPlay({ timeline: tl.timeline, targets: { box: '#box', l1: '#l1', l2: '#l2', l3: '#l3' } })
+```
+
+It is **familiar, not compatible** — GSAP code will not run unchanged. Anything
+authored through it is ordinary tinyfly JSON that opens in the editor. Read
+[docs/gsap-compat.md](docs/gsap-compat.md) for the mapping table and, more
+importantly, for what we deliberately don't do and why.
+
 ## Architecture
 
 ```
@@ -381,7 +447,14 @@ tinyfly/
 - [x] Animatable filters (blur, glow, drop-shadow)
 - [x] Shine sweep (highlight clipped to glyphs, all renderers)
 - [x] Audio/video sync (`MediaSync` / `player.attachMedia()`)
-- [ ] WebGL adapter
+- [x] WebGL adapter (minimal: textured/solid quads with transform, opacity, tint)
+- [x] Scroll-driven playback + visibility triggers (`tinyfly/drivers`)
+- [x] Drag / pointer interaction layer (`tinyfly/interaction`)
+- [x] Deterministic spring tracks
+- [x] FLIP layout transitions
+- [x] GSAP-flavoured compat facade (`tinyfly/gsap-compat`)
+- [ ] Scroll-scrub preview in the editor
+- [ ] Spring parameter editing in the editor UI
 - [ ] React Native adapter
 - [ ] Collaborative editing
 

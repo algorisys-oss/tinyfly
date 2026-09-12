@@ -1,5 +1,5 @@
-import type { Track, TimelineDefinition, AnyTrack, MotionPathTrack } from '../types'
-import { isMotionPathTrack } from '../types'
+import type { Keyframe, AnimatableValue, Track, TimelineDefinition, AnyTrack, MotionPathTrack, SpringTrack } from '../types'
+import { isMotionPathTrack, isSpringTrack } from '../types'
 import { Timeline } from '../core/timeline'
 import { createTrack } from '../core/track'
 
@@ -8,17 +8,25 @@ import { createTrack } from '../core/track'
  * Handles both regular tracks and motion path tracks.
  */
 export function serializeTrack(track: AnyTrack): AnyTrack {
+  if (isSpringTrack(track)) {
+    return {
+      id: track.id,
+      target: track.target,
+      property: track.property,
+      kind: 'spring',
+      spring: { ...track.spring },
+      ...scheduling(track),
+    }
+  }
+
   if (isMotionPathTrack(track)) {
     return {
       id: track.id,
       target: track.target,
       property: 'motionPath',
       motionPathConfig: { ...track.motionPathConfig },
-      keyframes: track.keyframes.map((kf) => ({
-        time: kf.time,
-        value: kf.value,
-        ...(kf.easing && { easing: kf.easing }),
-      })),
+      keyframes: track.keyframes.map(serializeKeyframe),
+      ...scheduling(track),
     }
   }
 
@@ -26,11 +34,30 @@ export function serializeTrack(track: AnyTrack): AnyTrack {
     id: track.id,
     target: track.target,
     property: track.property,
-    keyframes: track.keyframes.map((kf) => ({
-      time: kf.time,
-      value: kf.value,
-      ...(kf.easing && { easing: kf.easing }),
-    })),
+    keyframes: track.keyframes.map(serializeKeyframe),
+    ...scheduling(track),
+  }
+}
+
+function serializeKeyframe<T extends AnimatableValue>(kf: Keyframe<T>) {
+  return {
+    time: kf.time,
+    value: kf.value,
+    ...(kf.easing && { easing: kf.easing }),
+  }
+}
+
+/**
+ * Scheduling fields shared by every track kind. Omitted when unset so existing
+ * JSON round-trips byte-identically.
+ */
+function scheduling(track: AnyTrack) {
+  const endDelay = (track as Track).endDelay
+  return {
+    ...(track.delay !== undefined && { delay: track.delay }),
+    ...(endDelay !== undefined && { endDelay }),
+    ...(track.targets !== undefined && { targets: [...track.targets] }),
+    ...(track.stagger !== undefined && { stagger: { ...track.stagger } }),
   }
 }
 
@@ -40,6 +67,18 @@ export function serializeTrack(track: AnyTrack): AnyTrack {
  * Ensures keyframes are sorted by time.
  */
 export function deserializeTrack(data: AnyTrack): AnyTrack {
+  if (isSpringTrack(data)) {
+    const springData = data as SpringTrack
+    return {
+      id: springData.id,
+      target: springData.target,
+      property: springData.property,
+      kind: 'spring',
+      spring: { ...springData.spring },
+      ...scheduling(springData),
+    }
+  }
+
   // Check if this is a motion path track
   if (data.property === 'motionPath' && 'motionPathConfig' in data) {
     const motionData = data as MotionPathTrack
@@ -50,6 +89,7 @@ export function deserializeTrack(data: AnyTrack): AnyTrack {
       property: 'motionPath',
       motionPathConfig: { ...motionData.motionPathConfig },
       keyframes: sortedKeyframes,
+      ...scheduling(motionData),
     }
   }
 
@@ -57,7 +97,8 @@ export function deserializeTrack(data: AnyTrack): AnyTrack {
     id: data.id,
     target: data.target,
     property: data.property,
-    keyframes: data.keyframes,
+    keyframes: (data as Track).keyframes,
+    ...scheduling(data),
   } as Track)
 }
 
@@ -73,6 +114,7 @@ export function serializeTimeline(timeline: Timeline): TimelineDefinition {
       loop: timeline['_config'].loop,
       speed: timeline['_config'].speed,
       alternate: timeline['_config'].alternate,
+      repeatDelay: timeline['_config'].repeatDelay,
     },
     tracks: timeline.tracks.map(serializeTrack),
   }

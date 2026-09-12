@@ -1,6 +1,6 @@
 import { createSignal, createMemo } from 'solid-js'
 import { createStore } from 'solid-js/store'
-import { Timeline, createTrack, serializeTimeline, deserializeTimeline } from '../../engine'
+import { Timeline, createTrack, serializeTimeline, deserializeTimeline, hasKeyframes } from '../../engine'
 import type {
   Keyframe,
   AnimatableValue,
@@ -112,6 +112,7 @@ export function createEditorStore() {
 
     let last = 0
     for (const track of state.timeline.tracks) {
+      if (!hasKeyframes(track)) continue
       for (const keyframe of track.keyframes) {
         if (keyframe.time > last) last = keyframe.time
       }
@@ -282,6 +283,7 @@ export function createEditorStore() {
       addTrack({ id: `camera-${prop}-${Date.now()}`, target: 'Camera', property: prop, keyframes: [{ time: t, value }] })
       return
     }
+    if (!hasKeyframes(track)) return
     pushHistory()
     const kfs = [...track.keyframes]
     const idx = kfs.findIndex((k) => Math.abs(k.time - t) < 1)
@@ -546,7 +548,7 @@ export function createEditorStore() {
     const copied: CopiedKeyframe[] = []
     for (const ref of state.selectedKeyframes) {
       const track = tracks.find((t) => t.id === ref.trackId)
-      const kf = track?.keyframes[ref.index]
+      const kf = track && hasKeyframes(track) ? track.keyframes[ref.index] : undefined
       if (track && kf) {
         copied.push({ trackId: track.id, time: kf.time, value: kf.value, ...(kf.easing && { easing: kf.easing }) })
       }
@@ -582,7 +584,7 @@ export function createEditorStore() {
     const newSelection: KeyframeRef[] = []
     for (const [trackId, additions] of byTrack) {
       const track = state.timeline.tracks.find((t) => t.id === trackId)
-      if (!track) continue
+      if (!track || !hasKeyframes(track)) continue
       const merged = [...track.keyframes, ...additions].sort((a, b) => a.time - b.time)
       state.timeline.removeTrack(track.id)
       state.timeline.addTrack(createTrack({ ...track, keyframes: merged }))
@@ -615,8 +617,8 @@ export function createEditorStore() {
     let removed = 0
     for (const [trackId, indices] of byTrack) {
       const track = state.timeline.tracks.find((t) => t.id === trackId)
-      if (!track) continue
-      const kept = track.keyframes.filter((_, i) => !indices.has(i))
+      if (!track || !hasKeyframes(track)) continue
+      const kept = track.keyframes.filter((_: Keyframe, i: number) => !indices.has(i))
       removed += track.keyframes.length - kept.length
       state.timeline.removeTrack(track.id)
       state.timeline.addTrack(createTrack({ ...track, keyframes: kept }))
@@ -635,9 +637,11 @@ export function createEditorStore() {
     const trackIndex = tracks.findIndex((t) => t.id === state.selectedTrackId)
     if (trackIndex === -1) return
 
+    const track = tracks[trackIndex]
+    if (!hasKeyframes(track)) return
+
     pushHistory()
 
-    const track = tracks[trackIndex]
     const newKeyframes = [...track.keyframes, { time, value }].sort(
       (a, b) => a.time - b.time
     )
@@ -664,7 +668,8 @@ export function createEditorStore() {
 
     const tracks = state.timeline.tracks
     const track = tracks.find((t) => t.id === trackId)
-    if (!track || keyframeIndex < 0 || keyframeIndex >= track.keyframes.length) return
+    if (!track || !hasKeyframes(track)) return
+    if (keyframeIndex < 0 || keyframeIndex >= track.keyframes.length) return
 
     pushHistory()
 
@@ -694,7 +699,7 @@ export function createEditorStore() {
 
     const tracks = state.timeline.tracks
     const track = tracks.find((t) => t.id === trackId)
-    if (!track) return
+    if (!track || !hasKeyframes(track)) return
 
     pushHistory()
 

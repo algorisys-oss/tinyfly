@@ -60,6 +60,41 @@ export interface Track<T extends AnimatableValue = AnimatableValue> {
   property: string;
   /** Ordered list of keyframes (must be sorted by time) */
   keyframes: Keyframe<T>[];
+  /**
+   * Shift every keyframe by this many milliseconds at evaluation time.
+   * Purely a convenience: `delay: 200` is equivalent to adding 200 to each
+   * keyframe's `time`. Kept separate so authoring tools can adjust a track's
+   * start without rewriting its keyframes.
+   */
+  delay?: number;
+  /**
+   * Extra milliseconds held after the last keyframe. Contributes to the track's
+   * duration (and therefore the timeline's) without changing its final value.
+   */
+  endDelay?: number;
+  /**
+   * Animate several targets from one track, each offset by `stagger`.
+   * When present, `target` is ignored. See `StaggerConfig`.
+   */
+  targets?: string[];
+  /** Per-target time offsets for `targets`. Ignored when `targets` is absent. */
+  stagger?: StaggerConfig;
+}
+
+/** Where a stagger starts fanning out from */
+export type StaggerFrom = 'start' | 'end' | 'center' | 'edges' | number;
+
+/**
+ * Runtime stagger: expands one track across `targets` by offsetting each
+ * target's time. Serializable, and cheaper than baking N tracks when N is large.
+ */
+export interface StaggerConfig {
+  /** Milliseconds between consecutive targets. Ignored when `amount` is set. */
+  each?: number;
+  /** Total spread in milliseconds, divided across the targets. Wins over `each`. */
+  amount?: number;
+  /** Which target gets offset 0 and which way the fan runs (default: 'start') */
+  from?: StaggerFrom;
 }
 
 /** Timeline playback state */
@@ -78,6 +113,8 @@ export interface TimelineConfig {
   speed?: number;
   /** Whether to alternate direction on each loop iteration */
   alternate?: boolean;
+  /** Milliseconds to hold at the end before starting the next loop iteration */
+  repeatDelay?: number;
 }
 
 /** Serializable timeline definition */
@@ -88,8 +125,8 @@ export interface TimelineDefinition {
   name?: string;
   /** Timeline configuration */
   config: TimelineConfig;
-  /** Tracks in this timeline */
-  tracks: Track[];
+  /** Tracks in this timeline (keyframed, motion-path, or spring) */
+  tracks: AnyTrack[];
 }
 
 /** Current state of an animation at a given time */
@@ -139,6 +176,14 @@ export interface MotionPathTrack {
   motionPathConfig: MotionPathConfig;
   /** Keyframes with progress values (0-1) */
   keyframes: Keyframe<number>[];
+  /** Shift every keyframe by this many milliseconds at evaluation time */
+  delay?: number;
+  /** Extra milliseconds held after the last keyframe */
+  endDelay?: number;
+  /** Animate several targets along the path, each offset by `stagger` */
+  targets?: string[];
+  /** Per-target offsets for `targets` */
+  stagger?: StaggerConfig;
 }
 
 /** Result of computing position on a motion path */
@@ -151,8 +196,67 @@ export interface MotionPathPoint {
   angle: number;
 }
 
+// ============================================
+// Spring Types
+// ============================================
+
+/**
+ * Parameters for a physically-simulated spring. Serializable: the animation is
+ * the parameters, not a baked curve, so a spring track is as portable as a
+ * keyframe track.
+ */
+export interface SpringConfig {
+  /** Starting value */
+  from: number;
+  /** Resting target value */
+  to: number;
+  /** Spring constant — higher is snappier (default: 180) */
+  stiffness?: number;
+  /** Damping coefficient — higher settles sooner, 0 oscillates forever (default: 12) */
+  damping?: number;
+  /** Mass — higher is more sluggish (default: 1) */
+  mass?: number;
+  /** Initial velocity in units per second (default: 0) */
+  velocity?: number;
+  /** Distance from `to` below which the spring counts as settled (default: 0.01) */
+  restDelta?: number;
+  /** Speed below which the spring counts as settled, units/sec (default: 0.01) */
+  restSpeed?: number;
+}
+
+/**
+ * A track whose values come from a spring simulation instead of keyframes.
+ *
+ * Evaluated by integrating forward from t=0 at a fixed timestep, so it stays a
+ * pure function of time — seeking backwards yields the same values as playing
+ * forwards, and two runs produce identical output.
+ */
+export interface SpringTrack {
+  /** Unique identifier for this track */
+  id: string;
+  /** Target identifier */
+  target: string;
+  /** Property name to animate */
+  property: string;
+  /** Marks this as a spring track for serialization and dispatch */
+  kind: 'spring';
+  /** Spring parameters */
+  spring: SpringConfig;
+  /** Milliseconds before the spring starts */
+  delay?: number;
+  /** Animate several targets, each offset by `stagger` */
+  targets?: string[];
+  /** Per-target offsets for `targets` */
+  stagger?: StaggerConfig;
+}
+
+/** Type guard to check if a track is a spring track */
+export function isSpringTrack(track: AnyTrack): track is SpringTrack {
+  return (track as SpringTrack).kind === 'spring' && 'spring' in track;
+}
+
 /** Type guard to check if a track is a motion path track */
-export function isMotionPathTrack(track: Track | MotionPathTrack): track is MotionPathTrack {
+export function isMotionPathTrack(track: AnyTrack): track is MotionPathTrack {
   return track.property === 'motionPath' && 'motionPathConfig' in track;
 }
 
@@ -168,4 +272,18 @@ export function isMotionPathPoint(value: unknown): value is MotionPathPoint {
 }
 
 /** Union type for any track */
-export type AnyTrack = Track | MotionPathTrack;
+export type AnyTrack = Track | MotionPathTrack | SpringTrack;
+
+/**
+ * Tracks whose values come from keyframes — everything except springs.
+ * Most authoring and export code only makes sense for these.
+ */
+export type KeyframedTrack = Track | MotionPathTrack;
+
+/**
+ * Narrow a track to the keyframed kinds. Use this before reaching for
+ * `.keyframes`, which spring tracks do not have.
+ */
+export function hasKeyframes(track: AnyTrack): track is KeyframedTrack {
+  return 'keyframes' in track;
+}

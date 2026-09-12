@@ -119,6 +119,7 @@ export class SVGAdapter {
     properties: Map<string, AnimatableValue>
   ): void {
     const transforms: Record<string, number> = {}
+    const origin: Record<string, number> = {}
     const clip: Record<string, number> = {}
     const filter: FilterValues = {}
     let hasFilter = false
@@ -126,6 +127,10 @@ export class SVGAdapter {
     for (const [property, value] of properties) {
       if (TRANSFORM_PROPERTIES.has(property)) {
         transforms[property] = value as number
+      } else if (property === 'originX' || property === 'originY') {
+        if (typeof value === 'number') origin[property] = value
+      } else if (property === 'perspective') {
+        if (typeof value === 'number') transforms.perspective = value
       } else if (CLIP_PROPERTIES.has(property)) {
         if (typeof value === 'number') clip[property] = value
       } else if (FILTER_PROPERTIES.has(property)) {
@@ -146,6 +151,15 @@ export class SVGAdapter {
     if (Object.keys(transforms).length > 0) {
       const transformString = this.buildCssTransformString(transforms)
       ;(element as SVGElement & { style: CSSStyleDeclaration }).style.transform = transformString
+    }
+
+    // Apply transform-origin. SVG defaults its origin to the user-space origin
+    // rather than the element's own box, so `transform-box: fill-box` is set
+    // alongside it to make percentages mean "of this element".
+    if (Object.keys(origin).length > 0) {
+      const style = (element as SVGElement & { style: CSSStyleDeclaration }).style
+      style.transformBox = 'fill-box'
+      style.transformOrigin = `${origin.originX ?? 50}% ${origin.originY ?? 50}%`
     }
 
     // Apply composed clip-path (reveal/wipe mask). Missing sides default to 0.
@@ -170,7 +184,13 @@ export class SVGAdapter {
    * Build a CSS transform string (for use with transform-origin).
    */
   private buildCssTransformString(transforms: Record<string, number>): string {
+    // `perspective()` only affects the 3D functions that follow it, so it is
+    // emitted first (see the push order below).
     const parts: string[] = []
+
+    if (transforms.perspective !== undefined) {
+      parts.push(`perspective(${transforms.perspective}px)`)
+    }
 
     // Translation - motion path takes precedence over regular x/y
     const tx = transforms.motionPathX ?? transforms.x ?? transforms.translateX

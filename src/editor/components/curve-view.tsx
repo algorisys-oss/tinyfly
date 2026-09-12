@@ -4,6 +4,7 @@ import type { EditorStore } from '../stores/editor-store'
 import type { Track } from '../../engine'
 import { isNumericTrack, paddedRange, sampleCurve, easingToBezierPoints } from '../utils/curve-math'
 import type { CubicBezierPoints } from '../../engine'
+import { hasKeyframes } from '../../engine'
 import { TIME_SCALE, TimeRuler } from './timeline-view'
 import { trackLabelWidth } from '../utils/track-label-width'
 import './curve-view.css'
@@ -227,7 +228,7 @@ export const CurveView: Component<CurveViewProps> = (props) => {
     const d = drag()
     if (!d) return
     const track = tracks().find((t) => t.id === d.trackId)
-    if (!track) return
+    if (!track || !hasKeyframes(track)) return
 
     // Time from horizontal movement, clamped between neighbours so keyframes
     // keep their order (and index) during the drag.

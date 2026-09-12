@@ -1,6 +1,7 @@
 import type { Timeline } from '../core/timeline'
 import type { Track, Keyframe, EasingType, BuiltInEasingType, AnimatableValue } from '../types'
 import { isCubicBezierEasing } from '../types'
+import { toKeyframedTracks } from '../core/bake'
 
 /**
  * Lottie export options
@@ -426,7 +427,7 @@ export function exportToLottie(timeline: Timeline, options: LottieExportOptions 
   const duration = timeline.duration
   const endFrame = msToFrame(duration, frameRate)
 
-  const trackGroups = groupTracksByTarget(timeline.tracks)
+  const trackGroups = groupTracksByTarget(toKeyframedTracks(timeline.tracks))
   const layers: LottieLayer[] = []
 
   let layerIndex = 1

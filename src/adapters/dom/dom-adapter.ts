@@ -52,6 +52,12 @@ const TRANSFORM_PROPERTIES = new Set([
 ])
 
 /**
+ * Transform-origin components, as percentages of the element's own box.
+ * Kept as two numeric tracks rather than a CSS string so they interpolate.
+ */
+const ORIGIN_PROPERTIES = new Set(['originX', 'originY'])
+
+/**
  * Clip-inset properties (percent 0-100 from each edge). They compose into a
  * single `clip-path: inset(...)`, which drives reveal/wipe "mask" animations.
  */
@@ -123,6 +129,7 @@ export class DOMAdapter {
     properties: Map<string, AnimatableValue>
   ): void {
     const transformParts: string[] = []
+    const origin: Record<string, number> = {}
     const clip: Record<string, number> = {}
     const filter: FilterValues = {}
     let hasFilter = false
@@ -143,11 +150,15 @@ export class DOMAdapter {
         if (transformValue) {
           transformParts.push(transformValue)
         }
+      } else if (ORIGIN_PROPERTIES.has(property)) {
+        if (typeof value === 'number') origin[property] = value
       } else if (CLIP_PROPERTIES.has(property)) {
         if (typeof value === 'number') clip[property] = value
       } else if (FILTER_PROPERTIES.has(property)) {
         ;(filter as Record<string, AnimatableValue>)[property] = value
         hasFilter = true
+      } else if (property === 'perspective') {
+        // Consumed below, as the first function of the composed transform.
       } else if (property === 'shine') {
         // Handled after the loop (needs the composed base colour).
       } else if (property === 'd' && typeof value === 'string') {
@@ -173,9 +184,23 @@ export class DOMAdapter {
       this.applyShine(element, shine)
     }
 
-    // Apply composed transform
+    // Apply composed transform. `perspective` must come first in the function
+    // list to affect the 3D transforms that follow it.
+    const perspective = properties.get('perspective')
+    if (typeof perspective === 'number') {
+      transformParts.unshift(`perspective(${perspective}px)`)
+    }
+
     if (transformParts.length > 0) {
       element.style.transform = transformParts.join(' ')
+    }
+
+    // Apply transform-origin. A missing axis defaults to 50% (the CSS default),
+    // so animating one axis alone behaves as expected.
+    if (Object.keys(origin).length > 0) {
+      const ox = origin.originX ?? 50
+      const oy = origin.originY ?? 50
+      element.style.transformOrigin = `${ox}% ${oy}%`
     }
 
     // Apply composed clip-path (reveal/wipe mask). Missing sides default to 0.

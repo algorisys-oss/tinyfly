@@ -351,6 +351,374 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
 
 ---
 
+## Phase 25: GSAP-flavoured compat facade (`tinyfly/gsap-compat`) ✓
+
+**Goal:** give GSAP-literate developers a familiar imperative surface without
+letting imperative semantics into the engine. The facade is a *desugarer*: every
+call it accepts compiles down to ordinary `Track` + `Keyframe` data and is
+handed to a normal `Timeline`. Nothing new enters `src/engine/core`.
+
+**Not a goal:** drop-in GSAP compatibility. We will never match plugin APIs,
+`gsap.utils`, or GSAP's internal property parsing. This is *familiar*, not
+*compatible* — the docs must say so in the first paragraph.
+
+### Placement & rules
+
+- Lives in `src/compat/gsap/`, published as a separate entry `tinyfly/gsap-compat`
+  (add to `exports` in `package.json`, build via a third Vite lib config).
+- Depends **only** on the public engine API (`Timeline`, `createTrack`, easing
+  helpers). Zero new engine exports; zero DOM imports in the compile step.
+- Every method returns a plain `TimelineDefinition` on `.toDefinition()`, so
+  anything authored through the facade opens in the editor and round-trips as
+  JSON. This is the acceptance test for the whole phase.
+- Seconds in, milliseconds stored. The facade is the only place `* 1000` lives.
+
+### Slice 1 — tween desugaring
+
+- [x] `tf.to(target, vars)`, `tf.from(target, vars)`, `tf.fromTo(target, fromVars, toVars)`,
+      `tf.set(target, vars)`.
+  - `vars` splits into **reserved keys** (`duration`, `delay`, `ease`, `repeat`,
+    `yoyo`, `stagger`, `onComplete`, `onUpdate`) and **animated properties**
+    (everything else → one `Track` each).
+  - Each property compiles to a 2-keyframe track: `{time: start, value: from}`,
+    `{time: start + duration, value: to, easing}`.
+  - `tf.set` compiles to a single keyframe (a step hold).
+- [x] **The `from` problem.** GSAP reads the live DOM for the implicit start
+      value; we must not (determinism rule 5). Resolution order:
+  1. explicit `from` in `fromTo` — always wins;
+  2. the target's last authored value earlier on this timeline;
+  3. a `defaults` map passed to `tf.timeline({ defaults })`;
+  4. the property's documented static default (`opacity: 1`, `x: 0`, `scale: 1`).
+  A `to()` whose start value resolves to (4) logs a one-line dev warning naming
+  the property, because that is the case where GSAP users will be surprised.
+  **No `getComputedStyle` anywhere.** Document this as an intentional divergence.
+- [x] Target resolution: accept a target-name string (engine-native) or an array
+      of them. A CSS selector or raw `Element` is accepted **only** by the DOM
+      convenience wrapper in slice 5, which registers it with a `DOMAdapter` and
+      mints a stable generated name — the compile step still sees only names.
+
+### Slice 2 — sequencing & the position parameter
+
+- [x] `tl.to(target, vars, position)` where `position` is:
+  - a number → absolute seconds;
+  - `"+=n"` / `"-=n"` → relative to the current end-of-timeline cursor;
+  - `"<"` / `">"` → start/end of the *previous* tween;
+  - `"<n"` / `">n"` → previous tween's start/end, offset by `n` seconds;
+  - a label string → the labelled time.
+- [x] `tl.add(child, position)` for nesting another compat timeline (flattened at
+      compile time by offsetting every keyframe — no nested-timeline runtime).
+- [x] `tl.addLabel(name, position)`, and labels resolvable by `seek(label)`.
+- [x] Internal cursor semantics documented in one comment block: append-by-default,
+      exactly like GSAP, since that is the behaviour people rely on most.
+
+### Slice 3 — stagger
+
+- [x] `stagger: number` → each target's start offset by `i * n`.
+- [x] `stagger: { each, from, amount, grid, axis, ease }` with `from` supporting
+      `'start' | 'center' | 'edges' | 'end' | index`.
+- [x] Compiles to N independent tracks with shifted keyframe times — i.e. exactly
+      what the editor's per-letter stagger already bakes
+      (`src/editor/utils/split-text.ts`). **Reuse that offset math**, don't fork
+      it: extract the ordering/offset function into a shared pure helper both
+      call. This is the single highest-value item in the phase.
+
+### Slice 4 — ease-name mapping
+
+- [x] Map GSAP ease strings to our easing set. Exact where we have it, closest
+      cubic-bezier where we don't:
+  - `none`/`linear` → `linear`; `power1..4.in/out/inOut` → quad/cubic equivalents
+    or generated bezier; `sine`, `expo`, `circ`, `back` → cubic-bezier;
+  - `elastic`, `bounce`, `steps(n)` → **not representable** by a single bezier.
+    Options: (a) reject with a clear error naming the ease, or (b) bake them by
+    sampling the ease into N intermediate keyframes at author time.
+    **Decision: (b), behind `{ bakeEases: true }`, default off** — baking keeps
+    JSON portable and the engine untouched, but multiplies keyframe count, so it
+    must be opt-in and the docs must state the keyframe cost.
+  - [ ] **Deliberately not done** — adding `elastic`/`bounce`/`steps` as
+        first-class `BuiltInEasingType` values is gated on baking proving
+        unusable in practice. Baking works; springs (26C) cover the cases where
+        a real spring was what the author wanted. Revisit only with evidence.
+- [x] `ease` may also be a raw `CubicBezierPoints` or an `EasingFunction`
+      (function eases can't serialize — reject them at `toDefinition()` with a
+      message pointing at `createCubicBezier`).
+
+### Slice 5 — DOM convenience wrapper & control surface
+
+- [x] `tf.quickPlay(...)` style helper that wires `DOMAdapter` + a rAF loop, so
+      the 12-line boilerplate in `docs/examples.md` becomes one call. This is the
+      *real* reason GSAP feels lighter than us today — worth doing regardless of
+      the rest of the phase.
+- [x] Control aliases on the returned handle: `play/pause/reverse/restart/kill`,
+      `seek(secondsOrLabel)`, `progress()`, `timeScale()` → mapped onto
+      `Timeline` + `config.speed`. `repeat`/`yoyo` → `loop`/`alternate`.
+- [x] `kill()` = stop + unregister targets. No GSAP-style tween-level overwrite
+      semantics (we have no live tween objects to overwrite) — document the gap.
+
+### Explicitly out of scope
+
+Plugins (ScrollTrigger, Draggable, Flip, MorphSVG, MotionPathPlugin's
+autoRotate-from-live-DOM), `gsap.utils.*`, `gsap.matchMedia`, `quickSetter`,
+keyframe-arrays-inside-vars, tween-level overwrite/conflict resolution, and
+GSAP's implicit `getComputedStyle` start values. Scroll-driven playback is a
+separate idea (it's a *clock* concern, not a compat concern) — if we want it,
+it belongs in the engine as an alternative clock, not here.
+
+### Acceptance
+
+- [x] A compat-authored animation exports JSON that loads in the editor unchanged.
+- [x] Golden-file tests: for ~10 representative GSAP snippets, assert the compiled
+      `TimelineDefinition` matches a checked-in fixture.
+- [x] Determinism test: compiling the same script twice yields byte-identical JSON.
+- [x] Engine bundle size unchanged (facade is a separate entry, tree-shakeable).
+- [x] `docs/gsap-compat.md` — mapping table + a "what we deliberately don't do"
+      section, linked from the README.
+
+---
+
+## Phase 26: Closing the GSAP capability gaps ✓
+
+Phase 25 closes the *syntax* gap. This phase closes the *capability* gap: the
+animation kinds GSAP can express that tinyfly currently cannot, regardless of
+which API you use.
+
+Organising principle: **the engine stays a pure function of time.** Everything
+here either (a) becomes a new *driver* that decides what time to pass in, (b)
+becomes an authoring-time compiler that emits ordinary keyframes, or (c) is a
+narrow, deterministic extension of the track model. Anything that cannot be
+made to fit one of those three shapes is listed under "Deliberately rejected"
+with the reasoning, so it is not relitigated every six months.
+
+Precedent for (a): `Clock` already samples wall-clock time from rAF
+(`src/engine/core/clock.ts`). The engine is deterministic *given a time*, not
+given a wall clock — drivers are an existing, accepted boundary, not a new
+compromise.
+
+### 26A — Driver layer + scroll-driven playback  ← highest value
+
+The biggest real-world gap. Most GSAP production work is scroll-driven, and we
+have no answer at all.
+
+- [x] Establish `src/drivers/` — modules that own *when* and *to what time* a
+      timeline is advanced. They may touch the DOM; the engine must not import
+      them. A driver's only contract is calling `seek()` / `tick()`.
+- [x] `VisibilityDriver` (slice 1, ship first): IntersectionObserver → play once
+      / play each time / reset on exit. ~80 lines, no layout maths, and it covers
+      the most common "animate when it scrolls into view" case. Do this before
+      any scrub work.
+- [x] `ScrollDriver` (slice 2): maps scroll progress to timeline time (scrub).
+  - Pure core: `scrollProgress(rect, viewport, start, end) -> 0..1` as a tested
+    standalone function. All DOM reading happens in a thin shell around it.
+  - GSAP-style `start`/`end` strings (`"top bottom"`, `"center center"`,
+    `"+=400"`) parsed by a pure resolver with a fixture table of cases.
+  - `scrub: true | number` — the number is a smoothing time constant; implement
+    as exponential approach toward target time, and note that smoothing makes
+    playback frame-rate dependent (offer `scrub: true` as the exact, snappy path).
+  - `onEnter`/`onLeave`/`onEnterBack`/`onLeaveBack` callbacks.
+- [x] **Pinning** (slice 3, decide before building): pinning mutates layout
+      (position/spacer insertion) and is where ScrollTrigger's real complexity
+      lives. Options: (a) implement it, (b) document a CSS `position: sticky`
+      recipe that covers ~80% of uses with zero engine surface.
+      **Leaning (b) first** — ship the recipe in docs, revisit (a) only if the
+      sticky approach demonstrably fails for a real example in the gallery.
+- [ ] **Not done** — Editor support: a scroll-scrub preview mode so scroll
+      animations are authorable, not just hand-codable. The drivers are
+      developer-only until this lands.
+- [x] `docs/scroll-animation.md` (written, including the `position: sticky`
+      pinning recipe).
+  - [ ] **Not done** — at least two gallery examples.
+
+### 26B — Interaction layer (Draggable / Observer)
+
+- [x] `src/interaction/` — pointer/wheel/touch normalisation (`Observer`
+      equivalent): a single unified event source emitting
+      `{deltaX, deltaY, velocityX, velocityY, isDragging}`.
+- [x] `Draggable`: bounds, axis lock, and two output modes below.
+  - [ ] **Partial** — snapping is a simple grid snap, NOT the editor's
+        `snap.ts` (which snaps to element edges/centres/guides and is coupled
+        to editor state). Extracting the pure part of `snap.ts` and sharing it
+        is still the right move.
+  1. **drive a timeline's time** (drag to scrub) — needs nothing new;
+  2. **drive a target's properties directly** via an adapter — bypasses the
+     timeline entirely and is therefore *not* serializable. Must be documented
+     as a live-interaction API with no JSON representation.
+- [x] Keep this out of the engine and out of the default player bundle — separate
+      entry `tinyfly/interaction`, opt-in, so embed size is unaffected.
+
+### 26C — Deterministic springs & inertia (a second track kind)
+
+GSAP's InertiaPlugin/physics cannot be keyframed ahead of time. Rather than
+reject physics outright, extend the track model in the one way that stays
+deterministic and serializable.
+
+- [x] New track kind `SpringTrack`:
+      `{ kind: 'spring', target, property, from, to, stiffness, damping, mass, restDelta }`.
+- [x] **Fixed-timestep integration** (e.g. 1 ms substeps) evaluated from t=0 for
+      any requested time — so `getValueAtTime(t)` is pure and repeatable, and
+      `seek()` backwards gives the identical value. Never integrate from the
+      previous frame's state; that would make output frame-rate dependent and
+      break determinism rule 5.
+  - [x] Memoise per-track simulation results to keep scrubbing cheap.
+- [x] Fully JSON-representable (it's just parameters), so it round-trips through
+      the editor and export like any other track.
+- [x] Derive `restDelta`-based natural duration so a spring track contributes a
+      sensible length to `Timeline.duration`.
+- [ ] **Not done** — Curves view: render spring tracks by sampling the
+      simulation. They currently draw as a span bar in the dope sheet
+      (`timeline-view.tsx`) and are skipped by the curve editor.
+- [x] This also supersedes the Phase 25 "bake elastic/bounce" workaround for the
+      cases where a real spring is what the author actually wanted.
+
+### 26D — Live-layout transitions (Flip) as an authoring-time compiler
+
+- [x] `flip(targets, mutate)` helper in the DOM layer: measure rects → run the
+      caller's layout mutation → measure again → emit an ordinary two-keyframe
+      track per changed target (x/y/scaleX/scaleY).
+- [x] Engine untouched: measurement is DOM-layer, output is plain keyframes, and
+      the result serializes normally. The JSON is a snapshot of one specific
+      layout change — document that clearly, since GSAP's Flip is re-measured
+      every run and ours is not.
+
+### 26E — Relative, function-based, and randomised values (compile-time only)
+
+GSAP resolves these at runtime. We resolve them at **compile time** and store
+the concrete result, which preserves both determinism and JSON-first.
+
+- [x] `"+=100"` / `"-=50"` / `"*=2"` resolve against the previous authored value
+      on that target+property (shared resolver with Phase 25's `from` chain —
+      one implementation, not two).
+- [x] `"random(-100, 100)"` and function values resolve once at authoring time
+      against a **recorded seed** stored in the timeline JSON, so regenerating
+      reproduces the same animation and the output is still plain numbers.
+- [x] `random(...)` needs a small seeded PRNG (acceptable under the dependency
+      rule — a dozen lines, no package).
+- [x] Explicitly *not* re-evaluated per loop iteration (GSAP's `repeatRefresh`).
+      Document the divergence.
+
+### 26F — Track conflict resolution & addressable spans
+
+- [x] **Existing undocumented behaviour, now documented:** when two tracks share a
+      target+property, `getStateAtTime` writes both into the same map key, so the
+      *last track added* silently wins (`timeline.ts`, the
+      `targetValues.set(track.property, value)` line). Nothing documents this and
+      nothing warns. Decide and document an explicit rule:
+      last-added-wins (current, cheap) vs. an explicit `priority` field on
+      `Track`. **Leaning: keep last-added-wins, document it, and surface a
+      warning in the editor when two tracks overlap in time on the same
+      target+property** — silent overwrite is the bug, not the rule itself.
+  - [x] Rule documented in `getStateAtTime`; `findConflicts()` added to detect
+        overlaps.
+  - [ ] **Not done** — the editor does not yet call `findConflicts()` to warn.
+        Until it does, the overlap is still silent in the UI.
+- [x] `timeline.getTracks(filter)` / `removeTracks(filter)` by target, property,
+      or time range — the closest principled equivalent to GSAP's per-tween
+      `kill()`, given we have no live tween objects.
+- [x] Phase 25's facade returns handles that carry the generated track ids, so
+      `tween.kill()` maps onto `removeTracks`.
+
+### 26G — Missing animatable properties
+
+Small, unglamorous, and each one blocks real animations today.
+
+- [x] `transformOrigin` (DOM + SVG + Canvas). Canvas needs it most — it currently
+      has no origin concept, so rotate/scale always pivot at the element's own
+      anchor. Non-interpolating string values (`"50% 50%"`) need a step-hold
+      interpolator, or restrict to a numeric `[x, y]` pair — **prefer the numeric
+      pair**, it interpolates and serializes cleanly.
+- [x] `perspective` / `transformPerspective` (DOM real; Canvas already only
+      approximates 3D at `canvas-adapter.ts` — document the approximation rather
+      than pretending parity).
+- [x] `repeatDelay` on `TimelineConfig` (pause between loop iterations).
+- [x] Per-track `delay` / `endDelay` convenience (currently expressible only by
+      shifting keyframe times).
+
+### 26H — Runtime stagger primitive (optional, after Phase 25)
+
+Phase 25 bakes stagger into keyframes at author time, which is correct for JSON
+portability but multiplies track count for large splits (100 letters = 100
+tracks). If that proves to be a real perf or file-size problem:
+
+- [x] Allow one track to carry `targets: string[]` + a `stagger` descriptor,
+      expanded at evaluation time instead of author time.
+- [x] Shipped, but **the evidence gate was not honoured** — runtime stagger was
+      built without first profiling the baked form. It is covered by a test
+      asserting the two forms produce identical output, so neither is wrong;
+      still, the baked form remains the default in the editor and the runtime
+      form should be justified by a profile before it is promoted.
+
+### 26I — WebGL adapter
+
+- [x] Built the minimal adapter rather than amending the doc: quad-per-element
+      with transform, opacity and tint (`src/adapters/webgl/`). Pure
+      `quadMatrix` / `parseColor` are unit-tested; the GL calls need a real
+      context and are not.
+  - Scope is honest in the module doc: no paths, text, or gradients — use the
+    Canvas or SVG adapter for those.
+
+### Deliberately rejected (do not implement)
+
+- **Runtime function-based values** (`x: () => Math.random()*100` evaluated each
+  play) — breaks determinism rule 5 and cannot serialize. 26E is the answer.
+- **`repeatRefresh`** — same reason.
+- **Tween-level overwrite/conflict auto-resolution** — GSAP's `overwrite: 'auto'`
+  depends on live tween instances mutating each other. Our model is declarative
+  data; 26F's explicit rule is the principled equivalent.
+- **`gsap.matchMedia` / `gsap.context`** — responsive variants belong in the host
+  app choosing which timeline JSON to load, not in the engine.
+- **Plugin architecture** — a plugin system would let arbitrary code into the
+  evaluation path and destroy the "inspectable, deterministic" property that is
+  the whole point. New capability lands as engine features or drivers, reviewed
+  individually.
+
+### What shipped
+
+All nine slices are implemented and tested (1085 tests, up from 731). New modules:
+
+| Area | Location |
+|---|---|
+| Stagger maths (shared) | `src/engine/core/stagger.ts` |
+| Spring simulation | `src/engine/core/spring.ts` |
+| Baking (springs + eases) | `src/engine/core/bake.ts` |
+| Compile-time values + seeded PRNG | `src/engine/authoring/` |
+| Track queries + conflict detection | `Timeline.getTracks/removeTracks/findConflicts` |
+| Scroll + visibility drivers | `src/drivers/` → `tinyfly/drivers` |
+| Pointer/drag interaction | `src/interaction/` → `tinyfly/interaction` |
+| FLIP | `src/adapters/dom/flip.ts` |
+| WebGL adapter | `src/adapters/webgl/` |
+| GSAP compat facade | `src/compat/gsap/` → `tinyfly/gsap-compat` |
+
+Add-ons build to `lib/addons` via `vite.config.addons.ts`, with the engine
+externalised to the bare `tinyfly` specifier — importing both `tinyfly` and an
+add-on must not yield two `Timeline` classes.
+
+Docs: [gsap-compat.md](docs/gsap-compat.md), [scroll-animation.md](docs/scroll-animation.md),
+plus new API-reference sections. Both are registered in the in-app help viewer
+(`src/docs/docs-viewer.tsx`), so they appear under **Docs** in the editor.
+
+**Two bugs the tests caught in the new code, worth remembering:**
+- The compat facade defaulted its timeline id to `Date.now()`, so the same
+  script compiled to different JSON on every run — a direct determinism
+  violation, caught by the "compiles identically" test.
+- Position parameters (`'-=0.25'`) were parsed as milliseconds when GSAP means
+  seconds. Fixed with an explicit `scale` on `PositionContext`, so the
+  seconds→ms conversion lives in exactly one place.
+
+### Remaining (carried forward)
+
+- Editor scroll-scrub preview (26A) — without it the drivers are developer-only.
+- Editor conflict warning wired to `findConflicts()` (26F).
+- Curves view sampling for spring tracks (26C).
+- Share the editor's `snap.ts` with `Draggable` (26B).
+- Gallery examples for scroll animation (26A).
+
+### Sequencing recommendation
+
+26A slice 1 (visibility) → 26G (missing properties) → 26A slice 2 (scroll scrub)
+→ 26F (conflict rule) → 26E → 26C → 26B → 26D. 26H and 26I are conditional.
+26A and 26G together cover the majority of real complaints a GSAP user would
+have; everything after that is long-tail.
+
+---
+
 ## Backlog / For Review
 
 - [x] **Esc closes any dialog** — every dialog (AI Settings, Project Settings,

@@ -17,6 +17,15 @@ Complete reference for the tinyfly animation engine, player, and adapters.
 - [DOMAdapter](#domadapter)
 - [CanvasAdapter](#canvasadapter)
 - [SVGAdapter](#svgadapter)
+- [WebGLAdapter](#webgladapter)
+- [Spring Tracks](#spring-tracks)
+- [Stagger](#stagger)
+- [Baking](#baking)
+- [Authoring Values](#authoring-values)
+- [Drivers](#drivers)
+- [Interaction](#interaction)
+- [Flip](#flip)
+- [GSAP Compat](#gsap-compat)
 - [Export Formats](#export-formats)
 
 ---
@@ -1148,3 +1157,235 @@ Pure helpers for packing animation frames into a grid PNG and writing matching
 metadata (frame size, columns/rows, count, fps). The editor's **Sprite** export
 uses them to render each frame into its cell and download `…-spritesheet.png` +
 `…-spritesheet.json`. See [sprite-sheet-export.md](sprite-sheet-export.md).
+
+---
+
+## WebGLAdapter
+
+A minimal GPU render target: every element is a textured or solid-coloured quad
+with a transform, opacity and tint. Covers the same ground as the Canvas adapter
+for moving, scaling, rotating and fading rectangles and images. Paths, text and
+gradients are out of scope — use the Canvas or SVG adapter for those.
+
+```typescript
+import { WebGLAdapter } from 'tinyfly/adapters/webgl'
+
+const gl = canvas.getContext('webgl')!
+const adapter = new WebGLAdapter(gl)
+
+adapter.registerTarget('box', { x: 200, y: 100, width: 80, height: 80, fill: '#4f9' })
+
+timeline.onUpdate = (state) => {
+  adapter.applyState(state)
+  adapter.render()
+}
+```
+
+Pure helpers `quadMatrix(target, canvasWidth, canvasHeight)` and
+`parseColor(hex)` are exported for testing and for building your own renderer.
+
+---
+
+## Spring Tracks
+
+A track whose values come from a physical simulation rather than keyframes.
+
+```typescript
+timeline.addTrack({
+  id: 'pop',
+  target: 'box',
+  property: 'scale',
+  kind: 'spring',
+  spring: { from: 0, to: 1, stiffness: 200, damping: 12, mass: 1, velocity: 0 },
+})
+```
+
+| Field | Default | Meaning |
+|---|---|---|
+| `from` / `to` | — | Start and resting values |
+| `stiffness` | 180 | Higher is snappier |
+| `damping` | 12 | Higher settles sooner; 0 oscillates forever |
+| `mass` | 1 | Higher is more sluggish |
+| `velocity` | 0 | Initial velocity, units/second |
+| `restDelta` | 0.01 | Distance from `to` that counts as settled |
+| `restSpeed` | 0.01 | Speed that counts as settled |
+
+Springs are integrated at a **fixed 1ms timestep from t=0** on every query, so
+`getValueAtTime` stays a pure function of time: seeking backwards gives the same
+values as playing forwards, and two runs are byte-identical. The simulation is
+memoised, so scrubbing is cheap after the first pass. An undamped spring is
+capped at 60s so its duration stays finite.
+
+Because the animation is the *parameters*, a spring track serializes like any
+other track.
+
+```typescript
+import { SpringSampler, springValueAt, springDuration } from 'tinyfly'
+
+springDuration({ from: 0, to: 100 })     // natural settle time in ms
+springValueAt({ from: 0, to: 100 }, 120) // value at 120ms
+```
+
+---
+
+## Stagger
+
+One track can drive many targets, each offset in time.
+
+```typescript
+timeline.addTrack(createTrack({
+  id: 'letters',
+  target: 'unused',            // ignored when `targets` is present
+  targets: ['l1', 'l2', 'l3'],
+  stagger: { each: 100, from: 'center' },
+  property: 'opacity',
+  keyframes: [{ time: 0, value: 0 }, { time: 500, value: 1 }],
+}))
+```
+
+| Field | Meaning |
+|---|---|
+| `each` | Milliseconds between consecutive targets |
+| `amount` | Total spread, divided across the targets (wins over `each`) |
+| `from` | `'start'` (default), `'end'`, `'center'`, `'edges'`, or an index |
+
+This produces exactly what baking the stagger into N separate tracks would, so
+either form is valid — the runtime form is smaller in JSON when N is large.
+
+Pure helpers, shared by the editor, the engine and the compat facade:
+
+```typescript
+import { staggerOffset, staggerOffsets, staggerSpan, staggerDistance } from 'tinyfly'
+
+staggerOffsets(3, { each: 100 })   // [0, 100, 200]
+staggerSpan(4, { each: 100 })      // 300 — how far it extends a timeline
+```
+
+### Track scheduling
+
+Every track kind also accepts:
+
+| Field | Meaning |
+|---|---|
+| `delay` | Shift every keyframe by this many ms at evaluation time |
+| `endDelay` | Extra ms held after the last keyframe (extends duration) |
+
+---
+
+## Baking
+
+Turning a computed animation into plain keyframes, for export formats that only
+understand keyframes (CSS, Lottie) and for eases with no closed form.
+
+```typescript
+import { bakeSpringTrack, bakeEasing, toKeyframedTracks, simplifyKeyframes } from 'tinyfly'
+
+bakeSpringTrack(springTrack, { intervalMs: 1000 / 60, tolerance: 0.01 })
+bakeEasing(fromKeyframe, toKeyframe, elasticFn, { intervalMs: 16 })
+toKeyframedTracks(timeline.tracks)   // springs baked, everything else untouched
+```
+
+Baking is lossy in file size, not fidelity: sampling a deterministic simulation
+always produces the same keyframes. `simplifyKeyframes` drops points that lie on
+a straight line between their neighbours.
+
+---
+
+## Authoring Values
+
+Relative and random values are resolved when the timeline is **built**, not when
+it runs, so what lands in the JSON is a plain number.
+
+```typescript
+import { ValueResolver, resolveValue, resolveSequence, createRandom } from 'tinyfly'
+
+resolveValue('+=100', { base: 50 })          // 150
+resolveSequence(['+=100', '+=100'], 0)       // [100, 200]
+
+const resolver = new ValueResolver(2024)     // the seed
+resolver.resolve('random(-50, 50)')          // same seed → same number, always
+resolver.seed                                // store alongside the timeline
+```
+
+Operators: `+=`, `-=`, `*=`, `/=`. Random: `random(min, max)` and
+`random(min, max, step)`. Non-expression values (numbers, colours, path data)
+pass through untouched.
+
+---
+
+## Drivers
+
+Modules that decide *when* a timeline advances and *to what time*. They may
+touch the DOM; the engine never imports them. See
+[scroll-animation.md](scroll-animation.md).
+
+```typescript
+import { VisibilityDriver, ScrollDriver, scrollProgress } from 'tinyfly/drivers'
+
+new VisibilityDriver({ timeline, trigger, behaviour: 'once' }).start()
+new ScrollDriver({ timeline, trigger, start: 'top bottom', end: 'bottom top', scrub: true }).start()
+```
+
+`scrollProgress(rect, viewportHeight, start, end)` and `parseTrigger` are pure
+and exported, so trigger geometry can be tested without a browser.
+
+---
+
+## Interaction
+
+Live input. **Has no serializable representation** — a dragged position is not
+part of an animation document.
+
+```typescript
+import { Observer, Draggable } from 'tinyfly/interaction'
+
+// Drag to scrub a timeline
+new Draggable({ target: el, mode: 'scrub', timeline, scrubDistance: 500 }).start()
+
+// Drag to move, with bounds and snapping
+new Draggable({ target: el, axis: 'x', bounds: { minX: 0, maxX: 300 }, snap: 25 }).start()
+```
+
+`Observer` normalises pointer, touch and wheel into one `{ deltaX, deltaY,
+velocityX, velocityY, totalX, totalY, isDragging }` shape.
+
+---
+
+## Flip
+
+FLIP layout transitions, compiled to ordinary keyframes at authoring time.
+
+```typescript
+import { flip, recordFlipState, buildFlipTracks } from 'tinyfly/adapters/dom'
+
+const tracks = flip(
+  [{ name: 'card', element: cardEl }],
+  () => container.classList.add('grid-layout'),   // your layout change
+  { duration: 600, easing: 'ease-out' }
+)
+tracks.forEach((t) => timeline.addTrack(t))
+```
+
+Measurement happens in the DOM layer, so the engine stays free of live layout
+reads. The trade-off: the resulting JSON is a snapshot of one specific layout
+change — recompute it when the layout it was measured against changes.
+
+---
+
+## GSAP Compat
+
+A GSAP-flavoured authoring surface that desugars to ordinary tracks. See
+[gsap-compat.md](gsap-compat.md) for the full mapping table.
+
+```typescript
+import { timeline, quickPlay } from 'tinyfly/gsap-compat'
+
+const tl = timeline()
+tl.fromTo('box', { x: 0 }, { x: 200, duration: 1, ease: 'power2.out' })
+tl.to('box', { rotate: 180, duration: 0.5 }, '-=0.25')
+
+quickPlay({ timeline: tl.timeline, targets: { box: '#box' } })
+```
+
+`quickPlay` also stands alone: it wires a timeline to the DOM and runs the rAF
+loop, replacing the usual boilerplate.

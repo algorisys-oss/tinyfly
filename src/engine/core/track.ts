@@ -1,6 +1,8 @@
-import type { Track, Keyframe, AnimatableValue } from '../types'
+import type { Track, Keyframe, AnimatableValue, SpringTrack, StaggerConfig } from '../types'
 import { getEasingFunction } from '../interpolation/easing'
 import { getInterpolator } from '../interpolation/interpolators'
+import { staggerOffset, staggerSpan } from './stagger'
+import { SpringSampler } from './spring'
 
 /**
  * Create a track with sorted keyframes.
@@ -15,20 +17,101 @@ export function createTrack<T extends AnimatableValue>(
   }
 }
 
+/** One target's value at a point in time. */
+export interface TargetValue<T extends AnimatableValue = AnimatableValue> {
+  target: string
+  value: T
+}
+
+/**
+ * The targets a track drives, in order. A track either names one `target` or
+ * fans across `targets`; the multi-target form is what runtime stagger uses.
+ */
+export function trackTargets(track: { target: string; targets?: string[] }): string[] {
+  return track.targets && track.targets.length > 0 ? track.targets : [track.target]
+}
+
+/**
+ * Time offset applied to a track's own timeline for the target at `index`:
+ * its `delay` plus its share of any stagger.
+ */
+function offsetFor(
+  index: number,
+  count: number,
+  delay: number | undefined,
+  stagger: StaggerConfig | undefined
+): number {
+  const base = delay ?? 0
+  if (!stagger || count <= 1) return base
+  return base + staggerOffset(index, count, stagger)
+}
+
 /**
  * TrackPlayer computes interpolated values for a track at any given time.
  */
 export class TrackPlayer<T extends AnimatableValue = AnimatableValue> {
   private track: Track<T>
+  private targets: string[]
 
   constructor(track: Track<T>) {
     this.track = track
+    this.targets = trackTargets(track)
   }
 
   /**
    * Get the interpolated value at a specific time.
+   *
+   * For a multi-target track this returns the *first* target's value; callers
+   * that need every target should use `getTargetValues`.
    */
   getValueAtTime(time: number): T | undefined {
+    return this.valueForOffset(time - offsetFor(0, this.targets.length, this.track.delay, this.track.stagger))
+  }
+
+  /**
+   * Every target's value at a specific time, in target order.
+   *
+   * Single-target tracks yield one entry; staggered tracks yield one per target,
+   * each sampled at its own offset time.
+   */
+  getTargetValues(time: number): TargetValue<T>[] {
+    const count = this.targets.length
+    const out: TargetValue<T>[] = []
+
+    for (let i = 0; i < count; i++) {
+      const offset = offsetFor(i, count, this.track.delay, this.track.stagger)
+      const value = this.valueForOffset(time - offset)
+      if (value === undefined) continue
+      out.push({ target: this.targets[i], value })
+    }
+
+    return out
+  }
+
+  /**
+   * Get the duration of this track — the last keyframe, plus any delay, the
+   * widest stagger offset, and any trailing hold.
+   */
+  getDuration(): number {
+    const { keyframes } = this.track
+    if (keyframes.length === 0) {
+      return 0
+    }
+
+    const last = keyframes[keyframes.length - 1].time
+    const spread = this.track.stagger ? staggerSpan(this.targets.length, this.track.stagger) : 0
+    return last + (this.track.delay ?? 0) + spread + (this.track.endDelay ?? 0)
+  }
+
+  /**
+   * Get the track metadata.
+   */
+  getTrack(): Track<T> {
+    return this.track
+  }
+
+  /** Interpolated value at a time already shifted into the track's own frame. */
+  private valueForOffset(time: number): T | undefined {
     const { keyframes } = this.track
 
     if (keyframes.length === 0) {
@@ -74,24 +157,6 @@ export class TrackPlayer<T extends AnimatableValue = AnimatableValue> {
   }
 
   /**
-   * Get the duration of this track (time of last keyframe).
-   */
-  getDuration(): number {
-    const { keyframes } = this.track
-    if (keyframes.length === 0) {
-      return 0
-    }
-    return keyframes[keyframes.length - 1].time
-  }
-
-  /**
-   * Get the track metadata.
-   */
-  getTrack(): Track<T> {
-    return this.track
-  }
-
-  /**
    * Find the keyframes surrounding a given time.
    */
   private findSurroundingKeyframes(
@@ -106,5 +171,50 @@ export class TrackPlayer<T extends AnimatableValue = AnimatableValue> {
     }
 
     return { from: null, to: null }
+  }
+}
+
+/**
+ * SpringTrackPlayer evaluates a spring track.
+ *
+ * Mirrors `TrackPlayer`'s surface so `Timeline` can treat both the same way.
+ * The underlying `SpringSampler` caches its simulation, so scrubbing is cheap
+ * after the first pass.
+ */
+export class SpringTrackPlayer {
+  private track: SpringTrack
+  private targets: string[]
+  private sampler: SpringSampler
+
+  constructor(track: SpringTrack) {
+    this.track = track
+    this.targets = trackTargets(track)
+    this.sampler = new SpringSampler(track.spring)
+  }
+
+  getValueAtTime(time: number): number {
+    return this.sampler.valueAt(time - offsetFor(0, this.targets.length, this.track.delay, this.track.stagger))
+  }
+
+  getTargetValues(time: number): TargetValue<number>[] {
+    const count = this.targets.length
+    const out: TargetValue<number>[] = []
+
+    for (let i = 0; i < count; i++) {
+      const offset = offsetFor(i, count, this.track.delay, this.track.stagger)
+      out.push({ target: this.targets[i], value: this.sampler.valueAt(time - offset) })
+    }
+
+    return out
+  }
+
+  /** Settle time plus delay and the widest stagger offset. */
+  getDuration(): number {
+    const spread = this.track.stagger ? staggerSpan(this.targets.length, this.track.stagger) : 0
+    return this.sampler.settleTime() + (this.track.delay ?? 0) + spread
+  }
+
+  getTrack(): SpringTrack {
+    return this.track
   }
 }

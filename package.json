@@ -1,6 +1,6 @@
 {
   "name": "tinyfly",
-  "version": "0.46.2",
+  "version": "0.47.0",
   "type": "module",
   "description": "Lightweight, API-driven animation engine and editor. The engine is framework-agnostic and runs in browsers, Web Workers, and Node.",
   "license": "MIT",
@@ -20,11 +20,24 @@
       "types": "./lib/types/player/index.d.ts",
       "import": "./lib/player/tinyfly-player.es.js",
       "require": "./lib/player/tinyfly-player.umd.js"
+    },
+    "./drivers": {
+      "types": "./lib/types/drivers/index.d.ts",
+      "import": "./lib/addons/drivers.js"
+    },
+    "./interaction": {
+      "types": "./lib/types/interaction/index.d.ts",
+      "import": "./lib/addons/interaction.js"
+    },
+    "./gsap-compat": {
+      "types": "./lib/types/compat/gsap/index.d.ts",
+      "import": "./lib/addons/gsap-compat.js"
     }
   },
   "files": [
     "lib/engine",
     "lib/player",
+    "lib/addons",
     "lib/types"
   ],
   "scripts": {

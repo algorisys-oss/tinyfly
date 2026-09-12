@@ -4,7 +4,7 @@ import type { EditorStore } from '../stores/editor-store'
 import type { ProjectStore } from '../stores/project-store'
 import { isGradient, createLinearGradient, createRadialGradient, type SceneStore, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type SymbolInstanceElement, type FillValue, type LinearGradient, type RadialGradient } from '../stores/scene-store'
 import type { EasingType, BuiltInEasingType, CubicBezierPoints } from '../../engine'
-import { isCubicBezierEasing } from '../../engine'
+import { isCubicBezierEasing, hasKeyframes } from '../../engine'
 import { HelpIcon } from './tooltip'
 import { presetsByCategory, type AnimationPreset } from '../presets'
 import { CurveEditor } from './curve-editor'
@@ -47,6 +47,7 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
     const track = selectedTrack()
     const index = selectedKeyframeIndex()
     if (!track || index === null || index < 0) return null
+    if (!hasKeyframes(track)) return null
     return track.keyframes[index] ?? null
   })
 

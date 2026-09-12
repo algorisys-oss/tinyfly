@@ -629,3 +629,95 @@ describe('CanvasAdapter image object-fit + rounded clip', () => {
     expect(calls.roundRect[0]).toEqual([0, 0, 100, 100, 12])
   })
 })
+
+/**
+ * Transform origin (Phase 26G). Canvas previously always pivoted at the
+ * element's own centre with no way to change it; originX/originY shift the
+ * pivot within the element's bounding box, as percentages.
+ */
+describe('CanvasAdapter transform origin', () => {
+  let adapter: CanvasAdapter
+  let ctx: CanvasRenderingContext2D
+  let translations: Array<[number, number]>
+
+  beforeEach(() => {
+    adapter = new CanvasAdapter()
+    translations = []
+    ctx = {
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate: vi.fn((x: number, y: number) => { translations.push([x, y]) }),
+      rotate: vi.fn(),
+      scale: vi.fn(),
+      transform: vi.fn(),
+      globalAlpha: 1,
+      fillStyle: '',
+      strokeStyle: '',
+      lineWidth: 1,
+      beginPath: vi.fn(),
+      rect: vi.fn(),
+      arc: vi.fn(),
+      arcTo: vi.fn(),
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      fill: vi.fn(),
+      stroke: vi.fn(),
+      closePath: vi.fn(),
+      clip: vi.fn(),
+      clearRect: vi.fn(),
+      fillText: vi.fn(),
+      strokeText: vi.fn(),
+      measureText: vi.fn(() => ({ width: 0 })),
+      createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+      createRadialGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+      setLineDash: vi.fn(),
+      drawImage: vi.fn(),
+      filter: 'none',
+      canvas: { width: 800, height: 600 },
+    } as unknown as CanvasRenderingContext2D
+  })
+
+  const rect = (extra: Partial<CanvasTarget> = {}): CanvasTarget =>
+    ({ type: 'rect', x: 100, y: 100, width: 200, height: 100, rotate: 45, ...extra }) as CanvasTarget
+
+  it('pivots at the centre by default', () => {
+    adapter.registerTarget('box', rect())
+    adapter.render(ctx)
+    expect(translations[0]).toEqual([200, 150])
+  })
+
+  it('pivots at the top-left corner at origin 0/0', () => {
+    adapter.registerTarget('box', rect({ originX: 0, originY: 0 }))
+    adapter.render(ctx)
+    expect(translations[0]).toEqual([100, 100])
+  })
+
+  it('pivots at the bottom-right corner at origin 100/100', () => {
+    adapter.registerTarget('box', rect({ originX: 100, originY: 100 }))
+    adapter.render(ctx)
+    expect(translations[0]).toEqual([300, 200])
+  })
+
+  it('shifts one axis independently', () => {
+    adapter.registerTarget('box', rect({ originX: 0 }))
+    adapter.render(ctx)
+    expect(translations[0]).toEqual([100, 150])
+  })
+
+  it('undoes the pivot translation afterwards', () => {
+    adapter.registerTarget('box', rect({ originX: 0, originY: 0 }))
+    adapter.render(ctx)
+    const [px, py] = translations[0]
+    const [ux, uy] = translations[translations.length - 1]
+    expect([ux, uy]).toEqual([-px, -py])
+  })
+
+  it('uses the diameter as the bounding box for a circle', () => {
+    adapter.registerTarget('dot', {
+      type: 'circle', x: 50, y: 50, radius: 20, rotate: 30,
+      originX: 100, originY: 50,
+    } as CanvasTarget)
+    adapter.render(ctx)
+    expect(translations[0]).toEqual([70, 50])
+  })
+})

@@ -1,6 +1,7 @@
 import { createSignal, For } from 'solid-js'
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
+import { hasKeyframes } from '../../engine'
 import { createCollapsed } from '../utils/use-collapsed'
 import './track-panel.css'
 
@@ -92,7 +93,9 @@ export const TrackPanel: Component<TrackPanelProps> = (props) => {
                   <span class="track-property">{track.property}</span>
                 </div>
                 <div class="track-meta">
-                  <span class="keyframe-count">{track.keyframes.length} kf</span>
+                  <span class="keyframe-count">
+                    {hasKeyframes(track) ? `${track.keyframes.length} kf` : 'spring'}
+                  </span>
                   <button
                     class="remove-btn"
                     onClick={(e) => {

@@ -1,5 +1,5 @@
-import type { Track, Keyframe, EasingType, CubicBezierPoints } from '../../engine'
-import { getEasingFunction, isCubicBezierEasing } from '../../engine'
+import type { Track, AnyTrack, Keyframe, EasingType, CubicBezierPoints } from '../../engine'
+import { getEasingFunction, isCubicBezierEasing, hasKeyframes } from '../../engine'
 
 /**
  * Pure helpers behind the curve (graph) editor. Kept framework-free and
@@ -44,8 +44,9 @@ export function easingToBezierPoints(easing: EasingType | undefined): CubicBezie
 }
 
 /** True when every keyframe value is a plain number (graphable as a curve). */
-export function isNumericTrack(track: Track): boolean {
+export function isNumericTrack(track: AnyTrack): track is Track {
   return (
+    hasKeyframes(track) &&
     track.property !== 'motionPath' &&
     track.keyframes.length > 0 &&
     track.keyframes.every((kf) => typeof kf.value === 'number')

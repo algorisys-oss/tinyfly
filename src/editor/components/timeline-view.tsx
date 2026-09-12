@@ -1,7 +1,8 @@
-import { For, createMemo, createSignal, createEffect, onCleanup } from 'solid-js'
+import { For, Show, createMemo, createSignal, createEffect, onCleanup } from 'solid-js'
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
-import type { Track } from '../../engine'
+import type { Track, AnyTrack } from '../../engine'
+import { hasKeyframes, isSpringTrack } from '../../engine'
 import { trackLabelWidth } from '../utils/track-label-width'
 import './timeline-view.css'
 
@@ -45,7 +46,16 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
     props.store.seek(time)
   }
 
-  const handleTrackClick = (track: Track, _e: MouseEvent) => {
+  // How long a spring track runs. Read from the timeline rather than recomputed:
+  // the timeline's track player memoises its simulation, whereas calling
+  // `springDuration` here would re-run the whole integration on every render.
+  const springSpanMs = (track: AnyTrack): number => {
+    if (!isSpringTrack(track)) return 0
+    const span = props.store.state.timeline?.getTrackSpan(track.id)
+    return span ? span.to - span.from : 0
+  }
+
+  const handleTrackClick = (track: AnyTrack, _e: MouseEvent) => {
     // A just-completed box drag ends with a click on the row; don't let it
     // collapse the box selection down to a single-track select.
     if (boxJustFinished) {
@@ -57,7 +67,10 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
 
   // Bound to the keyframe lane, not the whole row: the row includes the label
   // gutter, which would offset every added keyframe by the gutter's width.
-  const handleTrackDoubleClick = (track: Track, e: MouseEvent) => {
+  const handleTrackDoubleClick = (track: AnyTrack, e: MouseEvent) => {
+    // Springs are parameter-driven; there is no keyframe to add.
+    if (!hasKeyframes(track)) return
+
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
     const x = e.clientX - rect.left + props.store.state.scrollPosition
     const time = Math.max(0, xToTime(x))
@@ -200,6 +213,7 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
       tracks().forEach((track, r) => {
         const cy = r * ROW_H + ROW_H / 2
         if (cy < minY || cy > maxY) return
+        if (!hasKeyframes(track)) return
         track.keyframes.forEach((kf, i) => {
           const cx = originX + timeToX(kf.time) - props.store.state.scrollPosition
           if (cx >= minX && cx <= maxX) refs.push({ trackId: track.id, index: i })
@@ -295,30 +309,48 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
                     left: `${timeToX(duration()) - props.store.state.scrollPosition}px`,
                   }}
                 />
-                <For each={track.keyframes}>
-                  {(keyframe, index) => {
-                    const isDragging = () => {
-                      const state = dragState()
-                      return state?.trackId === track.id && state?.keyframeIndex === index()
-                    }
-                    const displayTime = () => getKeyframeDisplayTime(track, index(), keyframe.time)
+                {/* Spring tracks have no keyframes to drag — their shape comes
+                    from parameters — so they draw as a span from start to
+                    settle instead of a row of dots. */}
+                <Show when={isSpringTrack(track)}>
+                  <div
+                    class="spring-span"
+                    title="Spring track — edit its parameters in Properties"
+                    style={{
+                      left: `${timeToX(track.delay ?? 0) - props.store.state.scrollPosition}px`,
+                      width: `${Math.max(2, timeToX(springSpanMs(track)))}px`,
+                    }}
+                  />
+                </Show>
+                <Show when={hasKeyframes(track) ? track : null} keyed>
+                  {(kfTrack) => (
+                    <For each={kfTrack.keyframes}>
+                      {(keyframe, index) => {
+                        const isDragging = () => {
+                          const state = dragState()
+                          return state?.trackId === kfTrack.id && state?.keyframeIndex === index()
+                        }
+                        const displayTime = () =>
+                          getKeyframeDisplayTime(kfTrack as Track, index(), keyframe.time)
 
-                    return (
-                      <div
-                        class="keyframe"
-                        classList={{
-                          selected: props.store.isKeyframeSelected(track.id, index()),
-                          dragging: isDragging(),
-                        }}
-                        style={{
-                          left: `${timeToX(displayTime()) - props.store.state.scrollPosition}px`,
-                        }}
-                        onMouseDown={(e) => handleKeyframeMouseDown(track, index(), e)}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    )
-                  }}
-                </For>
+                        return (
+                          <div
+                            class="keyframe"
+                            classList={{
+                              selected: props.store.isKeyframeSelected(kfTrack.id, index()),
+                              dragging: isDragging(),
+                            }}
+                            style={{
+                              left: `${timeToX(displayTime()) - props.store.state.scrollPosition}px`,
+                            }}
+                            onMouseDown={(e) => handleKeyframeMouseDown(kfTrack as Track, index(), e)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        )
+                      }}
+                    </For>
+                  )}
+                </Show>
               </div>
             </div>
           )}

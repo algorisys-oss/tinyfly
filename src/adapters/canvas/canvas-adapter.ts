@@ -48,6 +48,13 @@ export interface CanvasTargetBase {
   scaleY?: number
   skewX?: number
   skewY?: number
+  /**
+   * Transform pivot, as a percentage of the target's bounding box
+   * (0 = left/top, 50 = centre, 100 = right/bottom). Defaults to 50/50, which
+   * is the behaviour Canvas had before origins existed.
+   */
+  originX?: number
+  originY?: number
   fillStyle?: FillValue
   strokeStyle?: string
   lineWidth?: number
@@ -287,9 +294,10 @@ export class CanvasAdapter {
       target.skewY !== undefined
 
     if (hasTransform) {
-      // Move origin to target center for rotation/scale
-      const centerX = this.getCenterX(target)
-      const centerY = this.getCenterY(target)
+      // Move the origin to the target's pivot for rotation/scale. The pivot is
+      // its centre unless originX/originY shift it within the bounding box.
+      const centerX = this.getPivotX(target)
+      const centerY = this.getPivotY(target)
 
       ctx.translate(centerX, centerY)
 
@@ -660,6 +668,61 @@ export class CanvasAdapter {
     ctx.clip()
     ctx.drawImage(target.image, dx, dy, dw, dh)
     ctx.restore()
+  }
+
+  /**
+   * Transform pivot X: the target's centre, shifted by `originX` across its
+   * own width. `originX: 0` pivots on the left edge, 100 on the right.
+   */
+  private getPivotX(target: CanvasTarget): number {
+    const centre = this.getCenterX(target)
+    if (target.originX === undefined) return centre
+    return centre + ((target.originX - 50) / 100) * this.getBoundsWidth(target)
+  }
+
+  /** Transform pivot Y — see `getPivotX`. */
+  private getPivotY(target: CanvasTarget): number {
+    const centre = this.getCenterY(target)
+    if (target.originY === undefined) return centre
+    return centre + ((target.originY - 50) / 100) * this.getBoundsHeight(target)
+  }
+
+  /**
+   * Bounding-box width used to resolve `originX`. Circles use their diameter;
+   * text is approximated from its font size, since measuring it would need the
+   * context and the pivot only has to be stable, not typographically exact.
+   */
+  private getBoundsWidth(target: CanvasTarget): number {
+    switch (target.type) {
+      case 'rect':
+      case 'image':
+        return target.width
+      case 'circle':
+        return target.radius * 2
+      case 'text':
+        return (target.text?.length ?? 0) * (target.fontSize ?? 16) * 0.6
+      case 'line':
+        return Math.abs(target.x2 - target.x)
+      case 'path':
+        return 100 // Matches the approximate centre used above
+    }
+  }
+
+  /** Bounding-box height used to resolve `originY`. See `getBoundsWidth`. */
+  private getBoundsHeight(target: CanvasTarget): number {
+    switch (target.type) {
+      case 'rect':
+      case 'image':
+        return target.height
+      case 'circle':
+        return target.radius * 2
+      case 'text':
+        return target.fontSize ?? 16
+      case 'line':
+        return Math.abs(target.y2 - target.y)
+      case 'path':
+        return 100
+    }
   }
 
   /**
