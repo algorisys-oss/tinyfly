@@ -461,6 +461,16 @@ tinyfly/
 - [x] Spring parameter editing in the editor UI (presets + sliders, auto-extending scene)
 - [x] Spring presets in the Presets panel (Pop, Drop, Slide, Wobble, Settle)
 - [ ] Export-time collapse of baked staggers into runtime stagger tracks
+
+**Planned — [Phase 27](todo.md) (closing on GSAP):**
+- [ ] Cross-browser testing (Firefox and WebKit are currently unverified)
+- [ ] Performance benchmark against GSAP
+- [ ] Exercise the WebGL adapter against a real GL context (only its maths is tested)
+- [ ] Load-time value resolution + responsive variants (the serializable answer to function values and `matchMedia`)
+- [ ] Inertia / throw as a `decay` track kind
+- [ ] ScrambleText, CustomBounce, CustomWiggle (authoring-time generators)
+- [ ] Framework wrappers (React / Vue / Svelte)
+- [ ] Scroll pinning, nested timelines at runtime, explicit track priority
 - [ ] React Native adapter
 - [ ] Collaborative editing
 

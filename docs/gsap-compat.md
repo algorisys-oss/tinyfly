@@ -137,6 +137,11 @@ that, step 2 chains naturally and you can use `to` freely.
 These are not on a roadmap. Each conflicts with a principle the project is built
 on, and the alternative given is the principled equivalent.
 
+Several of these are now **reopened for consideration** in Phase 27 of
+[todo.md](../todo.md), with designs that resolve values once at load rather than
+per frame — which keeps the JSON a complete description of the animation. The
+reasoning below is still the bar any such proposal has to clear.
+
 | Not supported | Why | Instead |
 |---|---|---|
 | Runtime function values (`x: () => Math.random() * 100`) | Cannot serialize; different every run | Compile-time `"random(-100, 100)"` with a recorded seed — see [authoring values](#compile-time-values) |

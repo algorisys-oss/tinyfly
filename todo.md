@@ -665,20 +665,30 @@ tracks). If that proves to be a real perf or file-size problem:
   - Scope is honest in the module doc: no paths, text, or gradients — use the
     Canvas or SVG adapter for those.
 
-### Deliberately rejected (do not implement)
+### Deliberately rejected (superseded — see Phase 27)
+
+These were rejected during Phase 26 for the reasons below. Most have since been
+**reopened for consideration** in Phase 27, which proposes versions that keep the
+determinism and JSON-first guarantees intact. The original reasoning is kept
+because it is still the bar any proposal has to clear.
 
 - **Runtime function-based values** (`x: () => Math.random()*100` evaluated each
   play) — breaks determinism rule 5 and cannot serialize. 26E is the answer.
+  → reopened as **27A.1** (load-time resolution, not per-frame).
 - **`repeatRefresh`** — same reason.
+  → reopened as **27A.2** (seed derived from the loop iteration).
 - **Tween-level overwrite/conflict auto-resolution** — GSAP's `overwrite: 'auto'`
   depends on live tween instances mutating each other. Our model is declarative
   data; 26F's explicit rule is the principled equivalent.
+  → reopened as **27B.5** (explicit priority, still declarative).
 - **`gsap.matchMedia` / `gsap.context`** — responsive variants belong in the host
   app choosing which timeline JSON to load, not in the engine.
+  → reopened as **27A.3 / 27A.4** (variants as data; disposal as a host helper).
 - **Plugin architecture** — a plugin system would let arbitrary code into the
   evaluation path and destroy the "inspectable, deterministic" property that is
   the whole point. New capability lands as engine features or drivers, reviewed
   individually.
+  **Still rejected.** Nothing in Phase 27 requires it.
 
 ### What shipped
 
@@ -850,9 +860,15 @@ have caught. Worth recording *why* each was invisible to tests:
 
 ### Still open
 
-- Pinning in `ScrollDriver` (the `position: sticky` recipe covers the common
-  cases; revisit only if a real example needs more).
-- Export-time collapse of baked staggers into runtime stagger tracks (see above).
+Everything remaining from Phase 26 is carried into **Phase 27** below, which
+also covers the runtime-dynamism items and the maturity gaps found by the
+v0.50.1 comparison against GSAP.
+
+- Pinning in `ScrollDriver` → **27B.1** (still gated on a concrete example that
+  the `position: sticky` recipe cannot express).
+- Export-time collapse of baked staggers into runtime stagger tracks — the one
+  item *not* in Phase 27, because it is an optimisation rather than a gap. Still
+  worth doing: it would give small files and per-letter editing at once.
 
 ### Sequencing recommendation
 
@@ -860,6 +876,201 @@ have caught. Worth recording *why* each was invisible to tests:
 → 26F (conflict rule) → 26E → 26C → 26B → 26D. 26H and 26I are conditional.
 26A and 26G together cover the majority of real complaints a GSAP user would
 have; everything after that is long-tail.
+
+---
+
+## Phase 27: Closing on GSAP — runtime dynamism, missing plugins, maturity — planned
+
+Written after a full comparison at v0.50.1. Phase 26 closed most of the
+*capability* gap; this phase covers what is left, in three groups of very
+different character:
+
+- **27A Runtime dynamism** — things we rejected on principle. Reopened, with
+  designs that keep determinism and JSON-first intact. **Read the rejection
+  reasoning in "Deliberately rejected" above before starting any of these.**
+- **27B Missing runtime features** — ordinary work, no principle conflict.
+- **27C Maturity** — not features at all, and probably worth more than 27A+27B
+  combined.
+
+**Ordering note:** 27C first. The v0.50.1 post-mortem is the argument — 1,191
+tests, and twenty minutes of real browser use found three bugs including silent
+data loss that had shipped for four releases. More features on an under-verified
+base is the wrong trade.
+
+---
+
+### 27A — Runtime dynamism (principle-sensitive)
+
+The shared insight behind all four: GSAP resolves these **per frame**, which is
+what makes them un-serializable. Resolving them **once, at load**, gets most of
+the value and keeps the JSON a complete description of the animation.
+
+#### 27A.1 — Load-time value resolution
+
+- [ ] `deserializeTimeline(definition, { resolve })` where `resolve(token)`
+      turns a named token into a value.
+- [ ] JSON carries a token, not code: `{ "value": { "$ref": "viewportWidth" } }`.
+- [ ] The host supplies the values; the engine never evaluates anything.
+- [ ] Unresolved tokens fall back to a `default` recorded alongside the token,
+      so a player with no resolver still plays something sensible.
+
+**Why this clears the bar:** deterministic given its inputs, fully serializable,
+and the player stays free of an expression evaluator. Covers the real use case
+(viewport-relative distances, themed colours) without arbitrary code.
+
+**What it does not cover:** per-frame variation. That stays rejected.
+
+#### 27A.2 — Per-iteration randomisation (`repeatRefresh`)
+
+- [ ] Derive the PRNG seed from `baseSeed + loopIteration` so each loop draws
+      different values.
+
+**Why this clears the bar:** still reproducible, and — better than GSAP — you
+can compute iteration N's values directly without playing 1..N-1, so scrubbing
+and export still work. That property is worth protecting in the design.
+
+- [ ] Requires random values to be resolved at *evaluation* rather than
+      authoring time for tracks that opt in. Scope carefully: this is the one
+      item here that touches the hot path.
+
+#### 27A.3 — Responsive variants (`matchMedia`)
+
+- [ ] A `variants` map in the timeline definition, keyed by media query:
+      `{ "(max-width: 600px)": { ...overrides } }`.
+- [ ] Resolved once at load by the player, which already knows the viewport.
+- [ ] Overrides are partial track data, merged over the base — not whole
+      alternative timelines, which would triple file size.
+
+**Why this clears the bar:** it is data. The engine still receives one concrete
+timeline.
+
+#### 27A.4 — Scoped cleanup (`gsap.context`)
+
+- [ ] A `TimelineGroup` (or plain disposer) that owns a set of timelines,
+      drivers and adapters and tears them all down together.
+- [ ] Mostly a host-side convenience; no engine change expected.
+- [ ] Low risk, high value for framework users — this is what React/Vue
+      integrations will reach for on unmount.
+
+---
+
+### 27B — Missing runtime features
+
+#### 27B.1 — Scroll pinning
+
+- [ ] The one we deferred twice. `position: sticky` covers the common case and
+      is documented; this is for what it cannot express (pinning inside a
+      transformed ancestor, horizontal pins, pin-spacing with anchors).
+- [ ] Requires mutating layout: reposition the element and insert a spacer to
+      preserve scroll height. That is where most of ScrollTrigger's complexity
+      lives, and why it was deferred.
+- [ ] **Gate: build only when a concrete example defeats the sticky recipe.**
+      Write that example first; if it cannot be written, close the item.
+
+#### 27B.2 — Inertia / throw (`InertiaPlugin`)
+
+- [ ] A `decay` track kind: release with a velocity, decay by friction, settle.
+- [ ] Different equation from a spring (exponential friction decay, not
+      oscillation), so it is a sibling of `SpringTrack`, not a mode of it.
+- [ ] Optional snap targets — land on the nearest of a set of values.
+- [ ] Same fixed-timestep-from-t=0 treatment as springs, for the same reason:
+      deterministic, serializable, scrub-safe. Reuse `SpringSampler`'s shape.
+- [ ] Pairs with `Draggable`'s release velocity, which is already reported.
+
+#### 27B.3 — Authoring-time text/curve generators
+
+These compile to keyframes, so they fit the model with no engine change at all.
+Cheapest wins in 27B.
+
+- [ ] **ScrambleText** — character scramble resolving to the target string.
+- [ ] **CustomBounce / CustomWiggle** — parameterised generators producing a
+      keyframe sequence or a sampled ease.
+- [ ] All three belong in an `authoring/generators` module beside the existing
+      typewriter and split-text builders.
+
+#### 27B.4 — Nested timelines at runtime
+
+- [ ] Today `gsap-compat`'s `add()` flattens a child at compile time, so a child
+      cannot have its own `timeScale`, loop count, or be controlled separately.
+- [ ] A `TimelineTrack` kind referencing a child definition would fix that.
+- [ ] Touches duration computation, serialization, the editor's track list and
+      conflict detection. **Not small.** Needs a design note before code.
+
+#### 27B.5 — Explicit track priority
+
+- [ ] 26F documented last-added-wins and made overlaps detectable. The next step
+      is an optional `priority` field so authors can override the rule.
+- [ ] Still declarative — no live tween objects, no auto-resolution.
+- [ ] Editor: let the conflict banner offer "make this one win".
+
+#### 27B.6 — ScrollSmoother equivalent
+
+- [ ] Smooth-scrolling the whole page.
+- [ ] **Recommend rejecting.** It is a page-level scrolling concern, not an
+      animation-engine one, it fights native scroll and accessibility, and
+      several good standalone libraries exist. Recorded so the question is not
+      reopened from scratch.
+
+---
+
+### 27C — Maturity (do this first)
+
+Not features. The v0.50.1 post-mortem says this is where the real gap is.
+
+#### 27C.1 — Cross-browser testing
+
+- [ ] The suite has only ever run in Node, and the editor has only ever been
+      driven in Chromium. **Firefox and WebKit are completely unverified.**
+- [ ] Playwright across all three engines for: the editor smoke path, persistence
+      (this is where the `DataCloneError` bug lived), adapters, and export.
+- [ ] Highest-risk areas by prior evidence: IndexedDB, `structuredClone`,
+      WebCodecs (MP4 export), `background-clip: text` (shine), `transform-box`
+      (SVG origin).
+
+#### 27C.2 — Performance benchmark against GSAP
+
+- [ ] We have never measured against GSAP. Claims about being "in the same
+      weight class" currently rest on bundle size alone.
+- [ ] Measure: 100/500/1000 concurrent tweens, frame time under load, memory,
+      time-to-first-frame.
+- [ ] Publish the numbers honestly, including where we lose.
+
+#### 27C.3 — Exercise the WebGL adapter for real
+
+- [ ] Only `quadMatrix` and `parseColor` are tested. **No GL call has ever
+      run** — shader compilation, texture upload and draw are unverified.
+- [ ] Needs a real context (headless-gl in CI, or a Playwright browser test).
+- [ ] Until then the adapter should be described as experimental in the docs.
+
+#### 27C.4 — Framework wrappers
+
+- [ ] Thin `useTinyfly` hooks for React, Vue and Svelte — load a definition,
+      register targets, drive the loop, dispose on unmount (pairs with 27A.4).
+- [ ] Deliberately thin: the engine stays framework-agnostic, and these live in
+      their own entry points.
+
+#### 27C.5 — Broaden the test suite's parameter space
+
+- [ ] The spring bug hid because every test used `0 → 100` while every preset
+      uses `0 → 1`. That is a suite-design flaw, not a one-off.
+- [ ] Audit the numeric tests for fixed magnitudes and add small/large/negative
+      and zero-travel cases.
+- [ ] Consider property-based testing for the interpolation and easing paths.
+
+---
+
+### Sequencing
+
+**27C.1 → 27C.3 → 27C.5 → 27C.2**, then 27B.3 (cheap, no engine change) and
+27A.4 (low risk, unblocks framework users), then 27A.1 and 27A.3 together (they
+share the load-time resolution seam), then 27B.2 and 27B.5. 27B.1 and 27B.4 are
+gated on evidence and a design note respectively. 27B.6 is a recommended
+rejection.
+
+**The honest framing for this phase:** none of 27A or 27B closes the gap that
+actually matters. A GSAP user's real objection to tinyfly is not a missing
+plugin — it is that GSAP has ten years of production hardening and we found
+silent data loss last week. 27C is the answer to that, and it is unglamorous.
 
 ---
 
