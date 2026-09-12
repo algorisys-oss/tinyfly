@@ -741,6 +741,24 @@ Two notes worth keeping:
   `timeline.findConflicts()` directly, which is the convention this suite
   already documents.
 
+### Spring presets (done)
+
+`PresetTrack` is now a union — `KeyframePresetTrack | SpringPresetTrack` — so a
+preset can mix both kinds, which Spring Pop and friends do (a keyframed opacity
+fade alongside a spring on scale). Five presets in a new **Spring** category:
+Spring Pop, Spring Drop, Spring Slide, Spring Wobble, Spring Settle.
+
+Two of them exist to demonstrate the physics rather than just to look nice:
+
+- **Spring Wobble** has `from === to` and a non-zero `velocity`, so the motion
+  comes entirely from the initial flick. That is what makes it read as a knock
+  rather than a return from somewhere.
+- **Spring Settle** is damped past critical, so it never overshoots — the
+  counterexample to the other four.
+
+Both properties are asserted in tests, so a future edit that quietly breaks the
+characteristic fails rather than just looking slightly different.
+
 ### Spring authoring (done)
 
 Springs are now fully authorable without touching the API:
@@ -761,14 +779,45 @@ Springs are now fully authorable without touching the API:
   "overshoots" badge is a tested physics claim, not inline UI arithmetic. A test
   checks the closed form against the simulation across a range of parameters.
 
+### 26H evidence gate: resolved (and the answer was not what the spec expected)
+
+The spec gated runtime stagger on a profile showing the baked form was "too
+slow". It was run (`src/engine/core/stagger-forms.test.ts` carries the numbers):
+
+| targets | baked eval | runtime eval | baked JSON | runtime JSON |
+|---|---|---|---|---|
+| 10 | 5.9 ms | 3.5 ms | 1,176 | 251 |
+| 100 | 8.1 ms | 7.0 ms | 11,676 | 792 |
+| 500 | 41.3 ms | 41.9 ms | 59,626 | 3,593 |
+
+**Speed is not the reason.** The two forms are within noise of each other and
+identical at 500 targets — expanding one track across N targets costs about what
+evaluating N tracks costs, which is what you would expect.
+
+**File size is the reason**, and it is not close: ~15x at 100 targets, ~17x at
+500. For a format whose whole point is being shipped over a network and stored
+per project, that justifies the feature — just for a different reason than the
+spec anticipated.
+
+Consequence for the editor: it should **keep baking**, because the baked form is
+what makes each letter individually draggable, and authorability is worth more
+than file size inside the editor. The runtime form is for the API and for
+export.
+
+Follow-on idea (not built): an export-time pass that collapses a set of
+identically-shaped, evenly-offset tracks back into one runtime stagger track.
+That would give small files and per-letter editing at once.
+
+The timing numbers are recorded as a comment rather than asserted — timing
+assertions in CI are flaky and there is no action we would take on them. The
+size relationship *is* asserted, because it is deterministic and it is the
+property the feature exists for.
+
 ### Still open
 
 - Pinning in `ScrollDriver` (the `position: sticky` recipe covers the common
   cases; revisit only if a real example needs more).
-- Runtime-stagger evidence gate (26H): still unprofiled.
-- Spring presets in the **Presets** panel — the preset system is keyframe-shaped
-  (`AnimationPreset.tracks` carries keyframes), so offering a one-click "Spring
-  Pop" needs that type widened to carry spring tracks too.
+- Export-time collapse of baked staggers into runtime stagger tracks (see above).
 
 ### Sequencing recommendation
 

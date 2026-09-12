@@ -1,7 +1,14 @@
 import { describe, it, expect } from 'vitest'
 import { createEditorStore, MIN_DURATION_MS } from './editor-store'
 import type { AnyTrack, Keyframe } from '../../engine'
-import { hasKeyframes, isSpringTrack, serializeTimeline, deserializeTimeline } from '../../engine'
+import {
+  hasKeyframes,
+  isSpringTrack,
+  isUnderdamped,
+  serializeTimeline,
+  deserializeTimeline,
+} from '../../engine'
+import { getPresetById, isSpringPresetTrack } from '../presets'
 
 /** Narrow to a keyframed track. Every track in these tests is keyframed. */
 function kfs(track: AnyTrack): Keyframe[] {
@@ -611,5 +618,120 @@ describe('spring tracks', () => {
     expect(isSpringTrack(track) && track.spring).toEqual({
       from: 2, to: 9, stiffness: 250, damping: 7, mass: 1.5,
     })
+  })
+})
+
+/**
+ * Spring presets. `PresetTrack` is a union — a preset can mix keyframed tracks
+ * and spring tracks — so `applyPreset` has to build the right kind for each.
+ */
+describe('spring presets', () => {
+  const setup = () => {
+    const store = createEditorStore()
+    store.createNewTimeline('tl', 'Presets')
+    return store
+  }
+
+  const timelineOf = (store: ReturnType<typeof createEditorStore>) => store.state.timeline!
+  const springPreset = () => getPresetById('spring-pop')!
+
+  it('the spring presets are registered', () => {
+    for (const id of ['spring-pop', 'spring-drop', 'spring-slide-in', 'spring-wobble', 'spring-settle']) {
+      expect(getPresetById(id), id).toBeDefined()
+    }
+  })
+
+  it('applies a mixed preset, building each track kind correctly', () => {
+    const store = setup()
+    store.applyPreset(springPreset(), 'box')
+
+    const tracks = timelineOf(store).tracks
+    // Spring Pop is an opacity keyframe track plus a scale spring.
+    expect(tracks.some((t) => t.property === 'opacity' && hasKeyframes(t))).toBe(true)
+    expect(tracks.some((t) => t.property === 'scale' && isSpringTrack(t))).toBe(true)
+  })
+
+  it('the spring track carries the preset parameters', () => {
+    const store = setup()
+    store.applyPreset(springPreset(), 'box')
+
+    const spring = timelineOf(store).tracks.find(isSpringTrack)!
+    expect(spring.spring.stiffness).toBe(220)
+    expect(spring.spring.damping).toBe(11)
+  })
+
+  it('extends the scene to fit the spring, not just the preset duration', () => {
+    const store = setup()
+    store.applyPreset(springPreset(), 'box')
+
+    const timeline = timelineOf(store)
+    const springEnd = timeline.getTrackSpan(timeline.tracks.find(isSpringTrack)!.id)!.to
+    expect(timeline.duration).toBeGreaterThanOrEqual(springEnd)
+  })
+
+  it('honours a startTime by delaying the spring', () => {
+    const store = setup()
+    store.applyPreset(springPreset(), 'box', { startTime: 400 })
+
+    const spring = timelineOf(store).tracks.find(isSpringTrack)!
+    expect(spring.delay).toBe(400)
+  })
+
+  it('produces animated values', () => {
+    const store = setup()
+    store.applyPreset(springPreset(), 'box')
+
+    const timeline = timelineOf(store)
+    expect(timeline.getStateAtTime(0).values.get('box')?.get('scale')).toBe(0)
+    expect(timeline.getStateAtTime(80).values.get('box')?.get('scale')).toBeGreaterThan(0)
+  })
+
+  it('staggers a spring preset across targets via its delay', () => {
+    const store = setup()
+    store.applyPresetStaggered(springPreset(), ['a', 'b', 'c'], { staggerMs: 100 })
+
+    const springs = timelineOf(store).tracks.filter(isSpringTrack)
+    expect(springs).toHaveLength(3)
+    expect(springs.map((t) => t.delay)).toEqual([0, 100, 200])
+  })
+
+  it('a staggered spring preset still extends the scene past the last spring', () => {
+    const store = setup()
+    store.applyPresetStaggered(springPreset(), ['a', 'b', 'c'], { staggerMs: 300 })
+
+    const timeline = timelineOf(store)
+    const last = Math.max(...timeline.tracks.map((t) => timeline.getTrackSpan(t.id)?.to ?? 0))
+    expect(timeline.duration).toBeGreaterThanOrEqual(last)
+  })
+
+  it('spring presets survive a JSON round-trip', () => {
+    const store = setup()
+    store.applyPreset(springPreset(), 'box')
+
+    const restored = deserializeTimeline(serializeTimeline(timelineOf(store)))
+    const spring = restored.tracks.find(isSpringTrack)!
+    expect(spring.spring.stiffness).toBe(220)
+  })
+
+  it('Spring Wobble uses velocity rather than a displaced start', () => {
+    // It reads as a knock, not a return from somewhere — from and to are equal
+    // and the motion comes entirely from the initial velocity.
+    const wobble = getPresetById('spring-wobble')!
+    const track = wobble.tracks.find(isSpringPresetTrack)!
+    expect(track.spring.from).toBe(track.spring.to)
+    expect(track.spring.velocity).toBeGreaterThan(0)
+  })
+
+  it('Spring Settle is critically damped, so it never overshoots', () => {
+    const settle = getPresetById('spring-settle')!
+    const track = settle.tracks.find(isSpringPresetTrack)!
+    expect(isUnderdamped(track.spring)).toBe(false)
+  })
+
+  it('the bouncy presets do overshoot', () => {
+    for (const id of ['spring-pop', 'spring-drop']) {
+      const track = getPresetById(id)!.tracks.find(isSpringPresetTrack)!
+      expect(isUnderdamped(track.spring), id).toBe(true)
+    }
   })
 })

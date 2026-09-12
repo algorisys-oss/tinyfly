@@ -19,7 +19,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Playback control** - Play, pause, stop, seek, reverse, speed adjustment
 - **Looping** - Finite loops, infinite loops, ping-pong (alternate), and `repeatDelay` between iterations
 - **Springs** - Physical spring tracks, integrated at a fixed timestep from t=0 so they stay deterministic *and* serializable (the animation is the parameters, not a baked curve); authored in the editor with feel presets and sliders
-- **Runtime stagger** - One track fans across many targets (`each` / `amount` / `from`), producing exactly what baking N tracks would
+- **Runtime stagger** - One track fans across many targets (`each` / `amount` / `from`), producing exactly what baking N tracks would — and ~15x smaller in JSON (measured: 100 letters is 11.7 KB baked, 0.8 KB as one track)
 - **Track scheduling** - Per-track `delay` and `endDelay` without rewriting keyframes
 - **Track queries** - `getTracks(filter)`, `removeTracks(filter)`, and `findConflicts()` to surface overlapping writes
 - **Compile-time values** - `"+=100"` and `"random(-50, 50)"` resolve at authoring time from a recorded seed, so the JSON holds plain numbers and replays identically
@@ -459,6 +459,8 @@ tinyfly/
 - [x] Overlapping-track warnings in the Tracks panel
 - [x] Spring curves in the graph editor
 - [x] Spring parameter editing in the editor UI (presets + sliders, auto-extending scene)
+- [x] Spring presets in the Presets panel (Pop, Drop, Slide, Wobble, Settle)
+- [ ] Export-time collapse of baked staggers into runtime stagger tracks
 - [ ] React Native adapter
 - [ ] Collaborative editing
 

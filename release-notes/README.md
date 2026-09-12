@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.50.0](v0.50.0.md) | 2026-09-12 | Spring presets (Pop, Drop, Slide, Wobble, Settle) via a widened PresetTrack union; runtime-stagger evidence gate resolved — it is a file-size win (~15x), not a speed one |
 | [v0.49.0](v0.49.0.md) | 2026-09-12 | Spring authoring in the editor — Add Spring, feel presets, stiffness/damping/mass sliders, settle time and overshoot badge, auto-extending scene |
 | [v0.48.0](v0.48.0.md) | 2026-09-12 | Scroll animation becomes authorable — scroll-scrub preview in the editor, overlapping-track warnings, springs in the curve editor, shared snapping, scroll gallery examples |
 | [v0.47.0](v0.47.0.md) | 2026-09-12 | Closes the GSAP gap — scroll drivers, deterministic springs, drag/pointer layer, FLIP, WebGL adapter, and a GSAP-flavoured authoring API (`tinyfly/gsap-compat`) |

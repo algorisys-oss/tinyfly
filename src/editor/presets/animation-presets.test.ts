@@ -4,11 +4,19 @@ import {
   presetsByCategory,
   getPresetById,
   resolvePresetKeyframe,
+  isSpringPresetTrack,
   fadeIn,
   pulse,
   fadeOut,
   float,
 } from './animation-presets'
+import type { PresetTrack, PresetKeyframe } from './animation-presets'
+
+/** Narrow a preset track to the keyframed kind. */
+function kfsOf(track: PresetTrack): PresetKeyframe[] {
+  if (isSpringPresetTrack(track)) throw new Error(`preset track ${track.property} is a spring`)
+  return track.keyframes
+}
 
 describe('animation presets', () => {
   describe('preset definitions', () => {
@@ -23,13 +31,16 @@ describe('animation presets', () => {
       }
     })
 
-    it('all preset tracks have valid keyframes', () => {
+    it('all keyframed preset tracks have valid keyframes', () => {
       for (const preset of allPresets) {
         for (const track of preset.tracks) {
           expect(track.property).toBeDefined()
-          expect(track.keyframes.length).toBeGreaterThan(0)
+          // Spring tracks carry parameters instead; checked separately below.
+          if (isSpringPresetTrack(track)) continue
 
-          for (const kf of track.keyframes) {
+          expect(kfsOf(track).length).toBeGreaterThan(0)
+
+          for (const kf of kfsOf(track)) {
             expect(kf.timePercent).toBeGreaterThanOrEqual(0)
             expect(kf.timePercent).toBeLessThanOrEqual(1)
             expect(kf.value).toBeDefined()
@@ -38,8 +49,24 @@ describe('animation presets', () => {
       }
     })
 
+    it('all spring preset tracks have usable parameters', () => {
+      for (const preset of allPresets) {
+        for (const track of preset.tracks) {
+          if (!isSpringPresetTrack(track)) continue
+
+          const label = `${preset.id} / ${track.property}`
+          expect(track.spring.from, label).toBeTypeOf('number')
+          expect(track.spring.to, label).toBeTypeOf('number')
+          expect(track.spring.stiffness ?? 180, label).toBeGreaterThan(0)
+          expect(track.spring.damping ?? 12, label).toBeGreaterThanOrEqual(0)
+          expect(track.spring.mass ?? 1, label).toBeGreaterThan(0)
+        }
+      }
+    })
+
     it('contains expected number of presets', () => {
-      expect(allPresets.length).toBe(44) // 17 original + 16 text + 5 per-letter stagger + 4 reveal + 2 filter presets
+      // 17 original + 16 text + 5 per-letter stagger + 4 reveal + 2 filter + 5 spring
+      expect(allPresets.length).toBe(49)
     })
   })
 
@@ -130,29 +157,29 @@ describe('animation presets', () => {
     it('fadeIn has opacity track from 0 to 1', () => {
       expect(fadeIn.tracks.length).toBe(1)
       expect(fadeIn.tracks[0].property).toBe('opacity')
-      expect(fadeIn.tracks[0].keyframes[0].value).toBe(0)
-      expect(fadeIn.tracks[0].keyframes[1].value).toBe(1)
+      expect(kfsOf(fadeIn.tracks[0])[0].value).toBe(0)
+      expect(kfsOf(fadeIn.tracks[0])[1].value).toBe(1)
     })
 
     it('pulse has scale track that returns to 1', () => {
       expect(pulse.tracks.length).toBe(1)
       expect(pulse.tracks[0].property).toBe('scale')
-      expect(pulse.tracks[0].keyframes[0].value).toBe(1)
-      expect(pulse.tracks[0].keyframes[2].value).toBe(1)
+      expect(kfsOf(pulse.tracks[0])[0].value).toBe(1)
+      expect(kfsOf(pulse.tracks[0])[2].value).toBe(1)
     })
 
     it('fadeOut has opacity track from 1 to 0', () => {
       expect(fadeOut.tracks.length).toBe(1)
       expect(fadeOut.tracks[0].property).toBe('opacity')
-      expect(fadeOut.tracks[0].keyframes[0].value).toBe(1)
-      expect(fadeOut.tracks[0].keyframes[1].value).toBe(0)
+      expect(kfsOf(fadeOut.tracks[0])[0].value).toBe(1)
+      expect(kfsOf(fadeOut.tracks[0])[1].value).toBe(0)
     })
 
     it('float has y track with relative values', () => {
       expect(float.tracks.length).toBe(1)
       expect(float.tracks[0].property).toBe('y')
-      expect(float.tracks[0].keyframes[0].value).toBe(0)
-      expect(float.tracks[0].keyframes[1].value).toBe('-15')
+      expect(kfsOf(float.tracks[0])[0].value).toBe(0)
+      expect(kfsOf(float.tracks[0])[1].value).toBe('-15')
     })
   })
 })

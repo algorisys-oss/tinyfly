@@ -18,7 +18,7 @@ import type {
   SpringTrack,
   SpringConfig,
 } from '../../engine'
-import { type AnimationPreset, resolvePresetKeyframe } from '../presets'
+import { type AnimationPreset, resolvePresetKeyframe, isSpringPresetTrack } from '../presets'
 import type { SceneElement } from './scene-store'
 
 /**
@@ -434,6 +434,21 @@ export function createEditorStore() {
     for (const presetTrack of preset.tracks) {
       const trackId = `${targetName}-${presetTrack.property}-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`
 
+      // A spring preset carries parameters instead of keyframes; its duration
+      // comes from the physics, so the preset's `duration` does not apply.
+      if (isSpringPresetTrack(presetTrack)) {
+        state.timeline.addTrack({
+          id: trackId,
+          target: targetName,
+          property: presetTrack.property,
+          kind: 'spring',
+          spring: { ...presetTrack.spring },
+          delay: startTime + (presetTrack.delay ?? 0),
+        })
+        createdTrackIds.push(trackId)
+        continue
+      }
+
       const keyframes: Keyframe[] = presetTrack.keyframes.map((kf) => {
         const resolved = resolvePresetKeyframe(kf, duration, 0)
         return {
@@ -453,7 +468,7 @@ export function createEditorStore() {
       createdTrackIds.push(trackId)
     }
 
-    commitKeyframeEdit()
+    commitSpringEdit()
     return createdTrackIds
   }
 
@@ -533,6 +548,20 @@ export function createEditorStore() {
       for (const presetTrack of preset.tracks) {
         const trackId = `${targetName}-${presetTrack.property}-${Date.now()}-${targetIndex}-${Math.random().toString(36).slice(2, 5)}`
 
+        // Springs stagger by their delay, since they have no keyframes to shift.
+        if (isSpringPresetTrack(presetTrack)) {
+          state.timeline!.addTrack({
+            id: trackId,
+            target: targetName,
+            property: presetTrack.property,
+            kind: 'spring',
+            spring: { ...presetTrack.spring },
+            delay: targetStart + (presetTrack.delay ?? 0),
+          })
+          createdTrackIds.push(trackId)
+          continue
+        }
+
         const keyframes: Keyframe[] = presetTrack.keyframes.map((kf) => {
           const resolved = resolvePresetKeyframe(kf, duration, 0)
           return {
@@ -553,7 +582,9 @@ export function createEditorStore() {
       }
     })
 
-    commitKeyframeEdit()
+    // Spring-aware: a staggered spring preset must still extend the scene to
+    // fit the last spring's settle time.
+    commitSpringEdit()
     return createdTrackIds
   }
 

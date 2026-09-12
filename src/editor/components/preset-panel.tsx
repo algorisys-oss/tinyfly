@@ -14,7 +14,7 @@ interface PresetPanelProps {
   sceneStore: SceneStore
 }
 
-type Category = 'entrance' | 'emphasis' | 'exit' | 'motion' | 'text'
+type Category = 'entrance' | 'emphasis' | 'exit' | 'motion' | 'text' | 'spring'
 
 const categoryLabels: Record<Category, string> = {
   entrance: 'Entrance',
@@ -22,6 +22,7 @@ const categoryLabels: Record<Category, string> = {
   exit: 'Exit',
   motion: 'Motion',
   text: 'Text',
+  spring: 'Spring',
 }
 
 export const PresetPanel: Component<PresetPanelProps> = (props) => {
@@ -180,7 +181,7 @@ export const PresetPanel: Component<PresetPanelProps> = (props) => {
     }
   }
 
-  const categories: Category[] = ['entrance', 'emphasis', 'exit', 'motion', 'text']
+  const categories: Category[] = ['entrance', 'emphasis', 'exit', 'motion', 'text', 'spring']
 
   return (
     <div class="preset-panel">
@@ -188,7 +189,7 @@ export const PresetPanel: Component<PresetPanelProps> = (props) => {
         <h3>
           Animation Presets
           <HelpIcon
-            content="Click a preset to instantly apply that animation to the selected element. Choose from entrance, emphasis, exit, motion, and text effects."
+            content="Click a preset to instantly apply that animation to the selected element. Choose from entrance, emphasis, exit, motion, text, and spring effects. Spring presets are physics — tune stiffness and damping in Properties after applying."
             position="left"
           />
         </h3>

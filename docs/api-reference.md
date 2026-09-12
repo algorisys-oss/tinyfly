@@ -1270,7 +1270,19 @@ timeline.addTrack(createTrack({
 | `from` | `'start'` (default), `'end'`, `'center'`, `'edges'`, or an index |
 
 This produces exactly what baking the stagger into N separate tracks would, so
-either form is valid — the runtime form is smaller in JSON when N is large.
+either form is valid. **Which to use is a file-size and editability trade-off,
+not a speed one** — the two evaluate at the same rate (measured; see
+`stagger-forms.test.ts`), but serialize very differently:
+
+| Targets | Baked JSON | Runtime JSON |
+|---|---|---|
+| 100 | 11,676 bytes | 792 bytes |
+| 500 | 59,626 bytes | 3,593 bytes |
+
+Use the **runtime** form when the stagger is uniform and you ship the JSON — a
+500-letter split is 59 KB baked and 3.5 KB as one track. Use the **baked** form
+when each target needs to be tuned individually, which is why the editor's
+per-letter stagger bakes: it keeps every letter's keyframes draggable.
 
 Pure helpers, shared by the editor, the engine and the compat facade:
 

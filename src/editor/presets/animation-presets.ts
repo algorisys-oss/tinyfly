@@ -1,10 +1,10 @@
-import type { Keyframe, EasingType } from '../../engine/types'
+import type { Keyframe, EasingType, SpringConfig } from '../../engine/types'
 
 export interface AnimationPreset {
   id: string
   name: string
   description: string
-  category: 'entrance' | 'emphasis' | 'exit' | 'motion' | 'text'
+  category: 'entrance' | 'emphasis' | 'exit' | 'motion' | 'text' | 'spring'
   /** Duration in milliseconds */
   duration: number
   /** Tracks to create, relative to element position */
@@ -17,9 +17,35 @@ export interface AnimationPreset {
   recommendedStagger?: number
 }
 
-export interface PresetTrack {
+/**
+ * A preset track is either keyframed or a spring.
+ *
+ * The two are genuinely different shapes: a keyframed track is sampled against
+ * the preset's `duration`, while a spring decides its own duration from its
+ * parameters. Widening this union is what lets the Presets panel offer
+ * one-click spring effects alongside the keyframe ones.
+ */
+export type PresetTrack = KeyframePresetTrack | SpringPresetTrack
+
+export interface KeyframePresetTrack {
   property: string
   keyframes: PresetKeyframe[]
+}
+
+export interface SpringPresetTrack {
+  property: string
+  /**
+   * Spring parameters. The preset's `duration` does not apply — a spring runs
+   * until it settles, and the scene extends to fit it.
+   */
+  spring: SpringConfig
+  /** Milliseconds before the spring starts */
+  delay?: number
+}
+
+/** Narrow a preset track to the spring kind. */
+export function isSpringPresetTrack(track: PresetTrack): track is SpringPresetTrack {
+  return 'spring' in track
 }
 
 export interface PresetKeyframe {
@@ -1201,6 +1227,114 @@ export const letterPopIn: AnimationPreset = {
 // ALL PRESETS
 // ============================================
 
+// ============================================
+// Spring presets
+// ============================================
+//
+// These carry spring parameters rather than keyframes. A spring runs until it
+// settles, so `duration` below is only a nominal value for the preset list —
+// the real length comes from the physics, and the scene extends to fit it.
+
+export const springPop: AnimationPreset = {
+  id: 'spring-pop',
+  name: 'Spring Pop',
+  description: 'Scales up from nothing with a springy overshoot — the classic "pop in".',
+  category: 'spring',
+  duration: 600,
+  tracks: [
+    {
+      property: 'opacity',
+      keyframes: [
+        { timePercent: 0, value: 0 },
+        { timePercent: 0.25, value: 1, easing: 'ease-out' },
+        { timePercent: 1, value: 1 },
+      ],
+    },
+    { property: 'scale', spring: { from: 0, to: 1, stiffness: 220, damping: 11, mass: 1 } },
+  ],
+  recommendedStagger: 60,
+}
+
+export const springDrop: AnimationPreset = {
+  id: 'spring-drop',
+  name: 'Spring Drop',
+  description: 'Falls in from above and bounces to a stop. Underdamped, so it overshoots.',
+  category: 'spring',
+  duration: 800,
+  tracks: [
+    {
+      property: 'opacity',
+      keyframes: [
+        { timePercent: 0, value: 0 },
+        { timePercent: 0.2, value: 1, easing: 'ease-out' },
+        { timePercent: 1, value: 1 },
+      ],
+    },
+    { property: 'y', spring: { from: -120, to: 0, stiffness: 190, damping: 10, mass: 1 } },
+  ],
+  recommendedStagger: 70,
+}
+
+export const springSlideIn: AnimationPreset = {
+  id: 'spring-slide-in',
+  name: 'Spring Slide',
+  description: 'Slides in from the left and settles with a small overshoot.',
+  category: 'spring',
+  duration: 700,
+  tracks: [
+    {
+      property: 'opacity',
+      keyframes: [
+        { timePercent: 0, value: 0 },
+        { timePercent: 0.2, value: 1, easing: 'ease-out' },
+        { timePercent: 1, value: 1 },
+      ],
+    },
+    { property: 'x', spring: { from: -160, to: 0, stiffness: 200, damping: 14, mass: 1 } },
+  ],
+  recommendedStagger: 60,
+}
+
+export const springWobble: AnimationPreset = {
+  id: 'spring-wobble',
+  name: 'Spring Wobble',
+  description:
+    'A flick of rotation that wobbles back to rest. Driven by initial velocity rather than a displaced start.',
+  category: 'spring',
+  duration: 1000,
+  tracks: [
+    // Starting at rest *with velocity* is what makes this read as a knock
+    // rather than a return from somewhere.
+    {
+      property: 'rotate',
+      spring: { from: 0, to: 0, stiffness: 160, damping: 6, mass: 1, velocity: 700 },
+    },
+  ],
+  recommendedStagger: 50,
+}
+
+export const springSettle: AnimationPreset = {
+  id: 'spring-settle',
+  name: 'Spring Settle',
+  description: 'Critically damped: arrives fast and stops dead, with no overshoot at all.',
+  category: 'spring',
+  duration: 500,
+  tracks: [
+    {
+      property: 'opacity',
+      keyframes: [
+        { timePercent: 0, value: 0 },
+        { timePercent: 0.3, value: 1, easing: 'ease-out' },
+        { timePercent: 1, value: 1 },
+      ],
+    },
+    // damping >= 2 * sqrt(stiffness * mass) is critical; at or above it the
+    // spring never passes its target.
+    { property: 'scale', spring: { from: 0.8, to: 1, stiffness: 220, damping: 32, mass: 1 } },
+  ],
+  recommendedStagger: 50,
+}
+
 export const allPresets: AnimationPreset[] = [
   // Entrance
   fadeIn,
@@ -1252,6 +1386,12 @@ export const allPresets: AnimationPreset[] = [
   letterWave,
   letterAssemble,
   letterPopIn,
+  // Springs (parameters, not keyframes)
+  springPop,
+  springDrop,
+  springSlideIn,
+  springWobble,
+  springSettle,
 ]
 
 export const presetsByCategory = {
@@ -1260,6 +1400,7 @@ export const presetsByCategory = {
   exit: allPresets.filter((p) => p.category === 'exit'),
   motion: allPresets.filter((p) => p.category === 'motion'),
   text: allPresets.filter((p) => p.category === 'text'),
+  spring: allPresets.filter((p) => p.category === 'spring'),
 }
 
 export function getPresetById(id: string): AnimationPreset | undefined {
