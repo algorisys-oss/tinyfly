@@ -520,23 +520,30 @@ have no answer at all.
       recipe that covers ~80% of uses with zero engine surface.
       **Leaning (b) first** — ship the recipe in docs, revisit (a) only if the
       sticky approach demonstrably fails for a real example in the gallery.
-- [ ] **Not done** — Editor support: a scroll-scrub preview mode so scroll
-      animations are authorable, not just hand-codable. The drivers are
-      developer-only until this lands.
+- [x] Editor support: **scroll-scrub preview** (`⇅ Scroll` in the preview
+      header → `scroll-preview.tsx`). Attaches a real `ScrollDriver` to a real
+      scroll strip, so the triggers behave exactly as they will in production
+      rather than being simulated. Start/end presets, scrub smoothing, runway
+      length, a live progress readout, and the code snippet to reproduce it.
 - [x] `docs/scroll-animation.md` (written, including the `position: sticky`
       pinning recipe).
-  - [ ] **Not done** — at least two gallery examples.
+  - [x] Three gallery examples in a new **Scroll** category: Scroll Reveal,
+        Scroll Parallax, Scroll Progress Bar. Each carries a `driverSnippet`
+        shown on the card — the gallery loops them (a card is too small to
+        scroll in), so the snippet is how you make them scroll-driven.
 
 ### 26B — Interaction layer (Draggable / Observer)
 
 - [x] `src/interaction/` — pointer/wheel/touch normalisation (`Observer`
       equivalent): a single unified event source emitting
       `{deltaX, deltaY, velocityX, velocityY, isDragging}`.
-- [x] `Draggable`: bounds, axis lock, and two output modes below.
-  - [ ] **Partial** — snapping is a simple grid snap, NOT the editor's
-        `snap.ts` (which snaps to element edges/centres/guides and is coupled
-        to editor state). Extracting the pure part of `snap.ts` and sharing it
-        is still the right move.
+- [x] `Draggable`: bounds, axis lock, snapping, and two output modes below.
+  - [x] Snapping shares the editor's math: `snap.ts` moved to
+        `src/interaction/snap.ts` (it was already pure — only its location was
+        editor-specific) and both callers use `snapAxis` / `gridLinesFor`.
+        `Draggable` gains `snapLinesX/Y` for edge snapping and reports which
+        line caught, for drawing guides. The threshold defaults to half the
+        grid size so existing grid behaviour is unchanged.
   1. **drive a timeline's time** (drag to scrub) — needs nothing new;
   2. **drive a target's properties directly** via an adapter — bypasses the
      timeline entirely and is therefore *not* serializable. Must be documented
@@ -562,9 +569,12 @@ deterministic and serializable.
       the editor and export like any other track.
 - [x] Derive `restDelta`-based natural duration so a spring track contributes a
       sensible length to `Timeline.duration`.
-- [ ] **Not done** — Curves view: render spring tracks by sampling the
-      simulation. They currently draw as a span bar in the dope sheet
-      (`timeline-view.tsx`) and are skipped by the curve editor.
+- [x] Curves view: spring tracks draw from `sampleSpringCurve`, which samples
+      the same `SpringSampler` the engine plays back — so the drawn curve is
+      what runs. They get read-only lanes (dashed, badged `spring`) because a
+      spring's shape comes from parameters, not draggable points. `springRange`
+      sizes the lane from sampled values so an underdamped overshoot is not
+      clipped.
 - [x] This also supersedes the Phase 25 "bake elastic/bounce" workaround for the
       cases where a real spring is what the author actually wanted.
 
@@ -607,8 +617,9 @@ the concrete result, which preserves both determinism and JSON-first.
       target+property** — silent overwrite is the bug, not the rule itself.
   - [x] Rule documented in `getStateAtTime`; `findConflicts()` added to detect
         overlaps.
-  - [ ] **Not done** — the editor does not yet call `findConflicts()` to warn.
-        Until it does, the overlap is still silent in the UI.
+  - [x] The editor warns: `trackConflicts()` / `overriddenTrackIds()` on the
+        store feed a banner in the Tracks panel, and each overridden track is
+        struck through with a ⚠ and a tooltip naming the track that wins.
 - [x] `timeline.getTracks(filter)` / `removeTracks(filter)` by target, property,
       or time range — the closest principled equivalent to GSAP's per-tween
       `kill()`, given we have no live tween objects.
@@ -702,13 +713,42 @@ plus new API-reference sections. Both are registered in the in-app help viewer
   seconds. Fixed with an explicit `scale` on `PositionContext`, so the
   seconds→ms conversion lives in exactly one place.
 
-### Remaining (carried forward)
+### Follow-up pass (all five carried-forward items now done)
 
-- Editor scroll-scrub preview (26A) — without it the drivers are developer-only.
-- Editor conflict warning wired to `findConflicts()` (26F).
-- Curves view sampling for spring tracks (26C).
-- Share the editor's `snap.ts` with `Draggable` (26B).
-- Gallery examples for scroll animation (26A).
+The five items left open at the end of the first pass have been completed:
+
+| Item | Where |
+|---|---|
+| Scroll-scrub preview in the editor | `src/editor/components/scroll-preview.tsx` |
+| Conflict warning wired to `findConflicts()` | `track-panel.tsx` + store `trackConflicts()` |
+| Curves view samples spring tracks | `curve-math.ts` `sampleSpringCurve` / `springRange` |
+| `Draggable` shares the editor's snap math | `snap.ts` moved to `src/interaction/` |
+| Gallery examples for scroll | three in a new **Scroll** category |
+
+Tests: 1085 → 1122.
+
+Two notes worth keeping:
+
+- The scroll preview runs the **real** `ScrollDriver` against a **real** scroll
+  container rather than simulating scroll. That is what makes it trustworthy:
+  a trigger string tuned in the editor behaves identically on the page. It also
+  means the preview needed a `syncPlayheadFromTimeline()` primitive on the
+  store, since a driver seeks the `Timeline` directly and the editor's readouts
+  follow a signal.
+- The store's conflict accessors are `createMemo`s, so — like the existing
+  `tracks()` / `duration()` memos — they only recompute under the observer graph
+  the running app provides. The tests therefore assert against
+  `timeline.findConflicts()` directly, which is the convention this suite
+  already documents.
+
+### Still open
+
+- Spring parameter editing in the editor UI: spring tracks render (dope sheet
+  span, curve lane) and play, but there is no inspector to author
+  stiffness/damping/mass — they must be added through the API.
+- Pinning in `ScrollDriver` (the `position: sticky` recipe covers the common
+  cases; revisit only if a real example needs more).
+- Runtime-stagger evidence gate (26H): still unprofiled.
 
 ### Sequencing recommendation
 

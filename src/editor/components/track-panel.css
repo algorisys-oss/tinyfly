@@ -180,3 +180,32 @@
   font-size: 11px;
   color: #555;
 }
+
+/* Overlapping tracks. The engine resolves same-target+property overlaps as
+   last-added-wins; without a marker the discarded track looks like a bug in
+   the animation rather than a duplicate. */
+.track-conflict-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 4px 8px 6px;
+  padding: 6px 8px;
+  border: 1px solid var(--warn-border, #6b5524);
+  border-radius: 4px;
+  background: var(--warn-bg, #2e2717);
+  color: var(--warn-text, #d9c07a);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.track-conflict {
+  flex: none;
+  color: var(--warn-text, #d9c07a);
+}
+
+.track-item.overridden .track-target,
+.track-item.overridden .track-property {
+  opacity: 0.55;
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}

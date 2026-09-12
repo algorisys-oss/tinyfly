@@ -7,7 +7,8 @@ import { deserializeTimeline, type Timeline } from '../../engine'
 import { expandSymbolInstances, shownSymbolId } from '../utils/expand-symbols'
 import { cameraFromState, applyCameraToCtx, cameraSvgTransform } from '../utils/camera'
 import { onionGhostTimes } from '../utils/onion'
-import { snapAxis, gridLinesFor } from '../utils/snap'
+import { snapAxis, gridLinesFor } from '../../interaction/snap'
+import { ScrollPreview } from './scroll-preview'
 import { elementsBounds } from '../utils/element-bounds'
 import { buildPenPath, localizePenPath, mirrorHandle, type PenNode } from '../utils/pen-path'
 import type { EditorStore } from '../stores/editor-store'
@@ -444,6 +445,16 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
   }
   // Maximize expands the preview to fill the window so the stage can scale up.
   const [maximized, setMaximized] = createSignal(false)
+
+  // Scroll-scrub preview. While it is on the timeline is driven by scroll
+  // position alone, so ordinary playback is paused on entry.
+  const [scrollPreview, setScrollPreview] = createSignal(false)
+
+  const toggleScrollPreview = () => {
+    const next = !scrollPreview()
+    setScrollPreview(next)
+    if (next) props.store.pause()
+  }
   const recomputeScale = () => {
     if (!containerRef) return
     const availW = containerRef.clientWidth - 40 // container has 20px padding
@@ -1790,6 +1801,15 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
           {props.sceneStore.elementCount()} elements
         </span>
         <button
+          class="preview-scroll-btn"
+          classList={{ active: scrollPreview() }}
+          onClick={toggleScrollPreview}
+          title="Preview this scene as a scroll-driven animation"
+          disabled={!props.store.state.timeline}
+        >
+          ⇅ Scroll
+        </button>
+        <button
           class="preview-camera-btn"
           classList={{ active: props.store.hasCamera() }}
           onClick={() => (props.store.hasCamera() ? props.store.removeCamera() : props.store.addCamera())}
@@ -2548,6 +2568,12 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
           </div>
         </Show>
       </div>
+
+      {/* Scroll-scrub preview: a real ScrollDriver against a real scroll
+          container, so the triggers behave exactly as they will in production. */}
+      <Show when={scrollPreview() && props.store.state.timeline}>
+        <ScrollPreview store={props.store} />
+      </Show>
     </div>
   )
 }

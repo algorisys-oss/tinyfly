@@ -153,7 +153,7 @@ What GSAP sells as plugins, tinyfly ships as ordinary features:
 
 | GSAP plugin | tinyfly |
 |---|---|
-| ScrollTrigger | [`tinyfly/drivers`](./scroll-animation.md) — `ScrollDriver`, `VisibilityDriver` |
+| ScrollTrigger | [`tinyfly/drivers`](./scroll-animation.md) — `ScrollDriver`, `VisibilityDriver`, plus a scroll-scrub preview in the editor |
 | Draggable / Observer / Inertia | `tinyfly/interaction` — `Draggable`, `Observer` |
 | Flip | `flip()` in the DOM adapter — measures at author time, emits keyframes |
 | MorphSVG | Shape morphing — see [shape-morph.md](./shape-morph.md) |

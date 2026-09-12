@@ -194,6 +194,15 @@ const ExampleCard: Component<ExampleCardProps> = (props) => {
           {(tag) => <span class="tag">{tag}</span>}
         </For>
       </div>
+
+      {/* Scroll examples loop here because a card is too small to scroll in.
+          The snippet is how you drive the same timeline from scroll position. */}
+      <Show when={props.example.driverSnippet}>
+        <details class="example-driver">
+          <summary>Drive it from scroll</summary>
+          <pre>{props.example.driverSnippet}</pre>
+        </details>
+      </Show>
     </div>
   )
 }

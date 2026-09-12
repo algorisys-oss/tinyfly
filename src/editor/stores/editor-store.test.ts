@@ -356,3 +356,95 @@ describe('duration', () => {
     expect(store.currentTime()).toBe(2000)
   })
 })
+
+/**
+ * Conflict surfacing (Phase 26F). The engine resolves two tracks on the same
+ * target+property as last-added-wins; the store exposes that so the UI can mark
+ * the track whose values never reach the screen.
+ *
+ * Assertions read the timeline directly, for the reason documented above: the
+ * store's computed values are memos that only recompute under the observer
+ * graph the real app provides.
+ */
+describe('track conflicts', () => {
+  const setupWithTracks = () => {
+    const store = createEditorStore()
+    store.createNewTimeline('tl', 'Conflicts')
+    return store
+  }
+
+  const timelineOf = (store: ReturnType<typeof createEditorStore>) => store.state.timeline!
+
+  const fade = (id: string, target = 'box', from = 0, to = 1000) => ({
+    id,
+    target,
+    property: 'opacity',
+    keyframes: [
+      { time: from, value: 0 },
+      { time: to, value: 1 },
+    ],
+  })
+
+  it('reports none for a single track', () => {
+    const store = setupWithTracks()
+    store.addTrack(fade('a'))
+    expect(timelineOf(store).findConflicts()).toEqual([])
+  })
+
+  it('reports none when tracks drive different targets', () => {
+    const store = setupWithTracks()
+    store.addTrack(fade('a', 'box'))
+    store.addTrack(fade('b', 'other'))
+    expect(timelineOf(store).findConflicts()).toEqual([])
+  })
+
+  it('reports none when spans do not overlap', () => {
+    const store = setupWithTracks()
+    store.addTrack(fade('a', 'box', 0, 500))
+    store.addTrack(fade('b', 'box', 900, 1400))
+    expect(timelineOf(store).findConflicts()).toEqual([])
+  })
+
+  it('reports an overlap on the same target and property', () => {
+    const store = setupWithTracks()
+    store.addTrack(fade('a'))
+    store.addTrack(fade('b'))
+
+    const conflicts = timelineOf(store).findConflicts()
+    expect(conflicts).toHaveLength(1)
+    expect(conflicts[0].losingTrackId).toBe('a')
+    expect(conflicts[0].winningTrackId).toBe('b')
+  })
+
+  it('names the winner as the track that actually renders', () => {
+    const store = setupWithTracks()
+    store.addTrack({
+      id: 'a', target: 'box', property: 'opacity',
+      keyframes: [{ time: 0, value: 0.2 }, { time: 1000, value: 0.2 }],
+    })
+    store.addTrack({
+      id: 'b', target: 'box', property: 'opacity',
+      keyframes: [{ time: 0, value: 0.9 }, { time: 1000, value: 0.9 }],
+    })
+
+    const timeline = timelineOf(store)
+    expect(timeline.findConflicts()[0].winningTrackId).toBe('b')
+    expect(timeline.getStateAtTime(500).values.get('box')?.get('opacity')).toBe(0.9)
+  })
+
+  it('clears once the duplicate is removed', () => {
+    const store = setupWithTracks()
+    store.addTrack(fade('a'))
+    store.addTrack(fade('b'))
+    expect(timelineOf(store).findConflicts()).toHaveLength(1)
+
+    store.removeTrack('b')
+    expect(timelineOf(store).findConflicts()).toEqual([])
+  })
+
+  it('exposes the conflict accessors the track panel reads', () => {
+    const store = setupWithTracks()
+    expect(store.trackConflicts()).toEqual([])
+    expect(store.overriddenTrackIds().size).toBe(0)
+  })
+})

@@ -1329,6 +1329,9 @@ new ScrollDriver({ timeline, trigger, start: 'top bottom', end: 'bottom top', sc
 `scrollProgress(rect, viewportHeight, start, end)` and `parseTrigger` are pure
 and exported, so trigger geometry can be tested without a browser.
 
+The editor's **⇅ Scroll** preview attaches the same `ScrollDriver` to a real
+scroll strip, so triggers tuned there behave identically on a page.
+
 ---
 
 ## Interaction
@@ -1348,6 +1351,12 @@ new Draggable({ target: el, axis: 'x', bounds: { minX: 0, maxX: 300 }, snap: 25 
 
 `Observer` normalises pointer, touch and wheel into one `{ deltaX, deltaY,
 velocityX, velocityY, totalX, totalY, isDragging }` shape.
+
+Snapping shares the editor stage's math (`snapAxis` / `gridLinesFor`, also
+exported from this entry point). Pass `snapLinesX` / `snapLinesY` to snap to
+other elements' edges or guides, and read `draggable.snapLines` — or the
+`onSnap` callback — to draw a guide for whichever line caught. `snapThreshold`
+defaults to half the grid size, so a plain `snap: n` behaves like rounding.
 
 ---
 

@@ -320,3 +320,81 @@ describe('Draggable scrub mode', () => {
     expect(() => drag(target, [[0, 0], [100, 0]])).not.toThrow()
   })
 })
+
+/**
+ * Snapping goes through the same `snapAxis` / `gridLinesFor` helpers the editor
+ * stage uses, rather than a private rounding rule (Phase 26B).
+ */
+describe('Draggable snapping', () => {
+  let target: FakeTarget
+
+  beforeEach(() => {
+    target = new FakeTarget()
+  })
+
+  const dragTo = (d: Draggable, x: number, y = 0) => {
+    d.start()
+    drag(target, [[0, 0], [x, y]])
+  }
+
+  it('grid snapping still behaves like rounding by default', () => {
+    const d = new Draggable({ target, snap: 25 })
+    dragTo(d, 63)
+    expect(d.position.x).toBe(75)
+  })
+
+  it('defaults the threshold to half the grid, so every point reaches a line', () => {
+    const d = new Draggable({ target, snap: 100 })
+    dragTo(d, 49) // just under half a cell
+    expect(d.position.x).toBe(0)
+  })
+
+  it('snaps to a supplied edge line', () => {
+    const d = new Draggable({ target, snapLinesX: [120] })
+    dragTo(d, 116)
+    expect(d.position.x).toBe(120)
+  })
+
+  it('ignores an edge line beyond the threshold', () => {
+    const d = new Draggable({ target, snapLinesX: [120], snapThreshold: 3 })
+    dragTo(d, 110)
+    expect(d.position.x).toBe(110)
+  })
+
+  it('prefers the nearer of a grid line and an edge line', () => {
+    const d = new Draggable({ target, snap: 100, snapLinesX: [92], snapThreshold: 20 })
+    dragTo(d, 90)
+    expect(d.position.x).toBe(92)
+  })
+
+  it('reports which line caught, for drawing guides', () => {
+    const d = new Draggable({ target, snapLinesX: [120] })
+    dragTo(d, 116)
+    expect(d.snapLines.x).toBe(120)
+  })
+
+  it('reports null when nothing caught', () => {
+    const d = new Draggable({ target, snapLinesX: [500] })
+    dragTo(d, 100)
+    expect(d.snapLines.x).toBeNull()
+  })
+
+  it('calls onSnap with the caught lines', () => {
+    const onSnap = vi.fn()
+    const d = new Draggable({ target, snapLinesX: [120], onSnap })
+    dragTo(d, 116)
+    expect(onSnap).toHaveBeenLastCalledWith({ x: 120, y: null })
+  })
+
+  it('applies bounds after snapping, so a snap cannot escape them', () => {
+    const d = new Draggable({ target, snapLinesX: [200], bounds: { maxX: 150 } })
+    dragTo(d, 196)
+    expect(d.position.x).toBe(150)
+  })
+
+  it('snaps the y axis independently', () => {
+    const d = new Draggable({ target, snapLinesY: [80] })
+    dragTo(d, 0, 76)
+    expect(d.position.y).toBe(80)
+  })
+})

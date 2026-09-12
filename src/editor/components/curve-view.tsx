@@ -2,9 +2,17 @@ import { For, Show, createMemo, createSignal, createEffect, onCleanup } from 'so
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
 import type { Track } from '../../engine'
-import { isNumericTrack, paddedRange, sampleCurve, easingToBezierPoints } from '../utils/curve-math'
+import {
+  isNumericTrack,
+  paddedRange,
+  sampleCurve,
+  sampleSpringCurve,
+  springRange,
+  easingToBezierPoints,
+} from '../utils/curve-math'
 import type { CubicBezierPoints } from '../../engine'
-import { hasKeyframes } from '../../engine'
+import { hasKeyframes, isSpringTrack } from '../../engine'
+import type { SpringTrack } from '../../engine'
 import { TIME_SCALE, TimeRuler } from './timeline-view'
 import { trackLabelWidth } from '../utils/track-label-width'
 import './curve-view.css'
@@ -67,7 +75,11 @@ export const CurveView: Component<CurveViewProps> = (props) => {
   const duration = createMemo(() => props.store.duration())
   const tracks = createMemo(() => props.store.tracks())
   const numericTracks = createMemo(() => tracks().filter(isNumericTrack))
-  const skippedCount = createMemo(() => tracks().length - numericTracks().length)
+  // Spring tracks are drawn too, but from their simulation rather than from
+  // keyframes — they have none — so they get their own read-only lanes.
+  const springTracks = createMemo(() => tracks().filter(isSpringTrack) as SpringTrack[])
+  const graphableCount = createMemo(() => numericTracks().length + springTracks().length)
+  const skippedCount = createMemo(() => tracks().length - graphableCount())
 
   const scroll = () => props.store.state.scrollPosition
   const contentWidth = () => Math.max(duration(), 5000) * pixelsPerMs()
@@ -177,6 +189,18 @@ export const CurveView: Component<CurveViewProps> = (props) => {
   /** Build the SVG path for a track's eased value curve. */
   const curvePath = (track: Track, vmin: number, vmax: number, height = LANE_HEIGHT): string => {
     const pts = sampleCurve(displayKeyframes(track), Math.max(duration(), 5000), SAMPLES)
+    if (pts.length === 0) return ''
+    return pts
+      .map(
+        (pt, i) =>
+          `${i === 0 ? 'M' : 'L'} ${timeToX(pt.time).toFixed(1)} ${valueToY(pt.value, vmin, vmax, height).toFixed(1)}`
+      )
+      .join(' ')
+  }
+
+  /** Build the SVG path for a spring track's simulated curve. */
+  const springPath = (track: SpringTrack, vmin: number, vmax: number, height = LANE_HEIGHT): string => {
+    const pts = sampleSpringCurve(track, Math.max(duration(), 5000))
     if (pts.length === 0) return ''
     return pts
       .map(
@@ -460,7 +484,7 @@ export const CurveView: Component<CurveViewProps> = (props) => {
           </button>
         </div>
         <Show
-          when={numericTracks().length > 0}
+          when={graphableCount() > 0}
           fallback={<div class="curve-empty">No numeric tracks to graph. Animate a value like x, opacity, scale or rotate to see its curve here.</div>}
         >
           <Show when={!overlay()} fallback={<OverlayBlock />}>
@@ -581,6 +605,46 @@ export const CurveView: Component<CurveViewProps> = (props) => {
                       </For>
                     </svg>
                     {/* playhead line across the lane */}
+                    <div
+                      class="curve-lane-playhead"
+                      style={{ left: `${timeToX(props.store.currentTime()) - scroll()}px` }}
+                    />
+                  </div>
+                </div>
+              )
+            }}
+          </For>
+
+          {/* Spring lanes. Read-only: a spring's shape comes from its
+              parameters, so there is nothing to drag — the curve is drawn from
+              the same simulation the engine plays back. */}
+          <For each={springTracks()}>
+            {(track) => {
+              const range = createMemo(() => springRange(track, Math.max(duration(), 5000)))
+              const selected = () => props.store.state.selectedTrackId === track.id
+              return (
+                <div class="curve-lane spring-lane" classList={{ selected: selected() }}>
+                  <div class="curve-lane-label" onClick={() => props.store.selectTrack(track.id)}>
+                    <span class="curve-target">{track.target}</span>
+                    <span class="curve-property">
+                      {track.property} <span class="curve-spring-badge">spring</span>
+                    </span>
+                    <span class="curve-range">
+                      {fmt(range().vmax)}
+                      <br />
+                      {fmt(range().vmin)}
+                    </span>
+                  </div>
+                  <div class="curve-lane-area" style={{ height: `${LANE_HEIGHT}px` }}>
+                    <svg
+                      class="curve-svg"
+                      style={{ left: `${-scroll()}px`, width: `${contentWidth()}px`, height: `${LANE_HEIGHT}px` }}
+                      width={contentWidth()}
+                      height={LANE_HEIGHT}
+                    >
+                      <line x1="0" y1={LANE_HEIGHT / 2} x2={contentWidth()} y2={LANE_HEIGHT / 2} class="curve-grid" />
+                      <path d={springPath(track, range().vmin, range().vmax)} class="curve-path spring-path" />
+                    </svg>
                     <div
                       class="curve-lane-playhead"
                       style={{ left: `${timeToX(props.store.currentTime()) - scroll()}px` }}

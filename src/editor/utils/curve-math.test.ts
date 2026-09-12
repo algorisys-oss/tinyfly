@@ -1,5 +1,15 @@
 import { describe, it, expect } from 'vitest'
-import { isNumericTrack, paddedRange, sampleCurve, easingToBezierPoints } from './curve-math'
+import {
+  isNumericTrack,
+  paddedRange,
+  sampleCurve,
+  sampleSpringCurve,
+  springRange,
+  isGraphableTrack,
+  easingToBezierPoints,
+} from './curve-math'
+import { SpringSampler } from '../../engine'
+import type { SpringTrack } from '../../engine'
 import type { Track } from '../../engine'
 
 function track(partial: Partial<Track>): Track {
@@ -109,5 +119,99 @@ describe('sampleCurve', () => {
     const quarter = eased.find((p) => p.time === 25)
     // At 25% time, an ease-in-out curve is below the linear value of 25.
     expect(quarter!.value).toBeLessThan(25)
+  })
+})
+
+describe('sampleSpringCurve', () => {
+  const spring = (overrides = {}): SpringTrack => ({
+    id: 's',
+    target: 'box',
+    property: 'scale',
+    kind: 'spring',
+    spring: { from: 0, to: 100 },
+    ...overrides,
+  })
+
+  it('starts at the spring start value', () => {
+    const pts = sampleSpringCurve(spring(), 2000)
+    expect(pts[0]).toEqual({ time: 0, value: 0 })
+  })
+
+  it('ends at the resting value', () => {
+    const pts = sampleSpringCurve(spring(), 5000)
+    expect(pts[pts.length - 1].value).toBe(100)
+  })
+
+  it('extends a flat tail to endTime', () => {
+    const pts = sampleSpringCurve(spring(), 5000)
+    expect(pts[pts.length - 1].time).toBe(5000)
+  })
+
+  it('holds the start value through a delay', () => {
+    const pts = sampleSpringCurve(spring({ delay: 300 }), 3000)
+    expect(pts[0]).toEqual({ time: 0, value: 0 })
+    expect(pts[1]).toEqual({ time: 300, value: 0 })
+  })
+
+  it('produces times in ascending order', () => {
+    const times = sampleSpringCurve(spring(), 3000).map((p) => p.time)
+    expect(times).toEqual([...times].sort((a, b) => a - b))
+  })
+
+  it('matches what the engine plays back', () => {
+    const track = spring()
+    const sampler = new SpringSampler(track.spring)
+    const pts = sampleSpringCurve(track, 3000)
+
+    // Pick a mid-curve sample and check it against the engine's own value.
+    const mid = pts[Math.floor(pts.length / 3)]
+    expect(mid.value).toBeCloseTo(sampler.valueAt(mid.time), 10)
+  })
+
+  it('captures the overshoot of an underdamped spring', () => {
+    const pts = sampleSpringCurve(spring({ spring: { from: 0, to: 100, stiffness: 200, damping: 4 } }), 4000)
+    expect(Math.max(...pts.map((p) => p.value))).toBeGreaterThan(100)
+  })
+
+  it('is deterministic', () => {
+    expect(sampleSpringCurve(spring(), 3000)).toEqual(sampleSpringCurve(spring(), 3000))
+  })
+})
+
+describe('springRange', () => {
+  const spring: SpringTrack = {
+    id: 's',
+    target: 'box',
+    property: 'x',
+    kind: 'spring',
+    spring: { from: 0, to: 100, stiffness: 200, damping: 4 },
+  }
+
+  it('covers the overshoot, not just from/to', () => {
+    // An underdamped spring exceeds its target; a range taken from `to` alone
+    // would clip the curve out of the lane.
+    expect(springRange(spring, 4000).vmax).toBeGreaterThan(100)
+  })
+
+  it('pads below the minimum', () => {
+    expect(springRange(spring, 4000).vmin).toBeLessThanOrEqual(0)
+  })
+})
+
+describe('isGraphableTrack', () => {
+  it('accepts a numeric keyframe track', () => {
+    expect(isGraphableTrack(track({ keyframes: [{ time: 0, value: 0 }, { time: 1, value: 1 }] }))).toBe(true)
+  })
+
+  it('accepts a spring track', () => {
+    expect(
+      isGraphableTrack({
+        id: 's', target: 'b', property: 'x', kind: 'spring', spring: { from: 0, to: 1 },
+      })
+    ).toBe(true)
+  })
+
+  it('rejects a colour track', () => {
+    expect(isGraphableTrack(track({ property: 'fill', keyframes: [{ time: 0, value: '#fff' }] }))).toBe(false)
   })
 })

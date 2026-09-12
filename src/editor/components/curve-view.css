@@ -235,3 +235,26 @@
   color: #666;
   font-size: 11px;
 }
+
+/* Spring lanes are read-only — the curve comes from the simulation, not from
+   keyframes, so there is nothing to grab. Dashed to say so at a glance. */
+.curve-lane.spring-lane .curve-lane-area {
+  cursor: default;
+}
+
+.curve-path.spring-path {
+  stroke-dasharray: 4 3;
+  opacity: 0.9;
+}
+
+.curve-spring-badge {
+  display: inline-block;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: var(--accent-dim, #2c4a63);
+  color: var(--text-dim, #9bb4c7);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+}

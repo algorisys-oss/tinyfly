@@ -27,7 +27,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 ### Scroll & Interaction
 - **Scroll-driven playback** - `ScrollDriver` scrubs a timeline against scroll position with GSAP-style trigger strings (`'top bottom'`, `'top top+=500'`); the geometry is a pure, unit-tested function
 - **Play when visible** - `VisibilityDriver` plays on appearance (`once` / `repeat` / `reset`) via IntersectionObserver
-- **Drag & pointer input** - `Observer` normalises pointer/touch/wheel; `Draggable` supports bounds, axis lock, snapping, and drag-to-scrub
+- **Drag & pointer input** - `Observer` normalises pointer/touch/wheel; `Draggable` supports bounds, axis lock, grid/edge snapping (shared with the editor stage), and drag-to-scrub
 - **FLIP transitions** - `flip()` measures a layout change in the DOM layer and emits ordinary keyframes, keeping the engine free of live layout reads
 
 ### Render Adapters
@@ -370,7 +370,9 @@ import { timeline, quickPlay } from 'tinyfly/gsap-compat'
 
 **Scroll-driven animation** is a *driver*, not a special timeline. The engine is
 a pure function of time; a driver is what decides which time to hand it. So any
-existing animation becomes scroll-driven without changing it:
+existing animation becomes scroll-driven without changing it — and the editor's
+**⇅ Scroll** preview runs that same driver against a real scroll container, so
+triggers you tune there behave identically on your page:
 
 ```ts
 new ScrollDriver({
@@ -453,7 +455,9 @@ tinyfly/
 - [x] Deterministic spring tracks
 - [x] FLIP layout transitions
 - [x] GSAP-flavoured compat facade (`tinyfly/gsap-compat`)
-- [ ] Scroll-scrub preview in the editor
+- [x] Scroll-scrub preview in the editor (runs the real driver, not a simulation)
+- [x] Overlapping-track warnings in the Tracks panel
+- [x] Spring curves in the graph editor
 - [ ] Spring parameter editing in the editor UI
 - [ ] React Native adapter
 - [ ] Collaborative editing

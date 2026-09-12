@@ -156,6 +156,24 @@ The element sticks for the container's height while the timeline scrubs across
 it. If you hit a case this genuinely cannot express, that is the signal to
 revisit a real pin implementation — see Phase 26A in [todo.md](../todo.md).
 
+## Authoring in the editor
+
+Click **⇅ Scroll** in the preview header to switch the preview into scroll-scrub
+mode. A scrollable strip appears with a trigger element inside it; scroll the
+strip and the animation scrubs.
+
+This is not a simulation. The preview attaches a real `ScrollDriver` to a real
+scroll container, so a start/end pair tuned here behaves identically on your
+page. The panel shows the exact snippet to reproduce what you are looking at:
+
+- **Start** / **End** — the trigger positions, from the same grammar above
+- **Scrub** — `exact`, or a smoothing time
+- **Runway** — how much space sits above and below the trigger
+- A live progress percentage, and the code to paste
+
+Normal playback is paused while the mode is on, because scroll position is the
+only thing that should be moving the playhead — the same as in production.
+
 ## Determinism
 
 A driver is not a hole in the determinism guarantee. The engine is deterministic

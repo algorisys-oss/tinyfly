@@ -1,10 +1,13 @@
 /**
- * Snapping math for the editor stage. Pure and unit-tested; the preview feeds it
- * the moving element's candidate lines (left/center/right, top/middle/bottom) and
- * the static lines to snap against (grid multiples + other elements' edges), and
- * gets back the smallest adjustment plus the line that caught, for drawing a
- * guide. Everything is in stage (artboard) units — the caller converts the
- * pixel threshold by the preview scale.
+ * Snapping math, shared by the editor stage and `Draggable`.
+ *
+ * Pure and unit-tested: callers feed it the moving object's candidate lines
+ * (left/centre/right, top/middle/bottom) and the static lines to snap against
+ * (grid multiples + other elements' edges), and get back the smallest
+ * adjustment plus the line that caught, for drawing a guide.
+ *
+ * Unit-agnostic. The editor works in stage (artboard) units and converts its
+ * pixel threshold by the preview scale; `Draggable` works in raw pixels.
  */
 
 export interface AxisSnap {

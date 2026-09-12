@@ -4,7 +4,7 @@ import type { CanvasTarget } from '../adapters/canvas'
 /** Canvas target with a name property for gallery examples */
 export type GalleryCanvasTarget = CanvasTarget & { name: string }
 
-export type GalleryCategory = 'UI Components' | 'Text Effects' | 'Loaders' | 'Micro-interactions' | 'Data Visualization' | 'Creative'
+export type GalleryCategory = 'UI Components' | 'Text Effects' | 'Loaders' | 'Micro-interactions' | 'Data Visualization' | 'Creative' | 'Scroll'
 
 export interface GalleryExample {
   id: string
@@ -15,6 +15,15 @@ export interface GalleryExample {
   timeline: TimelineDefinition
   domHtml: string
   canvasTargets?: GalleryCanvasTarget[]
+  /**
+   * How to drive this animation on a real page, when it is not meant to play on
+   * a clock. Scroll examples set this; the gallery shows it beside the preview
+   * so the code to reproduce the effect is visible.
+   *
+   * The gallery itself still plays these on a loop — a card is too small to
+   * scroll meaningfully — so the snippet is how you make it scroll-driven.
+   */
+  driverSnippet?: string
 }
 
 /** Get all examples by category */
@@ -814,5 +823,195 @@ export const galleryExamples: GalleryExample[] = [
     canvasTargets: [
       { name: 'breath-circle', type: 'circle', x: 140, y: 90, radius: 40, fillStyle: '#4a9eff', opacity: 0.6 },
     ],
+  },
+
+  // ---- Scroll ----------------------------------------------------------
+  // These play on a loop in the gallery because a card is too small to scroll.
+  // `driverSnippet` shows how to drive each one from scroll position instead.
+
+  {
+    id: 'scroll-reveal',
+    name: 'Scroll Reveal',
+    description:
+      'A panel fades and rises into place as it enters the viewport. The classic scroll entrance — pair it with VisibilityDriver for a one-shot reveal, or ScrollDriver to tie it to scroll position.',
+    category: 'Scroll',
+    tags: ['scroll', 'reveal', 'entrance', 'fade'],
+    timeline: {
+      id: 'scroll-reveal',
+      name: 'Scroll Reveal',
+      config: { duration: 1200, loop: -1 },
+      tracks: [
+        {
+          id: 'panel-opacity',
+          target: 'panel',
+          property: 'opacity',
+          keyframes: [
+            { time: 0, value: 0 },
+            { time: 600, value: 1, easing: 'ease-out-cubic' },
+            { time: 1000, value: 1 },
+            { time: 1200, value: 0, easing: 'ease-in' },
+          ],
+        },
+        {
+          id: 'panel-y',
+          target: 'panel',
+          property: 'y',
+          keyframes: [
+            { time: 0, value: 40 },
+            { time: 600, value: 0, easing: 'ease-out-cubic' },
+            { time: 1200, value: 0 },
+          ],
+        },
+      ],
+    },
+    domHtml: `
+      <div class="scroll-panel" data-tinyfly="panel">
+        <p class="scroll-panel-title">Scroll Reveal</p>
+        <p class="scroll-panel-body">Rises into place on entry</p>
+      </div>
+    `,
+    canvasTargets: [
+      {
+        name: 'panel',
+        type: 'rect',
+        x: 60,
+        y: 80,
+        width: 180,
+        height: 90,
+        fillStyle: '#4a9eff',
+      } as GalleryCanvasTarget,
+    ],
+    driverSnippet: `import { VisibilityDriver } from 'tinyfly/drivers'
+
+// Play once, the first time the panel scrolls into view.
+new VisibilityDriver({
+  timeline,
+  trigger: document.querySelector('#panel'),
+  behaviour: 'once',
+  threshold: 0.25,
+}).start()`,
+  },
+
+  {
+    id: 'scroll-parallax',
+    name: 'Scroll Parallax',
+    description:
+      'Three layers drift at different rates as you scroll, the near layer moving furthest. Scrubbed rather than played, so the layers track the scroll position exactly.',
+    category: 'Scroll',
+    tags: ['scroll', 'parallax', 'scrub', 'layers'],
+    timeline: {
+      id: 'scroll-parallax',
+      name: 'Scroll Parallax',
+      config: { duration: 2000, loop: -1, alternate: true },
+      tracks: [
+        {
+          id: 'far-y',
+          target: 'far',
+          property: 'y',
+          keyframes: [
+            { time: 0, value: 0 },
+            { time: 2000, value: -20, easing: 'linear' },
+          ],
+        },
+        {
+          id: 'mid-y',
+          target: 'mid',
+          property: 'y',
+          keyframes: [
+            { time: 0, value: 0 },
+            { time: 2000, value: -55, easing: 'linear' },
+          ],
+        },
+        {
+          id: 'near-y',
+          target: 'near',
+          property: 'y',
+          keyframes: [
+            { time: 0, value: 0 },
+            { time: 2000, value: -110, easing: 'linear' },
+          ],
+        },
+      ],
+    },
+    domHtml: `
+      <div class="parallax-stage">
+        <div class="parallax-layer parallax-far" data-tinyfly="far"></div>
+        <div class="parallax-layer parallax-mid" data-tinyfly="mid"></div>
+        <div class="parallax-layer parallax-near" data-tinyfly="near"></div>
+      </div>
+    `,
+    canvasTargets: [
+      { name: 'far', type: 'rect', x: 40, y: 150, width: 220, height: 60, fillStyle: '#2c4a63' } as GalleryCanvasTarget,
+      { name: 'mid', type: 'rect', x: 70, y: 175, width: 160, height: 50, fillStyle: '#3d6b8f' } as GalleryCanvasTarget,
+      { name: 'near', type: 'rect', x: 100, y: 195, width: 100, height: 45, fillStyle: '#4a9eff' } as GalleryCanvasTarget,
+    ],
+    driverSnippet: `import { ScrollDriver } from 'tinyfly/drivers'
+
+// Tie the playhead to scroll position across the whole section.
+new ScrollDriver({
+  timeline,
+  trigger: document.querySelector('#section'),
+  start: 'top bottom',
+  end: 'bottom top',
+  scrub: true,
+}).start()`,
+  },
+
+  {
+    id: 'scroll-progress-bar',
+    name: 'Scroll Progress Bar',
+    description:
+      'A bar that fills in step with how far you have scrolled through an article. A fixed-pixel scrub range keeps the mapping predictable regardless of page length.',
+    category: 'Scroll',
+    tags: ['scroll', 'progress', 'scrub', 'indicator'],
+    timeline: {
+      id: 'scroll-progress',
+      name: 'Scroll Progress',
+      config: { duration: 1500, loop: -1, alternate: true },
+      tracks: [
+        {
+          id: 'bar-scale-x',
+          target: 'bar',
+          property: 'scaleX',
+          keyframes: [
+            { time: 0, value: 0 },
+            { time: 1500, value: 1, easing: 'linear' },
+          ],
+        },
+        {
+          id: 'bar-origin',
+          target: 'bar',
+          property: 'originX',
+          keyframes: [{ time: 0, value: 0 }],
+        },
+      ],
+    },
+    domHtml: `
+      <div class="scroll-progress-track">
+        <div class="scroll-progress-fill" data-tinyfly="bar"></div>
+      </div>
+    `,
+    canvasTargets: [
+      {
+        name: 'bar',
+        type: 'rect',
+        x: 40,
+        y: 140,
+        width: 220,
+        height: 10,
+        fillStyle: '#3ecf7a',
+        originX: 0,
+      } as GalleryCanvasTarget,
+    ],
+    driverSnippet: `import { ScrollDriver } from 'tinyfly/drivers'
+
+// Fixed 1200px of scrubbing, starting when the article's top hits the top.
+new ScrollDriver({
+  timeline,
+  trigger: document.querySelector('#article'),
+  start: 'top top',
+  end: 'top top+=1200',
+  scrub: 0.2, // slight smoothing; use true for exact tracking
+}).start()`,
   },
 ]

@@ -460,3 +460,31 @@
   white-space: nowrap;
   pointer-events: none;
 }
+
+/* Scroll-scrub preview toggle, alongside the camera button in the header. */
+.preview-scroll-btn {
+  padding: 2px 8px;
+  border: 1px solid var(--border, #333);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-dim, #9bb4c7);
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.preview-scroll-btn:hover:not(:disabled) {
+  border-color: var(--accent, #4a9eff);
+  color: var(--accent, #4a9eff);
+}
+
+.preview-scroll-btn.active {
+  border-color: var(--accent, #4a9eff);
+  background: rgba(74, 158, 255, 0.12);
+  color: var(--accent, #4a9eff);
+}
+
+.preview-scroll-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

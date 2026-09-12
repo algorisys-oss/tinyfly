@@ -1,4 +1,4 @@
-import { createSignal, For } from 'solid-js'
+import { createSignal, createMemo, For, Show } from 'solid-js'
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
 import { hasKeyframes } from '../../engine'
@@ -35,6 +35,22 @@ export const TrackPanel: Component<TrackPanelProps> = (props) => {
     setNewTarget('')
     setNewProperty('')
     setShowAddForm(false)
+  }
+
+  const conflicts = createMemo(() => props.store.trackConflicts())
+
+  /**
+   * Tooltip for a track whose values never reach the screen. The engine
+   * resolves overlaps as last-added-wins, so the winner is named here rather
+   * than leaving the user to guess why a track does nothing.
+   */
+  const overrideReason = (trackId: string): string | undefined => {
+    const conflict = conflicts().find((c) => c.losingTrackId === trackId)
+    if (!conflict) return undefined
+    return (
+      `Overridden: another track also animates ${conflict.target}.${conflict.property} ` +
+      `over the same times. The later track (${conflict.winningTrackId}) wins.`
+    )
   }
 
   const handleRemoveTrack = (trackId: string) => {
@@ -80,19 +96,37 @@ export const TrackPanel: Component<TrackPanelProps> = (props) => {
           </div>
         )}
 
+        <Show when={conflicts().length > 0}>
+          <div class="track-conflict-banner">
+            <span class="track-conflict">⚠</span>
+            <span>
+              {conflicts().length} overlapping track
+              {conflicts().length === 1 ? '' : 's'} — the later track wins, so the
+              marked ones have no effect where they overlap.
+            </span>
+          </div>
+        </Show>
+
         <div class="track-list">
           <For each={props.store.tracks()}>
             {(track) => (
               <div
                 class="track-item"
-                classList={{ selected: props.store.state.selectedTrackId === track.id }}
+                classList={{
+                  selected: props.store.state.selectedTrackId === track.id,
+                  overridden: props.store.overriddenTrackIds().has(track.id),
+                }}
                 onClick={() => props.store.selectTrack(track.id)}
+                title={overrideReason(track.id)}
               >
                 <div class="track-info">
                   <span class="track-target">{track.target}</span>
                   <span class="track-property">{track.property}</span>
                 </div>
                 <div class="track-meta">
+                  <Show when={props.store.overriddenTrackIds().has(track.id)}>
+                    <span class="track-conflict" aria-label="Overridden">⚠</span>
+                  </Show>
                   <span class="keyframe-count">
                     {hasKeyframes(track) ? `${track.keyframes.length} kf` : 'spring'}
                   </span>

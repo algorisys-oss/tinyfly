@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.48.0](v0.48.0.md) | 2026-09-12 | Scroll animation becomes authorable — scroll-scrub preview in the editor, overlapping-track warnings, springs in the curve editor, shared snapping, scroll gallery examples |
 | [v0.47.0](v0.47.0.md) | 2026-09-12 | Closes the GSAP gap — scroll drivers, deterministic springs, drag/pointer layer, FLIP, WebGL adapter, and a GSAP-flavoured authoring API (`tinyfly/gsap-compat`) |
 | [v0.46.2](v0.46.2.md) | 2026-07-31 | Consistency pass — skipped auto-save now retries itself; track-label width has one definition instead of four (fixes mobile hit-testing) |
 | [v0.46.1](v0.46.1.md) | 2026-07-31 | Data-loss fix — auto-save died after the first scene/project switch, so projects could reopen with an empty canvas |

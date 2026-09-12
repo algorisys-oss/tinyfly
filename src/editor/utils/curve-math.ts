@@ -1,5 +1,11 @@
-import type { Track, AnyTrack, Keyframe, EasingType, CubicBezierPoints } from '../../engine'
-import { getEasingFunction, isCubicBezierEasing, hasKeyframes } from '../../engine'
+import type { Track, AnyTrack, SpringTrack, Keyframe, EasingType, CubicBezierPoints } from '../../engine'
+import {
+  getEasingFunction,
+  isCubicBezierEasing,
+  hasKeyframes,
+  isSpringTrack,
+  SpringSampler,
+} from '../../engine'
 
 /**
  * Pure helpers behind the curve (graph) editor. Kept framework-free and
@@ -118,4 +124,67 @@ export function sampleCurve(
   if (endTime > last.time) pts.push({ time: endTime, value: lastV })
 
   return pts
+}
+
+/**
+ * Sample a spring track's simulated value curve, for drawing it in the graph
+ * editor.
+ *
+ * Springs have no keyframes, so `sampleCurve` cannot be used. The shape comes
+ * from the simulation instead — the same `SpringSampler` the engine plays
+ * back, so the drawn curve is exactly what runs. One sampler is built per call
+ * and memoises internally, so a whole curve costs one integration.
+ *
+ * Includes a flat lead-in through the track's delay and a flat tail-out to
+ * `endTime`, matching how the engine holds the value outside the spring's span.
+ */
+export function sampleSpringCurve(
+  track: SpringTrack,
+  endTime: number,
+  samples = 120
+): CurvePoint[] {
+  const sampler = new SpringSampler(track.spring)
+  const settle = sampler.settleTime()
+  const delay = track.delay ?? 0
+  const pts: CurvePoint[] = []
+
+  // Flat lead-in through the delay.
+  pts.push({ time: 0, value: track.spring.from })
+  if (delay > 0) pts.push({ time: delay, value: track.spring.from })
+
+  // The simulation itself. A settled-at-zero spring has nothing to draw
+  // between the endpoints.
+  if (settle > 0) {
+    for (let s = 1; s <= samples; s++) {
+      const t = (settle * s) / samples
+      pts.push({ time: delay + t, value: sampler.valueAt(t) })
+    }
+  }
+
+  // Flat tail-out at the resting value.
+  const end = delay + settle
+  if (endTime > end) pts.push({ time: endTime, value: track.spring.to })
+
+  return pts
+}
+
+/**
+ * The value range of a spring, padded like `paddedRange`. Sampled rather than
+ * taken from `from`/`to`, because an underdamped spring overshoots past both.
+ */
+export function springRange(
+  track: SpringTrack,
+  endTime: number,
+  padding = 0.15
+): { vmin: number; vmax: number } {
+  const pts = sampleSpringCurve(track, endTime)
+  return paddedRange(
+    pts.map((p) => ({ time: p.time, value: p.value })),
+    padding
+  )
+}
+
+/** True when a track can be drawn as a curve — numeric keyframes or a spring. */
+export function isGraphableTrack(track: AnyTrack): boolean {
+  return isNumericTrack(track) || isSpringTrack(track)
 }

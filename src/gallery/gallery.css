@@ -563,3 +563,107 @@
   transform: rotate(-90deg);
   transform-origin: 50% 50%;
 }
+
+/* ---- Scroll examples ------------------------------------------------- */
+
+.preview-container .scroll-panel {
+  width: 180px;
+  padding: 16px 18px;
+  border: 1px solid rgba(74, 158, 255, 0.4);
+  border-radius: 8px;
+  background: linear-gradient(160deg, #2c4a63, #1e3346);
+  color: #e6f1fa;
+}
+
+.preview-container .scroll-panel-title {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.preview-container .scroll-panel-body {
+  margin: 0;
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+/* Parallax: three stacked bands, the nearest drifting furthest. */
+.preview-container .parallax-stage {
+  position: relative;
+  width: 220px;
+  height: 150px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #16222e;
+}
+
+.preview-container .parallax-layer {
+  position: absolute;
+  left: 50%;
+  border-radius: 6px;
+  transform: translateX(-50%);
+}
+
+.preview-container .parallax-far {
+  bottom: 12px;
+  width: 220px;
+  height: 60px;
+  background: #2c4a63;
+}
+
+.preview-container .parallax-mid {
+  bottom: 6px;
+  width: 160px;
+  height: 50px;
+  background: #3d6b8f;
+}
+
+.preview-container .parallax-near {
+  bottom: 0;
+  width: 100px;
+  height: 45px;
+  background: #4a9eff;
+}
+
+/* Progress bar: the fill scales from its left edge (originX: 0). */
+.preview-container .scroll-progress-track {
+  width: 220px;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.preview-container .scroll-progress-fill {
+  width: 100%;
+  height: 100%;
+  border-radius: 5px;
+  background: linear-gradient(90deg, #3ecf7a, #4a9eff);
+  transform-origin: left center;
+}
+
+/* The "drive it from scroll" disclosure on a scroll example's card. */
+.example-driver {
+  margin-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding-top: 8px;
+}
+
+.example-driver summary {
+  color: #4a9eff;
+  cursor: pointer;
+  font-size: 11px;
+  user-select: none;
+}
+
+.example-driver pre {
+  margin: 6px 0 0;
+  padding: 8px 10px;
+  overflow-x: auto;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.35);
+  color: #9bb4c7;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  line-height: 1.55;
+}

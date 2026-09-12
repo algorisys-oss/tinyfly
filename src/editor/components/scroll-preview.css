@@ -1,0 +1,161 @@
+/*
+ * Scroll-scrub preview. The strip on the left is a real scroll container with a
+ * real trigger element inside it — the driver measures it exactly as it would
+ * measure an element on a page.
+ */
+
+.scroll-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 10px 10px;
+  border-top: 1px solid var(--border, #333);
+  background: var(--panel-bg, #1e1e1e);
+}
+
+.scroll-preview-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--text-dim, #9bb4c7);
+}
+
+.scroll-preview-controls label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.scroll-preview-controls select {
+  padding: 2px 4px;
+  border: 1px solid var(--border, #333);
+  border-radius: 3px;
+  background: var(--input-bg, #2a2a2a);
+  color: var(--text, #e0e0e0);
+  font-size: 11px;
+}
+
+.scroll-progress {
+  margin-left: auto;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--input-bg, #2a2a2a);
+  color: var(--accent, #4a9eff);
+  font-variant-numeric: tabular-nums;
+}
+
+.scroll-preview-body {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+/* The scrollable strip. Fixed height so there is always something to scroll. */
+.scroll-strip {
+  position: relative;
+  flex: none;
+  width: 92px;
+  height: 150px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--border, #333);
+  border-radius: 4px;
+  background:
+    repeating-linear-gradient(
+      180deg,
+      transparent 0 11px,
+      rgba(255, 255, 255, 0.03) 11px 12px
+    );
+}
+
+.scroll-runway {
+  min-height: 40px;
+}
+
+/* Stands in for the element a ScrollDriver would be pointed at. */
+.scroll-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 70px;
+  margin: 0 8px;
+  border: 1px dashed var(--accent, #4a9eff);
+  border-radius: 3px;
+  background: rgba(74, 158, 255, 0.08);
+  color: var(--accent, #4a9eff);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.scroll-preview-hints {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-dim, #9bb4c7);
+}
+
+.scroll-preview-hints p {
+  margin: 0;
+}
+
+.scroll-preview-hints code {
+  padding: 0 3px;
+  border-radius: 3px;
+  background: var(--input-bg, #2a2a2a);
+}
+
+.scroll-warn {
+  color: var(--warn-text, #d9c07a);
+}
+
+.scroll-jumps {
+  display: flex;
+  gap: 4px;
+}
+
+.scroll-jumps button {
+  padding: 2px 8px;
+  border: 1px solid var(--border, #333);
+  border-radius: 3px;
+  background: var(--input-bg, #2a2a2a);
+  color: var(--text, #e0e0e0);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.scroll-jumps button:hover {
+  border-color: var(--accent, #4a9eff);
+  color: var(--accent, #4a9eff);
+}
+
+/* The code you would paste to reproduce what the strip is doing. */
+.scroll-snippet {
+  margin: 0;
+  padding: 6px 8px;
+  overflow-x: auto;
+  border: 1px solid var(--border, #333);
+  border-radius: 3px;
+  background: var(--code-bg, #161616);
+  color: var(--text-dim, #9bb4c7);
+  font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 10px;
+  line-height: 1.5;
+  white-space: pre;
+}
+
+@media (max-width: 720px) {
+  .scroll-preview-body {
+    flex-direction: column;
+  }
+
+  .scroll-strip {
+    width: 100%;
+    height: 120px;
+  }
+}

@@ -752,6 +752,18 @@ export function createEditorStore() {
     setCurrentTime(state.timeline.currentTime)
   }
 
+  /**
+   * Mirror the timeline's playhead into the store after something else moved it.
+   *
+   * Drivers (scroll, drag-to-scrub) seek the `Timeline` directly, which is the
+   * right boundary — but the editor's readouts follow a signal, so they need
+   * telling. This is the one-line primitive for "an external driver moved us".
+   */
+  function syncPlayheadFromTimeline() {
+    if (!state.timeline) return
+    setCurrentTime(state.timeline.currentTime)
+  }
+
   // Tick the timeline (call from animation loop)
   function tick(delta: number) {
     if (!state.timeline) return
@@ -861,6 +873,24 @@ export function createEditorStore() {
     timelineVersion()
     return tracks().find((t) => t.id === state.selectedTrackId) ?? null
   })
+  /**
+   * Tracks whose values are being silently discarded.
+   *
+   * When two tracks drive the same target+property over overlapping times the
+   * engine resolves it as last-added-wins — predictable, but invisible, so a
+   * discarded track looks like a bug in the animation. Surfacing it is the
+   * whole point of `findConflicts`.
+   */
+  const trackConflicts = createMemo(() => {
+    timelineVersion()
+    return state.timeline?.findConflicts() ?? []
+  })
+
+  /** Ids of tracks that lose a conflict, for marking them in the track list. */
+  const overriddenTrackIds = createMemo(() => {
+    return new Set(trackConflicts().map((c) => c.losingTrackId))
+  })
+
   const canUndo = () => undoStack().length > 0
   const canRedo = () => redoStack().length > 0
 
@@ -874,9 +904,12 @@ export function createEditorStore() {
     duration,
     tracks,
     selectedTrack,
+    trackConflicts,
+    overriddenTrackIds,
     timelineVersion,
 
     // Timeline actions
+    syncPlayheadFromTimeline,
     createNewTimeline,
     loadTimeline,
 
