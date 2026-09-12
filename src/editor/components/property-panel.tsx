@@ -4,7 +4,14 @@ import type { EditorStore } from '../stores/editor-store'
 import type { ProjectStore } from '../stores/project-store'
 import { isGradient, createLinearGradient, createRadialGradient, type SceneStore, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type SymbolInstanceElement, type FillValue, type LinearGradient, type RadialGradient } from '../stores/scene-store'
 import type { EasingType, BuiltInEasingType, CubicBezierPoints } from '../../engine'
-import { isCubicBezierEasing, hasKeyframes } from '../../engine'
+import {
+  isCubicBezierEasing,
+  hasKeyframes,
+  isSpringTrack,
+  springDuration,
+  isUnderdamped,
+} from '../../engine'
+import type { SpringConfig } from '../../engine'
 import { HelpIcon } from './tooltip'
 import { presetsByCategory, type AnimationPreset } from '../presets'
 import { CurveEditor } from './curve-editor'
@@ -49,6 +56,46 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
     if (!track || index === null || index < 0) return null
     if (!hasKeyframes(track)) return null
     return track.keyframes[index] ?? null
+  })
+
+  /** The selected track, when it is a spring. */
+  const selectedSpring = createMemo(() => {
+    const track = selectedTrack()
+    return track && isSpringTrack(track) ? track : null
+  })
+
+  /**
+   * Presets for the two parameters that actually decide how a spring feels.
+   * Stiffness and damping interact, so offering them as named pairs is far
+   * more useful than two sliders someone has to discover the combinations of.
+   */
+  const SPRING_PRESETS: Array<{ name: string; spring: Partial<SpringConfig> }> = [
+    { name: 'Gentle', spring: { stiffness: 120, damping: 18, mass: 1 } },
+    { name: 'Default', spring: { stiffness: 180, damping: 12, mass: 1 } },
+    { name: 'Snappy', spring: { stiffness: 280, damping: 20, mass: 1 } },
+    { name: 'Bouncy', spring: { stiffness: 220, damping: 8, mass: 1 } },
+    { name: 'Wobbly', spring: { stiffness: 180, damping: 5, mass: 1 } },
+    { name: 'Stiff', spring: { stiffness: 400, damping: 30, mass: 1 } },
+  ]
+
+  const updateSpringParam = (changes: Partial<SpringConfig> & { delay?: number }) => {
+    const track = selectedSpring()
+    if (!track) return
+    props.store.updateSpring(track.id, changes)
+  }
+
+  /** Settle time of the selected spring, in ms — its natural duration. */
+  const springSettleMs = createMemo(() => {
+    const track = selectedSpring()
+    if (!track) return 0
+    props.store.timelineVersion() // recompute after a parameter edit
+    return Math.round(springDuration(track.spring))
+  })
+
+  /** Whether the spring passes its target before settling. */
+  const springOvershoots = createMemo(() => {
+    const track = selectedSpring()
+    return track ? isUnderdamped(track.spring) : false
   })
 
   const selectedElement = createMemo(() => props.sceneStore.selectedElement())
@@ -1563,6 +1610,143 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
       </div>
 
       <div class="panel-content">
+        {/* Spring tracks are authored as parameters, not keyframes — the engine
+            derives the motion — so they get their own inspector rather than a
+            keyframe row. */}
+        <Show when={selectedSpring()}>
+          {(spring) => (
+            <>
+              <div class="property-section">
+                <h4>Spring Track</h4>
+                <div class="property-row">
+                  <label>Target</label>
+                  <span class="property-value">{spring().target}</span>
+                </div>
+                <div class="property-row">
+                  <label>Property</label>
+                  <span class="property-value">{spring().property}</span>
+                </div>
+                <div class="property-row">
+                  <label>Settles in</label>
+                  <span class="property-value">
+                    {springSettleMs()} ms
+                    <Show when={springOvershoots()}>
+                      <span class="spring-flag" title="Underdamped: the spring passes its target before settling">
+                        overshoots
+                      </span>
+                    </Show>
+                  </span>
+                </div>
+              </div>
+
+              <div class="property-section">
+                <h4>Feel</h4>
+                <div class="spring-presets">
+                  {SPRING_PRESETS.map((preset) => (
+                    <button
+                      class="spring-preset-btn"
+                      onClick={() => updateSpringParam(preset.spring)}
+                      title={`stiffness ${preset.spring.stiffness}, damping ${preset.spring.damping}`}
+                    >
+                      {preset.name}
+                    </button>
+                  ))}
+                </div>
+                <p class="property-hint">
+                  Stiffness and damping interact — presets are pairs that work. Tune
+                  from there below.
+                </p>
+              </div>
+
+              <div class="property-section">
+                <h4>Values</h4>
+                <div class="property-row">
+                  <label>From</label>
+                  <input
+                    type="number"
+                    value={spring().spring.from}
+                    step="0.1"
+                    onInput={(e) => updateSpringParam({ from: Number(e.currentTarget.value) })}
+                  />
+                </div>
+                <div class="property-row">
+                  <label>To</label>
+                  <input
+                    type="number"
+                    value={spring().spring.to}
+                    step="0.1"
+                    onInput={(e) => updateSpringParam({ to: Number(e.currentTarget.value) })}
+                  />
+                </div>
+                <div class="property-row">
+                  <label>Delay (ms)</label>
+                  <input
+                    type="number"
+                    value={spring().delay ?? 0}
+                    min="0"
+                    step="10"
+                    onInput={(e) => updateSpringParam({ delay: Number(e.currentTarget.value) })}
+                  />
+                </div>
+              </div>
+
+              <div class="property-section">
+                <h4>Physics</h4>
+                <div class="property-row">
+                  <label title="Higher is snappier">Stiffness</label>
+                  <input
+                    type="range"
+                    min="20"
+                    max="500"
+                    step="5"
+                    value={spring().spring.stiffness ?? 180}
+                    onInput={(e) => updateSpringParam({ stiffness: Number(e.currentTarget.value) })}
+                  />
+                  <span class="property-value num">{spring().spring.stiffness ?? 180}</span>
+                </div>
+                <div class="property-row">
+                  <label title="Higher settles sooner; 0 oscillates forever">Damping</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="60"
+                    step="1"
+                    value={spring().spring.damping ?? 12}
+                    onInput={(e) => updateSpringParam({ damping: Number(e.currentTarget.value) })}
+                  />
+                  <span class="property-value num">{spring().spring.damping ?? 12}</span>
+                </div>
+                <div class="property-row">
+                  <label title="Higher is more sluggish">Mass</label>
+                  <input
+                    type="range"
+                    min="0.2"
+                    max="5"
+                    step="0.1"
+                    value={spring().spring.mass ?? 1}
+                    onInput={(e) => updateSpringParam({ mass: Number(e.currentTarget.value) })}
+                  />
+                  <span class="property-value num">{spring().spring.mass ?? 1}</span>
+                </div>
+                <div class="property-row">
+                  <label title="Initial velocity in units per second — a flick at the start">
+                    Velocity
+                  </label>
+                  <input
+                    type="number"
+                    value={spring().spring.velocity ?? 0}
+                    step="10"
+                    onInput={(e) => updateSpringParam({ velocity: Number(e.currentTarget.value) })}
+                  />
+                </div>
+                <p class="property-hint">
+                  The scene extends automatically to fit the spring's settle time.
+                </p>
+              </div>
+            </>
+          )}
+        </Show>
+
         {/* Show keyframe properties when keyframe is selected */}
         <Show when={selectedKeyframe()}>
           {(keyframe) => (

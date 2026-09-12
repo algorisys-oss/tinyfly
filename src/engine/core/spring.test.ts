@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { SpringSampler, springValueAt, springDuration, SPRING_MAX_DURATION_MS } from './spring'
+import {
+  SpringSampler,
+  springValueAt,
+  springDuration,
+  isUnderdamped,
+  criticalDamping,
+  SPRING_MAX_DURATION_MS,
+} from './spring'
 
 const basic = { from: 0, to: 100 }
 
@@ -107,5 +114,60 @@ describe('settleTime', () => {
 describe('springValueAt', () => {
   it('matches a long-lived sampler', () => {
     expect(springValueAt(basic, 120)).toBe(new SpringSampler(basic).valueAt(120))
+  })
+})
+
+describe('isUnderdamped', () => {
+  it('is true for a spring that overshoots', () => {
+    expect(isUnderdamped({ from: 0, to: 100, stiffness: 200, damping: 4 })).toBe(true)
+  })
+
+  it('is false for a heavily damped spring', () => {
+    expect(isUnderdamped({ from: 0, to: 100, stiffness: 100, damping: 60 })).toBe(false)
+  })
+
+  it('is false exactly at critical damping', () => {
+    const config = { from: 0, to: 100, stiffness: 100, mass: 1 }
+    expect(isUnderdamped({ ...config, damping: criticalDamping(config) })).toBe(false)
+  })
+
+  it('agrees with the simulation', () => {
+    // The closed-form test must match what actually happens, or the editor's
+    // "overshoots" badge would lie.
+    const cases = [
+      { from: 0, to: 100, stiffness: 200, damping: 4 },
+      { from: 0, to: 100, stiffness: 180, damping: 12 },
+      { from: 0, to: 100, stiffness: 100, damping: 60 },
+      { from: 0, to: 100, stiffness: 400, damping: 10 },
+      { from: 0, to: 100, stiffness: 50, damping: 30 },
+    ]
+
+    for (const config of cases) {
+      const sampler = new SpringSampler(config)
+      let peak = -Infinity
+      for (let t = 0; t <= 3000; t += 2) peak = Math.max(peak, sampler.valueAt(t))
+
+      const overshot = peak > config.to + 0.5
+      expect(isUnderdamped(config), JSON.stringify(config)).toBe(overshot)
+    }
+  })
+
+  it('accounts for mass', () => {
+    // More mass raises critical damping, so the same damping can flip it.
+    const light = { from: 0, to: 1, stiffness: 100, damping: 20, mass: 1 }
+    expect(isUnderdamped(light)).toBe(false)
+    expect(isUnderdamped({ ...light, mass: 4 })).toBe(true)
+  })
+
+  it('uses the defaults when parameters are omitted', () => {
+    // Default 180/12/1: critical is 2*sqrt(180) ≈ 26.8, so 12 overshoots.
+    expect(isUnderdamped({ from: 0, to: 1 })).toBe(true)
+  })
+})
+
+describe('criticalDamping', () => {
+  it('is 2 * sqrt(stiffness * mass)', () => {
+    expect(criticalDamping({ from: 0, to: 1, stiffness: 100, mass: 1 })).toBe(20)
+    expect(criticalDamping({ from: 0, to: 1, stiffness: 100, mass: 4 })).toBe(40)
   })
 })

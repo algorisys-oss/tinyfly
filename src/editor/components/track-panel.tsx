@@ -53,6 +53,34 @@ export const TrackPanel: Component<TrackPanelProps> = (props) => {
     )
   }
 
+  /**
+   * Add a spring track for the same target/property.
+   *
+   * A spring is authored as parameters rather than keyframes, so it starts from
+   * a sensible default pair and is then tuned in the Properties panel. The
+   * from/to values mirror the keyframe form's 0 → 1, which reads correctly for
+   * opacity and scale — the two properties springs are most often used on.
+   */
+  const handleAddSpring = () => {
+    const target = newTarget().trim()
+    const property = newProperty().trim()
+
+    if (!target || !property) return
+
+    const id = `${target}-${property}-spring-${Date.now()}`
+    props.store.addSpringTrack({
+      id,
+      target,
+      property,
+      spring: { from: 0, to: 1, stiffness: 180, damping: 12, mass: 1 },
+    })
+
+    setNewTarget('')
+    setNewProperty('')
+    setShowAddForm(false)
+    props.store.selectTrack(id)
+  }
+
   const handleRemoveTrack = (trackId: string) => {
     props.store.removeTrack(trackId)
   }
@@ -90,9 +118,18 @@ export const TrackPanel: Component<TrackPanelProps> = (props) => {
               value={newProperty()}
               onInput={(e) => setNewProperty(e.currentTarget.value)}
             />
-            <button class="confirm-btn" onClick={handleAddTrack}>
-              Add Track
-            </button>
+            <div class="add-track-actions">
+              <button class="confirm-btn" onClick={handleAddTrack}>
+                Add Track
+              </button>
+              <button
+                class="confirm-btn secondary"
+                onClick={handleAddSpring}
+                title="A physics spring: set stiffness and damping in Properties instead of keyframes"
+              >
+                Add Spring
+              </button>
+            </div>
           </div>
         )}
 

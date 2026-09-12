@@ -741,14 +741,34 @@ Two notes worth keeping:
   `timeline.findConflicts()` directly, which is the convention this suite
   already documents.
 
+### Spring authoring (done)
+
+Springs are now fully authorable without touching the API:
+
+- **Tracks panel** → **+** → **Add Spring** creates one for a target/property.
+- **Properties** shows a spring inspector: named feel presets (stiffness and
+  damping interact, so pairs that work are far more useful than two bare
+  sliders), from/to, delay, and sliders for stiffness/damping/mass plus initial
+  velocity. It reports the settle time and flags overshoot.
+- `updateSpring` **replaces** the track rather than mutating it, because the
+  timeline memoises a sampler per spring when the track is added — editing the
+  config in place would leave the old simulation cached and the preview showing
+  the previous motion. There is a test for exactly that.
+- `requiredDurationMs()` was added because `lastKeyframeTime()` only sees
+  keyframes, and a spring has none — a spring-only scene would have computed a
+  duration of 0 and played nothing.
+- `isUnderdamped` / `criticalDamping` moved into the engine so the editor's
+  "overshoots" badge is a tested physics claim, not inline UI arithmetic. A test
+  checks the closed form against the simulation across a range of parameters.
+
 ### Still open
 
-- Spring parameter editing in the editor UI: spring tracks render (dope sheet
-  span, curve lane) and play, but there is no inspector to author
-  stiffness/damping/mass — they must be added through the API.
 - Pinning in `ScrollDriver` (the `position: sticky` recipe covers the common
   cases; revisit only if a real example needs more).
 - Runtime-stagger evidence gate (26H): still unprofiled.
+- Spring presets in the **Presets** panel — the preset system is keyframe-shaped
+  (`AnimationPreset.tracks` carries keyframes), so offering a one-click "Spring
+  Pop" needs that type widened to carry spring tracks too.
 
 ### Sequencing recommendation
 

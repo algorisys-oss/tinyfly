@@ -1220,11 +1220,31 @@ Because the animation is the *parameters*, a spring track serializes like any
 other track.
 
 ```typescript
-import { SpringSampler, springValueAt, springDuration } from 'tinyfly'
+import {
+  SpringSampler, springValueAt, springDuration, isUnderdamped, criticalDamping,
+} from 'tinyfly'
 
 springDuration({ from: 0, to: 100 })     // natural settle time in ms
 springValueAt({ from: 0, to: 100 }, 120) // value at 120ms
+isUnderdamped({ from: 0, to: 100, damping: 4 })  // true — it overshoots
+criticalDamping({ from: 0, to: 100, stiffness: 100, mass: 1 })  // 20
 ```
+
+`isUnderdamped` is the closed-form test for whether a spring passes its target
+before settling (`damping < 2 * sqrt(stiffness * mass)`), so it costs nothing —
+no simulation needed. Overshoot is usually the point of reaching for a spring,
+and its absence is the most common reason a "bouncy" one looks flat.
+
+### Authoring in the editor
+
+Add a spring from the **Tracks** panel (**+** → **Add Spring**), then tune it in
+**Properties**: named feel presets (Gentle, Snappy, Bouncy, Wobbly…), from/to,
+delay, and sliders for stiffness, damping and mass. The panel shows the settle
+time and flags whether the spring overshoots.
+
+The scene extends automatically to fit the settle time — a spring decides its
+own duration, so a looser one simply takes longer, and without that the tail
+would be silently cut off.
 
 ---
 

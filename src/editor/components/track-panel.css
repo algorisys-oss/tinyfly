@@ -209,3 +209,23 @@
   text-decoration: line-through;
   text-decoration-thickness: 1px;
 }
+
+/* Two ways to add a track: keyframes, or a spring (parameters). */
+.add-track-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.add-track-actions .confirm-btn {
+  flex: 1;
+}
+
+.confirm-btn.secondary {
+  background: transparent;
+  border: 1px solid var(--accent, #4a9eff);
+  color: var(--accent, #4a9eff);
+}
+
+.confirm-btn.secondary:hover {
+  background: rgba(74, 158, 255, 0.12);
+}

@@ -161,3 +161,33 @@ export function springValueAt(config: SpringConfig, timeMs: number): number {
 export function springDuration(config: SpringConfig): number {
   return new SpringSampler(config).settleTime()
 }
+
+/**
+ * Whether a spring passes its target before settling.
+ *
+ * A spring oscillates when it is damped less than critically, and critical
+ * damping is `2 * sqrt(stiffness * mass)`. Worth exposing rather than leaving
+ * to trial and error: overshoot is usually the whole point of reaching for a
+ * spring, and its absence is the most common reason a "bouncy" one looks flat.
+ *
+ * This is the closed-form test, so it is exact and costs nothing — no
+ * simulation required.
+ */
+export function isUnderdamped(config: SpringConfig): boolean {
+  const stiffness = config.stiffness ?? DEFAULT_SPRING.stiffness
+  const damping = config.damping ?? DEFAULT_SPRING.damping
+  const mass = config.mass ?? DEFAULT_SPRING.mass
+
+  return damping < 2 * Math.sqrt(stiffness * mass)
+}
+
+/**
+ * Damping that would make this spring settle without overshooting — the
+ * critical-damping value for its stiffness and mass.
+ */
+export function criticalDamping(config: SpringConfig): number {
+  const stiffness = config.stiffness ?? DEFAULT_SPRING.stiffness
+  const mass = config.mass ?? DEFAULT_SPRING.mass
+
+  return 2 * Math.sqrt(stiffness * mass)
+}

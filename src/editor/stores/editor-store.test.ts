@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { createEditorStore, MIN_DURATION_MS } from './editor-store'
 import type { AnyTrack, Keyframe } from '../../engine'
-import { hasKeyframes } from '../../engine'
+import { hasKeyframes, isSpringTrack, serializeTimeline, deserializeTimeline } from '../../engine'
 
 /** Narrow to a keyframed track. Every track in these tests is keyframed. */
 function kfs(track: AnyTrack): Keyframe[] {
@@ -446,5 +446,170 @@ describe('track conflicts', () => {
     const store = setupWithTracks()
     expect(store.trackConflicts()).toEqual([])
     expect(store.overriddenTrackIds().size).toBe(0)
+  })
+})
+
+/**
+ * Spring authoring (Phase 26C follow-up). Springs are edited as parameters, so
+ * the store replaces the track rather than mutating it — the timeline memoises
+ * a sampler per spring when the track is added, and editing in place would
+ * leave the old simulation cached.
+ */
+describe('spring tracks', () => {
+  const setup = () => {
+    const store = createEditorStore()
+    store.createNewTimeline('tl', 'Springs')
+    return store
+  }
+
+  const timelineOf = (store: ReturnType<typeof createEditorStore>) => store.state.timeline!
+
+  const addSpring = (store: ReturnType<typeof createEditorStore>, overrides = {}) =>
+    store.addSpringTrack({
+      id: 's1',
+      target: 'box',
+      property: 'scale',
+      spring: { from: 0, to: 1, stiffness: 180, damping: 12 },
+      ...overrides,
+    })
+
+  it('adds a spring track', () => {
+    const store = setup()
+    addSpring(store)
+
+    const track = timelineOf(store).tracks[0]
+    expect(track.id).toBe('s1')
+    expect(hasKeyframes(track)).toBe(false)
+  })
+
+  it('the added spring produces values', () => {
+    const store = setup()
+    addSpring(store)
+
+    const timeline = timelineOf(store)
+    expect(timeline.getStateAtTime(0).values.get('box')?.get('scale')).toBe(0)
+    expect(timeline.getStateAtTime(60).values.get('box')?.get('scale')).toBeGreaterThan(0)
+  })
+
+  it('extends the scene to fit the settle time', () => {
+    const store = setup()
+    addSpring(store)
+    // A spring decides its own duration; the scene has to reach it or the tail
+    // is silently cut off. (Read the timeline, not store.duration() — that is a
+    // memo, per the note above.)
+    expect(timelineOf(store).duration).toBeGreaterThan(0)
+    expect(timelineOf(store).duration).toBeGreaterThanOrEqual(
+      timelineOf(store).getTrackSpan('s1')!.to
+    )
+  })
+
+  it('requiredDurationMs accounts for springs, which have no keyframes', () => {
+    const store = setup()
+    addSpring(store)
+    // lastKeyframeTime() alone would report 0 here.
+    expect(store.requiredDurationMs()).toBeGreaterThan(0)
+  })
+
+  it('requiredDurationMs takes the later of keyframes and springs', () => {
+    const store = setup()
+    addSpring(store)
+    const springEnd = store.requiredDurationMs()
+
+    store.addTrack({
+      id: 'late',
+      target: 'box',
+      property: 'x',
+      keyframes: [{ time: 0, value: 0 }, { time: springEnd + 5000, value: 1 }],
+    })
+    expect(store.requiredDurationMs()).toBe(springEnd + 5000)
+  })
+
+  it('updates a spring parameter', () => {
+    const store = setup()
+    addSpring(store)
+    store.updateSpring('s1', { stiffness: 400 })
+
+    const track = timelineOf(store).tracks[0]
+    expect(isSpringTrack(track) && track.spring.stiffness).toBe(400)
+  })
+
+  it('the edit actually changes the motion — the cached sampler is rebuilt', () => {
+    const store = setup()
+    addSpring(store)
+    const before = timelineOf(store).getStateAtTime(40).values.get('box')!.get('scale')
+
+    store.updateSpring('s1', { stiffness: 500 })
+    const after = timelineOf(store).getStateAtTime(40).values.get('box')!.get('scale')
+
+    expect(after).not.toBe(before)
+  })
+
+  it('keeps parameters that were not changed', () => {
+    const store = setup()
+    addSpring(store)
+    store.updateSpring('s1', { damping: 4 })
+
+    const track = timelineOf(store).tracks[0]
+    expect(isSpringTrack(track) && track.spring.stiffness).toBe(180)
+    expect(isSpringTrack(track) && track.spring.from).toBe(0)
+  })
+
+  it('updates the delay', () => {
+    const store = setup()
+    addSpring(store)
+    store.updateSpring('s1', { delay: 250 })
+
+    const track = timelineOf(store).tracks[0]
+    expect(track.delay).toBe(250)
+    expect(timelineOf(store).getTrackSpan('s1')!.from).toBe(250)
+  })
+
+  it('grows the scene when an edit makes the spring slower to settle', () => {
+    const store = setup()
+    addSpring(store, { spring: { from: 0, to: 1, stiffness: 400, damping: 30 } })
+    const before = timelineOf(store).duration
+
+    store.updateSpring('s1', { damping: 2 }) // barely damped: takes far longer
+    expect(timelineOf(store).duration).toBeGreaterThan(before)
+  })
+
+  it('ignores an update to a track that is not a spring', () => {
+    const store = setup()
+    store.addTrack({
+      id: 'plain',
+      target: 'box',
+      property: 'x',
+      keyframes: [{ time: 0, value: 0 }, { time: 100, value: 1 }],
+    })
+    expect(() => store.updateSpring('plain', { stiffness: 400 })).not.toThrow()
+
+    const track = timelineOf(store).tracks[0]
+    expect(hasKeyframes(track)).toBe(true)
+  })
+
+  it('ignores an update to a missing track', () => {
+    const store = setup()
+    expect(() => store.updateSpring('nope', { stiffness: 400 })).not.toThrow()
+  })
+
+  it('is undoable', () => {
+    const store = setup()
+    addSpring(store)
+    store.updateSpring('s1', { stiffness: 400 })
+    store.undo()
+
+    const track = timelineOf(store).tracks[0]
+    expect(isSpringTrack(track) && track.spring.stiffness).toBe(180)
+  })
+
+  it('survives a JSON round-trip with its parameters intact', () => {
+    const store = setup()
+    addSpring(store, { spring: { from: 2, to: 9, stiffness: 250, damping: 7, mass: 1.5 } })
+
+    const restored = deserializeTimeline(serializeTimeline(timelineOf(store)))
+    const track = restored.tracks[0]
+    expect(isSpringTrack(track) && track.spring).toEqual({
+      from: 2, to: 9, stiffness: 250, damping: 7, mass: 1.5,
+    })
   })
 })

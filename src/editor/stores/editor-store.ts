@@ -1,6 +1,13 @@
 import { createSignal, createMemo } from 'solid-js'
 import { createStore } from 'solid-js/store'
-import { Timeline, createTrack, serializeTimeline, deserializeTimeline, hasKeyframes } from '../../engine'
+import {
+  Timeline,
+  createTrack,
+  serializeTimeline,
+  deserializeTimeline,
+  hasKeyframes,
+  isSpringTrack,
+} from '../../engine'
 import type {
   Keyframe,
   AnimatableValue,
@@ -8,6 +15,8 @@ import type {
   TimelineDefinition,
   MotionPathTrack,
   EasingType,
+  SpringTrack,
+  SpringConfig,
 } from '../../engine'
 import { type AnimationPreset, resolvePresetKeyframe } from '../presets'
 import type { SceneElement } from './scene-store'
@@ -199,6 +208,101 @@ export function createEditorStore() {
 
     state.timeline.addTrack(track)
     commitKeyframeEdit()
+  }
+
+  /**
+   * Add a spring track.
+   *
+   * A spring is authored as parameters, not keyframes — the engine integrates
+   * it at a fixed timestep from t=0, so what is stored is the physics, and the
+   * motion is derived. That is why this is a separate action from `addTrack`
+   * rather than a keyframe shape.
+   */
+  function addSpringTrack(options: {
+    id: string
+    target: string
+    property: string
+    spring: SpringConfig
+    delay?: number
+  }) {
+    if (!state.timeline) return
+
+    pushHistory()
+
+    const track: SpringTrack = {
+      id: options.id,
+      target: options.target,
+      property: options.property,
+      kind: 'spring',
+      spring: { ...options.spring },
+      ...(options.delay !== undefined && { delay: options.delay }),
+    }
+
+    state.timeline.addTrack(track)
+    commitSpringEdit()
+    return track
+  }
+
+  /**
+   * Change a spring track's parameters.
+   *
+   * The track is replaced rather than mutated, because `Timeline` builds a
+   * memoised sampler per spring when the track is added — editing the config in
+   * place would leave the old simulation cached and the preview showing the
+   * previous motion.
+   */
+  function updateSpring(trackId: string, changes: Partial<SpringConfig> & { delay?: number }) {
+    if (!state.timeline) return
+
+    const existing = state.timeline.tracks.find((t) => t.id === trackId)
+    if (!existing || !isSpringTrack(existing)) return
+
+    pushHistory()
+
+    const { delay, ...springChanges } = changes
+    const next: SpringTrack = {
+      ...existing,
+      spring: { ...existing.spring, ...springChanges },
+      ...(delay !== undefined && { delay }),
+    }
+
+    state.timeline.removeTrack(trackId)
+    state.timeline.addTrack(next)
+    commitSpringEdit()
+  }
+
+  /**
+   * The time the last thing on the timeline finishes, across every track kind.
+   *
+   * `lastKeyframeTime()` only sees keyframes, so a spring — which has none —
+   * contributes nothing to it. `getTrackSpan` asks the timeline instead, which
+   * knows each track's real extent (and reuses the spring's memoised
+   * simulation rather than re-integrating it).
+   */
+  function requiredDurationMs(): number {
+    if (!state.timeline) return 0
+
+    let end = lastKeyframeTime()
+    for (const track of state.timeline.tracks) {
+      const span = state.timeline.getTrackSpan(track.id)
+      if (span && span.to > end) end = span.to
+    }
+    return Math.ceil(end)
+  }
+
+  /**
+   * Grow the scene to fit the springs, then publish the change.
+   *
+   * Springs decide their own duration — a looser spring simply takes longer to
+   * settle — so an edit that slows one down has to extend the scene, or its
+   * tail is silently cut off.
+   */
+  function commitSpringEdit() {
+    if (state.timeline) {
+      const needed = requiredDurationMs()
+      if (needed > state.timeline.duration) state.timeline.setDuration(needed)
+    }
+    bumpVersion()
   }
 
   /** Whether a camera (tracks targeting the reserved "Camera" layer) exists. */
@@ -909,6 +1013,9 @@ export function createEditorStore() {
     timelineVersion,
 
     // Timeline actions
+    addSpringTrack,
+    updateSpring,
+    requiredDurationMs,
     syncPlayheadFromTimeline,
     createNewTimeline,
     loadTimeline,

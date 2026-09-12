@@ -482,3 +482,61 @@
 .swap-add-track-btn:hover {
   background: #3d8ae0;
 }
+
+/* ---- Spring inspector ------------------------------------------------ */
+
+/* Stiffness and damping interact, so the presets are pairs that are known to
+   work — far more useful as a starting point than two bare sliders. */
+.spring-presets {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.spring-preset-btn {
+  padding: 4px 2px;
+  border: 1px solid var(--border, #333);
+  border-radius: 3px;
+  background: var(--input-bg, #2a2a2a);
+  color: var(--text, #e0e0e0);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.spring-preset-btn:hover {
+  border-color: var(--accent, #4a9eff);
+  color: var(--accent, #4a9eff);
+}
+
+.property-hint {
+  margin: 4px 0 0;
+  color: var(--text-dim, #9bb4c7);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+/* Marks an underdamped spring — one that passes its target before settling.
+   Its absence is the usual reason a "bouncy" spring looks flat. */
+.spring-flag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 3px;
+  background: rgba(255, 204, 68, 0.14);
+  color: var(--warn-text, #d9c07a);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.property-value.num {
+  min-width: 34px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.property-row input[type='range'] {
+  flex: 1;
+  min-width: 0;
+}
