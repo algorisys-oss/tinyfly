@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>tinyfly vs GSAP — frame-time benchmark</title>
+<style>
+  body { margin: 0; background: #151515; color: #ddd; font: 13px/1.5 system-ui, sans-serif; }
+  #stage { position: relative; height: 320px; overflow: hidden; border-bottom: 1px solid #333; }
+  .box { position: absolute; width: 12px; height: 12px; background: #4a9eff; border-radius: 2px; will-change: transform, opacity; }
+  #ui { padding: 12px 16px; }
+  button { padding: 6px 12px; margin-right: 6px; background: #2a2a2a; color: #ddd; border: 1px solid #444; border-radius: 4px; cursor: pointer; }
+  pre { background: #0f0f0f; padding: 12px; border-radius: 4px; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<div id="ui">
+  <button id="run">Run benchmark</button>
+  <span id="status">idle</span>
+  <pre id="out">Results will appear here.</pre>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script type="module">
+/**
+ * Frame-time benchmark: tinyfly vs GSAP, same workload.
+ *
+ * Both libraries animate the same N elements over the same properties for the
+ * same wall-clock window. We measure the browser's actual frame intervals with
+ * requestAnimationFrame, which is what a user perceives — not library-internal
+ * timings, which would not be comparable.
+ *
+ * Caveats recorded with the results rather than hidden:
+ *  - One machine, one browser. Ratios travel better than absolute numbers.
+ *  - GSAP drives its own ticker; tinyfly is driven by the loop below. That is
+ *    the honest comparison (it is how each is actually used), but it means the
+ *    loop overhead lands on tinyfly's side.
+ */
+import { Timeline, createTrack } from '/lib/engine/tinyfly-engine.js'
+import { DOMAdapter } from '/src/adapters/dom/dom-adapter.ts'
+
+const stage = document.getElementById('stage')
+const out = document.getElementById('out')
+const status = document.getElementById('status')
+
+const DURATION_MS = 3000
+const COUNTS = [100, 500, 1000, 2000]
+
+function makeBoxes(n) {
+  stage.innerHTML = ''
+  const boxes = []
+  for (let i = 0; i < n; i++) {
+    const el = document.createElement('div')
+    el.className = 'box'
+    el.style.left = `${(i % 60) * 22}px`
+    el.style.top = `${Math.floor(i / 60) * 18}px`
+    stage.appendChild(el)
+    boxes.push(el)
+  }
+  return boxes
+}
+
+/** Collect real frame intervals for `ms`, running `onFrame` each tick. */
+function recordFrames(ms, onFrame) {
+  return new Promise((resolve) => {
+    const intervals = []
+    let last = performance.now()
+    const start = last
+    function tick(now) {
+      const dt = now - last
+      last = now
+      if (now - start > 250) intervals.push(dt) // skip warm-up frames
+      onFrame?.(dt, now - start)
+      if (now - start < ms) requestAnimationFrame(tick)
+      else resolve(intervals)
+    }
+    requestAnimationFrame(tick)
+  })
+}
+
+function summarise(intervals) {
+  const sorted = [...intervals].sort((a, b) => a - b)
+  const at = (p) => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))]
+  const dropped = intervals.filter((d) => d > 20).length
+  return {
+    frames: intervals.length,
+    median: at(0.5),
+    p95: at(0.95),
+    worst: sorted[sorted.length - 1],
+    droppedPct: (dropped / intervals.length) * 100,
+    fps: 1000 / at(0.5),
+  }
+}
+
+async function benchTinyfly(n) {
+  const boxes = makeBoxes(n)
+  const adapter = new DOMAdapter()
+  const tracks = []
+  boxes.forEach((el, i) => {
+    const name = `b${i}`
+    adapter.registerTarget(name, el)
+    tracks.push(
+      createTrack({ id: `x${i}`, target: name, property: 'x',
+        keyframes: [{ time: 0, value: 0 }, { time: DURATION_MS, value: 200, easing: 'ease-in-out' }] }),
+      createTrack({ id: `o${i}`, target: name, property: 'opacity',
+        keyframes: [{ time: 0, value: 1 }, { time: DURATION_MS, value: 0.2, easing: 'ease-in-out' }] }),
+      createTrack({ id: `r${i}`, target: name, property: 'rotate',
+        keyframes: [{ time: 0, value: 0 }, { time: DURATION_MS, value: 360, easing: 'linear' }] })
+    )
+  })
+
+  const timeline = new Timeline({ id: 'bench', tracks })
+  timeline.onUpdate = (state) => adapter.applyState(state)
+  timeline.play()
+
+  const intervals = await recordFrames(DURATION_MS, (dt) => timeline.tick(dt))
+  timeline.stop()
+  return summarise(intervals)
+}
+
+async function benchGsap(n) {
+  const boxes = makeBoxes(n)
+  gsap.killTweensOf(boxes)
+
+  const tl = gsap.timeline()
+  tl.to(boxes, {
+    x: 200, opacity: 0.2, rotation: 360,
+    duration: DURATION_MS / 1000, ease: 'power1.inOut',
+  }, 0)
+
+  const intervals = await recordFrames(DURATION_MS)
+  tl.kill()
+  gsap.killTweensOf(boxes)
+  gsap.set(boxes, { clearProps: 'all' })
+  return summarise(intervals)
+}
+
+/** Idle a moment so one run's GC does not land in the next one's numbers. */
+const settle = () => new Promise((r) => setTimeout(r, 600))
+
+document.getElementById('run').onclick = async () => {
+  const rows = []
+  rows.push('tinyfly vs GSAP — real frame intervals, ms (lower is better)');
+  rows.push(`${DURATION_MS}ms per run, animating x + opacity + rotate on N elements`);
+  rows.push('');
+  rows.push('elements  library    median     p95    worst   ~fps   dropped');
+  rows.push('-'.repeat(62));
+
+  for (const n of COUNTS) {
+    for (const [label, fn] of [['tinyfly', benchTinyfly], ['gsap', benchGsap]]) {
+      status.textContent = `running ${label} @ ${n}…`;
+      await settle()
+      const s = await fn(n)
+      rows.push(
+        String(n).padEnd(10) +
+        label.padEnd(11) +
+        s.median.toFixed(2).padStart(6) +
+        s.p95.toFixed(2).padStart(8) +
+        s.worst.toFixed(1).padStart(9) +
+        s.fps.toFixed(0).padStart(7) +
+        `${s.droppedPct.toFixed(1)}%`.padStart(10)
+      )
+    }
+    rows.push('')
+  }
+
+  status.textContent = 'done'
+  out.textContent = rows.join('\n')
+  window.__benchResult = rows.join('\n')
+}
+</script>
+</body>
+</html>

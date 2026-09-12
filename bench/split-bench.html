@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8" /><title>tinyfly — engine vs adapter split</title>
+<style>body{margin:0;background:#151515;color:#ddd;font:13px/1.5 system-ui,sans-serif}
+#stage{position:relative;height:300px;overflow:hidden;border-bottom:1px solid #333}
+.box{position:absolute;width:10px;height:10px;background:#4a9eff;border-radius:2px;will-change:transform,opacity}
+#ui{padding:12px 16px}button{padding:6px 12px;background:#2a2a2a;color:#ddd;border:1px solid #444;border-radius:4px;cursor:pointer}
+pre{background:#0f0f0f;padding:12px;border-radius:4px;white-space:pre-wrap}</style>
+</head>
+<body>
+<div id="stage"></div>
+<div id="ui"><button id="run">Run</button> <span id="status">idle</span><pre id="out">—</pre></div>
+<script type="module">
+/**
+ * Where does tinyfly's per-frame time actually go?
+ *
+ * The work benchmark says we cost ~3x what GSAP does. That is a constant
+ * factor, so it is a fixable implementation cost rather than a worse algorithm
+ * — but only if we know which half it is in. This splits the frame into:
+ *
+ *   engine   — getStateAtTime: interpolation, plus building the state Map
+ *   adapter  — applyState: reading that Map and writing to the DOM
+ *
+ * The split matters because the two have very different fixes. Engine cost is
+ * mostly allocation (a fresh Map-of-Maps every frame); adapter cost is string
+ * building and DOM writes.
+ */
+import { Timeline, createTrack } from '/lib/engine/tinyfly-engine.js'
+import { DOMAdapter } from '/src/adapters/dom/dom-adapter.ts'
+
+const stage = document.getElementById('stage')
+const out = document.getElementById('out')
+const status = document.getElementById('status')
+const FRAMES = 200
+
+function makeBoxes(n) {
+  stage.innerHTML = ''
+  return Array.from({ length: n }, (_, i) => {
+    const el = document.createElement('div')
+    el.className = 'box'
+    el.style.left = `${(i % 80) * 16}px`
+    el.style.top = `${Math.floor(i / 80) * 12}px`
+    stage.appendChild(el)
+    return el
+  })
+}
+
+const med = (a) => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)] }
+
+function build(n) {
+  const boxes = makeBoxes(n)
+  const adapter = new DOMAdapter()
+  const tracks = []
+  boxes.forEach((el, i) => {
+    const name = `b${i}`
+    adapter.registerTarget(name, el)
+    tracks.push(
+      createTrack({ id: `x${i}`, target: name, property: 'x',
+        keyframes: [{ time: 0, value: 0 }, { time: 4000, value: 200, easing: 'ease-in-out' }] }),
+      createTrack({ id: `o${i}`, target: name, property: 'opacity',
+        keyframes: [{ time: 0, value: 1 }, { time: 4000, value: 0.2, easing: 'ease-in-out' }] }),
+      createTrack({ id: `r${i}`, target: name, property: 'rotate',
+        keyframes: [{ time: 0, value: 0 }, { time: 4000, value: 360, easing: 'linear' }] })
+    )
+  })
+  return { timeline: new Timeline({ id: 's', tracks }), adapter }
+}
+
+function run(n) {
+  const { timeline, adapter } = build(n)
+  return new Promise((resolve) => {
+    const engine = [], apply = [], targets = []
+    let i = 0, t = 0
+    function tick() {
+      t += 16.67
+      const a = performance.now()
+      const state = timeline.getStateAtTime(t % 4000)
+      const b = performance.now()
+      adapter.applyState(state)
+      const c = performance.now()
+      if (i > 20) { engine.push(b - a); apply.push(c - b); targets.push(state.values.size) }
+      i++
+      if (i < FRAMES) requestAnimationFrame(tick)
+      else resolve({ engine: med(engine), apply: med(apply), targets: targets[0] })
+    }
+    requestAnimationFrame(tick)
+  })
+}
+
+const settle = () => new Promise((r) => setTimeout(r, 400))
+
+document.getElementById('run').onclick = async () => {
+  const rows = ['tinyfly frame cost split, ms (median)', '']
+  rows.push('elements  tracks   engine   adapter    total   engine%')
+  rows.push('-'.repeat(56))
+  for (const n of [100, 500, 1000, 2000, 4000]) {
+    status.textContent = `n=${n}…`
+    await settle()
+    const r = await run(n)
+    const total = r.engine + r.apply
+    rows.push(
+      String(n).padEnd(10) + String(n * 3).padEnd(9) +
+      r.engine.toFixed(2).padStart(6) + r.apply.toFixed(2).padStart(10) +
+      total.toFixed(2).padStart(9) +
+      `${((r.engine / total) * 100).toFixed(0)}%`.padStart(10)
+    )
+  }
+  status.textContent = 'done'
+  out.textContent = rows.join('\n')
+}
+</script>
+</body>
+</html>

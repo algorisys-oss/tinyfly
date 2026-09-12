@@ -464,7 +464,7 @@ tinyfly/
 
 **Planned — [Phase 27](todo.md) (closing on GSAP):**
 - [ ] Cross-browser testing (Firefox and WebKit are currently unverified)
-- [ ] Performance benchmark against GSAP
+- [x] Performance benchmark against GSAP ([results](bench/README.md) — ~3x slower per frame; the DOM adapter is 75% of our cost, not the engine)
 - [ ] Exercise the WebGL adapter against a real GL context (only its maths is tested)
 - [ ] Load-time value resolution + responsive variants (the serializable answer to function values and `matchMedia`)
 - [ ] Inertia / throw as a `decay` track kind

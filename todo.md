@@ -1027,13 +1027,50 @@ Not features. The v0.50.1 post-mortem says this is where the real gap is.
       WebCodecs (MP4 export), `background-clip: text` (shine), `transform-box`
       (SVG origin).
 
-#### 27C.2 — Performance benchmark against GSAP
+#### 27C.2 — Performance benchmark against GSAP ✓ (first pass)
 
-- [ ] We have never measured against GSAP. Claims about being "in the same
-      weight class" currently rest on bundle size alone.
-- [ ] Measure: 100/500/1000 concurrent tweens, frame time under load, memory,
-      time-to-first-frame.
-- [ ] Publish the numbers honestly, including where we lose.
+- [x] Harnesses in `bench/` — engine-only (Node), per-frame work vs GSAP, and an
+      engine/adapter split. Results and method in [bench/README.md](bench/README.md).
+- [x] Published honestly, including where we lose.
+
+**Headline: GSAP is ~3x faster per frame at realistic sizes.** tinyfly 3.00 ms
+vs GSAP 1.10 ms at 1,000 animated elements. We still have 5.6x headroom at 60fps
+there, so this is not a problem for normal pages — but at 4,000 elements we are
+at the budget and GSAP still has 5x spare.
+
+The ratio is roughly flat from 100 to 2,000 elements, which means a **constant
+factor rather than a worse algorithm**. That is the encouraging reading.
+
+**The DOM adapter is ~75% of our frame cost; interpolation is ~25%.** The engine
+is not the problem. Some adapter cost is structural — the engine produces a
+state Map and the adapter reads it back and composes strings, where GSAP writes
+straight to the element — so the remaining work is optimising *within* the
+adapter architecture, not abandoning it.
+
+Two optimisations landed from this (see bench/README.md for numbers): colour
+endpoints are now memoised rather than re-parsed every frame, and the adapter
+allocates its origin/clip/filter objects lazily instead of per element per
+frame. One proposed optimisation — caching the composed transform string to skip
+unchanged writes — measured *worse* and was reverted, with the reason recorded
+at the write site.
+
+- [ ] **Still to measure:** memory, startup cost, and Firefox/WebKit (blocked on
+      27C.1).
+
+#### 27C.2b — Follow-on adapter optimisation (from the profile above)
+
+Now that the adapter is identified as the hot half, in rough order of expected
+value:
+
+- [ ] Reuse the state `Map` between frames instead of rebuilding a
+      Map-of-Maps every tick. Needs care: `getStateAtTime` is currently pure and
+      callers may hold the result.
+- [ ] Compose transforms with the individual CSS properties (`translate`,
+      `rotate`, `scale`) where supported, avoiding string building entirely.
+- [ ] Cache per-target property→handler dispatch instead of re-testing each
+      property against several `Set`s every frame.
+- [ ] Re-measure after each. The transform-cache result is the cautionary tale:
+      **measure, do not assume.**
 
 #### 27C.3 — Exercise the WebGL adapter for real
 

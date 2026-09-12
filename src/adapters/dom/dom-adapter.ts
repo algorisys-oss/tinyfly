@@ -129,10 +129,15 @@ export class DOMAdapter {
     properties: Map<string, AnimatableValue>
   ): void {
     const transformParts: string[] = []
-    const origin: Record<string, number> = {}
-    const clip: Record<string, number> = {}
-    const filter: FilterValues = {}
-    let hasFilter = false
+
+    // Lazily allocated. These three were previously created for every element on
+    // every frame, whether or not the element used origins, clipping or filters
+    // — which is most elements, most of the time. At 4,000 elements that was on
+    // the order of a million throwaway objects a second, and the DOM adapter
+    // measured as ~75% of tinyfly's per-frame cost.
+    let origin: Record<string, number> | null = null
+    let clip: Record<string, number> | null = null
+    let filter: FilterValues | null = null
 
     // Check if motion path values are present (they take priority over x/y/rotate)
     const hasMotionPathX = properties.has('motionPathX')
@@ -151,12 +156,11 @@ export class DOMAdapter {
           transformParts.push(transformValue)
         }
       } else if (ORIGIN_PROPERTIES.has(property)) {
-        if (typeof value === 'number') origin[property] = value
+        if (typeof value === 'number') (origin ??= {})[property] = value
       } else if (CLIP_PROPERTIES.has(property)) {
-        if (typeof value === 'number') clip[property] = value
+        if (typeof value === 'number') (clip ??= {})[property] = value
       } else if (FILTER_PROPERTIES.has(property)) {
-        ;(filter as Record<string, AnimatableValue>)[property] = value
-        hasFilter = true
+        ;((filter ??= {}) as Record<string, AnimatableValue>)[property] = value
       } else if (property === 'perspective') {
         // Consumed below, as the first function of the composed transform.
       } else if (property === 'shine') {
@@ -192,19 +196,27 @@ export class DOMAdapter {
     }
 
     if (transformParts.length > 0) {
+      // Deliberately written unconditionally.
+      //
+      // Caching the last string to skip an unchanged write was tried and made
+      // things *slower* (bench/split-bench.html: 2.40ms -> 2.80ms at 1,000
+      // elements). In a running animation every transform changes every frame,
+      // so the cache never hits and each element pays an extra WeakMap get and
+      // set for nothing. It would only pay off for tracks that have settled,
+      // which is not the case worth optimising for.
       element.style.transform = transformParts.join(' ')
     }
 
     // Apply transform-origin. A missing axis defaults to 50% (the CSS default),
     // so animating one axis alone behaves as expected.
-    if (Object.keys(origin).length > 0) {
+    if (origin) {
       const ox = origin.originX ?? 50
       const oy = origin.originY ?? 50
       element.style.transformOrigin = `${ox}% ${oy}%`
     }
 
     // Apply composed clip-path (reveal/wipe mask). Missing sides default to 0.
-    if (Object.keys(clip).length > 0) {
+    if (clip) {
       const t = clip.clipTop ?? 0
       const r = clip.clipRight ?? 0
       const b = clip.clipBottom ?? 0
@@ -213,7 +225,7 @@ export class DOMAdapter {
     }
 
     // Apply composed filter (blur / glow / drop-shadow).
-    if (hasFilter) {
+    if (filter) {
       const composed = composeFilter(filter)
       if (composed) element.style.filter = composed
     }

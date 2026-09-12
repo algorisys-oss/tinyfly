@@ -29,3 +29,6 @@ bun.lock
 bun.lockb
 pnpm-lock.yaml
 yarn.lock
+
+# Playwright MCP session artifacts (snapshots, screenshots)
+.playwright-mcp/
