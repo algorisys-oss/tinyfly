@@ -813,6 +813,41 @@ assertions in CI are flaky and there is no action we would take on them. The
 size relationship *is* asserted, because it is deterministic and it is the
 property the feature exists for.
 
+### Found by browser testing (v0.50.1)
+
+Driving the real editor turned up three defects that the test suite could not
+have caught. Worth recording *why* each was invisible to tests:
+
+1. **IndexedDB writes were silently failing** (pre-existing, since before this
+   work — confirmed by running v0.46.2). Project records go straight from a
+   Solid store into `IDBObjectStore.put`, and in the browser those are Proxies,
+   which structured clone rejects with `DataCloneError`. The only record that
+   ever persisted was the initial *empty* project: the moment the canvas had
+   anything on it every save was dropped, and the loss only showed after a
+   reload. Fixed by `unwrap`-ing before the write, with a JSON retry.
+   - Why tests missed it: under Vitest's Node environment `createStore` does not
+     proxy at all (`state === unwrap(state)`), so the failure is not
+     reproducible there. The regression test asserts the properties the fix
+     relies on and says so explicitly.
+
+2. **Spring rest detection was scale-dependent.** The thresholds were absolute,
+   so a `scale: 0 → 1` spring hit them ~100x sooner than an `x: 0 → 100` one —
+   it was declared "settled" at its first pass through the target, never
+   overshot, and reported 140 ms instead of 854 ms. The editor's "overshoots"
+   badge was therefore lying, which is exactly the failure mode the badge was
+   supposed to prevent. Thresholds are now fractions of travel distance, so
+   settling depends on the spring's parameters and not on the units of the
+   property it drives.
+   - Why tests missed it: every existing spring test used `from: 0, to: 100`.
+     The presets all use `0 → 1`. `spring-scale.test.ts` now covers small
+     magnitudes and asserts scale invariance directly.
+
+3. **The scroll preview was invisible.** Stacked below the stage, it was clipped
+   away by the preview panel's `overflow: hidden` — the timeline splitter owns
+   most of that column's height. Moved beside the stage, where it costs no
+   vertical height at all.
+   - Why tests missed it: layout is not something this suite can assert.
+
 ### Still open
 
 - Pinning in `ScrollDriver` (the `position: sticky` recipe covers the common

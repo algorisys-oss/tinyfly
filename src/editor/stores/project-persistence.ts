@@ -1,3 +1,4 @@
+import { unwrap } from 'solid-js/store'
 import {
   migrateProject,
   localStorageBackend,
@@ -143,13 +144,37 @@ export async function openIndexedDbBackend(): Promise<ProjectBackend> {
     }
   }
 
-  /** Write a single record; failures are logged, never thrown (best-effort). */
+  /**
+   * Write a single record; failures are logged, never thrown (best-effort).
+   *
+   * Records arrive straight from a Solid store, which means they are Proxies —
+   * and IndexedDB's structured clone rejects a proxy outright with
+   * `DataCloneError`. `unwrap` hands back the raw object graph behind the
+   * store, which is what we actually mean to persist.
+   *
+   * The JSON retry is the safety net: a dropped write here is silent data loss
+   * (the editor keeps working from memory and the user only finds out after a
+   * reload), so it is worth a second attempt. The persisted format is JSON by
+   * contract — the LocalStorage backend stores exactly that — so the round-trip
+   * cannot lose anything a reader would have seen.
+   */
   function put(storeName: string, value: unknown): void {
+    const record = typeof value === 'object' && value !== null ? unwrap(value) : value
+
     try {
       const tx = db.transaction(storeName, 'readwrite')
-      tx.objectStore(storeName).put(value)
+      tx.objectStore(storeName).put(record)
     } catch (e) {
-      console.error(`tinyfly: IndexedDB put into ${storeName} failed`, e)
+      try {
+        const tx = db.transaction(storeName, 'readwrite')
+        tx.objectStore(storeName).put(JSON.parse(JSON.stringify(record)))
+      } catch (retryError) {
+        console.error(
+          `tinyfly: IndexedDB put into ${storeName} failed (and the JSON retry failed too)`,
+          e,
+          retryError
+        )
+      }
     }
   }
 

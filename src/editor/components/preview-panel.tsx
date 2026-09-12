@@ -1784,7 +1784,10 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
   }
 
   return (
-    <div class="preview-panel" classList={{ maximized: maximized() }}>
+    <div
+      class="preview-panel"
+      classList={{ maximized: maximized(), 'has-scroll-preview': scrollPreview() }}
+    >
       <div class="preview-header">
         <span>Preview</span>
         <select
@@ -2567,13 +2570,16 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
             <div class="renderer-badge">SVG</div>
           </div>
         </Show>
-      </div>
 
-      {/* Scroll-scrub preview: a real ScrollDriver against a real scroll
-          container, so the triggers behave exactly as they will in production. */}
-      <Show when={scrollPreview() && props.store.state.timeline}>
-        <ScrollPreview store={props.store} />
-      </Show>
+        {/* Scroll-scrub preview: a real ScrollDriver against a real scroll
+            container, so the triggers behave exactly as they will in
+            production. It sits *beside* the stage rather than below it — the
+            preview area is short (the timeline splitter owns most of the
+            height), and a panel stacked underneath gets clipped away. */}
+        <Show when={scrollPreview() && props.store.state.timeline}>
+          <ScrollPreview store={props.store} />
+        </Show>
+      </div>
     </div>
   )
 }

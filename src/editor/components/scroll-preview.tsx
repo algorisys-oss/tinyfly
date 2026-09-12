@@ -128,8 +128,8 @@ export const ScrollPreview: Component<ScrollPreviewProps> = (props) => {
 
         <div class="scroll-preview-hints">
           <p>
-            Scroll the strip to scrub. This runs the same <code>ScrollDriver</code> your
-            page would, so the start/end triggers behave identically.
+            Scroll the strip to scrub — this is the same <code>ScrollDriver</code> your
+            page would run.
           </p>
           <div class="scroll-jumps">
             <button onClick={() => scrollTo(0)}>Top</button>
@@ -139,13 +139,18 @@ export const ScrollPreview: Component<ScrollPreviewProps> = (props) => {
           <Show when={props.store.duration() === 0}>
             <p class="scroll-warn">This scene has no duration yet, so there is nothing to scrub.</p>
           </Show>
-          <pre class="scroll-snippet">{`new ScrollDriver({
+          {/* Collapsed by default: the preview shares height with the stage, and
+              seeing the animation you are scrubbing matters more than the code. */}
+          <details class="scroll-snippet-details">
+            <summary>Code for this setup</summary>
+            <pre class="scroll-snippet">{`new ScrollDriver({
   timeline,
   trigger,
   start: '${start()}',
   end: '${end()}',
   scrub: ${smoothing() > 0 ? smoothing() : true},
 }).start()`}</pre>
+          </details>
         </div>
       </div>
     </div>

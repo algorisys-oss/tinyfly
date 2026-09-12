@@ -488,3 +488,18 @@
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+/*
+ * Scroll-scrub preview sits beside the stage, not below it.
+ *
+ * The preview area is short — the timeline splitter owns most of the column's
+ * height — so anything stacked underneath is clipped away by the panel's
+ * `overflow: hidden`. Laying them out in a row costs no vertical height at all;
+ * the stage simply narrows.
+ */
+.preview-panel.has-scroll-preview .preview-container {
+  flex-direction: row;
+  align-items: stretch;
+  gap: 10px;
+  padding: 10px;
+}

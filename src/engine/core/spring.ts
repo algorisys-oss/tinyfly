@@ -29,7 +29,7 @@ export const DEFAULT_SPRING: Required<Omit<SpringConfig, 'from' | 'to'>> = {
   mass: 1,
   velocity: 0,
   restDelta: 0.01,
-  restSpeed: 0.01,
+  restSpeed: 0.1,
 }
 
 /**
@@ -47,6 +47,18 @@ export class SpringSampler {
   private readonly restSpeed: number
 
   /** value[i] is the spring's position at time i * SPRING_STEP_MS */
+  /**
+   * Travel distance, used to scale the rest thresholds.
+   *
+   * Without this the thresholds are absolute, and a spring animating `scale`
+   * from 0 to 1 hits them ~100x sooner than one animating `x` from 0 to 100 —
+   * so the small one is declared "settled" at its first pass through the
+   * target and never shows the overshoot at all. Scaling by travel makes
+   * settling depend on the spring's parameters, not on the units of whatever
+   * property it happens to drive.
+   */
+  private readonly distance: number
+
   private samples: number[]
   private velocity: number
   /** Once at rest we stop simulating; every later time returns `to`. */
@@ -61,6 +73,10 @@ export class SpringSampler {
     this.restDelta = config.restDelta ?? DEFAULT_SPRING.restDelta
     this.restSpeed = config.restSpeed ?? DEFAULT_SPRING.restSpeed
 
+    // A zero-travel spring (a pure velocity "knock", where from === to) still
+    // needs a yardstick, so fall back to 1.
+    this.distance = Math.abs(this.to - this.from) || 1
+
     this.samples = [this.from]
     this.velocity = config.velocity ?? DEFAULT_SPRING.velocity
 
@@ -71,11 +87,17 @@ export class SpringSampler {
     }
   }
 
-  /** Whether a position/velocity pair counts as settled. */
+  /**
+   * Whether a position/velocity pair counts as settled.
+   *
+   * Both thresholds are fractions of the spring's travel distance:
+   * `restDelta` as a fraction of the distance, and `restSpeed` as a fraction
+   * of the distance per second. That keeps settling scale-invariant.
+   */
   private isAtRest(position: number): boolean {
     return (
-      Math.abs(position - this.to) < this.restDelta &&
-      Math.abs(this.velocity) < this.restSpeed * 1000
+      Math.abs(position - this.to) < this.restDelta * this.distance &&
+      Math.abs(this.velocity) < this.restSpeed * this.distance
     )
   }
 

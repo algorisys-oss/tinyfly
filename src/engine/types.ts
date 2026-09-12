@@ -218,9 +218,19 @@ export interface SpringConfig {
   mass?: number;
   /** Initial velocity in units per second (default: 0) */
   velocity?: number;
-  /** Distance from `to` below which the spring counts as settled (default: 0.01) */
+  /**
+   * How close to `to` counts as settled, as a fraction of the spring's travel
+   * distance (default: 0.01, i.e. within 1% of the journey).
+   *
+   * Relative rather than absolute so that settling depends on the spring's
+   * parameters and not on the units of the property it drives — `scale: 0→1`
+   * and `x: 0→100` settle at the same time.
+   */
   restDelta?: number;
-  /** Speed below which the spring counts as settled, units/sec (default: 0.01) */
+  /**
+   * How slow counts as settled, as a fraction of the travel distance per
+   * second (default: 0.1). Relative for the same reason as `restDelta`.
+   */
   restSpeed?: number;
 }
 
