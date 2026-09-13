@@ -20,11 +20,19 @@
  * - The element gets `aria-label` with its text and the pieces `aria-hidden`, so
  *   a screen reader reads the sentence rather than letter by letter.
  *
- * Lines depend on the element's width. If it can change (a resize), call
- * `revert()` and split again.
+ * Lines depend on the element's width. With `autoSplit: true` the split is
+ * redone when an element's width changes or web fonts finish loading. Build the
+ * animation in `onSplit` and return it, so the old one is killed before the
+ * pieces it animated are replaced.
  */
 
 export type SplitType = 'chars' | 'words' | 'lines'
+
+/** Anything `onSplit` may return to be cleaned up before a re-split. */
+export interface SplitAnimation {
+  kill?(): unknown
+  revert?(): unknown
+}
 
 export interface SplitTextOptions {
   /** Which pieces to create, comma-separated (default `'chars,words,lines'`) */
@@ -36,17 +44,27 @@ export interface SplitTextOptions {
   linesClass?: string
   /** Add `aria-label` / `aria-hidden` (default true) */
   aria?: boolean
+  /** Split again when an element's width changes or fonts load (default false) */
+  autoSplit?: boolean
+  /**
+   * Called after every split, including the first. Return the animation built on
+   * the pieces; it is killed before the next split and on `revert()`.
+   */
+  onSplit?: (self: SplitTextResult) => SplitAnimation | void
 }
 
 export interface SplitTextResult {
   /** The elements that were split */
   readonly elements: Element[]
+  /** The current pieces (replaced on each re-split) */
   readonly chars: HTMLElement[]
   readonly words: HTMLElement[]
   readonly lines: HTMLElement[]
   /** The mask wrappers, when `mask` was given */
   readonly masks: HTMLElement[]
-  /** Restore every element's original markup */
+  /** Split again now, e.g. after changing the text's layout yourself */
+  split(): void
+  /** Restore every element's original markup, and stop watching for resizes */
   revert(): void
 }
 
@@ -64,44 +82,119 @@ export function splitText(elements: Element[], options: SplitTextOptions = {}): 
     lines: options.linesClass ?? 'line',
   }
   const aria = options.aria !== false
+  const originals: Original[] = elements.map((element) => ({
+    element,
+    html: element.innerHTML,
+    ariaLabel: element.getAttribute('aria-label'),
+  }))
 
-  const originals: Original[] = []
-  const result = { elements, chars: [] as HTMLElement[], words: [] as HTMLElement[], lines: [] as HTMLElement[], masks: [] as HTMLElement[] }
+  let pieces = { chars: [] as HTMLElement[], words: [] as HTMLElement[], lines: [] as HTMLElement[], masks: [] as HTMLElement[] }
+  let animation: SplitAnimation | void
+  let observer: ResizeObserver | undefined
+  let reverted = false
 
-  for (const element of elements) {
-    originals.push({ element, html: element.innerHTML, ariaLabel: element.getAttribute('aria-label') })
-    const text = (element.textContent ?? '').replace(/\s+/g, ' ').trim()
-
-    const words = wrapWords(element, classes.words)
-    const chars = types.has('chars') ? words.flatMap((word) => wrapChars(word, classes.chars)) : []
-    const lines = types.has('lines') ? groupLines(element, words, classes.lines) : []
-
-    if (aria) {
-      if (!element.hasAttribute('aria-label') && text) element.setAttribute('aria-label', text)
-      for (const word of words) word.setAttribute('aria-hidden', 'true')
+  const restore = () => {
+    for (const { element, html, ariaLabel } of originals) {
+      element.innerHTML = html
+      if (ariaLabel === null) element.removeAttribute('aria-label')
+      else element.setAttribute('aria-label', ariaLabel)
     }
-
-    // Words are always wrapped (so they never break mid-word and lines can be
-    // measured), but only reported when asked for.
-    if (types.has('words')) result.words.push(...words)
-    else for (const word of words) word.removeAttribute('class')
-    result.chars.push(...chars)
-    result.lines.push(...lines)
-
-    const masked = options.mask === 'lines' ? lines : options.mask === 'words' ? words : options.mask === 'chars' ? chars : []
-    for (const piece of masked) result.masks.push(wrapInMask(piece, `${classes[options.mask!]}-mask`))
   }
 
-  return {
-    ...result,
-    revert() {
-      for (const { element, html, ariaLabel } of originals) {
-        element.innerHTML = html
-        if (ariaLabel === null) element.removeAttribute('aria-label')
-        else element.setAttribute('aria-label', ariaLabel)
+  const stopAnimation = () => {
+    if (!animation) return
+    if (animation.revert) animation.revert()
+    else animation.kill?.()
+    animation = undefined
+  }
+
+  const splitAll = () => {
+    const next = { chars: [] as HTMLElement[], words: [] as HTMLElement[], lines: [] as HTMLElement[], masks: [] as HTMLElement[] }
+    for (const { element } of originals) {
+      const text = (element.textContent ?? '').replace(/\s+/g, ' ').trim()
+
+      const words = wrapWords(element, classes.words)
+      const chars = types.has('chars') ? words.flatMap((word) => wrapChars(word, classes.chars)) : []
+      const lines = types.has('lines') ? groupLines(element, words, classes.lines) : []
+
+      if (aria) {
+        if (!element.hasAttribute('aria-label') && text) element.setAttribute('aria-label', text)
+        for (const word of words) word.setAttribute('aria-hidden', 'true')
       }
+
+      // Words are always wrapped (so they never break mid-word and lines can be
+      // measured), but only reported when asked for.
+      if (types.has('words')) next.words.push(...words)
+      else for (const word of words) word.removeAttribute('class')
+      next.chars.push(...chars)
+      next.lines.push(...lines)
+
+      const masked = options.mask === 'lines' ? lines : options.mask === 'words' ? words : options.mask === 'chars' ? chars : []
+      for (const piece of masked) next.masks.push(wrapInMask(piece, `${classes[options.mask!]}-mask`))
+    }
+    pieces = next
+  }
+
+  const self: SplitTextResult = {
+    elements,
+    get chars() { return pieces.chars },
+    get words() { return pieces.words },
+    get lines() { return pieces.lines },
+    get masks() { return pieces.masks },
+    split() {
+      if (reverted) return
+      stopAnimation()
+      restore()
+      splitAll()
+      animation = options.onSplit?.(self)
+    },
+    revert() {
+      reverted = true
+      observer?.disconnect()
+      stopAnimation()
+      restore()
     },
   }
+
+  splitAll()
+  animation = options.onSplit?.(self)
+
+  if (options.autoSplit) watchLayout()
+
+  function watchLayout() {
+    // Width is what changes where lines break; height changes are the split's own doing.
+    const widths = new Map<Element, number>()
+    let pending = false
+    const resplitSoon = () => {
+      if (pending) return
+      pending = true
+      const run = () => {
+        pending = false
+        self.split()
+      }
+      if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run)
+      else setTimeout(run, 0)
+    }
+
+    if (typeof ResizeObserver === 'function') {
+      observer = new ResizeObserver((entries) => {
+        let changed = false
+        for (const entry of entries) {
+          const width = Math.round(entry.contentRect.width)
+          const previous = widths.get(entry.target)
+          widths.set(entry.target, width)
+          if (previous !== undefined && previous !== width) changed = true
+        }
+        if (changed) resplitSoon()
+      })
+      for (const element of elements) observer.observe(element)
+    }
+
+    const fonts = (elements[0]?.ownerDocument as Document & { fonts?: FontFaceSet } | undefined)?.fonts
+    if (fonts && fonts.status !== 'loaded') fonts.ready.then(() => resplitSoon())
+  }
+
+  return self
 }
 
 /** Replace every text node under `root` with word spans and the spaces between them. */

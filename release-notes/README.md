@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.56.0](v0.56.0.md) | 2026-09-13 | Landing page at `/` built with tinyfly, editor at `/app` (lazy routes); resize-proof values (`invalidate`, function values, `autoSplit`); `live.context` / `live.matchMedia` with a real reduced-motion mode; `live.quickTo`; brand mark with animated beta badge; MIT license; WebKit passes e2e |
 | [v0.55.0](v0.55.0.md) | 2026-09-13 | Award-site motion on `live`: `scrollTrigger` with pinning, `splitText`, `drawSVG`, springs with momentum, shared-element Flip, object targets and ticker; Agency Landing Page showcase; `llms.txt` and complete docs; exporters moved to `tinyfly/export` (engine 26.8 → 15.8 KB gz) |
 | [v0.54.1](v0.54.1.md) | 2026-09-13 | Cross-browser checks (`npm run e2e`, Chromium + Firefox pass all 19); SVG content now rotates and scales in place in every adapter |
 | [v0.54.0](v0.54.0.md) | 2026-09-13 | Flip for live elements (shuffle, filter, layout switch, expand, smooth interrupts); editor samples for text, inertia and morph; exported text colour fixed |

@@ -5,6 +5,7 @@ import { renderMarkdown } from './markdown'
 import { DOCS, DOC_SECTIONS } from './doc-manifest'
 import { searchDocs } from './doc-search'
 import { rewriteDocLinks } from './doc-links'
+import { BrandMark } from '../components/brand-mark'
 import './docs-viewer.css'
 
 // Every markdown file in docs/, as raw strings; the manifest decides which are shown.
@@ -52,13 +53,15 @@ export const DocsViewer: Component = () => {
   return (
     <div class="docs-viewer">
       <header class="docs-header">
-        <A href="/" class="docs-back-link">
+        <A href="/app" class="docs-back-link">
           <svg viewBox="0 0 24 24" width="16" height="16">
             <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" fill="currentColor" />
           </svg>
           Back to Editor
         </A>
-        <h1 class="docs-title">tinyfly docs</h1>
+        <h1 class="docs-title">
+          <BrandMark size={24} wordmark="tinyfly docs" />
+        </h1>
         <div class="docs-header-spacer" />
       </header>
 

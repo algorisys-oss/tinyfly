@@ -13,28 +13,30 @@ export const html = `<style>
 export function run(live, root) {
   // #region code
   const grid = root.querySelector('.pg-grid')
-  const dots = [...grid.querySelectorAll('.pg-dot')]
-  live.set(dots, { scale: 1, opacity: 0.35 })
-
-  // One tween per dot at a time: kill the previous one before starting the next,
-  // so a fast-moving pointer never piles up tweens that fight each other.
-  const tweens = new Map()
-  const tweenDot = (dot, vars) => {
-    tweens.get(dot)?.kill()
-    tweens.set(dot, live.to(dot, vars))
-  }
+  const dots = [...grid.querySelectorAll('.pg-dot')].map((element) => ({
+    element,
+    // One reusable tween per dot and property: a fast pointer re-targets them
+    // rather than piling up tweens that fight each other.
+    scale: live.quickTo(element, 'scale', { duration: 0.3, ease: 'power2.out' }),
+    opacity: live.quickTo(element, 'opacity', { duration: 0.3, ease: 'power2.out' }),
+  }))
+  live.set(dots.map((dot) => dot.element), { scale: 1, opacity: 0.35 })
 
   const onMove = (event) => {
     dots.forEach((dot) => {
-      const box = dot.getBoundingClientRect()
+      const box = dot.element.getBoundingClientRect()
       const distance = Math.hypot(event.clientX - (box.left + box.width / 2), event.clientY - (box.top + box.height / 2))
       const strength = Math.max(0, 1 - distance / 90)
-      tweenDot(dot, { scale: 1 + strength * 1.8, opacity: 0.35 + strength * 0.65, duration: 0.3, ease: 'power2.out' })
+      dot.scale(1 + strength * 1.8)
+      dot.opacity(0.35 + strength * 0.65)
     })
   }
 
   const onLeave = () => {
-    dots.forEach((dot) => tweenDot(dot, { scale: 1, opacity: 0.35, duration: 0.6, ease: 'power3.out' }))
+    dots.forEach((dot) => {
+      dot.scale(1)
+      dot.opacity(0.35)
+    })
   }
 
   grid.addEventListener('pointermove', onMove)
@@ -51,8 +53,8 @@ export function run(live, root) {
 export const proximityGrid = {
   id: 'live-proximity-grid',
   name: 'Proximity Grid',
-  description: 'Dots grow and brighten by distance to the pointer. Killing the previous tween per dot keeps it smooth.',
-  tags: ['interaction', 'kill()', 'overwrite', 'hover'],
+  description: 'Dots grow and brighten by distance to the pointer, each through quickTo setters that re-target instead of piling up tweens.',
+  tags: ['interaction', 'quickTo', 'hover'],
   html,
   run,
 }

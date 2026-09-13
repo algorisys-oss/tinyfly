@@ -27,6 +27,12 @@ export const timeline = live.timeline
 export const ticker = live.ticker
 /** Split text into char, word and line spans (GSAP's SplitText). */
 export const splitText = live.splitText
+/** Collect animations so they can be reverted together (GSAP's `gsap.context`). */
+export const context = live.context
+/** Setups that apply while media queries match (GSAP's `gsap.matchMedia`). */
+export const matchMedia = live.matchMedia
+/** A reusable setter that animates one property toward each value (GSAP's `gsap.quickTo`). */
+export const quickTo = live.quickTo
 
 export * from '../engine'
 export * from '../player'

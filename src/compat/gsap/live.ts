@@ -1,8 +1,8 @@
 import type { Timeline, TimelineDefinition } from '../../engine'
 import { CompatTimeline, type CompatTimelineOptions } from './timeline'
 import type { Position } from './position'
-import { splitVars, type TweenVars } from './vars'
-import { Stage, type TargetInput, type Ticker } from './stage'
+import { RESERVED_KEYS, splitVars, type TweenVars } from './vars'
+import { Stage, type ObjectTarget, type TargetInput, type Ticker } from './stage'
 import type { AnimatableValue } from '../../engine'
 import { resolveLiveMotionPath } from './live-motion-path'
 import { convertToPath, pathDataOf, resolveMorphShape } from './live-morph'
@@ -13,6 +13,7 @@ import { splitText, type SplitTextOptions, type SplitTextResult } from './split-
 import { createScrollTrigger, type ScrollTriggerVars } from './live-scroll'
 import { resolveDrawSvg } from './draw-svg-vars'
 import { ScrollDriver } from '../../drivers'
+import { LiveContext, LiveMatchMedia, type Revertible } from './live-context'
 
 /**
  * The live facade: GSAP-style calls that play on real elements straight away.
@@ -51,6 +52,24 @@ export interface LiveTimelineOptions extends Omit<CompatTimelineOptions, 'startV
   scrollTrigger?: ScrollTriggerVars
 }
 
+/** Options for `live.quickTo`: how each re-targeted move animates. */
+export interface QuickToVars {
+  /** Seconds (default 0.4) */
+  duration?: number
+  /** Default `'power3.out'` */
+  ease?: string
+  /** Move on a spring instead; each re-target keeps the current velocity */
+  spring?: TweenVars['spring']
+}
+
+/** Call it with a value to animate toward it. */
+export interface QuickTo {
+  (value: number): void
+  /** The reused timeline */
+  readonly tween: LiveTimeline
+  kill(): void
+}
+
 export class LiveTimeline {
   /** The compiled compat timeline. */
   readonly compat: CompatTimeline
@@ -61,6 +80,8 @@ export class LiveTimeline {
   private autoplayPending: boolean
   private started = false
   private killed = false
+  /** The building calls, in order, so `invalidate()` can replay them. */
+  private readonly recipe: Array<() => void> = []
   /** The first element any tween targeted: a scroll trigger's default trigger. */
   private firstElement?: Element
   private scrollDriver?: ScrollDriver
@@ -93,6 +114,7 @@ export class LiveTimeline {
     })
 
     this.compat.timeline.onComplete = () => options.onComplete?.()
+    stage.collector?.track(this)
 
     this.autoplayPending = !options.paused && !options.scrollTrigger
     if (options.scrollTrigger) {
@@ -124,49 +146,52 @@ export class LiveTimeline {
   // --- building -----------------------------------------------------------
 
   to(target: TargetInput, vars: TweenVars, position?: Position): this {
-    const names = this.resolve(target)
-    if (names) this.perElementStarts(names, vars, position, (n, v, p) => this.compat.to(n, v, p))
-    return this
+    return this.record(() => this.tween(target, [vars], position, ([v], names, at) => this.compat.to(names, v, at)))
   }
 
   from(target: TargetInput, vars: TweenVars, position?: Position): this {
-    const names = this.resolve(target)
-    if (names) this.perElementStarts(names, vars, position, (n, v, p) => this.compat.from(n, v, p))
-    return this
+    return this.record(() => this.tween(target, [vars], position, ([v], names, at) => this.compat.from(names, v, at)))
   }
 
   fromTo(target: TargetInput, fromVars: TweenVars, toVars: TweenVars, position?: Position): this {
-    const names = this.resolve(target)
-    if (!names) return this
-    if ((fromVars.drawSVG === undefined && toVars.drawSVG === undefined) || names.length === 1) {
-      this.compat.fromTo(names, this.prepare(fromVars, names), this.prepare(toVars, names), position)
-      return this
-    }
-    // Each stroke has its own length, so each element gets its own tween.
-    this.eachElement(names, toVars, position, (name, vars, at) =>
-      this.compat.fromTo([name], this.prepare(fromVars, [name]), this.prepare(vars, [name]), at)
+    return this.record(() =>
+      this.tween(target, [fromVars, toVars], position, ([f, t], names, at) => this.compat.fromTo(names, f, t, at))
     )
-    return this
   }
 
   set(target: TargetInput, vars: TweenVars, position?: Position): this {
-    const names = this.resolve(target)
-    if (names) this.compat.set(names, this.prepare(vars, names), position)
-    return this
+    return this.record(() => this.tween(target, [vars], position, ([v], names, at) => this.compat.set(names, v, at)))
   }
 
   addLabel(name: string, position?: Position): this {
-    this.compat.addLabel(name, position)
-    return this
+    return this.record(() => this.compat.addLabel(name, position))
   }
 
   /** Merge another timeline in at a position (flattened, as in `tf`). */
   add(child: LiveTimeline, position?: Position): this {
-    // The child's tracks now play as part of this timeline, not on their own.
-    child.autoplayPending = false
-    child.timeline.stop()
-    child.stage.deactivate(child.timeline)
-    this.compat.add(child.compat, position)
+    return this.record(() => {
+      // The child's tracks now play as part of this timeline, not on their own.
+      child.autoplayPending = false
+      child.timeline.stop()
+      child.stage.deactivate(child.timeline)
+      this.compat.add(child.compat, position)
+    })
+  }
+
+  /**
+   * Build the timeline again from the same calls: rewind to the start (so start
+   * values are read from what elements show before it ran), rebuild every tween —
+   * re-running function values — and return to the same progress. Use after a
+   * layout change; `scrollTrigger: { invalidateOnRefresh: true }` does it on refresh.
+   */
+  invalidate(): this {
+    const progress = this.compat.progress()
+    this.compat.progress(0)
+    this.stage.render(this.timeline)
+    this.compat.reset()
+    for (const step of this.recipe) step()
+    this.compat.progress(progress)
+    this.stage.render(this.timeline)
     return this
   }
 
@@ -265,44 +290,53 @@ export class LiveTimeline {
     return this.compat.toDefinition()
   }
 
+  /** Run a building step now, and keep it so `invalidate()` can run it again. */
+  private record(step: () => void): this {
+    this.recipe.push(step)
+    step()
+    return this
+  }
+
   /**
-   * A track has one start value, but each element starts from its own shape or
-   * text, and each plain object from its own current values. So a morph or text tween over several elements builds one tween per
-   * element, all at the same position, with any stagger turned into delays.
+   * Compile one tween call. A track has one start value and one set of values,
+   * but some tweens differ per element — each element's own shape, text or stroke
+   * length, each plain object's own current values, or function values called per
+   * element — so those build one tween per element at the same position, with any
+   * stagger turned into delays. `varsList` is `[vars]`, or `[fromVars, toVars]`.
    */
-  private perElementStarts(
-    names: string[],
-    vars: TweenVars,
+  private tween(
+    target: TargetInput,
+    varsList: TweenVars[],
     position: Position | undefined,
-    build: (names: string[], vars: TweenVars, position?: Position) => void
+    build: (varsList: TweenVars[], names: string[], position?: Position) => void
   ): void {
-    const startsDifferPerElement =
-      vars.morphSVG !== undefined ||
-      vars.drawSVG !== undefined ||
-      vars.text !== undefined ||
-      vars.scrambleText !== undefined ||
-      names.some((name) => this.stage.objectFor(name) !== undefined)
-    if (!startsDifferPerElement || names.length === 1) {
-      build(names, this.prepare(vars, names), position)
+    const names = this.resolve(target)
+    if (!names) return
+
+    const perElement =
+      names.length > 1 &&
+      (varsList.some(differsPerElement) || names.some((name) => this.stage.objectFor(name) !== undefined))
+    if (!perElement) {
+      const first = this.targetFor(names[0])
+      build(varsList.map((vars) => this.prepare(resolveFunctionValues(vars, 0, first), names)), names, position)
       return
     }
 
-    this.eachElement(names, vars, position, (name, perElement, at) => build([name], this.prepare(perElement, [name]), at))
-  }
-
-  /** One tween per element at the same position, with any stagger turned into delays. */
-  private eachElement(
-    names: string[],
-    vars: TweenVars,
-    position: Position | undefined,
-    build: (name: string, vars: TweenVars, position: Position | undefined) => void
-  ): void {
-    const { stagger, ...rest } = vars
+    // Stagger and delay belong to the last vars (the `to` side).
+    const last = varsList.length - 1
+    const { stagger, ...rest } = varsList[last]
     const each = typeof stagger === 'number' ? stagger : (stagger as { each?: number } | undefined)?.each ?? 0
     names.forEach((name, i) => {
       const delay = toMs(rest.delay, 0) / 1000 + i * each
-      build(name, { ...rest, delay }, i === 0 ? position : '<')
+      const perTarget = varsList.map((vars, k) => (k === last ? { ...rest, delay } : vars))
+      const resolved = perTarget.map((vars) => this.prepare(resolveFunctionValues(vars, i, this.targetFor(name)), [name]))
+      build(resolved, [name], i === 0 ? position : '<')
     })
+  }
+
+  /** The element or plain object behind a target name. */
+  private targetFor(name: string): Element | ObjectTarget | undefined {
+    return this.stage.elementFor(name) ?? this.stage.objectFor(name)
   }
 
   /**
@@ -381,6 +415,19 @@ export interface LiveApi {
   scrollTrigger(vars: ScrollTriggerVars & { trigger: string | Element }): ScrollDriver | undefined
   /** Re-measure every scroll trigger, after layout changes a resize would not catch. */
   refreshScroll(): void
+  /**
+   * Collect everything the live API creates while `fn` runs (and later, inside
+   * `ctx.add()`), so `ctx.revert()` undoes it all. Selectors resolve within `scope`.
+   */
+  context(fn?: (context: LiveContext) => unknown, scope?: ParentNode): LiveContext
+  /** Setups that apply while media queries match (GSAP's `gsap.matchMedia`). */
+  matchMedia(scope?: ParentNode): LiveMatchMedia
+  /**
+   * A setter that animates one property toward each value it is given, re-using
+   * one tween (GSAP's `gsap.quickTo`) — for values that change on every pointer
+   * move or scroll event.
+   */
+  quickTo(target: TargetInput, property: string, vars?: QuickToVars): QuickTo
   /** Run a callback every frame, after animations are applied (GSAP's `gsap.ticker`). */
   readonly ticker: Ticker
   /** Record where elements appear, before a layout change (GSAP's `Flip.getState`). */
@@ -416,23 +463,59 @@ export function createLive(stage: Stage = new Stage()): LiveApi {
     })
   }
 
+  /** Register something with the context collecting right now, if any. */
+  const track = <T extends Revertible | undefined>(item: T): T => {
+    if (item) stage.collector?.track(item)
+    return item
+  }
+
   const api: LiveApi = {
     stage,
     ticker: stage.ticker,
-    scrollTrigger: (vars) => createScrollTrigger(stage, vars),
+    scrollTrigger: (vars) => track(createScrollTrigger(stage, vars)),
     refreshScroll: () => ScrollDriver.refreshAll(),
+    context: (fn, scope) => {
+      const context = new LiveContext(stage, scope)
+      if (fn) context.add(() => fn(context))
+      return context
+    },
+    matchMedia: (scope) => new LiveMatchMedia(stage, scope),
+    quickTo: (target, property, vars = {}) => {
+      const tween = new LiveTimeline(stage, { paused: true })
+      const [name] = stage.resolveTargets(target)
+      const setter = (value: number) => {
+        if (!name) return
+        // Measured before the old track goes, so a spring carries the motion on.
+        const velocity = vars.spring !== undefined ? stage.velocityOf(name, property) ?? 0 : 0
+        tween.compat.reset()
+        tween.compat.to(name, {
+          [property]: value,
+          duration: vars.duration ?? 0.4,
+          ease: vars.ease ?? 'power3.out',
+          ...(vars.spring !== undefined && { spring: withVelocity(vars.spring, property, velocity) }),
+        })
+        // Restart without rendering now: the value it starts from is already on
+        // screen, and the next frame applies the move. Many calls in one frame
+        // cost one write.
+        tween.timeline.stop()
+        tween.timeline.play()
+        stage.activate(tween.timeline)
+      }
+      return Object.assign(setter, { tween, kill: () => tween.kill() }) as QuickTo
+    },
     timeline: (options) => new LiveTimeline(stage, options),
     to: (target, vars) => single(vars).to(target, vars),
     from: (target, vars) => single(vars).from(target, vars),
     fromTo: (target, fromVars, toVars) => single(toVars).fromTo(target, fromVars, toVars),
     set: (target, vars) => single(vars).set(target, vars),
     convertToPath: (targets) => convertToPath(targets, stage.root),
-    splitText: (targets, options) =>
-      splitText(
-        typeof targets === 'string' ? Array.from(stage.root.querySelectorAll(targets)) : 'nodeType' in targets ? [targets as Element] : Array.from(targets),
-        options
-      ),
-    draggable: (target, options) => createLiveDraggable(api, stage, target, options),
+    splitText: (targets, options) => {
+      const root = stage.collector?.scope ?? stage.root
+      const elements =
+        typeof targets === 'string' ? Array.from(root.querySelectorAll(targets)) : 'nodeType' in targets ? [targets as Element] : Array.from(targets)
+      return track(splitText(elements, options))
+    },
+    draggable: (target, options) => track(createLiveDraggable(api, stage, target, options)),
     getFlipState: (targets) => getFlipState(stage, targets),
     flipFrom: (state, vars) => flipFrom(stage, (options) => new LiveTimeline(stage, options), state, vars),
     flip: (targets, change, vars) => {
@@ -451,6 +534,42 @@ export function createLive(stage: Stage = new Stage()): LiveApi {
  * the same element compose. The stage does nothing until something plays.
  */
 export const live: LiveApi = /* @__PURE__ */ createLive()
+
+/** A spring option with its velocity for `property` filled in. */
+function withVelocity(spring: NonNullable<TweenVars['spring']>, property: string, velocity: number): TweenVars['spring'] {
+  if (spring === true) return { velocity: { [property]: velocity } }
+  if (typeof spring === 'string') return { preset: spring, velocity: { [property]: velocity } }
+  return { ...spring, velocity: { [property]: velocity } }
+}
+
+/** Whether a tween's values can differ from one target to the next. */
+function differsPerElement(vars: TweenVars): boolean {
+  return (
+    vars.morphSVG !== undefined ||
+    vars.drawSVG !== undefined ||
+    vars.text !== undefined ||
+    vars.scrambleText !== undefined ||
+    hasFunctionValues(vars)
+  )
+}
+
+function hasFunctionValues(vars: TweenVars): boolean {
+  return Object.entries(vars).some(([key, value]) => typeof value === 'function' && !RESERVED_KEYS.has(key))
+}
+
+/**
+ * Call function values (`x: (index, target) => …`) for one target. Callbacks and
+ * a function `ease` are configuration, not values, and are left alone.
+ */
+function resolveFunctionValues(vars: TweenVars, index: number, target: Element | ObjectTarget | undefined): TweenVars {
+  if (!hasFunctionValues(vars)) return vars
+  const resolved: TweenVars = {}
+  for (const [key, value] of Object.entries(vars)) {
+    resolved[key] =
+      typeof value === 'function' && !RESERVED_KEYS.has(key) ? (value as (i: number, t: unknown) => unknown)(index, target) : value
+  }
+  return resolved
+}
 
 /** The length of an SVG shape's stroke, measured once; undefined for anything else. */
 function strokeLength(element: Element | undefined): number | undefined {

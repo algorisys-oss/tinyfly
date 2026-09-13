@@ -90,6 +90,11 @@ export const html = `<style>
   .ag-lightbox-img { aspect-ratio: 16 / 9; border-radius: 16px; }
   .ag-lightbox-caption { margin-top: 14px; font-size: 22px; font-weight: 600; }
 
+  /* Reduced motion: no pinning; the work row scrolls sideways by hand. */
+  .ag-reduced .ag-work { height: auto; padding-block: 80px; }
+  .ag-reduced .ag-work-track { width: auto; overflow-x: auto; scroll-snap-type: x mandatory; }
+  .ag-reduced .ag-card { scroll-snap-align: start; }
+
   .ag-contact { min-height: 90vh; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 32px; padding: 0 clamp(16px, 4vw, 48px); border-top: 1px solid var(--line); }
   .ag-big { font-size: clamp(64px, 16vw, 260px); font-weight: 800; letter-spacing: -0.06em; line-height: 0.9; }
   .ag .ag-magnet { display: inline-block; text-decoration: none; background: var(--accent); color: #0b0b0c; border-radius: 999px; padding: 22px 36px; font-size: clamp(16px, 2vw, 22px); font-weight: 700; }
@@ -153,211 +158,262 @@ export function run(live, root) {
   const $ = (selector) => root.querySelector(selector)
   const $$ = (selector) => [...root.querySelectorAll(selector)]
 
-  // ── Hero: headline lines rise from behind their own edge ─────────────────
-  const title = live.splitText('.ag-title', { type: 'lines', mask: 'lines' })
-  live.set('.ag-scroll path', { drawSVG: 0 })
-  const arrowLoop = live
-    .timeline({ repeat: -1, repeatDelay: 0.3, paused: true })
-    .fromTo('.ag-scroll path', { drawSVG: '0% 0%' }, { drawSVG: '0% 100%', duration: 0.7, ease: 'power2.inOut' })
-    .to('.ag-scroll path', { drawSVG: '100% 100%', duration: 0.7, ease: 'power2.inOut' })
+  // Everything is set up per motion preference. When the preference changes,
+  // matchMedia reverts the old setup (tweens, pins, split text, listeners) and
+  // runs this again, so reduced motion is a real mode, not an afterthought.
+  const mm = live.matchMedia()
+  mm.add({ full: '(prefers-reduced-motion: no-preference)', reduce: '(prefers-reduced-motion: reduce)' }, (context) => {
+    const reduce = context.conditions.reduce
+    const events = new AbortController() // removes every listener on revert
+    const on = (target, type, handler) => target.addEventListener(type, handler, { signal: events.signal })
+    root.classList.toggle('ag-reduced', reduce)
 
-  live
-    .timeline({ onComplete: () => arrowLoop.play() })
-    .fromTo(title.lines, { y: 140, rotate: 4 }, { y: 0, rotate: 0, duration: 1.2, ease: 'expo.out', stagger: 0.12 })
-    .fromTo('.ag-sub', { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.9, ease: 'power3.out' }, '-=0.8')
-
-  // Scrolling away, the headline drifts down and fades: scrubbed, slightly smoothed.
-  live
-    .timeline({ scrollTrigger: { trigger: '.ag-hero', start: 'top top', end: 'bottom top', scrub: 0.6 } })
-    .to('.ag-title', { y: 180, scale: 0.9, opacity: 0.15, ease: 'none', duration: 1 })
-    .to('.ag-blobs', { opacity: 0, ease: 'none', duration: 1 }, 0)
-
-  // ── Hero background: a canvas drawn on the ticker, following the pointer ─
-  const canvas = $('.ag-blobs')
-  const ctx = canvas.getContext('2d')
-  const pointer = { x: 0.7, y: 0.35 }
-  const target = { x: 0.7, y: 0.35 }
-  root.addEventListener('pointermove', (event) => {
-    const box = canvas.getBoundingClientRect()
-    target.x = (event.clientX - box.left) / box.width
-    target.y = (event.clientY - box.top) / box.height
-  })
-  // Size the canvas on resize, not every frame, so drawing never forces layout.
-  const sizeCanvas = () => {
-    canvas.width = canvas.clientWidth
-    canvas.height = canvas.clientHeight
-  }
-  sizeCanvas()
-  window.addEventListener('resize', sizeCanvas)
-
-  const drawBlobs = (time, deltaTime) => {
-    if (!ctx) return
-    // Ease toward the pointer by elapsed time, so it feels the same at any frame rate.
-    const follow = 1 - Math.exp(-deltaTime / 350)
-    pointer.x += (target.x - pointer.x) * follow
-    pointer.y += (target.y - pointer.y) * follow
-
-    const { width, height } = canvas
-    ctx.clearRect(0, 0, width, height)
-    const blobs = [
-      [pointer.x, pointer.y, 0.42, 'rgba(198, 255, 61, 0.22)'],
-      [0.25 + Math.sin(time * 0.4) * 0.08, 0.3 + Math.cos(time * 0.3) * 0.08, 0.5, 'rgba(99, 102, 241, 0.25)'],
-      [0.8 + Math.cos(time * 0.35) * 0.06, 0.8, 0.45, 'rgba(236, 72, 153, 0.18)'],
-    ]
-    for (const [bx, by, radius, colour] of blobs) {
-      const r = radius * Math.max(width, height)
-      const gradient = ctx.createRadialGradient(bx * width, by * height, 0, bx * width, by * height, r)
-      gradient.addColorStop(0, colour)
-      gradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
-      ctx.fillStyle = gradient
-      ctx.fillRect(0, 0, width, height)
-    }
-  }
-  // Only draw while the hero is on screen.
-  live.ticker.add(drawBlobs)
-  live.scrollTrigger({
-    trigger: '.ag-hero',
-    start: 'top bottom',
-    end: 'bottom top',
-    onLeave: () => live.ticker.remove(drawBlobs),
-    onEnterBack: () => live.ticker.add(drawBlobs),
-  })
-
-  // ── Nav: hides scrolling down, returns scrolling up ──────────────────────
-  let navHidden = false
-  live.scrollTrigger({
-    trigger: root,
-    start: 'top top',
-    end: 'bottom bottom',
-    onUpdate: ({ velocity }) => {
-      const hide = velocity > 0 ? true : velocity < 0 ? false : navHidden
-      if (hide === navHidden) return
-      navHidden = hide
-      live.to('.ag-nav', { y: hide ? -90 : 0, duration: 0.4, ease: 'power3.out' })
-    },
-  })
-
-  // ── Marquee: loops forever, speeds up and leans with scroll velocity ─────
-  const marqueeTrack = $('.ag-marquee-track')
-  const marquee = live
-    .timeline({ repeat: -1 })
-    .to(marqueeTrack, { x: -marqueeTrack.scrollWidth / 2, duration: 22, ease: 'none' })
-  live.scrollTrigger({
-    trigger: '.ag-marquee',
-    onUpdate: ({ velocity }) => {
-      marquee.timeScale(1 + Math.min(Math.abs(velocity) / 300, 8))
-      live.to(marqueeTrack, { skewX: Math.max(-14, Math.min(14, -velocity / 150)), duration: 0.5, ease: 'power3.out' })
-    },
-  })
-
-  // ── Manifesto: each word lights up as it scrolls through ─────────────────
-  const manifesto = live.splitText('.ag-manifesto-text', { type: 'words' })
-  live
-    .timeline({ scrollTrigger: { trigger: '.ag-manifesto', start: 'top 70%', end: 'bottom 55%', scrub: true } })
-    .fromTo(manifesto.words, { opacity: 0.12 }, { opacity: 1, duration: 0.3, stagger: 0.1, ease: 'none' })
-
-  // ── Work: pinned while vertical scroll slides the cards sideways ─────────
-  const workSection = $('.ag-work')
-  const workTrack = $('.ag-work-track')
-  const cards = $$('.ag-card')
-  const counter = $('.ag-counter')
-  const travel = Math.max(0, workTrack.scrollWidth - workSection.clientWidth)
-  live
-    .timeline({
-      scrollTrigger: {
-        trigger: workSection,
-        start: 'top top',
-        end: `+=${travel}`,
-        scrub: 0.5,
-        pin: true,
-        onUpdate: ({ progress }) => {
-          const index = Math.min(cards.length, 1 + Math.floor(progress * cards.length))
-          counter.textContent = `0${index} / 0${cards.length}`
-        },
+    // ── Hero: headline lines rise from behind their own edge ───────────────
+    // autoSplit re-measures the lines when the width changes. The intro plays
+    // once; a later re-split just shows the new lines in place.
+    let introPlayed = reduce
+    live.splitText('.ag-title', {
+      type: 'lines',
+      mask: 'lines',
+      autoSplit: true,
+      onSplit: (self) => {
+        if (introPlayed) return
+        introPlayed = true
+        return live.fromTo(self.lines, { y: 140, rotate: 4 }, { y: 0, rotate: 0, duration: 1.2, ease: 'expo.out', stagger: 0.12 })
       },
     })
-    .to(workTrack, { x: -travel, ease: 'none', duration: 1 })
-    .fromTo($$('.ag-card-img'), { scale: 1.3 }, { scale: 1, ease: 'none', duration: 1 }, 0)
 
-  // ── Stats: plain objects count up once they come into view ───────────────
-  $$('.ag-stat-value').forEach((element) => {
-    const count = { value: 0 }
-    live.to(count, {
-      value: Number(element.dataset.value),
-      duration: 1.8,
-      ease: 'power3.out',
-      onUpdate: () => (element.textContent = `${Math.round(count.value)}${element.dataset.suffix}`),
-      scrollTrigger: { trigger: element, start: 'top 85%', once: true },
+    const arrowLoop = live
+      .timeline({ repeat: -1, repeatDelay: 0.3, paused: true })
+      .fromTo('.ag-scroll path', { drawSVG: '0% 0%' }, { drawSVG: '0% 100%', duration: 0.7, ease: 'power2.inOut' })
+      .to('.ag-scroll path', { drawSVG: '100% 100%', duration: 0.7, ease: 'power2.inOut' })
+    if (reduce) {
+      live.set('.ag-scroll path', { drawSVG: true })
+    } else {
+      live.set('.ag-scroll path', { drawSVG: 0 })
+      live.fromTo('.ag-sub', { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.9, delay: 0.5, ease: 'power3.out', onComplete: () => arrowLoop.play() })
+
+      // Scrolling away, the headline drifts down and fades: scrubbed, slightly smoothed.
+      live
+        .timeline({ scrollTrigger: { trigger: '.ag-hero', start: 'top top', end: 'bottom top', scrub: 0.6 } })
+        .to('.ag-title', { y: 180, scale: 0.9, opacity: 0.15, ease: 'none', duration: 1 })
+        .to('.ag-blobs', { opacity: 0, ease: 'none', duration: 1 }, 0)
+    }
+
+    // ── Hero background: a canvas drawn on the ticker, following the pointer
+    const canvas = $('.ag-blobs')
+    const ctx = canvas.getContext('2d')
+    const pointer = { x: 0.7, y: 0.35 }
+    const target = { x: 0.7, y: 0.35 }
+    const drawBlobs = (time, deltaTime) => {
+      if (!ctx) return
+      // Ease toward the pointer by elapsed time, so it feels the same at any frame rate.
+      const follow = 1 - Math.exp(-deltaTime / 350)
+      pointer.x += (target.x - pointer.x) * follow
+      pointer.y += (target.y - pointer.y) * follow
+
+      const { width, height } = canvas
+      ctx.clearRect(0, 0, width, height)
+      const blobs = [
+        [pointer.x, pointer.y, 0.42, 'rgba(198, 255, 61, 0.22)'],
+        [0.25 + Math.sin(time * 0.4) * 0.08, 0.3 + Math.cos(time * 0.3) * 0.08, 0.5, 'rgba(99, 102, 241, 0.25)'],
+        [0.8 + Math.cos(time * 0.35) * 0.06, 0.8, 0.45, 'rgba(236, 72, 153, 0.18)'],
+      ]
+      for (const [bx, by, radius, colour] of blobs) {
+        const r = radius * Math.max(width, height)
+        const gradient = ctx.createRadialGradient(bx * width, by * height, 0, bx * width, by * height, r)
+        gradient.addColorStop(0, colour)
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
+        ctx.fillStyle = gradient
+        ctx.fillRect(0, 0, width, height)
+      }
+    }
+    // Size the canvas on resize, not every frame, so drawing never forces layout.
+    const sizeCanvas = () => {
+      canvas.width = canvas.clientWidth
+      canvas.height = canvas.clientHeight
+      if (reduce) drawBlobs(0, 1000) // one still frame
+    }
+    sizeCanvas()
+    on(window, 'resize', sizeCanvas)
+
+    if (!reduce) {
+      on(root, 'pointermove', (event) => {
+        const box = canvas.getBoundingClientRect()
+        target.x = (event.clientX - box.left) / box.width
+        target.y = (event.clientY - box.top) / box.height
+      })
+      // Only draw while the hero is on screen.
+      live.ticker.add(drawBlobs)
+      live.scrollTrigger({
+        trigger: '.ag-hero',
+        start: 'top bottom',
+        end: 'bottom top',
+        onLeave: () => live.ticker.remove(drawBlobs),
+        onEnterBack: () => live.ticker.add(drawBlobs),
+      })
+    }
+
+    // ── Nav: hides scrolling down, returns scrolling up ────────────────────
+    let navHidden = false
+    live.scrollTrigger({
+      trigger: root,
+      start: 'top top',
+      end: 'bottom bottom',
+      onUpdate: ({ velocity }) => {
+        const hide = velocity > 0 ? true : velocity < 0 ? false : navHidden
+        if (hide === navHidden) return
+        navHidden = hide
+        context.add(() => live.to('.ag-nav', { y: hide ? -90 : 0, duration: reduce ? 0 : 0.4, ease: 'power3.out' }))
+      },
     })
-  })
 
-  // ── Services: icons draw in, arrows spring on hover ──────────────────────
-  $$('.ag-service').forEach((item) => {
-    live
-      .timeline({ scrollTrigger: { trigger: item, start: 'top 80%', toggleActions: 'play none none reverse' } })
-      .fromTo(item.querySelectorAll('.ag-icon *'), { drawSVG: 0 }, { drawSVG: true, duration: 1, ease: 'power2.inOut', stagger: 0.15 })
-      .fromTo(item.querySelector('.ag-service-body'), { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: 0.7, ease: 'power3.out' }, 0.1)
+    // ── Marquee: loops, speeds up and leans with scroll velocity ───────────
+    if (!reduce) {
+      const marqueeTrack = $('.ag-marquee-track')
+      const marquee = live
+        .timeline({ repeat: -1 })
+        .to(marqueeTrack, { x: () => -marqueeTrack.scrollWidth / 2, duration: 22, ease: 'none' })
+      // Its distance depends on the font size, which follows the viewport width.
+      on(window, 'resize', () => marquee.invalidate())
+      // One reusable tween for the lean, re-targeted on every scroll update.
+      const lean = live.quickTo(marqueeTrack, 'skewX', { duration: 0.5, ease: 'power3.out' })
+      live.scrollTrigger({
+        trigger: '.ag-marquee',
+        onUpdate: ({ velocity }) => {
+          marquee.timeScale(1 + Math.min(Math.abs(velocity) / 300, 8))
+          lean(Math.max(-14, Math.min(14, -velocity / 150)))
+        },
+      })
+    }
 
-    const arrow = item.querySelector('.ag-service-arrow')
-    item.addEventListener('pointerenter', () => live.to(arrow, { x: 14, rotate: -45, spring: 'bouncy' }))
-    item.addEventListener('pointerleave', () => live.to(arrow, { x: 0, rotate: 0, spring: 'snappy' }))
-  })
+    // ── Manifesto: each word lights up as it scrolls through ───────────────
+    if (!reduce) {
+      const manifesto = live.splitText('.ag-manifesto-text', { type: 'words' })
+      live
+        .timeline({ scrollTrigger: { trigger: '.ag-manifesto', start: 'top 70%', end: 'bottom 55%', scrub: true } })
+        .fromTo(manifesto.words, { opacity: 0.12 }, { opacity: 1, duration: 0.3, stagger: 0.1, ease: 'none' })
+    }
 
-  // ── Gallery: a tile grows into the lightbox (a different element) ────────
-  const lightbox = $('.ag-lightbox')
-  const lightboxImage = $('.ag-lightbox-img')
-  const lightboxCaption = $('.ag-lightbox-caption')
-  let openTile = null
+    // ── Work: pinned while vertical scroll slides the cards sideways ───────
+    // With reduced motion the row simply scrolls sideways (see .ag-reduced).
+    if (!reduce) {
+      const workSection = $('.ag-work')
+      const workTrack = $('.ag-work-track')
+      const cards = $$('.ag-card')
+      const counter = $('.ag-counter')
+      // A function, so a resize or rotation measures the new distance.
+      const travel = () => Math.max(0, workTrack.scrollWidth - workSection.clientWidth)
+      live
+        .timeline({
+          scrollTrigger: {
+            trigger: workSection,
+            start: 'top top',
+            end: () => `+=${travel()}`,
+            scrub: 0.5,
+            pin: true,
+            invalidateOnRefresh: true,
+            onUpdate: ({ progress }) => {
+              const index = Math.min(cards.length, 1 + Math.floor(progress * cards.length))
+              counter.textContent = `0${index} / 0${cards.length}`
+            },
+          },
+        })
+        .to(workTrack, { x: () => -travel(), ease: 'none', duration: 1 })
+        .fromTo($$('.ag-card-img'), { scale: 1.3 }, { scale: 1, ease: 'none', duration: 1 }, 0)
+    }
 
-  $$('.ag-tile').forEach((tile) => {
-    tile.addEventListener('click', () => {
-      if (openTile) return
-      openTile = tile
-      const state = live.getFlipState(tile)
-      lightboxImage.dataset.flipId = tile.dataset.flipId
-      lightboxImage.style.background = tile.style.background
-      lightboxCaption.textContent = tile.textContent
-      lightbox.hidden = false
-      live.flipFrom(state, { targets: lightboxImage, fade: true, duration: 0.7, ease: 'power3.inOut' })
-      live.fromTo(lightboxCaption, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, delay: 0.35 })
+    // ── Stats: plain objects count up once they come into view ─────────────
+    $$('.ag-stat-value').forEach((element) => {
+      const count = { value: 0 }
+      live.to(count, {
+        value: Number(element.dataset.value),
+        duration: reduce ? 0 : 1.8,
+        ease: 'power3.out',
+        onUpdate: () => (element.textContent = `${Math.round(count.value)}${element.dataset.suffix}`),
+        scrollTrigger: { trigger: element, start: 'top 85%', once: true },
+      })
     })
+
+    // ── Services: icons draw in, arrows spring on hover ────────────────────
+    $$('.ag-service').forEach((item) => {
+      if (reduce) return
+      live
+        .timeline({ scrollTrigger: { trigger: item, start: 'top 80%', toggleActions: 'play none none reverse' } })
+        .fromTo(item.querySelectorAll('.ag-icon *'), { drawSVG: 0 }, { drawSVG: true, duration: 1, ease: 'power2.inOut', stagger: 0.15 })
+        .fromTo(item.querySelector('.ag-service-body'), { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: 0.7, ease: 'power3.out' }, 0.1)
+
+      const arrow = item.querySelector('.ag-service-arrow')
+      on(item, 'pointerenter', () => context.add(() => live.to(arrow, { x: 14, rotate: -45, spring: 'bouncy' })))
+      on(item, 'pointerleave', () => context.add(() => live.to(arrow, { x: 0, rotate: 0, spring: 'snappy' })))
+    })
+
+    // ── Gallery: a tile grows into the lightbox (a different element) ──────
+    const lightbox = $('.ag-lightbox')
+    const lightboxImage = $('.ag-lightbox-img')
+    const lightboxCaption = $('.ag-lightbox-caption')
+    const flipDuration = reduce ? 0 : 0.7
+    let openTile = null
+
+    $$('.ag-tile').forEach((tile) => {
+      on(tile, 'click', () => {
+        if (openTile) return
+        openTile = tile
+        const state = live.getFlipState(tile)
+        lightboxImage.dataset.flipId = tile.dataset.flipId
+        lightboxImage.style.background = tile.style.background
+        lightboxCaption.textContent = tile.textContent
+        lightbox.hidden = false
+        live.flipFrom(state, { targets: lightboxImage, fade: true, duration: flipDuration, ease: 'power3.inOut' })
+      })
+    })
+
+    const closeLightbox = () => {
+      if (!openTile) return
+      const tile = openTile
+      openTile = null
+      const state = live.getFlipState(lightboxImage)
+      lightbox.hidden = true
+      live.flipFrom(state, { targets: tile, fade: true, duration: flipDuration * 0.8, ease: 'power3.inOut' })
+    }
+    on(lightbox, 'click', closeLightbox)
+    on(window, 'keydown', (event) => event.key === 'Escape' && closeLightbox())
+
+    // ── Contact: letters bounce in on springs; the button is magnetic ──────
+    if (!reduce) {
+      const big = live.splitText('.ag-big', { type: 'chars' })
+      live.fromTo(
+        big.chars,
+        { y: 160, rotate: 14 },
+        { y: 0, rotate: 0, spring: 'bouncy', stagger: 0.04, scrollTrigger: { trigger: '.ag-contact', start: 'top 65%' } }
+      )
+
+      // Springs that re-target on every move and keep their momentum.
+      const magnet = $('.ag-magnet')
+      const magnetX = live.quickTo(magnet, 'x', { spring: 'snappy' })
+      const magnetY = live.quickTo(magnet, 'y', { spring: 'snappy' })
+      on(magnet, 'pointermove', (event) => {
+        // Measured from the layout box (offset*), so the pull does not feed back on itself.
+        const centreX = magnet.offsetLeft + magnet.offsetWidth / 2
+        const centreY = magnet.offsetTop + magnet.offsetHeight / 2
+        const box = magnet.offsetParent?.getBoundingClientRect() ?? { left: 0, top: 0 }
+        magnetX((event.clientX - box.left - centreX) * 0.35)
+        magnetY((event.clientY - box.top - centreY) * 0.35)
+      })
+      on(magnet, 'pointerleave', () => {
+        magnetX(0)
+        magnetY(0)
+      })
+    }
+
+    return () => {
+      events.abort()
+      root.classList.remove('ag-reduced')
+    }
   })
-
-  const closeLightbox = () => {
-    if (!openTile) return
-    const tile = openTile
-    openTile = null
-    const state = live.getFlipState(lightboxImage)
-    lightbox.hidden = true
-    live.flipFrom(state, { targets: tile, fade: true, duration: 0.55, ease: 'power3.inOut' })
-  }
-  lightbox.addEventListener('click', closeLightbox)
-  const onKey = (event) => event.key === 'Escape' && closeLightbox()
-  window.addEventListener('keydown', onKey)
-
-  // ── Contact: letters bounce in on springs; the button is magnetic ────────
-  const big = live.splitText('.ag-big', { type: 'chars' })
-  live.fromTo(
-    big.chars,
-    { y: 160, rotate: 14 },
-    { y: 0, rotate: 0, spring: 'bouncy', stagger: 0.04, scrollTrigger: { trigger: '.ag-contact', start: 'top 65%' } }
-  )
-
-  const magnet = $('.ag-magnet')
-  magnet.addEventListener('pointermove', (event) => {
-    const box = magnet.getBoundingClientRect()
-    const pullX = (event.clientX - (box.left + box.width / 2)) * 0.35
-    const pullY = (event.clientY - (box.top + box.height / 2)) * 0.35
-    live.to(magnet, { x: pullX, y: pullY, duration: 0.4, ease: 'power3.out' })
-  })
-  magnet.addEventListener('pointerleave', () => live.to(magnet, { x: 0, y: 0, spring: 'wobbly' }))
   // #endregion code
 
-  return () => {
-    window.removeEventListener('keydown', onKey)
-    window.removeEventListener('resize', sizeCanvas)
-    live.ticker.remove(drawBlobs)
-  }
+  return () => mm.revert()
 }
 
 /** @type {import('../live-demos/types').LiveDemo} */
@@ -365,8 +421,8 @@ export const agencyLanding = {
   id: 'agency-landing',
   name: 'Agency Landing Page',
   description:
-    'A full-page, award-site-style landing: masked headline reveal, pointer-lit canvas, velocity marquee, scroll-lit manifesto, pinned horizontal work, count-ups, drawn icons, a shared-element lightbox and springy contact type.',
-  tags: ['scrollTrigger', 'pin', 'splitText', 'drawSVG', 'spring', 'flip', 'ticker', 'object targets'],
+    'A full-page, award-site-style landing: masked headline reveal, pointer-lit canvas, velocity marquee, scroll-lit manifesto, pinned horizontal work that survives resizes, count-ups, drawn icons, a shared-element lightbox and springy type — with a real reduced-motion mode.',
+  tags: ['scrollTrigger', 'pin', 'splitText', 'drawSVG', 'spring', 'flip', 'ticker', 'matchMedia', 'invalidateOnRefresh'],
   html,
   run,
 }

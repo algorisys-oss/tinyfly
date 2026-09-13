@@ -26,10 +26,15 @@ export interface ScrollTriggerSelf {
 export interface ScrollTriggerVars {
   /** Element (or selector) defining the range. Default: the animation's first target. */
   trigger?: string | Element
-  /** `"<element edge> <viewport edge>"`, default `'top bottom'` */
-  start?: TriggerPosition
-  /** Default `'bottom top'`; `'+=600'` / `'+=150%'` measure from the start */
-  end?: TriggerPosition
+  /** `"<element edge> <viewport edge>"`, default `'top bottom'`; a function is re-run on refresh */
+  start?: TriggerPosition | (() => TriggerPosition)
+  /** Default `'bottom top'`; `'+=600'` / `'+=150%'` measure from the start; a function is re-run on refresh */
+  end?: TriggerPosition | (() => TriggerPosition)
+  /**
+   * On every refresh (a resize), rebuild the animation so function values and
+   * start values are read again for the new layout.
+   */
+  invalidateOnRefresh?: boolean
   /** `true` ties progress to scroll exactly; a number smooths over that many seconds */
   scrub?: boolean | number
   /** Hold the trigger (`true`) or another element in place through the range */
@@ -60,6 +65,7 @@ export interface ScrollControlled {
   restart(): unknown
   progress(value?: number): number
   reversed(): boolean
+  invalidate?(): unknown
 }
 
 type ToggleAction = 'play' | 'pause' | 'resume' | 'reverse' | 'restart' | 'reset' | 'complete' | 'none'
@@ -125,6 +131,7 @@ export function createScrollTrigger(
     scrub: scrub === false ? undefined : scrub,
     pin: vars.pin === true ? true : element(vars.pin as string | Element | undefined),
     scroller: element(vars.scroller) as HTMLElement | undefined,
+    onRefresh: vars.invalidateOnRefresh && animation?.invalidate ? () => animation.invalidate!() : undefined,
     onUpdate: (progress, velocity) => {
       if (animation && scrub !== false) animation.progress(progress)
       if (vars.onUpdate) {

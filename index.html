@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/tinyfly.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>tinyfly: A simple animation engine</title>
     <meta name="description" content="tinyfly is a lightweight, framework-agnostic animation engine with a visual editor. Animations are plain JSON; a GSAP-style API animates DOM and SVG." />
@@ -13,6 +13,20 @@
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <h1>tinyfly — motion, as data</h1>
+      <p>
+        A tiny, deterministic animation engine with a visual editor and a GSAP-style API.
+        Animations are plain JSON and play the same in a browser, a Web Worker or a video export.
+        The editor and this site need JavaScript.
+      </p>
+      <p>
+        <a href="https://github.com/algorisys-oss/tinyfly">Source on GitHub</a> ·
+        <a href="/llms.txt">llms.txt</a> ·
+        <a href="/docs/getting-started.md">Getting started</a> ·
+        <a href="/docs/gsap-compat.md">GSAP-style API</a>
+      </p>
+    </noscript>
     <script type="module" src="/src/index.tsx"></script>
   </body>
 </html>

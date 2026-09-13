@@ -117,3 +117,67 @@ describe('live.splitText', () => {
     expect(tl.duration()).toBeCloseTo(0.8)
   })
 })
+
+describe('splitText — autoSplit and onSplit', () => {
+  /** A ResizeObserver the test drives by hand. */
+  class FakeResizeObserver {
+    static instance: FakeResizeObserver
+    targets: Element[] = []
+    disconnected = false
+    callback: (entries: { target: Element; contentRect: { width: number } }[]) => void
+    constructor(callback: (entries: { target: Element; contentRect: { width: number } }[]) => void) {
+      this.callback = callback
+      FakeResizeObserver.instance = this
+    }
+    observe(target: Element) {
+      this.targets.push(target)
+    }
+    disconnect() {
+      this.disconnected = true
+    }
+    resize(width: number) {
+      this.callback(this.targets.map((target) => ({ target, contentRect: { width } })))
+    }
+  }
+
+  beforeEach(() => {
+    vi.stubGlobal('ResizeObserver', FakeResizeObserver)
+    vi.stubGlobal('requestAnimationFrame', (cb: () => void) => (cb(), 1))
+  })
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('calls onSplit after the first split, and kills its animation before re-splitting when the width changes', () => {
+    const kills: number[] = []
+    let splits = 0
+    const split = splitText([host], {
+      type: 'words',
+      autoSplit: true,
+      onSplit: (self) => {
+        const n = ++splits
+        expect(self.words.length).toBe(4)
+        return { kill: () => kills.push(n) }
+      },
+    })
+    expect(splits).toBe(1)
+    const firstWord = split.words[0]
+
+    FakeResizeObserver.instance.resize(300) // first report: records the width
+    FakeResizeObserver.instance.resize(300) // unchanged: nothing
+    expect(splits).toBe(1)
+
+    FakeResizeObserver.instance.resize(200)
+    expect(splits).toBe(2)
+    expect(kills).toEqual([1])
+    expect(split.words[0]).not.toBe(firstWord) // fresh pieces
+    expect(host.querySelectorAll('.word')).toHaveLength(4) // not split twice over
+  })
+
+  it('revert() stops watching and cleans up the last animation', () => {
+    const kill = vi.fn()
+    const split = splitText([host], { type: 'words', autoSplit: true, onSplit: () => ({ kill }) })
+    split.revert()
+    expect(kill).toHaveBeenCalledTimes(1)
+    expect(FakeResizeObserver.instance.disconnected).toBe(true)
+    expect(host.querySelector('.word')).toBeNull()
+  })
+})

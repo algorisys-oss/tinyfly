@@ -18,19 +18,22 @@ export const html = `<style>
 export function run(live, root) {
   // #region code
   const dock = root.querySelector('.dm-dock')
-  const icons = [...dock.querySelectorAll('.dm-icon')]
-  const tweens = new Map()
+  const icons = [...dock.querySelectorAll('.dm-icon')].map((element) => ({
+    element,
+    scale: live.quickTo(element, 'scale', { duration: 0.25, ease: 'power2.out' }),
+    lift: live.quickTo(element, 'y', { duration: 0.25, ease: 'power2.out' }),
+  }))
 
   const magnify = (icon, scale) => {
-    tweens.get(icon)?.kill()
-    tweens.set(icon, live.to(icon, { scale, y: (1 - scale) * 8, duration: 0.25, ease: 'power2.out' }))
+    icon.scale(scale)
+    icon.lift((1 - scale) * 8)
   }
 
   // Icons scale from the bottom (transform-origin in the CSS), by how close the
   // pointer is horizontally, and lift a little as they grow.
   const onMove = (event) => {
     icons.forEach((icon) => {
-      const box = icon.getBoundingClientRect()
+      const box = icon.element.getBoundingClientRect()
       const distance = Math.abs(event.clientX - (box.left + box.width / 2))
       magnify(icon, 1 + Math.max(0, 1 - distance / 100) * 0.9)
     })
@@ -52,7 +55,7 @@ export const dockMagnify = {
   id: 'live-dock-magnify',
   name: 'Dock Magnify',
   description: 'A macOS-style dock: icons swell and lift by their distance from the pointer.',
-  tags: ['interaction', 'hover', 'transform-origin'],
+  tags: ['interaction', 'quickTo', 'hover', 'transform-origin'],
   html,
   run,
 }

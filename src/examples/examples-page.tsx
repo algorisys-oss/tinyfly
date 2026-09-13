@@ -20,6 +20,7 @@ import {
 } from './example-catalog'
 import { buildSamplePreview } from './sample-preview'
 import { CopyCodeButton } from './copy-code-button'
+import { BrandMark } from '../components/brand-mark'
 import { editableExamplePage, liveDemoPage, showcasePage, timelineExamplePage } from './standalone-page'
 import { showcases } from './showcases'
 import markupCss from './code-examples.css?raw'
@@ -160,7 +161,7 @@ const EditableExampleCard: Component<{ example: EditableExample }> = (props) => 
         </button>
         <div class="example-controls-right">
           <CopyCodeButton getCode={() => editableExamplePage(props.example.sample)} />
-          <button class="open-btn" onClick={() => navigate(`/?example=${encodeURIComponent(props.example.id)}`)}>
+          <button class="open-btn" onClick={() => navigate(`/app?example=${encodeURIComponent(props.example.id)}`)}>
             Open in editor
           </button>
         </div>
@@ -383,11 +384,10 @@ export const ExamplesPage: Component = () => {
       <header class="examples-header">
         <div class="header-content">
           <div class="header-left">
-            <A href="/" class="examples-brand" title="tinyfly — back to editor">
-              <span class="examples-wordmark">tinyfly</span>
-              <span class="examples-beta-tag">BETA</span>
+            <A href="/" class="examples-brand" title="tinyfly home">
+              <BrandMark size={28} wordmark={<span class="examples-wordmark">tinyfly</span>} />
             </A>
-            <A href="/" class="back-link">
+            <A href="/app" class="back-link">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M19 12H5M12 19l-7-7 7-7" />
               </svg>
@@ -502,7 +502,7 @@ export const ExamplesPage: Component = () => {
         <p>
           Built with <strong>tinyfly</strong> - A lightweight, API-driven animation engine
         </p>
-        <A href="/" class="cta-btn">
+        <A href="/app" class="cta-btn">
           Create Your Own Animation
         </A>
       </footer>

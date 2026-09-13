@@ -34,12 +34,13 @@ export interface ScrollDriverOptions {
    * Where the range begins, as `"<element edge> <viewport edge>"`
    * (default: `'top bottom'` — when the element's top reaches the viewport's bottom).
    */
-  start?: TriggerPosition
+  start?: TriggerPosition | (() => TriggerPosition)
   /**
    * Where it ends (default: `'bottom top'`). `'+=600'` means 600px of scrolling
-   * after the start, and `'+=150%'` one and a half viewport heights.
+   * after the start, and `'+=150%'` one and a half viewport heights. A function
+   * (for either) is called again on every refresh, so it can depend on layout.
    */
-  end?: TriggerPosition
+  end?: TriggerPosition | (() => TriggerPosition)
   /**
    * `true` maps scroll position to time exactly (snappy, frame-accurate).
    * A number smooths the playhead toward its target over that many seconds.
@@ -58,6 +59,11 @@ export interface ScrollDriverOptions {
    * after scrolling stops, with one last call.
    */
   onUpdate?: (progress: number, velocity: number) => void
+  /**
+   * Called at the start of every refresh after the first, before anything is
+   * measured — where an animation rebuilds for the new layout.
+   */
+  onRefresh?: () => void
   /** Scrolled into the active range, going down */
   onEnter?: () => void
   /** Scrolled out of the active range, going down */
@@ -78,6 +84,25 @@ const IDLE_MS = 120
 const started: ScrollDriver[] = []
 const refreshAll = () => {
   for (const driver of started) driver.refresh()
+}
+
+/** The viewport size at the last refresh, to recognise resizes that change nothing that matters. */
+let lastViewport = { width: 0, height: 0 }
+
+/**
+ * On touch devices the address bar showing and hiding resizes the viewport's
+ * height as you scroll. Re-measuring then makes pins jump mid-scroll, and
+ * nothing that depends on width has changed, so those resizes are skipped.
+ */
+const onResize = () => {
+  const width = window.innerWidth
+  const height = window.innerHeight
+  const heightOnly = width === lastViewport.width && height !== lastViewport.height
+  const small = Math.abs(height - lastViewport.height) < lastViewport.height * 0.25
+  const touch = typeof navigator !== 'undefined' && (navigator.maxTouchPoints ?? 0) > 0
+  if (heightOnly && small && touch) return
+  lastViewport = { width, height }
+  refreshAll()
 }
 
 export class ScrollDriver implements Driver {
@@ -126,7 +151,8 @@ export class ScrollDriver implements Driver {
 
     this.scrollTarget()?.addEventListener('scroll', this.onScroll, { passive: true })
     if (started.length === 0 && typeof window !== 'undefined') {
-      window.addEventListener('resize', refreshAll, { passive: true })
+      lastViewport = { width: window.innerWidth, height: window.innerHeight }
+      window.addEventListener('resize', onResize, { passive: true })
     }
     started.push(this)
 
@@ -140,7 +166,7 @@ export class ScrollDriver implements Driver {
     this.scrollTarget()?.removeEventListener('scroll', this.onScroll)
     started.splice(started.indexOf(this), 1)
     if (started.length === 0 && typeof window !== 'undefined') {
-      window.removeEventListener('resize', refreshAll)
+      window.removeEventListener('resize', onResize)
     }
 
     this.stopSmoothing()
@@ -181,13 +207,14 @@ export class ScrollDriver implements Driver {
    */
   refresh(): void {
     if (!this.running) return
+    if (this.measured) this.options.onRefresh?.()
     const scroll = this.scrollPosition()
 
     this.pin?.release()
     const rect = this.triggerRect()
     if (rect) {
       const viewport = this.viewportHeight()
-      this.startPx = scroll + triggerDistance(rect, viewport, this.options.start ?? 'top bottom')
+      this.startPx = scroll + triggerDistance(rect, viewport, resolvePosition(this.options.start) ?? 'top bottom')
       this.endPx = this.resolveEnd(rect, viewport, scroll)
 
       if (this.pin) {
@@ -246,7 +273,7 @@ export class ScrollDriver implements Driver {
   }
 
   private resolveEnd(rect: { top: number; bottom: number; height: number }, viewport: number, scroll: number): number {
-    const end = this.options.end ?? 'bottom top'
+    const end = resolvePosition(this.options.end) ?? 'bottom top'
     const relative = typeof end === 'string' ? end.trim().match(/^\+=\s*(-?[\d.]+)\s*(%|px)?$/) : null
     if (relative) {
       const amount = Number.parseFloat(relative[1])
@@ -370,6 +397,10 @@ export class ScrollDriver implements Driver {
     if (scroller) return scroller.clientHeight
     return typeof window !== 'undefined' ? window.innerHeight : 0
   }
+}
+
+function resolvePosition(position: TriggerPosition | (() => TriggerPosition) | undefined): TriggerPosition | undefined {
+  return typeof position === 'function' ? position() : position
 }
 
 /** Convenience wrapper: create a started ScrollDriver. */

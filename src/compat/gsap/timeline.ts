@@ -228,6 +228,21 @@ export class CompatTimeline {
   reverse(): this { this.timeline.reverse(); return this }
   kill(): this { this.timeline.removeTracks(); return this }
 
+  /**
+   * Remove every tween and forget the cursor, labels and chained start values,
+   * so the same calls can build it again from scratch (`invalidate` in `live`).
+   */
+  reset(): this {
+    this.timeline.removeTracks()
+    this.cursor = 0
+    this.previousStart = 0
+    this.previousEnd = 0
+    this.labels.clear()
+    this.lastValues.clear()
+    this.trackCounter = 0
+    return this
+  }
+
   /** Seek to a time in seconds, or to a label. */
   seek(position: number | string): this {
     if (typeof position === 'string') {

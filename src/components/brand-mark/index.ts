@@ -1,2 +1,1 @@
-export { StatusBar } from './status-bar'
 export { BrandMark, BetaBadge, TinyflyIcon } from './brand-mark'

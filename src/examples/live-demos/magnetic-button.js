@@ -17,17 +17,27 @@ export function run(live, root) {
   const button = area.querySelector('.mb-button')
   const label = button.querySelector('.mb-label')
 
+  // quickTo makes one reusable tween per property: every pointer move re-targets
+  // it from where the value is now, instead of starting a new tween each time.
+  const pull = { duration: 0.4, ease: 'power3.out' }
+  const buttonX = live.quickTo(button, 'x', pull)
+  const buttonY = live.quickTo(button, 'y', pull)
+  const labelX = live.quickTo(label, 'x', pull)
+  const labelY = live.quickTo(label, 'y', pull)
+
   // Pull the button (and, less, its label) toward the pointer. Measured from the
   // area's centre, which does not move, so the pull does not feed back on itself.
   const onMove = (event) => {
     const box = area.getBoundingClientRect()
     const dx = event.clientX - (box.left + box.width / 2)
     const dy = event.clientY - (box.top + box.height / 2)
-    live.to(button, { x: dx * 0.35, y: dy * 0.35, duration: 0.4, ease: 'power3.out' })
-    live.to(label, { x: dx * 0.15, y: dy * 0.15, duration: 0.4, ease: 'power3.out' })
+    buttonX(dx * 0.35)
+    buttonY(dy * 0.35)
+    labelX(dx * 0.15)
+    labelY(dy * 0.15)
   }
 
-  // Snap back with an elastic ease. Played last, so it wins over any pull.
+  // Snap back with an elastic ease. Played last, so it wins over the pull.
   const onLeave = () => {
     live
       .timeline({ bakeEases: true })
@@ -50,7 +60,7 @@ export const magneticButton = {
   id: 'live-magnetic-button',
   name: 'Magnetic Button',
   description: 'The button leans toward the pointer and snaps back with an elastic ease when it leaves.',
-  tags: ['interaction', 'elastic.out', 'bakeEases', 'hover'],
+  tags: ['interaction', 'quickTo', 'elastic.out', 'hover'],
   html,
   run,
 }

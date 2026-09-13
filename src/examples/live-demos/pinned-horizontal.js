@@ -28,8 +28,9 @@ export function run(live, root) {
   // #region code
   const section = root.querySelector('.ph-section')
   const track = root.querySelector('.ph-track')
-  // How far the row of panels has to travel to show its last panel.
-  const distance = Math.max(0, track.scrollWidth - section.clientWidth)
+  // How far the row of panels has to travel to show its last panel — a
+  // function, so a resize or rotation measures it again.
+  const distance = () => Math.max(0, track.scrollWidth - section.clientWidth)
 
   // Pin the section while vertical scrolling moves the panels sideways: one
   // pixel of scroll is one pixel of travel. scrub: 0.3 smooths it slightly.
@@ -39,12 +40,13 @@ export function run(live, root) {
         trigger: section,
         scroller: '.ph-scroller', // the page itself in most sites; a box in this card
         start: 'top top',
-        end: `+=${distance}`,
+        end: () => `+=${distance()}`,
         scrub: 0.3,
         pin: true,
+        invalidateOnRefresh: true, // rebuild the tweens with the new distance on resize
       },
     })
-    .to(track, { x: -distance, ease: 'none', duration: 1 })
+    .to(track, { x: () => -distance(), ease: 'none', duration: 1 })
     .to('.ph-bar', { scaleX: 1, ease: 'none', duration: 1 }, 0)
   // #endregion code
 }

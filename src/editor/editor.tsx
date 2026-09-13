@@ -1,4 +1,5 @@
 import { onMount, onCleanup, createSignal, createEffect, createResource, Show } from 'solid-js'
+import { BrandMark } from '../components/brand-mark'
 import type { Component } from 'solid-js'
 import {
   TimelinePanel,
@@ -595,7 +596,7 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
   }
 
   /**
-   * `/?example=<id>` — sent here by "Open in editor" on the Examples page.
+   * `/app?example=<id>` — sent here by "Open in editor" on the Examples page.
    * The example lands in a new project, so it never overwrites existing work.
    * The parameter is removed straight away so a reload does not create another.
    */
@@ -639,10 +640,9 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
   return (
     <div class="editor">
       <header class="editor-header">
-        <h1>tinyfly</h1>
-        <span class="editor-beta-tag" title="tinyfly is in beta — expect rough edges">
-          BETA
-        </span>
+        <h1>
+          <BrandMark size={26} />
+        </h1>
         <span class="editor-subtitle">Animation Editor</span>
         <Tooltip content="Take the tour again" position="bottom">
           <button

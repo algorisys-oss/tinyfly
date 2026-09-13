@@ -1885,11 +1885,13 @@ live.scrollTrigger(vars: ScrollTriggerVars & { trigger }): ScrollDriver | undefi
 live.refreshScroll(): void
 tl.scrollTrigger: ScrollDriver | undefined     // after the next microtask
 tl.reversed(): boolean
+tl.invalidate(): LiveTimeline                  // rebuild from the same calls (function values re-run)
 
 interface ScrollTriggerVars {
   trigger?: string | Element
-  start?: TriggerPosition
-  end?: TriggerPosition
+  start?: TriggerPosition | (() => TriggerPosition)   // functions re-run on refresh
+  end?: TriggerPosition | (() => TriggerPosition)
+  invalidateOnRefresh?: boolean  // rebuild the animation on every refresh
   scrub?: boolean | number
   pin?: boolean | string | Element
   scroller?: string | HTMLElement
@@ -1915,6 +1917,8 @@ interface SplitTextOptions {
   wordsClass?: string        // 'word'
   linesClass?: string        // 'line'
   aria?: boolean             // true: aria-label on the element, aria-hidden on the pieces
+  autoSplit?: boolean        // re-split when width changes or fonts load
+  onSplit?: (self: SplitTextResult) => { kill?(): unknown; revert?(): unknown } | void
 }
 
 interface SplitTextResult {
@@ -1923,12 +1927,49 @@ interface SplitTextResult {
   words: HTMLElement[]
   lines: HTMLElement[]
   masks: HTMLElement[]
+  split(): void              // re-split now
   revert(): void
 }
 ```
 
 Lines are measured from layout once, at split time. See
 [gsap-compat.md](gsap-compat.md#split-text) for what the markup looks like.
+
+### quickTo
+
+```typescript
+live.quickTo(target: TargetInput, property: string, vars?: { duration?: number; ease?: string; spring?: SpringVars }): QuickTo
+
+interface QuickTo {
+  (value: number): void     // animate toward value from the current one; applied next frame
+  readonly tween: LiveTimeline
+  kill(): void
+}
+```
+
+Defaults: `duration` 0.4, `ease` `'power3.out'`. See [gsap-compat.md](gsap-compat.md#values-that-change-every-event-quickto).
+
+### Contexts and media queries
+
+```typescript
+live.context(fn?: (ctx: LiveContext) => unknown, scope?: ParentNode): LiveContext
+live.matchMedia(scope?: ParentNode): LiveMatchMedia
+
+class LiveContext {
+  conditions: Record<string, boolean>   // set by matchMedia
+  add<T>(fn: () => T): T                 // run fn collecting; a returned function is cleanup
+  revert(): void                         // undo everything, restore elements' inline style and SVG d
+}
+
+class LiveMatchMedia {
+  add(conditions: string | Record<string, string>, setup: (ctx: LiveContext) => unknown): this
+  revert(): void
+}
+```
+
+Function values: any non-configuration tween var may be `(index, target) => value`.
+See [gsap-compat.md](gsap-compat.md#surviving-resizes) and
+[responsive setups](gsap-compat.md#responsive-setups-reduced-motion-and-cleanup).
 
 ### Stage
 

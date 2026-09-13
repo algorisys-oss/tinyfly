@@ -93,6 +93,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Resizable preview** - Drag the splitter between the preview and the timeline to resize (double-click to reset)
 - **Stroke write-on** - Animate a path's stroke drawing itself on (DOM + SVG renderers); one-click "Write On" preset
 - **Embed code** - Generate copy-paste code for websites (single scene or full sequence)
+- **Landing page** - `/` introduces tinyfly with tinyfly itself: a masked headline, a pointer-led canvas, a live code playground that shows the JSON its code compiles to, a pinned feature story, a gallery and a copyable script tag, with a reduced-motion mode. It loads without the editor, which lives at `/app` (lazy-loaded, as are Examples, Showcase and Docs)
 - **Examples** - One page (`/examples`, the **Examples** toolbar button) for every ready-made animation: editable examples open in the editor as a new project, code examples show their timeline JSON and HTML to copy. Includes a full-page **Agency Landing Page** showcase and a **GSAP-style** section of 38 runnable `live.to()` demos (Flip layouts and shared elements, pinned horizontal scroll, line mask reveals, spring release, canvas from object tweens, motion paths, orbits, shape and menu morphs, scramble text, draggable throws, swipe cards, 3D card flips, magnetic button, proximity grid, marquee, split text, SVG draw…), and every card has **Copy code** for a complete standalone HTML page. Hover-to-play previews, search, and filters for kind and category (GSAP-style, Showcase, Basics, Motion, Text, UI, Loaders, Effects, Data, Camera, Scroll, and **Algorisys** product demos)
 
 ## Documentation
@@ -164,7 +165,7 @@ GitHub. No npm required.
 GSAP-shaped functions at the top level:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.55.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.56.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -185,7 +186,7 @@ GSAP-shaped functions at the top level:
 | `cdn/tinyfly.esm.js` | The same, as an ES module: `import { live } from '…/cdn/tinyfly.esm.js'` |
 | `cdn/tinyfly-player.iife.js` | Player only (~11 KB gzipped), for playing editor exports |
 
-Replace `@v0.55.0` with the version you want. **Pin a version in production**:
+Replace `@v0.56.0` with the version you want. **Pin a version in production**:
 a tag's files never change. `@main` follows the latest release, which jsDelivr
 caches for up to a day. Load one `tinyfly` global, not both.
 
@@ -222,7 +223,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) to use the visual editor.
+Open [http://localhost:5173](http://localhost:5173) for the landing page; the visual editor is at [/app](http://localhost:5173/app).
 
 ### Using the Engine (API)
 
@@ -562,7 +563,7 @@ tinyfly/
 - [ ] Export-time collapse of baked staggers into runtime stagger tracks
 
 **Planned — [Phase 27](todo.md) (closing on GSAP):**
-- [x] Cross-browser checks (`npm run e2e`): Chromium and Firefox pass; WebKit not yet run (needs `libavif16` on Linux)
+- [x] Cross-browser checks (`npm run e2e`): Chromium, Firefox and WebKit pass
 - [x] Performance benchmark against GSAP ([results](bench/README.md) — ~3x slower per frame; the DOM adapter is 75% of our cost, not the engine)
 - [ ] Exercise the WebGL adapter against a real GL context (only its maths is tested)
 - [ ] Load-time value resolution + responsive variants (the serializable answer to function values and `matchMedia`)
@@ -571,6 +572,7 @@ tinyfly/
 - [ ] CustomBounce, CustomWiggle (authoring-time generators)
 - [ ] Framework wrappers (React / Vue / Svelte)
 - [x] Scroll pinning (`scrollTrigger: { pin }`), split text, drawSVG, springs and shared-element Flip on `live` ([Phase 28](todo.md))
+- [ ] Interactive tutorial at `/learn`, from keyframes to an award-site page ([Phase 29](todo.md))
 - [ ] Nested timelines at runtime, explicit track priority
 - [ ] React Native adapter
 - [ ] Collaborative editing
@@ -611,8 +613,12 @@ results rather than just looking for errors:
 - **Editor:** adding elements, playing in all three renderers, and IndexedDB
   persistence across a reload.
 
-Latest run: Chromium 150 and Firefox 153 pass all 33 checks. WebKit needs
-`libavif16` on Linux hosts (`sudo apt-get install libavif16`).
+Latest run: Chromium 150, Firefox 153 and WebKit 26.5 pass all 33 checks. In WebKit
+on Linux, MP4 export is reported as a note: Playwright's WebKit build crashes while
+starting its bundled GStreamer, before tinyfly's code runs. WebKit needs `libavif16`
+on Linux hosts, and the runner removes the GTK/GIO variables a snap-installed
+terminal (VS Code from the Snap Store) exports, which otherwise break every page
+load.
 
 ### Test Coverage
 
@@ -642,18 +648,4 @@ Contributions are welcome! For anything larger than a small fix, please open an
 
 ## License
 
-**Dual Licensed**
-
-TinyFly is licensed under the [GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE).
-
-You are free to use, modify, and distribute this software for **personal and non-commercial purposes** under the terms of the AGPL-3.0. Any modified versions must also be released under the AGPL-3.0, and if you run a modified version as a network service, you must make the source code available to its users.
-
-### Commercial & SaaS Use
-
-If you wish to use TinyFly in a **commercial product, proprietary application, or SaaS offering** without the AGPL-3.0 obligations (including source disclosure), you must obtain a **commercial license** from the Algorisys Open Source Team.
-
-For commercial licensing inquiries, please contact us via [GitHub](https://github.com/algorisys-oss/tinyfly).
-
-### Attribution
-
-Regardless of license type, all usage of TinyFly must retain visible attribution to the **Algorisys Open Source Team** and a link to the [original repository](https://github.com/algorisys-oss/tinyfly).
+[MIT](LICENSE) © 2026 Algorisys OSS Team. Use it in personal, commercial and SaaS projects, modify it and redistribute it; keep the copyright and license notice with copies of the source.

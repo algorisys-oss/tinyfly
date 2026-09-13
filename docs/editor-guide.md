@@ -1,6 +1,6 @@
 # Editor Guide
 
-The tinyfly visual editor lets you create animations through a graphical interface — no code required. This guide covers every feature of the editor.
+The tinyfly visual editor lets you create animations through a graphical interface — no code required. It lives at `/app` (the site root, `/`, is the tinyfly home page, with **Open the editor** at the top). This guide covers every feature of the editor.
 
 ## Editor Layout
 
@@ -847,7 +847,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.55.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.56.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed

@@ -74,7 +74,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.55.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.56.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -484,7 +484,8 @@ live.scrollTrigger({
 | Option | |
 |---|---|
 | `trigger` | Element or selector; default the animation's first target |
-| `start`, `end` | `"<element edge> <viewport edge>"` as in [trigger positions](./scroll-animation.md#trigger-positions); `end: '+=600'` / `'+=150%'` is measured from the start. Defaults `'top bottom'`, `'bottom top'` |
+| `start`, `end` | `"<element edge> <viewport edge>"` as in [trigger positions](./scroll-animation.md#trigger-positions); `end: '+=600'` / `'+=150%'` is measured from the start. Defaults `'top bottom'`, `'bottom top'`. A function is called again on every refresh |
+| `invalidateOnRefresh` | On every refresh (a resize), rebuild the animation so function values and start values are read again |
 | `scrub` | `true`: progress follows scroll exactly. A number: smoothed over that many seconds |
 | `pin` | `true` pins the trigger for the range, or an element / selector to pin instead (see [pinning](./scroll-animation.md#pinning)) |
 | `scroller` | A scrolling element or selector instead of the window |
@@ -501,8 +502,106 @@ timeline. `tl.scrollTrigger` is the driver (`refresh()`, `progress`, `velocity`)
 `live.refreshScroll()` re-measures every trigger after a layout change a resize
 would not catch.
 
-Not supported: `snap`, `markers`, `pinSpacing: false`, `anticipatePin`,
-horizontal scrollers, and `containerAnimation`.
+On touch devices, resizes that only change the height a little (the address bar
+showing and hiding) do not refresh, so pins do not jump mid-scroll.
+
+Not supported yet: `snap`, `markers` and `containerAnimation` (planned), and
+`pinSpacing: false`, `anticipatePin`, horizontal scrollers.
+
+## Values that change every event: `quickTo`
+
+Pointer followers, magnetic buttons and scroll-velocity effects change a value on
+every event. Creating a tween per event works, but it allocates on every move and
+leaves overlapping tweens to compose. `live.quickTo` makes one reusable tween per
+property instead:
+
+```js
+const moveX = live.quickTo('.cursor', 'x', { duration: 0.5, ease: 'power3.out' })
+const moveY = live.quickTo('.cursor', 'y', { duration: 0.5, ease: 'power3.out' })
+window.addEventListener('pointermove', (e) => { moveX(e.clientX); moveY(e.clientY) })
+
+const pull = live.quickTo(button, 'x', { spring: 'snappy' })   // springs keep their momentum
+```
+
+- Each call re-targets the tween from the value on screen now, so there is no jump.
+- Nothing is written until the next frame, so several calls in one frame cost
+  one write.
+- With `spring`, each re-target carries the current velocity.
+- The setter uses the first element the target matches. `moveX.tween` is the
+  reused timeline, and `moveX.kill()` stops it.
+
+## Surviving resizes
+
+Anything measured from the page — a pinned section's travel, a marquee's width —
+changes when the window resizes or a phone rotates. Pass **functions** instead of
+numbers and they are called again whenever the animation is rebuilt:
+
+```js
+const travel = () => track.scrollWidth - section.clientWidth
+
+live.timeline({
+  scrollTrigger: { trigger: section, start: 'top top', end: () => `+=${travel()}`, pin: true, scrub: 0.5, invalidateOnRefresh: true },
+})
+  .to(track, { x: () => -travel(), ease: 'none' })
+```
+
+- **Function values** in tween vars are called with `(index, target)` when the
+  tween is built. When they differ per target, each target gets its own tween.
+- **`tl.invalidate()`** rebuilds a timeline from the same calls. It rewinds to
+  the start, so start values are read from elements before the timeline changed
+  them, re-runs every function value, and returns to the same progress. Call it
+  yourself for animations without a scroll trigger, e.g. on `resize`.
+- **`invalidateOnRefresh: true`** does that on every scroll refresh, before start
+  and end are measured again.
+
+## Responsive setups, reduced motion and cleanup
+
+**`live.context(fn, scope?)`** collects everything the live API creates while `fn`
+runs:
+
+- timelines and tweens, with their scroll triggers and pins;
+- split text and draggables;
+- stand-alone scroll triggers and ticker callbacks;
+- a cleanup function `fn` returns.
+
+`ctx.revert()` undoes it all, newest first. Each element the context animated
+gets its original inline style (and SVG `d`) back, and the stage forgets the
+values it applied, so the next setup starts clean. Selectors inside resolve
+within `scope`. That suits a component or a route: create the context on mount
+and revert it on unmount.
+
+```js
+const ctx = live.context(() => {
+  live.from('.card', { y: 40, opacity: 0, stagger: 0.1 })
+  button.addEventListener('click', () => ctx.add(() => live.to('.card', { rotate: 5 })))
+}, section)
+
+ctx.revert()
+```
+
+Work created later, for example in an event handler, joins the context only when
+it runs inside `ctx.add(fn)`.
+
+**`live.matchMedia()`** runs setups while media queries match:
+
+```js
+const mm = live.matchMedia()
+mm.add({ desktop: '(min-width: 800px)', reduce: '(prefers-reduced-motion: reduce)' }, (ctx) => {
+  const { desktop, reduce } = ctx.conditions
+  if (reduce) return live.set('.hero-title', { opacity: 1 })   // a real reduced-motion mode
+  live.timeline({ scrollTrigger: { pin: desktop, … } })
+  return () => { /* anything else to undo */ }
+})
+```
+
+- Each setup runs in its own context while any of its queries match.
+- It is reverted when they stop matching, and run again whenever the set of
+  matching conditions changes; `ctx.conditions` says which match.
+- `mm.revert()` removes every setup and stops listening.
+
+The [Agency Landing Page showcase](../src/examples/showcases/agency-landing.js)
+wraps its whole page this way. Under reduced motion there is no pinning, parallax
+or marquee, and values appear at their final state.
 
 ## Split text
 
@@ -525,6 +624,8 @@ split.revert()   // the original markup
 | `mask` | — | `'lines'`, `'words'` or `'chars'`: wrap each in an `overflow: clip` span, for reveals from behind an edge |
 | `charsClass`, `wordsClass`, `linesClass` | `char`, `word`, `line` | Class names (masks get `<class>-mask`) |
 | `aria` | `true` | Put the text in the element's `aria-label` and hide the pieces from screen readers |
+| `autoSplit` | `false` | Split again when an element's width changes or fonts load |
+| `onSplit(self)` | — | Called after every split; return the animation built on the pieces |
 
 It returns `{ elements, chars, words, lines, masks, revert() }`.
 
@@ -537,8 +638,10 @@ What it does to the markup:
 - **Characters** are grapheme clusters, so an emoji or an accented letter stays in one piece.
 - **Lines** are measured once, from where the browser wrapped the words. Inline
   markup such as `<em>` or `<a>` is kept and cloned into each line it spans;
-  `<br>` ends a line. Lines depend on the element's width, so after a resize call
-  `revert()` and split again.
+  `<br>` ends a line. Lines depend on the element's width: with `autoSplit: true`
+  the text is split again when an element's width changes or web fonts finish
+  loading. Build the animation in `onSplit(self)` and return it, so it is killed
+  before the pieces it animated are replaced. `split.split()` re-splits by hand.
 - `revert()` restores the saved HTML. Event listeners attached to elements
   *inside* the split element are lost; attach them to the element itself.
 

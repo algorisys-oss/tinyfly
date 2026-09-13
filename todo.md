@@ -1041,8 +1041,12 @@ Not features. The v0.50.1 post-mortem says this is where the real gap is.
       animated; HTML and canvas pivot on the element's centre. Both adapters now
       default SVG content to `transform-box: fill-box` + centre (author origins
       still win). The editor had hidden it with inline styles on its own markup.
-- [ ] **WebKit not run yet**: the host lacks `libavif16` (needs
-      `sudo apt-get install libavif16`); then `npm run e2e -- --browser webkit`.
+- [x] **WebKit 26.5 runs and passes all checks.** It needed `libavif16`, and the runner
+      now removes the snap GTK/GIO variables (`GIO_MODULE_DIR`…) that a VS Code snap
+      terminal exports. Without that, WebKit's network process loaded snap GIO
+      modules against the wrong glibc and failed every page load. MP4 export is a
+      note in Linux WebKit: its bundled GStreamer crashes on startup, outside tinyfly.
+      The MP4 check runs in its own page, so the crash cannot hide the other results.
 - [ ] Run `npm run e2e` in CI.
 
 #### 27C.2 — Performance benchmark against GSAP ✓ (first pass)
@@ -1072,7 +1076,7 @@ frame. One proposed optimisation — caching the composed transform string to sk
 unchanged writes — measured *worse* and was reverted, with the reason recorded
 at the write site.
 
-- [ ] **Still to measure:** memory, startup cost, and Firefox/WebKit (blocked on
+- [ ] **Still to measure:** memory, startup cost, and Firefox/WebKit (now unblocked by
       27C.1).
 
 #### 27C.2b — Follow-on adapter optimisation (from the profile above)
@@ -1382,6 +1386,223 @@ value for effort.
       **Copy code** (standalone page = same markup and code)
 - [x] Unit test runs and tears it down (no pins left); e2e `showcase` check: pin holds,
       stats count, leaving cleans up, no page errors (Chromium, Firefox)
+
+---
+
+## Phase 28B: Production robustness for award-site pages (before the tutorial)
+
+Phase 28 added the effects. This phase makes a real site built with them survive
+resizes, phone rotation, breakpoints, reduced-motion settings and route changes
+without hand-written re-setup, and replaces patterns the tutorial should not teach.
+
+### 28B.1 — Values that survive a resize ✓
+
+- [x] Function values in `live` vars (`x: (index, target) => …`), resolved per element
+      when they differ; callbacks and function eases are left alone
+- [x] `tl.invalidate()`: live timelines record their building calls; invalidating
+      rewinds to the start, rebuilds (`CompatTimeline.reset()` + replay), and
+      returns to the same progress
+- [x] `start` / `end` functions on scroll triggers, re-run on refresh;
+      `invalidateOnRefresh: true` rebuilds before re-measuring (`ScrollDriver.onRefresh`)
+- [x] `splitText({ autoSplit, onSplit })` re-splits on width change (ResizeObserver) or
+      fonts loading, killing the animation `onSplit` returned; `split.split()`
+- [x] Height-only resizes under 25% on touch devices skipped (address bar)
+- [x] Tests (`live-refresh.test.ts`, split-text autoSplit); browser check: after a
+      resize the showcase's pin distance is re-measured and the track ends flush
+      (0.0px) in Chromium, Firefox and WebKit
+
+### 28B.2 — Responsive setups, reduced motion, scoped cleanup ✓
+
+- [x] `live.context(fn, scope)` / `ctx.add()` / `ctx.revert()`: collects timelines (and
+      their triggers and pins), split text, draggables, stand-alone triggers, ticker
+      callbacks and returned cleanups; restores touched elements' inline style and
+      SVG `d`; `stage.forget()` drops applied values; selectors scope to `scope`
+- [x] `live.matchMedia()` with string or named conditions, `ctx.conditions`,
+      re-run on change, `mm.revert()`; `tinyfly.context` / `tinyfly.matchMedia` on
+      the script-tag global
+- [x] The showcase runs under `matchMedia` with a real reduced-motion mode (no pin,
+      parallax, marquee or split; final values; the work row scrolls sideways) and
+      the pinned-horizontal demo uses function values + `invalidateOnRefresh`
+- [x] 7 tests (`live-context.test.ts`), a reduced-motion showcase test, and a browser
+      check that toggling `prefers-reduced-motion` removes and restores the pin
+
+### 28B.3 — `live.quickTo` ✓
+
+- [x] `live.quickTo(target, property, { duration, ease, spring })` returns a setter
+      that re-targets one reused timeline from the value on screen; writes wait for
+      the next frame (many calls, one write); springs carry the current velocity;
+      `.tween`, `.kill()`; `tinyfly.quickTo` on the script-tag global
+- [x] Magnetic Button, Pointer Follow, Dock Magnify and Proximity Grid demos, and the
+      showcase's marquee lean and magnetic button, use it
+- [x] 5 tests (`quick-to.test.ts`), docs
+
+### 28B.4 — More scroll trigger options
+
+- [ ] `snap`: a number, an array of progress points, `'labels'`, or `{ snapTo, duration, ease }`
+      — after scrolling stops, scroll to the nearest point
+- [ ] `markers`: start and end lines for the scroller and trigger while developing
+- [ ] `containerAnimation`: triggers inside a horizontally scrolling pinned section,
+      measured along that animation's travel
+
+### 28B.5 — Image-sequence scrubbing
+
+- [ ] `live.imageSequence(canvas, { urls | pattern, frames })` returns an object whose
+      `frame` can be tweened or scrubbed. It preloads (nearby frames first),
+      draws to the canvas with cover fit, and handles the device pixel ratio
+
+### 28B.6 — Page transitions
+
+- [ ] A route-transition helper: animate the old view out and the new view in around a
+      DOM swap, using the View Transitions API when present; shared elements across
+      the swap through `data-flip-id`
+
+### 28B.7 — Custom curves
+
+- [ ] `CustomEase` from SVG path data or bezier points, serialized as sampled
+      keyframes or a cubic-bezier when it is one; CustomBounce and CustomWiggle
+      (supersedes 27B.3)
+
+### Sequencing
+
+28B.1 + 28B.2 together (both re-run setup code when something changes) → 28B.3 →
+update the showcase to use all three → Phase 28C landing page → 28B.4 → 28B.5–28B.7.
+Then Phase 29.
+
+---
+
+## Phase 28C: tinyfly.app landing page, editor at `/app` ✓
+
+The site root is now a landing page built with tinyfly itself; the editor moved to
+`/app`. First-time visitors learn what tinyfly is; returning users reach their work
+in one click.
+
+- [x] Routes: `/` landing (`src/landing/`), `/app` editor; `/examples`, `/showcase/:id`,
+      `/docs` unchanged. Old `/?example=` links redirect to `/app?example=`
+- [x] Back-to-editor and Open-in-editor links, the e2e editor check, README, getting
+      started, editor guide and deployment notes point at `/app`
+- [x] Returning users: the hero shows **Continue where you left off** when the
+      editor has saved work (`indexedDB.databases()` + the old LocalStorage keys;
+      it never opens the database, which could skip the editor's own upgrade)
+- [x] Fast first paint: editor, Examples, Showcase and Docs are lazy routes, so `/`
+      loads no editor or exporter modules (checked in e2e); the splash only shows
+      when opening `/app` directly
+- [x] Content, all under `live.matchMedia` (reduced motion, phones):
+      - [x] hero: masked split-text headline (autoSplit), fireflies on a ticker canvas
+            following the pointer through `quickTo` on a plain object, CTAs,
+            copyable CDN script tag
+      - [x] "code becomes motion": editable `live` snippet, its preview, and its
+            compiled JSON (`src/landing/playground.ts`)
+      - [x] pinned feature story: engine → editor → GSAP-style API → export, with
+            `invalidateOnRefresh`
+      - [x] gallery strip leaning with scroll velocity; numbers counting up; springy
+            closing type and a magnetic button
+- [x] Tests: `landing.test.ts` (playground, saved-work detection, motion start and
+      cleanup); e2e `landing` check in Chromium, Firefox and WebKit (no editor
+      bundle, playground recompiles, story pins, reduced motion, CTA loads the
+      editor, legacy links)
+- [x] Brand mark (`src/components/brand-mark/`): a fly icon whose wings flutter now and
+      then (and on hover), the wordmark, and a BETA badge with a sweeping shine and a
+      soft glow (both still under `prefers-reduced-motion`), shared by the landing
+      nav and the editor, Examples and Docs headers; `/tinyfly.svg` replaces the Vite favicon
+- [x] Static `<noscript>` fallback text and links in `index.html`
+- [ ] Open Graph image for link previews
+- [ ] Gallery cards show live miniature previews of the demos instead of colour fields
+
+---
+
+## Phase 29: Learn tinyfly — an interactive tutorial, basics to award-site level (planned)
+
+A course inside the app at `/learn`, not a separate site. Every lesson is live
+code next to a live preview, with checks that say whether you got it right. It
+goes from "what is a keyframe" to rebuilding the Agency Landing Page showcase
+section by section.
+
+### Principles
+
+- **Learn by changing running code.** Each step shows a short explanation, a code
+  panel and a preview. The preview re-runs as you type, the same way Examples
+  cards run `live` code: a Stage scoped to the preview and destroyed on every run.
+- **Checks are deterministic.** A step passes when a pure check over what your
+  code produced says so: the compiled `toDefinition()` JSON, values sampled at
+  set times with `getStateAtTime`, or DOM state after the preview runs. No
+  screenshots and no timing races. This follows the engine's own principle.
+- **No new heavy dependencies.** The code panel is a lightweight editor (textarea
+  plus highlighting overlay), not CodeMirror or Monaco, unless an evidence gate
+  shows the textarea cannot work.
+- **Lessons are plain data.** Each step is a file under `src/learn/lessons/`
+  holding markdown text, starter code, a solution and checks. Content can be
+  added without touching the runtime, and it is testable.
+- **Keep moving:** hints, "show solution", "reset step", progress saved
+  locally, and every step deep-linkable (`/learn/scroll/pinning`).
+
+### 29A — Lesson runtime
+
+- [ ] `/learn` route: course map (modules → lessons → steps) with progress, and a
+      **Learn** button in the editor toolbar and on the Examples page
+- [ ] Step layout: explanation | code | preview (stacked on phones); run on edit
+      (debounced), Reset, Hint, Solution, Next; errors shown inline with the line
+- [ ] Preview sandbox: a scoped `Stage` per run and teardown between runs (scroll
+      triggers, pins, tickers, listeners); scroll lessons get a scroll container
+      preview; the Stage + scroller setup is shared with the Examples page
+- [ ] Check API: `expect.track(target, property)`, `expect.valueAt(target, property, ms)`,
+      `expect.eases`, `expect.pinned`, `expect.dom(selector)`, each with a
+      friendly failure message; celebrate on pass
+- [ ] Timeline scrubber under the preview (reuses engine `seek`) and an
+      "inspect JSON" drawer, so learners see that code compiles to data
+- [ ] Progress in IndexedDB (same backend seam as projects); export and reset progress
+- [ ] "Open in editor" where a step's result is an editor animation;
+      "Copy as page" (standalone HTML) at the end of each module
+
+### 29B — Curriculum
+
+1. **Foundations.** Timelines, tracks and keyframes as JSON; duration and delay;
+   easing, with an interactive curve visualiser; interpolation of numbers,
+   colours and paths.
+2. **The GSAP-style API.** `live.to` / `from` / `fromTo` / `set`; targets and
+   selectors; stagger (`each`, `amount`, `from`); timelines and the position
+   parameter (`'<'`, `'-=0.2'`, labels); repeat, yoyo, controls.
+3. **The editor.** Build the same animation visually, compare its exported JSON
+   with lesson 1, and embed it. A guided overlay reuses the Help Tour.
+4. **Motion craft.** Easing personality, overlap and offset, anticipation and
+   follow-through; springs (presets, momentum) versus eases; when not to animate.
+5. **Text and SVG.** `splitText` line and character reveals with masks,
+   scramble and typewriter, `drawSVG`, `morphSVG`, motion paths with `align`.
+6. **Interaction.** Hover and magnetic effects, pointer follow on the ticker,
+   `live.draggable` with inertia and snapping, Flip layouts and shared elements,
+   canvas/WebGL via object targets.
+7. **Scroll.** Toggle reveals, scrub versus smoothed scrub, pinning, horizontal
+   pinned sections, velocity effects, and performance rules (refresh, no layout
+   reads, pause off-screen work).
+8. **Accessibility and performance.** `prefers-reduced-motion` (needs a tinyfly
+   helper, below), transform/opacity-only budgets, measuring with the e2e
+   harness.
+9. **Capstone: build the Agency Landing Page.** One lesson per section: hero
+   reveal, canvas, marquee, manifesto, pinned work, stats, services, lightbox,
+   contact. It ends with your own page exported as a standalone file.
+
+### 29C — Engine and API work the course needs
+
+- [ ] Reduced-motion helper, e.g. `live.matchMedia('(prefers-reduced-motion: reduce)', setup)`
+      or a `reducedMotion` option: lesson 8 must teach a real API, not a workaround
+- [ ] Friendlier `onWarning` messages, surfaced inline in lessons: no targets
+      found, drawSVG on a non-shape, spring on a colour
+- [ ] `live.quickTo`-style setter for pointer-driven values, if lesson 6 shows
+      that creating a tween per event is too much for learners
+
+### 29D — Quality gates
+
+- [ ] Unit test: every step's **solution** passes its checks, and every
+      **starter** fails at least one (so no step is already solved)
+- [ ] e2e `learn` check (Chromium, Firefox, WebKit): open every module, run each
+      solution, all checks pass, no page errors; phone-width layout check
+- [ ] Lessons listed in the doc manifest, so `llms-full.txt` includes the course
+- [ ] Keyboard-only walkthrough of a full module; code panel and preview labelled
+      for screen readers
+
+### Sequencing
+
+After Phase 28B: 29A runtime with module 2 as the pilot (the API most people arrive for) → 29D
+gates → modules 1, 3 → 4–7 (with 29C as each needs it) → 8 → 9 capstone.
 
 ---
 

@@ -4,7 +4,7 @@ import type { Component } from 'solid-js'
 type CopyState = 'idle' | 'copied' | 'failed'
 
 /** Put text on the clipboard, falling back to a hidden textarea where the async API is unavailable (e.g. plain http). */
-async function copyText(text: string): Promise<void> {
+export async function copyText(text: string): Promise<void> {
   if (navigator.clipboard?.writeText) {
     await navigator.clipboard.writeText(text)
     return

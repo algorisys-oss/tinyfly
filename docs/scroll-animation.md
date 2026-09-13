@@ -160,6 +160,12 @@ inserted above the trigger — call `driver.refresh()` (or
 `driver.progress` is the current progress, 0..1; `driver.velocity` the scroll
 speed.
 
+On touch devices, resizes that only change the height by less than a quarter
+(the address bar showing and hiding) are skipped, so pins do not jump mid-scroll.
+`start` and `end` may be functions, called again on every refresh, and
+`onRefresh` runs before each re-measure (after the first), which is where
+`invalidateOnRefresh` rebuilds an animation.
+
 ### Smooth-scroll libraries
 
 Libraries that keep native scrolling (Lenis, and Locomotive Scroll v5 built on

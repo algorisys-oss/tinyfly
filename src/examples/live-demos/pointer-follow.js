@@ -18,18 +18,22 @@ export const html = `<style>
 export function run(live, root) {
   // #region code
   const area = root.querySelector('.pf-area')
-  const dots = area.querySelectorAll('.pf-dot')
+  const dots = [...area.querySelectorAll('.pf-dot')]
   live.set(dots, { x: 130, y: 75 })
 
-  // Every move starts a fresh tween from wherever each dot is now; the newest
-  // tween wins, so the dots chase the pointer. Later dots lag behind.
+  // One quickTo per dot and axis: each move re-targets the same tween from where
+  // the dot is now. Later dots take longer, so they trail behind.
+  const followers = dots.map((dot, i) => {
+    const follow = { duration: 0.3 + i * 0.15, ease: 'power3.out' }
+    return { x: live.quickTo(dot, 'x', follow), y: live.quickTo(dot, 'y', follow) }
+  })
+
   const onMove = (event) => {
     const box = area.getBoundingClientRect()
-    const x = event.clientX - box.left
-    const y = event.clientY - box.top
-    dots.forEach((dot, i) => {
-      live.to(dot, { x, y, duration: 0.3 + i * 0.15, ease: 'power3.out' })
-    })
+    for (const follower of followers) {
+      follower.x(event.clientX - box.left)
+      follower.y(event.clientY - box.top)
+    }
   }
 
   area.addEventListener('pointermove', onMove)
@@ -42,8 +46,8 @@ export function run(live, root) {
 export const pointerFollow = {
   id: 'live-pointer-follow',
   name: 'Pointer Follow',
-  description: 'A new tween per pointer move. Each starts from the value tinyfly last applied, so motion stays continuous.',
-  tags: ['interaction', 'overwrite', 'power3.out'],
+  description: 'Dots chase the pointer with live.quickTo: one reusable tween per dot and axis, re-targeted on every move.',
+  tags: ['interaction', 'quickTo', 'power3.out'],
   html,
   run,
 }

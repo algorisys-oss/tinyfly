@@ -32,7 +32,7 @@ const KEY_FACTS = `Key facts:
 - Times in JSON timelines are milliseconds; durations in the GSAP-style API are seconds, as in GSAP.
 - The GSAP-style API is familiar, not compatible: GSAP code does not run unchanged. \`docs/gsap-compat.md\` lists every supported option and each difference.
 - Track kinds: keyframe tracks, spring (\`kind: 'spring'\`), inertia (\`kind: 'inertia'\`), motion path (\`property: 'motionPath'\`) and text (\`property: 'text'\`). All serialize to JSON; \`docs/file-format.md\` defines them.
-- Source: https://github.com/algorisys-oss/tinyfly. License: AGPL-3.0, with a commercial license for proprietary and SaaS use (see the README).`
+- Source: https://github.com/algorisys-oss/tinyfly. License: MIT.`
 
 export function buildLlmsTxt(options: LlmsTxtOptions): string {
   const lines: string[] = ['# tinyfly', '', `> ${SUMMARY}`, '', KEY_FACTS, '']

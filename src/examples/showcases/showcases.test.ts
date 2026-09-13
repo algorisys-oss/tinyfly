@@ -7,6 +7,14 @@ import { showcasePage } from '../standalone-page'
 
 stubSvgGeometry()
 
+/** Media queries answer as a browser with no motion preference would, so the full setup runs. */
+window.matchMedia = ((query: string) => ({
+  matches: query.includes('no-preference'),
+  media: query,
+  addEventListener: () => {},
+  removeEventListener: () => {},
+})) as unknown as typeof window.matchMedia
+
 /**
  * Full-page showcases must run end to end without a browser's layout: build the
  * page, run its code, drive frames and scroll, and tear down leaving nothing
@@ -54,4 +62,34 @@ describe('showcases', () => {
       host.remove()
     })
   }
+
+  it('agency-landing has a reduced-motion mode: no pin, no split, final values straight away', async () => {
+    const saved = window.matchMedia
+    window.matchMedia = ((query: string) => ({
+      matches: query.includes('reduce'),
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    })) as unknown as typeof window.matchMedia
+    try {
+      const showcase = findShowcase('agency-landing')!
+      const host = document.createElement('div')
+      host.innerHTML = showcase.html
+      document.body.appendChild(host)
+      const stage = new Stage({ root: host, scheduler: { request: () => 1, cancel: () => {} } })
+      const cleanup = showcase.run(createLive(stage), host)
+      await Promise.resolve()
+
+      expect(host.classList.contains('ag-reduced')).toBe(true)
+      expect(host.querySelector('.pin-spacer')).toBeNull()
+      expect(host.querySelector('.ag-manifesto-text .word')).toBeNull()
+
+      cleanup?.()
+      stage.destroy()
+      expect(host.classList.contains('ag-reduced')).toBe(false)
+      host.remove()
+    } finally {
+      window.matchMedia = saved
+    }
+  })
 })

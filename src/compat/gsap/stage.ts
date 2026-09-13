@@ -1,5 +1,6 @@
 import type { Timeline, AnimationState, AnimatableValue } from '../../engine'
 import { DOMAdapter } from '../../adapters/dom'
+import type { ContextCollector, ContextHost } from './live-context'
 
 /**
  * The shared runtime behind the live facade: one frame loop, one DOM adapter,
@@ -75,7 +76,7 @@ const browserScheduler: FrameScheduler = {
   cancel: (id) => cancelAnimationFrame(id),
 }
 
-export class Stage {
+export class Stage implements ContextHost {
   private readonly adapter = new DOMAdapter()
   private readonly scheduler: FrameScheduler
   private readonly rootOption?: ParentNode
@@ -91,6 +92,8 @@ export class Stage {
 
   /** Things created for this stage that outlive a timeline (scroll triggers, pins). */
   private readonly owned = new Set<{ destroy(): void }>()
+
+  private currentCollector: ContextCollector | undefined
 
   private readonly tickerCallbacks = new Set<TickerCallback>()
   private tickerTime = 0
@@ -133,14 +136,37 @@ export class Stage {
   resolveTargets(input: TargetInput): string[] {
     const names: string[] = []
     for (const target of this.targetsOf(input)) {
-      names.push(this.nameFor(target))
+      const name = this.nameFor(target)
+      if (isElement(target)) this.currentCollector?.touch(target, name)
+      names.push(name)
     }
     return names
   }
 
-  /** Find one element the way selector targets are found: within the stage's root. */
+  /** Find one element the way selector targets are found: within the stage's root (or the collecting context's scope). */
   query(selector: string): Element | null {
-    return this.root.querySelector(selector)
+    return this.selectorRoot.querySelector(selector)
+  }
+
+  // --- contexts -----------------------------------------------------------
+
+  /** The context collecting what is created right now, if any (see live-context.ts). */
+  get collector(): ContextCollector | undefined {
+    return this.currentCollector
+  }
+
+  setCollector(collector: ContextCollector | undefined): void {
+    this.currentCollector = collector
+  }
+
+  /** Drop the values applied to a target, so the next animation starts from its natural state. */
+  forget(name: string): void {
+    this.applied.delete(name)
+    this.dirty.delete(name)
+  }
+
+  private get selectorRoot(): ParentNode {
+    return this.currentCollector?.scope ?? this.root
   }
 
   /** The element registered under a target name. */
@@ -192,6 +218,7 @@ export class Stage {
         this.tickerFrame = 0
       }
       this.tickerCallbacks.add(callback)
+      this.currentCollector?.track({ revert: () => this.ticker.remove(callback) })
       this.startLoop()
     },
     remove: (callback) => {
@@ -380,7 +407,7 @@ export class Stage {
 
   private targetsOf(input: TargetInput): (Element | ObjectTarget)[] {
     if (typeof input === 'string') {
-      return Array.from(this.root.querySelectorAll(input))
+      return Array.from(this.selectorRoot.querySelectorAll(input))
     }
     if (isElement(input)) return [input]
     if (!isTargetList(input)) return [input as ObjectTarget]

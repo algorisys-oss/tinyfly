@@ -15,10 +15,25 @@ const option = (name) => {
   return i >= 0 ? args[i + 1] : undefined
 }
 
+/**
+ * A terminal inside a snap (VS Code installed from the Snap Store) exports GTK and
+ * GIO variables pointing into the snap. WebKit's network process then loads GIO
+ * modules built against the snap's older glibc and fails every page load with
+ * "WebKit encountered an internal error". Launch it without those variables.
+ */
+function withoutSnapLibraries(env) {
+  const snapScoped = ['GIO_MODULE_DIR', 'GTK_PATH', 'GTK_EXE_PREFIX', 'GTK_IM_MODULE_FILE', 'GDK_PIXBUF_MODULE_FILE', 'GDK_PIXBUF_MODULEDIR', 'GSETTINGS_SCHEMA_DIR', 'LOCPATH']
+  const clean = { ...env }
+  for (const name of snapScoped) {
+    if (clean[name]?.includes('/snap/')) delete clean[name]
+  }
+  return clean
+}
+
 const BROWSERS = {
   chromium: () => chromium.launch({ channel: 'chrome', headless: true }),
   firefox: () => firefox.launch({ headless: true }),
-  webkit: () => webkit.launch({ headless: true }),
+  webkit: () => webkit.launch({ headless: true, env: withoutSnapLibraries(process.env) }),
 }
 
 const wantedBrowsers = option('browser') ? [option('browser')] : Object.keys(BROWSERS)

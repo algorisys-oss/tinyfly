@@ -50,11 +50,15 @@ Files listed in `.ossignore` are excluded from OSS publishing:
 
 ```bash
 # Dry run - preview what will be published
-./scripts/publish-oss.sh
+npm run release:oss:dry-run      # ./scripts/publish-oss.sh
 
-# Actually push to the OSS repo
-./scripts/publish-oss.sh --push
+# Push to the OSS repo, build the CDN bundles into cdn/, and tag v{version}
+npm run release:oss              # ./scripts/publish-oss.sh --push
 ```
+
+These two npm scripts exist only in the private repository: the publish script
+replaces the OSS copy's `scripts` with the public set (`dev`, `build`, the library
+builds, `test`, `e2e`), since `scripts/` itself is not published.
 
 ### What the Script Does
 
@@ -283,7 +287,7 @@ export default defineConfig({
 
 Tinyfly uses client-side routing. Ensure your server/hosting is configured to:
 - Serve `index.html` for all routes (fallback)
-- This is required for `/examples`, `/docs` and other routes to work on direct access
+- This is required for `/app` (the editor), `/examples`, `/showcase/…`, `/docs` and other routes to work on direct access
 
 ## Embedding the Player
 
