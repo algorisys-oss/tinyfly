@@ -166,6 +166,19 @@ On touch devices, resizes that only change the height by less than a quarter
 `onRefresh` runs before each re-measure (after the first), which is where
 `invalidateOnRefresh` rebuilds an animation.
 
+### Snap, markers and horizontal containers
+
+- **`snap`** takes a progress step, a list of points, a function, or
+  `{ snapTo, duration, delay, ease }`. It scrolls to the nearest point once
+  scrolling stops inside the range, allowing for the speed scrolling had, and
+  stops at once if the person scrolls, touches, clicks or types.
+  `snapProgress(progress, velocity, snapTo)` is the pure choice.
+- **`markers: true`** draws the start and end lines while developing.
+- **`container: { range(), progress(), shiftAt(progress) }`** puts a trigger
+  inside something that moves sideways as the page scrolls. `containerProgressAt()`
+  is the pure solver, and `live` builds `container` for you from
+  `containerAnimation`.
+
 ### Smooth-scroll libraries
 
 Libraries that keep native scrolling (Lenis, and Locomotive Scroll v5 built on

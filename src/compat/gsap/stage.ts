@@ -32,7 +32,7 @@ import type { ContextCollector, ContextHost } from './live-context'
  * are written back onto it each frame — `{ x: 0 }`, a Three.js `mesh.position`,
  * a shader uniform. Arrays and node lists are lists of targets, not objects.
  */
-export type ObjectTarget = Record<string, unknown>
+export type ObjectTarget = object
 
 /** Anything the live facade accepts as a target. */
 export type TargetInput =
@@ -361,7 +361,7 @@ export class Stage implements ContextHost {
       const properties = this.applied.get(name)!
       const object = this.objects.get(name)
       if (object) {
-        for (const [property, value] of properties) object[property] = value
+        for (const [property, value] of properties) (object as Record<string, unknown>)[property] = value
       } else {
         values.set(name, properties)
       }

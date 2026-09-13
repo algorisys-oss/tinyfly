@@ -94,7 +94,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Stroke write-on** - Animate a path's stroke drawing itself on (DOM + SVG renderers); one-click "Write On" preset
 - **Embed code** - Generate copy-paste code for websites (single scene or full sequence)
 - **Landing page** - `/` introduces tinyfly with tinyfly itself: a masked headline, a pointer-led canvas, a live code playground that shows the JSON its code compiles to, a pinned feature story, a gallery and a copyable script tag, with a reduced-motion mode. It loads without the editor, which lives at `/app` (lazy-loaded, as are Examples, Showcase and Docs)
-- **Examples** - One page (`/examples`, the **Examples** toolbar button) for every ready-made animation: editable examples open in the editor as a new project, code examples show their timeline JSON and HTML to copy. Includes a full-page **Agency Landing Page** showcase and a **GSAP-style** section of 38 runnable `live.to()` demos (Flip layouts and shared elements, pinned horizontal scroll, line mask reveals, spring release, canvas from object tweens, motion paths, orbits, shape and menu morphs, scramble text, draggable throws, swipe cards, 3D card flips, magnetic button, proximity grid, marquee, split text, SVG draw…), and every card has **Copy code** for a complete standalone HTML page. Hover-to-play previews, search, and filters for kind and category (GSAP-style, Showcase, Basics, Motion, Text, UI, Loaders, Effects, Data, Camera, Scroll, and **Algorisys** product demos)
+- **Examples** - One page (`/examples`, the **Examples** toolbar button) for every ready-made animation: editable examples open in the editor as a new project, code examples show their timeline JSON and HTML to copy. Includes a full-page **Agency Landing Page** showcase and a **GSAP-style** section of 41 runnable `live.to()` demos (Flip layouts and shared elements, pinned horizontal scroll, line mask reveals, spring release, canvas from object tweens, motion paths, orbits, shape and menu morphs, scramble text, draggable throws, swipe cards, 3D card flips, magnetic button, proximity grid, marquee, split text, SVG draw…), and every card has **Copy code** for a complete standalone HTML page. Hover-to-play previews, search, and filters for kind and category (GSAP-style, Showcase, Basics, Motion, Text, UI, Loaders, Effects, Data, Camera, Scroll, and **Algorisys** product demos)
 
 ## Documentation
 
@@ -165,7 +165,7 @@ GitHub. No npm required.
 GSAP-shaped functions at the top level:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.56.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.57.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -186,7 +186,7 @@ GSAP-shaped functions at the top level:
 | `cdn/tinyfly.esm.js` | The same, as an ES module: `import { live } from '…/cdn/tinyfly.esm.js'` |
 | `cdn/tinyfly-player.iife.js` | Player only (~11 KB gzipped), for playing editor exports |
 
-Replace `@v0.56.0` with the version you want. **Pin a version in production**:
+Replace `@v0.57.0` with the version you want. **Pin a version in production**:
 a tag's files never change. `@main` follows the latest release, which jsDelivr
 caches for up to a day. Load one `tinyfly` global, not both.
 
@@ -474,6 +474,9 @@ timeline.addTrack({
 - `spring` — presets or stiffness/damping/mass, carrying the momentum of whatever it interrupts or a drag's release velocity
 - Flip shared elements — `data-flip-id` grows a thumbnail into a different hero element
 - Plain-object targets and `live.ticker` — drive canvas, Three.js or shader uniforms on the same frame as the DOM
+- Survives resizes and breakpoints — function values, `invalidateOnRefresh`, `splitText` `autoSplit`, `live.matchMedia()` (a real reduced-motion mode) and `live.context()` cleanup
+- `live.quickTo` for pointer and scroll-driven values; `snap`, `markers` and `containerAnimation` on scroll triggers
+- `live.imageSequence` scroll-scrubbed frame sequences, `live.pageTransition` route changes with shared elements, and `CustomEase` / `CustomBounce` / `CustomWiggle`
 
 See the **Agency Landing Page** showcase on the Examples page (`/showcase/agency-landing`).
 
@@ -569,7 +572,7 @@ tinyfly/
 - [ ] Load-time value resolution + responsive variants (the serializable answer to function values and `matchMedia`)
 - [x] Inertia / throw as an `inertia` track kind
 - [x] Text tracks: type-on and scramble text
-- [ ] CustomBounce, CustomWiggle (authoring-time generators)
+- [x] CustomEase, CustomBounce, CustomWiggle
 - [ ] Framework wrappers (React / Vue / Svelte)
 - [x] Scroll pinning (`scrollTrigger: { pin }`), split text, drawSVG, springs and shared-element Flip on `live` ([Phase 28](todo.md))
 - [ ] Interactive tutorial at `/learn`, from keyframes to an award-site page ([Phase 29](todo.md))

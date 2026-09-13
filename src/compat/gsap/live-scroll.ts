@@ -1,4 +1,6 @@
-import { ScrollDriver, type TriggerPosition } from '../../drivers'
+import { ScrollDriver, type ContainerAxis, type MarkerOptions, type SnapOption, type SnapTo, type TriggerPosition } from '../../drivers'
+import { getEasingFunction, type Timeline } from '../../engine'
+import { mapEase } from './ease-map'
 import type { Stage } from './stage'
 
 /**
@@ -49,11 +51,37 @@ export interface ScrollTriggerVars {
   toggleActions?: string
   /** Stop watching after the first enter (the animation keeps playing) */
   once?: boolean
+  /**
+   * After scrolling stops inside the range, scroll on to the nearest point: a
+   * progress step (`1 / 3`), progress points, `'labels'` (the timeline's labels),
+   * a function, or `{ snapTo, duration, delay, ease }` with an ease name.
+   */
+  snap?: LiveSnap
+  /** Show start and end markers while developing (`true`, or colours, indent, id) */
+  markers?: boolean | MarkerOptions
+  /**
+   * The animation moving this trigger's container sideways (a pinned horizontal
+   * section's tween). Start and end are then horizontal: `'left right'` is when the
+   * trigger's left edge reaches the viewport's right edge.
+   */
+  containerAnimation?: ContainerAnimation
   onUpdate?: (self: ScrollTriggerSelf) => void
   onEnter?: () => void
   onLeave?: () => void
   onEnterBack?: () => void
   onLeaveBack?: () => void
+}
+
+type SnapPoints = number | number[] | 'labels' | ((progress: number) => number)
+export type LiveSnap =
+  | SnapPoints
+  | { snapTo: SnapPoints; duration?: number | { min: number; max: number }; delay?: number; ease?: string }
+
+/** What `containerAnimation` needs from a live timeline. */
+export interface ContainerAnimation {
+  readonly timeline: Timeline
+  readonly scrollTrigger: ScrollDriver | undefined
+  progress(value?: number): number
 }
 
 /** What a scroll trigger controls: the parts of a live timeline it needs. */
@@ -66,6 +94,8 @@ export interface ScrollControlled {
   progress(value?: number): number
   reversed(): boolean
   invalidate?(): unknown
+  /** Label times as progress (0..1), for `snap: 'labels'` */
+  labelProgresses?(): number[]
 }
 
 type ToggleAction = 'play' | 'pause' | 'resume' | 'reverse' | 'restart' | 'reset' | 'complete' | 'none'
@@ -124,6 +154,8 @@ export function createScrollTrigger(
     if (vars.once && index === 0) queueMicrotask(() => driver.destroy())
   }
 
+  const container = vars.containerAnimation ? containerAxis(stage, vars.containerAnimation, trigger, warn) : undefined
+
   driver = new ScrollDriver({
     trigger,
     start: vars.start,
@@ -132,6 +164,9 @@ export function createScrollTrigger(
     pin: vars.pin === true ? true : element(vars.pin as string | Element | undefined),
     scroller: element(vars.scroller) as HTMLElement | undefined,
     onRefresh: vars.invalidateOnRefresh && animation?.invalidate ? () => animation.invalidate!() : undefined,
+    snap: vars.snap === undefined ? undefined : resolveSnap(vars.snap, animation),
+    markers: vars.markers,
+    container,
     onUpdate: (progress, velocity) => {
       if (animation && scrub !== false) animation.progress(progress)
       if (vars.onUpdate) {
@@ -152,4 +187,60 @@ export function createScrollTrigger(
 
   driver.start()
   return stage.own(driver)
+}
+
+/** Turn `snap` vars into the driver's option: label points and ease names resolved. */
+function resolveSnap(snap: LiveSnap, animation: ScrollControlled | undefined): SnapOption {
+  // Labels are read when snapping, so a rebuilt timeline's labels are the ones used.
+  const toSnapTo = (value: SnapPoints): SnapTo =>
+    value === 'labels' ? (progress) => nearest(progress, animation?.labelProgresses?.() ?? []) : value
+  if (typeof snap !== 'object' || Array.isArray(snap)) return toSnapTo(snap)
+  const mapped = snap.ease ? mapEase(snap.ease) : undefined
+  return {
+    snapTo: toSnapTo(snap.snapTo),
+    duration: snap.duration,
+    delay: snap.delay,
+    ease: mapped ? mapped.fn ?? getEasingFunction(mapped.easing) : undefined,
+  }
+}
+
+function nearest(progress: number, points: number[]): number {
+  return points.reduce((best, point) => (Math.abs(point - progress) < Math.abs(best - progress) ? point : best), points[0] ?? progress)
+}
+
+/**
+ * How a container animation moves `trigger` along x: the tracks animating `x` on
+ * the trigger's ancestors (usually the one track sliding the row), sampled at any
+ * progress of the container's timeline.
+ */
+function containerAxis(stage: Stage, animation: ContainerAnimation, trigger: Element, warn: (message: string) => void): ContainerAxis | undefined {
+  const movers = () =>
+    animation.timeline
+      .getTracks({ property: 'x' })
+      .map((track) => track.target)
+      .filter((name) => {
+        const element = stage.elementFor(name)
+        return !!element && element !== trigger && element.contains(trigger)
+      })
+
+  if (movers().length === 0) {
+    warn('gsap-compat: containerAnimation does not move an ancestor of the trigger along x')
+  }
+  return {
+    range: () => {
+      const driver = animation.scrollTrigger
+      if (!driver) warn('gsap-compat: containerAnimation needs its own scrollTrigger (created before this one)')
+      return { start: driver?.startOffset ?? 0, end: driver?.endOffset ?? 0 }
+    },
+    progress: () => animation.progress(),
+    shiftAt: (progress) => {
+      const state = animation.timeline.getStateAtTime(progress * animation.timeline.duration)
+      let shift = 0
+      for (const name of movers()) {
+        const value = state.values.get(name)?.get('x')
+        if (typeof value === 'number') shift += value
+      }
+      return shift
+    },
+  }
 }

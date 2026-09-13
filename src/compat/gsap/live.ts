@@ -14,6 +14,10 @@ import { createScrollTrigger, type ScrollTriggerVars } from './live-scroll'
 import { resolveDrawSvg } from './draw-svg-vars'
 import { ScrollDriver } from '../../drivers'
 import { LiveContext, LiveMatchMedia, type Revertible } from './live-context'
+import { ImageSequence, type ImageSequenceOptions } from './image-sequence'
+import { pageTransition, type PageTransitionOptions } from './live-transition'
+import { CustomBounce, CustomEase, CustomWiggle } from './custom-eases'
+import type { CubicBezierPoints, CustomBounceOptions, CustomWiggleOptions } from '../../engine'
 
 /**
  * The live facade: GSAP-style calls that play on real elements straight away.
@@ -95,7 +99,7 @@ export class LiveTimeline {
         // An object's own property is the truth: code outside tinyfly may have
         // changed it since the last frame.
         const object = stage.objectFor(target)
-        if (object) return animatableValue(object[property])
+        if (object) return animatableValue((object as Record<string, unknown>)[property])
 
         const applied = stage.appliedValue(target, property)
         if (applied !== undefined) return applied
@@ -238,6 +242,12 @@ export class LiveTimeline {
     return this.play()
   }
 
+  /** Label times as progress (0..1), in order. */
+  labelProgresses(): number[] {
+    const duration = this.timeline.duration
+    return duration > 0 ? this.compat.labelTimes().map((time) => time / duration) : []
+  }
+
   /** Whether the timeline is set to play backwards. */
   reversed(): boolean {
     return this.timeline.direction === 'reverse'
@@ -248,6 +258,7 @@ export class LiveTimeline {
     this.autoplayPending = false
     this.compat.seek(position)
     this.stage.render(this.timeline)
+    this.options.onUpdate?.()
     return this
   }
 
@@ -257,6 +268,8 @@ export class LiveTimeline {
     this.autoplayPending = false
     const result = this.compat.progress(value)
     this.stage.render(this.timeline)
+    // A scroll scrub moves the playhead this way, so updates must fire here too.
+    this.options.onUpdate?.()
     return result
   }
 
@@ -428,6 +441,22 @@ export interface LiveApi {
    * move or scroll event.
    */
   quickTo(target: TargetInput, property: string, vars?: QuickToVars): QuickTo
+  /**
+   * A canvas showing one frame of an image sequence; tween or scrub its `frame`.
+   * Selectors resolve within the stage's root.
+   */
+  imageSequence(canvas: string | HTMLCanvasElement, options: ImageSequenceOptions): ImageSequence
+  /**
+   * Animate a client-side page change: the old view out, `update()`, shared elements
+   * carried across by `data-flip-id`, the new view in. Resolves when it has finished.
+   */
+  pageTransition(options: PageTransitionOptions): Promise<void>
+  /** Register a custom ease from SVG path data or bezier points (GSAP's CustomEase.create). Returns the name. */
+  customEase(name: string, definition: string | CubicBezierPoints): string
+  /** Register a bouncing ease (GSAP's CustomBounce.create). Returns the name. */
+  customBounce(name: string, options?: CustomBounceOptions): string
+  /** Register a wiggle ease that returns to the start (GSAP's CustomWiggle.create). Returns the name. */
+  customWiggle(name: string, options?: CustomWiggleOptions): string
   /** Run a callback every frame, after animations are applied (GSAP's `gsap.ticker`). */
   readonly ticker: Ticker
   /** Record where elements appear, before a layout change (GSAP's `Flip.getState`). */
@@ -480,6 +509,15 @@ export function createLive(stage: Stage = new Stage()): LiveApi {
       return context
     },
     matchMedia: (scope) => new LiveMatchMedia(stage, scope),
+    customEase: CustomEase.create,
+    customBounce: CustomBounce.create,
+    customWiggle: CustomWiggle.create,
+    pageTransition: (options) => pageTransition(api, stage, (timelineOptions) => new LiveTimeline(stage, timelineOptions), options),
+    imageSequence: (canvas, options) => {
+      const element = typeof canvas === 'string' ? (stage.collector?.scope ?? stage.root).querySelector(canvas) : canvas
+      if (!(element instanceof HTMLCanvasElement)) throw new Error(`gsap-compat: imageSequence needs a <canvas>, got ${String(canvas)}`)
+      return track(new ImageSequence(element, options))
+    },
     quickTo: (target, property, vars = {}) => {
       const tween = new LiveTimeline(stage, { paused: true })
       const [name] = stage.resolveTargets(target)

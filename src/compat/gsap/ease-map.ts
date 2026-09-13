@@ -17,8 +17,12 @@ import type { EasingType, EasingFunction, CubicBezierPoints } from '../../engine
  * keyframes, which is why baking is opt-in.
  */
 
-/** Eases with no closed form in our easing set; these must be baked. */
-export type NonBezierEase = 'elastic' | 'bounce' | 'steps'
+/**
+ * Eases with no closed form in our easing set; these must be baked. `custom` is a
+ * registered curve (CustomEase, CustomBounce, CustomWiggle): those are always
+ * baked, since smoothing a curve someone drew would silently change it.
+ */
+export type NonBezierEase = 'elastic' | 'bounce' | 'steps' | 'custom'
 
 export interface MappedEase {
   /** A serializable easing, when one exists */
@@ -155,6 +159,8 @@ export function steps(count: number): EasingFunction {
  * ease should not stop an animation from being built.
  */
 export function mapEase(name: string): MappedEase {
+  const registered = customEases.get(name.trim().toLowerCase())
+  if (registered) return registered
   const key = normaliseEaseName(name)
 
   // steps(n) carries its own argument.
@@ -192,4 +198,19 @@ export function mapEase(name: string): MappedEase {
 /** Whether an ease name needs baking rather than a serializable easing. */
 export function easeRequiresBaking(name: string): boolean {
   return mapEase(name).requiresBaking !== undefined
+}
+
+/** Eases registered by name (`CustomEase.create` and friends). */
+const customEases = new Map<string, MappedEase>()
+
+/**
+ * Register an ease under a name, for use as `ease: name`. A cubic-bezier is kept
+ * exact; any other curve is sampled into keyframes when a tween uses it.
+ */
+export function registerEase(name: string, ease: { fn: EasingFunction; bezier?: CubicBezierPoints }): string {
+  customEases.set(
+    name.trim().toLowerCase(),
+    ease.bezier ? { easing: { type: 'cubic-bezier', points: ease.bezier }, fn: ease.fn } : { fn: ease.fn, requiresBaking: 'custom' }
+  )
+  return name
 }

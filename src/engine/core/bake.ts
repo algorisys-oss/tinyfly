@@ -135,7 +135,9 @@ export function bakeEasing<T extends Keyframe['value']>(
     })
   }
 
-  out.push({ ...to, easing: 'linear' })
+  // Most eases end at 1, which is exactly `to`. A few (a wiggle) end elsewhere.
+  const end = easingFn(1)
+  out.push({ ...to, ...(end !== 1 && { value: interpolator(from.value, to.value, end) as T }), easing: 'linear' })
   return out
 }
 

@@ -188,6 +188,11 @@ export class CompatTimeline {
   }
 
   /** Time of a label, in milliseconds. */
+  /** Every label's time in milliseconds, in time order. */
+  labelTimes(): number[] {
+    return [...this.labels.values()].sort((a, b) => a - b)
+  }
+
   labelTime(name: string): number | undefined {
     return this.labels.get(name)
   }
@@ -486,7 +491,7 @@ export class CompatTimeline {
 
     const mapped = typeof rawEase === 'string' ? mapEase(rawEase) : undefined
 
-    if (mapped?.requiresBaking && this.options.bakeEases && mapped.fn) {
+    if (mapped?.requiresBaking && (this.options.bakeEases || mapped.requiresBaking === 'custom') && mapped.fn) {
       return [
         first,
         ...bakeEasing(first, { time: duration, value: to }, mapped.fn, {

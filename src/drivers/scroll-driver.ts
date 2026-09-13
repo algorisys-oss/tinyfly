@@ -1,7 +1,9 @@
 import type { Timeline } from '../engine'
 import type { Driver } from './types'
-import { triggerDistance, clamp01, smoothToward, type TriggerPosition } from './scroll-math'
+import { triggerDistance, clamp01, smoothToward, parseTrigger, containerProgressAt, type TriggerPosition } from './scroll-math'
 import { ScrollPin } from './scroll-pin'
+import { ScrollAnimator, snapConfig, snapDuration, snapProgress, type SnapOption } from './scroll-snap'
+import { ScrollMarkers, type MarkerGeometry, type MarkerOptions } from './scroll-markers'
 
 /**
  * Ties a timeline's playhead to scroll position ("scrubbing"), optionally
@@ -54,6 +56,21 @@ export interface ScrollDriverOptions {
   /** Scroll container (default: the window) */
   scroller?: HTMLElement | null
   /**
+   * After scrolling stops inside the range, scroll on to the nearest point: a
+   * progress step (`0.25`), a list of progress points, a function, or
+   * `{ snapTo, duration, delay, ease }`.
+   */
+  snap?: SnapOption
+  /** Show start and end markers while developing */
+  markers?: boolean | MarkerOptions
+  /**
+   * For a trigger inside a horizontally moving container (a pinned section whose
+   * track slides sideways): the container's scroll range, its current progress, and
+   * how far it has moved the trigger along x at a progress. Start and end then use
+   * horizontal edges (`'left right'`, the defaults, to `'right left'`).
+   */
+  container?: ContainerAxis
+  /**
    * Called when progress (0..1) or velocity changes. Velocity is the scroll speed
    * in pixels per second, positive scrolling down; it drops back to 0 shortly
    * after scrolling stops, with one last call.
@@ -72,6 +89,12 @@ export interface ScrollDriverOptions {
   onEnterBack?: () => void
   /** Scrolled back out of the active range, going up */
   onLeaveBack?: () => void
+}
+
+export interface ContainerAxis {
+  range(): { start: number; end: number }
+  progress(): number
+  shiftAt(progress: number): number
 }
 
 /** Where the scroll position is relative to the range. */
@@ -133,9 +156,17 @@ export class ScrollDriver implements Driver {
   private lastFrameTime: number | null = null
   private readonly onScroll = () => this.update()
 
+  /** Speed when scrolling last stopped, for choosing a snap point */
+  private releaseVelocity = 0
+  private readonly snapper: ScrollAnimator
+  private snapTimer: ReturnType<typeof setTimeout> | null = null
+  private markers: ScrollMarkers | null = null
+  private markerGeometry: MarkerGeometry | null = null
+
   constructor(options: ScrollDriverOptions) {
     this.timeline = options.timeline
     this.options = options
+    this.snapper = new ScrollAnimator((offset) => this.scrollTo(offset), typeof window !== 'undefined' ? window : null)
   }
 
   start(): void {
@@ -147,7 +178,10 @@ export class ScrollDriver implements Driver {
     this.timeline?.pause()
 
     const pinned = this.options.pin === true ? this.options.trigger : this.options.pin || null
-    if (pinned) this.pin = new ScrollPin(pinned as HTMLElement)
+    if (pinned && !this.options.container) this.pin = new ScrollPin(pinned as HTMLElement)
+    if (this.options.markers && typeof document !== 'undefined') {
+      this.markers = new ScrollMarkers(document, this.options.scroller ?? null, this.options.markers)
+    }
 
     this.scrollTarget()?.addEventListener('scroll', this.onScroll, { passive: true })
     if (started.length === 0 && typeof window !== 'undefined') {
@@ -172,6 +206,9 @@ export class ScrollDriver implements Driver {
     this.stopSmoothing()
     if (this.idleTimer !== null) clearTimeout(this.idleTimer)
     this.idleTimer = null
+    if (this.snapTimer !== null) clearTimeout(this.snapTimer)
+    this.snapTimer = null
+    this.snapper.cancel()
   }
 
   /** Stop, and remove any pin spacer. */
@@ -179,6 +216,17 @@ export class ScrollDriver implements Driver {
     this.stop()
     this.pin?.destroy()
     this.pin = null
+    this.markers?.destroy()
+    this.markers = null
+  }
+
+  /** The range's start and end, as scroll offsets. */
+  get startOffset(): number {
+    return this.startPx
+  }
+
+  get endOffset(): number {
+    return this.endPx
   }
 
   /**
@@ -212,7 +260,9 @@ export class ScrollDriver implements Driver {
 
     this.pin?.release()
     const rect = this.triggerRect()
-    if (rect) {
+    if (rect && this.options.container) {
+      this.measureInContainer(this.options.container)
+    } else if (rect) {
       const viewport = this.viewportHeight()
       this.startPx = scroll + triggerDistance(rect, viewport, resolvePosition(this.options.start) ?? 'top bottom')
       this.endPx = this.resolveEnd(rect, viewport, scroll)
@@ -222,7 +272,9 @@ export class ScrollDriver implements Driver {
         const pinRect = this.relativeRect(this.pin.element.getBoundingClientRect())
         this.pin.apply(pinRect.top - (this.startPx - scroll), this.endPx - this.startPx)
       }
+      this.markerGeometry = this.markers ? this.markersFor(viewport) : null
     }
+    if (this.markers && this.markerGeometry) this.markers.place(this.markerGeometry, scroll)
 
     this.lastScroll = null
     // The first measurement shows the page's position straight away rather
@@ -248,8 +300,9 @@ export class ScrollDriver implements Driver {
 
   // --- internals ----------------------------------------------------------
 
-  private updateFrom(scroll: number, snap: boolean): void {
+  private updateFrom(scroll: number, immediate: boolean): void {
     this.trackVelocity(scroll)
+    if (this.markers && this.markerGeometry) this.markers.follow(this.markerGeometry, scroll)
 
     const span = this.endPx - this.startPx
     const previousZone = this.zone
@@ -257,7 +310,7 @@ export class ScrollDriver implements Driver {
     this.zone = span > 0 ? (scroll <= this.startPx ? 'before' : scroll >= this.endPx ? 'after' : 'active') : scroll >= this.startPx ? 'after' : 'before'
     this.fireBoundaryCallbacks(previousZone, this.zone)
 
-    if (snap || this.smoothing() <= 0) {
+    if (immediate || this.smoothing() <= 0) {
       this.displayProgress = this.targetProgress
       this.applyProgress()
     } else {
@@ -310,8 +363,10 @@ export class ScrollDriver implements Driver {
     if (this.idleTimer !== null) clearTimeout(this.idleTimer)
     this.idleTimer = setTimeout(() => {
       this.idleTimer = null
+      this.releaseVelocity = this.velocityPxPerSecond
       this.velocityPxPerSecond = 0
       this.emitUpdate()
+      this.scheduleSnap()
     }, IDLE_MS)
   }
 
@@ -333,6 +388,80 @@ export class ScrollDriver implements Driver {
       onLeave?.()
     } else {
       onLeaveBack?.()
+    }
+  }
+
+  /** Scrolling has stopped: settle on the nearest snap point, if there is one. */
+  private scheduleSnap(): void {
+    const option = this.options.snap
+    if (option === undefined || this.snapper.active) return
+    const config = snapConfig(option)
+    const run = () => {
+      this.snapTimer = null
+      const span = this.endPx - this.startPx
+      const scroll = this.scrollPosition()
+      if (!this.running || span <= 0 || scroll <= this.startPx || scroll >= this.endPx) return
+      const progress = (scroll - this.startPx) / span
+      const target = this.startPx + snapProgress(progress, this.releaseVelocity / span, config.snapTo) * span
+      if (Math.abs(target - scroll) < 1) return
+      this.snapper.animate(scroll, target, snapDuration(config, target - scroll, this.viewportHeight()), config.ease)
+    }
+    if (config.delay) this.snapTimer = setTimeout(run, config.delay * 1000)
+    else run()
+  }
+
+  private scrollTo(offset: number): void {
+    const scroller = this.options.scroller
+    if (scroller) {
+      if (typeof scroller.scrollTo === 'function') scroller.scrollTo({ top: offset, behavior: 'instant' })
+      else scroller.scrollTop = offset
+    } else if (typeof window !== 'undefined') {
+      window.scrollTo({ top: offset, behavior: 'instant' })
+    }
+  }
+
+  /**
+   * Resolve start and end for a trigger inside a horizontally moving container:
+   * find the container progress where each horizontal position fires, and turn
+   * it into the container's scroll offsets.
+   */
+  private measureInContainer(container: ContainerAxis): void {
+    const el = this.options.trigger as Element & { getBoundingClientRect?: () => DOMRect }
+    if (typeof el?.getBoundingClientRect !== 'function') return
+    const box = el.getBoundingClientRect()
+    const hostLeft = this.options.scroller?.getBoundingClientRect?.().left ?? 0
+    const viewportWidth = this.options.scroller ? this.options.scroller.clientWidth : typeof window !== 'undefined' ? window.innerWidth : 0
+    // Where the trigger would be with the container at rest.
+    const left = box.left - hostLeft - container.shiftAt(container.progress())
+    const { start, end } = container.range()
+    const toOffset = (progress: number) => start + progress * (end - start)
+
+    const startProgress = containerProgressAt(left, box.width, viewportWidth, resolvePosition(this.options.start) ?? 'left right', container.shiftAt)
+    this.startPx = toOffset(startProgress)
+    const endPosition = resolvePosition(this.options.end) ?? 'right left'
+    const relative = typeof endPosition === 'string' ? endPosition.trim().match(/^\+=\s*(-?[\d.]+)\s*(px)?$/) : null
+    this.endPx = relative
+      ? this.startPx + Number.parseFloat(relative[1])
+      : toOffset(containerProgressAt(left, box.width, viewportWidth, endPosition, container.shiftAt))
+    this.markerGeometry = null
+  }
+
+  /** Where the markers go: the element points on the page, and the viewport lines they meet. */
+  private markersFor(viewport: number): MarkerGeometry {
+    const line = (position: TriggerPosition | (() => TriggerPosition) | undefined, fallback: TriggerPosition) => {
+      const resolved = resolvePosition(position) ?? fallback
+      if (typeof resolved === 'number') return 0
+      if (/^\s*\+=/.test(resolved)) return undefined
+      const parsed = parseTrigger(resolved)
+      return viewport * parsed.viewportFraction - parsed.offsetPx
+    }
+    const startViewport = line(this.options.start, 'top bottom') ?? 0
+    const endViewport = line(this.options.end, 'bottom top') ?? startViewport
+    return {
+      startViewport,
+      endViewport,
+      startPage: this.startPx + startViewport,
+      endPage: this.endPx + endViewport,
     }
   }
 

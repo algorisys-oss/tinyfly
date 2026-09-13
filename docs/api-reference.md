@@ -1681,6 +1681,9 @@ interface ScrollDriverOptions {
   end?: TriggerPosition          // 'bottom top'; '+=600' / '+=150%' from the start
   scrub?: boolean | number       // true exact; seconds of smoothing
   pin?: boolean | Element        // hold the trigger (or an element) through the range
+  snap?: SnapOption              // number | number[] | (p) => number | { snapTo, duration, delay, ease }
+  markers?: boolean | MarkerOptions
+  container?: ContainerAxis      // { range(), progress(), shiftAt(progress) } for horizontal triggers
   scroller?: HTMLElement | null  // default: the window
   onUpdate?: (progress: number, velocity: number) => void   // velocity px/s, 0 after scrolling stops
   onEnter?, onLeave?, onEnterBack?, onLeaveBack?: () => void
@@ -1693,6 +1696,7 @@ interface ScrollDriverOptions {
 | `refresh()` | Re-measure (automatic on resize); `sample()` is the same |
 | `update(scrollPosition?)` | Update from the scroll offset — no layout reads; pass a value to drive it from a virtual scroller |
 | `ScrollDriver.refreshAll()` | Re-measure every started driver, in start order |
+| `startOffset` / `endOffset` | The range as scroll offsets |
 | `destroy()` | Stop and remove any pin spacer |
 
 `ScrollPin` (also exported) is the sticky-spacer pin the driver uses.
@@ -1897,6 +1901,10 @@ interface ScrollTriggerVars {
   scroller?: string | HTMLElement
   toggleActions?: string         // 'play none none none'
   once?: boolean
+  snap?: number | number[] | 'labels' | ((progress: number) => number)
+       | { snapTo, duration?: number | { min, max }, delay?: number, ease?: string }
+  markers?: boolean | { startColor?, endColor?, fontSize?, indent?, id? }
+  containerAnimation?: LiveTimeline   // triggers inside a horizontally sliding row
   onUpdate?: (self: { progress: number; velocity: number; direction: 1 | -1 }) => void
   onEnter?, onLeave?, onEnterBack?, onLeaveBack?: () => void
 }
@@ -1934,6 +1942,64 @@ interface SplitTextResult {
 
 Lines are measured from layout once, at split time. See
 [gsap-compat.md](gsap-compat.md#split-text) for what the markup looks like.
+
+### Custom eases
+
+```typescript
+// tinyfly (engine): pure generators
+customEase(definition: string | CubicBezierPoints): { fn: EasingFunction; bezier?: CubicBezierPoints }
+customBounce(options?: { strength?: number }): EasingFunction
+customWiggle(options?: { wiggles?: number; type?: 'easeOut' | 'easeInOut' | 'uniform' }): EasingFunction
+
+// tinyfly/gsap-compat: register by name
+CustomEase.create(name, definition): string      // also live.customEase(name, definition)
+CustomBounce.create(name, options?): string      // live.customBounce
+CustomWiggle.create(name, options?): string      // live.customWiggle
+registerEase(name, { fn, bezier? }): string
+```
+
+`bakeEasing` ends on the ease's own final value, so an ease that does not end at 1
+(a wiggle) bakes correctly.
+
+### Page transitions
+
+```typescript
+live.pageTransition(options: PageTransitionOptions): Promise<void>
+
+interface PageTransitionOptions {
+  update: () => void | Promise<void>
+  from?: TargetInput
+  to?: TargetInput | (() => TargetInput)
+  shared?: string                 // selector; matched by data-flip-id
+  leave?: TweenVars | false       // { opacity: 0, y: -16 }
+  enter?: TweenVars | false       // { opacity: 0, y: 16 }
+  duration?: number               // 0.35 per phase
+  ease?: string                   // 'power2.inOut'
+  native?: boolean                // View Transitions API when available
+}
+```
+
+### Image sequences
+
+```typescript
+live.imageSequence(canvas: string | HTMLCanvasElement, options: ImageSequenceOptions): ImageSequence
+
+interface ImageSequenceOptions {
+  frames: number
+  url: (index: number) => string
+  fit?: 'cover' | 'contain'      // 'cover'
+  concurrency?: number           // 6
+  onProgress?: (loaded: number, total: number) => void
+}
+
+class ImageSequence {
+  frame: number                  // set it (or tween it) to draw the nearest frame
+  readonly frames: number
+  readonly loaded: number
+  resize(): void
+  destroy(): void
+}
+```
 
 ### quickTo
 

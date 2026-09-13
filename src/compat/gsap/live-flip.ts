@@ -202,7 +202,7 @@ function flipId(element: Element): string | undefined {
 }
 
 /** The natural value each entrance property animates to. */
-function restValues(from: TweenVars): TweenVars {
+export function restValues(from: TweenVars): TweenVars {
   const rest: TweenVars = {}
   for (const property of Object.keys(from)) {
     rest[property] = property === 'opacity' || property.startsWith('scale') ? 1 : 0

@@ -9,7 +9,7 @@ import { Stage, type FrameScheduler } from './stage'
  */
 
 let scrollY = 0
-const layout = new Map<Element, { top: number; height: number }>()
+const layout = new Map<Element, { top: number; height: number; left?: number; width?: number }>()
 let pending: ((t: number) => void) | null = null
 let now = 0
 const scheduler: FrameScheduler = { request: (cb) => ((pending = cb), 1), cancel: () => (pending = null) }
@@ -40,7 +40,9 @@ beforeEach(() => {
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
     const own = layout.get(this) ?? (this.parentElement ? layout.get(this.parentElement) : undefined) ?? { top: 0, height: 0 }
     const top = own.top - scrollY
-    return { top, bottom: top + own.height, height: own.height, left: 0, right: 0, width: 0, x: 0, y: top, toJSON: () => ({}) } as DOMRect
+    const left = own.left ?? 0
+    const width = own.width ?? 0
+    return { top, bottom: top + own.height, height: own.height, left, right: left + width, width, x: left, y: top, toJSON: () => ({}) } as DOMRect
   })
   vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (this: HTMLElement) {
     return layout.get(this)?.height ?? 0
@@ -173,5 +175,72 @@ describe('live.scrollTrigger', () => {
       expect(tl.scrollTrigger).toBeUndefined()
       expect(warn).toHaveBeenCalledWith(expect.stringContaining('#nope'))
     })
+  })
+})
+
+describe('snap with labels, and containerAnimation', () => {
+  it("snap: 'labels' settles on the nearest label after scrolling stops", async () => {
+    vi.useFakeTimers()
+    let clock = 0
+    vi.spyOn(performance, 'now').mockImplementation(() => clock)
+    const scrollToSpy = vi.fn()
+    window.scrollTo = scrollToSpy as unknown as typeof window.scrollTo
+
+    live
+      .timeline({ scrollTrigger: { trigger: '#panel', start: 'top top', end: '+=1000', scrub: true, snap: { snapTo: 'labels', duration: 0 } } })
+      .addLabel('a')
+      .to('#box', { x: 100, duration: 1 })
+      .addLabel('b')
+      .to('#box', { x: 200, duration: 3 })
+      .addLabel('c')
+    await Promise.resolve()
+
+    clock = 16
+    scrollY = 1200
+    window.dispatchEvent(new Event('scroll'))
+    clock = 32
+    scrollY = 1210 // progress 0.21: label b is at 0.25
+    window.dispatchEvent(new Event('scroll'))
+    vi.advanceTimersByTime(200)
+    expect(scrollToSpy).toHaveBeenLastCalledWith({ top: 1250, behavior: 'instant' })
+    vi.useRealTimers()
+  })
+
+  it('containerAnimation: a horizontal trigger fires when the moving row brings it into view', async () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 800 })
+    document.body.innerHTML = '<section id="h"><div id="row"><div id="item"></div></div></section>'
+    layout.set(document.getElementById('h')!, { top: 1000, height: 500 })
+    layout.set(document.getElementById('item')!, { top: 1000, height: 100, left: 1500, width: 100 })
+
+    const row = live
+      .timeline({ scrollTrigger: { trigger: '#h', start: 'top top', end: '+=2000', scrub: true } })
+      .to('#row', { x: -2000, ease: 'none', duration: 1 })
+    await Promise.resolve()
+
+    const onEnter = vi.fn()
+    live.to('#item', { opacity: 0.5, duration: 0.1, scrollTrigger: { trigger: '#item', containerAnimation: row, start: 'left right', onEnter } })
+    await Promise.resolve()
+
+    // The item's left edge meets the viewport's right edge at row progress 0.35:
+    // 1000 + 0.35 × 2000 = 1700px of page scroll.
+    scrollY = 1650
+    window.dispatchEvent(new Event('scroll'))
+    expect(onEnter).not.toHaveBeenCalled()
+    scrollY = 1750
+    window.dispatchEvent(new Event('scroll'))
+    expect(onEnter).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('onUpdate while scrubbing', () => {
+  it('fires as scroll moves the playhead', async () => {
+    const onUpdate = vi.fn()
+    live
+      .timeline({ onUpdate, scrollTrigger: { trigger: '#panel', start: 'top top', end: '+=1000', scrub: true } })
+      .to('#box', { x: 100, duration: 1 })
+    await Promise.resolve()
+    const before = onUpdate.mock.calls.length
+    scrollTo(1500)
+    expect(onUpdate.mock.calls.length).toBeGreaterThan(before)
   })
 })

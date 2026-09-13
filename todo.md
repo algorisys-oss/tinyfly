@@ -989,8 +989,7 @@ These compile to keyframes, so they fit the model with no engine change at all.
 Cheapest wins in 27B.
 
 - [ ] **ScrambleText** — character scramble resolving to the target string.
-- [ ] **CustomBounce / CustomWiggle** — parameterised generators producing a
-      keyframe sequence or a sampled ease.
+- [x] **CustomBounce / CustomWiggle** — done in 28B.7 (with CustomEase).
 - [ ] All three belong in an `authoring/generators` module beside the existing
       typewriter and split-text builders.
 
@@ -1389,7 +1388,7 @@ value for effort.
 
 ---
 
-## Phase 28B: Production robustness for award-site pages (before the tutorial)
+## Phase 28B: Production robustness for award-site pages (before the tutorial) ✓
 
 Phase 28 added the effects. This phase makes a real site built with them survive
 resizes, phone rotation, breakpoints, reduced-motion settings and route changes
@@ -1436,31 +1435,61 @@ without hand-written re-setup, and replaces patterns the tutorial should not tea
       showcase's marquee lean and magnetic button, use it
 - [x] 5 tests (`quick-to.test.ts`), docs
 
-### 28B.4 — More scroll trigger options
+### 28B.4 — More scroll trigger options ✓
 
-- [ ] `snap`: a number, an array of progress points, `'labels'`, or `{ snapTo, duration, ease }`
-      — after scrolling stops, scroll to the nearest point
-- [ ] `markers`: start and end lines for the scroller and trigger while developing
-- [ ] `containerAnimation`: triggers inside a horizontally scrolling pinned section,
-      measured along that animation's travel
+- [x] `snap`: step, points, function, `'labels'` (live), or `{ snapTo, duration, delay, ease }`.
+      Chosen after scrolling stops, projecting the release speed so flicks carry on
+      (`snapProgress`, pure); scrolled by `ScrollAnimator`, which gives way to
+      wheel, touch, pointer or key input
+- [x] `markers`: scroller-start / scroller-end lines fixed to the viewport, and start
+      / end markers on the page (`ScrollMarkers`); inside element scrollers too; removed
+      on destroy
+- [x] `containerAnimation`: horizontal start/end solved by bisection against the row's
+      own x tracks (`containerProgressAt`, pure) and mapped onto the row's scroll range
+- [x] Tests (`scroll-snap.test.ts`, driver snap and markers, live `'labels'` and
+      containerAnimation); the Pinned Horizontal Scroll demo snaps to panels and reveals
+      titles through containerAnimation, checked in Chromium, Firefox and WebKit
 
-### 28B.5 — Image-sequence scrubbing
+### 28B.5 — Image-sequence scrubbing ✓
 
-- [ ] `live.imageSequence(canvas, { urls | pattern, frames })` returns an object whose
-      `frame` can be tweened or scrubbed. It preloads (nearby frames first),
-      draws to the canvas with cover fit, and handles the device pixel ratio
+- [x] `live.imageSequence(canvas, { frames, url, fit, concurrency, onProgress })`: an
+      object whose `frame` setter draws the nearest frame (cover or contain, device
+      pixel ratio, resize); loads nearest-first a few at a time and draws the closest
+      loaded frame meanwhile; `destroy()`; collected by contexts; `tinyfly.imageSequence`
+- [x] Object targets accept any object (class instances with setters), not only records
+- [x] Fix: `onUpdate` now fires when a live timeline is moved by `progress()` / `seek()`,
+      which is how scroll scrubbing moves it (GSAP fires it there too)
+- [x] 5 tests (`image-sequence.test.ts`) and a scrub `onUpdate` test; "Image Sequence
+      Scrub" demo (self-generated frames) with a browser check that scrolling changes the
+      drawn frame in Chromium, Firefox and WebKit
 
-### 28B.6 — Page transitions
+### 28B.6 — Page transitions ✓
 
-- [ ] A route-transition helper: animate the old view out and the new view in around a
-      DOM swap, using the View Transitions API when present; shared elements across
-      the swap through `data-flip-id`
+- [x] `live.pageTransition({ update, from, to, shared, leave, enter, duration, ease, native })`:
+      old view out → `update()` (sync or async) → shared elements flip across by
+      `data-flip-id` while the new view comes in; resolves when done; `tinyfly.pageTransition`
+- [x] With `shared`, leave/enter animate the view's parts that don't contain shared
+      elements, so those fly on their own (found by the browser check: the page's
+      drop-in dragged the hero 16px)
+- [x] `native: true` hands it to the View Transitions API (names from flip ids), falling
+      back to the tinyfly version elsewhere
+- [x] 4 tests (`live-transition.test.ts`); "Page Transition" demo with a browser check
+      (hero starts on the thumbnail and lands on its layout at 0.00px in Chromium,
+      Firefox and WebKit); the copied-page test caught a demo variable outside the
+      copied code
 
-### 28B.7 — Custom curves
+### 28B.7 — Custom curves ✓
 
-- [ ] `CustomEase` from SVG path data or bezier points, serialized as sampled
-      keyframes or a cubic-bezier when it is one; CustomBounce and CustomWiggle
-      (supersedes 27B.3)
+- [x] Engine generators (`engine/authoring/custom-ease.ts`): `customEase` from SVG path
+      data (any scale or y direction, normalised) or bezier points, with a single cubic
+      kept as an exact cubic-bezier; `customBounce({ strength })` with physically timed
+      rebounds; `customWiggle({ wiggles, type })` ending at the start value
+- [x] `CustomEase.create` / `CustomBounce.create` / `CustomWiggle.create` (and
+      `live.customEase` etc., `tinyfly.CustomEase`) register eases by name; custom
+      curves are always baked into keyframes, never smoothed
+- [x] Fix: `bakeEasing` ends on the ease's final value (a wiggle ended on `to`)
+- [x] Tests (`custom-ease.test.ts`, `custom-eases.test.ts`); "Custom Eases" demo;
+      supersedes 27B.3's CustomBounce / CustomWiggle item
 
 ### Sequencing
 

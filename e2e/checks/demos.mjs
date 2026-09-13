@@ -38,7 +38,7 @@ export default {
       const seen = new Set([await snap()])
 
       // Interact the way a person would: press buttons and clickable parts, then drag and scroll.
-      const clickables = await page.locator('#demo button, #demo .fe-block, #demo .cs-stack, #demo .sg-thumb').all()
+      const clickables = await page.locator('#demo button, #demo .fe-block, #demo .cs-stack, #demo .sg-thumb, #demo .pt-row').all()
       for (const el of clickables.slice(0, 3)) {
         try {
           await el.click({ timeout: 1000 })
@@ -129,7 +129,8 @@ export default {
     })
     await page.evaluate(() => window.__teardown?.())
 
-    // Scroll pinning: the section holds still while the panels travel, then scrolls away.
+    // Scroll pinning: the section holds still while the panels travel, snaps to a
+    // whole panel when scrolling stops, and titles rise in as panels arrive.
     await mount(page, 'live-pinned-horizontal')
     await page.waitForTimeout(100)
     const pin = await page.evaluate(async () => {
@@ -140,24 +141,56 @@ export default {
       const settle = () => new Promise((r) => setTimeout(r, 2000))
       const offset = () => section.getBoundingClientRect().top - scroller.getBoundingClientRect().top
       const trackX = () => new DOMMatrix(getComputedStyle(track).transform).m41
+      const titleOpacities = () => [...document.querySelectorAll('.ph-panel strong')].map((t) => Number(getComputedStyle(t).opacity))
 
       const pinStart = 90 // the note above the section is 90px tall
-      scroller.scrollTop = pinStart + distance / 2
-      scroller.dispatchEvent(new Event('scroll'))
+      // Scroll gently to 40% of the travel; scrolling stops there.
+      for (let y = 0; y <= pinStart + distance * 0.4; y += 12) {
+        scroller.scrollTop = y
+        scroller.dispatchEvent(new Event('scroll'))
+        await new Promise((r) => requestAnimationFrame(r))
+      }
       await settle()
-      const mid = { offset: offset(), x: trackX() }
+      const snapped = { offset: offset(), progress: (scroller.scrollTop - pinStart) / distance, x: trackX(), titles: titleOpacities() }
 
       scroller.scrollTop = pinStart + distance + 60
       scroller.dispatchEvent(new Event('scroll'))
       await settle()
-      const after = { offset: offset(), x: trackX() }
-      return { distance, mid, after }
+      return { distance, snapped, after: { offset: offset(), x: trackX(), titles: titleOpacities() } }
+    })
+    const third = Math.round(pin.snapped.progress * 3)
+    results.push({
+      label: 'scroll pin + snap: pinned, settles on a whole panel, released after',
+      ok:
+        pin.distance > 100 &&
+        Math.abs(pin.snapped.offset) < 1 &&
+        Math.abs(pin.snapped.progress * 3 - third) < 0.02 &&
+        Math.abs(pin.snapped.x + pin.distance * (third / 3)) < 3 &&
+        Math.abs(pin.after.offset + 60) < 1.5 &&
+        Math.abs(pin.after.x + pin.distance) < 1,
+      detail: `distance ${pin.distance}px; snapped to progress ${pin.snapped.progress.toFixed(3)} (x ${pin.snapped.x.toFixed(1)}); after offset ${pin.after.offset.toFixed(1)}`,
     })
     results.push({
-      label: 'scroll pin: section held in place while panels travel with scroll, released after',
-      ok: pin.distance > 100 && Math.abs(pin.mid.offset) < 1 && Math.abs(pin.mid.x + pin.distance / 2) < 2 && Math.abs(pin.after.offset + 60) < 1.5 && Math.abs(pin.after.x + pin.distance) < 1,
-      detail: `distance ${pin.distance}px; mid offset ${pin.mid.offset.toFixed(1)} x ${pin.mid.x.toFixed(1)}; after offset ${pin.after.offset.toFixed(1)} x ${pin.after.x.toFixed(1)}`,
+      label: 'containerAnimation: panel titles are shown once their panel has slid in',
+      ok: pin.after.titles.every((o) => o > 0.99) && pin.snapped.titles.at(-1) < 0.01,
+      detail: `at snap ${pin.snapped.titles.map((o) => o.toFixed(2)).join(' ')}; at end ${pin.after.titles.map((o) => o.toFixed(2)).join(' ')}`,
     })
+    await page.evaluate(() => window.__teardown?.())
+
+    // Image sequence: scrolling through the pin scrubs to the last frame.
+    await mount(page, 'live-image-sequence-scrub')
+    await page.waitForTimeout(600)
+    const sequence = await page.evaluate(async () => {
+      const scroller = document.querySelector('.sq-scroller')
+      const canvas = document.querySelector('.sq-canvas')
+      const pixel = () => [...canvas.getContext('2d').getImageData(canvas.width / 2, canvas.height / 2, 1, 1).data].join(',')
+      const first = pixel()
+      scroller.scrollTop = 80 + 160 // halfway through the 320px scrub
+      scroller.dispatchEvent(new Event('scroll'))
+      await new Promise((r) => setTimeout(r, 900))
+      return { first, middle: pixel(), painted: canvas.width > 0 && pixel() !== '0,0,0,0' }
+    })
+    results.push({ label: 'imageSequence: scrolling scrubs to a different frame on the canvas', ok: sequence.painted && sequence.first !== sequence.middle, detail: `centre pixel ${sequence.first} → ${sequence.middle}` })
     await page.evaluate(() => window.__teardown?.())
 
     // drawSVG: a real path's measured length, drawn to a segment in each browser.
@@ -233,6 +266,36 @@ export default {
       label: 'shared-element flip: hero starts on the thumbnail, lands on its layout, thumbnail returns',
       ok: shared.grew && shared.startGap < 1 && shared.landGap < 0.5 && shared.backGap < 0.5 && shared.thumbOpacity === '1',
       detail: `start ${shared.startGap.toFixed(2)}px, land ${shared.landGap.toFixed(2)}px, back ${shared.backGap.toFixed(2)}px, thumb opacity ${shared.thumbOpacity}`,
+    })
+    await page.evaluate(() => window.__teardown?.())
+
+    // Page transition: the hero starts over the clicked thumbnail and ends on its own layout.
+    await mount(page, 'live-page-transition')
+    await page.waitForTimeout(100)
+    const route = await page.evaluate(async () => {
+      const rect = (el) => { const r = el.getBoundingClientRect(); return [r.left, r.top, r.width, r.height] }
+      const diff = (a, b) => Math.max(...a.map((v, i) => Math.abs(v - b[i])))
+      const thumb = document.querySelectorAll('.pt-thumb')[1]
+      const thumbRect = rect(thumb)
+      thumb.closest('[data-open]').click()
+      // Wait for the leave phase and the swap.
+      let hero = null
+      for (let i = 0; i < 120 && !hero; i++) {
+        await new Promise((r) => requestAnimationFrame(r))
+        hero = document.querySelector('.pt-hero')
+      }
+      await new Promise((r) => requestAnimationFrame(r))
+      const start = diff(rect(hero), thumbRect)
+      await new Promise((r) => setTimeout(r, 900))
+      hero.style.transform = 'none'
+      const layout = rect(hero)
+      hero.style.transform = ''
+      return { start, land: diff(rect(hero), layout), title: document.querySelector('.pt-page h3')?.textContent, opacity: getComputedStyle(document.querySelector('.pt-page')).opacity }
+    })
+    results.push({
+      label: 'pageTransition: shared image carried across the route swap, new page fully in',
+      ok: route.start < 2 && route.land < 0.5 && route.title === 'Oslo' && route.opacity === '1',
+      detail: `start ${route.start.toFixed(2)}px, land ${route.land.toFixed(2)}px, ${route.title}, opacity ${route.opacity}`,
     })
     await page.evaluate(() => window.__teardown?.())
 

@@ -193,3 +193,65 @@ describe('ScrollDriver — smoothing', () => {
     vi.unstubAllGlobals()
   })
 })
+
+describe('ScrollDriver — snap', () => {
+  it('scrolls on to the nearest snap point once scrolling stops inside the range', () => {
+    vi.useFakeTimers()
+    const frames: FrameRequestCallback[] = []
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => frames.push(cb))
+    vi.stubGlobal('cancelAnimationFrame', () => {})
+    const scrollToSpy = vi.fn((options: ScrollToOptions) => scrollTo(options.top ?? 0))
+    window.scrollTo = scrollToSpy as unknown as typeof window.scrollTo
+
+    let now = 0
+    vi.spyOn(performance, 'now').mockImplementation(() => now)
+
+    place(section(), 1000, 400)
+    make({ trigger: section(), start: 'top top', end: '+=1000', snap: { snapTo: 0.5, duration: 0.1 } }).start()
+    now = 16
+    scrollTo(1290)
+    now = 32
+    scrollTo(1300) // progress 0.3, drifting slowly on: 0.5 is nearest
+    vi.advanceTimersByTime(200) // scrolling stops
+    let t = 0
+    while (frames.length) frames.shift()!((t += 16))
+    expect(scrollToSpy).toHaveBeenLastCalledWith({ top: 1500, behavior: 'instant' })
+
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+  })
+
+  it('does not snap outside the range', () => {
+    vi.useFakeTimers()
+    const scrollToSpy = vi.fn()
+    window.scrollTo = scrollToSpy as unknown as typeof window.scrollTo
+    place(section(), 1000, 400)
+    let now = 0
+    vi.spyOn(performance, 'now').mockImplementation(() => now)
+    make({ trigger: section(), start: 'top top', end: '+=1000', snap: 0.5 }).start()
+    now = 16
+    scrollTo(300)
+    vi.advanceTimersByTime(200)
+    expect(scrollToSpy).not.toHaveBeenCalled()
+    vi.useRealTimers()
+  })
+})
+
+describe('ScrollDriver — markers', () => {
+  it('draws start and end markers where the range begins and ends, and removes them on destroy', () => {
+    place(section(), 1000, 400)
+    const driver = make({ trigger: section(), start: 'top 20%', end: '+=500', markers: { id: 'hero' } })
+    driver.start()
+    const markers = [...document.querySelectorAll<HTMLElement>('.scroll-marker')]
+    const byLabel = Object.fromEntries(markers.map((node) => [node.textContent, node]))
+    expect(Object.keys(byLabel).sort()).toEqual(['hero end', 'hero scroller-end', 'hero scroller-start', 'hero start'])
+    // The trigger's top (page 1000) meets the line 200px down the viewport.
+    expect(byLabel['hero start'].style.top).toBe('1000px')
+    expect(byLabel['hero scroller-start'].style.top).toBe('200px')
+    expect(byLabel['hero scroller-start'].style.position).toBe('fixed')
+    expect(byLabel['hero end'].style.top).toBe('1500px')
+
+    driver.destroy()
+    expect(document.querySelector('.scroll-marker')).toBeNull()
+  })
+})

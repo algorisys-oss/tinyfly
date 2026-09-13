@@ -759,7 +759,7 @@ There are two kinds of example, and a filter for each:
 
 | Category | Examples |
 |----------|---------|
-| **GSAP-style** | 38 live `live.to()` demos, grouped below |
+| **GSAP-style** | 41 live `live.to()` demos, grouped below |
 | **Showcase** | Draw · Guess · Repeat (vertical promo), Logo Intro, Social Card, Menu Animation |
 | **Basics** | Fade in/out, scale pulse, rotation, shape morph |
 | **Motion** | Bouncing ball, slide-in, orbit, pendulum, wave, zigzag, motion path |
@@ -847,7 +847,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.56.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.57.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed

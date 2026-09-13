@@ -74,7 +74,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.56.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.57.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -223,6 +223,36 @@ Most GSAP eases map to an exact built-in or a close cubic-bezier:
 GSAP 2 spellings (`Power2.easeOut`) and bare families (`power2`, which defaults
 to `.out`) are both accepted. An unrecognised name falls back to `ease-out`
 rather than throwing.
+
+### Custom eases
+
+Build a curve once, name it, and use the name as an ease anywhere:
+
+```js
+import { CustomEase, CustomBounce, CustomWiggle } from 'tinyfly/gsap-compat'   // or live.customEase(...)
+
+CustomEase.create('hop', 'M0,0 C0.25,0 0.3,1.35 0.55,1.15 C0.75,1 0.85,1 1,1')
+CustomEase.create('snappy', [0.7, 0, 0.9, 0.4])       // bezier points
+CustomBounce.create('drop', { strength: 0.65 })
+CustomWiggle.create('shake', { wiggles: 7, type: 'easeOut' })
+
+live.to('.ball', { y: 300, ease: 'drop' })
+live.to('.bell', { rotate: 20, ease: 'shake' })      // swings ±20° and comes back
+```
+
+- **CustomEase** takes SVG path data or bezier points. Path data may be in any
+  coordinate space or y direction: x is scaled to run 0 → 1, and y to start at 0
+  and end at 1. So a curve copied out of a design tool works as is, and it may
+  overshoot.
+- **CustomBounce** drops onto the end value and rebounds. Each bounce keeps part
+  of the height, timed like a real ball. `strength` (0–1) sets how lively it is.
+- **CustomWiggle** oscillates around the start value and ends back there (unlike
+  other eases). `wiggles` sets the count, and `type` is `'easeOut'` (dying away),
+  `'easeInOut'` or `'uniform'`.
+- **Serialization:** a curve that is one cubic-bezier stays an exact, serializable
+  easing. Anything else is always sampled into keyframes by the tween that uses
+  it, even without `bakeEases`, so the JSON plays without the curve. The generators
+  are pure functions in the engine (`customEase`, `customBounce`, `customWiggle`).
 
 ### Eases that must be baked
 
@@ -491,6 +521,9 @@ live.scrollTrigger({
 | `scroller` | A scrolling element or selector instead of the window |
 | `toggleActions` | Without `scrub`: actions on enter, leave, enter back, leave back — `play`, `pause`, `resume`, `reverse`, `restart`, `reset`, `complete` or `none`. Default `'play none none none'` |
 | `once` | Stop watching after the first enter |
+| `snap` | After scrolling stops inside the range, scroll on to the nearest point: a progress step (`1 / 3`), progress points (`[0, 0.4, 1]`), `'labels'`, a function, or `{ snapTo, duration, delay, ease }` |
+| `markers` | Draw start / end lines while developing: `true`, or `{ startColor, endColor, fontSize, indent, id }` |
+| `containerAnimation` | The animation sliding this trigger's row sideways; start and end become horizontal (`'left right'` → `'right left'`) |
 | `onUpdate(self)` | `self` is `{ progress, velocity, direction }`; velocity in px/s, back to 0 when scrolling stops |
 | `onEnter`, `onLeave`, `onEnterBack`, `onLeaveBack` | Edge callbacks |
 
@@ -505,8 +538,41 @@ would not catch.
 On touch devices, resizes that only change the height a little (the address bar
 showing and hiding) do not refresh, so pins do not jump mid-scroll.
 
-Not supported yet: `snap`, `markers` and `containerAnimation` (planned), and
-`pinSpacing: false`, `anticipatePin`, horizontal scrollers.
+Not supported: `pinSpacing: false`, `anticipatePin`, horizontal scrollers.
+
+### Snapping, markers and horizontal sections
+
+**Snap** runs after scrolling stops inside the range. It uses the speed scrolling
+had just before stopping, so a flick carries on to the next point instead of
+falling back. It then animates the scroll offset and gives way at once to a wheel,
+touch, click or key. With `'labels'` it snaps to the timeline's labels, read at
+snap time so a rebuilt timeline's labels count.
+
+**Markers** show where a range starts and ends. Green and red lines are fixed to
+the viewport where the element points fire, and matching markers sit on the page
+at the element points. The range is active between the moments each page marker
+crosses its line. Remove `markers` before shipping.
+
+**`containerAnimation`** handles the classic pinned horizontal section, where
+items inside the sliding row need their own triggers:
+
+```js
+const row = live
+  .timeline({ scrollTrigger: { trigger: '.work', start: 'top top', end: () => `+=${travel()}`, pin: true, scrub: true, snap: 1 / 3 } })
+  .to('.track', { x: () => -travel(), ease: 'none' })
+
+document.querySelectorAll('.panel').forEach((panel) => {
+  live.from(panel.querySelector('h3'), {
+    y: 20, opacity: 0,
+    scrollTrigger: { trigger: panel, containerAnimation: row, start: 'left 80%', toggleActions: 'play none none reverse' },
+  })
+})
+```
+
+The trigger's horizontal positions are solved against the row's own motion (the
+`x` tracks moving its ancestors), and turned into the row's vertical scroll range.
+Create the row's timeline first, keep its motion steady in one direction (an
+`ease: 'none'` slide is the usual case), and don't pin inside it.
 
 ## Values that change every event: `quickTo`
 
@@ -602,6 +668,77 @@ mm.add({ desktop: '(min-width: 800px)', reduce: '(prefers-reduced-motion: reduce
 The [Agency Landing Page showcase](../src/examples/showcases/agency-landing.js)
 wraps its whole page this way. Under reduced motion there is no pinning, parallax
 or marquee, and values appear at their final state.
+
+## Page transitions
+
+`live.pageTransition` animates a client-side route change. It plays the old view
+out, runs your `update` (render the next route; it may return a promise), carries
+shared elements across by `data-flip-id`, and plays the new view in. It resolves
+when everything has finished:
+
+```js
+router.onNavigate(async (next) => {
+  await live.pageTransition({
+    from: '.page',
+    to: '.page',
+    shared: '[data-flip-id]',             // a thumbnail on one page, the hero on the next
+    update: () => render(next),
+  })
+})
+```
+
+| Option | Default | |
+|---|---|---|
+| `update` | — | Change the page; may be async |
+| `from`, `to` | — | The leaving and arriving views (`to` is resolved after `update`; a function is fine) |
+| `shared` | — | Selector for elements matched across by `data-flip-id` |
+| `leave`, `enter` | fade + 16px lift / drop | The values the old view goes to and the new view comes from, or `false` |
+| `duration`, `ease` | `0.35`, `'power2.inOut'` | Per phase; shared elements take 1.4× the duration |
+| `native` | `false` | Hand the change to the browser's View Transitions API when it has one |
+
+- **Shared elements travel on their own.** When `shared` is given, `leave` and
+  `enter` animate the view's children that neither are nor contain a shared
+  element. Moving the whole view would drag the shared elements along.
+- **Native mode.** Shared elements get `view-transition-name`s from their flip
+  ids and the browser runs the transition. Browsers without the API get the
+  tinyfly version, so the call works everywhere.
+- **Scope.** It is for changes within one document, such as a client-side
+  router; a full page load starts a new document.
+
+## Image sequences
+
+`live.imageSequence` draws one frame of a numbered image sequence into a canvas.
+Its `frame` is an ordinary number, so a tween or a scroll scrub turns the object:
+
+```js
+const phone = live.imageSequence('canvas.phone', {
+  frames: 120,
+  url: (i) => `/frames/phone_${String(i + 1).padStart(4, '0')}.webp`,
+})
+
+live.to(phone, {
+  frame: phone.frames - 1,
+  ease: 'none',
+  scrollTrigger: { trigger: '.product', start: 'top top', end: '+=2000', scrub: true, pin: true },
+})
+```
+
+| Option | |
+|---|---|
+| `frames`, `url(index)` | How many frames, and where frame `index` (0-based) is |
+| `fit` | `'cover'` (default) or `'contain'` |
+| `concurrency` | Images loading at once (default 6) |
+| `onProgress(loaded, total)` | Called as frames arrive |
+
+- **Loading.** The first frame loads straight away. The rest load a few at a
+  time, nearest the frame on screen first. Until a frame arrives, the nearest
+  loaded one is drawn, so scrubbing ahead of the network never shows a blank
+  canvas.
+- **Drawing.** Setting `frame` draws the nearest whole frame, and only when it
+  changes. The canvas is sized to its box at the device pixel ratio (capped at
+  2) and resized with the window.
+- **Cleanup.** `sequence.destroy()` stops loading. Contexts and matchMedia
+  setups do this for you.
 
 ## Split text
 

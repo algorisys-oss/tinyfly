@@ -189,3 +189,42 @@ export function smoothToward(
   const factor = 1 - Math.exp(-(deltaMs / 1000) / smoothingSeconds)
   return current + (target - current) * factor
 }
+
+/**
+ * For a trigger inside a horizontally moving container (a pinned section whose
+ * track slides sideways as the page scrolls): the container progress at which a
+ * horizontal trigger position fires.
+ *
+ * `left` and `width` are the trigger's box at container progress 0, `shiftAt(p)`
+ * is how far the container has moved it along x at progress p (usually negative
+ * and decreasing), and `viewportWidth` is the visible width. Positions use the
+ * same grammar as vertical ones, with `left` / `center` / `right` edges.
+ * Solved by bisection, so the container's motion only needs to be monotonic.
+ */
+export function containerProgressAt(
+  left: number,
+  width: number,
+  viewportWidth: number,
+  position: TriggerPosition,
+  shiftAt: (progress: number) => number
+): number {
+  const distance = (progress: number) =>
+    triggerDistance({ top: left + shiftAt(progress), bottom: left + shiftAt(progress) + width, height: width }, viewportWidth, position)
+
+  const atStart = distance(0)
+  const atEnd = distance(1)
+  if (Math.sign(atStart) === Math.sign(atEnd) || atStart === 0 || atEnd === 0) {
+    // Never crosses within the container's travel: it has already fired, or never will.
+    if (atStart === 0) return 0
+    if (atEnd === 0) return 1
+    return Math.abs(atStart) < Math.abs(atEnd) ? 0 : 1
+  }
+  let low = 0
+  let high = 1
+  for (let i = 0; i < 40; i++) {
+    const mid = (low + high) / 2
+    if (Math.sign(distance(mid)) === Math.sign(atStart)) low = mid
+    else high = mid
+  }
+  return (low + high) / 2
+}

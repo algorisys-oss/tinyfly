@@ -33,6 +33,10 @@ export const context = live.context
 export const matchMedia = live.matchMedia
 /** A reusable setter that animates one property toward each value (GSAP's `gsap.quickTo`). */
 export const quickTo = live.quickTo
+/** A canvas scrubbing through an image sequence (tween its `frame`). */
+export const imageSequence = live.imageSequence
+/** Animate a client-side page change (old view out, update, shared elements across, new view in). */
+export const pageTransition = live.pageTransition
 
 export * from '../engine'
 export * from '../player'
@@ -47,4 +51,7 @@ export {
   CompatTimeline,
   quickPlay,
   mapEase,
+  CustomEase,
+  CustomBounce,
+  CustomWiggle,
 } from '../compat/gsap'
