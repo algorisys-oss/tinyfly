@@ -297,6 +297,10 @@ wave, assemble, typewriter, shine/mask reveal, blur-in).
 - [x] CDN hosted player script (`build:player` → `lib/player/tinyfly-player.iife.js`, global `tinyfly`)
 - [x] Audio/video sync (`MediaSync`, `player.attachMedia()`; exported from the player bundle)
 - [x] Documentation (getting started, editor guide, API reference, examples, in-app viewer)
+- [x] Docs completeness pass: file format covers every track kind (spring, inertia, text, motion-path `matrix`, scheduling, `repeatDelay`); API reference covers Timeline queries, type guards, Stage, drivers helpers, media sync and video export; editor guide and getting started match the current toolbar and track form; stale CDN versions, player paths and import paths fixed
+- [x] `tinyfly/adapters` package entry (DOM, Canvas, SVG, WebGL adapters) so the documented adapter imports resolve
+- [x] Docs for language models: `llms.txt` at the repo root (checked by a file-snapshot test), and the built editor serves `/llms.txt`, `/llms-full.txt` and raw `/docs/<page>.md` (`vite-llms-plugin.ts`); one doc manifest (`src/docs/doc-manifest.ts`) feeds these and the in-app viewer
+- [x] In-app docs viewer: all 14 user docs grouped by section, deep links (`/docs/<page>#anchor`), links between docs stay in the app (design notes open on GitHub), section-level search, meta description in `index.html`; e2e `docs` check (Chromium, Firefox)
 - [x] Example gallery (14 professional examples with DOM/Canvas renderer toggle)
 
 ## Phase 24: 2D Animation (planned)
@@ -1264,6 +1268,123 @@ silent data loss last week. 27C is the answer to that, and it is unglamorous.
 
 ---
 
+## Phase 28: Awwwards-style motion — the runtime gaps
+
+Compared against what agency / award sites lean on (scroll pinning, shared
+element transitions, springs, WebGL sync, kinetic type, line drawing). Audit
+(v0.54.1): scrubbing, Flip, inertia, stagger and morphing exist; the items below
+are what is missing or only reachable through the low-level engine. Ordered by
+value for effort.
+
+### 28.1 — Plain-object targets and a public ticker ✓
+
+- [x] `live.to(object, vars)` tweens any plain JS object's properties (numbers,
+      colour strings, number arrays) from its current values, assigned straight
+      back onto it — no DOM adapter (a Three.js `mesh.position`, shader uniforms)
+- [x] Several objects each start from their own values; objects and elements mix
+      in one timeline and share its clock; arrays / NodeLists stay target lists
+- [x] `live.ticker.add(fn)` / `remove(fn)` (and `tinyfly.ticker`): run after each
+      frame's values are applied with GSAP's `(time, deltaTime, frame)`; the loop
+      runs while any callback is registered
+- [x] 8 tests (`live-objects.test.ts`), docs (gsap-compat, api-reference), and the
+      "Canvas from Object Tweens" demo
+
+### 28.2 — Split text utility ✓
+
+- [x] `live.splitText(target, { type: 'chars,words,lines', mask })` (and
+      `splitText` from `tinyfly/gsap-compat`, `tinyfly.splitText`) returns
+      `{ elements, chars, words, lines, masks, revert() }`
+- [x] Lines measured once from layout (a word starts a line below the middle of
+      the line's first word; `<br>` breaks); inline markup (`<em>`, `<a>`) is
+      cloned into each line it spans; spaces stay text so it wraps and copies
+- [x] Grapheme-cluster characters (`Intl.Segmenter`), custom classes, `mask`
+      wrappers with `overflow: clip`
+- [x] `aria-label` on the element and `aria-hidden` on the pieces (opt out with `aria: false`)
+- [x] 10 tests (`split-text.test.ts`), docs, the Split Text Reveal demo uses it,
+      and a new "Line Mask Reveal" demo
+
+### 28.3 — Scroll options on `live`, pinning, external scrollers ✓
+
+- [x] `scrollTrigger: { trigger, start, end, scrub, pin, scroller, toggleActions,
+      once, onUpdate, onEnter… }` on `live.timeline()` / `live.to()`, plus
+      `live.scrollTrigger(vars)` with no animation and `live.refreshScroll()`
+- [x] `pin` automates the sticky recipe (`ScrollPin`: a spacer as tall as the
+      element plus the pinned distance, the element `position: sticky` at the
+      start offset); `kill()` and `stage.destroy()` remove it
+- [x] `end: '+=600'` / `'+=150%'` relative to the start
+- [x] Performance: layout measured on start/resize only — scroll events read the
+      scroll offset alone; the smoothing loop stops once settled; resize refreshes
+      all drivers once, in start order
+- [x] `driver.update(scrollTop)` for virtual scrollers; native-scroll smooth
+      scrollers (Lenis) work unchanged
+- [x] Velocity in `onUpdate(progress, velocity)`, back to 0 after scrolling stops;
+      `direction` on the live `self`
+- [x] Fix: a scroll jumping across a short range (or loading past it) now fires
+      enter and leave; toggle `play` / `reverse` never jump to the opposite end
+- [x] Tests (`scroll-driver-features.test.ts`, `live-scroll.test.ts`), docs
+      (scroll-animation, gsap-compat, api-reference), "Pinned Horizontal Scroll"
+      demo with a browser check that the pin holds to the pixel
+
+### 28.4 — SVG line drawing ✓
+
+- [x] `drawSVG: true | false | px | '60%' | '20% 80%' | '10 50%'` on `live`
+      (`to`, `from`, `fromTo`, staggers), compiled to `strokeDasharray: [visible,
+      length]` + `strokeDashoffset: -start` with each element's length measured once
+- [x] Undrawn strokes start fully drawn; non-strokes warn and the rest of the tween plays;
+      `timeline()` / `tf` throw with a pointer to `drawSvgProperties(value, length)`
+- [x] 8 tests (`draw-svg.test.ts`), a browser check against a real bezier's length,
+      docs; SVG Line Draw and Draw & Follow demos use it
+
+### 28.5 — Springs from `live` ✓
+
+- [x] `spring: true | 'wobbly' | { preset, stiffness, damping, mass, velocity, restDelta }`
+      on `live` and `timeline()` compiles numeric properties to spring tracks;
+      non-numeric properties keep `duration` + `ease`; the tween lasts until the
+      slowest spring settles; chains and serializes like any tween
+- [x] `SPRING_PRESETS` (Gentle, Default, Snappy, Bouncy, Wobbly, Stiff) moved into
+      the engine; the editor's spring inspector uses them
+- [x] Interrupting carries momentum: `stage.velocityOf()` measures the property's
+      current speed from the timeline animating it (finite difference of its
+      deterministic state) and feeds the new spring; explicit `velocity`
+      (per property, e.g. a drag's `onRelease`) wins
+- [x] 10 tests (`spring.test.ts`), docs, "Spring Release" demo with a browser check
+      (flung card carries its velocity, overshoots, settles at 0.00px)
+
+### 28.6 — Flip shared elements ✓
+
+- [x] `data-flip-id`: an element not in the recorded state flips from the box of
+      the recorded element with its flip id (thumbnail → hero, a different element)
+- [x] `fade: true` cross-fades: incoming fades in, the replaced element fades out if still shown
+- [x] 3 tests, docs, "Shared Element Gallery" demo with a browser check (hero starts
+      on the thumbnail and lands on its layout at 0.00px, and returns)
+- [ ] Not done: `absolute` / `nested` modes (still open from Phase 26D)
+
+### 28.7 — Smaller core entry ✓
+
+- [x] GIF / WebP / MP4 / video / sprite-sheet / CSS / Lottie exporters moved from
+      the `tinyfly` entry to `tinyfly/export` (built in the add-ons config, its own
+      files bundled in, the engine external)
+- [x] Measured (gzip): engine entry 26.8 KB → 15.8 KB; script-tag bundle 37.3 KB →
+      32.1 KB *including* 28.1–28.6; tree-shaken Timeline + createTrack ≈ 8.5 KB
+- [x] Breaking for `import { exportToCSS } from 'tinyfly'` and `tinyfly.exportTo…` on
+      the script-tag global — import from `tinyfly/export`; docs updated
+
+### 28.8 — Showcase: a full award-site-style page ✓
+
+- [x] "Agency Landing Page" (`src/examples/showcases/agency-landing.js`) using every
+      Phase 28 feature together: masked line reveal, pointer-lit canvas on the ticker
+      (paused off-screen), hide-on-scroll nav from velocity, velocity marquee,
+      scroll-lit manifesto words, pinned horizontal work with a counter, object
+      count-ups, drawn service icons with spring hovers, shared-element lightbox,
+      spring letters and a magnetic button; responsive down to phone widths
+- [x] `/showcase/:id` route on real window scroll (the app's inner scrolling is
+      switched off while mounted); Examples page band with **Open the page** and
+      **Copy code** (standalone page = same markup and code)
+- [x] Unit test runs and tears it down (no pins left); e2e `showcase` check: pin holds,
+      stats count, leaving cleans up, no page errors (Chromium, Firefox)
+
+---
+
 ## Backlog / For Review
 
 - [x] **Esc closes any dialog** — every dialog (AI Settings, Project Settings,
@@ -1355,7 +1476,7 @@ silent data loss last week. 27C is the answer to that, and it is unglamorous.
 
 ## Test Coverage
 
-- 731 tests passing
+- 1711 tests passing across 99 files (`npx vitest run`); the per-area counts below date from 731 tests and are kept for history
 - Easing functions: 48 tests
 - Interpolators: 21 tests
 - Clock: 19 tests

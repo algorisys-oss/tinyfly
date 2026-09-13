@@ -1,6 +1,8 @@
 import type { EasingType } from '../../engine'
 import type { StaggerConfig, StaggerFrom } from '../../engine'
 import type { Position } from './position'
+import type { ScrollTriggerVars } from './live-scroll'
+import type { SpringVars } from './spring-vars'
 
 /**
  * Splitting a GSAP `vars` object into scheduling and animated properties.
@@ -26,6 +28,8 @@ export const RESERVED_KEYS = new Set([
   'immediateRender',
   'overwrite',
   'paused',
+  'scrollTrigger',
+  'spring',
 ])
 
 export interface TweenVars {
@@ -42,6 +46,10 @@ export interface TweenVars {
   onStart?: () => void
   id?: string
   paused?: boolean
+  /** Animate numeric properties with spring physics instead of duration + ease — see spring-vars.ts */
+  spring?: SpringVars
+  /** Tie the tween to scrolling (live only) — see live-scroll.ts */
+  scrollTrigger?: ScrollTriggerVars
   /** Any other key is a property to animate */
   [property: string]: unknown
 }

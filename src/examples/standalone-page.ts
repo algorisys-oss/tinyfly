@@ -87,6 +87,20 @@ ${demo.code}`,
   })
 }
 
+/** A full-page showcase: the page is the showcase, on a plain body that scrolls. */
+export function showcasePage(showcase: LiveDemoWithCode): string {
+  return page({
+    title: showcase.name,
+    style: 'body {\n  margin: 0;\n  background: #0b0b0c;\n}',
+    body: `<div id="page">\n${indent(showcase.html, 2)}\n</div>`,
+    script: `// \`live\` plays GSAP-style animations on real elements.
+const live = tinyfly.live
+const root = document.getElementById('page')
+
+${showcase.code}`,
+  })
+}
+
 /** A timeline example: its markup, the CSS that markup needs, and its JSON. */
 export function timelineExamplePage(example: CodeExample, markupCss: string): string {
   const scrollNote = example.driverSnippet

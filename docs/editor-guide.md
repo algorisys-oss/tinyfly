@@ -8,9 +8,9 @@ The editor is divided into several panels:
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│ Header: tinyfly BETA · Save · toolbar buttons        │
+│ Header: tinyfly BETA · ? · ⚙ · toolbar               │
 ├─────────────────────────────────────────────────────┤
-│ AI prompt bar  (describe → Generate)                 │
+│ AI prompt bar  (shown with the AI button)            │
 ├──────────┬──────────────────────────┬───────────────┤
 │ Elements │                          │   Property    │
 │ + Tracks │     Canvas / Preview     │  + Presets    │
@@ -31,7 +31,10 @@ phones/tablets the panels slide in from the edges via the ☰ / ⚙ buttons.
 
 ## Toolbar
 
-The header/toolbar at the top provides:
+Next to the **tinyfly** logo, the header has a **?** button that replays the
+onboarding tour and a **⚙ Project Settings** button (project name, canvas size and
+background colour; see [Project Settings](#project-settings)). The toolbar follows,
+left to right:
 
 - **Project title** — shows the current project's name; **double-click to rename**
   it inline. A `*` means there are unsaved edits.
@@ -39,17 +42,18 @@ The header/toolbar at the top provides:
   **Saving…** → **Saved ✓**. Auto-save always runs in the background; this button
   is a reassuring, tap-friendly manual save (handy on tablets).
 - **New** — start a fresh project (prompts if you have unsaved changes).
+- **AI** — show or hide the AI prompt bar, where you describe an animation and
+  click **Generate**.
 - **My Animations** — open the gallery of every project you've saved (thumbnails,
   open / duplicate / delete). See [Project Management](#project-management).
 - **Examples** — every ready-made animation on one page (`/examples`). Open one in
   the editor, or copy the code of a code example into your own page.
-- **Docs** — open this documentation in-app.
-- **Import / Export** — load or save the animation as a JSON file.
-- **Export As** — render to **GIF / WebP / MP4 / CSS / Lottie**.
-- **Embed** — generate copy-paste embed code for a website.
-- **Help / Shortcuts** — keyboard shortcuts (or press `?`); the `?` tour button
-  replays the onboarding walkthrough.
-- **Project Settings** (gear) — project name, canvas size, and background colour.
+- **Export** — open the export dialog: **CSS**, **Lottie**, **GIF**, **WebP**,
+  **MP4** (MP4 or WebM, depending on the browser) or **Sprite** sheet. See
+  [Export Formats](#export-formats).
+- **More** (⋯) — a menu with **Import JSON…**, **Export JSON**, **Embed…**
+  (copy-paste embed code), **Docs** (this documentation, in-app) and **Keyboard
+  Shortcuts** (or press `?`).
 
 Shapes, text, images, video, lines, arrows and paths are added from the
 **Elements** panel on the left (see [Adding Elements](#adding-elements)).
@@ -79,7 +83,8 @@ resize the box. See [polygon-star.md](polygon-star.md).
 
 ### Adding Elements
 
-Click any shape button in the toolbar. The element appears at the center of the canvas with default dimensions. You can then:
+Click an element type in the **Elements** panel on the left (Rectangle, Circle,
+Text, Line, Arrow, Path, Image, Audio, Video, or ⬡ Polygon / ★ Star). The element appears at the center of the canvas with default dimensions. You can then:
 
 - **Drag** to reposition it on the canvas
 - **Resize** using the 8 handles around the element (corners and midpoints)
@@ -427,9 +432,31 @@ of each scene so you can tell them apart at a glance.
 
 ### Adding Tracks
 
-1. In the Track Panel, click **+ Add Track**
-2. Select the target element
-3. Select the property to animate
+1. In the Track Panel, click **+**
+2. Type the **Target**: the element's name as shown in the Elements panel (for
+   example `box`)
+3. Type the **Property** to animate (for example `opacity` or `x`)
+4. Click **Add Track** for a keyframe track. It starts with two keyframes: `0` at
+   the start and `1` at the end of the scene, which you then edit.
+
+The same form has **Add Spring** and **Add Inertia**, which create physics tracks
+edited by parameters instead of keyframes (see [Spring tracks](#spring-tracks) and
+[Throws with inertia](#throws-with-inertia-inertia-tracks)). Click **×** to close
+the form.
+
+### Spring tracks
+
+A spring track moves a property from one value to another like a physical spring,
+so you set how it feels instead of placing keyframes. It appears as a span on the
+timeline. Select it to edit in Properties:
+
+- **Feel** — one-click presets: Gentle, Default, Snappy, Bouncy, Wobbly, Stiff.
+- **Values** — From, To and Delay (ms).
+- **Physics** — Stiffness (higher is snappier), Damping (higher settles sooner; 0
+  oscillates forever), Mass (higher is more sluggish) and an initial Velocity.
+
+The inspector shows how long the spring takes to settle and flags a spring that
+overshoots its target.
 
 ### Adding Keyframes
 
@@ -481,16 +508,18 @@ Each keyframe has an easing setting that controls how the value transitions FROM
 - **ease-in-out-cubic** — Cubic ease in-out
 - **Custom cubic-bezier** — Define your own curve with the visual curve editor
 
-### Timeline Configuration
+### Looping, speed and direction
 
-In the playback controls area:
+The editor has no loop, speed or direction controls. These are playback settings,
+chosen where the animation is played:
 
-| Setting | Description |
-|---------|-------------|
-| Duration | Total animation length — editable in the `current / duration` readout (seconds). See [Scene duration](#scene-duration) |
-| Loop | Number of repetitions: 0 (none), -1 (infinite), or a specific count |
-| Speed | Playback speed multiplier (0.5x, 1x, 2x, etc.) |
-| Alternate | Ping-pong mode — reverses direction on each loop |
+- **Embed code** passes `loop: -1` (loop forever) to the player; edit it in the
+  copied code.
+- The **player** accepts `loop` (`0` none, `-1` infinite, or a count), `alternate`
+  (ping-pong) and `speed` options. See [API Reference](api-reference.md).
+- In **JSON**, the same settings are `config.loop`, `config.alternate`,
+  `config.speed` and `config.repeatDelay` on the timeline. See
+  [File Format](file-format.md).
 
 ## Playback Controls
 
@@ -498,13 +527,11 @@ The playback bar provides:
 
 | Control | Description |
 |---------|-------------|
-| Play/Pause | Start or pause animation playback |
-| Stop | Stop and reset to the beginning |
-| Seek | Click on the time ruler or drag the playhead |
-| Speed | Adjust playback speed |
-| Reverse | Toggle playback direction |
-| Undo | Undo last action (Ctrl+Z) |
-| Redo | Redo undone action (Ctrl+Shift+Z or Ctrl+Y) |
+| Undo / Redo | Undo the last change (Ctrl+Z); redo it (Ctrl+Shift+Z or Ctrl+Y) |
+| Stop | Stop and return to the beginning |
+| Play/Pause | Start or pause playback |
+| `current / duration` | The playhead time, and the scene duration in seconds, which you can type into. A **Fit** button appears when keyframes sit past the end. See [Scene duration](#scene-duration) |
+| Seek bar | Drag to move the playhead (you can also click the timeline ruler) |
 
 ## Scenes & Transitions
 
@@ -724,8 +751,7 @@ There are two kinds of example, and a filter for each:
 - **Open in editor** — built in the editor. **Open in editor** loads it into a
   **new project**, so your existing work is never replaced.
 - **Code** — for your own page. Timeline examples show their JSON and HTML under
-  **View code** and play on DOM or Canvas; scroll examples also show how to drive
-  them from scroll position. **GSAP-style** examples are real `live.to()` code that
+  **View code** and play on DOM or Canvas. **GSAP-style** examples are real `live.to()` code that
   runs on the card while you hover. The code shown is read from the demo's own
   source file, so it is exactly what runs.
 
@@ -733,7 +759,7 @@ There are two kinds of example, and a filter for each:
 
 | Category | Examples |
 |----------|---------|
-| **GSAP-style** | Live `live.to()` code: staggered grid, logo sequence, composed tweens, timeline controls, pointer follow, elastic/bounce/steps, magnetic button, proximity grid, dock magnify, velocity skew, card stack, infinite marquee, split-text reveal, SVG line draw |
+| **GSAP-style** | 38 live `live.to()` demos, grouped below |
 | **Showcase** | Draw · Guess · Repeat (vertical promo), Logo Intro, Social Card, Menu Animation |
 | **Basics** | Fade in/out, scale pulse, rotation, shape morph |
 | **Motion** | Bouncing ball, slide-in, orbit, pendulum, wave, zigzag, motion path |
@@ -746,25 +772,59 @@ There are two kinds of example, and a filter for each:
 | **Scroll** | Scroll reveal, parallax, progress bar |
 | **Algorisys** | Product showcase demos (TinyFly, YappyDraw, HappyPaint, ProPeak, SkillzEngine) |
 
-Every card has a **Copy code** button. It copies a complete HTML page for that
-example (markup, styles, the animation, and the tinyfly script tag) that you can
-save as a `.html` file and open. For editable examples that is the same output
-as the editor's Embed; for GSAP-style examples it is the demo's code, unchanged.
+The GSAP-style demos cover:
 
-Filters are part of the URL, so `/examples?kind=code&category=scroll` links straight
-to a filtered view. Examples are a good way to learn: study how they use tracks,
+- **Flip layout transitions** — shuffle grid, filter gallery, layout switch, expand tile,
+  shared-element gallery (`data-flip-id`).
+- **Scroll** — pinned horizontal scroll (`scrollTrigger` with `pin` and `scrub`).
+- **Motion paths** — following an SVG path, a path through points, orbits, draw & follow.
+- **Shape morphing** — shape morph, icon morph (play/pause), menu morph.
+- **Text** — scramble text, typewriter, stats decode, split-text reveal, line mask reveal (`splitText`).
+- **Springs, inertia and dragging** — spring release, throw to slots, inertia carousel, friction, swipe cards.
+- **Canvas and WebGL** — canvas from object tweens (plain-object targets and `live.ticker`).
+- **Timelines and easing** — staggered grid, logo sequence, composed tweens,
+  timeline controls, elastic/bounce/steps.
+- **Pointer and UI effects** — pointer follow, magnetic button, proximity grid, dock
+  magnify, velocity skew, card stack, card flip, infinite marquee, SVG line draw (`drawSVG`).
+
+Above the cards is a **full-page showcase**: an agency-style landing page built from
+the same API — masked headline reveal, a pointer-lit canvas on the ticker, a
+velocity marquee, scroll-lit copy, a pinned horizontal work section, count-ups,
+drawn icons, a shared-element lightbox and springy type. **Open the page** runs it
+at `/showcase/agency-landing` on the real window scroll; **Copy code** gives the
+whole page as one HTML file.
+
+Every card has a **Copy code** button. It copies a complete, standalone HTML page
+for that example (markup, styles, the animation, and a script tag that loads
+tinyfly from the jsDelivr GitHub CDN, pinned to the editor's version) that you can
+save as a `.html` file and open. For editable examples the animation is the same
+as the editor's Embed; for GSAP-style examples it is the demo's code, unchanged.
+Scroll code examples also have **Drive it from scroll**, showing how to scrub the
+same timeline from scroll position.
+
+Use the search box to find examples by name, description or tag. Search and filters
+are part of the URL, so `/examples?kind=code&category=scroll` links straight to a
+filtered view. Examples are a good way to learn: study how they use tracks,
 keyframes, and easing to achieve different effects.
 
 ## Motion Paths
 
-Motion path animation lets you move an element along a custom SVG path.
+Motion path animation moves an element along a path you draw.
 
-1. Add a Path element to your canvas (or define a path in the track)
-2. The motion path track uses a `motionPath` property with progress keyframes (0 to 1)
-3. Enable **auto-rotate** to make the element face the direction of travel
-4. Set a **rotation offset** to adjust the facing angle
+1. Add a **Path** element (or draw one with the ✒️ Pen tool) and select it.
+2. In Properties, find the **Motion Path** section:
+   - **Element** — the element to move along this path.
+   - **Duration** — how long the trip takes, in ms.
+   - **Auto-Rotate** — turn the element to face the direction of travel.
+   - **Rotation Offset** — shown with Auto-Rotate; adjusts the facing angle (degrees).
+3. Click **Apply Motion Path**.
 
-Motion paths are defined using standard SVG path data (`d` attribute), supporting commands like:
+This adds a `motionPath` track to that element, starting at 0 ms, with two
+keyframes that go from `0` (the start of the path) to `1` (the end) with
+`ease-in-out`. Edit those keyframes like any other to change the timing or easing,
+or add keyframes in between to pause or reverse along the path.
+
+The path is standard SVG path data (the `d` attribute), supporting commands like:
 - `M` (move to), `L` (line to), `C` (cubic bezier curve)
 - `Q` (quadratic bezier), `A` (arc), `Z` (close path)
 
@@ -772,7 +832,7 @@ Motion paths are defined using standard SVG path data (`d` attribute), supportin
 
 ### Embed Dialog
 
-Click **Embed** in the toolbar to generate copy-paste code for your website.
+Choose **More → Embed…** in the toolbar to generate copy-paste code for your website.
 
 **Scope options:**
 - **Single Scene** — Embed only the current scene's animation
@@ -786,19 +846,23 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 
 **Steps to embed:**
 1. Build the player: `npm run build:player`
-2. Copy `dist/player/tinyfly-player.iife.js` to your project
+2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.55.0/cdn/tinyfly-player.iife.js`
+   instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed
 
 ### Export Formats
 
-Click **Export** in the toolbar for additional formats:
+Click **Export** in the toolbar and pick a format:
 
 - **CSS** — Generates CSS `@keyframes` animations
 - **Lottie** — Exports bodymovin-compatible Lottie JSON
 - **GIF** — A real animated GIF (per-frame palette, transparent background option)
 - **WebP** — Animated WebP — smaller and truer in colour than GIF, with full alpha
-- **MP4** — H.264 video (via WebCodecs where available, else MediaRecorder)
+- **MP4** — video. Pick the codec from the formats your browser supports: MP4
+  (H.264) is encoded frame by frame with WebCodecs where available; otherwise MP4 or
+  WebM (VP9/VP8) is recorded in real time with MediaRecorder
 - **Sprite** — Every frame packed into one **PNG grid** plus a **JSON** metadata
   file (frame size, columns/rows, count, fps) — ready for game engines or a custom
   `<canvas>` player. Alpha is kept when Transparent is on. See
@@ -810,7 +874,7 @@ paths, images, video layers, symbols, **and the camera**.
 
 ### Import
 
-Click **Import** in the toolbar to load a previously exported JSON file. This replaces the current project.
+Choose **More → Import JSON…** in the toolbar to load a previously exported JSON file. This replaces the current project.
 
 ## Renderer Preview
 
@@ -899,11 +963,11 @@ grid of cards, each with a live thumbnail and "last modified" time:
 ### Renaming
 
 Two ways: **double-click the project title** in the toolbar to rename it inline,
-or open **Project Settings** (gear icon).
+or open **Project Settings** (⚙ in the header).
 
 ### Project Settings
 
-Open Project Settings (gear icon) from the toolbar to:
+Open Project Settings (⚙ in the header, next to the logo) to:
 
 - **Rename** the project
 - **Set canvas size** (width and height in pixels)

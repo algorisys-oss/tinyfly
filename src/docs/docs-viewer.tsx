@@ -1,50 +1,52 @@
-import { createSignal, createMemo, For } from 'solid-js'
+import { createSignal, createMemo, createEffect, on, For, Show } from 'solid-js'
 import type { Component } from 'solid-js'
-import { A } from '@solidjs/router'
+import { A, useNavigate, useParams, useLocation } from '@solidjs/router'
 import { renderMarkdown } from './markdown'
+import { DOCS, DOC_SECTIONS } from './doc-manifest'
+import { searchDocs } from './doc-search'
+import { rewriteDocLinks } from './doc-links'
 import './docs-viewer.css'
 
-// Import documentation markdown files as raw strings
-import gettingStartedMd from '../../docs/getting-started.md?raw'
-import editorGuideMd from '../../docs/editor-guide.md?raw'
-import apiReferenceMd from '../../docs/api-reference.md?raw'
-import fileFormatMd from '../../docs/file-format.md?raw'
-import examplesMd from '../../docs/examples.md?raw'
-import scrollAnimationMd from '../../docs/scroll-animation.md?raw'
-import gsapCompatMd from '../../docs/gsap-compat.md?raw'
+// Every markdown file in docs/, as raw strings; the manifest decides which are shown.
+const files = import.meta.glob<string>('../../docs/*.md', { query: '?raw', import: 'default', eager: true })
+const contentById = new Map(Object.entries(files).map(([path, text]) => [path.replace(/^.*\/|\.md$/g, ''), text]))
 
-interface DocPage {
-  id: string
-  title: string
-  content: string
-}
-
-const pages: DocPage[] = [
-  { id: 'getting-started', title: 'Getting Started', content: gettingStartedMd },
-  { id: 'editor-guide', title: 'Editor Guide', content: editorGuideMd },
-  { id: 'api-reference', title: 'API Reference', content: apiReferenceMd },
-  { id: 'file-format', title: 'File Format', content: fileFormatMd },
-  { id: 'examples', title: 'Examples', content: examplesMd },
-  { id: 'scroll-animation', title: 'Scroll Animation', content: scrollAnimationMd },
-  { id: 'gsap-compat', title: 'GSAP Compatibility', content: gsapCompatMd },
-]
+const pages = DOCS.map((doc) => ({ ...doc, content: contentById.get(doc.id) ?? '' }))
+const pageIds = new Set(pages.map((page) => page.id))
 
 export const DocsViewer: Component = () => {
-  const [currentPageId, setCurrentPageId] = createSignal('getting-started')
+  const params = useParams<{ page?: string }>()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [query, setQuery] = createSignal('')
+  let contentEl: HTMLElement | undefined
 
-  const currentPage = createMemo(() => {
-    return pages.find(p => p.id === currentPageId()) ?? pages[0]
-  })
+  const currentPage = createMemo(() => pages.find((page) => page.id === params.page) ?? pages[0])
+  const renderedHtml = createMemo(() => rewriteDocLinks(renderMarkdown(currentPage().content), pageIds))
+  const hits = createMemo(() => searchDocs(pages, query()))
 
-  const renderedHtml = createMemo(() => {
-    return renderMarkdown(currentPage().content)
-  })
+  // After a page or anchor change, show the anchor (or the top of the page).
+  createEffect(
+    on([renderedHtml, () => location.hash], ([, hash]) => {
+      if (!contentEl) return
+      const target = hash ? contentEl.querySelector(`[id="${CSS.escape(decodeURIComponent(hash.slice(1)))}"]`) : null
+      if (target) target.scrollIntoView()
+      else contentEl.scrollTop = 0
+    })
+  )
 
-  const handlePageChange = (pageId: string) => {
-    setCurrentPageId(pageId)
-    // Scroll content to top
-    const content = document.querySelector('.docs-content')
-    if (content) content.scrollTop = 0
+  // Links to other doc pages are rendered as plain anchors; route them in-app.
+  const handleContentClick = (event: MouseEvent) => {
+    const anchor = (event.target as Element).closest('a')
+    const href = anchor?.getAttribute('href')
+    if (!href?.startsWith('/docs/') || event.metaKey || event.ctrlKey || event.shiftKey) return
+    event.preventDefault()
+    navigate(href)
+  }
+
+  const openHit = (href: string) => {
+    setQuery('')
+    navigate(href)
   }
 
   return (
@@ -62,20 +64,66 @@ export const DocsViewer: Component = () => {
 
       <div class="docs-body">
         <nav class="docs-sidebar">
-          <For each={pages}>
-            {(page) => (
-              <button
-                class="docs-nav-item"
-                classList={{ active: currentPageId() === page.id }}
-                onClick={() => handlePageChange(page.id)}
-              >
-                {page.title}
-              </button>
-            )}
-          </For>
+          <input
+            class="docs-search"
+            type="search"
+            placeholder="Search docs…"
+            aria-label="Search docs"
+            value={query()}
+            onInput={(event) => setQuery(event.currentTarget.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') setQuery('')
+              const first = hits()[0]
+              if (event.key === 'Enter' && first) openHit(`/docs/${first.docId}${first.anchor ? `#${first.anchor}` : ''}`)
+            }}
+          />
+
+          <Show
+            when={query().trim()}
+            fallback={
+              <For each={DOC_SECTIONS}>
+                {(section) => (
+                  <div class="docs-nav-section">
+                    <div class="docs-nav-heading">{section}</div>
+                    <For each={pages.filter((page) => page.section === section)}>
+                      {(page) => (
+                        <A
+                          href={`/docs/${page.id}`}
+                          class="docs-nav-item"
+                          classList={{ active: currentPage().id === page.id }}
+                          title={page.summary}
+                        >
+                          {page.title}
+                        </A>
+                      )}
+                    </For>
+                  </div>
+                )}
+              </For>
+            }
+          >
+            <div class="docs-search-results">
+              <Show when={hits().length > 0} fallback={<div class="docs-search-empty">No matches</div>}>
+                <For each={hits()}>
+                  {(hit) => (
+                    <button class="docs-search-hit" onClick={() => openHit(`/docs/${hit.docId}${hit.anchor ? `#${hit.anchor}` : ''}`)}>
+                      <span class="docs-search-hit-title">{hit.heading}</span>
+                      <span class="docs-search-hit-doc">{hit.docTitle}</span>
+                      <span class="docs-search-hit-snippet">{hit.snippet}</span>
+                    </button>
+                  )}
+                </For>
+              </Show>
+            </div>
+          </Show>
+
+          <div class="docs-llms">
+            For AI tools: <a href="/llms.txt">llms.txt</a> · <a href="/llms-full.txt">llms-full.txt</a> ·{' '}
+            <a href={`/docs/${currentPage().id}.md`}>this page as markdown</a>
+          </div>
         </nav>
 
-        <main class="docs-content" innerHTML={renderedHtml()} />
+        <main class="docs-content" ref={contentEl} innerHTML={renderedHtml()} onClick={handleContentClick} />
       </div>
     </div>
   )

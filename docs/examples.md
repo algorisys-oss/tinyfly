@@ -25,7 +25,7 @@ The simplest animation — fade an element from invisible to visible.
 
 ```typescript
 import { Timeline, createTrack } from 'tinyfly'
-import { DOMAdapter } from 'tinyfly/adapters/dom'
+import { DOMAdapter } from 'tinyfly/adapters'
 
 const timeline = new Timeline({
   id: 'fade-in',
@@ -282,7 +282,7 @@ Animate shapes on a `<canvas>` element.
 
 ```typescript
 import { Timeline, createTrack } from 'tinyfly'
-import { CanvasAdapter } from 'tinyfly/adapters/canvas'
+import { CanvasAdapter } from 'tinyfly/adapters'
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement
 const ctx = canvas.getContext('2d')!
@@ -387,7 +387,7 @@ Animate SVG elements directly.
 
 ```typescript
 import { Timeline, createTrack } from 'tinyfly'
-import { SVGAdapter } from 'tinyfly/adapters/svg'
+import { SVGAdapter } from 'tinyfly/adapters'
 
 const adapter = new SVGAdapter()
 adapter.registerTarget('ball', document.getElementById('ball') as SVGElement)
@@ -693,4 +693,4 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `dist/player/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.55.0/cdn/tinyfly-player.iife.js`.

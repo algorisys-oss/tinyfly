@@ -21,6 +21,11 @@ import { layoutRect } from './layout'
  * Offsets are measured between centres, because scale happens about an
  * element's centre (the CSS default origin); measuring corners would leave a
  * resized element off by half its change in size.
+ *
+ * Shared elements: elements with the same `data-flip-id` are treated as one
+ * thing. When an element appears that was not recorded, but something with its
+ * flip id was, it flips from where that other element was — a gallery thumbnail
+ * growing into the detail view's hero, which is a different element.
  */
 
 interface Box {
@@ -34,6 +39,8 @@ interface Box {
 export interface FlipState {
   readonly elements: Element[]
   readonly boxes: Map<Element, Box | null>
+  /** Where each `data-flip-id` appeared, and which element showed it */
+  readonly ids: Map<string, { element: Element; box: Box }>
 }
 
 export interface FlipVars {
@@ -49,6 +56,11 @@ export interface FlipVars {
    * but is now gets the `enter` animation.
    */
   targets?: TargetInput
+  /**
+   * Cross-fade shared elements: one that takes over another's flip id fades in
+   * while the element it replaces (if still shown) fades out. Default false.
+   */
+  fade?: boolean
   /**
    * How newly visible elements come in: the values they start from (they end at
    * their natural values), or `false` for no entrance. Default: fade and grow in.
@@ -77,8 +89,14 @@ export function getFlipState(stage: Stage, targets: TargetInput): FlipState {
   const names = stage.resolveTargets(targets)
   const elements = names.map((name) => stage.elementFor(name)).filter((el): el is Element => !!el)
   const boxes = new Map<Element, Box | null>()
-  for (const element of elements) boxes.set(element, visualBox(element))
-  return { elements, boxes }
+  const ids = new Map<string, { element: Element; box: Box }>()
+  for (const element of elements) {
+    const box = visualBox(element)
+    boxes.set(element, box)
+    const id = flipId(element)
+    if (box && id !== undefined && !ids.has(id)) ids.set(id, { element, box })
+  }
+  return { elements, boxes, ids }
 }
 
 /** A flip that is still running on an element, so a new one can take over. */
@@ -113,9 +131,18 @@ export function flipFrom(
   let index = 0
 
   for (const element of ordered) {
-    const before = state.boxes.get(element) ?? null
     const after = layoutBox(element)
     if (!after) continue // not rendered now: nothing to show
+
+    // Not recorded (or hidden then), but standing in for something that was.
+    let before = state.boxes.get(element) ?? null
+    let replaces: Element | undefined
+    const id = flipId(element)
+    const shared = !before && id !== undefined ? state.ids.get(id) : undefined
+    if (shared && shared.element !== element) {
+      before = shared.box
+      replaces = shared.element
+    }
 
     // Take over from a flip still running on this element — only its part of
     // that flip, so other elements it covers keep going. The "before" box was
@@ -153,17 +180,25 @@ export function flipFrom(
       continue
     }
 
+    const crossFade = vars.fade === true && replaces !== undefined
     tl.fromTo(
       element,
-      { x: dx, y: dy, scaleX: sx, scaleY: sy },
-      { x: 0, y: 0, scaleX: 1, scaleY: 1, duration, ease, delay },
+      { x: dx, y: dy, scaleX: sx, scaleY: sy, ...(crossFade && { opacity: 0 }) },
+      { x: 0, y: 0, scaleX: 1, scaleY: 1, ...(crossFade && { opacity: 1 }), duration, ease, delay },
       0
     )
+    if (crossFade && replaces && layoutBox(replaces)) {
+      tl.fromTo(replaces, { opacity: 1 }, { opacity: 0, duration, ease, delay }, 0)
+    }
     running.set(element, tl)
     index++
   }
 
   return tl
+}
+
+function flipId(element: Element): string | undefined {
+  return (element as HTMLElement).dataset?.flipId
 }
 
 /** The natural value each entrance property animates to. */

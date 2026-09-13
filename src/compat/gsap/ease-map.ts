@@ -72,12 +72,13 @@ const BUILTIN_ALIASES: Record<string, EasingType> = {
   none: 'linear',
   linear: 'linear',
   'linear.none': 'linear',
-  'power2.in': 'ease-in-quad',
-  'power2.out': 'ease-out-quad',
-  'power2.inout': 'ease-in-out-quad',
-  'power3.in': 'ease-in-cubic',
-  'power3.out': 'ease-out-cubic',
-  'power3.inout': 'ease-in-out-cubic',
+  // GSAP's powerN is a polynomial of degree N+1: power1 is quad, power2 cubic.
+  'power1.in': 'ease-in-quad',
+  'power1.out': 'ease-out-quad',
+  'power1.inout': 'ease-in-out-quad',
+  'power2.in': 'ease-in-cubic',
+  'power2.out': 'ease-out-cubic',
+  'power2.inout': 'ease-in-out-cubic',
 }
 
 /** Normalise "Power2.easeOut", "power2.out" and "power2" to one spelling. */

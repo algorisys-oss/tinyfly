@@ -93,7 +93,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Resizable preview** - Drag the splitter between the preview and the timeline to resize (double-click to reset)
 - **Stroke write-on** - Animate a path's stroke drawing itself on (DOM + SVG renderers); one-click "Write On" preset
 - **Embed code** - Generate copy-paste code for websites (single scene or full sequence)
-- **Examples** - One page (`/examples`, the **Examples** toolbar button) for every ready-made animation: editable examples open in the editor as a new project, code examples show their timeline JSON and HTML to copy. Includes a **GSAP-style** section of 33 runnable `live.to()` demos (Flip layouts, motion paths, orbits, shape and menu morphs, scramble text, draggable throws, swipe cards, 3D card flips, magnetic button, proximity grid, marquee, split text, SVG draw…), and every card has **Copy code** for a complete standalone HTML page. Hover-to-play previews, search, and filters for kind and category (GSAP-style, Showcase, Basics, Motion, Text, UI, Loaders, Effects, Data, Camera, Scroll, and **Algorisys** product demos)
+- **Examples** - One page (`/examples`, the **Examples** toolbar button) for every ready-made animation: editable examples open in the editor as a new project, code examples show their timeline JSON and HTML to copy. Includes a full-page **Agency Landing Page** showcase and a **GSAP-style** section of 38 runnable `live.to()` demos (Flip layouts and shared elements, pinned horizontal scroll, line mask reveals, spring release, canvas from object tweens, motion paths, orbits, shape and menu morphs, scramble text, draggable throws, swipe cards, 3D card flips, magnetic button, proximity grid, marquee, split text, SVG draw…), and every card has **Copy code** for a complete standalone HTML page. Hover-to-play previews, search, and filters for kind and category (GSAP-style, Showcase, Basics, Motion, Text, UI, Loaders, Effects, Data, Camera, Scroll, and **Algorisys** product demos)
 
 ## Documentation
 
@@ -108,6 +108,8 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - [2D Animation Roadmap](docs/2d-animation-roadmap.md) — Adobe Animate gap analysis and phased plan (symbols/library, camera, onion skinning, …)
 
 **Feature guides:** [Symbols & Library](docs/symbols-and-library.md) · [Camera](docs/camera.md) · [Polygon & Star](docs/polygon-star.md) · [Pen tool](docs/pen-tool.md) · [Shape morph](docs/shape-morph.md) · [Grid & snapping](docs/grid-and-snapping.md) · [Onion skinning](docs/onion-skinning.md) · [Sprite-sheet export](docs/sprite-sheet-export.md)
+
+**Docs for LLMs:** the repo root has [`llms.txt`](llms.txt), an [llmstxt.org](https://llmstxt.org) index of these docs. The built editor also serves `/llms.txt`, `/llms-full.txt` (every doc in one file) and each page as raw markdown at `/docs/<page>.md`.
 
 ## Installation
 
@@ -126,6 +128,8 @@ for what you import:
 |---|---|---|
 | `tinyfly` | The engine — `Timeline`, tracks, easing, JSON | Browser, Web Worker, Node |
 | `tinyfly/player` | `TinyflyPlayer`, `MediaSync`, sequencer — plays editor JSON on the DOM | Browser |
+| `tinyfly/export` | `exportToCSS`, `exportToLottie`, GIF / WebP / MP4 / sprite-sheet export | Browser (CSS and Lottie anywhere) |
+| `tinyfly/adapters` | `DOMAdapter`, `CanvasAdapter`, `SVGAdapter`, `WebGLAdapter` — apply timeline state to a render target | Browser |
 | `tinyfly/gsap-compat` | GSAP-style `live.to()` / `timeline()`, plus the compiling `tf` facade | Browser (`tf` anywhere) |
 | `tinyfly/drivers` | `ScrollDriver`, `VisibilityDriver` | Browser |
 | `tinyfly/interaction` | `Observer`, `Draggable` | Browser |
@@ -137,6 +141,9 @@ import { Timeline, createTrack } from 'tinyfly'
 
 // The DOM player + media sync (browser)
 import { TinyflyPlayer, MediaSync } from 'tinyfly/player'
+
+// Render adapters: apply timeline state to DOM, Canvas, SVG or WebGL (browser)
+import { DOMAdapter } from 'tinyfly/adapters'
 
 // GSAP-style animation of real elements (browser)
 import { live } from 'tinyfly/gsap-compat'
@@ -157,7 +164,7 @@ GitHub. No npm required.
 GSAP-shaped functions at the top level:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.52.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.55.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -178,11 +185,11 @@ GSAP-shaped functions at the top level:
 | `cdn/tinyfly.esm.js` | The same, as an ES module: `import { live } from '…/cdn/tinyfly.esm.js'` |
 | `cdn/tinyfly-player.iife.js` | Player only (~11 KB gzipped), for playing editor exports |
 
-Replace `@v0.52.0` with the version you want. **Pin a version in production**:
+Replace `@v0.55.0` with the version you want. **Pin a version in production**:
 a tag's files never change. `@main` follows the latest release, which jsDelivr
 caches for up to a day. Load one `tinyfly` global, not both.
 
-Every card on the [Examples page](#features) has **Copy code**, which gives you a
+Every card on the [Examples page](docs/editor-guide.md#examples) has **Copy code**, which gives you a
 complete HTML page already using these URLs.
 
 ### Build the distributable libraries
@@ -195,7 +202,7 @@ This produces:
 
 - `lib/engine/tinyfly-engine.js` (ESM) and `.umd.cjs` — the engine
 - `lib/player/tinyfly-player.{es,umd,iife}.js` — the standalone DOM player
-- `lib/addons/{gsap-compat,drivers,interaction}.js` — the optional entry points
+- `lib/addons/{adapters,export,gsap-compat,drivers,interaction}.js` — the optional entry points
 - `lib/browser/tinyfly.{iife,umd}.js` and `tinyfly.js` — the all-in-one bundle
 - `lib/types/**` — TypeScript declarations
 
@@ -205,7 +212,7 @@ This produces:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/tinyfly.git
+git clone https://github.com/algorisys-oss/tinyfly.git
 cd tinyfly
 
 # Install dependencies
@@ -459,6 +466,16 @@ timeline.addTrack({
 
 **Motion paths** follow SVG path data, points, or (with `live`) an SVG element on the page — `align` lays the path over the element where it is drawn and `autoRotate` turns the follower to face along it. The path parser handles everything design tools export, and followers move at an even speed.
 
+**Award-site motion** on the same `live` API, all compiled to ordinary tracks:
+- `scrollTrigger` — scrub (exact or smoothed), `pin` (the sticky recipe automated), `toggleActions`, `once`, velocity in `onUpdate`; scrolling does no layout reads
+- `live.splitText()` — characters, words and rendered lines, with clipping masks and accessible labels
+- `drawSVG` — stroke drawing by length or segment (`'20% 80%'`)
+- `spring` — presets or stiffness/damping/mass, carrying the momentum of whatever it interrupts or a drag's release velocity
+- Flip shared elements — `data-flip-id` grows a thumbnail into a different hero element
+- Plain-object targets and `live.ticker` — drive canvas, Three.js or shader uniforms on the same frame as the DOM
+
+See the **Agency Landing Page** showcase on the Examples page (`/showcase/agency-landing`).
+
 **GSAP-flavoured authoring** desugars a familiar API into ordinary tracks:
 
 ```ts
@@ -502,7 +519,8 @@ tinyfly/
 │   ├── adapters/         # Render adapters
 │   │   ├── dom/          # DOM/CSS adapter
 │   │   ├── canvas/       # Canvas 2D adapter
-│   │   └── svg/          # SVG adapter
+│   │   ├── svg/          # SVG adapter
+│   │   └── webgl/        # WebGL adapter
 │   ├── editor/           # Visual editor (SolidJS)
 │   │   ├── components/   # UI components
 │   │   └── stores/       # State management
@@ -544,14 +562,16 @@ tinyfly/
 - [ ] Export-time collapse of baked staggers into runtime stagger tracks
 
 **Planned — [Phase 27](todo.md) (closing on GSAP):**
-- [ ] Cross-browser testing (Firefox and WebKit are currently unverified)
+- [x] Cross-browser checks (`npm run e2e`): Chromium and Firefox pass; WebKit not yet run (needs `libavif16` on Linux)
 - [x] Performance benchmark against GSAP ([results](bench/README.md) — ~3x slower per frame; the DOM adapter is 75% of our cost, not the engine)
 - [ ] Exercise the WebGL adapter against a real GL context (only its maths is tested)
 - [ ] Load-time value resolution + responsive variants (the serializable answer to function values and `matchMedia`)
-- [ ] Inertia / throw as a `decay` track kind
-- [ ] ScrambleText, CustomBounce, CustomWiggle (authoring-time generators)
+- [x] Inertia / throw as an `inertia` track kind
+- [x] Text tracks: type-on and scramble text
+- [ ] CustomBounce, CustomWiggle (authoring-time generators)
 - [ ] Framework wrappers (React / Vue / Svelte)
-- [ ] Scroll pinning, nested timelines at runtime, explicit track priority
+- [x] Scroll pinning (`scrollTrigger: { pin }`), split text, drawSVG, springs and shared-element Flip on `live` ([Phase 28](todo.md))
+- [ ] Nested timelines at runtime, explicit track priority
 - [ ] React Native adapter
 - [ ] Collaborative editing
 
@@ -591,27 +611,28 @@ results rather than just looking for errors:
 - **Editor:** adding elements, playing in all three renderers, and IndexedDB
   persistence across a reload.
 
-Latest run: Chromium 150 and Firefox 153 pass all 19 checks. WebKit needs
+Latest run: Chromium 150 and Firefox 153 pass all 33 checks. WebKit needs
 `libavif16` on Linux hosts (`sudo apt-get install libavif16`).
 
 ### Test Coverage
 
-- 731 tests passing
-- Core engine: 136 tests
-- Adapters: 87 tests (incl. clip/mask reveal, filters, shine across DOM/SVG/Canvas)
-- Editor stores: 181 tests (incl. split-text, staggered presets, keyframe copy/paste, scene duration)
-- Split-text util: 8 tests
-- Typewriter builder: 9 tests
-- Letter-stagger sample (engine integration): 4 tests
-- Player + media sync: 45 tests
-- Sequencer: 30 tests
-- Export formats: 71 tests (CSS 10, Lottie 10, GIF 19, MP4 16, WebP 16)
-- Export filename sanitizer: 14 tests
-- Animation presets: 18 tests
+`npm test` runs 1,711 unit tests in 99 files, all passing:
+
+| Area | Tests |
+|---|---|
+| Engine (`src/engine`: timeline, easing, paths, text, exports, serialization) | 498 |
+| Editor (`src/editor`: stores, utils, presets, AI, samples) | 393 |
+| Examples page and GSAP-style demos (`src/examples`) | 206 |
+| GSAP-style API (`src/compat/gsap`) | 201 |
+| Render adapters (`src/adapters`) | 134 |
+| Player, media sync and sequencer (`src/player`) | 83 |
+| Drivers and interaction (`src/drivers`, `src/interaction`) | 108 |
+| Docs viewer and `llms.txt` (`src/docs`) | 14 |
 
 ## Contributing
 
-Contributions are welcome! Please read our contributing guidelines before submitting a PR.
+Contributions are welcome! For anything larger than a small fix, please open an
+[issue](https://github.com/algorisys-oss/tinyfly/issues) first to discuss it, then send a pull request.
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)

@@ -190,6 +190,8 @@ describe('VisibilityDriver', () => {
 
 describe('ScrollDriver', () => {
   let listeners: Record<string, Array<() => void>>
+  /** Started drivers, stopped after each test: resize handling is shared between drivers. */
+  let startedDrivers: ScrollDriver[]
 
   /** A trigger element whose rect we can move between samples. */
   function makeTrigger(top: number, height = 500) {
@@ -212,8 +214,15 @@ describe('ScrollDriver', () => {
 
   beforeEach(() => {
     listeners = {}
+    startedDrivers = []
+    const start = ScrollDriver.prototype.start
+    vi.spyOn(ScrollDriver.prototype, 'start').mockImplementation(function (this: ScrollDriver) {
+      startedDrivers.push(this)
+      start.call(this)
+    })
     ;(globalThis as Record<string, unknown>).window = {
       innerHeight: 1000,
+      scrollY: 0,
       addEventListener: (type: string, fn: () => void) => {
         ;(listeners[type] ??= []).push(fn)
       },
@@ -224,6 +233,8 @@ describe('ScrollDriver', () => {
   })
 
   afterEach(() => {
+    for (const driver of startedDrivers) driver.destroy()
+    vi.restoreAllMocks()
     delete (globalThis as Record<string, unknown>).window
   })
 
@@ -287,7 +298,7 @@ describe('ScrollDriver', () => {
     state.top = 250
     driver.sample()
 
-    expect(onUpdate).toHaveBeenLastCalledWith(expect.closeTo(0.5, 6))
+    expect(onUpdate).toHaveBeenLastCalledWith(expect.closeTo(0.5, 6), 0)
   })
 
   it('honours custom start and end triggers', () => {
@@ -306,12 +317,15 @@ describe('ScrollDriver', () => {
     expect(timeline.currentTime).toBeCloseTo(500, 6)
   })
 
-  it('re-samples on scroll events', () => {
+  it('updates on scroll events from the scroll offset alone, without re-measuring', () => {
     const timeline = buildTimeline()
     const { el, state } = makeTrigger(1500)
     new ScrollDriver({ timeline, trigger: el }).start()
 
-    state.top = 250
+    // Scrolling 1250px down moves the element up by the same amount; the driver
+    // must get there from the scroll offset (the rect below is deliberately stale).
+    ;(window as unknown as { scrollY: number }).scrollY = 1250
+    state.top = 99999
     for (const fn of listeners.scroll ?? []) fn()
 
     expect(timeline.currentTime).toBeCloseTo(500, 6)

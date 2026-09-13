@@ -44,6 +44,15 @@ describe('track endDelay', () => {
     expect(tl.duration).toBe(1300)
     expect(tl.getStateAtTime(1200).values.get('box')?.get('opacity')).toBe(1)
   })
+
+  it('applies to motion-path tracks too', () => {
+    const tl = new Timeline({
+      id: 't',
+      tracks: [{ id: 'p', target: 'dot', property: 'motionPath', motionPathConfig: { pathData: 'M0 0 L100 0' }, endDelay: 300, keyframes: [{ time: 0, value: 0 }, { time: 1000, value: 1 }] }],
+    })
+    expect(tl.duration).toBe(1300)
+    expect(tl.getStateAtTime(1200).values.get('dot')?.get('motionPathX')).toBe(100)
+  })
 })
 
 describe('runtime stagger', () => {

@@ -3,7 +3,9 @@ import { DOMAdapter } from '../../adapters/dom'
 
 /**
  * The shared runtime behind the live facade: one frame loop, one DOM adapter,
- * and a record of the values currently applied to each element.
+ * and a record of the values currently applied to each element. Plain objects
+ * are targets too — their values are assigned straight onto them — and the
+ * ticker lets other rendering (canvas, WebGL) run on the same frame.
  *
  * Why one stage rather than a loop per animation. The DOM adapter composes
  * `transform` from the properties in the state it is given, so two independent
@@ -14,7 +16,8 @@ import { DOMAdapter } from '../../adapters/dom'
  *
  * Merge rule: timelines are ticked in activation order and write into the same
  * per-element map, so when two drive the same property at once, the one played
- * most recently wins. This mirrors the engine's own "last track added wins".
+ * most recently wins. This mirrors the engine's own rule for tracks, where
+ * the one that started most recently wins.
  *
  * The stage holds only *playing* timelines. A timeline that finishes or pauses
  * drops out after its last frame is applied — its final values stay in the
@@ -23,8 +26,33 @@ import { DOMAdapter } from '../../adapters/dom'
  * tweens beyond their element's last values.
  */
 
+/**
+ * A plain JavaScript object animated directly: its numeric (or colour) properties
+ * are written back onto it each frame — `{ x: 0 }`, a Three.js `mesh.position`,
+ * a shader uniform. Arrays and node lists are lists of targets, not objects.
+ */
+export type ObjectTarget = Record<string, unknown>
+
 /** Anything the live facade accepts as a target. */
-export type TargetInput = string | Element | ArrayLike<Element> | ReadonlyArray<string | Element>
+export type TargetInput =
+  | string
+  | Element
+  | ObjectTarget
+  | ArrayLike<Element>
+  | ReadonlyArray<string | Element | ObjectTarget>
+
+/**
+ * Called once per frame, after that frame's values are applied — the place to
+ * render a canvas or a WebGL scene from objects tinyfly is animating.
+ * `time` is seconds since the ticker started, `deltaTime` milliseconds since the
+ * previous frame, `frame` a frame counter (GSAP's ticker signature).
+ */
+export type TickerCallback = (time: number, deltaTime: number, frame: number) => void
+
+export interface Ticker {
+  add(callback: TickerCallback): void
+  remove(callback: TickerCallback): void
+}
 
 /** Frame scheduling, injectable so the stage can be driven by tests. */
 export interface FrameScheduler {
@@ -57,6 +85,17 @@ export class Stage {
   private readonly elements = new Map<string, Element>()
   private nameCounter = 0
 
+  /** Plain-object targets, named like elements but written directly. */
+  private objectNames = new WeakMap<object, string>()
+  private readonly objects = new Map<string, ObjectTarget>()
+
+  /** Things created for this stage that outlive a timeline (scroll triggers, pins). */
+  private readonly owned = new Set<{ destroy(): void }>()
+
+  private readonly tickerCallbacks = new Set<TickerCallback>()
+  private tickerTime = 0
+  private tickerFrame = 0
+
   /** Playing timelines, in activation order. */
   private readonly active = new Map<Timeline, ActiveEntry>()
 
@@ -86,14 +125,15 @@ export class Stage {
   }
 
   /**
-   * Resolve selectors, elements and lists of either to engine target names,
-   * registering each element with the adapter the first time it is seen.
+   * Resolve selectors, elements, plain objects and lists of them to engine
+   * target names, registering each element with the adapter (and each object
+   * with the stage) the first time it is seen.
    * Returns an empty array when nothing matches.
    */
   resolveTargets(input: TargetInput): string[] {
     const names: string[] = []
-    for (const element of this.elementsOf(input)) {
-      names.push(this.nameFor(element))
+    for (const target of this.targetsOf(input)) {
+      names.push(this.nameFor(target))
     }
     return names
   }
@@ -108,9 +148,56 @@ export class Stage {
     return this.elements.get(name)
   }
 
+  /** The plain object registered under a target name. */
+  objectFor(name: string): ObjectTarget | undefined {
+    return this.objects.get(name)
+  }
+
   /** Last value the stage applied to a target's property, if any. */
   appliedValue(name: string, property: string): AnimatableValue | undefined {
     return this.applied.get(name)?.get(property)
+  }
+
+  /**
+   * How fast a property is changing right now, in units per second, taken from
+   * the most recently played timeline that animates it — so a spring started
+   * mid-motion carries the momentum. A finite difference over a few milliseconds
+   * of that timeline's own (deterministic) state; undefined when nothing playing
+   * animates the property.
+   */
+  velocityOf(name: string, property: string): number | undefined {
+    const STEP_MS = 4
+    for (const timeline of [...this.active.keys()].reverse()) {
+      if (timeline.getTracks({ target: name, property }).length === 0) continue
+      const time = timeline.currentTime
+      if (time < STEP_MS) return 0
+      const now = timeline.getStateAtTime(time).values.get(name)?.get(property)
+      const before = timeline.getStateAtTime(time - STEP_MS).values.get(name)?.get(property)
+      if (typeof now !== 'number' || typeof before !== 'number') return undefined
+      const perMs = (now - before) / STEP_MS
+      return (timeline.direction === 'reverse' ? -perMs : perMs) * 1000
+    }
+    return undefined
+  }
+
+  /**
+   * Run a callback every frame, after animations are applied. The frame loop
+   * keeps going while any callback is registered, even with nothing playing.
+   */
+  readonly ticker: Ticker = {
+    add: (callback) => {
+      if (this.destroyed) return
+      if (this.tickerCallbacks.size === 0) {
+        this.tickerTime = 0
+        this.tickerFrame = 0
+      }
+      this.tickerCallbacks.add(callback)
+      this.startLoop()
+    },
+    remove: (callback) => {
+      this.tickerCallbacks.delete(callback)
+      if (!this.running) this.stopLoop()
+    },
   }
 
   // --- playback -----------------------------------------------------------
@@ -135,7 +222,14 @@ export class Stage {
   /** Remove a timeline from the running set. Its applied values remain. */
   deactivate(timeline: Timeline): void {
     this.active.delete(timeline)
-    if (this.active.size === 0) this.stopLoop()
+    if (!this.running) this.stopLoop()
+  }
+
+  /** Destroy `resource` along with the stage. Returns it. */
+  own<T extends { destroy(): void }>(resource: T): T {
+    if (this.destroyed) resource.destroy()
+    else this.owned.add(resource)
+    return resource
   }
 
   /**
@@ -146,12 +240,17 @@ export class Stage {
    */
   destroy(): void {
     this.destroyed = true
+    for (const resource of this.owned) resource.destroy()
+    this.owned.clear()
     for (const timeline of this.active.keys()) timeline.stop()
     this.active.clear()
     this.stopLoop()
     this.adapter.clearTargets()
     this.elements.clear()
     this.names = new WeakMap()
+    this.objects.clear()
+    this.objectNames = new WeakMap()
+    this.tickerCallbacks.clear()
     this.applied.clear()
     this.dirty.clear()
   }
@@ -195,10 +294,25 @@ export class Stage {
       if (timeline.playbackState !== 'playing') this.active.delete(timeline)
     }
     this.flush()
-    if (this.active.size === 0) this.stopLoop()
+    this.runTicker(deltaMs)
+    if (!this.running) this.stopLoop()
   }
 
   // --- internals ----------------------------------------------------------
+
+  /** Whether the frame loop has work: something playing, or a ticker callback. */
+  private get running(): boolean {
+    return this.active.size > 0 || this.tickerCallbacks.size > 0
+  }
+
+  private runTicker(deltaMs: number): void {
+    if (this.tickerCallbacks.size === 0) return
+    this.tickerTime += deltaMs
+    this.tickerFrame += 1
+    for (const callback of [...this.tickerCallbacks]) {
+      callback(this.tickerTime / 1000, deltaMs, this.tickerFrame)
+    }
+  }
 
   private write(state: AnimationState): void {
     for (const [name, properties] of state.values) {
@@ -216,8 +330,17 @@ export class Stage {
     if (this.dirty.size === 0) return
 
     const values = new Map<string, Map<string, AnimatableValue>>()
-    for (const name of this.dirty) values.set(name, this.applied.get(name)!)
+    for (const name of this.dirty) {
+      const properties = this.applied.get(name)!
+      const object = this.objects.get(name)
+      if (object) {
+        for (const [property, value] of properties) object[property] = value
+      } else {
+        values.set(name, properties)
+      }
+    }
     this.dirty.clear()
+    if (values.size === 0) return
 
     // The adapter reads only `values`; the rest is filled to satisfy the type.
     this.adapter.applyState({
@@ -238,7 +361,7 @@ export class Stage {
 
     // A callback run during the tick (an onComplete that plays something else)
     // may already have scheduled the next frame.
-    if (this.active.size > 0 && this.frameId === null) {
+    if (this.running && this.frameId === null) {
       this.frameId = this.scheduler.request(this.frame)
     }
   }
@@ -255,20 +378,38 @@ export class Stage {
     this.lastTimestamp = null
   }
 
-  private elementsOf(input: TargetInput): Element[] {
+  private targetsOf(input: TargetInput): (Element | ObjectTarget)[] {
     if (typeof input === 'string') {
       return Array.from(this.root.querySelectorAll(input))
     }
     if (isElement(input)) return [input]
+    if (!isTargetList(input)) return [input as ObjectTarget]
 
-    const result: Element[] = []
-    for (const item of Array.from(input as ArrayLike<string | Element>)) {
-      result.push(...this.elementsOf(item))
+    const result: (Element | ObjectTarget)[] = []
+    for (const item of Array.from(input as ArrayLike<string | Element | ObjectTarget>)) {
+      result.push(...this.targetsOf(item))
     }
     return result
   }
 
-  private nameFor(element: Element): string {
+  private nameFor(target: Element | ObjectTarget): string {
+    return isElement(target) ? this.elementName(target) : this.objectName(target)
+  }
+
+  private objectName(object: ObjectTarget): string {
+    const existing = this.objectNames.get(object)
+    if (existing) return existing
+    let name: string
+    do {
+      this.nameCounter += 1
+      name = `obj-${this.nameCounter}`
+    } while (this.objects.has(name) || this.elements.has(name))
+    this.objectNames.set(object, name)
+    this.objects.set(name, object)
+    return name
+  }
+
+  private elementName(element: Element): string {
     const existing = this.names.get(element)
     if (existing) return existing
 
@@ -291,4 +432,11 @@ export class Stage {
 
 function isElement(value: unknown): value is Element {
   return typeof value === 'object' && value !== null && (value as Node).nodeType === 1
+}
+
+/** Arrays, NodeLists and HTMLCollections hold targets; any other object is one. */
+function isTargetList(value: unknown): boolean {
+  if (Array.isArray(value)) return true
+  const list = value as { length?: unknown; item?: unknown }
+  return typeof list.length === 'number' && typeof list.item === 'function'
 }

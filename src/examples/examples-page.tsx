@@ -20,7 +20,8 @@ import {
 } from './example-catalog'
 import { buildSamplePreview } from './sample-preview'
 import { CopyCodeButton } from './copy-code-button'
-import { editableExamplePage, liveDemoPage, timelineExamplePage } from './standalone-page'
+import { editableExamplePage, liveDemoPage, showcasePage, timelineExamplePage } from './standalone-page'
+import { showcases } from './showcases'
 import markupCss from './code-examples.css?raw'
 import './code-examples.css'
 import './examples-page.css'
@@ -451,6 +452,31 @@ export const ExamplesPage: Component = () => {
           </For>
         </div>
       </div>
+
+      <Show when={!query() && category() === 'all' && kind() !== 'editable'}>
+        <section class="showcase-band" aria-label="Full-page showcases">
+          <For each={showcases}>
+            {(showcase) => (
+              <div class="showcase-card">
+                <div class="showcase-card-text">
+                  <span class="showcase-card-label">Full-page showcase</span>
+                  <h2>{showcase.name}</h2>
+                  <p>{showcase.description}</p>
+                  <div class="example-tags">
+                    <For each={showcase.tags}>{(tag) => <span class="tag">{tag}</span>}</For>
+                  </div>
+                </div>
+                <div class="showcase-card-actions">
+                  <A href={`/showcase/${showcase.id}`} class="cta-btn">
+                    Open the page
+                  </A>
+                  <CopyCodeButton getCode={() => showcasePage(showcase)} />
+                </div>
+              </div>
+            )}
+          </For>
+        </section>
+      </Show>
 
       <main class="examples-grid">
         <For each={visible()}>

@@ -13,6 +13,11 @@ import { cardStack } from './card-stack'
 import { infiniteMarquee } from './infinite-marquee'
 import { splitTextReveal } from './split-text-reveal'
 import { svgLineDraw } from './svg-line-draw'
+import { canvasObjectTween } from './canvas-object-tween'
+import { lineMaskReveal } from './line-mask-reveal'
+import { pinnedHorizontal } from './pinned-horizontal'
+import { springRelease } from './spring-release'
+import { sharedElementGallery } from './shared-element-gallery'
 import { motionPathAlign } from './motion-path-align'
 import { motionPathPoints } from './motion-path-points'
 import { shapeMorph } from './shape-morph'
@@ -46,6 +51,11 @@ import cardStackSource from './card-stack.js?raw'
 import infiniteMarqueeSource from './infinite-marquee.js?raw'
 import splitTextRevealSource from './split-text-reveal.js?raw'
 import svgLineDrawSource from './svg-line-draw.js?raw'
+import canvasObjectTweenSource from './canvas-object-tween.js?raw'
+import lineMaskRevealSource from './line-mask-reveal.js?raw'
+import pinnedHorizontalSource from './pinned-horizontal.js?raw'
+import springReleaseSource from './spring-release.js?raw'
+import sharedElementGallerySource from './shared-element-gallery.js?raw'
 import motionPathAlignSource from './motion-path-align.js?raw'
 import motionPathPointsSource from './motion-path-points.js?raw'
 import shapeMorphSource from './shape-morph.js?raw'
@@ -95,12 +105,14 @@ export const liveDemos: LiveDemoWithCode[] = [
   withCode(flipFilter, flipFilterSource),
   withCode(flipLayout, flipLayoutSource),
   withCode(flipExpand, flipExpandSource),
+  withCode(sharedElementGallery, sharedElementGallerySource),
   withCode(motionPathAlign, motionPathAlignSource),
   withCode(motionPathPoints, motionPathPointsSource),
   withCode(shapeMorph, shapeMorphSource),
   withCode(iconMorph, iconMorphSource),
   withCode(scrambleText, scrambleTextSource),
   withCode(typewriterText, typewriterTextSource),
+  withCode(springRelease, springReleaseSource),
   withCode(throwToSlots, throwToSlotsSource),
   withCode(inertiaCarousel, inertiaCarouselSource),
   withCode(frictionThrows, frictionThrowsSource),
@@ -122,6 +134,9 @@ export const liveDemos: LiveDemoWithCode[] = [
   withCode(velocitySkew, velocitySkewSource),
   withCode(cardStack, cardStackSource),
   withCode(infiniteMarquee, infiniteMarqueeSource),
+  withCode(pinnedHorizontal, pinnedHorizontalSource),
+  withCode(lineMaskReveal, lineMaskRevealSource),
   withCode(splitTextReveal, splitTextRevealSource),
   withCode(svgLineDraw, svgLineDrawSource),
+  withCode(canvasObjectTween, canvasObjectTweenSource),
 ]

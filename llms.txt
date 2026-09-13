@@ -1,0 +1,44 @@
+# tinyfly
+
+> tinyfly is a lightweight, framework-agnostic animation engine with an optional visual editor. Animations are plain JSON (timelines, tracks, keyframes) and play deterministically in browsers, Web Workers and Node. A GSAP-style API (`live.to`, `live.timeline`) drives real DOM and SVG elements.
+
+Key facts:
+
+- Package: `tinyfly` (prepared for npm but not yet published; until then use the script tag below, or build the repo and install it locally). Entry points: `tinyfly` (engine), `tinyfly/export` (CSS, Lottie, GIF, video exporters), `tinyfly/player`, `tinyfly/adapters` (DOM, Canvas, SVG, WebGL), `tinyfly/gsap-compat` (GSAP-style API), `tinyfly/drivers` (scroll, visibility), `tinyfly/interaction` (Observer, Draggable), `tinyfly/browser` (the GSAP-style runtime plus engine, player, drivers and interaction — no exporters — for script tags).
+- Script tag: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v{version}/cdn/tinyfly.iife.js` defines a global `tinyfly`, e.g. `tinyfly.to('.box', { x: 200, duration: 1 })`. Replace `{version}` with a release tag.
+- The GSAP-style `live` API covers `scrollTrigger` (scrub, pin, toggleActions), `splitText` (chars, words, lines, masks), `drawSVG`, `spring`, `morphSVG`, `motionPath`, text/scramble, inertia and Draggable, Flip (including shared elements by `data-flip-id`), plain-object targets and `live.ticker`.
+- Times in JSON timelines are milliseconds; durations in the GSAP-style API are seconds, as in GSAP.
+- The GSAP-style API is familiar, not compatible: GSAP code does not run unchanged. `docs/gsap-compat.md` lists every supported option and each difference.
+- Track kinds: keyframe tracks, spring (`kind: 'spring'`), inertia (`kind: 'inertia'`), motion path (`property: 'motionPath'`) and text (`property: 'text'`). All serialize to JSON; `docs/file-format.md` defines them.
+- Source: https://github.com/algorisys-oss/tinyfly. License: AGPL-3.0, with a commercial license for proprietary and SaaS use (see the README).
+
+## Start here
+
+- [Getting Started](https://raw.githubusercontent.com/algorisys-oss/tinyfly/main/docs/getting-started.md): What tinyfly is, making a first animation in the editor, and using it from code, a script tag or the CDN.
+- [GSAP Compatibility](https://raw.githubusercontent.com/algorisys-oss/tinyfly/main/docs/gsap-compat.md): The GSAP-style API (`live.to`, `tf.timeline`): supported vars, motion paths, morphSVG, text, inertia, Draggable, Flip, and where it differs from GSAP.
+- [Code Examples](https://raw.githubusercontent.com/algorisys-oss/tinyfly/main/docs/examples.md): Recipes with the engine API: fades, loops, colour and bezier easing, loading JSON, canvas and SVG rendering, multi-scene sequences, motion paths and script-tag embeds.
+
+## Reference
+
+- [API Reference](https://raw.githubusercontent.com/algorisys-oss/tinyfly/main/docs/api-reference.md): Every public engine, player and adapter API: Timeline, tracks, keyframes, easing, drivers, serialization and exports.
+- [File Format](https://raw.githubusercontent.com/algorisys-oss/tinyfly/main/docs/file-format.md): The JSON animation format: timelines, every track kind, keyframes, easing and the project file — for generating or consuming animations.
+
+## Editor features
+
+- [Editor Guide](https://raw.githubusercontent.com/algorisys-oss/tinyfly/main/docs/editor-guide.md): Every panel and feature of the visual editor, from elements and keyframes to text and inertia tracks, preview and export.
+- [Shape Morphing](https://raw.githubusercontent.com/algorisys-oss/tinyfly/main/docs/shape-morph.md): Tweening one path into another, including shapes with different point counts and several subpaths.
+- [Pen Tool](https://raw.githubusercontent.com/algorisys-oss/tinyfly/main/docs/pen-tool.md): Drawing custom paths point by point with straight segments and bezier curves.
+- [Polygons & Stars](https://raw.githubusercontent.com/algorisys-oss/tinyfly/main/docs/polygon-star.md): Parametric polygon and star shapes that stay editable while animating like any path.
+- [Grid & Snapping](https://raw.githubusercontent.com/algorisys-oss/tinyfly/main/docs/grid-and-snapping.md): The grid overlay, snapping to grid, elements and artboard centre, and alignment guides.
+- [Onion Skinning](https://raw.githubusercontent.com/algorisys-oss/tinyfly/main/docs/onion-skinning.md): Ghost frames before and after the playhead for judging arcs and easing.
+- [Sprite-sheet Export](https://raw.githubusercontent.com/algorisys-oss/tinyfly/main/docs/sprite-sheet-export.md): Exporting frames as a PNG grid plus JSON metadata for game engines and canvas players.
+
+## Guides
+
+- [Scroll Animation](https://raw.githubusercontent.com/algorisys-oss/tinyfly/main/docs/scroll-animation.md): Scroll-driven and play-when-visible animation with ScrollDriver and VisibilityDriver.
+- [Deployment](https://raw.githubusercontent.com/algorisys-oss/tinyfly/main/docs/DEPLOYMENT.md): Building and hosting the editor, and serving the player bundles.
+
+## Optional
+
+- [README](https://raw.githubusercontent.com/algorisys-oss/tinyfly/main/README.md): Feature overview, project layout and development setup.
+- [Release notes](https://raw.githubusercontent.com/algorisys-oss/tinyfly/main/release-notes/README.md): What changed in each version.

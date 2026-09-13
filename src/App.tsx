@@ -1,7 +1,7 @@
 import { Router, Route, Navigate } from '@solidjs/router'
 import { createSignal, Show } from 'solid-js'
 import { Editor } from './editor'
-import { ExamplesPage } from './examples'
+import { ExamplesPage, ShowcasePage } from './examples'
 import { DocsViewer } from './docs'
 import { Splash } from './splash'
 
@@ -20,9 +20,10 @@ function App() {
         <Router>
           <Route path="/" component={Editor} />
           <Route path="/examples" component={ExamplesPage} />
+          <Route path="/showcase/:id" component={ShowcasePage} />
           {/* The gallery and the editor's Samples dialog merged into /examples. */}
           <Route path="/gallery" component={() => <Navigate href="/examples" />} />
-          <Route path="/docs" component={DocsViewer} />
+          <Route path="/docs/:page?" component={DocsViewer} />
         </Router>
       </Show>
     </>

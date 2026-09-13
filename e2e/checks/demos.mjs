@@ -38,7 +38,7 @@ export default {
       const seen = new Set([await snap()])
 
       // Interact the way a person would: press buttons and clickable parts, then drag and scroll.
-      const clickables = await page.locator('#demo button, #demo .fe-block, #demo .cs-stack').all()
+      const clickables = await page.locator('#demo button, #demo .fe-block, #demo .cs-stack, #demo .sg-thumb').all()
       for (const el of clickables.slice(0, 3)) {
         try {
           await el.click({ timeout: 1000 })
@@ -109,6 +109,144 @@ export default {
     })
     results.push({ label: 'flip: no jump at the first frame', ok: flip.jump < 1 && flip.moved > 10, detail: `jump ${flip.jump.toFixed(2)}px while layout moved ${flip.moved.toFixed(0)}px` })
     results.push({ label: 'flip: lands exactly on the new layout', ok: flip.landing < 0.5, detail: `${flip.landing.toFixed(2)}px` })
+    await page.evaluate(() => window.__teardown?.())
+
+    // Split text: lines follow the browser's own wrapping, and the text is unchanged.
+    await mount(page, 'live-line-mask-reveal')
+    const lines = await page.evaluate(() => {
+      const copy = document.querySelector('.lm-copy')
+      const lineEls = [...copy.querySelectorAll('.line')]
+      const tops = lineEls.map((line) => [...line.querySelectorAll('span')].filter((s) => !s.className).map((w) => w.offsetTop))
+      // Within a line every word shares a top (offsetTop ignores the lines' animated transforms).
+      const flat = tops.every((t) => new Set(t).size <= 1)
+      const text = copy.textContent.replace(/\s+/g, ' ').trim()
+      return { count: lineEls.length, flat, text, label: copy.getAttribute('aria-label'), masks: copy.querySelectorAll('.line-mask').length }
+    })
+    results.push({
+      label: 'split text: lines match the browser wrapping, text and aria-label intact',
+      ok: lines.count >= 3 && lines.flat && lines.masks === lines.count && lines.text === lines.label && lines.text.startsWith('Motion that reads'),
+      detail: `${lines.count} lines, masks ${lines.masks}, words level ${lines.flat}, text ${lines.text === lines.label}`,
+    })
+    await page.evaluate(() => window.__teardown?.())
+
+    // Scroll pinning: the section holds still while the panels travel, then scrolls away.
+    await mount(page, 'live-pinned-horizontal')
+    await page.waitForTimeout(100)
+    const pin = await page.evaluate(async () => {
+      const scroller = document.querySelector('.ph-scroller')
+      const section = document.querySelector('.ph-section')
+      const track = document.querySelector('.ph-track')
+      const distance = track.scrollWidth - section.clientWidth
+      const settle = () => new Promise((r) => setTimeout(r, 2000))
+      const offset = () => section.getBoundingClientRect().top - scroller.getBoundingClientRect().top
+      const trackX = () => new DOMMatrix(getComputedStyle(track).transform).m41
+
+      const pinStart = 90 // the note above the section is 90px tall
+      scroller.scrollTop = pinStart + distance / 2
+      scroller.dispatchEvent(new Event('scroll'))
+      await settle()
+      const mid = { offset: offset(), x: trackX() }
+
+      scroller.scrollTop = pinStart + distance + 60
+      scroller.dispatchEvent(new Event('scroll'))
+      await settle()
+      const after = { offset: offset(), x: trackX() }
+      return { distance, mid, after }
+    })
+    results.push({
+      label: 'scroll pin: section held in place while panels travel with scroll, released after',
+      ok: pin.distance > 100 && Math.abs(pin.mid.offset) < 1 && Math.abs(pin.mid.x + pin.distance / 2) < 2 && Math.abs(pin.after.offset + 60) < 1.5 && Math.abs(pin.after.x + pin.distance) < 1,
+      detail: `distance ${pin.distance}px; mid offset ${pin.mid.offset.toFixed(1)} x ${pin.mid.x.toFixed(1)}; after offset ${pin.after.offset.toFixed(1)} x ${pin.after.x.toFixed(1)}`,
+    })
+    await page.evaluate(() => window.__teardown?.())
+
+    // drawSVG: a real path's measured length, drawn to a segment in each browser.
+    const draw = await page.evaluate(async () => {
+      const { createLive, Stage } = await import('/src/compat/gsap/index.ts')
+      const root = document.getElementById('root')
+      root.innerHTML = '<svg width="300" height="120"><path id="dp" d="M10 60 C 60 0, 120 120, 290 60" fill="none" stroke="#000" stroke-width="4"/></svg>'
+      const path = document.getElementById('dp')
+      const stage = new Stage({ root })
+      createLive(stage).fromTo(path, { drawSVG: 0 }, { drawSVG: '20% 70%', duration: 0.3 })
+      await new Promise((r) => setTimeout(r, 600))
+      const length = path.getTotalLength()
+      const style = getComputedStyle(path)
+      const dashes = style.strokeDasharray.split(/[\s,]+/).map(parseFloat)
+      const offset = parseFloat(style.strokeDashoffset)
+      stage.destroy()
+      return { length, dashes, offset }
+    })
+    const drawOk = Math.abs(draw.dashes[0] - draw.length * 0.5) < 0.5 && Math.abs(draw.dashes[1] - draw.length) < 0.5 && Math.abs(draw.offset + draw.length * 0.2) < 0.5
+    results.push({ label: 'drawSVG: measured stroke drawn to the requested segment', ok: drawOk, detail: `length ${draw.length.toFixed(1)}, dasharray ${draw.dashes.map((d) => d.toFixed(1)).join(' ')}, offset ${draw.offset.toFixed(1)}` })
+
+    // Springs: a fling springs the card home past centre (overshoot) and settles on it.
+    await mount(page, 'live-spring-release')
+    await page.waitForTimeout(100)
+    const cardBox = await page.locator('.sr-card').boundingBox()
+    const cx = cardBox.x + cardBox.width / 2
+    const cy = cardBox.y + cardBox.height / 2
+    await page.mouse.move(cx, cy)
+    await page.mouse.down()
+    await page.mouse.move(cx + 60, cy, { steps: 4 })
+    await page.mouse.move(cx + 90, cy, { steps: 2 })
+    await page.mouse.up()
+    const path = await page.evaluate(async () => {
+      const card = document.querySelector('.sr-card')
+      const xs = []
+      const start = performance.now()
+      while (performance.now() - start < 2500) {
+        await new Promise((r) => requestAnimationFrame(r))
+        xs.push(new DOMMatrix(getComputedStyle(card).transform).m41)
+      }
+      return { min: Math.min(...xs), last: xs[xs.length - 1], first: xs[0] }
+    })
+    results.push({
+      label: 'spring release: flung card overshoots centre and settles on it',
+      ok: path.first > 30 && path.min < -2 && Math.abs(path.last) < 0.5,
+      detail: `released at ${path.first.toFixed(1)}px, overshoot ${path.min.toFixed(1)}px, settled ${path.last.toFixed(2)}px`,
+    })
+    await page.evaluate(() => window.__teardown?.())
+
+    // Shared elements: the hero starts exactly over the clicked thumbnail, lands on its own layout, and returns.
+    await mount(page, 'live-shared-element-gallery')
+    await page.waitForTimeout(100)
+    const shared = await page.evaluate(async () => {
+      const frame = () => new Promise((r) => requestAnimationFrame(() => r()))
+      const rect = (el) => { const r = el.getBoundingClientRect(); return [r.left, r.top, r.width, r.height] }
+      const diff = (a, b) => Math.max(...a.map((v, i) => Math.abs(v - b[i])))
+      const thumb = document.querySelectorAll('.sg-thumb')[2]
+      const hero = document.querySelector('.sg-hero')
+      const thumbRect = rect(thumb)
+      thumb.click()
+      await frame()
+      const startGap = diff(rect(hero), thumbRect)
+      await new Promise((r) => setTimeout(r, 900))
+      hero.style.transform = 'none'
+      const heroLayout = rect(hero)
+      hero.style.transform = ''
+      const landGap = diff(rect(hero), heroLayout)
+      document.querySelector('.sg-detail').click()
+      await new Promise((r) => setTimeout(r, 800))
+      return { startGap, landGap, backGap: diff(rect(thumb), thumbRect), thumbOpacity: getComputedStyle(thumb).opacity, grew: heroLayout[2] > thumbRect[2] * 1.5 }
+    })
+    results.push({
+      label: 'shared-element flip: hero starts on the thumbnail, lands on its layout, thumbnail returns',
+      ok: shared.grew && shared.startGap < 1 && shared.landGap < 0.5 && shared.backGap < 0.5 && shared.thumbOpacity === '1',
+      detail: `start ${shared.startGap.toFixed(2)}px, land ${shared.landGap.toFixed(2)}px, back ${shared.backGap.toFixed(2)}px, thumb opacity ${shared.thumbOpacity}`,
+    })
+    await page.evaluate(() => window.__teardown?.())
+
+    // Object targets + ticker: the canvas is drawn from a tweened object.
+    await mount(page, 'live-canvas-object-tween')
+    await page.waitForTimeout(700)
+    const canvas = await page.evaluate(() => {
+      const c = document.querySelector('.co-canvas')
+      const data = c.getContext('2d').getImageData(0, 0, c.width, c.height).data
+      let painted = 0
+      for (let i = 3; i < data.length; i += 4) if (data[i] > 0) painted++
+      return { painted, readout: document.querySelector('.co-readout').textContent }
+    })
+    results.push({ label: 'object tweens drive a canvas through the ticker', ok: canvas.painted > 500 && canvas.readout !== 'radius 30 · spread 0.00', detail: `${canvas.painted} painted px, "${canvas.readout}"` })
     await page.evaluate(() => window.__teardown?.())
     return results
   },

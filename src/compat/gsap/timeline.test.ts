@@ -50,7 +50,7 @@ describe('to()', () => {
   it('maps the ease onto the end keyframe', () => {
     const tl = timeline()
     tl.to('box', { x: 100, duration: 1, ease: 'power2.out' })
-    expect(trackFor(tl, 'x').keyframes[1].easing).toBe('ease-out-quad')
+    expect(trackFor(tl, 'x').keyframes[1].easing).toBe('ease-out-cubic')
   })
 
   it('does not treat reserved keys as properties', () => {
@@ -447,7 +447,7 @@ describe('output contract', () => {
           delay: 0,
           keyframes: [
             { time: 0, value: 0 },
-            { time: 1000, value: 100, easing: 'ease-out-quad' },
+            { time: 1000, value: 100, easing: 'ease-out-cubic' },
           ],
         },
         {
@@ -457,7 +457,7 @@ describe('output contract', () => {
           delay: 0,
           keyframes: [
             { time: 0, value: 0 },
-            { time: 1000, value: 1, easing: 'ease-out-quad' },
+            { time: 1000, value: 1, easing: 'ease-out-cubic' },
           ],
         },
         {

@@ -174,3 +174,75 @@ describe('live flip', () => {
     expect(done).toBe(true)
   })
 })
+
+describe('live flip — shared elements (data-flip-id)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <div class="grid"><div class="thumb" id="t1" data-flip-id="photo-1"></div><div class="thumb" id="t2" data-flip-id="photo-2"></div></div>
+      <div class="detail"></div>`
+    for (const el of document.querySelectorAll('.thumb')) installGeometry(el)
+    place(document.getElementById('t1')!, 0, 0, 50, 50)
+    place(document.getElementById('t2')!, 60, 0, 50, 50)
+  })
+
+  /** Open the detail view: a new hero element with thumbnail 1's flip id; the thumbnail hides. */
+  const openDetail = () => {
+    const hero = document.createElement('div')
+    hero.className = 'hero'
+    hero.id = 'hero'
+    hero.dataset.flipId = 'photo-1'
+    installGeometry(hero)
+    document.querySelector('.detail')!.appendChild(hero)
+    place(hero, 300, 200, 200, 100)
+    layout.set(document.getElementById('t1')!, null)
+    return hero
+  }
+
+  it('flips a new element from where the element with its flip id was', async () => {
+    let hero!: HTMLElement
+    live.flip('[data-flip-id]', () => (hero = openDetail()), { duration: 0.5, ease: 'none' })
+    await Promise.resolve()
+    // First frame: the hero sits exactly over the old thumbnail.
+    expect(centre(hero).x).toBeCloseTo(25)
+    expect(centre(hero).y).toBeCloseTo(25)
+    expect(centre(hero).w).toBeCloseTo(50)
+    expect(centre(hero).h).toBeCloseTo(50)
+    // Not treated as a newcomer: no entrance fade.
+    expect(hero.style.opacity).toBe('')
+
+    run(600)
+    expect(centre(hero).x).toBeCloseTo(400)
+    expect(centre(hero).w).toBeCloseTo(200)
+  })
+
+  it('cross-fades with fade: true when the original is still shown', async () => {
+    let hero!: HTMLElement
+    const thumb = document.getElementById('t1')!
+    live.flip(
+      '[data-flip-id]',
+      () => {
+        hero = openDetail()
+        place(thumb, 0, 0, 50, 50) // the thumbnail stays visible this time
+      },
+      { duration: 0.4, ease: 'none', fade: true }
+    )
+    await Promise.resolve()
+    expect(hero.style.opacity).toBe('0')
+    expect(thumb.style.opacity).toBe('1')
+    run(500)
+    expect(hero.style.opacity).toBe('1')
+    expect(thumb.style.opacity).toBe('0')
+  })
+
+  it('still gives unmatched newcomers the entrance', async () => {
+    const extra = document.createElement('div')
+    extra.dataset.flipId = 'photo-9'
+    installGeometry(extra)
+    live.flip('[data-flip-id]', () => {
+      document.body.appendChild(extra)
+      place(extra, 0, 300)
+    }, { duration: 0.3 })
+    await Promise.resolve()
+    expect(extra.style.opacity).toBe('0')
+  })
+})

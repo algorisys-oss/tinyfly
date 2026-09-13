@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.55.0](v0.55.0.md) | 2026-09-13 | Award-site motion on `live`: `scrollTrigger` with pinning, `splitText`, `drawSVG`, springs with momentum, shared-element Flip, object targets and ticker; Agency Landing Page showcase; `llms.txt` and complete docs; exporters moved to `tinyfly/export` (engine 26.8 → 15.8 KB gz) |
 | [v0.54.1](v0.54.1.md) | 2026-09-13 | Cross-browser checks (`npm run e2e`, Chromium + Firefox pass all 19); SVG content now rotates and scales in place in every adapter |
 | [v0.54.0](v0.54.0.md) | 2026-09-13 | Flip for live elements (shuffle, filter, layout switch, expand, smooth interrupts); editor samples for text, inertia and morph; exported text colour fixed |
 | [v0.53.0](v0.53.0.md) | 2026-09-13 | Engine work for the GSAP demos: motion paths (`align`, `autoRotate`) and shape morphing (`morphSVG`) seeded text scrambling/typing, and inertia with draggable throws from `live`; a real path parser; fixes chained tweens on one property hiding each other |

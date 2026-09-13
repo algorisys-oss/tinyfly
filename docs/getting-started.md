@@ -36,9 +36,9 @@ When it opens, here's what you're looking at:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  tinyfly  BETA   [ Save ]  New  My Animations  Examples  …    │  ← top toolbar
+│ tinyfly BETA [Save] New AI My Animations Examples Export More │  ← top toolbar
 ├─────────────────────────────────────────────────────────────┤
-│  Describe an animation…                    [ Generate ]       │  ← AI prompt bar
+│  Describe an animation…                    [ Generate ]       │  ← AI prompt bar (click AI)
 ├────────────┬───────────────────────────────┬────────────────┤
 │  Elements  │                               │   Properties    │
 │  Tracks    │        Preview (the stage)    │   Presets       │  ← side panels
@@ -76,8 +76,9 @@ Drag the scrubber back and forth to "scrub" through time. Congrats — that's an
 animation.
 
 You can also click **My Animations** to see every project you've made (each is
-saved automatically), or type a sentence in the prompt bar (e.g. *"a title that
-fades up with a shine"*) and click **Generate** to have AI build one for you.
+saved automatically), or click **AI**, type a sentence in the prompt bar (e.g.
+*"a title that fades up with a shine"*) and click **Generate** to have AI build
+one for you.
 
 ---
 
@@ -90,8 +91,9 @@ Let's build a simple "fade and slide in" by hand.
 position/size in the **Properties** panel on the right.
 
 **Step 2 — Add something to animate (a track).** In the **Tracks** panel, click
-**+ Add Track** and choose a property — start with **opacity** (how see-through
-it is).
+**+**. Type the shape's name (as shown in the Elements panel) as the **Target**, and
+the property to animate as the **Property** — start with **opacity** (how
+see-through it is). Then click **Add Track**.
 
 **Step 3 — Place keyframes.** A **keyframe** says "at *this* time, the value is
 *this*." On the timeline, **double-click** the track to drop a keyframe, then
@@ -120,10 +122,10 @@ by eye.
 confirms it). **Double-click the title** in the toolbar to rename your project.
 On a tablet, tap **Save** any time for peace of mind.
 
-**Step 7 — Export.** Click **Export As** to download a **GIF**, **WebP**, or
-**MP4** video, or **CSS** / **Lottie** code. Click **Embed** to get copy-paste
-HTML for a website. Or **Export** to save the raw animation as a `.json` file you
-can re-import later.
+**Step 7 — Export.** Click **Export** to download a **GIF**, **WebP**, an **MP4**
+(or WebM) video, a sprite sheet, or **CSS** / **Lottie** code. The **More** menu
+has **Embed…** for copy-paste HTML for a website, and **Export JSON** to save the
+raw animation as a `.json` file you can re-import later with **Import JSON…**.
 
 That's the whole loop: **add → animate → ease → play → export.**
 
@@ -139,7 +141,7 @@ Once these click, the rest of tinyfly makes sense.
 | **Track** | One property of one shape being animated (e.g. *this circle's opacity*). |
 | **Keyframe** | A value pinned at a moment in time — a diamond on the timeline. |
 | **Easing** | The *feel* of the motion between two keyframes: constant (`linear`), or accelerating/settling (`ease-in`, `ease-out`, `ease-in-out`, …), or a fully custom curve. |
-| **Element** | A thing on the stage you animate: rectangle, circle, text, image, video, line, arrow, or path. |
+| **Element** | A thing on the stage you animate: rectangle, circle, polygon, star, text, image, video, audio, line, arrow, or path. |
 
 And two bigger ones:
 
@@ -171,9 +173,41 @@ the timeline and the bottom scrollbar (or Shift + scroll) to pan.
 The editor is optional — the engine is a small, framework-free library. Every
 animation is plain JSON, and everything the editor does, you can do in code.
 
+### Use it in a web page
+
+The quickest start needs no build step. Add one script tag and animate elements
+with a GSAP-style call (durations are in seconds here):
+
+```html
+<div class="box" style="width:60px;height:60px;background:#4a9eff"></div>
+
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.55.0/cdn/tinyfly.iife.js"></script>
+<script>
+  tinyfly.to('.box', { x: 200, duration: 1 })
+</script>
+```
+
+In a project with a bundler, the same API is a module import:
+
+```typescript
+import { live } from 'tinyfly/gsap-compat'
+
+live.to('.box', { x: 200, duration: 1 })
+```
+
+> The package is not on npm yet. Until it is, use the script tag above, or build
+> this repo (`npm run build:libs`) and `npm install /path/to/tinyfly`.
+
+See **[GSAP Compatibility](gsap-compat.md)** for everything `live` supports.
+
+### Timelines and adapters
+
+Underneath, an animation is a timeline of tracks. Times here are in
+milliseconds:
+
 ```typescript
 import { Timeline, createTrack } from 'tinyfly'
-import { DOMAdapter } from 'tinyfly/adapters/dom'
+import { DOMAdapter } from 'tinyfly/adapters'
 
 // 1. A timeline that loops forever
 const timeline = new Timeline({ id: 'fade', config: { duration: 1000, loop: -1 } })
@@ -234,7 +268,7 @@ For the exact JSON shape, see the **[File Format](file-format.md)** reference.
 | `opacity` | Transparency (0–1) |
 | `fill`, `stroke` | Colours |
 | `strokeWidth`, `borderRadius` | Border width / corner radius (px) |
-| `blur`, `glow`, `dropShadow` | Filters |
+| `blur`, `glow`, `shadowX`/`shadowY`/`shadowBlur` | Filters |
 | `clipTop`/`Right`/`Bottom`/`Left` | Reveal / wipe |
 
 The full list is in the [File Format](file-format.md#animatable-properties) doc.
@@ -248,18 +282,25 @@ Once you're comfortable, tinyfly has a lot more built in:
 - **Shapes & drawing** — ⬡ polygons, ★ stars (parametric sides/points), and a
   ✒️ **Pen** tool for custom bezier paths.
 - **🌀 Shape morph** — tween one shape into another over the timeline.
+- **Text tracks** — scramble a text element into new words, or type it on.
+- **Springs and inertia** — physics tracks: a spring settles on a value, an
+  inertia track is a throw that slows under friction. Add them from the **+** in
+  the Tracks panel.
 - **🎥 Camera** — animate a pan / zoom / rotate over the whole stage (drag to pan
   on stage, or keyframe it in the timeline).
 - **Precision** — ▦ grid, 🧲 snapping, and 📏 rulers with draggable guides.
 - **🧅 Onion skinning** — see ghost frames around the playhead while you edit.
-- **Export** — GIF, WebP, MP4, a **sprite sheet** (PNG grid + JSON), CSS, or
+- **Export** — GIF, WebP, MP4/WebM, a **sprite sheet** (PNG grid + JSON), CSS, or
   Lottie — plus copy-paste **embed** code.
 
-Each is covered in the **[Editor Guide](editor-guide.md)**.
+Each is covered in the **[Editor Guide](editor-guide.md)**. From code, the same
+features (plus Flip layout transitions and draggable throws) are in
+**[GSAP Compatibility](gsap-compat.md)**.
 
 ## Where to next
 
 - **[Editor Guide](editor-guide.md)** — every panel, button, and shortcut in depth.
 - **[Examples](examples.md)** — ready-made animations to learn from.
 - **[File Format](file-format.md)** — the JSON behind it all, for integrations.
+- **[GSAP Compatibility](gsap-compat.md)** — the `live.to()` API for web pages.
 - **[API Reference](api-reference.md)** — the full engine/player/adapter API.

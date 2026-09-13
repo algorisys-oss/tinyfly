@@ -23,6 +23,10 @@ export const from = live.from
 export const fromTo = live.fromTo
 export const set = live.set
 export const timeline = live.timeline
+/** Per-frame callbacks, run after animations are applied (GSAP's `gsap.ticker`). */
+export const ticker = live.ticker
+/** Split text into char, word and line spans (GSAP's SplitText). */
+export const splitText = live.splitText
 
 export * from '../engine'
 export * from '../player'

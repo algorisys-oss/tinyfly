@@ -17,16 +17,14 @@ export function run(live, root) {
   const lines = root.querySelectorAll('.sd-line')
   const tl = live.timeline({ repeat: -1, yoyo: true, repeatDelay: 0.5 })
 
-  // A dash as long as the line, offset by its full length, hides it. Animating the
-  // offset to 0 draws it in. Lengths differ, so each line gets its own tween.
-  lines.forEach((line, i) => {
-    const length = line.getTotalLength()
-    line.style.strokeDasharray = String(length)
-    tl.fromTo(line, { strokeDashoffset: length }, { strokeDashoffset: 0, duration: 1.2, ease: 'power2.inOut' }, i * 0.3)
-  })
+  // drawSVG measures each line's length once and animates its dash, so lines
+  // of different lengths all draw in over the same time.
+  tl.fromTo(lines, { drawSVG: 0 }, { drawSVG: true, duration: 1.2, ease: 'power2.inOut', stagger: 0.3 })
+    // Then shrink each to its middle and back out, a segment rather than a start.
+    .to(lines, { drawSVG: '45% 55%', duration: 0.6, ease: 'power2.in', stagger: 0.1 }, '+=0.2')
 
   // The stroke uses currentColor, so animating `color` recolours the lines.
-  tl.fromTo(lines, { color: '#4a9eff' }, { color: '#3ecf7a', duration: 0.5, stagger: 0.1 }, '>-0.3')
+  tl.fromTo(lines, { color: '#4a9eff' }, { color: '#3ecf7a', duration: 0.5, stagger: 0.1 }, '<')
   // #endregion code
 }
 
@@ -34,8 +32,8 @@ export function run(live, root) {
 export const svgLineDraw = {
   id: 'live-svg-line-draw',
   name: 'SVG Line Draw',
-  description: 'Lines draw themselves with stroke-dashoffset, then recolour through currentColor. No plugin needed.',
-  tags: ['svg', 'strokeDashoffset', 'currentColor', 'yoyo'],
+  description: 'Lines draw in with drawSVG, shrink to a middle segment and recolour through currentColor.',
+  tags: ['svg', 'drawSVG', 'currentColor', 'yoyo'],
   html,
   run,
 }

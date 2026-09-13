@@ -13,6 +13,11 @@ function escapeHtml(text: string): string {
     .replace(/"/g, '&quot;')
 }
 
+/** The anchor id a heading gets, e.g. "Motion Paths" → "motion-paths" */
+export function headingId(text: string): string {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+}
+
 /** Process inline markdown (bold, italic, code, links) */
 function processInline(text: string): string {
   let result = escapeHtml(text)
@@ -108,7 +113,7 @@ export function renderMarkdown(markdown: string): string {
     if (headingMatch) {
       const level = headingMatch[1].length
       const text = headingMatch[2]
-      const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+      const id = headingId(text)
       output.push(`<h${level} id="${id}">${processInline(text)}</h${level}>`)
       i++
       continue

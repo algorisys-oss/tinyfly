@@ -440,6 +440,7 @@ export class Timeline {
         property: track.property,
         keyframes: track.keyframes,
         delay: track.delay,
+        endDelay: track.endDelay,
         targets: track.targets,
         stagger: track.stagger,
       }

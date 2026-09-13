@@ -1,6 +1,7 @@
 export const html = `<style>
-  .st-heading { margin: 0; color: #fff; font: 800 34px system-ui, sans-serif; letter-spacing: 1px; perspective: 400px; }
-  .st-char { display: inline-block; transform-origin: 50% 100%; }
+  .st-heading { margin: 0; color: #fff; font: 800 34px system-ui, sans-serif; letter-spacing: 1px; }
+  .st-word { perspective: 400px; }
+  .st-char { transform-origin: 50% 100%; }
 </style>
 <h2 class="st-heading">Split &amp; reveal</h2>`
 
@@ -10,11 +11,9 @@ export const html = `<style>
  */
 export function run(live, root) {
   // #region code
-  // Split the heading into one inline-block span per character.
-  const heading = root.querySelector('.st-heading')
-  heading.innerHTML = [...heading.textContent]
-    .map((char) => `<span class="st-char">${char === ' ' ? '&nbsp;' : char}</span>`)
-    .join('')
+  // Split the heading into word and character spans. Spaces stay real spaces,
+  // and the heading keeps an aria-label with its full text.
+  live.splitText('.st-heading', { type: 'words,chars', wordsClass: 'st-word', charsClass: 'st-char' })
 
   live
     .timeline({ repeat: -1, repeatDelay: 0.6 })
@@ -34,7 +33,7 @@ export const splitTextReveal = {
   id: 'live-split-text-reveal',
   name: 'Split Text Reveal',
   description: 'Characters flip up in 3D one after another, ripple in a wave, then leave from the end.',
-  tags: ['text', 'stagger', 'rotateX', 'back.out'],
+  tags: ['text', 'splitText', 'stagger', 'rotateX', 'back.out'],
   html,
   run,
 }

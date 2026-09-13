@@ -11,13 +11,17 @@ Complete reference for the tinyfly animation engine, player, and adapters.
 - [Easing](#easing)
 - [Interpolators](#interpolators)
 - [Motion Path](#motion-path)
+- [Text Tracks](#text-tracks)
 - [Serialization](#serialization)
 - [TinyflyPlayer](#tinyflyplayer)
 - [TinyflySequencer](#tinyflysequencer)
+- [Media Sync](#media-sync)
 - [DOMAdapter](#domadapter)
 - [CanvasAdapter](#canvasadapter)
 - [SVGAdapter](#svgadapter)
+- [Export Formats](#export-formats)
 - [WebGLAdapter](#webgladapter)
+- [Inertia Tracks](#inertia-tracks)
 - [Spring Tracks](#spring-tracks)
 - [Stagger](#stagger)
 - [Baking](#baking)
@@ -26,7 +30,12 @@ Complete reference for the tinyfly animation engine, player, and adapters.
 - [Interaction](#interaction)
 - [Flip](#flip)
 - [GSAP Compat](#gsap-compat)
-- [Export Formats](#export-formats)
+
+Entry points: `tinyfly` (engine), `tinyfly/export` (CSS, Lottie, GIF, WebP,
+video and sprite-sheet exporters), `tinyfly/player`, `tinyfly/adapters` (DOM,
+Canvas, SVG and WebGL adapters, Flip helpers), `tinyfly/drivers`,
+`tinyfly/interaction`, `tinyfly/gsap-compat`, and `tinyfly/browser` (the live
+runtime and everything except the exporters, for `<script>` tags).
 
 ---
 
@@ -75,8 +84,22 @@ interface Track<T extends AnimatableValue = AnimatableValue> {
   target: string        // Target element name
   property: string      // Property to animate (e.g., 'opacity', 'x')
   keyframes: Keyframe<T>[]  // Must be sorted by time
+  delay?: number        // Shift every keyframe by this many ms at evaluation time
+  endDelay?: number     // Extra ms held after the last keyframe (extends duration)
+  targets?: string[]    // Drive several targets; `target` is then ignored
+  stagger?: StaggerConfig  // Per-target time offsets for `targets`
+}
+
+interface StaggerConfig {
+  each?: number         // ms between consecutive targets
+  amount?: number       // Total spread in ms (wins over `each`)
+  from?: 'start' | 'end' | 'center' | 'edges' | number  // default 'start'
 }
 ```
+
+Every track kind accepts `delay`, `targets` and `stagger`. `endDelay` takes
+effect on keyframe and text tracks; spring and inertia tracks decide their own
+duration. See [Stagger](#stagger).
 
 ### MotionPathTrack
 
@@ -94,10 +117,21 @@ interface MotionPathTrack {
   property: 'motionPath'
   motionPathConfig: MotionPathConfig
   keyframes: Keyframe<number>[]  // Progress values 0-1
+  delay?: number; endDelay?: number; targets?: string[]; stagger?: StaggerConfig
 }
-
-type AnyTrack = Track | MotionPathTrack
 ```
+
+### AnyTrack / KeyframedTrack
+
+```typescript
+type AnyTrack = Track | MotionPathTrack | TextTrack | SpringTrack | InertiaTrack
+type KeyframedTrack = Track | MotionPathTrack | TextTrack
+```
+
+`AnyTrack` is what a timeline holds. `KeyframedTrack` is the subset with
+`keyframes`; spring and inertia tracks compute values from parameters instead.
+See [Text Tracks](#text-tracks), [Spring Tracks](#spring-tracks) and
+[Inertia Tracks](#inertia-tracks).
 
 ### TimelineConfig
 
@@ -107,8 +141,14 @@ interface TimelineConfig {
   loop?: number          // 0 = no loop, -1 = infinite, n = n times
   speed?: number         // Playback speed multiplier (default: 1)
   alternate?: boolean    // Ping-pong effect on each loop
+  repeatDelay?: number   // ms to wait between loop iterations
 }
 ```
+
+`repeatDelay` applies at each loop boundary. Going forward, the playhead holds
+the last frame for the delay, then wraps to the start; with `alternate` it holds
+at the end it reached before turning round. The delay is consumed at `speed`,
+and `seek()` or `stop()` cancels a pending one.
 
 ### TimelineDefinition
 
@@ -117,7 +157,7 @@ interface TimelineDefinition {
   id: string
   name?: string
   config: TimelineConfig
-  tracks: Track[]
+  tracks: AnyTrack[]
 }
 ```
 
@@ -141,7 +181,13 @@ Returned by `timeline.getStateAtTime()`. Contains the computed value for every t
 
 ```typescript
 function isCubicBezierEasing(easing: EasingType | undefined): easing is CubicBezierEasing
-function isMotionPathTrack(track: Track | MotionPathTrack): track is MotionPathTrack
+function isMotionPathTrack(track: AnyTrack): track is MotionPathTrack
+function isTextTrack(track: AnyTrack): track is TextTrack
+function isSpringTrack(track: AnyTrack): track is SpringTrack
+function isInertiaTrack(track: AnyTrack): track is InertiaTrack
+function hasKeyframes(track: AnyTrack): track is KeyframedTrack
+function isMotionPathPoint(value: unknown): value is MotionPathPoint
+function isPathData(value: string): boolean   // starts with a moveto
 ```
 
 ---
@@ -213,7 +259,7 @@ Toggle playback direction between forward and reverse.
 
 #### `tick(delta: number): void`
 
-Advance the timeline by `delta` milliseconds. Call this from your animation loop (e.g., `requestAnimationFrame`). The delta is scaled by the `speed` multiplier. Handles looping, alternate direction, and completion automatically.
+Advance the timeline by `delta` milliseconds. Call this from your animation loop (e.g., `requestAnimationFrame`). The delta is scaled by the `speed` multiplier. Handles looping, alternate direction, `repeatDelay`, and completion automatically. Does nothing unless the timeline is playing.
 
 #### `getStateAtTime(time: number): AnimationState`
 
@@ -223,15 +269,68 @@ When several tracks drive the same target and property, the value comes from the
 
 #### `addTrack(track: AnyTrack): void`
 
-Add a track to the timeline. Accepts both regular tracks and motion path tracks.
+Add a track to the timeline. Accepts every track kind.
+
+#### `replaceTrack(trackId: string, track: AnyTrack): void`
+
+Swap a track for a new version, keeping its position in the track order (which
+decides ties between overlapping tracks). The new track may have a different id.
+Does nothing if no track has `trackId`.
 
 #### `removeTrack(trackId: string): void`
 
 Remove a track by its ID.
 
+#### `getTracks(filter?: TrackFilter): AnyTrack[]`
+
+Tracks matching every field of the filter. An empty filter returns all tracks.
+
+#### `removeTracks(filter?: TrackFilter): string[]`
+
+Remove every track matching the filter and return their ids.
+`timeline.removeTracks({ target: 'box' })` is the equivalent of killing all
+tweens on an element.
+
+```typescript
+interface TrackFilter {
+  target?: string                          // includes one of a multi-target track's `targets`
+  property?: string
+  timeRange?: { from: number; to: number } // active span overlaps this range (ms)
+  id?: string
+}
+```
+
+#### `getTrackSpan(trackId: string): { from: number; to: number } | undefined`
+
+The span a track is active over, in ms: from its first keyframe plus `delay`
+(or from `delay`, for springs and inertia) to its end, including stagger and
+`endDelay`. `undefined` for an unknown id or a track with no keyframes.
+
+#### `findConflicts(): TrackConflict[]`
+
+Pairs of tracks that write the same property of the same target over
+overlapping spans, with the winner decided by the rule above. The engine
+resolves these silently, so authoring tools should call this and warn.
+
+```typescript
+interface TrackConflict {
+  target: string
+  property: string
+  losingTrackId: string    // values discarded where the spans overlap
+  winningTrackId: string   // values applied
+}
+```
+
+#### `setDuration(duration: number | undefined): void`
+
+Set an explicit duration in ms. Pass `undefined` to go back to the duration
+calculated from the tracks.
+
 #### `toDefinition(): TimelineDefinition`
 
-Export the timeline as a JSON-serializable object.
+Return the timeline as a `TimelineDefinition`. Not a copy: `tracks` are the
+timeline's own track objects. Use [`serializeTimeline`](#serialization) for a
+detached copy.
 
 ### Callbacks
 
@@ -442,13 +541,17 @@ Discrete interpolation — returns `from` when `progress < 1`, `to` when `progre
 ### morphPath (shape tween)
 
 ```typescript
-function morphPath(from: string, to: string, progress: number, samples?: number): string
+function morphPath(from: string, to: string, progress: number, options?: MorphOptions): string
 function isPathData(value: string): boolean
+
+interface MorphOptions {
+  shapeIndex?: number   // force the start-point alignment; negative reverses direction
+}
 ```
 
-Interpolate between two SVG path `d` strings. Both paths are sampled uniformly
-along their length and the points are blended by `progress`, so **any** two shapes
-morph smoothly and deterministically (no DOM required). `isPathData` recognises a
+Interpolate between two SVG path `d` strings. Both paths are sampled along their
+length (keeping every corner) and the points are blended by `progress`, so **any**
+two shapes morph smoothly and deterministically (no DOM required). `isPathData` recognises a
 string that starts with a moveto. A `d` track animates a path's shape — see
 [shape-morph.md](shape-morph.md).
 
@@ -625,7 +728,8 @@ function serializeTrack(track: AnyTrack): AnyTrack
 function deserializeTrack(data: AnyTrack): AnyTrack
 ```
 
-Serialize/deserialize individual tracks. Handles both regular and motion path tracks.
+Serialize/deserialize individual tracks of every kind. Scheduling fields are
+kept when set and omitted otherwise; `deserializeTrack` sorts keyframes by time.
 
 **Example:**
 ```typescript
@@ -701,6 +805,16 @@ Change the playback speed.
 
 Toggle playback direction.
 
+#### `attachMedia(media: SyncableMedia, options?: MediaSyncOptions): void`
+
+Keep an `<audio>` / `<video>` element (or anything shaped like one) in sync with
+the timeline. The timeline stays the clock; the media follows play, pause, seek
+and speed. Replaces any media attached before. See [Media Sync](#media-sync).
+
+#### `detachMedia(): void`
+
+Pause and release the attached media, if any.
+
 #### `destroy(): void`
 
 Clean up all resources, stop the animation loop, and clear registered targets.
@@ -727,6 +841,10 @@ When `load()` is called, the player automatically finds target elements by searc
 <div class="box"></div>
 <div id="box"></div>
 ```
+
+On `load()` the player also binds any `[data-tinyfly-media]` audio/video
+elements in the container, starting each at its `data-tinyfly-start` time (ms).
+The editor's embed export writes these attributes.
 
 ### Helper Functions
 
@@ -870,6 +988,44 @@ const sequencer = await tinyfly.playSequence('#container', './sequence.json', {
 
 ---
 
+## Media Sync
+
+Locks media to a timeline. Depends only on a small structural subset of
+`HTMLMediaElement`, so it can drive any media source and is testable without a
+browser.
+
+```typescript
+import { MediaSync, syncMediaElement } from 'tinyfly/player'
+
+interface SyncableMedia {
+  currentTime: number        // seconds
+  readonly paused: boolean
+  playbackRate: number
+  play(): Promise<void> | void
+  pause(): void
+}
+
+interface MediaSyncOptions {
+  offset?: number            // seconds added to timeline time (default 0)
+  driftTolerance?: number    // seconds of drift allowed while playing (default 0.15)
+}
+```
+
+| `MediaSync` method | Description |
+|--------|-------------|
+| `new MediaSync(media, options?)` | Wrap a media element |
+| `update(timelineTimeMs, isPlaying)` | Call each frame. Plays or pauses the media to match; re-seeks while playing only when drift exceeds the tolerance, and exactly while paused |
+| `seek(timelineTimeMs)` | Hard-align on an explicit seek |
+| `setRate(rate)` | Mirror the timeline speed onto `playbackRate` |
+| `dispose()` | Pause the media |
+
+`syncMediaElement(sync, media, timelineMs, isPlaying, startMs)` handles media
+that starts partway through: before `startMs` it keeps the media paused at 0,
+after it syncs to the elapsed time. A `play()` rejected by autoplay policy is
+ignored, so blocked audio never stops the animation.
+
+---
+
 ## DOMAdapter
 
 Applies animation state to HTML elements using CSS transforms and styles.
@@ -877,7 +1033,7 @@ Applies animation state to HTML elements using CSS transforms and styles.
 ### Usage
 
 ```typescript
-import { DOMAdapter } from 'tinyfly/adapters/dom'
+import { DOMAdapter } from 'tinyfly/adapters'
 
 const adapter = new DOMAdapter()
 adapter.registerTarget('box', document.getElementById('my-box'))
@@ -935,7 +1091,7 @@ Draws animated shapes on a Canvas 2D context.
 ### Usage
 
 ```typescript
-import { CanvasAdapter } from 'tinyfly/adapters/canvas'
+import { CanvasAdapter } from 'tinyfly/adapters'
 
 const canvas = document.getElementById('my-canvas') as HTMLCanvasElement
 const ctx = canvas.getContext('2d')
@@ -1078,7 +1234,7 @@ Applies animation state to SVG elements.
 ### Usage
 
 ```typescript
-import { SVGAdapter } from 'tinyfly/adapters/svg'
+import { SVGAdapter } from 'tinyfly/adapters'
 
 const adapter = new SVGAdapter()
 const circle = document.querySelector('circle') as SVGElement
@@ -1122,10 +1278,13 @@ Same interface as DOMAdapter:
 
 ## Export Formats
 
+The exporters are their own entry point, `tinyfly/export`, so the engine stays
+small for pages that only play animations (the exporters are about half its size).
+
 ### CSS Export
 
 ```typescript
-import { exportToCSS } from 'tinyfly/engine/export'
+import { exportToCSS } from 'tinyfly/export'
 
 interface CSSExportOptions {
   classPrefix?: string              // CSS class prefix (default: 'tinyfly')
@@ -1154,7 +1313,7 @@ Generates standard CSS `@keyframes` animations. Combines transform properties au
 ### Lottie Export
 
 ```typescript
-import { exportToLottie } from 'tinyfly/engine/export'
+import { exportToLottie } from 'tinyfly/export'
 
 interface LottieExportOptions {
   name?: string                     // Animation name
@@ -1179,7 +1338,7 @@ Exports animations in the Lottie/bodymovin format. Supports position, rotation, 
 ### GIF Export
 
 ```typescript
-import { extractFrames } from 'tinyfly/engine/export'
+import { extractFrames } from 'tinyfly/export'
 
 interface GIFExportOptions {
   width: number
@@ -1210,16 +1369,50 @@ const result = extractFrames(timeline, {
 
 Extracts individual frames from the animation. Use with a GIF encoder library (like gif.js or gifenc) to create the actual GIF file. The `renderFrame` callback lets you customize how each frame is drawn.
 
-The engine also ships real encoders used by the editor: `exportToGIF`,
-`exportToWebP`, and `exportVideo` (H.264 via WebCodecs/MediaRecorder), each taking
-a `renderFrame` callback and returning a `Blob`.
+The engine also ships real encoders used by the editor, each taking a
+`renderFrame` callback:
+
+```typescript
+exportToGIF(timeline: Timeline, options: GIFExportOptions): Promise<Blob>
+exportToWebP(timeline: Timeline, options: WebPExportOptions): Promise<Blob>
+```
+
+### Video Export
+
+```typescript
+import { exportVideo, exportToMP4, exportToVideo, getVideoExportFormats, isVideoExportSupported } from 'tinyfly/export'
+
+isVideoExportSupported(): boolean
+getVideoExportFormats(): VideoExportFormat[]   // { id, label, extension, deterministic }, best first
+exportVideo(options: VideoExportOptions & { format?: string }): Promise<{ blob: Blob; extension: string }>
+exportToMP4(options: MP4ExportOptions): Promise<Blob>
+exportToVideo(options: VideoExportOptions): Promise<Blob>
+```
+
+| Function | Description |
+|----------|-------------|
+| `isVideoExportSupported` | Whether this environment can export video at all (needs a DOM, and WebCodecs or MediaRecorder) |
+| `getVideoExportFormats` | Formats this browser can produce: MP4 (H.264) via WebCodecs first (`id: 'mp4-webcodecs'`, deterministic), then MediaRecorder codecs such as WebM VP9/VP8 (real-time) |
+| `exportVideo` | Export with the format whose `id` you pass, or the best one |
+| `exportToMP4` | Encode H.264 MP4 with WebCodecs. Not real-time: frames are encoded as fast as possible at exact timestamps. Throws without WebCodecs |
+| `exportToVideo` | Record with MediaRecorder in real time (a 6s animation takes ~6s). `mimeType` defaults to the best supported codec |
+
+Shared options: `width`, `height`, `durationMs`, `fps` (default 30), `bitrate`,
+`background` (default white; `null` keeps transparency),
+`renderFrame(ctx, timeMs)` (may be async), `onProgress(fraction)` and `signal`
+(an `AbortSignal`). `exportToMP4` also takes `bitsPerPixel` (default 0.25) and
+`keyFrameInterval`, and rounds the size up to even numbers. `downloadVideo(blob,
+filename?)` saves the result.
+
+`exportToLottieJSON(timeline, options?)` returns `exportToLottie`'s result as a
+JSON string.
 
 ### Sprite-sheet layout
 
 ```typescript
 import {
   spriteSheetLayout, frameCell, spriteFrameTimes, spriteSheetMeta
-} from 'tinyfly/engine/export'
+} from 'tinyfly'
 
 const layout = spriteSheetLayout(frames, frameWidth, frameHeight, maxColumns) // grid + sheet size
 const cell   = frameCell(index, layout)          // { index, col, row, x, y }
@@ -1242,7 +1435,7 @@ for moving, scaling, rotating and fading rectangles and images. Paths, text and
 gradients are out of scope — use the Canvas or SVG adapter for those.
 
 ```typescript
-import { WebGLAdapter } from 'tinyfly/adapters/webgl'
+import { WebGLAdapter } from 'tinyfly/adapters'
 
 const gl = canvas.getContext('webgl')!
 const adapter = new WebGLAdapter(gl)
@@ -1298,8 +1491,8 @@ inertiaDuration(config): number      // ms until settled
 bakeInertiaTrack(track, options?): Track<number>
 ```
 
-`Timeline.replaceTrack(id, track)` swaps a track in place, keeping its position
-in the track order (which decides ties between overlapping tracks).
+`Timeline.replaceTrack(id, track)` swaps a track in place — see
+[Timeline methods](#methods).
 
 ---
 
@@ -1324,8 +1517,8 @@ timeline.addTrack({
 | `damping` | 12 | Higher settles sooner; 0 oscillates forever |
 | `mass` | 1 | Higher is more sluggish |
 | `velocity` | 0 | Initial velocity, units/second |
-| `restDelta` | 0.01 | Distance from `to` that counts as settled |
-| `restSpeed` | 0.01 | Speed that counts as settled |
+| `restDelta` | 0.01 | Distance from `to` that counts as settled, as a fraction of the travel distance |
+| `restSpeed` | 0.1 | Speed that counts as settled, as a fraction of the travel distance per second |
 
 Springs are integrated at a **fixed 1ms timestep from t=0** on every query, so
 `getValueAtTime` stays a pure function of time: seeking backwards gives the same
@@ -1417,7 +1610,7 @@ Every track kind also accepts:
 | Field | Meaning |
 |---|---|
 | `delay` | Shift every keyframe by this many ms at evaluation time |
-| `endDelay` | Extra ms held after the last keyframe (extends duration) |
+| `endDelay` | Extra ms held after the last keyframe (extends duration). Keyframe and text tracks |
 
 ---
 
@@ -1475,8 +1668,50 @@ new VisibilityDriver({ timeline, trigger, behaviour: 'once' }).start()
 new ScrollDriver({ timeline, trigger, start: 'top bottom', end: 'bottom top', scrub: true }).start()
 ```
 
-`scrollProgress(rect, viewportHeight, start, end)` and `parseTrigger` are pure
-and exported, so trigger geometry can be tested without a browser.
+Both implement `Driver` (`start()`, `stop()`, `destroy()`, each safe to call
+twice). Drivers only move the playhead: `VisibilityDriver` calls `play()`, so
+something must still tick the timeline; `ScrollDriver` calls `seek()`, so render
+in its `onUpdate`.
+
+```typescript
+interface ScrollDriverOptions {
+  timeline?: Timeline            // optional: without it, only progress and callbacks
+  trigger: Element
+  start?: TriggerPosition        // 'top bottom'
+  end?: TriggerPosition          // 'bottom top'; '+=600' / '+=150%' from the start
+  scrub?: boolean | number       // true exact; seconds of smoothing
+  pin?: boolean | Element        // hold the trigger (or an element) through the range
+  scroller?: HTMLElement | null  // default: the window
+  onUpdate?: (progress: number, velocity: number) => void   // velocity px/s, 0 after scrolling stops
+  onEnter?, onLeave?, onEnterBack?, onLeaveBack?: () => void
+}
+```
+
+| `ScrollDriver` member | |
+|---|---|
+| `progress` / `velocity` | 0..1 through the range / scroll speed in px/s |
+| `refresh()` | Re-measure (automatic on resize); `sample()` is the same |
+| `update(scrollPosition?)` | Update from the scroll offset — no layout reads; pass a value to drive it from a virtual scroller |
+| `ScrollDriver.refreshAll()` | Re-measure every started driver, in start order |
+| `destroy()` | Stop and remove any pin spacer |
+
+`ScrollPin` (also exported) is the sticky-spacer pin the driver uses.
+
+```typescript
+playWhenVisible(options: VisibilityDriverOptions): VisibilityDriver   // new VisibilityDriver(options), started
+scrubOnScroll(options: ScrollDriverOptions): ScrollDriver             // new ScrollDriver(options), started
+```
+
+Pure helpers, so trigger geometry can be tested without a browser (`rect` is
+`{ top, bottom, height }` in viewport coordinates):
+
+| Function | Returns |
+|----------|---------|
+| `parseTrigger(position)` | `{ elementFraction, viewportFraction, offsetPx, absolutePx? }` for a `"<element edge> <viewport edge>"` string or a pixel number |
+| `triggerDistance(rect, viewportHeight, position)` | Scroll distance in px until the trigger fires; positive means it is still ahead |
+| `scrollProgress(rect, viewportHeight, start, end)` | Progress between the two triggers, clamped to 0..1 |
+| `smoothToward(current, target, smoothingSeconds, deltaMs)` | `current` moved toward `target` by exponential smoothing (what `scrub: <seconds>` uses); returns `target` when `smoothingSeconds <= 0` |
+| `clamp01(value)` | `value` clamped to 0..1 |
 
 The editor's **⇅ Scroll** preview attaches the same `ScrollDriver` to a real
 scroll strip, so triggers tuned there behave identically on a page.
@@ -1514,7 +1749,7 @@ defaults to half the grid size, so a plain `snap: n` behaves like rounding.
 FLIP layout transitions, compiled to ordinary keyframes at authoring time.
 
 ```typescript
-import { flip, recordFlipState, buildFlipTracks } from 'tinyfly/adapters/dom'
+import { flip, recordFlipState, buildFlipTracks } from 'tinyfly/adapters'
 
 const tracks = flip(
   [{ name: 'card', element: cardEl }],
@@ -1560,7 +1795,20 @@ live.set(target, vars)                            // applied on the next microta
 live.timeline(options?: LiveTimelineOptions)      // chainable .to/.from/.fromTo/.set/.addLabel/.add
 ```
 
-`target` is a CSS selector, an `Element`, a `NodeList`, or an array of either.
+`target` is a CSS selector, an `Element`, a plain object, a `NodeList`, or an
+array of those. A plain object's properties are tweened from its current values
+and assigned back onto it each frame (for canvas, WebGL or any custom renderer).
+
+```typescript
+live.ticker.add(callback: TickerCallback): void
+live.ticker.remove(callback: TickerCallback): void
+
+type TickerCallback = (time: number, deltaTime: number, frame: number) => void
+```
+
+Ticker callbacks run every frame after animations are applied: `time` is seconds
+since the ticker started, `deltaTime` milliseconds since the last frame. The loop
+runs while any callback is registered.
 
 | `LiveTimelineOptions` | |
 |---|---|
@@ -1573,27 +1821,167 @@ live.timeline(options?: LiveTimelineOptions)      // chainable .to/.from/.fromTo
 `duration()`, `isActive()`, `kill()`, `toDefinition()`. The engine timeline is
 `.timeline`, the compiled compat timeline `.compat`.
 
-`createLive(stage)` binds the same API to a separate `Stage`
-(`new Stage({ scheduler?, root? })`). `stage.tick(ms)` advances it by hand, and
-`stage.destroy()` stops everything on it and releases its elements.
+`createLive(stage?)` binds the same API to a separate `Stage`; `live.stage` is
+the one the default `live` uses.
+
+```typescript
+live.convertToPath(targets: string | Element | ArrayLike<Element>): Element[]
+live.draggable(target: TargetInput, options?: LiveDraggableOptions): LiveDraggable
+
+interface LiveDraggable {
+  readonly draggable: Draggable            // the underlying tinyfly/interaction Draggable
+  readonly position: { x: number; y: number }  // where the element is now
+  destroy(): void                          // stop listening and stop any throw in progress
+}
+```
+
+`convertToPath` replaces basic SVG shapes with equivalent `<path>` elements
+(selectors resolve within the stage's root) and returns the resulting elements
+in order. It changes the document. `draggable` options are listed in
+[gsap-compat.md](gsap-compat.md#inertia-and-dragging); it throws if the target
+matches nothing.
+
+### Springs on `live`
+
+```typescript
+live.to(target, { x: 0, spring: true | SpringPresetName | SpringOptions })
+
+type SpringPresetName = 'gentle' | 'default' | 'snappy' | 'bouncy' | 'wobbly' | 'stiff'
+interface SpringOptions {
+  preset?: SpringPresetName
+  stiffness?: number
+  damping?: number
+  mass?: number
+  velocity?: number | Record<string, number>   // units/s; unset → the property's current velocity
+  restDelta?: number
+}
+
+SPRING_PRESETS: Record<SpringPresetName, { stiffness: number; damping: number; mass: number }>  // from tinyfly
+stage.velocityOf(name, property): number | undefined   // units/s from the playing timeline that animates it
+```
+
+Numeric properties compile to spring tracks; the tween lasts until the slowest
+settles. `CompatTimelineOptions.startVelocity(target, property)` is the hook `live`
+uses to carry momentum. See [gsap-compat.md](gsap-compat.md#springs).
+
+### Line drawing
+
+```typescript
+live.to(shape, { drawSVG: true | false | number | string })   // '60%', '20% 80%', '10 50%'
+
+drawSegment(value: DrawSvgValue, length: number): [start: number, end: number]
+drawSvgProperties(value: DrawSvgValue, length: number): { strokeDasharray: [number, number]; strokeDashoffset: number }
+```
+
+`live` measures `getTotalLength()` once per element and compiles to
+`strokeDasharray` / `strokeDashoffset` tracks. See [gsap-compat.md](gsap-compat.md#line-drawing).
+
+### Scroll triggers
+
+```typescript
+live.timeline({ scrollTrigger: ScrollTriggerVars, ...options })
+live.to(target, { ...vars, scrollTrigger: ScrollTriggerVars })
+live.scrollTrigger(vars: ScrollTriggerVars & { trigger }): ScrollDriver | undefined
+live.refreshScroll(): void
+tl.scrollTrigger: ScrollDriver | undefined     // after the next microtask
+tl.reversed(): boolean
+
+interface ScrollTriggerVars {
+  trigger?: string | Element
+  start?: TriggerPosition
+  end?: TriggerPosition
+  scrub?: boolean | number
+  pin?: boolean | string | Element
+  scroller?: string | HTMLElement
+  toggleActions?: string         // 'play none none none'
+  once?: boolean
+  onUpdate?: (self: { progress: number; velocity: number; direction: 1 | -1 }) => void
+  onEnter?, onLeave?, onEnterBack?, onLeaveBack?: () => void
+}
+```
+
+See [gsap-compat.md](gsap-compat.md#scroll-triggers).
+
+### Split text
+
+```typescript
+live.splitText(targets: string | Element | ArrayLike<Element>, options?: SplitTextOptions): SplitTextResult
+splitText(elements: Element[], options?: SplitTextOptions): SplitTextResult   // from tinyfly/gsap-compat
+
+interface SplitTextOptions {
+  type?: string              // 'chars,words,lines' (default), any subset
+  mask?: 'chars' | 'words' | 'lines'
+  charsClass?: string        // 'char'
+  wordsClass?: string        // 'word'
+  linesClass?: string        // 'line'
+  aria?: boolean             // true: aria-label on the element, aria-hidden on the pieces
+}
+
+interface SplitTextResult {
+  elements: Element[]
+  chars: HTMLElement[]
+  words: HTMLElement[]
+  lines: HTMLElement[]
+  masks: HTMLElement[]
+  revert(): void
+}
+```
+
+Lines are measured from layout once, at split time. See
+[gsap-compat.md](gsap-compat.md#split-text) for what the markup looks like.
+
+### Stage
+
+The shared runtime behind `live`: one frame loop, one DOM adapter, and the
+values last applied to each element, merged per element so concurrent
+animations compose.
+
+```typescript
+new Stage(options?: StageOptions)
+
+interface StageOptions {
+  scheduler?: FrameScheduler   // { request(cb): number; cancel(id): void } — default requestAnimationFrame
+  root?: ParentNode            // where selectors resolve (default: document)
+}
+
+type ObjectTarget = Record<string, unknown>
+type TargetInput = string | Element | ObjectTarget | ArrayLike<Element> | ReadonlyArray<string | Element | ObjectTarget>
+```
+
+| Member | Description |
+|--------|-------------|
+| `root` | The `ParentNode` selectors resolve in (read lazily, so a stage can exist without a document) |
+| `resolveTargets(input)` | Engine target names for a selector, element, object or list, registering new ones (an element with an `id` is named `#id`, objects `obj-N`) |
+| `query(selector)` | First matching element within `root` |
+| `elementFor(name)` | The element registered under a target name |
+| `objectFor(name)` | The plain object registered under a target name |
+| `ticker` | `add(callback)` / `remove(callback)`: run after each frame's values are applied; keeps the loop running |
+| `appliedValue(name, property)` | The last value applied to that property |
+| `apply(name, values)` | Write values for one target immediately, without a timeline (e.g. while dragging); later tweens start from them |
+| `render(timeline)` | Apply a timeline's state at its current time, immediately |
+| `activate(timeline)` / `deactivate(timeline)` | Add a playing timeline to the loop (moving it last, so it wins merges) / remove it, keeping its applied values |
+| `tick(deltaMs)` | Advance every active timeline and apply the merged result. The loop calls it; call it yourself when you own the loop |
+| `destroy()` | Stop everything, release elements, and ignore later playback |
 
 ### Flip
 
 ```typescript
 live.getFlipState(targets): LiveFlipState
-live.flipFrom(state, { duration?, ease?, stagger?, scale?, targets?, enter?, onComplete? }): LiveTimeline
+live.flipFrom(state, { duration?, ease?, stagger?, scale?, targets?, enter?, fade?, onComplete? }): LiveTimeline
 live.flip(targets, change: () => void, vars?): LiveTimeline
 ```
 
 Measures where elements appear before a layout change (transforms included) and
 where they are laid out after (transforms ignored), then animates each from the
 difference back to rest using centre offsets, plus scale for size changes.
-Newly visible elements get the `enter` animation. A flip that starts while
+Newly visible elements get the `enter` animation — unless they share a
+`data-flip-id` with a recorded element, in which case they flip from that
+element's box (`fade: true` cross-fades the two). A flip that starts while
 another is running takes over each element from where it appears.
 
 ### Browser bundle
 
 `tinyfly/browser` (and `lib/browser/tinyfly.iife.js` for `<script>` tags, global
 `tinyfly`) re-exports the engine, player, drivers, interaction, `tf`, `live`,
-`Stage` and `quickPlay`, with `to`, `from`, `fromTo`, `set` and `timeline` at the
-top level bound to `live`.
+`Stage` and `quickPlay`, with `to`, `from`, `fromTo`, `set`, `timeline`,
+`ticker` and `splitText` at the top level bound to `live`.

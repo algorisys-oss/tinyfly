@@ -33,6 +33,22 @@ export const DEFAULT_SPRING: Required<Omit<SpringConfig, 'from' | 'to'>> = {
 }
 
 /**
+ * Named springs for the two parameters that decide how one feels. Stiffness and
+ * damping interact, so named pairs are more useful than two sliders someone has
+ * to discover the combinations of. Shared by the editor and `spring: 'wobbly'`.
+ */
+export const SPRING_PRESETS = {
+  gentle: { stiffness: 120, damping: 18, mass: 1 },
+  default: { stiffness: 180, damping: 12, mass: 1 },
+  snappy: { stiffness: 280, damping: 20, mass: 1 },
+  bouncy: { stiffness: 220, damping: 8, mass: 1 },
+  wobbly: { stiffness: 180, damping: 5, mass: 1 },
+  stiff: { stiffness: 400, damping: 30, mass: 1 },
+} as const satisfies Record<string, { stiffness: number; damping: number; mass: number }>
+
+export type SpringPresetName = keyof typeof SPRING_PRESETS
+
+/**
  * Samples a single spring, extending the simulation on demand and caching it.
  *
  * Instances are cheap; one is created per spring track.

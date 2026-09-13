@@ -2,6 +2,8 @@ import { defineConfig, type Plugin } from 'vite'
 import { resolve, dirname } from 'path'
 
 const ENGINE_DIR = resolve(__dirname, 'src/engine')
+/** The exporters live under the engine but ship as their own entry, `tinyfly/export`. */
+const EXPORT_DIR = resolve(__dirname, 'src/engine/export')
 
 /**
  * Rewrite imports that resolve into the engine to the bare `tinyfly` specifier
@@ -11,9 +13,9 @@ const ENGINE_DIR = resolve(__dirname, 'src/engine')
  * importing both `tinyfly` and `tinyfly/gsap-compat` ends up with two
  * `Timeline` classes and `instanceof` checks that silently fail.
  *
- * Adapters are deliberately *not* externalised — they have no public entry
- * point of their own, so the small amount of adapter code an add-on uses is
- * bundled in.
+ * Adapters are *not* externalised: `tinyfly/adapters` is its own entry, but
+ * the small amount of adapter code another add-on uses is bundled into it so
+ * add-ons do not depend on each other.
  */
 function externaliseEngine(): Plugin {
   return {
@@ -23,6 +25,8 @@ function externaliseEngine(): Plugin {
       if (!importer || !source.startsWith('.')) return null
       const resolved = resolve(dirname(importer), source)
       if (!resolved.startsWith(ENGINE_DIR)) return null
+      // Inside the export entry, its own files are bundled into it.
+      if (resolved.startsWith(EXPORT_DIR) && importer.startsWith(EXPORT_DIR)) return null
       return { id: 'tinyfly', external: true }
     },
   }
@@ -41,6 +45,8 @@ export default defineConfig({
   build: {
     lib: {
       entry: {
+        adapters: resolve(__dirname, 'src/adapters/index.ts'),
+        export: resolve(__dirname, 'src/engine/export/index.ts'),
         drivers: resolve(__dirname, 'src/drivers/index.ts'),
         interaction: resolve(__dirname, 'src/interaction/index.ts'),
         'gsap-compat': resolve(__dirname, 'src/compat/gsap/index.ts'),

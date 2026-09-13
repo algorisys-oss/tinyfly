@@ -7,7 +7,7 @@ export default {
   async run({ page, base }) {
     await page.goto(`${base}/e2e/harness.html`)
     return page.evaluate(async () => {
-      const engine = await import('/src/engine/index.ts')
+      const engine = { ...(await import('/src/engine/index.ts')), ...(await import('/src/engine/export/index.ts')) }
       const timeline = new engine.Timeline({
         id: 'x',
         tracks: [{ id: 'x', target: 'dot', property: 'x', keyframes: [{ time: 0, value: 0 }, { time: 300, value: 60 }] }],

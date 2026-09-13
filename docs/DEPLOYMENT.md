@@ -20,7 +20,21 @@ npm run build
 npm run build:player
 ```
 
-The build output is in the `dist/` directory.
+The build output is in the `dist/` directory. The player build goes to
+`lib/player/` instead, so an app build (which empties `dist/`) doesn't delete it.
+
+Besides the editor, `npm run build` writes the docs for language models to the
+site root (see `vite-llms-plugin.ts`):
+
+- `llms.txt` — an [llmstxt.org](https://llmstxt.org) index of the docs
+- `llms-full.txt` — every doc in one file
+- `docs/<page>.md` — each doc as raw markdown
+
+Configure your host to serve `.md` and `.txt` files as text (`text/markdown` and
+`text/plain`), not as downloads, and make sure the SPA fallback below doesn't
+replace them with `index.html`. Because `/docs` is also an editor route, the host
+must answer `/docs` with `index.html`, not a directory listing or an error for the
+`docs/` folder. The dev server serves the same paths.
 
 ## Publishing to OSS Repository
 
@@ -38,22 +52,24 @@ Files listed in `.ossignore` are excluded from OSS publishing:
 # Dry run - preview what will be published
 ./scripts/publish-oss.sh
 
-# Actually push to OSS repo
-OSS_REMOTE=https://github.com/algorisys-oss/tinyfly.git ./scripts/publish-oss.sh --push
+# Actually push to the OSS repo
+./scripts/publish-oss.sh --push
 ```
 
 ### What the Script Does
 
 1. Creates a clean copy from the latest git commit
 2. Removes paths listed in `.ossignore`
-3. Patches `package.json` (removes `private` flag)
-4. Pushes to the OSS repository
+3. Builds the browser and player bundles from that copy into `cdn/`
+4. Patches `package.json` (removes `private` flag)
+5. Pushes to the OSS repository and tags the commit `v{version}`, unless that
+   tag already exists (see [jsDelivr GitHub CDN](#jsdelivr-github-cdn))
 
 ### Environment Variables
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `OSS_REMOTE` | Git URL of the OSS repository | (required for --push) |
+| `OSS_REMOTE` | Git URL of the OSS repository | `https://github.com/algorisys-oss/tinyfly.git` |
 | `OSS_BRANCH` | Branch to push to | `main` |
 | `OSS_MESSAGE` | Custom commit message | Auto-generated |
 
@@ -202,9 +218,17 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
-    # Handle SPA routing
+    # Serve docs/*.md as text instead of a download (.txt is text/plain already)
+    location ~* \.md$ {
+        default_type text/markdown;
+        charset utf-8;
+        charset_types text/markdown;
+    }
+
+    # Handle SPA routing. No `$uri/`: /docs is an editor route, but dist/docs/
+    # is also a folder of .md files, and nginx would answer 403 for the folder.
     location / {
-        try_files $uri $uri/ /index.html;
+        try_files $uri /index.html;
     }
 
     # Cache static assets
@@ -269,14 +293,42 @@ The embeddable player can be built separately:
 npm run build:player
 ```
 
-This creates a standalone player script that can be included in any website:
+This writes `lib/player/tinyfly-player.{iife,es,umd}.js`. The IIFE build is a
+plain script that puts the player on a `tinyfly` global:
 
 ```html
-<script type="module" src="https://your-cdn.com/tinyfly-player.js"></script>
+<div id="container"></div>
+
+<script src="https://your-cdn.com/tinyfly-player.iife.js"></script>
 <script>
-  TinyflyPlayer.play('#container', 'animation.json', { loop: -1 });
+  tinyfly.play('#container', 'animation.json', { loop: -1, autoplay: true })
 </script>
 ```
+
+This is the same code the editor's **Embed** dialog generates.
+
+## jsDelivr GitHub CDN
+
+Every release publishes the bundles to the `cdn/` folder of
+[algorisys-oss/tinyfly](https://github.com/algorisys-oss/tinyfly) and tags the
+commit `v{version}` (`./scripts/publish-oss.sh --push`, above). jsDelivr serves
+them straight from GitHub, so you don't need to host the scripts yourself:
+
+```
+https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v{version}/cdn/tinyfly.iife.js
+```
+
+| File | What | Global |
+|---|---|---|
+| `tinyfly.iife.js` | Everything: engine, player, `live` (GSAP-style), drivers, interaction | `tinyfly` |
+| `tinyfly.umd.js` | The same, as UMD | `tinyfly` |
+| `tinyfly.esm.js` | The same, as an ES module | — |
+| `tinyfly-player.iife.js` | Player only, for playing exported JSON | `tinyfly` |
+
+Pin a version tag in production. The script never moves an existing tag, so a
+pinned URL keeps serving the same file; bump the version in `package.json` to
+publish new bundles. `@main` follows the latest publish and jsDelivr caches it for
+up to a day.
 
 ## Performance Optimization
 

@@ -11,8 +11,10 @@ import {
   type MotionPathTrack,
   type TextTrack,
   type InertiaTrack,
+  type SpringTrack,
   inertiaDuration,
   inertiaRest,
+  springDuration,
 } from '../../engine'
 import { mapEase } from './ease-map'
 import { resolvePosition, type Position, type PositionContext } from './position'
@@ -20,8 +22,10 @@ import { splitVars, toMs, toStaggerConfig, type TweenVars } from './vars'
 import { defaultFor } from './defaults'
 import { compileMotionPath, reverseMotionPath } from './motion-path-vars'
 import { desugarMorph } from './morph-vars'
+import { rejectUnresolvedDrawSvg } from './draw-svg-vars'
 import { compileTextVars } from './text-vars'
 import { compileInertiaProperty, type InertiaVars } from './inertia-vars'
+import { springParameters, springVelocity, type SpringVars } from './spring-vars'
 
 /**
  * A GSAP-flavoured facade over the tinyfly engine.
@@ -61,6 +65,12 @@ export interface CompatTimelineOptions {
    * what lands in the JSON.
    */
   startValue?: (target: string, property: string) => AnimatableValue | undefined
+  /**
+   * The velocity (units per second) a property is already moving at, for a
+   * `spring` tween that does not give one — so interrupting a motion carries its
+   * momentum. Called once, at build time.
+   */
+  startVelocity?: (target: string, property: string) => number | undefined
   /**
    * Bake eases that no cubic-bezier can express (elastic, bounce, steps) into
    * intermediate keyframes. Off by default because it multiplies keyframe
@@ -120,12 +130,12 @@ export class CompatTimeline {
 
   /** Animate to the given values. */
   to(target: string | string[], vars: TweenVars, position?: Position): TweenHandle {
-    return this.build(target, undefined, desugarMorph(vars), position)
+    return this.build(target, undefined, desugar(vars), position)
   }
 
   /** Animate from the given values to where the property already is. */
   from(target: string | string[], vars: TweenVars, position?: Position): TweenHandle {
-    const { config, properties } = splitVars(desugarMorph(vars))
+    const { config, properties } = splitVars(desugar(vars))
     const { motionPath, text, scrambleText, ...animated } = properties
     const first = this.targetsOf(target)[0]
 
@@ -160,13 +170,13 @@ export class CompatTimeline {
     toVars: TweenVars,
     position?: Position
   ): TweenHandle {
-    const { properties: fromProperties } = splitVars(desugarMorph(fromVars))
-    return this.build(target, fromProperties, desugarMorph(toVars), position)
+    const { properties: fromProperties } = splitVars(desugar(fromVars))
+    return this.build(target, fromProperties, desugar(toVars), position)
   }
 
   /** Set values instantly — a single held keyframe. */
   set(target: string | string[], vars: TweenVars, position?: Position): TweenHandle {
-    return this.build(target, undefined, { ...desugarMorph(vars), duration: 0 }, position)
+    return this.build(target, undefined, { ...desugar(vars), duration: 0 }, position)
   }
 
   // --- sequencing ---------------------------------------------------------
@@ -287,6 +297,10 @@ export class CompatTimeline {
 
     const easing = this.easingFor(config.ease)
     const trackIds: string[] = []
+    const spring = config.spring as SpringVars | undefined
+    // Springs and throws decide their own length, so they extend the tween rather than using `duration`.
+    let physicsMs = 0
+    let eased = false
 
     for (const [property, rawTo] of Object.entries(properties)) {
       const toValue = rawTo as AnimatableValue
@@ -306,6 +320,32 @@ export class CompatTimeline {
         fromValue = toValue
       }
 
+      if (spring !== undefined && typeof fromValue === 'number' && typeof toValue === 'number') {
+        const springConfig = {
+          ...springParameters(spring),
+          from: fromValue,
+          to: toValue,
+          velocity: springVelocity(spring, property) ?? this.options.startVelocity?.(targets[0], property) ?? 0,
+        }
+        const id = this.nextTrackId(`${targets[0]}-${property}-spring`)
+        const track: SpringTrack = {
+          id,
+          target: targets[0],
+          ...(targets.length > 1 && { targets }),
+          ...(stagger && targets.length > 1 && { stagger }),
+          property,
+          kind: 'spring',
+          spring: springConfig,
+          delay: start + delay,
+        }
+        this.timeline.addTrack(track)
+        trackIds.push(id)
+        physicsMs = Math.max(physicsMs, springDuration(springConfig))
+        for (const t of targets) this.lastValues.set(`${t}|${property}`, toValue)
+        continue
+      }
+
+      eased = true
       const keyframes = this.keyframesFor(fromValue, toValue, duration, easing, config.ease)
 
       const id = this.nextTrackId(`${targets[0]}-${property}`)
@@ -363,8 +403,6 @@ export class CompatTimeline {
       trackIds.push(id)
     }
 
-    // A throw decides its own length, so it extends the tween rather than using `duration`.
-    let throwMs = 0
     if (inertia !== undefined) {
       for (const [property, value] of Object.entries(inertia as InertiaVars)) {
         const from = this.resolveStart(targets[0], property)
@@ -386,7 +424,7 @@ export class CompatTimeline {
         }
         this.timeline.addTrack(track)
         trackIds.push(id)
-        throwMs = Math.max(throwMs, inertiaDuration(inertiaConfig))
+        physicsMs = Math.max(physicsMs, inertiaDuration(inertiaConfig))
         // The next tween on this property starts where the throw came to rest.
         for (const t of targets) this.lastValues.set(`${t}|${property}`, inertiaRest(inertiaConfig))
       }
@@ -394,8 +432,8 @@ export class CompatTimeline {
 
     // Reuse the engine's stagger maths rather than re-deriving it — it also
     // accounts for `from` (a centre fan spans half as far as a start fan).
-    const onlyThrows = inertia !== undefined && Object.keys(properties).length === 0 && !textConfig && motionPath === undefined
-    const length = onlyThrows ? throwMs : Math.max(duration, throwMs)
+    const onlyPhysics = (inertia !== undefined || spring !== undefined) && !eased && !textConfig && motionPath === undefined
+    const length = onlyPhysics ? physicsMs : Math.max(duration, physicsMs)
     const span =
       length + (stagger && targets.length > 1 ? staggerSpan(targets.length, stagger) : 0)
     const end = start + delay + span
@@ -540,4 +578,9 @@ function textValueOf(value: unknown): string {
 /** Create a GSAP-flavoured timeline. */
 export function timeline(options?: CompatTimelineOptions): CompatTimeline {
   return new CompatTimeline(options)
+}
+
+/** Replace options that name other properties (`morphSVG`) and reject ones that need the page. */
+function desugar(vars: TweenVars): TweenVars {
+  return rejectUnresolvedDrawSvg(desugarMorph(vars))
 }

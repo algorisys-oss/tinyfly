@@ -21,6 +21,29 @@ IntersectionObserver.
 
 **"Tie it to how far I've scrolled"** → `ScrollDriver`.
 
+Each has a one-call form that creates the driver and starts it:
+
+```ts
+import { playWhenVisible, scrubOnScroll } from 'tinyfly/drivers'
+
+const visible = playWhenVisible({ timeline, trigger: section })   // a started VisibilityDriver
+const scrub = scrubOnScroll({ timeline, trigger: panel, scrub: true })  // a started ScrollDriver
+```
+
+**Drivers move the playhead; they do not render.** `VisibilityDriver` calls
+`timeline.play()`, so something must still tick the timeline and apply its state
+(a `Clock` or your own rAF loop).
+`ScrollDriver` calls `timeline.seek()`, so apply the state in `onUpdate`:
+
+```ts
+new ScrollDriver({
+  timeline,
+  trigger: panel,
+  scrub: true,
+  onUpdate: () => adapter.applyState(timeline.getStateAtTime(timeline.currentTime)),
+}).start()
+```
+
 ## VisibilityDriver
 
 ```ts
@@ -86,10 +109,11 @@ Keywords: `top`/`left`/`start` (0), `center`/`centre`/`middle` (0.5),
 `bottom`/`right`/`end` (1). A single token is read as the element edge with the
 viewport edge defaulting to `top`.
 
-A common fixed-length scrub:
+A common fixed-length scrub — `end` starting with `+=` is measured from the start:
 
 ```ts
-{ start: 'top top', end: 'top top+=500' }   // 500px of scrolling, exactly
+{ start: 'top top', end: '+=500' }    // 500px of scrolling, exactly
+{ start: 'top top', end: '+=150%' }   // one and a half viewport heights
 ```
 
 ### Scrub modes
@@ -105,9 +129,15 @@ animation needs to land on specific frames.
 
 ### Callbacks
 
-`onUpdate(progress)` fires whenever progress changes. `onEnter` / `onLeave` /
-`onEnterBack` / `onLeaveBack` fire at the edges of the active range, with
-`Back` meaning you were scrolling up.
+`onUpdate(progress, velocity)` fires whenever progress or scroll speed changes.
+`velocity` is in px/s, positive scrolling down, and returns to 0 (with one more
+call) about 120 ms after scrolling stops — enough for skew-on-scroll effects.
+`onEnter` / `onLeave` / `onEnterBack` / `onLeaveBack` fire at the edges of the
+active range, with `Back` meaning you were scrolling up. A scroll that jumps
+across the whole range in one step (a fast flick, or loading the page already
+past it) fires both edges, in order.
+
+Without a `timeline`, the driver only reports progress and fires callbacks.
 
 ### Nested scrollers
 
@@ -117,17 +147,62 @@ new ScrollDriver({ timeline, trigger, scroller: document.querySelector('#pane')!
 
 Positions are then measured against that element's box instead of the viewport.
 
-### Forcing a re-measure
+### Performance, and re-measuring
 
-If you change layout yourself, call `driver.sample()`. The driver already
-re-samples on `scroll` and `resize`.
+**Scrolling does no layout work.** The driver measures the trigger when it
+starts and on window resize, turning `start` and `end` into absolute scroll
+offsets. A scroll event then reads only the scroll offset. With `scrub: <seconds>`
+its frame loop runs only until the playhead catches up, then stops.
+
+So if layout changes without a resize — images or web fonts loading, content
+inserted above the trigger — call `driver.refresh()` (or
+`ScrollDriver.refreshAll()` for every driver, in the order they started).
+`driver.progress` is the current progress, 0..1; `driver.velocity` the scroll
+speed.
+
+### Smooth-scroll libraries
+
+Libraries that keep native scrolling (Lenis, and Locomotive Scroll v5 built on
+it) fire ordinary `scroll` events, so drivers follow them with no setup. For a
+scroller that moves content with transforms instead, push its position:
+
+```ts
+virtualScroller.on('scroll', ({ scroll }) => driver.update(scroll))
+```
 
 ## Pinning
 
-**There is no pin option, on purpose.** Pinning mutates page layout — it
-repositions the element and inserts a spacer to preserve scroll height — and
-that is where most of ScrollTrigger's complexity lives. CSS already does the
-common case:
+`pin: true` holds the trigger in place for the length of the range; pass an
+element to pin something else:
+
+```ts
+new ScrollDriver({
+  timeline,
+  trigger: document.querySelector('.panels')!,
+  start: 'top top',
+  end: '+=2000',      // stays pinned for 2000px of scrolling
+  scrub: true,
+  pin: true,
+}).start()
+```
+
+It is the CSS sticky recipe below, automated. The element is wrapped in a
+`div.pin-spacer` as tall as the element plus the pinned distance, and made
+`position: sticky` at the offset where the range starts, so content after it is
+pushed down by that distance and the browser does the holding. Nothing is
+written while scrolling. `destroy()` removes the spacer and restores the
+element's styles.
+
+Two things to know:
+
+- Sticky positioning stops working if an ancestor between the element and the
+  scroller has `overflow: hidden` or `auto`.
+- Create pinned drivers top to bottom. A pin pushes the content below it down,
+  and resize refreshes run in start order so later drivers measure after it.
+
+### Doing it by hand
+
+The same effect in plain CSS, if you prefer to own the layout:
 
 ```html
 <div class="pin-container">
@@ -153,8 +228,12 @@ new ScrollDriver({
 ```
 
 The element sticks for the container's height while the timeline scrubs across
-it. If you hit a case this genuinely cannot express, that is the signal to
-revisit a real pin implementation — see Phase 26A in [todo.md](../todo.md).
+it.
+
+## With the GSAP-style API
+
+`live` accepts GSAP's `scrollTrigger` vars on a timeline or a single tween, built
+on the same driver — see [gsap-compat.md](gsap-compat.md#scroll-triggers).
 
 ## Authoring in the editor
 
@@ -181,6 +260,13 @@ A driver is not a hole in the determinism guarantee. The engine is deterministic
 rAF `Clock` already reads real time. A scroll driver is the same kind of
 boundary — and `scrollProgress()` itself is a pure function of geometry, unit
 tested without a browser.
+
+The geometry helpers are exported for the same reason: `parseTrigger(position)`,
+`triggerDistance(rect, viewportHeight, position)` (px until a trigger fires,
+positive while it is still ahead), `scrollProgress(rect, viewportHeight, start,
+end)`, and `smoothToward(current, target, smoothingSeconds, deltaMs)` (the
+smoothing behind `scrub: <seconds>`). See the
+[API reference](./api-reference.md#drivers).
 
 ## Cleaning up
 

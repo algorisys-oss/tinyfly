@@ -20,15 +20,13 @@ export const html = `<style>
 export function run(live, root) {
   // #region code
   // The line draws itself while a dot rides its tip: the same path, the same
-  // duration and ease, once as a stroke offset and once as a motion path.
+  // duration and ease, once as drawSVG and once as a motion path.
   const line = root.querySelector('.df-line')
-  const length = line.getTotalLength()
-  line.style.strokeDasharray = String(length)
 
   const draw = { duration: 2.2, ease: 'power1.inOut' }
   live
     .timeline({ repeat: -1, repeatDelay: 0.6, yoyo: true })
-    .fromTo(line, { strokeDashoffset: length }, { strokeDashoffset: 0, ...draw })
+    .fromTo(line, { drawSVG: 0 }, { drawSVG: '100%', ...draw })
     .to('.df-dot', { motionPath: { path: line, align: line }, ...draw }, '<')
   // #endregion code
 }
@@ -38,7 +36,7 @@ export const drawAndFollow = {
   id: 'live-draw-and-follow',
   name: 'Draw & Follow',
   description: 'A path draws itself while a glowing dot rides its tip — stroke-dashoffset and motionPath in lockstep.',
-  tags: ['motionPath', 'align', 'strokeDashoffset', 'yoyo'],
+  tags: ['motionPath', 'align', 'drawSVG', 'yoyo'],
   html,
   run,
 }

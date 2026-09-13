@@ -1,0 +1,52 @@
+/* The app scrolls inside #root; a showcase scrolls the window, like a real site. */
+html.showcase-mode,
+html.showcase-mode body,
+html.showcase-mode #root {
+  height: auto;
+  overflow: visible;
+}
+
+html.showcase-mode body {
+  overflow-x: clip;
+}
+
+.showcase-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  z-index: 100;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(20, 20, 22, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid #2a2a2a;
+  font: 13px system-ui, sans-serif;
+  white-space: nowrap;
+}
+
+.showcase-bar-link {
+  color: #ddd;
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+
+.showcase-bar-link:hover {
+  background: #2a2a2a;
+}
+
+.showcase-missing {
+  padding: 48px;
+  color: #ddd;
+  background: #0d0d0d;
+  min-height: 100vh;
+  font-family: system-ui, sans-serif;
+}
+
+.showcase-missing a {
+  color: #4a9eff;
+}

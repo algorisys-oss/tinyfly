@@ -74,7 +74,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.52.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.55.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -109,15 +109,54 @@ property at the same time, the one played most recently wins. A finished
 animation's final values are kept, so later tweens compose with them and start
 from them.
 
-**DOM reads happen once, when a tween is built — never per frame.** The start
-value `live` adds comes from what tinyfly last applied. Beyond that, it reads the
-page only where GSAP's option names something on the page: a shape's current
-path (`morphSVG`), an element's current text (`text`, `scrambleText`), and a
-path's geometry and the follower's layout (`motionPath` with `align`). Whatever
-it reads is written into the compiled tracks as plain values, so the JSON still
-describes the animation completely. It never reads `getComputedStyle`: an
-element styled by CSS alone starts numeric and colour properties from the static
-defaults, so use `fromTo` for the first tween on those.
+**Tweens read the DOM once, when they are built — never per frame.** The start
+value `live` adds comes from what tinyfly last applied. Beyond that, a tween
+reads the page only where GSAP's option names something on the page: a shape's
+current path (`morphSVG`), an element's current text (`text`, `scrambleText`),
+and a path's geometry and the follower's layout (`motionPath` with `align`).
+Whatever it reads is written into the compiled tracks as plain values, so the
+JSON still describes the animation completely. It never reads
+`getComputedStyle`: an element styled by CSS alone starts numeric and colour
+properties from the static defaults, so use `fromTo` for the first tween on
+those.
+
+Two features measure the page by design, outside that rule. [Flip](#flip)
+measures layout once per `getFlipState` call and once per `flipFrom` call (which
+`live.flip` makes one each of). `live.draggable` re-measures an element `bounds`
+on each press and follows pointer events for the whole drag. Both still hand the
+engine plain values: Flip compiles to ordinary tweens, and a throw is an ordinary
+inertia tween.
+
+**Plain objects are targets too.** Pass any JavaScript object and its
+properties are tweened and assigned straight back onto it — no element, no
+adapter. That is how a canvas, a Three.js scene or a shader uniform follows the
+same timeline as the DOM:
+
+```js
+const scene = { radius: 30, color: '#4a9eff' }
+live.to(scene, { radius: 90, color: '#ec4899', duration: 1.4, ease: 'expo.inOut' })
+live.to(mesh.position, { x: 2, y: 1, duration: 1 })        // Three.js
+live.to(material.uniforms.uProgress, { value: 1, duration: 2 })
+```
+
+Each object starts from its own current values, read when the tween is built.
+Numbers, colour strings and number arrays animate. Arrays and `NodeList`s are
+lists of targets, not objects to animate. Objects and elements mix freely in one
+timeline.
+
+**The ticker** runs a callback every frame, after that frame's values are
+applied, with GSAP's arguments — `time` in seconds since the ticker started,
+`deltaTime` in milliseconds, and a `frame` counter:
+
+```js
+const render = (time, deltaTime, frame) => renderer.render(threeScene, camera)
+live.ticker.add(render)
+live.ticker.remove(render)
+```
+
+The frame loop keeps running while any callback is registered, even with no
+animation playing, and stops when the last one is removed. In a script tag it is
+`tinyfly.ticker`.
 
 **Separate stages.** `createLive(new Stage())` gives an isolated loop and
 adapter — useful for tests (pass a `scheduler`), or for a widget that should not
@@ -177,8 +216,8 @@ Most GSAP eases map to an exact built-in or a close cubic-bezier:
 | GSAP | Result |
 |---|---|
 | `none`, `linear` | `linear` |
-| `power2.*`, `power3.*` | Exact built-in equivalents |
-| `power1.*`, `power4.*`, `sine.*`, `expo.*`, `circ.*`, `back.*` | Cubic-bezier |
+| `power1.*`, `power2.*` | Exact built-ins: `power1` is quad, `power2` is cubic, as in GSAP |
+| `power3.*`, `power4.*`, `sine.*`, `expo.*`, `circ.*`, `back.*` | Cubic-bezier |
 | `elastic.*`, `bounce.*`, `steps(n)` | **Needs baking** — see below |
 
 GSAP 2 spellings (`Power2.easeOut`) and bare families (`power2`, which defaults
@@ -241,7 +280,7 @@ These are not on a roadmap. Each conflicts with a principle the project is built
 on, and the alternative given is the principled equivalent.
 
 Several of these are now **reopened for consideration** in Phase 27 of
-[todo.md](../todo.md), with designs that resolve values once at load rather than
+[todo.md](https://github.com/algorisys-oss/tinyfly/blob/main/todo.md), with designs that resolve values once at load rather than
 per frame — which keeps the JSON a complete description of the animation. The
 reasoning below is still the bar any such proposal has to clear.
 
@@ -261,14 +300,15 @@ What GSAP sells as plugins, tinyfly ships as ordinary features:
 
 | GSAP plugin | tinyfly |
 |---|---|
-| ScrollTrigger | [`tinyfly/drivers`](./scroll-animation.md) — `ScrollDriver`, `VisibilityDriver`, plus a scroll-scrub preview in the editor |
+| ScrollTrigger | `scrollTrigger` on `live` (scrub, pin, toggleActions) — see [Scroll triggers](#scroll-triggers); [`tinyfly/drivers`](./scroll-animation.md) underneath, plus a scroll-scrub preview in the editor |
 | Draggable / Observer | `live.draggable()`, and `tinyfly/interaction` — `Draggable`, `Observer` |
 | InertiaPlugin | The `inertia` tween option and inertia tracks — see [Inertia](#inertia-and-dragging) |
 | Flip | `live.flip()` / `live.getFlipState()` + `live.flipFrom()` — see [Flip](#flip); `flip()` in the DOM adapter for authoring |
 | MorphSVG | The `morphSVG` tween option — see [Shape morphing](#shape-morphing) |
 | MotionPathPlugin | The `motionPath` tween option — see [Motion paths](#motion-paths) |
-| DrawSVG | Stroke write-on, built in |
-| SplitText | Text splitting in the editor, built in |
+| DrawSVG | The `drawSVG` tween option — see [Line drawing](#line-drawing) |
+| SplitText | `live.splitText()` — see [Split text](#split-text); text splitting in the editor |
+| `gsap.ticker` | `live.ticker` — see [Playing on real elements](#playing-on-real-elements-live) |
 | TextPlugin | The `text` tween option — see [Text](#text) |
 | ScrambleTextPlugin | The `scrambleText` tween option — see [Text](#text) |
 | Physics2D | [Spring](#springs) and [inertia](#inertia-and-dragging) tracks — deterministic and serializable |
@@ -349,6 +389,34 @@ How the engine matches two shapes so the morph looks intentional:
 Plans are cached per pair of shapes, so the matching runs once; each frame only
 blends points.
 
+## Line drawing
+
+`drawSVG` animates how much of an SVG stroke is drawn:
+
+```js
+live.from('.line', { drawSVG: 0, duration: 1 })                   // draw in
+live.to('.line', { drawSVG: '40% 60%', duration: 0.6 })           // shrink to the middle
+live.fromTo('path', { drawSVG: '50% 50%' }, { drawSVG: true, stagger: 0.1 })  // grow out from the centre
+```
+
+| Value | Drawn |
+|---|---|
+| `true` / `false` | All of it / none |
+| `120` | The first 120px |
+| `'60%'` | The first 60% |
+| `'20% 80%'`, `'10 50%'` | From one point to the other (px and % mix) |
+
+`live` measures each element's length once (`getTotalLength()`), so shapes of
+different lengths draw over the same duration, and compiles the draw to two
+ordinary tracks — `strokeDasharray` as `[visible, length]` and `strokeDashoffset`
+as `-start`. A `to()` on a stroke tinyfly has not drawn starts fully drawn. It
+works on anything with a stroke length: `path`, `line`, `polyline`, `polygon`,
+`circle`, `ellipse`, `rect`. It replaces any dash pattern the element had, and
+with `stroke-linecap: round` an empty segment still shows a dot.
+
+`timeline()` / `tf` have no page to measure and throw on `drawSVG`; use
+`drawSvgProperties(value, length)` to get the two values yourself.
+
 ## Text
 
 GSAP's TextPlugin and ScrambleTextPlugin options work on `timeline()`, `tf` and `live`:
@@ -387,6 +455,93 @@ Spaces stay spaces while scrambling, so word shapes remain readable.
 `text` replaces the element's text content. Markup inside it (spans, links) is
 replaced too; animate an inner element if you need to keep the rest.
 
+## Scroll triggers
+
+`scrollTrigger` on `live.timeline()` or a single `live` tween ties it to
+scrolling, with GSAP's option names. It is built on
+[`ScrollDriver`](./scroll-animation.md), so scrolling does no layout reads.
+
+```js
+// Scrub: scroll position is the playhead. Pin the section while it plays.
+live.timeline({
+  scrollTrigger: { trigger: '.panels', start: 'top top', end: '+=2000', scrub: 0.5, pin: true },
+})
+  .to('.track', { x: -1600, ease: 'none' })
+
+// Toggle: play when the card comes into view, reverse when scrolling back above it.
+live.from('.card', {
+  y: 60, opacity: 0, duration: 0.8,
+  scrollTrigger: { start: 'top 80%', toggleActions: 'play none none reverse' },
+})
+
+// No animation: just callbacks, e.g. skew by scroll speed.
+live.scrollTrigger({
+  trigger: '.gallery',
+  onUpdate: ({ velocity }) => live.to('.gallery img', { skewY: velocity / -300, duration: 0.4 }),
+})
+```
+
+| Option | |
+|---|---|
+| `trigger` | Element or selector; default the animation's first target |
+| `start`, `end` | `"<element edge> <viewport edge>"` as in [trigger positions](./scroll-animation.md#trigger-positions); `end: '+=600'` / `'+=150%'` is measured from the start. Defaults `'top bottom'`, `'bottom top'` |
+| `scrub` | `true`: progress follows scroll exactly. A number: smoothed over that many seconds |
+| `pin` | `true` pins the trigger for the range, or an element / selector to pin instead (see [pinning](./scroll-animation.md#pinning)) |
+| `scroller` | A scrolling element or selector instead of the window |
+| `toggleActions` | Without `scrub`: actions on enter, leave, enter back, leave back — `play`, `pause`, `resume`, `reverse`, `restart`, `reset`, `complete` or `none`. Default `'play none none none'` |
+| `once` | Stop watching after the first enter |
+| `onUpdate(self)` | `self` is `{ progress, velocity, direction }`; velocity in px/s, back to 0 when scrolling stops |
+| `onEnter`, `onLeave`, `onEnterBack`, `onLeaveBack` | Edge callbacks |
+
+A timeline with `scrollTrigger` does not autoplay, and without `scrub` it shows its
+starting state straight away, so a `from()` reveal never flashes its end state.
+The trigger attaches on the next microtask, after the tweens chained onto the
+timeline. `tl.scrollTrigger` is the driver (`refresh()`, `progress`, `velocity`);
+`tl.kill()` removes it and its pin, as does destroying the stage.
+`live.refreshScroll()` re-measures every trigger after a layout change a resize
+would not catch.
+
+Not supported: `snap`, `markers`, `pinSpacing: false`, `anticipatePin`,
+horizontal scrollers, and `containerAnimation`.
+
+## Split text
+
+`live.splitText` wraps text in spans so characters, words or lines can be
+animated one after another (GSAP's SplitText):
+
+```js
+const split = live.splitText('.headline', { type: 'lines', mask: 'lines' })
+live.fromTo(split.lines, { y: 40 }, { y: 0, duration: 0.9, ease: 'expo.out', stagger: 0.12 })
+
+const title = live.splitText('.title', { type: 'words,chars' })
+live.from(title.chars, { opacity: 0, y: 30, rotateX: -90, stagger: 0.03 })
+
+split.revert()   // the original markup
+```
+
+| Option | Default | |
+|---|---|---|
+| `type` | `'chars,words,lines'` | Which pieces to create, comma-separated |
+| `mask` | — | `'lines'`, `'words'` or `'chars'`: wrap each in an `overflow: clip` span, for reveals from behind an edge |
+| `charsClass`, `wordsClass`, `linesClass` | `char`, `word`, `line` | Class names (masks get `<class>-mask`) |
+| `aria` | `true` | Put the text in the element's `aria-label` and hide the pieces from screen readers |
+
+It returns `{ elements, chars, words, lines, masks, revert() }`.
+
+What it does to the markup:
+
+- **Words** become inline-block spans, so they can move and never break in the
+  middle. Spaces stay as real text between them, so the text still wraps,
+  selects and copies normally. Words are wrapped even when you only ask for
+  `chars` or `lines` (they just aren't returned or classed).
+- **Characters** are grapheme clusters, so an emoji or an accented letter stays in one piece.
+- **Lines** are measured once, from where the browser wrapped the words. Inline
+  markup such as `<em>` or `<a>` is kept and cloned into each line it spans;
+  `<br>` ends a line. Lines depend on the element's width, so after a resize call
+  `revert()` and split again.
+- `revert()` restores the saved HTML. Event listeners attached to elements
+  *inside* the split element are lost; attach them to the element itself.
+
 ## Flip
 
 Animate elements from where they were to where a layout change put them:
@@ -407,6 +562,7 @@ live.flipFrom(state, { duration: 0.5, targets: '.item' })
 | `scale` | Animate size changes with scaleX/scaleY (default `true`); `false` moves only |
 | `targets` | Elements that may have appeared in the change (`live.flip` passes its own) |
 | `enter` | Start values for newly visible elements (default `{ opacity: 0, scale: 0.6 }`), or `false` |
+| `fade` | Cross-fade shared elements (below): the incoming one fades in, the one it replaces fades out if still shown |
 | `onComplete` | Called when it finishes |
 
 Any change works: reorder the DOM, toggle classes, hide and show, resize.
@@ -419,6 +575,30 @@ track data.
 
 **Interrupting is smooth.** Starting a flip while another is running takes over
 each element from where it appears right now.
+
+**Shared elements.** Give two different elements the same `data-flip-id` and
+they are treated as one thing: an element that was not recorded, but whose flip
+id was, flips from where the recorded element was. That is how a gallery
+thumbnail grows into a detail view's hero image, which is a separate element:
+
+```js
+thumb.addEventListener('click', () => {
+  const state = live.getFlipState(thumb)            // record only what is leaving
+  hero.dataset.flipId = thumb.dataset.flipId        // same id → same "thing"
+  detail.hidden = false
+  live.flipFrom(state, { targets: hero, fade: true, duration: 0.6 })
+})
+
+close.addEventListener('click', () => {
+  const state = live.getFlipState(hero)
+  detail.hidden = true
+  live.flipFrom(state, { targets: thumb, fade: true })
+})
+```
+
+Record only the element that is leaving: if both elements are in the state, each
+is matched to itself. Matching works within one document (a client-side route
+change counts; a full page load does not).
 
 **Limits.** Size changes scale the element, so its content scales too during
 the animation (text looks stretched mid-flip). Elements that disappear are not
@@ -472,7 +652,37 @@ rate of deceleration, so it lands exactly there without looking steered.
 
 ## Springs
 
-A spring is a better answer than an elastic ease when you want real physics:
+`spring` on a tween animates its numeric properties with spring physics instead
+of a duration and an ease:
+
+```js
+live.to('.card', { x: 0, scale: 1, spring: 'bouncy' })
+live.to('.card', { y: 0, spring: { stiffness: 260, damping: 14, mass: 1 } })
+
+// Release a drag into a spring, keeping the fling.
+live.draggable('.card', {
+  onRelease: (velocity) => live.to('.card', { x: 0, y: 0, spring: { preset: 'wobbly', velocity } }),
+})
+```
+
+| Value | |
+|---|---|
+| `true` | The default spring (stiffness 180, damping 12, mass 1) |
+| `'gentle'`, `'default'`, `'snappy'`, `'bouncy'`, `'wobbly'`, `'stiff'` | The presets the editor's spring inspector offers (`SPRING_PRESETS`) |
+| `{ preset?, stiffness?, damping?, mass?, velocity?, restDelta? }` | Parameters, optionally over a preset. `velocity` is units per second — one number, or per property (`{ x: 800, y: -200 }`) |
+
+- Each numeric property compiles to a **spring track**, so the result is still
+  deterministic, scrubbable and plain JSON. Properties that are not numbers (a
+  colour) keep tweening with `duration` and `ease`.
+- A spring settles in its own time: `duration` and `ease` are ignored for the
+  sprung properties, and the tween lasts as long as its slowest spring.
+- **Interruptions keep their momentum.** Without a `velocity`, `live` starts the
+  spring at the speed the property is already moving — measured once from the
+  animation it takes over — so re-targeting mid-motion does not stall.
+- All the sprung properties run on the shared frame loop, and each element is
+  written once per frame however many there are.
+
+The same spring as a track, without the GSAP-style API:
 
 ```ts
 import { Timeline } from 'tinyfly'

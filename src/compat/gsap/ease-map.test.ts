@@ -38,8 +38,12 @@ describe('mapEase — serializable eases', () => {
   })
 
   it('prefers an exact built-in where one exists', () => {
-    expect(mapEase('power2.out').easing).toBe('ease-out-quad')
-    expect(mapEase('power3.inout').easing).toBe('ease-in-out-cubic')
+    // GSAP's power1 is quadratic and power2 cubic (degree N+1).
+    expect(mapEase('power1.out').easing).toBe('ease-out-quad')
+    expect(mapEase('power2.out').easing).toBe('ease-out-cubic')
+    expect(mapEase('power2.inout').easing).toBe('ease-in-out-cubic')
+    // power3 is quartic, which has no built-in.
+    expect(mapEase('power3.out').easing).toEqual({ type: 'cubic-bezier', points: [0.165, 0.84, 0.44, 1] })
   })
 
   it('falls back to a cubic-bezier for families we have no built-in for', () => {

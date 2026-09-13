@@ -2,12 +2,17 @@ import type { Timeline, TimelineDefinition } from '../../engine'
 import { CompatTimeline, type CompatTimelineOptions } from './timeline'
 import type { Position } from './position'
 import { splitVars, type TweenVars } from './vars'
-import { Stage, type TargetInput } from './stage'
+import { Stage, type TargetInput, type Ticker } from './stage'
+import type { AnimatableValue } from '../../engine'
 import { resolveLiveMotionPath } from './live-motion-path'
 import { convertToPath, pathDataOf, resolveMorphShape } from './live-morph'
 import { toMs } from './vars'
 import { createLiveDraggable, type LiveDraggable, type LiveDraggableOptions } from './live-draggable'
 import { flipFrom, getFlipState, type FlipState, type FlipVars } from './live-flip'
+import { splitText, type SplitTextOptions, type SplitTextResult } from './split-text'
+import { createScrollTrigger, type ScrollTriggerVars } from './live-scroll'
+import { resolveDrawSvg } from './draw-svg-vars'
+import { ScrollDriver } from '../../drivers'
 
 /**
  * The live facade: GSAP-style calls that play on real elements straight away.
@@ -39,6 +44,11 @@ export interface LiveTimelineOptions extends Omit<CompatTimelineOptions, 'startV
   /** Called after each frame this timeline is applied */
   onUpdate?: () => void
   onComplete?: () => void
+  /**
+   * Drive this timeline from scrolling: scrub it, pin, or play/reverse it as a
+   * range is crossed. It does not autoplay.
+   */
+  scrollTrigger?: ScrollTriggerVars
 }
 
 export class LiveTimeline {
@@ -50,6 +60,10 @@ export class LiveTimeline {
   /** Cleared once playback has been started or explicitly controlled. */
   private autoplayPending: boolean
   private started = false
+  private killed = false
+  /** The first element any tween targeted: a scroll trigger's default trigger. */
+  private firstElement?: Element
+  private scrollDriver?: ScrollDriver
 
   constructor(stage: Stage, options: LiveTimelineOptions = {}) {
     this.stage = stage
@@ -57,19 +71,39 @@ export class LiveTimeline {
     this.compat = new CompatTimeline({
       ...options,
       startValue: (target, property) => {
+        // An object's own property is the truth: code outside tinyfly may have
+        // changed it since the last frame.
+        const object = stage.objectFor(target)
+        if (object) return animatableValue(object[property])
+
         const applied = stage.appliedValue(target, property)
         if (applied !== undefined) return applied
         // A shape's starting point is whatever the element draws right now,
         // and a text tween starts from the text it shows.
         if (property === 'd') return pathDataOf(stage.elementFor(target)) ?? undefined
         if (property === 'text') return stage.elementFor(target)?.textContent ?? undefined
+        // An undrawn stroke is fully drawn: one dash as long as the path.
+        if (property === 'strokeDasharray' || property === 'strokeDashoffset') {
+          const length = strokeLength(stage.elementFor(target))
+          if (length !== undefined) return property === 'strokeDasharray' ? [length, length] : 0
+        }
         return undefined
       },
+      startVelocity: (target, property) => stage.velocityOf(target, property),
     })
 
     this.compat.timeline.onComplete = () => options.onComplete?.()
 
-    this.autoplayPending = !options.paused
+    this.autoplayPending = !options.paused && !options.scrollTrigger
+    if (options.scrollTrigger) {
+      // Wait for the tweens chained on synchronously, so the default trigger and
+      // the starting state are known.
+      const vars = options.scrollTrigger
+      queueMicrotask(() => {
+        if (this.killed) return
+        this.scrollDriver = createScrollTrigger(stage, vars, this, this.firstElement, (m) => options.onWarning?.(m))
+      })
+    }
     if (this.autoplayPending) {
       queueMicrotask(() => {
         if (this.autoplayPending) this.play()
@@ -80,6 +114,11 @@ export class LiveTimeline {
   /** The engine timeline. */
   get timeline(): Timeline {
     return this.compat.timeline
+  }
+
+  /** The scroll driver behind `scrollTrigger`, once attached (after a microtask). */
+  get scrollTrigger(): ScrollDriver | undefined {
+    return this.scrollDriver
   }
 
   // --- building -----------------------------------------------------------
@@ -98,7 +137,15 @@ export class LiveTimeline {
 
   fromTo(target: TargetInput, fromVars: TweenVars, toVars: TweenVars, position?: Position): this {
     const names = this.resolve(target)
-    if (names) this.compat.fromTo(names, this.prepare(fromVars, names), this.prepare(toVars, names), position)
+    if (!names) return this
+    if ((fromVars.drawSVG === undefined && toVars.drawSVG === undefined) || names.length === 1) {
+      this.compat.fromTo(names, this.prepare(fromVars, names), this.prepare(toVars, names), position)
+      return this
+    }
+    // Each stroke has its own length, so each element gets its own tween.
+    this.eachElement(names, toVars, position, (name, vars, at) =>
+      this.compat.fromTo([name], this.prepare(fromVars, [name]), this.prepare(vars, [name]), at)
+    )
     return this
   }
 
@@ -166,6 +213,11 @@ export class LiveTimeline {
     return this.play()
   }
 
+  /** Whether the timeline is set to play backwards. */
+  reversed(): boolean {
+    return this.timeline.direction === 'reverse'
+  }
+
   /** Jump to a time in seconds, or to a label, and apply it immediately. */
   seek(position: number | string): this {
     this.autoplayPending = false
@@ -196,8 +248,11 @@ export class LiveTimeline {
     return this.timeline.playbackState === 'playing'
   }
 
-  /** Stop and remove every tween. Elements keep the values last applied. */
+  /** Stop and remove every tween, and any scroll trigger (and its pin). Elements keep the values last applied. */
   kill(): this {
+    this.killed = true
+    this.scrollDriver?.destroy()
+    this.scrollDriver = undefined
     this.autoplayPending = false
     this.timeline.stop()
     this.stage.deactivate(this.timeline)
@@ -212,7 +267,7 @@ export class LiveTimeline {
 
   /**
    * A track has one start value, but each element starts from its own shape or
-   * text. So a morph or text tween over several elements builds one tween per
+   * text, and each plain object from its own current values. So a morph or text tween over several elements builds one tween per
    * element, all at the same position, with any stagger turned into delays.
    */
   private perElementStarts(
@@ -222,17 +277,31 @@ export class LiveTimeline {
     build: (names: string[], vars: TweenVars, position?: Position) => void
   ): void {
     const startsDifferPerElement =
-      vars.morphSVG !== undefined || vars.text !== undefined || vars.scrambleText !== undefined
+      vars.morphSVG !== undefined ||
+      vars.drawSVG !== undefined ||
+      vars.text !== undefined ||
+      vars.scrambleText !== undefined ||
+      names.some((name) => this.stage.objectFor(name) !== undefined)
     if (!startsDifferPerElement || names.length === 1) {
       build(names, this.prepare(vars, names), position)
       return
     }
 
+    this.eachElement(names, vars, position, (name, perElement, at) => build([name], this.prepare(perElement, [name]), at))
+  }
+
+  /** One tween per element at the same position, with any stagger turned into delays. */
+  private eachElement(
+    names: string[],
+    vars: TweenVars,
+    position: Position | undefined,
+    build: (name: string, vars: TweenVars, position: Position | undefined) => void
+  ): void {
     const { stagger, ...rest } = vars
     const each = typeof stagger === 'number' ? stagger : (stagger as { each?: number } | undefined)?.each ?? 0
     names.forEach((name, i) => {
       const delay = toMs(rest.delay, 0) / 1000 + i * each
-      build([name], this.prepare({ ...rest, delay }, [name]), i === 0 ? position : '<')
+      build(name, { ...rest, delay }, i === 0 ? position : '<')
     })
   }
 
@@ -262,6 +331,17 @@ export class LiveTimeline {
       prepared = shape ? { ...prepared, morphSVG: shape } : withoutMorph
     }
 
+    if (vars.drawSVG !== undefined) {
+      const length = strokeLength(this.stage.elementFor(names[0]))
+      if (length === undefined) {
+        warn('gsap-compat: drawSVG needs an SVG shape with a stroke (path, line, circle…)')
+        const { drawSVG: _unmeasurable, ...withoutDraw } = prepared
+        prepared = withoutDraw
+      } else {
+        prepared = resolveDrawSvg(prepared, length)
+      }
+    }
+
     return prepared
   }
 
@@ -271,6 +351,7 @@ export class LiveTimeline {
       this.options.onWarning?.(`gsap-compat: no elements found for target ${describe(target)}`)
       return undefined
     }
+    this.firstElement ??= names.map((name) => this.stage.elementFor(name)).find((el) => el !== undefined)
     return names
   }
 }
@@ -287,6 +368,21 @@ export interface LiveApi {
    * morphed (selectors resolve within the stage's root). Changes the document.
    */
   convertToPath(targets: string | Element | ArrayLike<Element>): Element[]
+  /**
+   * Wrap text in char, word and line spans so each can be animated (GSAP's
+   * SplitText). Selectors resolve within the stage's root. Changes the document;
+   * `revert()` restores it.
+   */
+  splitText(targets: string | Element | ArrayLike<Element>, options?: SplitTextOptions): SplitTextResult
+  /**
+   * A scroll trigger with no animation — for callbacks such as velocity effects
+   * (GSAP's `ScrollTrigger.create`). `destroy()` it when done.
+   */
+  scrollTrigger(vars: ScrollTriggerVars & { trigger: string | Element }): ScrollDriver | undefined
+  /** Re-measure every scroll trigger, after layout changes a resize would not catch. */
+  refreshScroll(): void
+  /** Run a callback every frame, after animations are applied (GSAP's `gsap.ticker`). */
+  readonly ticker: Ticker
   /** Record where elements appear, before a layout change (GSAP's `Flip.getState`). */
   getFlipState(targets: TargetInput): FlipState
   /** Animate recorded elements from where they were to their new layout (GSAP's `Flip.from`). */
@@ -316,17 +412,26 @@ export function createLive(stage: Stage = new Stage()): LiveApi {
       onStart: config.onStart,
       onUpdate: config.onUpdate,
       onComplete: config.onComplete,
+      scrollTrigger: config.scrollTrigger,
     })
   }
 
   const api: LiveApi = {
     stage,
+    ticker: stage.ticker,
+    scrollTrigger: (vars) => createScrollTrigger(stage, vars),
+    refreshScroll: () => ScrollDriver.refreshAll(),
     timeline: (options) => new LiveTimeline(stage, options),
     to: (target, vars) => single(vars).to(target, vars),
     from: (target, vars) => single(vars).from(target, vars),
     fromTo: (target, fromVars, toVars) => single(toVars).fromTo(target, fromVars, toVars),
     set: (target, vars) => single(vars).set(target, vars),
     convertToPath: (targets) => convertToPath(targets, stage.root),
+    splitText: (targets, options) =>
+      splitText(
+        typeof targets === 'string' ? Array.from(stage.root.querySelectorAll(targets)) : 'nodeType' in targets ? [targets as Element] : Array.from(targets),
+        options
+      ),
     draggable: (target, options) => createLiveDraggable(api, stage, target, options),
     getFlipState: (targets) => getFlipState(stage, targets),
     flipFrom: (state, vars) => flipFrom(stage, (options) => new LiveTimeline(stage, options), state, vars),
@@ -346,6 +451,20 @@ export function createLive(stage: Stage = new Stage()): LiveApi {
  * the same element compose. The stage does nothing until something plays.
  */
 export const live: LiveApi = /* @__PURE__ */ createLive()
+
+/** The length of an SVG shape's stroke, measured once; undefined for anything else. */
+function strokeLength(element: Element | undefined): number | undefined {
+  const shape = element as (Element & { getTotalLength?: () => number }) | undefined
+  if (typeof shape?.getTotalLength !== 'function') return undefined
+  return shape.getTotalLength()
+}
+
+/** A property read off a plain object, if it is something the engine can animate. */
+function animatableValue(value: unknown): AnimatableValue | undefined {
+  if (typeof value === 'number' || typeof value === 'string') return value
+  if (Array.isArray(value) && value.every((item) => typeof item === 'number')) return value as number[]
+  return undefined
+}
 
 function describe(target: TargetInput): string {
   return typeof target === 'string' ? `"${target}"` : String(target)

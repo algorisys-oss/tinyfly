@@ -12,6 +12,7 @@ import {
   isInertiaTrack,
   springDuration,
   isUnderdamped,
+  SPRING_PRESETS,
 } from '../../engine'
 import type { SpringConfig } from '../../engine'
 import { HelpIcon } from './tooltip'
@@ -82,19 +83,10 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
     return track && isSpringTrack(track) ? track : null
   })
 
-  /**
-   * Presets for the two parameters that actually decide how a spring feels.
-   * Stiffness and damping interact, so offering them as named pairs is far
-   * more useful than two sliders someone has to discover the combinations of.
-   */
-  const SPRING_PRESETS: Array<{ name: string; spring: Partial<SpringConfig> }> = [
-    { name: 'Gentle', spring: { stiffness: 120, damping: 18, mass: 1 } },
-    { name: 'Default', spring: { stiffness: 180, damping: 12, mass: 1 } },
-    { name: 'Snappy', spring: { stiffness: 280, damping: 20, mass: 1 } },
-    { name: 'Bouncy', spring: { stiffness: 220, damping: 8, mass: 1 } },
-    { name: 'Wobbly', spring: { stiffness: 180, damping: 5, mass: 1 } },
-    { name: 'Stiff', spring: { stiffness: 400, damping: 30, mass: 1 } },
-  ]
+  /** The engine's named springs, capitalised for the preset buttons. */
+  const SPRING_PRESET_BUTTONS: Array<{ name: string; spring: Partial<SpringConfig> }> = Object.entries(SPRING_PRESETS).map(
+    ([name, spring]) => ({ name: name[0].toUpperCase() + name.slice(1), spring })
+  )
 
   const updateSpringParam = (changes: Partial<SpringConfig> & { delay?: number }) => {
     const track = selectedSpring()
@@ -1668,7 +1660,7 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
               <div class="property-section">
                 <h4>Feel</h4>
                 <div class="spring-presets">
-                  {SPRING_PRESETS.map((preset) => (
+                  {SPRING_PRESET_BUTTONS.map((preset) => (
                     <button
                       class="spring-preset-btn"
                       onClick={() => updateSpringParam(preset.spring)}
