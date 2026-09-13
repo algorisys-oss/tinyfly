@@ -3,6 +3,7 @@ import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
 import type { ProjectStore } from '../stores/project-store'
 import type { SceneStore } from '../stores/scene-store'
+import { copyText } from '../../examples/copy-code-button'
 import './toolbar.css'
 
 interface ToolbarProps {
@@ -23,6 +24,23 @@ export const Toolbar: Component<ToolbarProps> = (props) => {
   const [importing, setImporting] = createSignal(false)
   const [showNewConfirm, setShowNewConfirm] = createSignal(false)
   const [showMore, setShowMore] = createSignal(false)
+  const [jsonCopied, setJsonCopied] = createSignal(false)
+
+  /** Put the timeline's JSON on the clipboard, e.g. to paste into a Learn step. */
+  const handleCopyJson = async () => {
+    const json = props.store.exportJSON()
+    if (!json) return
+    try {
+      await copyText(json)
+      setJsonCopied(true)
+      window.setTimeout(() => {
+        setJsonCopied(false)
+        setShowMore(false)
+      }, 900)
+    } catch {
+      setShowMore(false)
+    }
+  }
   let fileInputRef: HTMLInputElement | undefined
   let moreRef: HTMLDivElement | undefined
 
@@ -328,6 +346,13 @@ export const Toolbar: Component<ToolbarProps> = (props) => {
               onClick={() => { handleExport(); setShowMore(false) }}
             >
               Export JSON
+            </button>
+            <button
+              class="toolbar-more-item"
+              disabled={!props.store.state.timeline}
+              onClick={handleCopyJson}
+            >
+              {jsonCopied() ? 'JSON copied' : 'Copy JSON'}
             </button>
             <button
               class="toolbar-more-item"

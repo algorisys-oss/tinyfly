@@ -1,9 +1,16 @@
 import type { Lesson, Module, Step } from './types'
 import { foundationsModule } from './modules/foundations'
 import { gsapApiModule } from './modules/gsap-api'
+import { editorModule } from './modules/editor'
+import { motionCraftModule } from './modules/motion-craft'
+import { textSvgModule } from './modules/text-svg'
+import { interactionModule } from './modules/interaction'
+import { scrollModule } from './modules/scroll'
+import { accessibilityPerformanceModule } from './modules/accessibility-performance'
+import { capstoneModule } from './modules/capstone'
 
 /** The course, in order. Modules are added here as they are written (see todo.md, Phase 29). */
-export const course: Module[] = [foundationsModule, gsapApiModule]
+export const course: Module[] = [foundationsModule, gsapApiModule, editorModule, motionCraftModule, textSvgModule, interactionModule, scrollModule, accessibilityPerformanceModule, capstoneModule]
 
 export interface StepLocation {
   module: Module

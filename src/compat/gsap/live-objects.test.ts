@@ -107,6 +107,26 @@ describe('plain-object targets', () => {
     expect(document.getElementById('box')!.style.transform).toContain('100px')
   })
 
+  it('staggers many objects evenly, with a delay counted once', async () => {
+    const points = Array.from({ length: 5 }, () => ({ value: 0 }))
+    live.timeline().to(points, { value: 1, duration: 1, delay: 0.5, ease: 'none', stagger: 0.25 })
+    await flushMicrotasks()
+    frames.advance(0)
+    frames.advance(1750)
+    // Starts at 0.5, 0.75, 1, 1.25, 1.5s: evenly spaced, not piling up.
+    expect(points.map((point) => point.value)).toEqual([1, 1, 0.75, 0.5, 0.25].map((value) => expect.closeTo(value, 5)))
+  })
+
+  it('honours stagger amount and from for per-object tweens', async () => {
+    const points = Array.from({ length: 5 }, () => ({ value: 0 }))
+    live.timeline().to(points, { value: 1, duration: 1, ease: 'none', stagger: { amount: 1, from: 'center' } })
+    await flushMicrotasks()
+    frames.advance(0)
+    frames.advance(1000)
+    // Centre starts at 0, its neighbours at 0.5s, the edges at 1s.
+    expect(points.map((point) => point.value)).toEqual([0, 0.5, 1, 0.5, 0].map((value) => expect.closeTo(value, 5)))
+  })
+
   it('treats arrays as lists of targets, not as an object to animate', async () => {
     const points = [{ x: 0 }, { x: 0 }]
     live.to(points, { x: 10, duration: 0.1 })

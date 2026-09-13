@@ -74,7 +74,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.59.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.60.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -758,7 +758,7 @@ split.revert()   // the original markup
 | Option | Default | |
 |---|---|---|
 | `type` | `'chars,words,lines'` | Which pieces to create, comma-separated |
-| `mask` | — | `'lines'`, `'words'` or `'chars'`: wrap each in an `overflow: clip` span, for reveals from behind an edge |
+| `mask` | — | `'lines'`, `'words'` or `'chars'`: wrap each in an `overflow: clip` span, for reveals from behind an edge. Masks leave 0.12em below the baseline (with a matching negative margin) so descenders aren't clipped |
 | `charsClass`, `wordsClass`, `linesClass` | `char`, `word`, `line` | Class names (masks get `<class>-mask`) |
 | `aria` | `true` | Put the text in the element's `aria-label` and hide the pieces from screen readers |
 | `autoSplit` | `false` | Split again when an element's width changes or fonts load |

@@ -1,6 +1,8 @@
 import { extractCode, type LiveDemoWithCode } from '../live-demos'
 import { agencyLanding } from './agency-landing'
 import agencyLandingSource from './agency-landing.js?raw'
+import { ganeshChaturthi } from './ganesh-chaturthi'
+import ganeshChaturthiSource from './ganesh-chaturthi.js?raw'
 
 /**
  * Full-page showcases: whole sites built from the GSAP-style API, running on the
@@ -8,7 +10,10 @@ import agencyLandingSource from './agency-landing.js?raw'
  * each is a page rather than a card — opened at `/showcase/<id>`, and copied as a
  * standalone page that is the same markup and code.
  */
-export const showcases: LiveDemoWithCode[] = [{ ...agencyLanding, code: extractCode(agencyLandingSource) }]
+export const showcases: LiveDemoWithCode[] = [
+  { ...agencyLanding, code: extractCode(agencyLandingSource) },
+  { ...ganeshChaturthi, code: extractCode(ganeshChaturthiSource) },
+]
 
 export function findShowcase(id: string): LiveDemoWithCode | undefined {
   return showcases.find((showcase) => showcase.id === id)

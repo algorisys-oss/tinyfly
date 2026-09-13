@@ -59,4 +59,16 @@ export interface CheckContext {
   duration(): number
   /** Engine target names of the elements matching `selector` */
   targets(selector: string): string[]
+  /** Calls the code made to the live API (e.g. `'to'`, `'timeline'`, `'draggable'`, `'ticker.add'`), with their arguments */
+  calls(method?: string): { method: string; args: unknown[] }[]
+  /**
+   * Fire a DOM event on the first element matching `selector`, as a person would,
+   * so checks can test interactions. Timelines built in response are recorded too.
+   */
+  fire(selector: string, type: string, init?: { clientX?: number; clientY?: number }): void
+  /**
+   * Run the same code again, off screen, with `prefers-reduced-motion` answered as
+   * given, and return what that run built — to check a reduced-motion branch.
+   */
+  rerun(options: { reducedMotion: boolean }): CheckContext
 }

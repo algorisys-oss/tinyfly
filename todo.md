@@ -1546,6 +1546,9 @@ in one click.
       title set; unknown ids say so; the landing gallery links to these pages;
       e2e `example-pages` check in Chromium, Firefox and WebKit
 - [ ] Gallery cards show live miniature previews of the demos instead of colour fields
+- [x] Festive showcase `/showcase/ganesh-chaturthi` (`src/examples/showcases/ganesh-chaturthi.js`):
+      hand-drawn SVG Ganesh ji and Mooshak, drawn-in rangoli, flickering diyas, petals on a ticker
+      canvas, springy split-text greeting, tap-to-hop Mooshak, pointer parallax, reduced-motion mode
 
 ---
 
@@ -1590,8 +1593,15 @@ section by section.
       `durationIs`, `easeIs`, `staggerIs`, `timelineCount`, `custom` with
       learner-facing messages
 - [x] Progress and drafts in localStorage (a course needs no more; IndexedDB not needed)
+- [x] Checks run on a hidden copy of the step (`checkIsolated`: laid out off screen at the
+      preview's width, nothing ticking), so checks that click, hover or flip never change
+      the preview. Found when the lightbox check left the capstone preview's lightbox open
+- [x] Interaction checks: `context.calls(method)` (every `live` call and its arguments),
+      `context.fire(selector, type)`, `context.rerun({ reducedMotion })`
 - [ ] "Inspect JSON" drawer beside the preview
-- [ ] Scroll-container previews for the scroll module
+- [x] Scroll-container previews for the scroll module: the markup is a `.scroller` box and
+      triggers pass `scroller: '.scroller'`; pins (sticky) and pinned horizontal rows work
+      inside it (checked in Chrome)
 - [ ] "Open in editor" / "Copy as page" at the end of a module
 
 ### 29B — Curriculum
@@ -1606,33 +1616,67 @@ section by section.
    and ease, `from`, `fromTo`), many elements (selectors, `stagger`, `from: 'center'`),
    timelines (sequencing, the position parameter, repeat and yoyo). Still to add:
    labels, `set`, playback controls.
-3. **The editor.** Build the same animation visually, compare its exported JSON
-   with lesson 1, and embed it. A guided overlay reuses the Help Tour.
-4. **Motion craft.** Easing personality, overlap and offset, anticipation and
-   follow-through; springs (presets, momentum) versus eases; when not to animate.
-5. **Text and SVG.** `splitText` line and character reveals with masks,
-   scramble and typewriter, `drawSVG`, `morphSVG`, motion paths with `align`.
-6. **Interaction.** Hover and magnetic effects, pointer follow on the ticker,
-   `live.draggable` with inertia and snapping, Flip layouts and shared elements,
-   canvas/WebGL via object targets.
-7. **Scroll.** Toggle reveals, scrub versus smoothed scrub, pinning, horizontal
-   pinned sections, velocity effects, and performance rules (refresh, no layout
-   reads, pause off-screen work).
-8. **Accessibility and performance.** `prefers-reduced-motion` (needs a tinyfly
-   helper, below), transform/opacity-only budgets, measuring with the e2e
+3. **The editor.** ✓ 2 lessons, 5 steps — build visually (element and track, easing a
+   keyframe, a second track), same data two ways (a preset's JSON, then the same
+   animation in `live` code). Steps end with **More → Copy JSON** (new menu item) and
+   pasting into `play( … )`; `play()` gives targets the preview lacks a placeholder
+   box. The e2e `learn-editor` check performs every step in the real studio in
+   Chromium, Firefox and WebKit and requires the copied JSON to pass.
+4. **Motion craft.** ✓ 3 lessons, 7 steps — timing (overlap with `'-=0.3'`, stagger
+   `amount`), anticipation and follow-through (a wind-up, `back.out` overshoot),
+   springs and durations (`spring: 'bouncy'`, damping without wobble, 0.2s button
+   presses). Checks sample motion over time (`sampleValues`) to test overshoot and
+   wind-up.
+5. **Text and SVG.** ✓ 2 lessons, 6 steps — text (split into words, masked line reveal,
+   `scrambleText`), SVG (`drawSVG`, `morphSVG` to another shape, `motionPath`).
+   Found while writing it: line masks clipped descenders; masks now leave 0.12em below
+   the baseline by default.
+6. **Interaction.** ✓ 3 lessons, 6 steps — pointer (hover in and out, a magnetic pull
+   with `quickTo`), drag and throw (`draggable` with `bounds`, `inertia`), layout and
+   canvas (`flip` on a class change, a tweened plain object drawn on `ticker.add`). The
+   runner records `live` calls (`context.calls`) and checks fire real events
+   (`context.fire`), so a hover check hovers and then reads the tween it started.
+   Still to add: snapping, shared elements.
+7. **Scroll.** ✓ 3 lessons, 7 steps — reveals (`start: 'top 80%'`, `toggleActions`
+   reverse, a trigger per card), scrub (a reading-progress bar with `scrub: true`,
+   smoothed `scrub: 0.5`), pinning and speed (a pinned scrubbed timeline, skew by
+   velocity with `live.scrollTrigger` + `quickTo`). The preview is its own scroller
+   (`scroller: '.scroller'`, pins use sticky positioning so they work inside it). The
+   runner also records `to`/`from`/`fromTo`/`set`/`timeline` vars, so checks read
+   each `scrollTrigger`; the velocity check calls `onUpdate` as scrolling would.
+   Still to add: horizontal pinned sections with `containerAnimation`, snap.
+8. **Accessibility and performance.** ✓ 3 lessons, 5 steps — reduced motion (two
+   modes with `live.matchMedia` on both `prefers-reduced-motion` values, a fade instead
+   of movement), keyboard parity (hover feedback on `focus` / `blur` too), performance
+   (transforms instead of `left` / `width`, a canvas ticker started and stopped by a
+   scroll trigger's edge callbacks). `context.rerun({ reducedMotion })` runs the code
+   again off screen with the preference emulated, so both branches are checked in every
+   browser whatever its own setting. Still to add: measuring frame cost with the e2e
    harness.
-9. **Capstone: build the Agency Landing Page.** One lesson per section: hero
-   reveal, canvas, marquee, manifesto, pinned work, stats, services, lightbox,
-   contact. It ends with your own page exported as a standalone file.
+9. **Capstone: build the Agency Landing Page.** ✓ 4 lessons, 10 steps, each one section
+   of the showcase in a small scrolling preview with its class names — hero (masked
+   line reveal, scrubbed drift), marquee and manifesto (a seamless loop measured by a
+   function, a velocity lean clamped with `quickTo`, words lit by scroll), work and
+   stats (pinned horizontal row with `invalidateOnRefresh`, plain-object count-ups
+   written in `onUpdate`, `once`), details (icons drawn per row with reverse toggle
+   actions, a lightbox grown from its tile with `getFlipState` / `flipFrom`, spring
+   letters). It ends at the whole page, whose Copy code is the standalone file.
+   Still to add: the hero canvas and the magnetic button as capstone steps (both are
+   taught in Interaction and Accessibility and performance).
+
+**Course complete: 9 modules, 27 lessons, 64 steps.** Every solution passes and every
+starter fails in the unit gate, and every step passes in Chromium, Firefox and WebKit.
 
 ### 29C — Engine and API work the course needs
 
-- [ ] Reduced-motion helper, e.g. `live.matchMedia('(prefers-reduced-motion: reduce)', setup)`
-      or a `reducedMotion` option: lesson 8 must teach a real API, not a workaround
+- [x] Reduced-motion helper: `live.matchMedia()` (Phase 28B) is the real API lesson 8 teaches
 - [ ] Friendlier `onWarning` messages, surfaced inline in lessons: no targets
       found, drawSVG on a non-shape, spring on a colour
-- [ ] `live.quickTo`-style setter for pointer-driven values, if lesson 6 shows
-      that creating a tween per event is too much for learners
+- [x] `live.quickTo` (Phase 28B), taught in lesson 6 (magnetic pull) and 7 (velocity skew)
+- [x] Per-element stagger spaced evenly: tweens built one per element (drawSVG, morphSVG,
+      text, function values, objects) placed each at `'<'` and then added `i * each`, so
+      delays grew quadratically (38 rangoli strokes at 0.025s: the 18th started at 3.8s).
+      Found by the Ganesh Chaturthi showcase; each now waits one `each`, with a test
 
 ### 29D — Quality gates
 
@@ -1643,6 +1687,35 @@ section by section.
 - [ ] Lessons listed in the doc manifest, so `llms-full.txt` includes the course
 - [ ] Keyboard-only walkthrough of a full module; code panel and preview labelled
       for screen readers
+
+### 29E — After the course
+
+- [x] Review `tinyfly-vs-gsap.html` (the user's comparison, written at v0.55) against the
+      current code. Closed since it was written: page transitions, image sequences,
+      custom eases (CustomEase / CustomBounce / CustomWiggle), snap / markers /
+      containerAnimation, resize-proof function values with `invalidate()`, the course.
+      Fixed while reviewing: per-element tweens (drawSVG, morphSVG, text, objects,
+      function values) ignored stagger `amount` and `from`, and piled delays up.
+      None of the remaining gaps needs third-party code:
+  - [ ] **Smooth scrolling (ScrollSmoother):** a native smoothed-scroll wrapper plus
+        `data-speed` / `data-lag` parallax, feeding `ScrollDriver`; pins must still work
+  - [ ] **Timeline callbacks and control:** `onRepeat`, `onReverseComplete`, `tl.call()`,
+        `addPause()`, `tweenTo()` / `tweenFromTo()`, `live.delayedCall()`,
+        `live.killTweensOf()`
+  - [ ] **`repeatRefresh`:** re-run function values on each repeat (reuses `invalidate()`),
+        with a seeded random so every loop stays reproducible
+  - [ ] **Utilities:** `live.utils` — clamp, mapRange, interpolate, wrap, snap, random
+        (seeded), toArray, distribute; `live.getProperty()`
+  - [ ] **ScrollTrigger extras:** `ScrollTrigger.batch`-style grouped reveals,
+        `pinSpacing: false`, horizontal scrollers, `anticipatePin`
+  - [ ] **Scroll-to:** animate a scroller to a position, element or label (anchor links)
+  - [ ] **Tween `keyframes` arrays** in vars (`keyframes: [{ x: 100 }, { y: 50 }]`)
+  - [ ] **Stagger `grid`** for live (2D ripple from a cell)
+  - [ ] **Draggable `type: 'rotation'`** (knobs, dials)
+  - [ ] **Distribution:** publish to npm (`npm view tinyfly` 404s today; the CDN is the
+        GitHub mirror via jsDelivr) and the 27C.4 framework hooks
+  - By design, not gaps: elastic / bounce / steps are baked into keyframes (JSON stays
+    portable), nested timelines are flattened, no per-frame function values
 
 ### Sequencing
 

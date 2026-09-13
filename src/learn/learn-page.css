@@ -207,13 +207,6 @@ html:has(.learn) #root {
   border-color: var(--learn-accent);
 }
 
-.learn-coming ul {
-  margin: 0;
-  padding-left: 20px;
-  color: var(--learn-muted);
-  line-height: 1.9;
-}
-
 /* ── Step ────────────────────────────────────────────────────────────── */
 .learn-step {
   display: grid;

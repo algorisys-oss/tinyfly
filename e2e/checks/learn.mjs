@@ -35,6 +35,17 @@ export default {
     }
     results.push({ label: `learn: every step's solution passes its checks (${steps} steps)`, ok: failing.length === 0 && steps > 5, detail: failing.join(', ') })
 
+    // Checks click and hover a hidden copy, so the preview stays as the code left it.
+    await page.goto(`${base}/learn/capstone/details/lightbox`)
+    await page.waitForSelector('.learn-step textarea', { timeout: 30000 })
+    await page.getByRole('button', { name: 'Show solution' }).click()
+    await page.waitForFunction(() => document.querySelectorAll('.learn-checks li.passed').length > 0, null, { timeout: 5000 }).catch(() => {})
+    const untouched = await page.evaluate(() => ({
+      hidden: document.querySelector('.learn-preview .ag-lightbox')?.hidden,
+      copies: document.querySelectorAll('[data-learn-offscreen]').length,
+    }))
+    results.push({ label: 'learn: checks leave the preview untouched', ok: untouched.hidden === true && untouched.copies === 0, detail: JSON.stringify(untouched) })
+
     await page.goto(`${base}/learn`)
     await page.waitForSelector('.learn-dots')
     const dots = await page.evaluate(() => ({ done: document.querySelectorAll('.learn-dots i.done').length, total: document.querySelectorAll('.learn-dots i').length }))

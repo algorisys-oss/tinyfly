@@ -323,6 +323,10 @@ function wrapInMask(piece: HTMLElement, className: string): HTMLElement {
   mask.className = className
   mask.style.display = piece.style.display === 'block' ? 'block' : 'inline-block'
   mask.style.overflow = 'clip'
+  // Room below the baseline so descenders (g, p, y) aren't clipped; the negative
+  // margin gives the space back, so the layout doesn't move.
+  mask.style.paddingBottom = '0.12em'
+  mask.style.marginBottom = '-0.12em'
   piece.replaceWith(mask)
   mask.appendChild(piece)
   return mask

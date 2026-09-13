@@ -4,20 +4,9 @@ import { A, Navigate, useNavigate, useParams } from '@solidjs/router'
 import { BrandMark } from '../components/brand-mark'
 import { renderMarkdown } from '../docs/markdown'
 import { allSteps, course, findStep, stepKey } from './course'
-import { checkStep, runStep, type CheckResult, type RunResult } from './runner'
+import { checkIsolated, runStep, type CheckResult, type RunResult } from './runner'
 import { completedSteps, draftFor, markCompleted, resetProgress, saveDraft } from './progress'
 import './learn-page.css'
-
-/** Modules planned for the course, shown on the map until they are written. */
-const COMING = [
-  'The editor: build it visually, compare the JSON',
-  'Motion craft: overlap, anticipation, springs',
-  'Text and SVG: split text, drawSVG, morphing',
-  'Interaction: hover, drag, Flip, canvas',
-  'Scroll: triggers, scrub, pinning, snap',
-  'Accessibility and performance',
-  'Capstone: build an award-style landing page',
-]
 
 const LearnHeader: Component<{ trail?: string }> = (props) => (
   <header class="learn-header">
@@ -101,12 +90,6 @@ export const LearnHome: Component = () => {
           )}
         </For>
 
-        <section class="learn-module learn-coming">
-          <h2>Coming next</h2>
-          <ul>
-            <For each={COMING}>{(title) => <li>{title}</li>}</For>
-          </ul>
-        </section>
       </main>
     </div>
   )
@@ -134,7 +117,8 @@ export const LearnStep: Component = () => {
     run?.destroy()
     run = runStep(current.step, source, preview)
     setError(run.error)
-    const checked = checkStep(current.step, run)
+    // Checks fire clicks and hovers, so they run on a hidden copy, not the preview.
+    const checked = checkIsolated(current.step, source, preview)
     setResults(checked)
     setScrub(undefined)
     if (checked.every((result) => result.passed)) {

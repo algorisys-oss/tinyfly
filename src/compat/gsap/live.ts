@@ -6,7 +6,7 @@ import { Stage, type ObjectTarget, type TargetInput, type Ticker } from './stage
 import type { AnimatableValue } from '../../engine'
 import { resolveLiveMotionPath } from './live-motion-path'
 import { convertToPath, pathDataOf, resolveMorphShape } from './live-morph'
-import { toMs } from './vars'
+import { toMs, toStaggerConfig } from './vars'
 import { createLiveDraggable, type LiveDraggable, type LiveDraggableOptions } from './live-draggable'
 import { flipFrom, getFlipState, type FlipState, type FlipVars } from './live-flip'
 import { splitText, type SplitTextOptions, type SplitTextResult } from './split-text'
@@ -18,6 +18,7 @@ import { ImageSequence, type ImageSequenceOptions } from './image-sequence'
 import { pageTransition, type PageTransitionOptions } from './live-transition'
 import { CustomBounce, CustomEase, CustomWiggle } from './custom-eases'
 import type { CubicBezierPoints, CustomBounceOptions, CustomWiggleOptions } from '../../engine'
+import { staggerOffsets } from '../../engine'
 
 /**
  * The live facade: GSAP-style calls that play on real elements straight away.
@@ -335,15 +336,22 @@ export class LiveTimeline {
       return
     }
 
-    // Stagger and delay belong to the last vars (the `to` side).
+    // Stagger and delay belong to the last vars (the `to` side). Offsets follow the
+    // stagger's each / amount / from, in seconds, as they would for one shared track.
     const last = varsList.length - 1
     const { stagger, ...rest } = varsList[last]
-    const each = typeof stagger === 'number' ? stagger : (stagger as { each?: number } | undefined)?.each ?? 0
+    const config = toStaggerConfig(stagger)
+    const offsets = config ? staggerOffsets(names.length, config).map((ms) => ms / 1000) : names.map(() => 0)
+    // The first element goes at the position, after its delay and offset. Each later
+    // one goes relative to the previous element's start ('<'), which already includes
+    // those, so it moves by the difference between their offsets — possibly backwards.
     names.forEach((name, i) => {
-      const delay = toMs(rest.delay, 0) / 1000 + i * each
+      const delay = i === 0 ? toMs(rest.delay, 0) / 1000 + offsets[0] : 0
+      const step = i === 0 ? 0 : offsets[i] - offsets[i - 1]
+      const at = i === 0 ? position : `<${step < 0 ? '-' : '+'}${Math.abs(step).toFixed(6)}`
       const perTarget = varsList.map((vars, k) => (k === last ? { ...rest, delay } : vars))
       const resolved = perTarget.map((vars) => this.prepare(resolveFunctionValues(vars, i, this.targetFor(name)), [name]))
-      build(resolved, [name], i === 0 ? position : '<')
+      build(resolved, [name], at)
     })
   }
 

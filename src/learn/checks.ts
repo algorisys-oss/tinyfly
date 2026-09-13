@@ -83,3 +83,13 @@ function endOf(context: CheckContext): number {
   const duration = context.duration()
   return Number.isFinite(duration) ? duration : 10
 }
+
+/** A property's numeric values across `[from, to]` seconds, `count` samples. */
+export function sampleValues(context: CheckContext, selector: string, property: string, from: number, to: number, count = 60): number[] {
+  const values: number[] = []
+  for (let i = 0; i <= count; i++) {
+    const value = context.valueAt(selector, property, from + ((to - from) * i) / count)
+    if (typeof value === 'number') values.push(value)
+  }
+  return values
+}

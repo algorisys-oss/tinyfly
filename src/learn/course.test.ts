@@ -2,6 +2,10 @@
 import { describe, it, expect } from 'vitest'
 import { allSteps, course, stepKey } from './course'
 import { checkStep, runStep } from './runner'
+import { stubSvgGeometry } from '../examples/live-demos/test-support'
+
+// happy-dom has no SVG geometry; drawSVG needs a stroke length.
+stubSvgGeometry()
 
 /**
  * The course's quality gate: every step's solution passes all of its checks, and

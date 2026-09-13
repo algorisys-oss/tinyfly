@@ -1,7 +1,6 @@
 export const html = `<style>
   .lm-copy { margin: 0; max-width: 250px; color: #fff; font: 700 22px/1.25 system-ui, sans-serif; }
   .lm-copy em { color: #4a9eff; font-style: normal; }
-  .lm-copy .line-mask { padding-bottom: 0.08em; margin-bottom: -0.08em; }
 </style>
 <p class="lm-copy">Motion that reads like <em>editorial type</em>, one line at a time, rising from behind its own edge.</p>`
 

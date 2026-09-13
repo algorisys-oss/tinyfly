@@ -94,7 +94,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Stroke write-on** - Animate a path's stroke drawing itself on (DOM + SVG renderers); one-click "Write On" preset
 - **Embed code** - Generate copy-paste code for websites (single scene or full sequence)
 - **Landing page** - `/` introduces tinyfly with tinyfly itself: a masked headline, a pointer-led canvas, a live code playground that shows the JSON its code compiles to, a pinned feature story, a gallery and a copyable script tag, with a reduced-motion mode. It loads without the editor, which lives at `/studio` (lazy-loaded, as are Examples, Showcase and Docs)
-- **Learn** - An interactive course at `/learn`: short steps with live code, a preview you can scrub, and checks that read what your code compiled to. Two modules so far: Foundations (animation as JSON: keyframes, tracks, easing, loops) and the GSAP-style API (tweens, stagger, timelines); more are planned, up to building an award-style page
+- **Learn** - An interactive course at `/learn`: short steps with live code, a preview you can scrub, and checks that read what your code compiled to. Nine modules, 64 steps: Foundations (animation as JSON), the GSAP-style API, the Editor (build in the studio, Copy JSON, compare with code), Motion craft (timing, anticipation, springs), Text and SVG, Interaction (hover, quickTo, drag and throw, Flip, canvas), Scroll (reveals, scrub, pinning, velocity), Accessibility and performance (a real reduced-motion mode, keyboard parity, transforms, pausing off-screen work), and a Capstone that rebuilds the Agency Landing Page section by section
 - **Examples** - One page (`/examples`, the **Examples** toolbar button), and a shareable page for every example at `/examples/<id>` for every ready-made animation: editable examples open in the editor as a new project, code examples show their timeline JSON and HTML to copy. Includes a full-page **Agency Landing Page** showcase and a **GSAP-style** section of 41 runnable `live.to()` demos (Flip layouts and shared elements, pinned horizontal scroll, line mask reveals, spring release, canvas from object tweens, motion paths, orbits, shape and menu morphs, scramble text, draggable throws, swipe cards, 3D card flips, magnetic button, proximity grid, marquee, split text, SVG draw…), and every card has **Copy code** for a complete standalone HTML page. Hover-to-play previews, search, and filters for kind and category (GSAP-style, Showcase, Basics, Motion, Text, UI, Loaders, Effects, Data, Camera, Scroll, and **Algorisys** product demos)
 
 ## Documentation
@@ -166,7 +166,7 @@ GitHub. No npm required.
 GSAP-shaped functions at the top level:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.59.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.60.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -576,7 +576,7 @@ tinyfly/
 - [x] CustomEase, CustomBounce, CustomWiggle
 - [ ] Framework wrappers (React / Vue / Svelte)
 - [x] Scroll pinning (`scrollTrigger: { pin }`), split text, drawSVG, springs and shared-element Flip on `live` ([Phase 28](todo.md))
-- [x] Interactive tutorial at `/learn` — Foundations and GSAP-style API modules live; more modules planned ([Phase 29](todo.md))
+- [x] Interactive tutorial at `/learn` — 9 modules from keyframes to an award-style landing page, checked in three browsers ([Phase 29](todo.md))
 - [ ] Nested timelines at runtime, explicit track priority
 - [ ] React Native adapter
 - [ ] Collaborative editing
