@@ -7,6 +7,8 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["vite/client"],
     "skipLibCheck": true,
+    /* The Examples page demos are plain JS so their code can be copied into a page as-is. */
+    "allowJs": true,
 
     /* Bundler mode */
     "moduleResolution": "bundler",

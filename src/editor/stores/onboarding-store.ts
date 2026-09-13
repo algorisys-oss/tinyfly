@@ -63,7 +63,7 @@ export const onboardingSteps: OnboardingStep[] = [
   {
     id: 'toolbar',
     title: 'Toolbar',
-    content: 'Import/export your work, embed animations, browse samples, and access export formats (CSS, Lottie, GIF).',
+    content: 'Import/export your work, embed animations, browse examples, and access export formats (CSS, Lottie, GIF).',
     target: '.toolbar',
     position: 'bottom',
   },

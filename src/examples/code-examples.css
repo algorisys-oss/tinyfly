@@ -1,0 +1,286 @@
+/*
+ * Styles for the markup of the code examples (code-examples.ts).
+ *
+ * Kept apart from the page styles because it is also copied, verbatim, into the
+ * standalone HTML page that "Copy code" produces — so it has to work on its own.
+ */
+.preview-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.preview-container .animated-box {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #4a9eff, #8b5cf6);
+  border-radius: 8px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.preview-container .animated-circle {
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #22c55e, #10b981);
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.preview-container .animated-text {
+  font-size: 24px;
+  font-weight: bold;
+  color: #fff;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+}
+
+.preview-container .loading-bar {
+  width: 200px;
+  height: 6px;
+  background: #333;
+  border-radius: 3px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  overflow: hidden;
+}
+
+.preview-container .loading-bar-fill {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #4a9eff, #8b5cf6);
+  border-radius: 3px;
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.preview-container .notification-card {
+  width: 220px;
+  padding: 16px;
+  background: #2a2a2a;
+  border-radius: 12px;
+  border-left: 4px solid #4a9eff;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) translateX(100px);
+  opacity: 0;
+}
+
+.preview-container .notification-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 4px;
+}
+
+.preview-container .notification-message {
+  font-size: 12px;
+  color: #888;
+  margin: 0;
+}
+
+.preview-container .button {
+  padding: 12px 32px;
+  background: #4a9eff;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+}
+
+.preview-container .card-stack {
+  position: relative;
+  width: 120px;
+  height: 80px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.preview-container .stack-card {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #4a9eff, #8b5cf6);
+  border-radius: 8px;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.preview-container .stack-card:nth-child(2) {
+  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  transform: translate(10px, -10px);
+}
+
+.preview-container .stack-card:nth-child(3) {
+  background: linear-gradient(135deg, #ec4899, #f43f5e);
+  transform: translate(20px, -20px);
+}
+
+.preview-container .orbit-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.preview-container .orbit-center {
+  width: 30px;
+  height: 30px;
+  background: #4a9eff;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.preview-container .orbit-dot {
+  width: 12px;
+  height: 12px;
+  background: #8b5cf6;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.preview-container .typing-cursor {
+  width: 2px;
+  height: 24px;
+  background: #4a9eff;
+  flex-shrink: 0;
+}
+
+.preview-container .counter {
+  font-size: 48px;
+  font-weight: bold;
+  color: #4a9eff;
+  font-family: monospace;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.preview-container .progress-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.preview-container .progress-ring circle {
+  fill: none;
+  stroke-width: 6;
+}
+
+.preview-container .progress-ring .bg {
+  stroke: #333;
+}
+
+.preview-container .progress-ring .progress {
+  stroke: #4a9eff;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+/* ---- Scroll examples ------------------------------------------------- */
+
+.preview-container .scroll-panel {
+  width: 180px;
+  padding: 16px 18px;
+  border: 1px solid rgba(74, 158, 255, 0.4);
+  border-radius: 8px;
+  background: linear-gradient(160deg, #2c4a63, #1e3346);
+  color: #e6f1fa;
+}
+
+.preview-container .scroll-panel-title {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.preview-container .scroll-panel-body {
+  margin: 0;
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+/* Parallax: three stacked bands, the nearest drifting furthest. */
+.preview-container .parallax-stage {
+  position: relative;
+  width: 220px;
+  height: 150px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #16222e;
+}
+
+.preview-container .parallax-layer {
+  position: absolute;
+  left: 50%;
+  border-radius: 6px;
+  transform: translateX(-50%);
+}
+
+.preview-container .parallax-far {
+  bottom: 12px;
+  width: 220px;
+  height: 60px;
+  background: #2c4a63;
+}
+
+.preview-container .parallax-mid {
+  bottom: 6px;
+  width: 160px;
+  height: 50px;
+  background: #3d6b8f;
+}
+
+.preview-container .parallax-near {
+  bottom: 0;
+  width: 100px;
+  height: 45px;
+  background: #4a9eff;
+}
+
+/* Progress bar: the fill scales from its left edge (originX: 0). */
+.preview-container .scroll-progress-track {
+  width: 220px;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.preview-container .scroll-progress-fill {
+  width: 100%;
+  height: 100%;
+  border-radius: 5px;
+  background: linear-gradient(90deg, #3ecf7a, #4a9eff);
+  transform-origin: left center;
+}

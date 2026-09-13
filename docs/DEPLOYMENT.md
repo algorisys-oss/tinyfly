@@ -259,7 +259,7 @@ export default defineConfig({
 
 Tinyfly uses client-side routing. Ensure your server/hosting is configured to:
 - Serve `index.html` for all routes (fallback)
-- This is required for `/gallery` and other routes to work on direct access
+- This is required for `/examples`, `/docs` and other routes to work on direct access
 
 ## Embedding the Player
 

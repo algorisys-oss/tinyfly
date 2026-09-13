@@ -55,3 +55,8 @@ export const tf = {
 }
 
 export type { Position, TweenVars }
+
+export { Stage } from './stage'
+export type { TargetInput, FrameScheduler, StageOptions } from './stage'
+export { LiveTimeline, live, createLive } from './live'
+export type { LiveTimelineOptions, LiveApi } from './live'

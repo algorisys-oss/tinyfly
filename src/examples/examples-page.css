@@ -1,0 +1,597 @@
+.examples-page {
+  min-height: 100vh;
+  background: #0d0d0d;
+  color: #e0e0e0;
+}
+
+/* Header */
+.examples-header {
+  background: linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%);
+  border-bottom: 1px solid #2a2a2a;
+  padding: 24px 32px;
+}
+
+.header-content {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 8px;
+}
+
+.examples-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+}
+
+.examples-wordmark {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: #4a9eff;
+}
+
+.examples-beta-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #4a9eff, #9b59b6);
+  box-shadow: 0 0 10px rgba(74, 158, 255, 0.35);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.back-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #888;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s;
+}
+
+.back-link:hover {
+  color: #4a9eff;
+}
+
+.examples-header h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.header-subtitle {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
+/* Filters */
+.examples-filters {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px 32px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 10px 16px;
+  flex: 1;
+  min-width: 250px;
+  max-width: 400px;
+}
+
+.search-box svg {
+  color: #666;
+  flex-shrink: 0;
+}
+
+.search-box input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: #e0e0e0;
+  font-size: 14px;
+  outline: none;
+}
+
+.search-box input::placeholder {
+  color: #666;
+}
+
+.category-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.category-btn {
+  padding: 8px 16px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 20px;
+  color: #888;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: capitalize;
+}
+
+.category-btn:hover {
+  border-color: #4a9eff;
+  color: #fff;
+}
+
+.category-btn.active {
+  background: #4a9eff;
+  border-color: #4a9eff;
+  color: #fff;
+}
+
+/* Examples Grid */
+.examples-grid {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 32px 48px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+/* Example Card */
+.example-card {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.example-card:hover {
+  border-color: #3a3a3a;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.example-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px 8px;
+}
+
+.example-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.example-category {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #4a9eff;
+  background: rgba(74, 158, 255, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.example-description {
+  margin: 0;
+  padding: 0 20px 16px;
+  font-size: 13px;
+  color: #888;
+  line-height: 1.5;
+}
+
+/* Preview Area */
+.example-preview {
+  background: #111;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.preview-canvas {
+  display: block;
+}
+
+/* Controls */
+.example-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-top: 1px solid #2a2a2a;
+}
+
+.renderer-toggle {
+  display: flex;
+  gap: 4px;
+  background: #111;
+  border-radius: 6px;
+  padding: 3px;
+}
+
+.renderer-btn {
+  padding: 6px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #666;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.renderer-btn:hover {
+  color: #aaa;
+}
+
+.renderer-btn.active {
+  background: #333;
+  color: #fff;
+}
+
+.play-btn {
+  padding: 8px 24px;
+  background: #4a9eff;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.play-btn:hover {
+  background: #3a8eef;
+}
+
+/* Tags */
+.example-tags {
+  display: flex;
+  gap: 6px;
+  padding: 0 20px 16px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  font-size: 11px;
+  color: #666;
+  background: #222;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+/* No Results */
+.no-results {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+/* Footer */
+.examples-footer {
+  background: #1a1a1a;
+  border-top: 1px solid #2a2a2a;
+  padding: 32px;
+  text-align: center;
+}
+
+.examples-footer p {
+  margin: 0 0 20px;
+  color: #666;
+  font-size: 14px;
+}
+
+.examples-footer strong {
+  color: #4a9eff;
+}
+
+.cta-btn {
+  display: inline-block;
+  padding: 12px 32px;
+  background: #4a9eff;
+  border-radius: 8px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.cta-btn:hover {
+  background: #3a8eef;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .examples-header {
+    padding: 16px;
+  }
+
+  .header-left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .examples-filters {
+    padding: 16px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-box {
+    max-width: none;
+  }
+
+  .examples-grid {
+    padding: 0 16px 32px;
+    grid-template-columns: 1fr;
+  }
+}
+
+/* The "drive it from scroll" disclosure on a scroll example's card. */
+.example-driver {
+  margin: 0 20px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding-top: 8px;
+}
+
+.example-driver summary {
+  color: #4a9eff;
+  cursor: pointer;
+  font-size: 11px;
+  user-select: none;
+}
+
+.example-driver pre {
+  margin: 6px 0 0;
+  padding: 8px 10px;
+  overflow-x: auto;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.35);
+  color: #9bb4c7;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+/* ── Kind filter (All / Open in editor / Code) ─────────────────────────── */
+.kind-filters {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 8px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+}
+
+.kind-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #888;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.kind-btn:hover {
+  color: #ddd;
+}
+
+.kind-btn.active {
+  background: #333;
+  color: #fff;
+}
+
+.kind-count {
+  margin-left: 6px;
+  color: #666;
+  font-size: 11px;
+}
+
+/* ── Card badges ───────────────────────────────────────────────────────── */
+.example-badges {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.example-kind {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: #3ecf7a;
+  background: rgba(62, 207, 122, 0.1);
+}
+
+.example-kind.kind-code {
+  color: #c792ea;
+  background: rgba(199, 146, 234, 0.1);
+}
+
+/* ── Editable example preview: the sample's canvas, scaled to fit ──────── */
+.sample-stage-frame {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sample-stage-clip {
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.sample-stage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  background: #252525;
+  transform-origin: 0 0;
+}
+
+.preview-hint {
+  position: absolute;
+  right: 8px;
+  bottom: 6px;
+  color: #555;
+  font-size: 10px;
+  pointer-events: none;
+}
+
+.open-btn {
+  padding: 8px 16px;
+  background: #3ecf7a;
+  border: none;
+  border-radius: 6px;
+  color: #0d0d0d;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.open-btn:hover {
+  background: #5ad98f;
+}
+
+.secondary-btn {
+  padding: 8px 16px;
+  background: #262626;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #ddd;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.secondary-btn:hover {
+  border-color: #4a9eff;
+}
+
+/* ── Code disclosure on code examples ──────────────────────────────────── */
+.example-code {
+  margin: 0 20px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding-top: 8px;
+}
+
+.example-code summary {
+  color: #c792ea;
+  cursor: pointer;
+  font-size: 11px;
+  user-select: none;
+}
+
+.example-code h4 {
+  margin: 10px 0 4px;
+  color: #888;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.example-code pre {
+  margin: 0;
+  max-height: 220px;
+  padding: 8px 10px;
+  overflow: auto;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.35);
+  color: #9bb4c7;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+/* ── GSAP-style live demos ─────────────────────────────────────────────── */
+.live-demo-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.example-code-note {
+  margin: 8px 0;
+  color: #777;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.example-code-note code {
+  color: #9bb4c7;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* ── Copy code ─────────────────────────────────────────────────────────── */
+.example-controls-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.copy-code-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  background: #262626;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #ccc;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.copy-code-btn:hover {
+  border-color: #c792ea;
+  color: #fff;
+}
+
+.copy-code-btn.copied {
+  border-color: #3ecf7a;
+  color: #3ecf7a;
+}
+
+.copy-code-btn.failed {
+  border-color: #ef4444;
+  color: #ef4444;
+}

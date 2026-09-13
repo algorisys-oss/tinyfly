@@ -2,7 +2,7 @@
  * System Prompt — teaches an LLM how to emit a valid tinyfly animation as
  * strict JSON. tinyfly is JSON-first, so the model's whole job is to produce
  * the same `{ elements, tracks, duration }` shape a hand-authored sample uses;
- * the generator then loads it through the exact path the Samples dialog uses.
+ * the generator then loads it through the exact path `applySample` uses.
  *
  * Keep this in sync with:
  *  - element types      → src/editor/stores/scene-store.ts (SceneElement)

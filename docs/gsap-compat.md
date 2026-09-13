@@ -38,6 +38,89 @@ quickPlay({ timeline: tl.timeline, targets: { box: '#my-box' } })
 and runs the rAF loop, replacing the dozen lines of boilerplate every
 hand-written tinyfly example starts with.
 
+## Playing on real elements: `live`
+
+> Fourteen runnable demos are on the Examples page under **GSAP-style**
+> (`/examples?category=gsap`), each with its code and **Copy code**: stagger,
+> labels, composition, playback controls, baked eases, and interaction effects
+> like a magnetic button, proximity grid, dock magnification, velocity skew,
+> card stack, infinite marquee, split-text reveal and SVG line drawing.
+>
+> **Doing without `overwrite`.** Interactive effects start a new tween on every
+> pointer move. Keep the returned timeline and `kill()` it before starting the
+> next one on the same element (see *Proximity Grid*), so tweens never pile up.
+
+`timeline()` and `tf` *compile*: targets are names, and playback is yours to
+wire. `live` compiles the same way and then plays the result on the page:
+
+```ts
+import { live } from 'tinyfly/gsap-compat'
+
+live.to('.box', { x: 200, duration: 1, ease: 'power2.out' })
+live.from('.card', { opacity: 0, y: 30, duration: 0.6, stagger: 0.1 })
+
+const tl = live.timeline({ repeat: -1, yoyo: true })
+  .to('#a', { x: 120, duration: 0.5 })
+  .to('#b', { rotate: 180, duration: 0.5 }, '<')
+
+tl.pause()          // play, pause, resume, restart, reverse, seek, progress, timeScale, kill
+tl.toDefinition()   // the same plain JSON the compiler produces
+```
+
+Without a build step, the all-in-one bundle exposes the same functions on a
+global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
+
+```html
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.52.0/cdn/tinyfly.iife.js"></script>
+<script>
+  tinyfly.to('.box', { x: 200, duration: 1 })
+</script>
+```
+
+What `live` adds, all of it runtime rather than compilation:
+
+| | `timeline()` / `tf` | `live` |
+|---|---|---|
+| Targets | Names | CSS selectors, elements, node lists, or arrays of them |
+| Many matches | — | A selector matching several elements animates all of them; `stagger` fans them out |
+| Playback | You call `quickPlay` or drive `tick()` | Starts on the next microtask; `paused: true` opts out |
+| Return value of `to()` etc. | A tween handle | The timeline, so calls chain |
+| Tween-level `repeat`, `yoyo`, `onStart`, `onUpdate`, `onComplete` | On `timeline()` | Also accepted in `live.to(target, vars)` |
+| Start value of a `to()` | Resolution chain | Resolution chain, with **the value tinyfly last applied to that element** inserted before `defaults` |
+
+**Autoplay waits a microtask** so every tween chained synchronously onto a
+timeline is in place before it starts. Calling `play`, `pause`, `seek` or
+`progress` before then takes control, and autoplay is cancelled.
+
+**Concurrent animations compose.** Every `live` animation shares one frame loop
+and one DOM adapter, which merges values per element before writing. So
+
+```ts
+live.to('#box', { x: 200, duration: 1 })
+live.to('#box', { rotate: 90, duration: 1 })
+```
+
+moves *and* turns the box. (Two separate `quickPlay` calls would each write a
+`transform` missing the other's property.) When two animations drive the *same*
+property at the same time, the one played most recently wins. A finished
+animation's final values are kept, so later tweens compose with them and start
+from them.
+
+**Still no DOM reads.** The start value `live` adds comes from what tinyfly
+itself last applied, resolved once when the tween is built. It never reads
+`getComputedStyle`, so an element styled by CSS alone still starts from the
+static defaults. Use `fromTo` for the first tween on a property, as above.
+
+**Separate stages.** `createLive(new Stage())` gives an isolated loop and
+adapter — useful for tests (pass a `scheduler`), or for a widget that should not
+compose with the rest of the page. `new Stage({ root })` resolves selectors inside
+`root` only. `stage.tick(ms)` drives it by hand.
+
+Elements stay registered with the stage once animated. For long-lived single-page
+apps that create and discard many elements, use a `Stage` per view and call
+`stage.destroy()` when the view goes away. It stops everything on that stage,
+releases its elements, and ignores any autoplay still queued.
+
 ## Mapping table
 
 | GSAP | tinyfly/gsap-compat | Notes |

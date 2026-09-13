@@ -2196,24 +2196,3 @@ export function getSamplesByCategory(category: SampleDefinition['category']): Sa
 export function getSampleById(id: string): SampleDefinition | undefined {
   return sampleDefinitions.find((s) => s.id === id)
 }
-
-/**
- * Get all unique categories
- */
-export function getCategories(): SampleDefinition['category'][] {
-  return ['basic', 'motion', 'text', 'ui', 'effects', 'showcase', 'products']
-}
-
-/**
- * Category display names
- */
-export const categoryNames: Record<SampleDefinition['category'], string> = {
-  basic: 'Basic',
-  motion: 'Motion',
-  text: 'Text',
-  ui: 'UI Elements',
-  effects: 'Effects',
-  showcase: 'Showcase',
-  products: 'Algorisys',
-  camera: 'Camera',
-}

@@ -11,7 +11,6 @@ import {
   ProjectSettingsDialog,
   EmbedDialog,
   ExportDialog,
-  SamplesDialog,
   GalleryDialog,
   ShortcutsDialog,
   ElementPanel,
@@ -29,6 +28,8 @@ import { renderSceneThumbnail } from './utils/scene-thumbnail'
 import { elementsBounds, shiftElement } from './utils/element-bounds'
 import { serializeTimeline, deserializeTimeline } from '../engine'
 import { StatusBar } from '../components'
+import { useNavigate, useSearchParams } from '@solidjs/router'
+import { applySample, getSampleById } from './samples'
 import './editor.css'
 
 interface EditorInnerProps {
@@ -73,7 +74,6 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
   const [showSettings, setShowSettings] = createSignal(false)
   const [showEmbed, setShowEmbed] = createSignal(false)
   const [showExportAs, setShowExportAs] = createSignal(false)
-  const [showSamples, setShowSamples] = createSignal(false)
   const [showGallery, setShowGallery] = createSignal(false)
   const [showShortcuts, setShowShortcuts] = createSignal(false)
   const [showAISettings, setShowAISettings] = createSignal(false)
@@ -340,6 +340,8 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
       // Clear history after setting up demo (so demo setup isn't in undo stack)
       store.clearHistory()
     }
+
+    openExampleFromUrl()
   })
 
   onCleanup(() => {
@@ -582,6 +584,40 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
     setShowGallery(false)
   }
 
+  const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams<{ example?: string }>()
+
+  /** Save, then leave for the Examples page. */
+  const openExamples = () => {
+    flushSave()
+    captureOutgoingThumbnail()
+    navigate('/examples')
+  }
+
+  /**
+   * `/?example=<id>` — sent here by "Open in editor" on the Examples page.
+   * The example lands in a new project, so it never overwrites existing work.
+   * The parameter is removed straight away so a reload does not create another.
+   */
+  function openExampleFromUrl() {
+    const id = searchParams.example
+    if (!id) return
+    setSearchParams({ example: undefined }, { replace: true })
+
+    const sample = getSampleById(id)
+    if (!sample) return
+
+    setIsSwitchingScene(true)
+    try {
+      store.stop()
+      setEditContext({ type: 'scene' })
+      projectStore.createNew(sample.name, sample.canvas)
+      applySample({ store, sceneStore, projectStore }, sample)
+    } finally {
+      setIsSwitchingScene(false)
+    }
+  }
+
   /** Create a brand-new project from the gallery and load it. */
   const newProjectFromGallery = () => {
     flushSave()
@@ -634,7 +670,7 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
             />
           </svg>
         </button>
-        <Toolbar store={store} projectStore={projectStore} sceneStore={sceneStore} onEmbed={() => setShowEmbed(true)} onExportAs={() => setShowExportAs(true)} onSamples={() => setShowSamples(true)} onOpenGallery={() => void openGallery()} onSave={flushSave} onToggleAI={toggleAiBar} aiOpen={aiBarOpen()} onShowShortcuts={() => setShowShortcuts(true)} />
+        <Toolbar store={store} projectStore={projectStore} sceneStore={sceneStore} onEmbed={() => setShowEmbed(true)} onExportAs={() => setShowExportAs(true)} onOpenExamples={openExamples} onOpenGallery={() => void openGallery()} onSave={flushSave} onToggleAI={toggleAiBar} aiOpen={aiBarOpen()} onShowShortcuts={() => setShowShortcuts(true)} />
       </header>
 
       <Show
@@ -807,14 +843,6 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
         isOpen={showExportAs()}
         onClose={() => setShowExportAs(false)}
         sceneName={projectStore.getActiveScene().name}
-      />
-
-      <SamplesDialog
-        store={store}
-        sceneStore={sceneStore}
-        projectStore={projectStore}
-        isOpen={showSamples()}
-        onClose={() => setShowSamples(false)}
       />
 
       <GalleryDialog

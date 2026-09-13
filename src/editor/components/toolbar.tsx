@@ -11,7 +11,7 @@ interface ToolbarProps {
   sceneStore?: SceneStore
   onEmbed?: () => void
   onExportAs?: () => void
-  onSamples?: () => void
+  onOpenExamples?: () => void
   onOpenGallery?: () => void
   onSave?: () => void
   onToggleAI?: () => void
@@ -272,12 +272,16 @@ export const Toolbar: Component<ToolbarProps> = (props) => {
         </button>
       </Show>
 
-      <Show when={props.sceneStore}>
-        <button class="toolbar-btn toolbar-btn-sample" onClick={() => props.onSamples?.()} title="Browse Sample Animations">
+      <Show when={props.onOpenExamples}>
+        <button
+          class="toolbar-btn toolbar-btn-examples"
+          onClick={() => props.onOpenExamples?.()}
+          title="Examples — open one in the editor, or copy its code"
+        >
           <svg viewBox="0 0 24 24" width="16" height="16">
             <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12zM10 9h8v2h-8zm0 3h4v2h-4zm0-6h8v2h-8z" fill="currentColor" />
           </svg>
-          <span>Samples</span>
+          <span>Examples</span>
         </button>
       </Show>
 
@@ -333,9 +337,6 @@ export const Toolbar: Component<ToolbarProps> = (props) => {
               Embed…
             </button>
             <div class="toolbar-more-sep" />
-            <a class="toolbar-more-item" href="/gallery" onClick={() => setShowMore(false)}>
-              Examples Gallery
-            </a>
             <a class="toolbar-more-item" href="/docs" onClick={() => setShowMore(false)}>
               Docs
             </a>

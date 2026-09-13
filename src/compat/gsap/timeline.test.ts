@@ -474,3 +474,22 @@ describe('output contract', () => {
     })
   })
 })
+
+describe('startValue option', () => {
+  it('supplies a start value before the defaults map', () => {
+    const tl = timeline({
+      defaults: { x: 5 },
+      startValue: (target, property) => (target === 'box' && property === 'x' ? 40 : undefined),
+    })
+    tl.to('box', { x: 100, duration: 1 })
+    expect(trackFor(tl, 'x').keyframes[0].value).toBe(40)
+  })
+
+  it('is overridden by a value this timeline already authored', () => {
+    const tl = timeline({ startValue: () => 40 })
+    tl.fromTo('box', { x: 0 }, { x: 10, duration: 1 })
+    tl.to('box', { x: 20, duration: 1 })
+    expect(trackFor(tl, 'x').keyframes[0].value).toBe(0)
+    expect(tracksOf(tl).filter((t) => t.property === 'x')[1].keyframes[0].value).toBe(10)
+  })
+})

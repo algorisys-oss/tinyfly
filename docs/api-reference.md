@@ -1430,3 +1430,39 @@ quickPlay({ timeline: tl.timeline, targets: { box: '#box' } })
 
 `quickPlay` also stands alone: it wires a timeline to the DOM and runs the rAF
 loop, replacing the usual boilerplate.
+
+### `live` — play on real elements
+
+```typescript
+import { live, createLive, Stage } from 'tinyfly/gsap-compat'
+
+live.to('.box', { x: 200, duration: 1 })          // → LiveTimeline, already playing
+live.from(target, vars)
+live.fromTo(target, fromVars, toVars)
+live.set(target, vars)                            // applied on the next microtask
+live.timeline(options?: LiveTimelineOptions)      // chainable .to/.from/.fromTo/.set/.addLabel/.add
+```
+
+`target` is a CSS selector, an `Element`, a `NodeList`, or an array of either.
+
+| `LiveTimelineOptions` | |
+|---|---|
+| `repeat`, `yoyo`, `repeatDelay`, `timeScale`, `defaults`, `bakeEases`, `onWarning` | As on `timeline()` |
+| `paused` | Do not autoplay |
+| `onStart`, `onUpdate`, `onComplete` | Lifecycle callbacks |
+
+`LiveTimeline` methods: `play()`, `pause()`, `resume()`, `restart()`,
+`reverse()`, `seek(secondsOrLabel)`, `progress(value?)`, `timeScale(value?)`,
+`duration()`, `isActive()`, `kill()`, `toDefinition()`. The engine timeline is
+`.timeline`, the compiled compat timeline `.compat`.
+
+`createLive(stage)` binds the same API to a separate `Stage`
+(`new Stage({ scheduler?, root? })`). `stage.tick(ms)` advances it by hand, and
+`stage.destroy()` stops everything on it and releases its elements.
+
+### Browser bundle
+
+`tinyfly/browser` (and `lib/browser/tinyfly.iife.js` for `<script>` tags, global
+`tinyfly`) re-exports the engine, player, drivers, interaction, `tf`, `live`,
+`Stage` and `quickPlay`, with `to`, `from`, `fromTo`, `set` and `timeline` at the
+top level bound to `live`.

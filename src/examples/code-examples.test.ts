@@ -1,25 +1,25 @@
 import { describe, it, expect } from 'vitest'
-import { galleryExamples, getExamplesByCategory } from './gallery-examples'
+import { codeExamples, getExamplesByCategory } from './code-examples'
 import { deserializeTimeline } from '../engine'
 
 /**
- * Structural checks over the gallery. These caught a real defect once already:
+ * Structural checks over the code examples. These caught a real defect once already:
  * an array hole from a stray comma, which typechecks as `undefined` slipping
  * into the list.
  */
 
-describe('galleryExamples', () => {
+describe('codeExamples', () => {
   it('has no holes', () => {
-    expect(galleryExamples.every((ex) => ex !== undefined && ex !== null)).toBe(true)
+    expect(codeExamples.every((ex) => ex !== undefined && ex !== null)).toBe(true)
   })
 
   it('has unique ids', () => {
-    const ids = galleryExamples.map((ex) => ex.id)
+    const ids = codeExamples.map((ex) => ex.id)
     expect(new Set(ids).size).toBe(ids.length)
   })
 
   it('gives every example a name, description and at least one tag', () => {
-    for (const ex of galleryExamples) {
+    for (const ex of codeExamples) {
       expect(ex.name, ex.id).toBeTruthy()
       expect(ex.description, ex.id).toBeTruthy()
       expect(ex.tags.length, ex.id).toBeGreaterThan(0)
@@ -27,14 +27,14 @@ describe('galleryExamples', () => {
   })
 
   it('every timeline deserializes and has a positive duration', () => {
-    for (const ex of galleryExamples) {
+    for (const ex of codeExamples) {
       const timeline = deserializeTimeline(ex.timeline)
       expect(timeline.duration, ex.id).toBeGreaterThan(0)
     }
   })
 
   it('every track targets something the DOM markup exposes', () => {
-    for (const ex of galleryExamples) {
+    for (const ex of codeExamples) {
       for (const track of ex.timeline.tracks) {
         expect(ex.domHtml, `${ex.id} / ${track.target}`).toContain(`data-tinyfly="${track.target}"`)
       }
@@ -42,7 +42,7 @@ describe('galleryExamples', () => {
   })
 
   it('canvas targets, where present, cover every animated target', () => {
-    for (const ex of galleryExamples) {
+    for (const ex of codeExamples) {
       if (!ex.canvasTargets) continue
       const names = new Set(ex.canvasTargets.map((t) => t.name))
       for (const track of ex.timeline.tracks) {
@@ -78,7 +78,7 @@ describe('scroll examples', () => {
   })
 
   it('non-scroll examples carry no driver snippet', () => {
-    const others = galleryExamples.filter((ex) => ex.category !== 'Scroll')
+    const others = codeExamples.filter((ex) => ex.category !== 'Scroll')
     expect(others.every((ex) => ex.driverSnippet === undefined)).toBe(true)
   })
 })

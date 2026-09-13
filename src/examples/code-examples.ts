@@ -1,37 +1,37 @@
 import type { TimelineDefinition } from '../engine'
 import type { CanvasTarget } from '../adapters/canvas'
 
-/** Canvas target with a name property for gallery examples */
-export type GalleryCanvasTarget = CanvasTarget & { name: string }
+/** Canvas target with a name property for code examples */
+export type CodeCanvasTarget = CanvasTarget & { name: string }
 
-export type GalleryCategory = 'UI Components' | 'Text Effects' | 'Loaders' | 'Micro-interactions' | 'Data Visualization' | 'Creative' | 'Scroll'
+export type CodeCategory = 'UI Components' | 'Text Effects' | 'Loaders' | 'Micro-interactions' | 'Data Visualization' | 'Creative' | 'Scroll'
 
-export interface GalleryExample {
+export interface CodeExample {
   id: string
   name: string
   description: string
-  category: GalleryCategory
+  category: CodeCategory
   tags: string[]
   timeline: TimelineDefinition
   domHtml: string
-  canvasTargets?: GalleryCanvasTarget[]
+  canvasTargets?: CodeCanvasTarget[]
   /**
    * How to drive this animation on a real page, when it is not meant to play on
-   * a clock. Scroll examples set this; the gallery shows it beside the preview
+   * a clock. Scroll examples set this; the Examples page shows it beside the preview
    * so the code to reproduce the effect is visible.
    *
-   * The gallery itself still plays these on a loop — a card is too small to
+   * The Examples page still plays these on a loop — a card is too small to
    * scroll meaningfully — so the snippet is how you make it scroll-driven.
    */
   driverSnippet?: string
 }
 
 /** Get all examples by category */
-export function getExamplesByCategory(category: GalleryCategory): GalleryExample[] {
-  return galleryExamples.filter(ex => ex.category === category)
+export function getExamplesByCategory(category: CodeCategory): CodeExample[] {
+  return codeExamples.filter(ex => ex.category === category)
 }
 
-export const galleryExamples: GalleryExample[] = [
+export const codeExamples: CodeExample[] = [
   // UI Components
   {
     id: 'slide-in-notification',
@@ -583,7 +583,7 @@ export const galleryExamples: GalleryExample[] = [
 
   // Data Visualization
   {
-    id: 'bar-chart',
+    id: 'animated-bar-chart',
     name: 'Animated Bar Chart',
     description: 'Bars animating up with staggered timing for data visualization.',
     category: 'Data Visualization',
@@ -826,7 +826,7 @@ export const galleryExamples: GalleryExample[] = [
   },
 
   // ---- Scroll ----------------------------------------------------------
-  // These play on a loop in the gallery because a card is too small to scroll.
+  // These play on a loop on the Examples page because a card is too small to scroll.
   // `driverSnippet` shows how to drive each one from scroll position instead.
 
   {
@@ -879,7 +879,7 @@ export const galleryExamples: GalleryExample[] = [
         width: 180,
         height: 90,
         fillStyle: '#4a9eff',
-      } as GalleryCanvasTarget,
+      } as CodeCanvasTarget,
     ],
     driverSnippet: `import { VisibilityDriver } from 'tinyfly/drivers'
 
@@ -941,9 +941,9 @@ new VisibilityDriver({
       </div>
     `,
     canvasTargets: [
-      { name: 'far', type: 'rect', x: 40, y: 150, width: 220, height: 60, fillStyle: '#2c4a63' } as GalleryCanvasTarget,
-      { name: 'mid', type: 'rect', x: 70, y: 175, width: 160, height: 50, fillStyle: '#3d6b8f' } as GalleryCanvasTarget,
-      { name: 'near', type: 'rect', x: 100, y: 195, width: 100, height: 45, fillStyle: '#4a9eff' } as GalleryCanvasTarget,
+      { name: 'far', type: 'rect', x: 40, y: 150, width: 220, height: 60, fillStyle: '#2c4a63' } as CodeCanvasTarget,
+      { name: 'mid', type: 'rect', x: 70, y: 175, width: 160, height: 50, fillStyle: '#3d6b8f' } as CodeCanvasTarget,
+      { name: 'near', type: 'rect', x: 100, y: 195, width: 100, height: 45, fillStyle: '#4a9eff' } as CodeCanvasTarget,
     ],
     driverSnippet: `import { ScrollDriver } from 'tinyfly/drivers'
 
@@ -1001,7 +1001,7 @@ new ScrollDriver({
         height: 10,
         fillStyle: '#3ecf7a',
         originX: 0,
-      } as GalleryCanvasTarget,
+      } as CodeCanvasTarget,
     ],
     driverSnippet: `import { ScrollDriver } from 'tinyfly/drivers'
 

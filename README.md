@@ -54,7 +54,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Media in embeds** - Exported/embedded HTML carries the media, and the player auto-discovers and syncs it (`[data-tinyfly-media]`), so audio/video play in time wherever the animation is embedded
 
 ### Visual Editor
-- **AI prompt → animation** - Describe an animation in plain language ("a title that fades up with a shine", "three cards sliding in one after another") and generate a fully editable timeline. Bring your own API key for **OpenAI, Google Gemini, or Anthropic** — keys stay in your browser and are sent directly to the provider. The model emits tinyfly's JSON schema, which loads through the same path as the sample library, so generated animations are ordinary keyframes you can tweak
+- **AI prompt → animation** - Describe an animation in plain language ("a title that fades up with a shine", "three cards sliding in one after another") and generate a fully editable timeline. Bring your own API key for **OpenAI, Google Gemini, or Anthropic** — keys stay in your browser and are sent directly to the provider. The model emits tinyfly's JSON schema, which loads through the same path as the editable examples, so generated animations are ordinary keyframes you can tweak
 - **Any canvas / aspect ratio** - The preview artboard follows the project canvas (DOM, Canvas, and SVG renderers) and fits-to-view, so a vertical 9:16 promo or any custom size previews at true proportions; samples can declare their own canvas size
 - **Device-frame preset** - One click stamps a device mockup (rounded body, camera/notch, and a rounded video "screen") sized to the canvas, in **Phone / Landscape / Tablet** variants — drop a screen-recording into the screen's source for an app promo
 - **Timeline view** - Visual keyframe editing with drag-and-drop
@@ -92,7 +92,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Resizable preview** - Drag the splitter between the preview and the timeline to resize (double-click to reset)
 - **Stroke write-on** - Animate a path's stroke drawing itself on (DOM + SVG renderers); one-click "Write On" preset
 - **Embed code** - Generate copy-paste code for websites (single scene or full sequence)
-- **Sample library** - One-click starter animations across Basic, Motion, Text, UI, Effects, Showcase, and **Algorisys** product-showcase categories (viral infographic demos for TinyFly, YappyDraw, HappyPaint, ProPeak, SkillzEngine, and the full ecosystem)
+- **Examples** - One page (`/examples`, the **Examples** toolbar button) for every ready-made animation: editable examples open in the editor as a new project, code examples show their timeline JSON and HTML to copy. Includes a **GSAP-style** section of 14 runnable `live.to()` demos (stagger, labels, magnetic button, proximity grid, dock, velocity skew, marquee, split text, SVG draw…), and every card has **Copy code** for a complete standalone HTML page. Hover-to-play previews, search, and filters for kind and category (GSAP-style, Showcase, Basics, Motion, Text, UI, Loaders, Effects, Data, Camera, Scroll, and **Algorisys** product demos)
 
 ## Documentation
 
@@ -114,7 +114,21 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 npm install tinyfly
 ```
 
-The package ships two entry points:
+> **Not on npm yet.** The package is prepared for publishing but has not been
+> published. Until it is, use the [GitHub CDN](#use-from-a-script-tag-no-build-step)
+> below, or build it locally and `npm install /path/to/tinyfly`.
+
+The package ships these entry points. Each is tree-shakeable, so you pay only
+for what you import:
+
+| Import | What it is | Environments |
+|---|---|---|
+| `tinyfly` | The engine — `Timeline`, tracks, easing, JSON | Browser, Web Worker, Node |
+| `tinyfly/player` | `TinyflyPlayer`, `MediaSync`, sequencer — plays editor JSON on the DOM | Browser |
+| `tinyfly/gsap-compat` | GSAP-style `live.to()` / `timeline()`, plus the compiling `tf` facade | Browser (`tf` anywhere) |
+| `tinyfly/drivers` | `ScrollDriver`, `VisibilityDriver` | Browser |
+| `tinyfly/interaction` | `Observer`, `Draggable` | Browser |
+| `tinyfly/browser` | Everything above in one bundle | Browser |
 
 ```js
 // The framework-agnostic engine (browser, Web Worker, or Node)
@@ -122,29 +136,67 @@ import { Timeline, createTrack } from 'tinyfly'
 
 // The DOM player + media sync (browser)
 import { TinyflyPlayer, MediaSync } from 'tinyfly/player'
+
+// GSAP-style animation of real elements (browser)
+import { live } from 'tinyfly/gsap-compat'
+live.to('.box', { x: 200, duration: 1, ease: 'power2.out' })
 ```
+
+TypeScript declarations ship with every entry point. Works with any framework
+(React, Vue, Svelte, Solid, Angular) or none — the engine has no dependencies.
+
+### Use from a `<script>` tag (no build step)
+
+Every release publishes browser bundles to the `cdn/` folder of
+[algorisys-oss/tinyfly](https://github.com/algorisys-oss/tinyfly), tagged with
+its version, and [jsDelivr](https://www.jsdelivr.com/) serves them straight from
+GitHub. No npm required.
+
+`tinyfly.iife.js` (~29 KB gzipped) puts everything on one `tinyfly` global, with
+GSAP-shaped functions at the top level:
+
+```html
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.52.0/cdn/tinyfly.iife.js"></script>
+<script>
+  tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
+
+  tinyfly.timeline({ repeat: -1, yoyo: true })
+    .fromTo('.dot', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.4, stagger: 0.1 })
+    .to('.title', { scale: 1.1, duration: 0.3 })
+
+  // The player, engine, drivers and interaction are on the same global
+  const player = new tinyfly.TinyflyPlayer('#stage')
+  player.load('animation.json').then(() => player.play())
+</script>
+```
+
+| File | What |
+|---|---|
+| `cdn/tinyfly.iife.js` | Everything, on a `tinyfly` global |
+| `cdn/tinyfly.umd.js` | The same, as UMD |
+| `cdn/tinyfly.esm.js` | The same, as an ES module: `import { live } from '…/cdn/tinyfly.esm.js'` |
+| `cdn/tinyfly-player.iife.js` | Player only (~11 KB gzipped), for playing editor exports |
+
+Replace `@v0.52.0` with the version you want. **Pin a version in production**:
+a tag's files never change. `@main` follows the latest release, which jsDelivr
+caches for up to a day. Load one `tinyfly` global, not both.
+
+Every card on the [Examples page](#features) has **Copy code**, which gives you a
+complete HTML page already using these URLs.
 
 ### Build the distributable libraries
 
 ```bash
-npm run build:libs   # engine + player bundles + type declarations -> lib/
+npm run build:libs   # all bundles + type declarations -> lib/
 ```
 
 This produces:
 
 - `lib/engine/tinyfly-engine.js` (ESM) and `.umd.cjs` — the engine
 - `lib/player/tinyfly-player.{es,umd,iife}.js` — the standalone DOM player
+- `lib/addons/{gsap-compat,drivers,interaction}.js` — the optional entry points
+- `lib/browser/tinyfly.{iife,umd}.js` and `tinyfly.js` — the all-in-one bundle
 - `lib/types/**` — TypeScript declarations
-
-### Use via CDN (no build step)
-
-```html
-<script src="https://unpkg.com/tinyfly/lib/player/tinyfly-player.iife.js"></script>
-<script>
-  const player = new tinyfly.TinyflyPlayer('#stage')
-  player.load('animation.json').then(() => player.play())
-</script>
-```
 
 ## Quick Start
 
@@ -406,6 +458,22 @@ tl.to(['l1', 'l2', 'l3'], { y: 0, duration: 0.5, stagger: 0.08 }, '-=0.25')
 quickPlay({ timeline: tl.timeline, targets: { box: '#box', l1: '#l1', l2: '#l2', l3: '#l3' } })
 ```
 
+For a page that just wants things to move, **`live`** plays straight onto
+elements — CSS selectors, elements or node lists, no target map, no loop:
+
+```ts
+import { live } from 'tinyfly/gsap-compat'
+
+live.to('.card', { y: -20, opacity: 1, duration: 0.6, stagger: 0.08, ease: 'power3.out' })
+live.to('#logo', { rotate: 360, duration: 2, repeat: -1 })
+live.timeline({ repeat: -1, yoyo: true })
+  .to('.a', { x: 120, duration: 0.5 })
+  .to('.b', { scale: 1.4, duration: 0.5 }, '<')
+```
+
+Separate `live` animations on the same element compose (an `x` tween and a
+`rotate` tween both apply) because they share one frame loop and one adapter.
+
 It is **familiar, not compatible** — GSAP code will not run unchanged. Anything
 authored through it is ordinary tinyfly JSON that opens in the editor. Read
 [docs/gsap-compat.md](docs/gsap-compat.md) for the mapping table and, more
@@ -439,6 +507,8 @@ tinyfly/
 - [x] Multi-select keyframes
 - [x] Visual curve editor for custom easing
 - [x] npm engine package + CDN player build (`npm run build:libs`)
+- [x] All-in-one `<script>` bundle with a GSAP-shaped `tinyfly` global, and `live.to()` that plays on real elements
+- [ ] Publish to npm
 
 ### Future
 - [x] Scene transitions (fade, slide between scenes)

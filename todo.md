@@ -1094,6 +1094,78 @@ value:
       and zero-travel cases.
 - [ ] Consider property-based testing for the interpolation and easing paths.
 
+#### 27C.6 — Distribution: integrate like GSAP
+
+The engine was usable from a bundler, but not from a `<script>` tag with GSAP's
+ergonomics, and it had never been published.
+
+- [x] `live` facade (`src/compat/gsap/live.ts`): `live.to('.box', vars)` plays on
+      real elements with no target map and no loop. Selectors / elements / node
+      lists; chainable timelines; autoplay on the next microtask.
+- [x] Shared `Stage` (`src/compat/gsap/stage.ts`): one rAF loop and one DOM
+      adapter for every live animation, merging values per element so separate
+      tweens on one element compose instead of overwriting `transform`. The loop
+      stops when nothing is playing.
+- [x] Start values from what tinyfly last applied (via a new `startValue` hook on
+      `CompatTimeline`) — resolved once at build time, still no DOM reads.
+- [x] All-in-one browser bundle `lib/browser/tinyfly.{iife,umd}.js` + `tinyfly/browser`
+      entry, global `tinyfly` with `to/from/fromTo/set/timeline` at the top level.
+      ~29 KB gzipped. Verified in headless Chrome from a plain `<script>` tag.
+- [x] `package.json` ready for npm: `private` removed, repository/keywords,
+      `unpkg`/`jsdelivr` fields, `prepublishOnly`, Solid moved to devDependencies
+      (the published package is the engine and has no runtime dependencies).
+- [x] **GitHub CDN.** `publish-oss.sh` builds the browser + player bundles from
+      the archived source into the OSS repo's `cdn/`, tags `v<version>` (never
+      moving an existing tag), and jsDelivr serves
+      `cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v<version>/cdn/tinyfly.iife.js`.
+      Copy code pages pin to it. OSS `package.json` keeps the lib build scripts.
+      First real publish happens at the next "ship it".
+- [ ] **Publish to npm.** Needs the account and a final call on the package name
+      (`tinyfly` was unclaimed as of 2026-09-13).
+- [x] **One Examples page.** The editor's Samples dialog and the separate `/gallery`
+      page were two catalogs that overlapped. Merged into `/examples`
+      (`src/examples/`), reached from a single **Examples** toolbar button:
+      - One catalog (`example-catalog.ts`), two kinds: *editable* (opens in the
+        editor) and *code* (timeline JSON + HTML to copy). Shared categories,
+        search, kind/category filters kept in the URL.
+      - Editable cards preview through the embed HTML generator
+        (`sample-preview.ts`), still frame + hover to play.
+      - "Open in editor" → `/?example=<id>` → a **new project** via `applySample`,
+        so opening an example never overwrites work (the old dialog replaced the
+        current project). Verified in Chrome: project count 1 → 2, stable on reload.
+      - `/gallery` redirects to `/examples`. Samples dialog removed.
+      - Fixed on the way: the 3 Camera samples were never reachable — the dialog's
+        category list omitted `camera`.
+- [x] Examples: **GSAP-style** section — six runnable `live` demos
+      (`src/examples/live-demos/`): staggered grid, logo sequence with labels,
+      composed tweens, timeline controls (play/pause/reverse/timeScale/scrub),
+      pointer follow, elastic/bounce/steps via `bakeEases`. Each runs on a
+      `Stage({ root })` scoped to its card while hovered; the code shown is read
+      from the demo's own source (`?raw`, `// #region code`), so it cannot drift.
+      Added `Stage.destroy()` for teardown. Verified in Chrome: all six animate,
+      reset on leave, no console errors.
+- [x] Examples: eight more GSAP-style demos, recreating popular effects from
+      the GSAP demo hub (demos.gsap.com) with original code on `live`: magnetic
+      button, proximity grid, dock magnify, velocity skew, card stack, infinite
+      marquee, split-text reveal, SVG line draw. Verified in Chrome with real
+      pointer/scroll/click input; proximity grid holds 60fps while sweeping.
+- [ ] GSAP-style demos still out of reach, each needing engine or adapter work:
+      Flip layout transitions on live elements, MorphSVG between arbitrary paths
+      from `live`, motion paths from `live` (motion-path tracks are not exposed
+      through the compat vars), ScrambleText, and Draggable + inertia throws
+      (needs 27B.2 decay tracks).
+- [x] Examples: **Copy code** on every card — a complete standalone HTML page
+      (`standalone-page.ts`). Demos are plain `.js` (JSDoc types, `allowJs`) so
+      the copied code runs unchanged; the code examples' markup CSS moved to
+      `code-examples.css` so it can be copied too. Tests compile every generated
+      page's script and run the live ones; verified in Chrome by copying four
+      pages (live ×2, timeline, editable) and opening each standalone.
+- [ ] Examples: remove near-duplicates across the two former catalogs (e.g. two
+      "Progress Bar"s, Text Reveal vs Text Slide Up) and move the editor's loaders
+      from UI into Loaders.
+- [ ] Single shared ticker for `quickPlay`, player and drivers too (today only
+      `live` shares one).
+
 ---
 
 ### Sequencing

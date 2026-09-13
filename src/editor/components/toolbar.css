@@ -148,12 +148,12 @@
   background: #3ae082;
 }
 
-.toolbar-btn-sample {
+.toolbar-btn-examples {
   background: #9b59b6;
   color: #fff;
 }
 
-.toolbar-btn-sample:hover:not(:disabled) {
+.toolbar-btn-examples:hover:not(:disabled) {
   background: #b06cc7;
 }
 

@@ -3,7 +3,7 @@
  *
  * The LLM returns strict JSON matching the tinyfly sample schema
  * (`{ name, description, duration, canvas?, elements, tracks }`). We validate
- * it, then load it through the SAME store calls the Samples dialog uses — so an
+ * it, then load it through the SAME store calls `applySample` uses — so an
  * AI-generated animation and a hand-authored sample are indistinguishable to
  * the rest of the editor. No animation logic lives here; this is pure data.
  */
@@ -81,7 +81,7 @@ function validate(obj: unknown): obj is GeneratedAnimation {
 
 /**
  * Load a validated animation into the editor, replacing the current scene's
- * content. Mirrors `loadSample` in samples-dialog.tsx.
+ * content. Mirrors `applySample` in samples/apply-sample.ts.
  */
 export function applyGeneratedAnimation(stores: EditorStores, anim: GeneratedAnimation): void {
   const { store, sceneStore, projectStore } = stores

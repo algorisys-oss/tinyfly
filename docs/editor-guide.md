@@ -41,8 +41,8 @@ The header/toolbar at the top provides:
 - **New** — start a fresh project (prompts if you have unsaved changes).
 - **My Animations** — open the gallery of every project you've saved (thumbnails,
   open / duplicate / delete). See [Project Management](#project-management).
-- **Samples** — browse and load ready-made animations.
-- **Gallery** — a separate page of curated example animations (opens `/gallery`).
+- **Examples** — every ready-made animation on one page (`/examples`). Open one in
+  the editor, or copy the code of a code example into your own page.
 - **Docs** — open this documentation in-app.
 - **Import / Export** — load or save the animation as a JSON file.
 - **Export As** — render to **GIF / WebP / MP4 / CSS / Lottie**.
@@ -672,23 +672,47 @@ The **Shine Sweep** text preset sends a bright highlight travelling across the
 text, clipped to the glyph shapes (like a metallic sheen). The base text colour
 stays visible underneath. Shine renders on the DOM, SVG, and Canvas renderers.
 
-## Sample Animations
+## Examples
 
-Tinyfly includes sample animations organized into categories. Access them from the **Samples** button in the toolbar.
+Every ready-made animation lives on one page. Open it with the **Examples** button
+in the toolbar (or go to `/examples`). Cards show a still frame and play while you
+hover over them.
+
+There are two kinds of example, and a filter for each:
+
+- **Open in editor** — built in the editor. **Open in editor** loads it into a
+  **new project**, so your existing work is never replaced.
+- **Code** — for your own page. Timeline examples show their JSON and HTML under
+  **View code** and play on DOM or Canvas; scroll examples also show how to drive
+  them from scroll position. **GSAP-style** examples are real `live.to()` code that
+  runs on the card while you hover. The code shown is read from the demo's own
+  source file, so it is exactly what runs.
 
 ### Categories
 
 | Category | Examples |
 |----------|---------|
-| **Basic** | Fade in/out, scale pulse, rotation, morph |
-| **Motion** | Bounce, slide-in, orbit, pendulum, wave, zigzag, motion path |
-| **Text** | Text fade, slide, scale, bounce, typewriter, wave, glitch, highlight |
-| **UI** | Button hover, loader spinner, progress bar, notification, modal, tooltip, menu |
-| **Effects** | Glow pulse, shake, parallax, particle burst, color cycle |
+| **GSAP-style** | Live `live.to()` code: staggered grid, logo sequence, composed tweens, timeline controls, pointer follow, elastic/bounce/steps, magnetic button, proximity grid, dock magnify, velocity skew, card stack, infinite marquee, split-text reveal, SVG line draw |
+| **Showcase** | Draw · Guess · Repeat (vertical promo), Logo Intro, Social Card, Menu Animation |
+| **Basics** | Fade in/out, scale pulse, rotation, shape morph |
+| **Motion** | Bouncing ball, slide-in, orbit, pendulum, wave, zigzag, motion path |
+| **Text** | Letter drop & bounce, fade, slide, scale, bounce, typewriter, wave, glitch, highlight, reveal |
+| **UI & Interactions** | Loading spinner, button press, notification, toggle switch, skeleton loader, like, success check |
+| **Loaders** | Progress bar, dot spinner, orbit loader |
+| **Effects** | Colour morph, particle burst, ripple, confetti, starburst, floating shapes |
+| **Data** | Bar chart, number counter |
 | **Camera** | Push In, Pan Across, Orbit Reveal |
-| **Showcase** | Logo reveal, hero animation, card flip, scroll indicator, call to action |
+| **Scroll** | Scroll reveal, parallax, progress bar |
+| **Algorisys** | Product showcase demos (TinyFly, YappyDraw, HappyPaint, ProPeak, SkillzEngine) |
 
-Loading a sample replaces your current project. Samples are a great way to learn animation techniques — study how they use tracks, keyframes, and easing to achieve different effects.
+Every card has a **Copy code** button. It copies a complete HTML page for that
+example (markup, styles, the animation, and the tinyfly script tag) that you can
+save as a `.html` file and open. For editable examples that is the same output
+as the editor's Embed; for GSAP-style examples it is the demo's code, unchanged.
+
+Filters are part of the URL, so `/examples?kind=code&category=scroll` links straight
+to a filtered view. Examples are a good way to learn: study how they use tracks,
+keyframes, and easing to achieve different effects.
 
 ## Motion Paths
 
@@ -799,7 +823,7 @@ starts still. There are three ways to author it:
 
 The camera applies in **all previews (DOM/Canvas/SVG)**, **raster export**
 (GIF/WebP/MP4/Sprite) and **embeds** (single & multi-scene). Ready-made **Camera**
-samples (Push In, Pan Across, Orbit Reveal) are in the Samples dialog. Tip: set up
+examples (Push In, Pan Across, Orbit Reveal) are on the Examples page. Tip: set up
 your elements first, then keyframe the camera (editing while the camera is mid-move
 is approximate for now). See [camera.md](camera.md).
 
@@ -896,7 +920,7 @@ to save first. Your previous project isn't lost — it stays in **My Animations*
 
 1. **Start with presets** — Apply a preset to quickly set up tracks and keyframes, then customize from there.
 
-2. **Study the samples** — Load sample animations to learn common patterns. Look at how tracks, keyframes, and easing work together.
+2. **Study the examples** — Open examples in the editor to learn common patterns. Look at how tracks, keyframes, and easing work together.
 
 3. **Use easing** — Linear animations look mechanical. Use `ease-out` for entrance animations (fast start, gentle landing) and `ease-in` for exits.
 

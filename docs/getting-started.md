@@ -5,7 +5,7 @@ your browser — then using them anywhere (a website, an app, or as a GIF / vide
 file). You don't need to be a programmer to use the editor. This guide walks you
 from "never opened it" to "made and exported your first animation."
 
-> **In a hurry?** Open the editor → click **Samples** → pick one → press **Play**.
+> **In a hurry?** Open the editor → click **Examples** → **Open in editor** on one → press **Play**.
 > That's the 30-second version. The rest of this page slows it down.
 
 ---
@@ -36,7 +36,7 @@ When it opens, here's what you're looking at:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  tinyfly  BETA   [ Save ]  New  My Animations  Samples  …     │  ← top toolbar
+│  tinyfly  BETA   [ Save ]  New  My Animations  Examples  …    │  ← top toolbar
 ├─────────────────────────────────────────────────────────────┤
 │  Describe an animation…                    [ Generate ]       │  ← AI prompt bar
 ├────────────┬───────────────────────────────┬────────────────┤
@@ -62,12 +62,13 @@ When it opens, here's what you're looking at:
 
 ---
 
-## 3. The fastest first win: load a sample
+## 3. The fastest first win: open an example
 
 The quickest way to *feel* how it works:
 
-1. Click **Samples** in the toolbar.
-2. Pick one (try "Fade In/Out" or a Showcase demo).
+1. Click **Examples** in the toolbar. Hover over a card to watch it play.
+2. On one you like (try "Fade In/Out" or a Showcase demo), click **Open in editor**.
+   It opens as a new project, so nothing you already made is touched.
 3. Press the big **▶ Play** button.
 
 Watch the diamonds on the timeline and the shape on the stage move together.

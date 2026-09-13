@@ -45,6 +45,14 @@ export interface CompatTimelineOptions {
    */
   defaults?: Record<string, number>
   /**
+   * Look up a start value for a target+property this timeline has not authored
+   * yet — consulted between step 2 and step 3 of the resolution chain. The live
+   * runtime uses it to start a new tween from the value an earlier tween left
+   * on the element. It is called once, at build time; the resolved number is
+   * what lands in the JSON.
+   */
+  startValue?: (target: string, property: string) => number | undefined
+  /**
    * Bake eases that no cubic-bezier can express (elastic, bounce, steps) into
    * intermediate keyframes. Off by default because it multiplies keyframe
    * count; without it those eases fall back to their nearest smooth curve.
@@ -342,6 +350,9 @@ export class CompatTimeline {
   private resolveStart(target: string, property: string): AnimatableValue {
     const remembered = this.lastValues.get(`${target}|${property}`)
     if (remembered !== undefined) return remembered
+
+    const supplied = this.options.startValue?.(target, property)
+    if (supplied !== undefined) return supplied
 
     const fromDefaults = this.options.defaults?.[property]
     if (fromDefaults !== undefined) return fromDefaults

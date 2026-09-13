@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.52.0](v0.52.0.md) | 2026-09-13 | Integrate like GSAP — `live.to()` plays on real elements, one `<script>` bundle with a `tinyfly` global, concurrent tweens compose on one element, package prepared for npm; Samples and Gallery merged into one Examples page |
 | [v0.51.0](v0.51.0.md) | 2026-09-12 | First GSAP performance comparison — ~3x slower per frame, adapter is 75% of the cost; colour memoisation and lazy adapter allocation; one optimisation measured worse and reverted |
 | [v0.50.1](v0.50.1.md) | 2026-09-12 | Browser-testing fixes — pre-existing IndexedDB data loss (projects stopped saving once the canvas had content), springs not overshooting at small scales, scroll preview invisible |
 | [v0.50.0](v0.50.0.md) | 2026-09-12 | Spring presets (Pop, Drop, Slide, Wobble, Settle) via a widened PresetTrack union; runtime-stagger evidence gate resolved — it is a file-size win (~15x), not a speed one |

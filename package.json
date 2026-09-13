@@ -1,15 +1,39 @@
 {
   "name": "tinyfly",
-  "version": "0.51.0",
+  "version": "0.52.0",
   "type": "module",
   "description": "Lightweight, API-driven animation engine and editor. The engine is framework-agnostic and runs in browsers, Web Workers, and Node.",
   "license": "MIT",
+  "author": "Algorisys OSS Team",
+  "homepage": "https://github.com/algorisys-oss/tinyfly#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/algorisys-oss/tinyfly.git"
+  },
+  "bugs": {
+    "url": "https://github.com/algorisys-oss/tinyfly/issues"
+  },
+  "keywords": [
+    "animation",
+    "animation-engine",
+    "timeline",
+    "keyframes",
+    "tween",
+    "easing",
+    "spring",
+    "gsap-alternative",
+    "svg",
+    "canvas",
+    "web-animation"
+  ],
   "sideEffects": [
     "**/*.css"
   ],
   "main": "./lib/engine/tinyfly-engine.umd.cjs",
   "module": "./lib/engine/tinyfly-engine.js",
   "types": "./lib/types/engine/index.d.ts",
+  "unpkg": "./lib/browser/tinyfly.iife.js",
+  "jsdelivr": "./lib/browser/tinyfly.iife.js",
   "exports": {
     ".": {
       "types": "./lib/types/engine/index.d.ts",
@@ -32,29 +56,40 @@
     "./gsap-compat": {
       "types": "./lib/types/compat/gsap/index.d.ts",
       "import": "./lib/addons/gsap-compat.js"
-    }
+    },
+    "./browser": {
+      "types": "./lib/types/browser/index.d.ts",
+      "import": "./lib/browser/tinyfly.js",
+      "require": "./lib/browser/tinyfly.umd.js"
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "lib/engine",
     "lib/player",
     "lib/addons",
+    "lib/browser",
     "lib/types"
   ],
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:engine": "vite build --config vite.config.engine.ts",
     "build:player": "vite build --config vite.config.player.ts",
+    "build:addons": "vite build --config vite.config.addons.ts",
+    "build:browser": "vite build --config vite.config.browser.ts",
+    "build:types": "tsc -p tsconfig.lib.json",
+    "build:libs": "npm run build:engine && npm run build:player && npm run build:addons && npm run build:browser && npm run build:types",
     "preview": "vite preview",
     "test": "vitest",
-    "test:run": "vitest run"
-  },
-  "dependencies": {
-    "@solidjs/router": "^0.15.4",
-    "solid-js": "^1.9.10"
+    "test:run": "vitest run",
+    "prepublishOnly": "npm run test:run && npm run build:libs"
   },
   "devDependencies": {
+    "@solidjs/router": "^0.15.4",
     "@types/node": "^24.10.1",
     "happy-dom": "^20.5.0",
+    "solid-js": "^1.9.10",
     "typescript": "~5.9.3",
     "vite": "^7.2.4",
     "vite-plugin-solid": "^2.11.10",
