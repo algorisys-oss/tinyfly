@@ -10,7 +10,7 @@ import './landing-page.css'
 
 /**
  * tinyfly.app's front page: what tinyfly is, shown with tinyfly. The editor lives
- * at /app; this page only loads the live runtime, not the editor.
+ * at /studio; this page only loads the live runtime, not the editor.
  */
 
 const SCRIPT_TAG = `<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v${__APP_VERSION__}/cdn/tinyfly.iife.js"></script>`
@@ -101,7 +101,7 @@ export const LandingPage: Component = () => {
     <Show
       // Old links to the editor were `/?example=…`; send them on.
       when={!params.example}
-      fallback={<Navigate href={`/app?example=${encodeURIComponent(params.example ?? '')}`} />}
+      fallback={<Navigate href={`/studio?example=${encodeURIComponent(params.example ?? '')}`} />}
     >
       <div class="lp" ref={page}>
         <nav class="lp-nav">
@@ -116,7 +116,7 @@ export const LandingPage: Component = () => {
             <a href="https://github.com/algorisys-oss/tinyfly" target="_blank" rel="noopener">
               GitHub
             </a>
-            <A href="/app" class="lp-nav-cta">
+            <A href="/studio" class="lp-nav-cta">
               Open the editor
             </A>
           </div>
@@ -135,12 +135,12 @@ export const LandingPage: Component = () => {
             <Show
               when={savedWork()}
               fallback={
-                <A href="/app" class="lp-button lp-button-primary">
+                <A href="/studio" class="lp-button lp-button-primary">
                   Open the editor
                 </A>
               }
             >
-              <A href="/app" class="lp-button lp-button-primary">
+              <A href="/studio" class="lp-button lp-button-primary">
                 Continue where you left off
               </A>
             </Show>
@@ -302,7 +302,7 @@ export const LandingPage: Component = () => {
 
         <footer class="lp-closing">
           <h2 class="lp-closing-title">Start animating.</h2>
-          <A href="/app" class="lp-magnet">
+          <A href="/studio" class="lp-magnet">
             Open the editor
           </A>
           <div class="lp-footer-links">

@@ -596,7 +596,7 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
   }
 
   /**
-   * `/app?example=<id>` — sent here by "Open in editor" on the Examples page.
+   * `/studio?example=<id>` — sent here by "Open in editor" on the Examples page.
    * The example lands in a new project, so it never overwrites existing work.
    * The parameter is removed straight away so a reload does not create another.
    */

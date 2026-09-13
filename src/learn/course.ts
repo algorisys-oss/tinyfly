@@ -1,8 +1,9 @@
 import type { Lesson, Module, Step } from './types'
+import { foundationsModule } from './modules/foundations'
 import { gsapApiModule } from './modules/gsap-api'
 
 /** The course, in order. Modules are added here as they are written (see todo.md, Phase 29). */
-export const course: Module[] = [gsapApiModule]
+export const course: Module[] = [foundationsModule, gsapApiModule]
 
 export interface StepLocation {
   module: Module

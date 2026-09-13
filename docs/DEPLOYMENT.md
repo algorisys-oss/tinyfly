@@ -285,9 +285,25 @@ export default defineConfig({
 
 ### SPA Routing
 
-Tinyfly uses client-side routing. Ensure your server/hosting is configured to:
-- Serve `index.html` for all routes (fallback)
-- This is required for `/app` (the editor), `/examples`, `/showcase/…`, `/docs` and other routes to work on direct access
+tinyfly uses client-side routing. Addresses such as `/studio` (the editor; `/app`
+redirects there), `/learn/…`, `/examples/<id>`, `/showcase/…` and `/docs/…` are
+not files, so opening or **refreshing** one gives "page not found" unless the host
+answers unknown addresses with `index.html`. Real files (assets, `llms.txt`,
+`docs/*.md`) must still be served as themselves.
+
+The build includes a fallback for the common hosts:
+
+| Host | What handles it |
+|---|---|
+| Netlify, Cloudflare Pages | `public/_redirects` → `dist/_redirects` (`/*  /index.html  200`) |
+| Vercel | `vercel.json` (rewrites paths without a file extension to `/index.html`) |
+| GitHub Pages and plain static hosts that serve `404.html` | `dist/404.html`, a copy of `index.html` written by the build |
+| nginx | `try_files $uri /index.html;` (see the nginx example above) |
+| Apache, LiteSpeed (Hostinger and most shared hosting) | `public/.htaccess` → `dist/.htaccess`: rewrites missing paths to `index.html`, serves `.md` / `.txt` as text, caches hashed assets. Upload the dotfile with the rest of `dist/` |
+| Caddy | `try_files {path} /index.html` |
+
+If refreshing a page still shows "not found", the host is ignoring these files.
+Set its single-page-app or rewrite option to serve `/index.html` for missing paths.
 
 ## Embedding the Player
 

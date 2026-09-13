@@ -171,7 +171,7 @@ const EditableExampleCard: Component<{ example: EditableExample } & CardProps> =
         </button>
         <div class="example-controls-right">
           <CopyCodeButton getCode={() => editableExamplePage(props.example.sample)} />
-          <button class="open-btn" onClick={() => navigate(`/app?example=${encodeURIComponent(props.example.id)}`)}>
+          <button class="open-btn" onClick={() => navigate(`/studio?example=${encodeURIComponent(props.example.id)}`)}>
             Open in editor
           </button>
         </div>
@@ -411,7 +411,7 @@ export const ExamplesPage: Component = () => {
             <A href="/" class="examples-brand" title="tinyfly home">
               <BrandMark size={28} wordmark={<span class="examples-wordmark">tinyfly</span>} />
             </A>
-            <A href="/app" class="back-link">
+            <A href="/studio" class="back-link">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M19 12H5M12 19l-7-7 7-7" />
               </svg>
@@ -518,7 +518,7 @@ export const ExamplesPage: Component = () => {
         <p>
           Built with <strong>tinyfly</strong> - A lightweight, API-driven animation engine
         </p>
-        <A href="/app" class="cta-btn">
+        <A href="/studio" class="cta-btn">
           Create Your Own Animation
         </A>
       </footer>

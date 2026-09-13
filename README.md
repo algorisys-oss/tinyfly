@@ -93,8 +93,8 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Resizable preview** - Drag the splitter between the preview and the timeline to resize (double-click to reset)
 - **Stroke write-on** - Animate a path's stroke drawing itself on (DOM + SVG renderers); one-click "Write On" preset
 - **Embed code** - Generate copy-paste code for websites (single scene or full sequence)
-- **Landing page** - `/` introduces tinyfly with tinyfly itself: a masked headline, a pointer-led canvas, a live code playground that shows the JSON its code compiles to, a pinned feature story, a gallery and a copyable script tag, with a reduced-motion mode. It loads without the editor, which lives at `/app` (lazy-loaded, as are Examples, Showcase and Docs)
-- **Learn** - An interactive course at `/learn`: short steps with live code, a preview you can scrub, and checks that read what your code compiled to. The first module teaches the GSAP-style API (tweens, stagger, timelines); more modules are planned up to building an award-style page
+- **Landing page** - `/` introduces tinyfly with tinyfly itself: a masked headline, a pointer-led canvas, a live code playground that shows the JSON its code compiles to, a pinned feature story, a gallery and a copyable script tag, with a reduced-motion mode. It loads without the editor, which lives at `/studio` (lazy-loaded, as are Examples, Showcase and Docs)
+- **Learn** - An interactive course at `/learn`: short steps with live code, a preview you can scrub, and checks that read what your code compiled to. Two modules so far: Foundations (animation as JSON: keyframes, tracks, easing, loops) and the GSAP-style API (tweens, stagger, timelines); more are planned, up to building an award-style page
 - **Examples** - One page (`/examples`, the **Examples** toolbar button), and a shareable page for every example at `/examples/<id>` for every ready-made animation: editable examples open in the editor as a new project, code examples show their timeline JSON and HTML to copy. Includes a full-page **Agency Landing Page** showcase and a **GSAP-style** section of 41 runnable `live.to()` demos (Flip layouts and shared elements, pinned horizontal scroll, line mask reveals, spring release, canvas from object tweens, motion paths, orbits, shape and menu morphs, scramble text, draggable throws, swipe cards, 3D card flips, magnetic button, proximity grid, marquee, split text, SVG draw…), and every card has **Copy code** for a complete standalone HTML page. Hover-to-play previews, search, and filters for kind and category (GSAP-style, Showcase, Basics, Motion, Text, UI, Loaders, Effects, Data, Camera, Scroll, and **Algorisys** product demos)
 
 ## Documentation
@@ -166,7 +166,7 @@ GitHub. No npm required.
 GSAP-shaped functions at the top level:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.58.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.59.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -187,7 +187,7 @@ GSAP-shaped functions at the top level:
 | `cdn/tinyfly.esm.js` | The same, as an ES module: `import { live } from '…/cdn/tinyfly.esm.js'` |
 | `cdn/tinyfly-player.iife.js` | Player only (~11 KB gzipped), for playing editor exports |
 
-Replace `@v0.58.0` with the version you want. **Pin a version in production**:
+Replace `@v0.59.0` with the version you want. **Pin a version in production**:
 a tag's files never change. `@main` follows the latest release, which jsDelivr
 caches for up to a day. Load one `tinyfly` global, not both.
 
@@ -224,7 +224,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) for the landing page; the visual editor is at [/app](http://localhost:5173/app).
+Open [http://localhost:5173](http://localhost:5173) for the landing page; the visual editor is at [/studio](http://localhost:5173/studio).
 
 ### Using the Engine (API)
 
@@ -576,7 +576,7 @@ tinyfly/
 - [x] CustomEase, CustomBounce, CustomWiggle
 - [ ] Framework wrappers (React / Vue / Svelte)
 - [x] Scroll pinning (`scrollTrigger: { pin }`), split text, drawSVG, springs and shared-element Flip on `live` ([Phase 28](todo.md))
-- [x] Interactive tutorial at `/learn` — first module (GSAP-style API) live; more modules planned ([Phase 29](todo.md))
+- [x] Interactive tutorial at `/learn` — Foundations and GSAP-style API modules live; more modules planned ([Phase 29](todo.md))
 - [ ] Nested timelines at runtime, explicit track priority
 - [ ] React Native adapter
 - [ ] Collaborative editing

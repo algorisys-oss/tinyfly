@@ -10,7 +10,6 @@ import './learn-page.css'
 
 /** Modules planned for the course, shown on the map until they are written. */
 const COMING = [
-  'Foundations: timelines, keyframes and easing as data',
   'The editor: build it visually, compare the JSON',
   'Motion craft: overlap, anticipation, springs',
   'Text and SVG: split text, drawSVG, morphing',
@@ -34,7 +33,7 @@ const LearnHeader: Component<{ trail?: string }> = (props) => (
     <nav class="learn-links">
       <A href="/examples">Examples</A>
       <A href="/docs/gsap-compat">Docs</A>
-      <A href="/app">Editor</A>
+      <A href="/studio">Editor</A>
     </nav>
   </header>
 )

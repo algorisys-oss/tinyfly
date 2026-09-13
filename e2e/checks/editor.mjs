@@ -7,7 +7,7 @@ export default {
   name: 'editor',
   async run({ page, context, base }) {
     await context.addInitScript(() => localStorage.setItem('tinyfly-onboarding', JSON.stringify({ completed: true, currentStep: 0, dismissed: true })))
-    await page.goto(`${base}/app`)
+    await page.goto(`${base}/studio`)
     await page.waitForSelector('.toolbar-btn-myfiles', { timeout: 30000 })
     await page.waitForTimeout(500)
     const results = []

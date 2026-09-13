@@ -1,0 +1,4 @@
+# Netlify and Cloudflare Pages: tinyfly is a single-page app, so any address that
+# is not a real file (/studio, /learn/…, /examples/…, /docs/…) is answered with
+# index.html. Real files — assets, llms.txt, docs/*.md — are served first.
+/*  /index.html  200

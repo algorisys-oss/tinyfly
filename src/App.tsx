@@ -14,7 +14,7 @@ const LearnHome = lazy(() => import('./learn').then((m) => ({ default: m.LearnHo
 const LearnStep = lazy(() => import('./learn').then((m) => ({ default: m.LearnStep })))
 
 /** The splash belongs to the editor; the landing page and the rest open straight away. */
-const opensInEditor = () => window.location.pathname === '/app' || window.location.pathname.startsWith('/app/')
+const opensInEditor = () => /^\/(studio|app)(\/|$)/.test(window.location.pathname)
 
 function App() {
   const [showSplash, setShowSplash] = createSignal(opensInEditor())
@@ -27,7 +27,9 @@ function App() {
       <Show when={!showSplash()}>
         <Router>
           <Route path="/" component={LandingPage} />
-          <Route path="/app" component={Editor} />
+          <Route path="/studio" component={Editor} />
+          {/* The editor was at /app in v0.56–v0.58; keep those links (and ?example=) working. */}
+          <Route path="/app" component={() => <Navigate href={`/studio${window.location.search}`} />} />
           <Route path="/examples" component={ExamplesPage} />
           <Route path="/examples/:id" component={ExamplePage} />
           <Route path="/showcase/:id" component={ShowcasePage} />

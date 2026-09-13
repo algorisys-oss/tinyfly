@@ -1499,22 +1499,23 @@ Then Phase 29.
 
 ---
 
-## Phase 28C: tinyfly.app landing page, editor at `/app` ✓
+## Phase 28C: tinyfly.app landing page, editor at `/studio` ✓
 
 The site root is now a landing page built with tinyfly itself; the editor moved to
-`/app`. First-time visitors learn what tinyfly is; returning users reach their work
+`/studio`. First-time visitors learn what tinyfly is; returning users reach their work
 in one click.
 
-- [x] Routes: `/` landing (`src/landing/`), `/app` editor; `/examples`, `/showcase/:id`,
-      `/docs` unchanged. Old `/?example=` links redirect to `/app?example=`
+- [x] Routes: `/` landing (`src/landing/`), `/studio` editor (it was `/app` in v0.56–v0.58;
+      `/app` now redirects, keeping `?example=`); `/examples`, `/showcase/:id`, `/docs`
+      unchanged. Old `/?example=` links redirect to `/studio?example=`
 - [x] Back-to-editor and Open-in-editor links, the e2e editor check, README, getting
-      started, editor guide and deployment notes point at `/app`
+      started, editor guide and deployment notes point at `/studio`
 - [x] Returning users: the hero shows **Continue where you left off** when the
       editor has saved work (`indexedDB.databases()` + the old LocalStorage keys;
       it never opens the database, which could skip the editor's own upgrade)
 - [x] Fast first paint: editor, Examples, Showcase and Docs are lazy routes, so `/`
       loads no editor or exporter modules (checked in e2e); the splash only shows
-      when opening `/app` directly
+      when opening `/studio` directly
 - [x] Content, all under `live.matchMedia` (reduced motion, phones):
       - [x] hero: masked split-text headline (autoSplit), fireflies on a ticker canvas
             following the pointer through `quickTo` on a plain object, CTAs,
@@ -1534,6 +1535,11 @@ in one click.
       soft glow (both still under `prefers-reduced-motion`), shared by the landing
       nav and the editor, Examples and Docs headers; `/tinyfly.svg` replaces the Vite favicon
 - [x] Static `<noscript>` fallback text and links in `index.html`
+- [x] Editor moved from `/app` to `/studio` (the site is tinyfly.app); `/app` redirects
+- [x] Refreshing a route no longer 404s: `public/.htaccess` for Apache / LiteSpeed (Hostinger,
+      where tinyfly.app runs), plus `public/_redirects` (Netlify,
+      Cloudflare Pages), `vercel.json`, and a build-time `404.html` copy of the app
+      (GitHub Pages and similar); nginx / Apache / Caddy rules in DEPLOYMENT.md
 - [ ] Open Graph image for link previews
 - [x] Every example on its own page, `/examples/<id>`, for sharing: card titles link to
       it; it plays without hovering; Copy link; more from the same category; page
@@ -1590,9 +1596,12 @@ section by section.
 
 ### 29B — Curriculum
 
-1. **Foundations.** Timelines, tracks and keyframes as JSON; duration and delay;
-   easing, with an interactive curve visualiser; interpolation of numbers,
-   colours and paths.
+1. **Foundations.** ✓ 3 lessons, 8 steps — keyframes (a timeline is JSON, times in
+   milliseconds, more keyframes), tracks and values (one track per property,
+   colours), easing and loops (easing on the arriving keyframe, cubic-bezier,
+   `loop` / `alternate`). Learners edit JSON and call `play(animation)`; the runner
+   plays definitions on `data-tinyfly` elements with the same scrub and checks.
+   Still to add: an interactive curve visualiser.
 2. **The GSAP-style API.** ✓ pilot: 3 lessons, 10 steps — first tween (`to`, duration
    and ease, `from`, `fromTo`), many elements (selectors, `stagger`, `from: 'center'`),
    timelines (sequencing, the position parameter, repeat and yoyo). Still to add:
