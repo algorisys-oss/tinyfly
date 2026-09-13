@@ -8,11 +8,20 @@ import {
   type EasingType,
   type AnimatableValue,
   type TimelineDefinition,
+  type MotionPathTrack,
+  type TextTrack,
+  type InertiaTrack,
+  inertiaDuration,
+  inertiaRest,
 } from '../../engine'
 import { mapEase } from './ease-map'
 import { resolvePosition, type Position, type PositionContext } from './position'
 import { splitVars, toMs, toStaggerConfig, type TweenVars } from './vars'
 import { defaultFor } from './defaults'
+import { compileMotionPath, reverseMotionPath } from './motion-path-vars'
+import { desugarMorph } from './morph-vars'
+import { compileTextVars } from './text-vars'
+import { compileInertiaProperty, type InertiaVars } from './inertia-vars'
 
 /**
  * A GSAP-flavoured facade over the tinyfly engine.
@@ -51,7 +60,7 @@ export interface CompatTimelineOptions {
    * on the element. It is called once, at build time; the resolved number is
    * what lands in the JSON.
    */
-  startValue?: (target: string, property: string) => number | undefined
+  startValue?: (target: string, property: string) => AnimatableValue | undefined
   /**
    * Bake eases that no cubic-bezier can express (elastic, bounce, steps) into
    * intermediate keyframes. Off by default because it multiplies keyframe
@@ -88,7 +97,7 @@ export class CompatTimeline {
   private trackCounter = 0
 
   /** Last authored value per "target|property", for the resolution chain. */
-  private lastValues = new Map<string, number>()
+  private lastValues = new Map<string, AnimatableValue>()
 
   constructor(options: CompatTimelineOptions = {}) {
     this.options = options
@@ -111,21 +120,37 @@ export class CompatTimeline {
 
   /** Animate to the given values. */
   to(target: string | string[], vars: TweenVars, position?: Position): TweenHandle {
-    return this.build(target, undefined, vars, position)
+    return this.build(target, undefined, desugarMorph(vars), position)
   }
 
   /** Animate from the given values to where the property already is. */
   from(target: string | string[], vars: TweenVars, position?: Position): TweenHandle {
-    const { config, properties } = splitVars(vars)
+    const { config, properties } = splitVars(desugarMorph(vars))
+    const { motionPath, text, scrambleText, ...animated } = properties
+    const first = this.targetsOf(target)[0]
 
     // `from` is `to` with the endpoints swapped: the given values are the start,
     // and the end is whatever the resolution chain says the property holds.
     const toVars: TweenVars = { ...config }
-    for (const property of Object.keys(properties)) {
-      toVars[property] = this.resolveStart(this.targetsOf(target)[0], property)
+    for (const property of Object.keys(animated)) {
+      toVars[property] = this.resolveStart(first, property)
+    }
+    // A motion path has no "current value" — from() travels it backwards.
+    if (motionPath !== undefined) toVars.motionPath = reverseMotionPath(motionPath)
+
+    // Text goes from the given text to the current text, keeping its options.
+    const fromText: Record<string, unknown> = {}
+    const current = String(this.resolveStart(first, 'text'))
+    if (text !== undefined) {
+      fromText.text = textValueOf(text)
+      toVars.text = typeof text === 'object' ? { ...text, value: current } : current
+    }
+    if (scrambleText !== undefined) {
+      fromText.text = textValueOf(scrambleText)
+      toVars.scrambleText = typeof scrambleText === 'object' ? { ...scrambleText, text: current } : current
     }
 
-    return this.build(target, properties, toVars, position)
+    return this.build(target, { ...animated, ...fromText }, toVars, position)
   }
 
   /** Animate between two explicit sets of values. */
@@ -135,13 +160,13 @@ export class CompatTimeline {
     toVars: TweenVars,
     position?: Position
   ): TweenHandle {
-    const { properties: fromProperties } = splitVars(fromVars)
-    return this.build(target, fromProperties, toVars, position)
+    const { properties: fromProperties } = splitVars(desugarMorph(fromVars))
+    return this.build(target, fromProperties, desugarMorph(toVars), position)
   }
 
   /** Set values instantly — a single held keyframe. */
   set(target: string | string[], vars: TweenVars, position?: Position): TweenHandle {
-    return this.build(target, undefined, { ...vars, duration: 0 }, position)
+    return this.build(target, undefined, { ...desugarMorph(vars), duration: 0 }, position)
   }
 
   // --- sequencing ---------------------------------------------------------
@@ -249,7 +274,10 @@ export class CompatTimeline {
     vars: TweenVars,
     position?: Position
   ): TweenHandle {
-    const { config, properties } = splitVars(vars)
+    const { config, properties: allProperties } = splitVars(vars)
+    // motionPath, text and scrambleText are not properties with a value; each
+    // compiles to its own track kind.
+    const { motionPath, text, scrambleText, inertia, ...properties } = allProperties
     const targets = this.targetsOf(target)
 
     const start = resolvePosition(position, this.context())
@@ -262,10 +290,21 @@ export class CompatTimeline {
 
     for (const [property, rawTo] of Object.entries(properties)) {
       const toValue = rawTo as AnimatableValue
-      const fromValue =
+      let fromValue =
         fromProperties?.[property] !== undefined
           ? (fromProperties[property] as AnimatableValue)
           : this.resolveStart(targets[0], property)
+
+      // A fallback start of the wrong kind (0 for a colour, say) would render as
+      // garbage for the whole tween. Start from the end value instead: it snaps
+      // rather than animates, which is visibly wrong but not broken.
+      if (typeof fromValue !== typeof toValue) {
+        this.warn(
+          `no usable start value for "${property}" on "${targets[0]}" — it will snap to ${String(toValue)}. ` +
+            'Use fromTo() to animate it.'
+        )
+        fromValue = toValue
+      }
 
       const keyframes = this.keyframesFor(fromValue, toValue, duration, easing, config.ease)
 
@@ -283,15 +322,82 @@ export class CompatTimeline {
       )
 
       trackIds.push(id)
-      if (typeof toValue === 'number') {
-        for (const t of targets) this.lastValues.set(`${t}|${property}`, toValue)
+      // Any value, not just numbers: a colour or a shape chains just as well.
+      for (const t of targets) this.lastValues.set(`${t}|${property}`, toValue)
+    }
+
+    const textConfig = compileTextVars({ text, scrambleText }, targets[0], duration)
+    if (textConfig) {
+      const given = fromProperties?.text ?? fromProperties?.scrambleText
+      const from = given !== undefined ? textValueOf(given) : this.resolveStart(targets[0], 'text')
+      const id = this.nextTrackId(`${targets[0]}-text`)
+      const track: TextTrack = {
+        id,
+        target: targets[0],
+        ...(targets.length > 1 && { targets }),
+        ...(stagger && targets.length > 1 && { stagger }),
+        property: 'text',
+        textConfig: { from: typeof from === 'string' ? from : String(from ?? ''), ...textConfig },
+        delay: start + delay,
+        keyframes: this.keyframesFor(0, 1, duration, easing, config.ease) as TextTrack['keyframes'],
+      }
+      this.timeline.addTrack(track)
+      trackIds.push(id)
+      for (const t of targets) this.lastValues.set(`${t}|text`, textConfig.to)
+    }
+
+    if (motionPath !== undefined) {
+      const { config: pathConfig, start: from, end: to } = compileMotionPath(motionPath)
+      const id = this.nextTrackId(`${targets[0]}-motionPath`)
+      const track: MotionPathTrack = {
+        id,
+        target: targets[0],
+        ...(targets.length > 1 && { targets }),
+        ...(stagger && targets.length > 1 && { stagger }),
+        property: 'motionPath',
+        motionPathConfig: pathConfig,
+        delay: start + delay,
+        keyframes: this.keyframesFor(from, to, duration, easing, config.ease) as MotionPathTrack['keyframes'],
+      }
+      this.timeline.addTrack(track)
+      trackIds.push(id)
+    }
+
+    // A throw decides its own length, so it extends the tween rather than using `duration`.
+    let throwMs = 0
+    if (inertia !== undefined) {
+      for (const [property, value] of Object.entries(inertia as InertiaVars)) {
+        const from = this.resolveStart(targets[0], property)
+        if (typeof from !== 'number') {
+          this.warn(`inertia on "${property}" needs a numeric start value; skipped`)
+          continue
+        }
+        const inertiaConfig = compileInertiaProperty(from, value)
+        const id = this.nextTrackId(`${targets[0]}-${property}-inertia`)
+        const track: InertiaTrack = {
+          id,
+          target: targets[0],
+          ...(targets.length > 1 && { targets }),
+          ...(stagger && targets.length > 1 && { stagger }),
+          property,
+          kind: 'inertia',
+          inertia: inertiaConfig,
+          delay: start + delay,
+        }
+        this.timeline.addTrack(track)
+        trackIds.push(id)
+        throwMs = Math.max(throwMs, inertiaDuration(inertiaConfig))
+        // The next tween on this property starts where the throw came to rest.
+        for (const t of targets) this.lastValues.set(`${t}|${property}`, inertiaRest(inertiaConfig))
       }
     }
 
     // Reuse the engine's stagger maths rather than re-deriving it — it also
     // accounts for `from` (a centre fan spans half as far as a start fan).
+    const onlyThrows = inertia !== undefined && Object.keys(properties).length === 0 && !textConfig && motionPath === undefined
+    const length = onlyThrows ? throwMs : Math.max(duration, throwMs)
     const span =
-      duration + (stagger && targets.length > 1 ? staggerSpan(targets.length, stagger) : 0)
+      length + (stagger && targets.length > 1 ? staggerSpan(targets.length, stagger) : 0)
     const end = start + delay + span
 
     this.previousStart = start + delay
@@ -357,6 +463,17 @@ export class CompatTimeline {
     const fromDefaults = this.options.defaults?.[property]
     if (fromDefaults !== undefined) return fromDefaults
 
+    // Text starts empty unless something says otherwise: typing onto nothing is normal.
+    if (property === 'text') return ''
+
+    // A shape has no sensible default: morphing from nothing is always a mistake.
+    if (property === 'd') {
+      throw new Error(
+        `gsap-compat: no starting shape for "${target}". Use fromTo({ d: … }, { morphSVG: … }), ` +
+          'or live.to(), which reads the element\'s current shape.'
+      )
+    }
+
     const staticDefault = defaultFor(property)
     if (staticDefault !== undefined) {
       this.warn(
@@ -408,6 +525,16 @@ export class CompatTimeline {
   private warn(message: string): void {
     this.options.onWarning?.(`gsap-compat: ${message}`)
   }
+}
+
+/** The string in a `text` / `scrambleText` value: the value itself, or its `value` / `text` field. */
+function textValueOf(value: unknown): string {
+  if (typeof value === 'string') return value
+  if (value && typeof value === 'object') {
+    const record = value as { value?: unknown; text?: unknown }
+    return String(record.value ?? record.text ?? '')
+  }
+  return String(value ?? '')
 }
 
 /** Create a GSAP-flavoured timeline. */

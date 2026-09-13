@@ -43,6 +43,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Staggered animation** - Fan any preset across the letters (or a multi-selection) with a per-letter delay — the primitive behind Animate-style drop, cascade, and wave effects
 - **Per-letter presets** - Drop & Bounce, Cascade Up, Wave, Assemble, and Pop In, tuned to shine when staggered
 - **Typewriter reveal** - Character-by-character typing with an optional blinking cursor that steps along; the timeline auto-extends to fit
+- **Scramble & type-on text tracks** - Select a text element → **Text Animation** to scramble it into new words or type it on; a text-track inspector edits the words, character set, reveal delay, refresh rate and timing. Seeded, so previews and exports replay identically
 - **Filters** - Animatable blur, glow, and drop-shadow (Blur In, Glow Pulse, Drop Shadow presets)
 - **Shine sweep** - A highlight sweeps across the text, clipped to the glyphs, on all three renderers
 - **All JSON** - A stagger, typewriter, or filter is just keyframe tracks, so it serializes, persists, and plays anywhere the engine runs
@@ -92,7 +93,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Resizable preview** - Drag the splitter between the preview and the timeline to resize (double-click to reset)
 - **Stroke write-on** - Animate a path's stroke drawing itself on (DOM + SVG renderers); one-click "Write On" preset
 - **Embed code** - Generate copy-paste code for websites (single scene or full sequence)
-- **Examples** - One page (`/examples`, the **Examples** toolbar button) for every ready-made animation: editable examples open in the editor as a new project, code examples show their timeline JSON and HTML to copy. Includes a **GSAP-style** section of 14 runnable `live.to()` demos (stagger, labels, magnetic button, proximity grid, dock, velocity skew, marquee, split text, SVG draw…), and every card has **Copy code** for a complete standalone HTML page. Hover-to-play previews, search, and filters for kind and category (GSAP-style, Showcase, Basics, Motion, Text, UI, Loaders, Effects, Data, Camera, Scroll, and **Algorisys** product demos)
+- **Examples** - One page (`/examples`, the **Examples** toolbar button) for every ready-made animation: editable examples open in the editor as a new project, code examples show their timeline JSON and HTML to copy. Includes a **GSAP-style** section of 29 runnable `live.to()` demos (motion paths, orbits, shape and menu morphs, scramble text, draggable throws, swipe cards, 3D card flips, magnetic button, proximity grid, marquee, split text, SVG draw…), and every card has **Copy code** for a complete standalone HTML page. Hover-to-play previews, search, and filters for kind and category (GSAP-style, Showcase, Basics, Motion, Text, UI, Loaders, Effects, Data, Camera, Scroll, and **Algorisys** product demos)
 
 ## Documentation
 
@@ -447,6 +448,14 @@ timeline.addTrack({
   spring: { from: 0, to: 1, stiffness: 200, damping: 12 },
 })
 ```
+
+**Inertia and dragging**: throw elements with `live.draggable(el, { bounds, inertia: { end: slots } })` or the `inertia` tween option. Friction is exact closed-form decay, snapping lands precisely, and it all serializes like any track.
+
+**Text animation** types, backspaces and scrambles text (`text` and `scrambleText`), deterministically: scramble characters are seeded, so scrubbing and exports replay exactly.
+
+**Shape morphing** turns any path into any other (`morphSVG` in `live` and `tf`): subpaths are paired, the start point and direction are chosen so nothing twists, and corners stay sharp.
+
+**Motion paths** follow SVG path data, points, or (with `live`) an SVG element on the page — `align` lays the path over the element where it is drawn and `autoRotate` turns the follower to face along it. The path parser handles everything design tools export, and followers move at an even speed.
 
 **GSAP-flavoured authoring** desugars a familiar API into ordinary tracks:
 

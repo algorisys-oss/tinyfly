@@ -1,8 +1,9 @@
-import type { Track, Keyframe, AnimatableValue, SpringTrack, StaggerConfig } from '../types'
+import type { Track, Keyframe, AnimatableValue, SpringTrack, InertiaTrack, StaggerConfig } from '../types'
 import { getEasingFunction } from '../interpolation/easing'
 import { getInterpolator } from '../interpolation/interpolators'
 import { staggerOffset, staggerSpan } from './stagger'
 import { SpringSampler } from './spring'
+import { inertiaDuration, inertiaValueAt } from './inertia'
 
 /**
  * Create a track with sorted keyframes.
@@ -21,6 +22,8 @@ export function createTrack<T extends AnimatableValue>(
 export interface TargetValue<T extends AnimatableValue = AnimatableValue> {
   target: string
   value: T
+  /** When this target's animation on the track starts, in timeline milliseconds */
+  start: number
 }
 
 /**
@@ -82,7 +85,7 @@ export class TrackPlayer<T extends AnimatableValue = AnimatableValue> {
       const offset = offsetFor(i, count, this.track.delay, this.track.stagger)
       const value = this.valueForOffset(time - offset)
       if (value === undefined) continue
-      out.push({ target: this.targets[i], value })
+      out.push({ target: this.targets[i], value, start: offset + this.track.keyframes[0].time })
     }
 
     return out
@@ -202,7 +205,7 @@ export class SpringTrackPlayer {
 
     for (let i = 0; i < count; i++) {
       const offset = offsetFor(i, count, this.track.delay, this.track.stagger)
-      out.push({ target: this.targets[i], value: this.sampler.valueAt(time - offset) })
+      out.push({ target: this.targets[i], value: this.sampler.valueAt(time - offset), start: offset })
     }
 
     return out
@@ -215,6 +218,46 @@ export class SpringTrackPlayer {
   }
 
   getTrack(): SpringTrack {
+    return this.track
+  }
+}
+
+/**
+ * InertiaTrackPlayer evaluates a throw. The motion is closed-form, so there is
+ * nothing to simulate or cache: each value is computed directly from time.
+ */
+export class InertiaTrackPlayer {
+  private track: InertiaTrack
+  private targets: string[]
+  private duration: number
+
+  constructor(track: InertiaTrack) {
+    this.track = track
+    this.targets = trackTargets(track)
+    this.duration = inertiaDuration(track.inertia)
+  }
+
+  getValueAtTime(time: number): number {
+    return inertiaValueAt(this.track.inertia, time - offsetFor(0, this.targets.length, this.track.delay, this.track.stagger))
+  }
+
+  getTargetValues(time: number): TargetValue<number>[] {
+    const count = this.targets.length
+    const out: TargetValue<number>[] = []
+    for (let i = 0; i < count; i++) {
+      const offset = offsetFor(i, count, this.track.delay, this.track.stagger)
+      out.push({ target: this.targets[i], value: inertiaValueAt(this.track.inertia, time - offset), start: offset })
+    }
+    return out
+  }
+
+  /** Settle time plus delay and the widest stagger offset. */
+  getDuration(): number {
+    const spread = this.track.stagger ? staggerSpan(this.targets.length, this.track.stagger) : 0
+    return this.duration + (this.track.delay ?? 0) + spread
+  }
+
+  getTrack(): InertiaTrack {
     return this.track
   }
 }

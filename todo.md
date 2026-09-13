@@ -969,13 +969,15 @@ timeline.
 
 #### 27B.2 — Inertia / throw (`InertiaPlugin`)
 
-- [ ] A `decay` track kind: release with a velocity, decay by friction, settle.
-- [ ] Different equation from a spring (exponential friction decay, not
-      oscillation), so it is a sibling of `SpringTrack`, not a mode of it.
-- [ ] Optional snap targets — land on the nearest of a set of values.
-- [ ] Same fixed-timestep-from-t=0 treatment as springs, for the same reason:
-      deterministic, serializable, scrub-safe. Reuse `SpringSampler`'s shape.
-- [ ] Pairs with `Draggable`'s release velocity, which is already reported.
+- [x] An `inertia` track kind (named for GSAP's plugin rather than `decay`):
+      release with a velocity, decay by friction, settle.
+- [x] Sibling of `SpringTrack`, not a mode of it.
+- [x] Snap targets (grid increment or listed values), plus min/max bounds.
+      Aiming at a snap keeps the deceleration and lands exactly on it.
+- [x] Deterministic and scrub-safe — better than planned: exponential decay has
+      an exact closed form, so no fixed-step integration or sample cache at all.
+- [x] Pairs with `Draggable`'s release velocity: `live.draggable(target, {
+      bounds, inertia: { end } })`, with 2D point snapping.
 
 #### 27B.3 — Authoring-time text/curve generators
 
@@ -1149,11 +1151,65 @@ ergonomics, and it had never been published.
       button, proximity grid, dock magnify, velocity skew, card stack, infinite
       marquee, split-text reveal, SVG line draw. Verified in Chrome with real
       pointer/scroll/click input; proximity grid holds 60fps while sweeping.
-- [ ] GSAP-style demos still out of reach, each needing engine or adapter work:
-      Flip layout transitions on live elements, MorphSVG between arbitrary paths
-      from `live`, motion paths from `live` (motion-path tracks are not exposed
-      through the compat vars), ScrambleText, and Draggable + inertia throws
-      (needs 27B.2 decay tracks).
+- [ ] **Engine work so every GSAP demo can be showcased** (in order):
+  - [x] **Motion paths from `live` / `tf`.** `motionPath: { path, curviness,
+        autoRotate, start, end }`; in `live` also a selector/element (any basic
+        SVG shape) plus `align` / `alignOrigin`, measured once into a new
+        `MotionPathConfig.matrix`. Path parser rewritten: every command, compact
+        notation, exact Q/S/T, arcs as cubics, arc-length speed within curves.
+        New public `engine/path` exports incl. `pointsToPath`, `shapeToPathData`.
+        Verified in Chrome: followers stay within 0.24px of the browser's own
+        path geometry. Demos: Motion Path, Path Through Points.
+  - [x] **Shape morph from `live` / `tf`** (`morphSVG`, `live.convertToPath`).
+        Engine morph rewritten: subpaths paired, automatic start point and
+        winding (shapeIndex auto, or forced), corners of both shapes kept, open
+        paths stay open, exact strings at 0 and 1, plans cached. Demos: Shape
+        Morph, Play / Pause Morph.
+  - [x] **Engine fix found along the way:** a later track on the same
+        target+property applied its start value before it started, hiding every
+        earlier tween (`.to(x:100).to(x:0)` never showed the first). Resolution is
+        now "most recently started wins; before any start, the first to start;
+        ties to the later-added". Fast path unchanged when nothing is shared;
+        ~30% more per track when it is. Fixed the shipped Split Text and Logo
+        Sequence demos, which were silently affected. Compat also now chains
+        colours and shapes, not just numbers, and snaps (with a warning) instead
+        of animating from a start value of the wrong kind.
+  - [x] **Text: typing and ScrambleText.** New keyframed `TextTrack`
+        (`property: 'text'`, `textConfig`, progress keyframes) expanded by the
+        timeline via pure `textAt`; scramble characters are a hash of seed,
+        position and refresh step, so scrubbing and exports replay exactly. DOM
+        and SVG adapters set `textContent`; Canvas already takes `text`. `text`
+        (TextPlugin) and `scrambleText` in `tf`/`live`; `live` starts from each
+        element's current text. Demos: Scramble Text, Typewriter.
+  - [x] Editor: **Text Animation** section on text elements (scramble / type
+        on) and a **Text Track** inspector (words, scramble options, New
+        scramble, timing). Store `addTextTrack` / `updateTextTrack`; new engine
+        `Timeline.replaceTrack` keeps track order on edits (springs use it too).
+        Adapters update a lone text node in place (`setTextContent`) so the Solid
+        preview keeps control of its text; the preview restores an element's
+        text when a text track stops driving it. CSS/Lottie exports skip text
+        tracks. **Also fixed:** typing into a text element's Content (and Font)
+        field reverted every keystroke — its sync effect tracked the local value.
+  - [x] **Drag + inertia.** `InertiaTrack` (`kind: 'inertia'`): closed-form
+        exponential decay, snapping, bounds, scale-invariant settling; player,
+        JSON, baking for exports (shared with springs). `inertia` tween option
+        in `tf`/`live` (bare velocity, `min`/`max`, `end` increment/list/
+        function resolved at build, `resistance`/`friction`). `live.draggable()`
+        drags with `Stage.apply` and throws on release with 2D point snapping;
+        `Draggable.getPosition` picks up mid-throw; `Observer` now captures the
+        pointer so fast flicks keep their velocity. Editor: Add Inertia, span on
+        the timeline, inspector. Demos: Throw to Slots, Inertia Carousel,
+        Friction. Verified in Chrome: flicks glide and land exactly (0.00px) on
+        slots; carousel settles on card boundaries within bounds.
+  - [ ] **Flip on live elements** — `live.flip()` through the shared stage.
+  - [x] **More GSAP-style examples** (29 total): Menu Morph, Draw & Follow,
+        Orbits, Swipe Cards, Card Flip, Stats Decode — each verified in Chrome
+        with measurements (dot 0.05px from drawn tip; planets ≤0.58px from
+        orbits; swipes dismiss/return; stats decode to exact values).
+  - [x] **Engine fix found along the way:** during a `repeatDelay` pause a
+        forward loop showed its *first* frame (it wrapped, then waited), so
+        finished states snapped back before the pause. It now holds the last
+        frame through the pause, then wraps — as GSAP does.
 - [x] Examples: **Copy code** on every card — a complete standalone HTML page
       (`standalone-page.ts`). Demos are plain `.js` (JSDoc types, `allowJs`) so
       the copied code runs unchanged; the code examples' markup CSS moved to

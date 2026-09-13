@@ -50,7 +50,7 @@ const browserScheduler: FrameScheduler = {
 export class Stage {
   private readonly adapter = new DOMAdapter()
   private readonly scheduler: FrameScheduler
-  private readonly root?: ParentNode
+  private readonly rootOption?: ParentNode
 
   /** Element → engine target name. The engine only ever sees names. */
   private names = new WeakMap<Element, string>()
@@ -71,10 +71,19 @@ export class Stage {
 
   constructor(options: StageOptions = {}) {
     this.scheduler = options.scheduler ?? browserScheduler
-    this.root = options.root
+    this.rootOption = options.root
   }
 
   // --- targets ------------------------------------------------------------
+
+  /**
+   * Where selector targets are resolved: the given root, or the document.
+   * Read lazily so a stage can be created where there is no document (Node, a
+   * Worker) as long as nothing is resolved there.
+   */
+  get root(): ParentNode {
+    return this.rootOption ?? document
+  }
 
   /**
    * Resolve selectors, elements and lists of either to engine target names,
@@ -89,15 +98,19 @@ export class Stage {
     return names
   }
 
+  /** Find one element the way selector targets are found: within the stage's root. */
+  query(selector: string): Element | null {
+    return this.root.querySelector(selector)
+  }
+
   /** The element registered under a target name. */
   elementFor(name: string): Element | undefined {
     return this.elements.get(name)
   }
 
-  /** Last numeric value the stage applied to a target's property, if any. */
-  appliedValue(name: string, property: string): number | undefined {
-    const value = this.applied.get(name)?.get(property)
-    return typeof value === 'number' ? value : undefined
+  /** Last value the stage applied to a target's property, if any. */
+  appliedValue(name: string, property: string): AnimatableValue | undefined {
+    return this.applied.get(name)?.get(property)
   }
 
   // --- playback -----------------------------------------------------------
@@ -141,6 +154,18 @@ export class Stage {
     this.names = new WeakMap()
     this.applied.clear()
     this.dirty.clear()
+  }
+
+  /**
+   * Write values for one target straight away, without a timeline — for direct
+   * manipulation such as dragging, where every pointer move sets a position.
+   * The values join the applied state, so later tweens start from them.
+   */
+  apply(name: string, values: Record<string, AnimatableValue>): void {
+    if (this.destroyed) return
+    const properties = new Map<string, AnimatableValue>(Object.entries(values))
+    this.write({ values: new Map([[name, properties]]), currentTime: 0, playbackState: 'idle', direction: 'forward', loopIteration: 0 })
+    this.flush()
   }
 
   /** Apply a timeline's state at its current time, immediately. */
@@ -232,8 +257,7 @@ export class Stage {
 
   private elementsOf(input: TargetInput): Element[] {
     if (typeof input === 'string') {
-      const root = this.root ?? document
-      return Array.from(root.querySelectorAll(input))
+      return Array.from(this.root.querySelectorAll(input))
     }
     if (isElement(input)) return [input]
 

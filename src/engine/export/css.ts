@@ -2,6 +2,7 @@ import type { Timeline } from '../core/timeline'
 import type { Track, EasingType, BuiltInEasingType, Keyframe, AnimatableValue } from '../types'
 import { isCubicBezierEasing } from '../types'
 import { toKeyframedTracks } from '../core/bake'
+import { isTextTrack } from '../types'
 
 /**
  * CSS export options
@@ -307,7 +308,9 @@ export function exportToCSS(timeline: Timeline, options: CSSExportOptions = {}):
   }
 
   // Group tracks by target
-  const trackGroups = groupTracksByTarget(toKeyframedTracks(timeline.tracks))
+  // Text tracks change an element's text, which CSS keyframes and Lottie shape
+  // layers cannot express; they are left out (raster exports do include them).
+  const trackGroups = groupTracksByTarget(toKeyframedTracks(timeline.tracks).filter((t) => !isTextTrack(t)))
 
   for (const [target, tracks] of trackGroups) {
     // Generate unique animation name

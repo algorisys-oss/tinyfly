@@ -239,3 +239,20 @@ describe('CSS Export', () => {
     })
   })
 })
+
+describe('text tracks in CSS export', () => {
+  it('leaves text tracks out, since CSS cannot animate text content', async () => {
+    const { Timeline } = await import('../core/timeline')
+    const { exportToCSS } = await import('./css')
+    const tl = new Timeline({
+      id: 't',
+      tracks: [
+        { id: 'o', target: 'box', property: 'opacity', keyframes: [{ time: 0, value: 0 }, { time: 1000, value: 1 }] },
+        { id: 'txt', target: 'box', property: 'text', textConfig: { to: 'hi', mode: 'type' }, keyframes: [{ time: 0, value: 0 }, { time: 1000, value: 1 }] },
+      ],
+    })
+    const css = JSON.stringify(exportToCSS(tl))
+    expect(css).toContain('opacity')
+    expect(css).not.toMatch(/\btext:/)
+  })
+})

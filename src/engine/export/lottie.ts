@@ -2,6 +2,7 @@ import type { Timeline } from '../core/timeline'
 import type { Track, Keyframe, EasingType, BuiltInEasingType, AnimatableValue } from '../types'
 import { isCubicBezierEasing } from '../types'
 import { toKeyframedTracks } from '../core/bake'
+import { isTextTrack } from '../types'
 
 /**
  * Lottie export options
@@ -427,7 +428,9 @@ export function exportToLottie(timeline: Timeline, options: LottieExportOptions 
   const duration = timeline.duration
   const endFrame = msToFrame(duration, frameRate)
 
-  const trackGroups = groupTracksByTarget(toKeyframedTracks(timeline.tracks))
+  // Text tracks change an element's text, which CSS keyframes and Lottie shape
+  // layers cannot express; they are left out (raster exports do include them).
+  const trackGroups = groupTracksByTarget(toKeyframedTracks(timeline.tracks).filter((t) => !isTextTrack(t)))
   const layers: LottieLayer[] = []
 
   let layerIndex = 1

@@ -589,6 +589,47 @@ The Preset Panel provides ready-made animation templates that you can apply to a
 | Swing | 1000ms | Pendulum rotation effect |
 | Breathe | 2000ms | Subtle scale breathing |
 
+### Throws with inertia (inertia tracks)
+
+In the Tracks panel, click **+**, enter a target and a property (for example `x`),
+then **Add Inertia**. An inertia track is a throw: it starts with a velocity and
+slows under friction until it rests. It appears as a span on the timeline, like a
+spring, and is labelled `inertia` in the track list.
+
+Select it to edit in Properties:
+
+- **Throw**: From, Velocity (units per second), Friction (higher stops sooner),
+  and Delay.
+- **Landing**: Min and Max, and **Snap to**. One number snaps to a grid of that
+  size; a list such as `0, 120, 300` snaps to the nearest value. The header shows
+  where it comes to rest (marked *snapped* when snapping moved it) and how long
+  it takes to settle.
+
+The scene grows automatically to fit the throw. Inertia tracks play in every
+preview and bake into keyframes for exports.
+
+### Scramble and type-on (text tracks)
+
+Select a text element and use **🔤 Text Animation** in Properties:
+
+1. Choose **Scramble** (the current text scrambles into new words) or **Type on**.
+2. Enter the new text and a duration, then **Add text animation →**. It starts at
+   the playhead.
+
+This adds a **text** track (labelled `text` in the track list). Select it to edit:
+
+- **Words** — From, To, and right-to-left.
+- **Scramble** — the characters to scramble through (A–Z, a–z, A–z, 0–9, or your own),
+  how often they change, how long before they start to settle (reveal delay), and
+  whether the length grows or shrinks. **New scramble** picks a different random
+  sequence; each sequence is seeded, so it replays identically in previews and exports.
+- **Timing** — start, duration and easing.
+
+While a text track exists it decides the element's text (before it starts, the element
+shows *From*). Remove the track and the element's own Content shows again. Text tracks
+play in every preview and in GIF/WebP/MP4/sprite exports; CSS and Lottie exports leave
+them out, since neither can animate text content.
+
 ### Text Animations
 
 | Preset | Duration | Description |

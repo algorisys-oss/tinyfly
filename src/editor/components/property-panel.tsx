@@ -1,4 +1,4 @@
-import { createMemo, createSignal, createEffect, Show, Switch, Match, For } from 'solid-js'
+import { createMemo, createSignal, createEffect, on, untrack, Show, Switch, Match, For } from 'solid-js'
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
 import type { ProjectStore } from '../stores/project-store'
@@ -8,6 +8,8 @@ import {
   isCubicBezierEasing,
   hasKeyframes,
   isSpringTrack,
+  isTextTrack,
+  isInertiaTrack,
   springDuration,
   isUnderdamped,
 } from '../../engine'
@@ -16,6 +18,8 @@ import { HelpIcon } from './tooltip'
 import { presetsByCategory, type AnimationPreset } from '../presets'
 import { CurveEditor } from './curve-editor'
 import { polyStarPath, type PolyStarKind } from '../utils/poly-star'
+import { TextAnimationCreator, TextTrackInspector } from './text-animation-panel'
+import { InertiaInspector } from './inertia-inspector'
 import './property-panel.css'
 
 interface PropertyPanelProps {
@@ -56,6 +60,20 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
     if (!track || index === null || index < 0) return null
     if (!hasKeyframes(track)) return null
     return track.keyframes[index] ?? null
+  })
+
+  /** The selected track, when it is a text track. */
+  const selectedTextTrack = createMemo(() => {
+    props.store.timelineVersion() // the track object is replaced on every edit
+    const track = selectedTrack()
+    return track && isTextTrack(track) ? track : null
+  })
+
+  /** The selected track, when it is an inertia track. */
+  const selectedInertiaTrack = createMemo(() => {
+    props.store.timelineVersion()
+    const track = selectedTrack()
+    return track && isInertiaTrack(track) ? track : null
   })
 
   /** The selected track, when it is a spring. */
@@ -669,14 +687,18 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
     const [localText, setLocalText] = createSignal(props.element.text)
     let debounceTimer: number | undefined
 
-    // Sync local text when element changes externally (e.g., undo/redo or different selection)
-    createEffect(() => {
-      const elementText = props.element.text
-      // Only sync if different from local (avoids overwriting during typing)
-      if (elementText !== localText()) {
-        setLocalText(elementText)
-      }
-    })
+    // Sync local text when the element changes externally (undo/redo, another
+    // selection). Only the element's text is tracked: if `localText` were a
+    // dependency too, every keystroke would re-run this before the debounced
+    // store update landed, see the old text, and undo the keystroke.
+    createEffect(
+      on(
+        () => props.element.text,
+        (elementText) => {
+          if (elementText !== untrack(localText)) setLocalText(elementText)
+        }
+      )
+    )
 
     const handleInput = (e: InputEvent & { currentTarget: HTMLInputElement }) => {
       const value = e.currentTarget.value
@@ -708,12 +730,15 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
     const [localFont, setLocalFont] = createSignal(props.element.fontFamily)
     let debounceTimer: number | undefined
 
-    createEffect(() => {
-      const elementFont = props.element.fontFamily
-      if (elementFont !== localFont()) {
-        setLocalFont(elementFont)
-      }
-    })
+    // Track only the element's font, for the same reason as TextContentInput.
+    createEffect(
+      on(
+        () => props.element.fontFamily,
+        (elementFont) => {
+          if (elementFont !== untrack(localFont)) setLocalFont(elementFont)
+        }
+      )
+    )
 
     const handleInput = (e: InputEvent & { currentTarget: HTMLInputElement }) => {
       const value = e.currentTarget.value
@@ -822,6 +847,7 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
           <div class="text-effect-applied">{textEffectMessage()}</div>
         </Show>
       </div>
+      <TextAnimationCreator store={props.store} element={element} />
     </>
   )
 
@@ -1745,6 +1771,18 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
               </div>
             </>
           )}
+        </Show>
+
+        {/* Text tracks are authored as words and options; their keyframes are
+            only progress, so they get their own inspector too. */}
+        {/* Not keyed: every edit replaces the track object, and remounting would
+            drop a slider mid-drag. The accessor updates props in place. */}
+        <Show when={selectedTextTrack()}>
+          {(track) => <TextTrackInspector store={props.store} track={track()} />}
+        </Show>
+
+        <Show when={selectedInertiaTrack()}>
+          {(track) => <InertiaInspector store={props.store} track={track()} />}
         </Show>
 
         {/* Show keyframe properties when keyframe is selected */}

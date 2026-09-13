@@ -9,13 +9,15 @@ import type {
   AnyTrack,
   MotionPathTrack,
   SpringTrack,
+  TextTrack,
 } from '../types'
-import { isMotionPathTrack, isSpringTrack } from '../types'
-import { TrackPlayer, SpringTrackPlayer, trackTargets } from './track'
+import { isMotionPathTrack, isSpringTrack, isTextTrack, isInertiaTrack } from '../types'
+import { TrackPlayer, SpringTrackPlayer, InertiaTrackPlayer, trackTargets } from './track'
 import { getMotionPathPoint } from '../path/motion-path'
+import { textAt } from '../text/text-value'
 
 /** Anything that can produce per-target values at a time. */
-type AnyTrackPlayer = TrackPlayer | SpringTrackPlayer
+type AnyTrackPlayer = TrackPlayer | SpringTrackPlayer | InertiaTrackPlayer
 
 /** Selects a subset of a timeline's tracks. All given fields must match. */
 export interface TrackFilter {
@@ -31,7 +33,7 @@ export interface TrackFilter {
 
 /**
  * Two tracks writing the same property of the same target over an overlapping
- * span. The later-added track wins; see `Timeline.findConflicts`.
+ * span. The track that starts later wins (ties: added later); see `Timeline.findConflicts`.
  */
 export interface TrackConflict {
   target: string
@@ -63,6 +65,7 @@ export class Timeline {
   private _trackPlayers: Map<string, AnyTrackPlayer> = new Map()
   private _motionPathTracks: Map<string, MotionPathTrack> = new Map()
   private _springTracks: Map<string, SpringTrack> = new Map()
+  private _textTracks: Map<string, TextTrack> = new Map()
   private _config: TimelineConfig
   private _currentTime = 0
   private _playbackState: PlaybackState = 'idle'
@@ -71,6 +74,11 @@ export class Timeline {
   private _explicitDuration?: number
   /** Milliseconds still to wait at a loop boundary before the next iteration */
   private _repeatDelayRemaining = 0
+  /**
+   * A forward loop reached its end with a repeat delay armed: the playhead
+   * holds on the last frame for the delay, then returns to the start.
+   */
+  private _wrapAfterDelay = false
 
   onUpdate: UpdateCallback | null = null
   onComplete: CompleteCallback | null = null
@@ -169,6 +177,7 @@ export class Timeline {
   stop(): void {
     this._playbackState = 'idle'
     this._repeatDelayRemaining = 0
+    this._wrapAfterDelay = false
     this._currentTime = 0
     this._loopIteration = 0
     this._direction = 'forward'
@@ -182,6 +191,7 @@ export class Timeline {
     this._currentTime = Math.max(0, Math.min(time, maxTime))
     // An explicit seek cancels any pending between-loops pause.
     this._repeatDelayRemaining = 0
+    this._wrapAfterDelay = false
   }
 
   /**
@@ -219,6 +229,12 @@ export class Timeline {
         // Still waiting — emit the held frame and stop here.
         this.onUpdate?.(this.getStateAtTime(this._currentTime))
         return
+      }
+
+      // The pause is over: a forward loop now goes back to the start.
+      if (this._wrapAfterDelay) {
+        this._wrapAfterDelay = false
+        this._currentTime = 0
       }
     }
 
@@ -274,35 +290,15 @@ export class Timeline {
   getStateAtTime(time: number): AnimationState {
     const values = new Map<string, Map<string, AnimatableValue>>()
 
-    // Tracks are evaluated in insertion order and write into a shared per-target
-    // map, so when two tracks drive the same target+property over overlapping
-    // times, the LAST TRACK ADDED WINS. That is the documented conflict rule —
-    // see `findConflicts()`, which surfaces such overlaps so an editor can warn
-    // rather than letting one silently swallow the other.
-    for (const [trackId, player] of this._trackPlayers) {
-      const track = player.getTrack()
-
-      for (const { target, value } of player.getTargetValues(time)) {
-        if (value === undefined) continue
-
-        if (!values.has(target)) {
-          values.set(target, new Map())
-        }
-
-        const targetValues = values.get(target)!
-
-        // Check if this is a motion path track
-        const motionPathTrack = this._motionPathTracks.get(trackId)
-        if (motionPathTrack && typeof value === 'number') {
-          // Expand motion path progress to x, y, and optionally rotation
-          const point = getMotionPathPoint(motionPathTrack.motionPathConfig, value)
-          targetValues.set('motionPathX', point.x)
-          targetValues.set('motionPathY', point.y)
-          if (motionPathTrack.motionPathConfig.autoRotate) {
-            targetValues.set('motionPathRotate', point.angle)
-          }
-        } else {
-          targetValues.set(track.property, value)
+    if (this._hasSharedWrites()) {
+      this._resolveShared(time, values)
+    } else {
+      // Fast path: every target+property is driven by one track, so there is
+      // nothing to resolve.
+      for (const [trackId, player] of this._trackPlayers) {
+        const property = player.getTrack().property
+        for (const { target, value, start } of player.getTargetValues(time)) {
+          this._write(values, trackId, target, property, value, time - start)
         }
       }
     }
@@ -317,10 +313,113 @@ export class Timeline {
   }
 
   /**
+   * Several tracks drive the same target+property. Which one applies at `time`:
+   *
+   * 1. Of the tracks that have started (their first keyframe, plus delay and
+   *    stagger, is at or before `time`), the one that started LAST.
+   * 2. If none has started yet, the one that starts FIRST — so the value before
+   *    anything plays is the first animation's starting value.
+   * 3. Ties on start time go to the track added LAST.
+   *
+   * This is what makes a sequence of tweens on one property play as a sequence:
+   * a later tween holds its starting value, but does not apply it until its
+   * turn. `findConflicts()` reports overlaps by the same rule.
+   */
+  private _resolveShared(time: number, values: Map<string, Map<string, AnimatableValue>>): void {
+    const chosen = new Map<string, { trackId: string; target: string; property: string; value: AnimatableValue; start: number; started: boolean }>()
+
+    for (const [trackId, player] of this._trackPlayers) {
+      const property = player.getTrack().property
+      for (const { target, value, start } of player.getTargetValues(time)) {
+        const key = `${target}\u0000${property}`
+        const started = start <= time
+        const current = chosen.get(key)
+        // Tracks are visited in insertion order, so on a tie this one was added later and wins.
+        const wins =
+          !current ||
+          (started !== current.started ? started : started ? start >= current.start : start <= current.start)
+        if (wins) chosen.set(key, { trackId, target, property, value, start, started })
+      }
+    }
+
+    for (const { trackId, target, property, value, start } of chosen.values()) {
+      this._write(values, trackId, target, property, value, time - start)
+    }
+  }
+
+  /**
+   * Write one track's value for a target, expanding the progress of motion paths
+   * (into x/y/rotation) and text tracks (into the string). `elapsed` is the time
+   * since this target's animation on the track started.
+   */
+  private _write(
+    values: Map<string, Map<string, AnimatableValue>>,
+    trackId: string,
+    target: string,
+    property: string,
+    value: AnimatableValue,
+    elapsed: number
+  ): void {
+    if (value === undefined) return
+
+    let targetValues = values.get(target)
+    if (!targetValues) {
+      targetValues = new Map()
+      values.set(target, targetValues)
+    }
+
+    const textTrack = this._textTracks.get(trackId)
+    if (textTrack && typeof value === 'number') {
+      targetValues.set('text', textAt(textTrack.textConfig, value, Math.max(0, elapsed)))
+      return
+    }
+
+    const motionPathTrack = this._motionPathTracks.get(trackId)
+    if (motionPathTrack && typeof value === 'number') {
+      const point = getMotionPathPoint(motionPathTrack.motionPathConfig, value)
+      targetValues.set('motionPathX', point.x)
+      targetValues.set('motionPathY', point.y)
+      if (motionPathTrack.motionPathConfig.autoRotate) {
+        targetValues.set('motionPathRotate', point.angle)
+      }
+    } else {
+      targetValues.set(property, value)
+    }
+  }
+
+  /** Cached: does any target+property have more than one track? */
+  private _sharedWrites: boolean | null = null
+
+  private _hasSharedWrites(): boolean {
+    if (this._sharedWrites === null) {
+      const seen = new Set<string>()
+      this._sharedWrites = false
+      outer: for (const track of this._tracks) {
+        for (const target of trackTargets(track)) {
+          const key = `${target}\u0000${track.property}`
+          if (seen.has(key)) {
+            this._sharedWrites = true
+            break outer
+          }
+          seen.add(key)
+        }
+      }
+    }
+    return this._sharedWrites
+  }
+
+  /**
    * Add a track to the timeline.
    */
   addTrack(track: AnyTrack): void {
     this._tracks.push(track)
+    this._sharedWrites = null
+
+    // Inertia tracks are computed from their parameters rather than interpolated.
+    if (isInertiaTrack(track)) {
+      this._trackPlayers.set(track.id, new InertiaTrackPlayer(track))
+      return
+    }
 
     // Spring tracks are simulated rather than interpolated.
     if (isSpringTrack(track)) {
@@ -329,9 +428,12 @@ export class Timeline {
       return
     }
 
-    // Create a TrackPlayer for the keyframes (works for both regular and motion path tracks)
-    // Motion path tracks use number keyframes for progress (0-1)
-    if (isMotionPathTrack(track)) {
+    // Create a TrackPlayer for the keyframes (works for regular, motion path and text tracks)
+    // Motion path and text tracks use number keyframes for progress (0-1)
+    if (isTextTrack(track)) {
+      this._trackPlayers.set(track.id, new TrackPlayer(track as unknown as Track<number>))
+      this._textTracks.set(track.id, track)
+    } else if (isMotionPathTrack(track)) {
       const regularTrack: Track<number> = {
         id: track.id,
         target: track.target,
@@ -349,13 +451,31 @@ export class Timeline {
   }
 
   /**
+   * Replace a track with a new version, keeping its place in the track order
+   * (which decides ties when tracks overlap). The new track may have a
+   * different id. Does nothing if no track has `trackId`.
+   */
+  replaceTrack(trackId: string, track: AnyTrack): void {
+    const index = this._tracks.findIndex((t) => t.id === trackId)
+    if (index < 0) return
+
+    const after = this._tracks.slice(index + 1)
+    this.removeTrack(trackId)
+    for (const later of after) this.removeTrack(later.id)
+    this.addTrack(track)
+    for (const later of after) this.addTrack(later)
+  }
+
+  /**
    * Remove a track by its ID.
    */
   removeTrack(trackId: string): void {
     this._tracks = this._tracks.filter((t) => t.id !== trackId)
+    this._sharedWrites = null
     this._trackPlayers.delete(trackId)
     this._motionPathTracks.delete(trackId)
     this._springTracks.delete(trackId)
+    this._textTracks.delete(trackId)
   }
 
   /**
@@ -393,7 +513,7 @@ export class Timeline {
     const track = player.getTrack()
     const delay = track.delay ?? 0
 
-    if (isSpringTrack(track as AnyTrack)) {
+    if (isSpringTrack(track as AnyTrack) || isInertiaTrack(track as AnyTrack)) {
       return { from: delay, to: player.getDuration() }
     }
 
@@ -406,15 +526,16 @@ export class Timeline {
   /**
    * Overlapping writes to the same target+property.
    *
-   * The engine resolves these as last-added-wins (see `getStateAtTime`), which
-   * is predictable but silent — an authoring tool should call this and warn,
-   * because a silently discarded track looks like a bug in the animation.
+   * Where two spans overlap, the track that starts later wins from the moment it
+   * starts (ties: the one added later) — see `_resolveShared`. That is
+   * predictable but silent, so an authoring tool should call this and warn,
+   * because a silently discarded stretch of a track looks like a bug.
    */
   findConflicts(): TrackConflict[] {
     const conflicts: TrackConflict[] = []
 
-    // Compare each track against every track added before it. The earlier one
-    // loses, matching evaluation order.
+    // Compare each track against every track added before it. The one that
+    // starts later wins; on equal starts, the one added later — matching evaluation.
     for (let i = 0; i < this._tracks.length; i++) {
       const later = this._tracks[i]
       const laterSpan = this.getTrackSpan(later.id)
@@ -433,12 +554,13 @@ export class Timeline {
         const overlaps = earlierSpan.from <= laterSpan.to && laterSpan.from <= earlierSpan.to
         if (!overlaps) continue
 
+        const laterWins = laterSpan.from >= earlierSpan.from
         for (const target of shared) {
           conflicts.push({
             target,
             property: later.property,
-            losingTrackId: earlier.id,
-            winningTrackId: later.id,
+            losingTrackId: laterWins ? earlier.id : later.id,
+            winningTrackId: laterWins ? later.id : earlier.id,
           })
         }
       }
@@ -501,6 +623,10 @@ export class Timeline {
       if (this._config.alternate) {
         this._direction = 'reverse'
         // Stay at duration, will move backward from here
+      } else if (this._repeatDelayRemaining > 0) {
+        // Hold the finished frame through the pause (as GSAP does), rather than
+        // snapping back to the start and waiting there.
+        this._wrapAfterDelay = true
       } else {
         this._currentTime = 0
       }

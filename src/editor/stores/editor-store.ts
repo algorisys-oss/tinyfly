@@ -7,6 +7,8 @@ import {
   deserializeTimeline,
   hasKeyframes,
   isSpringTrack,
+  isTextTrack,
+  isInertiaTrack,
 } from '../../engine'
 import type {
   Keyframe,
@@ -17,6 +19,10 @@ import type {
   EasingType,
   SpringTrack,
   SpringConfig,
+  TextTrack,
+  TextConfig,
+  InertiaTrack,
+  InertiaConfig,
 } from '../../engine'
 import { type AnimationPreset, resolvePresetKeyframe, isSpringPresetTrack } from '../presets'
 import type { SceneElement } from './scene-store'
@@ -266,8 +272,142 @@ export function createEditorStore() {
       ...(delay !== undefined && { delay }),
     }
 
-    state.timeline.removeTrack(trackId)
-    state.timeline.addTrack(next)
+    state.timeline.replaceTrack(trackId, next)
+    commitSpringEdit()
+  }
+
+  /** Add an inertia track: a throw on one property, released after `delay` ms. */
+  function addInertiaTrack(options: {
+    id: string
+    target: string
+    property: string
+    inertia: InertiaConfig
+    delay?: number
+  }): InertiaTrack | undefined {
+    if (!state.timeline) return
+
+    pushHistory()
+
+    const track: InertiaTrack = {
+      id: options.id,
+      target: options.target,
+      property: options.property,
+      kind: 'inertia',
+      inertia: { ...options.inertia },
+      ...(options.delay !== undefined && { delay: options.delay }),
+    }
+
+    state.timeline.addTrack(track)
+    commitSpringEdit()
+    return track
+  }
+
+  /**
+   * Change an inertia track's parameters. `end: null` removes snapping. Replaced
+   * in place, keeping track order.
+   */
+  function updateInertia(
+    trackId: string,
+    changes: Partial<Omit<InertiaConfig, 'end' | 'min' | 'max'>> & {
+      end?: InertiaConfig['end'] | null
+      min?: number | null
+      max?: number | null
+      delay?: number
+    }
+  ) {
+    if (!state.timeline) return
+
+    const existing = state.timeline.tracks.find((t) => t.id === trackId)
+    if (!existing || !isInertiaTrack(existing)) return
+
+    pushHistory()
+
+    const { delay, ...configChanges } = changes
+    const inertia: InertiaConfig = { ...existing.inertia }
+    for (const [key, value] of Object.entries(configChanges)) {
+      if (value === null) delete (inertia as unknown as Record<string, unknown>)[key]
+      else if (value !== undefined) (inertia as unknown as Record<string, unknown>)[key] = value
+    }
+
+    const next: InertiaTrack = { ...existing, inertia, ...(delay !== undefined && { delay }) }
+    state.timeline.replaceTrack(trackId, next)
+    commitSpringEdit()
+  }
+
+  /**
+   * Add a text track: the target's text types or scrambles from `from` to `to`
+   * over `durationMs`, starting at `startMs`.
+   */
+  function addTextTrack(options: {
+    target: string
+    textConfig: TextConfig
+    startMs?: number
+    durationMs?: number
+    easing?: EasingType
+  }): TextTrack | undefined {
+    if (!state.timeline) return
+
+    pushHistory()
+
+    const start = options.startMs ?? 0
+    const length = Math.max(1, options.durationMs ?? 1000)
+    const track: TextTrack = {
+      id: `${options.target}-text-${Date.now()}`,
+      target: options.target,
+      property: 'text',
+      textConfig: { ...options.textConfig },
+      keyframes: [
+        { time: start, value: 0 },
+        { time: start + length, value: 1, ...(options.easing && { easing: options.easing }) },
+      ],
+    }
+
+    state.timeline.addTrack(track)
+    commitSpringEdit()
+    return track
+  }
+
+  /**
+   * Change a text track's settings: its text options, and its timing and easing
+   * (the first and last keyframes carry those). Replaced rather than mutated, so
+   * undo has a clean snapshot and the timeline re-registers the track.
+   */
+  function updateTextTrack(
+    trackId: string,
+    changes: Partial<TextConfig> & { startMs?: number; durationMs?: number; easing?: EasingType | null }
+  ) {
+    if (!state.timeline) return
+
+    const existing = state.timeline.tracks.find((t) => t.id === trackId)
+    if (!existing || !isTextTrack(existing)) return
+
+    pushHistory()
+
+    const { startMs, durationMs, easing, ...configChanges } = changes
+    const timingChanged = startMs !== undefined || durationMs !== undefined || easing !== undefined
+
+    let keyframes = existing.keyframes
+    if (timingChanged) {
+      // Timing edits rebuild the simple 0 → 1 pair; settings-only edits keep the
+      // keyframes as they are (which may be baked, multi-keyframe eases).
+      const first = existing.keyframes[0]
+      const last = existing.keyframes[existing.keyframes.length - 1]
+      const start = startMs ?? first.time
+      const length = Math.max(1, durationMs ?? last.time - first.time)
+      const nextEasing = easing === undefined ? last.easing : easing ?? undefined
+      keyframes = [
+        { time: start, value: 0 },
+        { time: start + length, value: 1, ...(nextEasing && { easing: nextEasing }) },
+      ]
+    }
+
+    const next: TextTrack = {
+      ...existing,
+      textConfig: { ...existing.textConfig, ...configChanges },
+      keyframes,
+    }
+
+    state.timeline.replaceTrack(trackId, next)
     commitSpringEdit()
   }
 
@@ -1011,9 +1151,9 @@ export function createEditorStore() {
   /**
    * Tracks whose values are being silently discarded.
    *
-   * When two tracks drive the same target+property over overlapping times the
-   * engine resolves it as last-added-wins — predictable, but invisible, so a
-   * discarded track looks like a bug in the animation. Surfacing it is the
+   * When two tracks drive the same target+property over overlapping times, the
+   * engine gives the overlap to the one that starts later (ties: added later) —
+   * predictable, but invisible, so a discarded track looks like a bug. Surfacing it is the
    * whole point of `findConflicts`.
    */
   const trackConflicts = createMemo(() => {
@@ -1046,6 +1186,10 @@ export function createEditorStore() {
     // Timeline actions
     addSpringTrack,
     updateSpring,
+    addTextTrack,
+    updateTextTrack,
+    addInertiaTrack,
+    updateInertia,
     requiredDurationMs,
     syncPlayheadFromTimeline,
     createNewTimeline,

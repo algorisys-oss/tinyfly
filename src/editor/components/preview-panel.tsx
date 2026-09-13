@@ -3,7 +3,8 @@ import type { Component } from 'solid-js'
 import { DOMAdapter } from '../../adapters/dom'
 import { CanvasAdapter } from '../../adapters/canvas'
 import { SVGAdapter } from '../../adapters/svg'
-import { deserializeTimeline, type Timeline } from '../../engine'
+import { deserializeTimeline, type Timeline, type AnimationState } from '../../engine'
+import { setTextContent } from '../../adapters/text-content'
 import { expandSymbolInstances, shownSymbolId } from '../utils/expand-symbols'
 import { cameraFromState, applyCameraToCtx, cameraSvgTransform } from '../utils/camera'
 import { onionGhostTimes } from '../utils/onion'
@@ -634,6 +635,36 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     ctx.restore()
   }
 
+  /**
+   * Text elements a text track has written to. When a text track stops driving
+   * one (it was removed, or the playhead left it), the element's own text is
+   * put back once — otherwise the last animated string would linger in the
+   * preview, since nothing else rewrites it.
+   */
+  const animatedTextNames = new Set<string>()
+  const restoreUnanimatedText = (state: AnimationState, renderer: string) => {
+    for (const element of props.sceneStore.elements()) {
+      if (element.type !== 'text') continue
+      if (state.values.get(element.name)?.has('text')) {
+        animatedTextNames.add(element.name)
+        continue
+      }
+      if (!animatedTextNames.delete(element.name)) continue
+
+      const text = (element as TextElement).text
+      if (renderer === 'dom') {
+        const node = adapter?.getTarget(element.name)
+        if (node) setTextContent(node, text)
+      } else if (renderer === 'svg') {
+        const node = svgAdapter?.getTarget(element.name)
+        if (node) setTextContent(node, text)
+      } else if (renderer === 'canvas') {
+        const target = canvasAdapter?.getTarget(element.name) as { text?: string } | undefined
+        if (target) target.text = text
+      }
+    }
+  }
+
   // Apply state based on current renderer
   const applyStateToRenderer = () => {
     const renderer = rendererType()
@@ -643,12 +674,15 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
 
       if (renderer === 'dom' && adapter) {
         adapter.applyState(state)
+        restoreUnanimatedText(state, renderer)
         applyInstanceStates()
       } else if (renderer === 'canvas' && canvasAdapter) {
         canvasAdapter.applyState(state)
+        restoreUnanimatedText(state, renderer)
         renderCanvas()
       } else if (renderer === 'svg' && svgAdapter) {
         svgAdapter.applyState(state)
+        restoreUnanimatedText(state, renderer)
       }
     } else if (renderer === 'canvas') {
       // No animation, but still render canvas elements

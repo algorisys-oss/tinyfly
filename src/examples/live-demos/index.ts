@@ -13,6 +13,21 @@ import { cardStack } from './card-stack'
 import { infiniteMarquee } from './infinite-marquee'
 import { splitTextReveal } from './split-text-reveal'
 import { svgLineDraw } from './svg-line-draw'
+import { motionPathAlign } from './motion-path-align'
+import { motionPathPoints } from './motion-path-points'
+import { shapeMorph } from './shape-morph'
+import { iconMorph } from './icon-morph'
+import { scrambleText } from './scramble-text'
+import { typewriterText } from './typewriter-text'
+import { throwToSlots } from './throw-to-slots'
+import { inertiaCarousel } from './inertia-carousel'
+import { frictionThrows } from './friction-throws'
+import { menuMorph } from './menu-morph'
+import { drawAndFollow } from './draw-and-follow'
+import { orbits } from './orbits'
+import { swipeCards } from './swipe-cards'
+import { cardFlip3d } from './card-flip-3d'
+import { statsDecode } from './stats-decode'
 import staggerGridSource from './stagger-grid.js?raw'
 import labelSequenceSource from './label-sequence.js?raw'
 import composedMotionSource from './composed-motion.js?raw'
@@ -27,6 +42,21 @@ import cardStackSource from './card-stack.js?raw'
 import infiniteMarqueeSource from './infinite-marquee.js?raw'
 import splitTextRevealSource from './split-text-reveal.js?raw'
 import svgLineDrawSource from './svg-line-draw.js?raw'
+import motionPathAlignSource from './motion-path-align.js?raw'
+import motionPathPointsSource from './motion-path-points.js?raw'
+import shapeMorphSource from './shape-morph.js?raw'
+import iconMorphSource from './icon-morph.js?raw'
+import scrambleTextSource from './scramble-text.js?raw'
+import typewriterTextSource from './typewriter-text.js?raw'
+import throwToSlotsSource from './throw-to-slots.js?raw'
+import inertiaCarouselSource from './inertia-carousel.js?raw'
+import frictionThrowsSource from './friction-throws.js?raw'
+import menuMorphSource from './menu-morph.js?raw'
+import drawAndFollowSource from './draw-and-follow.js?raw'
+import orbitsSource from './orbits.js?raw'
+import swipeCardsSource from './swipe-cards.js?raw'
+import cardFlip3dSource from './card-flip-3d.js?raw'
+import statsDecodeSource from './stats-decode.js?raw'
 
 export type { LiveDemo } from './types'
 
@@ -53,6 +83,21 @@ export function extractCode(source: string): string {
 const withCode = (demo: LiveDemo, source: string): LiveDemoWithCode => ({ ...demo, code: extractCode(source) })
 
 export const liveDemos: LiveDemoWithCode[] = [
+  withCode(motionPathAlign, motionPathAlignSource),
+  withCode(motionPathPoints, motionPathPointsSource),
+  withCode(shapeMorph, shapeMorphSource),
+  withCode(iconMorph, iconMorphSource),
+  withCode(scrambleText, scrambleTextSource),
+  withCode(typewriterText, typewriterTextSource),
+  withCode(throwToSlots, throwToSlotsSource),
+  withCode(inertiaCarousel, inertiaCarouselSource),
+  withCode(frictionThrows, frictionThrowsSource),
+  withCode(menuMorph, menuMorphSource),
+  withCode(drawAndFollow, drawAndFollowSource),
+  withCode(orbits, orbitsSource),
+  withCode(swipeCards, swipeCardsSource),
+  withCode(cardFlip3d, cardFlip3dSource),
+  withCode(statsDecode, statsDecodeSource),
   withCode(staggerGrid, staggerGridSource),
   withCode(labelSequence, labelSequenceSource),
   withCode(composedMotion, composedMotionSource),

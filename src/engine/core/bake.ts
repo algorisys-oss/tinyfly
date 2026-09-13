@@ -1,8 +1,9 @@
-import type { AnyTrack, Track, Keyframe, EasingType, KeyframedTrack } from '../types'
-import { isSpringTrack, hasKeyframes } from '../types'
+import type { AnyTrack, Track, Keyframe, EasingType, KeyframedTrack, SpringTrack, InertiaTrack } from '../types'
+import { isSpringTrack, isInertiaTrack, hasKeyframes } from '../types'
 import { getEasingFunction } from '../interpolation/easing'
 import { getInterpolator } from '../interpolation/interpolators'
 import { SpringSampler } from './spring'
+import { inertiaDuration, inertiaRest, inertiaValueAt } from './inertia'
 
 /**
  * Baking: turning a computed animation into plain keyframes.
@@ -40,29 +41,58 @@ export function bakeSpringTrack(track: AnyTrack, options: BakeOptions = {}): Tra
   if (!isSpringTrack(track)) {
     throw new Error(`bakeSpringTrack: track "${track.id}" is not a spring track`)
   }
+  const sampler = new SpringSampler(track.spring)
+  return bakeComputedTrack(track, (t) => sampler.valueAt(t), sampler.settleTime(), track.spring.from, track.spring.to, options)
+}
 
+/**
+ * Sample an inertia track into an ordinary keyframe track, the same way
+ * springs are baked.
+ */
+export function bakeInertiaTrack(track: AnyTrack, options: BakeOptions = {}): Track<number> {
+  if (!isInertiaTrack(track)) {
+    throw new Error(`bakeInertiaTrack: track "${track.id}" is not an inertia track`)
+  }
+  const config = track.inertia
+  return bakeComputedTrack(
+    track,
+    (t) => inertiaValueAt(config, t),
+    inertiaDuration(config),
+    config.from,
+    inertiaRest(config),
+    options
+  )
+}
+
+/** Sample a track whose value is computed from time (spring or inertia) into keyframes. */
+function bakeComputedTrack(
+  track: SpringTrack | InertiaTrack,
+  valueAt: (timeMs: number) => number,
+  settle: number,
+  startValue: number,
+  restValue: number,
+  options: BakeOptions
+): Track<number> {
   const interval = options.intervalMs ?? DEFAULT_BAKE_INTERVAL_MS
   const tolerance = options.tolerance ?? 0.01
-  const sampler = new SpringSampler(track.spring)
-  const settle = sampler.settleTime()
   const delay = track.delay ?? 0
 
   const samples: Keyframe<number>[] = []
   for (let t = 0; t <= settle; t += interval) {
-    samples.push({ time: t + delay, value: sampler.valueAt(t), easing: 'linear' })
+    samples.push({ time: t + delay, value: valueAt(t), easing: 'linear' })
   }
 
   // Always land exactly on the resting value.
   const last = samples[samples.length - 1]
   if (!last || last.time < settle + delay) {
-    samples.push({ time: settle + delay, value: track.spring.to, easing: 'linear' })
+    samples.push({ time: settle + delay, value: restValue, easing: 'linear' })
   } else {
-    last.value = track.spring.to
+    last.value = restValue
   }
 
-  // A delayed spring holds its start value until it begins.
+  // A delayed track holds its start value until it begins.
   if (delay > 0) {
-    samples.unshift({ time: 0, value: track.spring.from, easing: 'linear' })
+    samples.unshift({ time: 0, value: startValue, easing: 'linear' })
   }
 
   return {
@@ -110,20 +140,21 @@ export function bakeEasing<T extends Keyframe['value']>(
 }
 
 /**
- * Any track as a keyframed track — springs get baked, everything else passes
- * through untouched. Export paths use this so they never see a spring.
+ * Any track as a keyframed track — springs and inertia get baked, everything
+ * else passes through untouched. Export paths use this so they never see a
+ * computed track.
  */
 export function toKeyframedTrack(track: AnyTrack, options?: BakeOptions): KeyframedTrack {
-  if (isSpringTrack(track)) {
-    return bakeSpringTrack(track, options)
-  }
+  if (isSpringTrack(track)) return bakeSpringTrack(track, options)
+  if (isInertiaTrack(track)) return bakeInertiaTrack(track, options)
   return track
 }
 
 /** Bake a whole track list for export. */
 export function toKeyframedTracks(tracks: AnyTrack[], options?: BakeOptions): KeyframedTrack[] {
   return tracks.filter(hasKeyframes).concat(
-    tracks.filter(isSpringTrack).map((t) => bakeSpringTrack(t, options))
+    tracks.filter(isSpringTrack).map((t) => bakeSpringTrack(t, options)),
+    tracks.filter(isInertiaTrack).map((t) => bakeInertiaTrack(t, options))
   )
 }
 

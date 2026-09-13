@@ -1,6 +1,7 @@
 import type { AnimationState, AnimatableValue } from '../../engine/types'
 import { FILTER_PROPERTIES, composeFilter, type FilterValues } from '../filter-utils'
 import { shineStops } from '../shine-utils'
+import { setTextContent } from '../text-content'
 
 const SVG_NS = 'http://www.w3.org/2000/svg'
 
@@ -136,6 +137,8 @@ export class SVGAdapter {
       } else if (FILTER_PROPERTIES.has(property)) {
         ;(filter as Record<string, AnimatableValue>)[property] = value
         hasFilter = true
+      } else if (property === 'text') {
+        if (typeof value === 'string') setTextContent(element, value)
       } else if (property === 'shine') {
         if (typeof value === 'number') this.applyShine(element, value)
       } else if (property === 'opacity') {

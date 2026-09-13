@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest'
 import { liveDemoPage } from './standalone-page'
 import { liveDemos } from './live-demos'
 import { createLive, Stage, type FrameScheduler } from '../compat/gsap'
-import { exercise, stubSvgGeometry } from './live-demos/test-support'
+import { exercise, snapshot as markup, stubSvgGeometry } from './live-demos/test-support'
 
 stubSvgGeometry()
 
@@ -38,17 +38,18 @@ describe('copied live demo pages run', () => {
 
       expect(() => new Function('tinyfly', inline)({ live: createLive(stage) })).not.toThrow()
       await Promise.resolve()
+      const styles = () => markup(document.body)
+      const beforeInput = styles()
       exercise(document.body)
       await Promise.resolve()
 
-      const styles = () =>
-        Array.from(document.body.querySelectorAll('*'))
-          .map((el) => el.getAttribute('style') ?? '')
-          .join('|')
-      step()
-      const before = styles()
-      for (let i = 0; i < 20; i++) step()
-      expect(styles(), demo.id).not.toBe(before)
+      // Record every frame for 1.6s and look for any change (see live-demos.test.ts).
+      const seen = new Set<string>([beforeInput])
+      for (let i = 0; i < 100; i++) {
+        step()
+        seen.add(styles())
+      }
+      expect(seen.size, demo.id).toBeGreaterThan(1)
       stage.destroy()
     })
   }

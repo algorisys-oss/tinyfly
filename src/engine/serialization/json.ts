@@ -1,5 +1,5 @@
-import type { Keyframe, AnimatableValue, Track, TimelineDefinition, AnyTrack, MotionPathTrack, SpringTrack } from '../types'
-import { isMotionPathTrack, isSpringTrack } from '../types'
+import type { Keyframe, AnimatableValue, Track, TimelineDefinition, AnyTrack, MotionPathTrack, SpringTrack, TextTrack, InertiaTrack } from '../types'
+import { isMotionPathTrack, isSpringTrack, isTextTrack, isInertiaTrack } from '../types'
 import { Timeline } from '../core/timeline'
 import { createTrack } from '../core/track'
 
@@ -8,6 +8,17 @@ import { createTrack } from '../core/track'
  * Handles both regular tracks and motion path tracks.
  */
 export function serializeTrack(track: AnyTrack): AnyTrack {
+  if (isInertiaTrack(track)) {
+    return {
+      id: track.id,
+      target: track.target,
+      property: track.property,
+      kind: 'inertia',
+      inertia: copyInertia(track.inertia),
+      ...scheduling(track),
+    }
+  }
+
   if (isSpringTrack(track)) {
     return {
       id: track.id,
@@ -15,6 +26,17 @@ export function serializeTrack(track: AnyTrack): AnyTrack {
       property: track.property,
       kind: 'spring',
       spring: { ...track.spring },
+      ...scheduling(track),
+    }
+  }
+
+  if (isTextTrack(track)) {
+    return {
+      id: track.id,
+      target: track.target,
+      property: 'text',
+      textConfig: { ...track.textConfig },
+      keyframes: track.keyframes.map(serializeKeyframe),
       ...scheduling(track),
     }
   }
@@ -37,6 +59,11 @@ export function serializeTrack(track: AnyTrack): AnyTrack {
     keyframes: track.keyframes.map(serializeKeyframe),
     ...scheduling(track),
   }
+}
+
+/** A copy of an inertia config, not sharing its `end` array with the original. */
+function copyInertia(inertia: InertiaTrack['inertia']): InertiaTrack['inertia'] {
+  return { ...inertia, ...(Array.isArray(inertia.end) && { end: [...inertia.end] }) }
 }
 
 function serializeKeyframe<T extends AnimatableValue>(kf: Keyframe<T>) {
@@ -67,6 +94,18 @@ function scheduling(track: AnyTrack) {
  * Ensures keyframes are sorted by time.
  */
 export function deserializeTrack(data: AnyTrack): AnyTrack {
+  if (isInertiaTrack(data)) {
+    const inertiaData = data as InertiaTrack
+    return {
+      id: inertiaData.id,
+      target: inertiaData.target,
+      property: inertiaData.property,
+      kind: 'inertia',
+      inertia: copyInertia(inertiaData.inertia),
+      ...scheduling(inertiaData),
+    }
+  }
+
   if (isSpringTrack(data)) {
     const springData = data as SpringTrack
     return {
@@ -76,6 +115,18 @@ export function deserializeTrack(data: AnyTrack): AnyTrack {
       kind: 'spring',
       spring: { ...springData.spring },
       ...scheduling(springData),
+    }
+  }
+
+  if (isTextTrack(data)) {
+    const textData = data as TextTrack
+    return {
+      id: textData.id,
+      target: textData.target,
+      property: 'text',
+      textConfig: { ...textData.textConfig },
+      keyframes: [...textData.keyframes].sort((a, b) => a.time - b.time),
+      ...scheduling(textData),
     }
   }
 

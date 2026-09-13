@@ -162,6 +162,13 @@ export interface MotionPathConfig {
   autoRotate?: boolean;
   /** Rotation offset in degrees (added to tangent angle when autoRotate is true) */
   rotateOffset?: number;
+  /**
+   * Affine transform `[a, b, c, d, e, f]` applied to every point on the path
+   * (x' = a·x + c·y + e, y' = b·x + d·y + f), and to its tangent. Places a path
+   * drawn in one coordinate space — an SVG's user units — into the space of the
+   * element that follows it. Omit for identity.
+   */
+  matrix?: [number, number, number, number, number, number];
 }
 
 /** A track that animates along a motion path */
@@ -194,6 +201,67 @@ export interface MotionPathPoint {
   y: number;
   /** Tangent angle in degrees */
   angle: number;
+}
+
+// ============================================
+// Text Types
+// ============================================
+
+/** How a text track gets from one string to another. */
+export type TextMode = 'type' | 'scramble';
+
+/** A character set name, or a string of the characters to use. */
+export type TextChars = 'upperCase' | 'lowerCase' | 'upperAndLowerCase' | 'numbers' | (string & {});
+
+/**
+ * Parameters for animating text. Plain data: the string at any moment is a pure
+ * function of these, the eased progress and the elapsed time.
+ */
+export interface TextConfig {
+  /** Text at progress 0 (default: empty) */
+  from?: string;
+  /** Text at progress 1 */
+  to: string;
+  /**
+   * `type`: the new text replaces the old one character at a time.
+   * `scramble`: unrevealed characters cycle through random ones, then settle.
+   */
+  mode: TextMode;
+  /** Scramble: characters to draw from (default: `upperCase`) */
+  chars?: TextChars;
+  /** Scramble: how often random characters change, per second (default: 20) */
+  refreshRate?: number;
+  /** Scramble: fraction of the tween (0–1) before characters start to settle */
+  revealDelay?: number;
+  /** Scramble: grow or shrink the length from `from` to `to` over the tween (default: true) */
+  tweenLength?: boolean;
+  /** Reveal from the end of the string instead of the start */
+  rightToLeft?: boolean;
+  /** Scramble: seed for the random characters, so every playback matches */
+  seed?: number;
+}
+
+/**
+ * A track that animates text. Keyframes carry progress (0–1) with easing, like
+ * a motion path, and the timeline expands progress into the string.
+ */
+export interface TextTrack {
+  id: string;
+  target: string;
+  /** Always 'text' for text tracks */
+  property: 'text';
+  textConfig: TextConfig;
+  /** Keyframes with progress values (0-1) */
+  keyframes: Keyframe<number>[];
+  delay?: number;
+  endDelay?: number;
+  targets?: string[];
+  stagger?: StaggerConfig;
+}
+
+/** Type guard to check if a track is a text track */
+export function isTextTrack(track: AnyTrack): track is TextTrack {
+  return track.property === 'text' && 'textConfig' in track;
 }
 
 // ============================================
@@ -260,6 +328,55 @@ export interface SpringTrack {
   stagger?: StaggerConfig;
 }
 
+// ============================================
+// Inertia Types
+// ============================================
+
+/**
+ * A throw: a value released with a velocity that slows under friction and comes
+ * to rest — optionally snapping to a chosen resting place and staying in
+ * bounds. Plain data; the motion is a closed-form function of time.
+ */
+export interface InertiaConfig {
+  /** Value at release */
+  from: number;
+  /** Speed at release, in units per second (negative moves down) */
+  velocity: number;
+  /** How quickly it slows: exponential decay rate per second (default: 4) */
+  friction?: number;
+  /** Lowest resting value */
+  min?: number;
+  /** Highest resting value */
+  max?: number;
+  /**
+   * Where it may come to rest. A number snaps to multiples of it (a grid); an
+   * array snaps to the nearest listed value. It still slows the same way, just
+   * aimed so it lands exactly there.
+   */
+  end?: number | number[];
+  /** How close to the resting value counts as settled (default: scales with distance) */
+  restDelta?: number;
+}
+
+/** A track whose value is a throw with inertia, not keyframes. */
+export interface InertiaTrack {
+  id: string;
+  target: string;
+  property: string;
+  /** Marks this as an inertia track for serialization and dispatch */
+  kind: 'inertia';
+  inertia: InertiaConfig;
+  /** Milliseconds before the release */
+  delay?: number;
+  targets?: string[];
+  stagger?: StaggerConfig;
+}
+
+/** Type guard to check if a track is an inertia track */
+export function isInertiaTrack(track: AnyTrack): track is InertiaTrack {
+  return (track as InertiaTrack).kind === 'inertia' && 'inertia' in track;
+}
+
 /** Type guard to check if a track is a spring track */
 export function isSpringTrack(track: AnyTrack): track is SpringTrack {
   return (track as SpringTrack).kind === 'spring' && 'spring' in track;
@@ -282,17 +399,18 @@ export function isMotionPathPoint(value: unknown): value is MotionPathPoint {
 }
 
 /** Union type for any track */
-export type AnyTrack = Track | MotionPathTrack | SpringTrack;
+export type AnyTrack = Track | MotionPathTrack | TextTrack | SpringTrack | InertiaTrack;
 
 /**
- * Tracks whose values come from keyframes — everything except springs.
+ * Tracks whose values come from keyframes — everything except springs and
+ * inertia, whose motion is computed from parameters.
  * Most authoring and export code only makes sense for these.
  */
-export type KeyframedTrack = Track | MotionPathTrack;
+export type KeyframedTrack = Track | MotionPathTrack | TextTrack;
 
 /**
  * Narrow a track to the keyframed kinds. Use this before reaching for
- * `.keyframes`, which spring tracks do not have.
+ * `.keyframes`, which spring and inertia tracks do not have.
  */
 export function hasKeyframes(track: AnyTrack): track is KeyframedTrack {
   return 'keyframes' in track;

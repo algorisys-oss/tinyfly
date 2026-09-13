@@ -3,6 +3,10 @@ import { CompatTimeline, type CompatTimelineOptions } from './timeline'
 import type { Position } from './position'
 import { splitVars, type TweenVars } from './vars'
 import { Stage, type TargetInput } from './stage'
+import { resolveLiveMotionPath } from './live-motion-path'
+import { convertToPath, pathDataOf, resolveMorphShape } from './live-morph'
+import { toMs } from './vars'
+import { createLiveDraggable, type LiveDraggable, type LiveDraggableOptions } from './live-draggable'
 
 /**
  * The live facade: GSAP-style calls that play on real elements straight away.
@@ -51,7 +55,15 @@ export class LiveTimeline {
     this.options = options
     this.compat = new CompatTimeline({
       ...options,
-      startValue: (target, property) => stage.appliedValue(target, property),
+      startValue: (target, property) => {
+        const applied = stage.appliedValue(target, property)
+        if (applied !== undefined) return applied
+        // A shape's starting point is whatever the element draws right now,
+        // and a text tween starts from the text it shows.
+        if (property === 'd') return pathDataOf(stage.elementFor(target)) ?? undefined
+        if (property === 'text') return stage.elementFor(target)?.textContent ?? undefined
+        return undefined
+      },
     })
 
     this.compat.timeline.onComplete = () => options.onComplete?.()
@@ -73,25 +85,25 @@ export class LiveTimeline {
 
   to(target: TargetInput, vars: TweenVars, position?: Position): this {
     const names = this.resolve(target)
-    if (names) this.compat.to(names, vars, position)
+    if (names) this.perElementStarts(names, vars, position, (n, v, p) => this.compat.to(n, v, p))
     return this
   }
 
   from(target: TargetInput, vars: TweenVars, position?: Position): this {
     const names = this.resolve(target)
-    if (names) this.compat.from(names, vars, position)
+    if (names) this.perElementStarts(names, vars, position, (n, v, p) => this.compat.from(n, v, p))
     return this
   }
 
   fromTo(target: TargetInput, fromVars: TweenVars, toVars: TweenVars, position?: Position): this {
     const names = this.resolve(target)
-    if (names) this.compat.fromTo(names, fromVars, toVars, position)
+    if (names) this.compat.fromTo(names, this.prepare(fromVars, names), this.prepare(toVars, names), position)
     return this
   }
 
   set(target: TargetInput, vars: TweenVars, position?: Position): this {
     const names = this.resolve(target)
-    if (names) this.compat.set(names, vars, position)
+    if (names) this.compat.set(names, this.prepare(vars, names), position)
     return this
   }
 
@@ -197,6 +209,61 @@ export class LiveTimeline {
     return this.compat.toDefinition()
   }
 
+  /**
+   * A track has one start value, but each element starts from its own shape or
+   * text. So a morph or text tween over several elements builds one tween per
+   * element, all at the same position, with any stagger turned into delays.
+   */
+  private perElementStarts(
+    names: string[],
+    vars: TweenVars,
+    position: Position | undefined,
+    build: (names: string[], vars: TweenVars, position?: Position) => void
+  ): void {
+    const startsDifferPerElement =
+      vars.morphSVG !== undefined || vars.text !== undefined || vars.scrambleText !== undefined
+    if (!startsDifferPerElement || names.length === 1) {
+      build(names, this.prepare(vars, names), position)
+      return
+    }
+
+    const { stagger, ...rest } = vars
+    const each = typeof stagger === 'number' ? stagger : (stagger as { each?: number } | undefined)?.each ?? 0
+    names.forEach((name, i) => {
+      const delay = toMs(rest.delay, 0) / 1000 + i * each
+      build([name], this.prepare({ ...rest, delay }, [name]), i === 0 ? position : '<')
+    })
+  }
+
+  /**
+   * Resolve the parts of vars that refer to the page — today, a motion path
+   * given as a selector or element, and its `align` — into plain data.
+   */
+  private prepare(vars: TweenVars, names: string[]): TweenVars {
+    const warn = (message: string) => this.options.onWarning?.(message)
+    const query = (selector: string) => this.stage.query(selector)
+    let prepared = vars
+
+    if (vars.motionPath !== undefined) {
+      const motionPath = resolveLiveMotionPath(vars.motionPath, {
+        query,
+        targets: names.map((name) => this.stage.elementFor(name)).filter((el): el is Element => !!el),
+        warn,
+      })
+      prepared = { ...prepared, motionPath }
+    }
+
+    if (vars.morphSVG !== undefined) {
+      const shape = resolveMorphShape(vars.morphSVG, query, warn)
+      // A shape that could not be found has already been warned about; the rest
+      // of the tween still plays.
+      const { morphSVG: _unresolved, ...withoutMorph } = prepared
+      prepared = shape ? { ...prepared, morphSVG: shape } : withoutMorph
+    }
+
+    return prepared
+  }
+
   private resolve(target: TargetInput): string[] | undefined {
     const names = this.stage.resolveTargets(target)
     if (names.length === 0) {
@@ -214,6 +281,13 @@ export interface LiveApi {
   from(target: TargetInput, vars: TweenVars): LiveTimeline
   fromTo(target: TargetInput, fromVars: TweenVars, toVars: TweenVars): LiveTimeline
   set(target: TargetInput, vars: TweenVars): LiveTimeline
+  /**
+   * Replace basic SVG shapes with equivalent `<path>` elements so they can be
+   * morphed (selectors resolve within the stage's root). Changes the document.
+   */
+  convertToPath(targets: string | Element | ArrayLike<Element>): Element[]
+  /** Drag an element, and throw it with inertia on release (GSAP's Draggable + InertiaPlugin). */
+  draggable(target: TargetInput, options?: LiveDraggableOptions): LiveDraggable
   /** The stage these calls play on. */
   readonly stage: Stage
 }
@@ -238,14 +312,17 @@ export function createLive(stage: Stage = new Stage()): LiveApi {
     })
   }
 
-  return {
+  const api: LiveApi = {
     stage,
     timeline: (options) => new LiveTimeline(stage, options),
     to: (target, vars) => single(vars).to(target, vars),
     from: (target, vars) => single(vars).from(target, vars),
     fromTo: (target, fromVars, toVars) => single(toVars).fromTo(target, fromVars, toVars),
     set: (target, vars) => single(vars).set(target, vars),
+    convertToPath: (targets) => convertToPath(targets, stage.root),
+    draggable: (target, options) => createLiveDraggable(api, stage, target, options),
   }
+  return api
 }
 
 /**

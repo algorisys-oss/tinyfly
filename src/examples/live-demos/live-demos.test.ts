@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest'
 import { liveDemos, extractCode } from './index'
 import { createLive, Stage, type FrameScheduler } from '../../compat/gsap'
-import { exercise, stubSvgGeometry } from './test-support'
+import { exercise, snapshot as markup, stubSvgGeometry } from './test-support'
 
 stubSvgGeometry()
 
@@ -52,17 +52,22 @@ describe('live demos', () => {
       const cleanup = demo.run(live, root)
       await Promise.resolve()
 
+      const snapshot = () => markup(root)
+      // Before any input, so a demo that moves only while dragged still counts.
+      const beforeInput = snapshot()
+
       // Interactive demos only move on input; give them some.
       exercise(root)
       await Promise.resolve()
 
-      const snapshot = () =>
-        Array.from(root.querySelectorAll<HTMLElement>('*')).map((el) => el.getAttribute('style') ?? '').join('|')
-
-      frames.advance(16)
-      const before = snapshot()
-      for (let i = 0; i < 20; i++) frames.advance(16)
-      expect(snapshot(), demo.id).not.toBe(before)
+      // Record every frame for 1.6s: a looping demo can be back where it
+      // started at any single later moment, so look for any change at all.
+      const seen = new Set<string>([beforeInput])
+      for (let i = 0; i < 100; i++) {
+        frames.advance(16)
+        seen.add(snapshot())
+      }
+      expect(seen.size, demo.id).toBeGreaterThan(1)
 
       expect(() => {
         cleanup?.()

@@ -85,6 +85,7 @@ interface MotionPathConfig {
   pathData: string          // SVG path data (d attribute)
   autoRotate?: boolean      // Auto-rotate to follow path tangent
   rotateOffset?: number     // Rotation offset in degrees
+  matrix?: [a, b, c, d, e, f]  // Affine transform applied to points and tangent
 }
 
 interface MotionPathTrack {
@@ -217,6 +218,8 @@ Advance the timeline by `delta` milliseconds. Call this from your animation loop
 #### `getStateAtTime(time: number): AnimationState`
 
 Compute the animation state at a specific time. Returns a map of all target/property values at that time. For motion path tracks, expands the progress value into `motionPathX`, `motionPathY`, and optionally `motionPathRotate`.
+
+When several tracks drive the same target and property, the value comes from the track that **started most recently** (its first keyframe plus delay and stagger, at or before `time`). Before any of them has started, the one that **starts first** supplies its starting value. Ties on start time go to the track added last. This is what lets a sequence of tweens on one property play in order. `findConflicts()` names winners by the same rule.
 
 #### `addTrack(track: AnyTrack): void`
 
@@ -521,6 +524,77 @@ timeline.addTrack(motionTrack)
 ```
 
 The timeline automatically expands the motion path progress into `motionPathX`, `motionPathY`, and `motionPathRotate` properties in the animation state.
+
+Progress is by arc length, including within curves, so followers move at an even
+speed. `matrix` places the path into another coordinate space (x' = a·x + c·y + e,
+y' = b·x + d·y + f); the tangent is transformed too, so `autoRotate` still faces
+along the path.
+
+### Path utilities
+
+```typescript
+import { parsePath, getPointAtProgress, getPathLength, pointsToPath, shapeToPathData, morphPath } from 'tinyfly'
+
+getPathLength('M0 0 L30 40')                          // 50
+getPointAtProgress('M0 0 Q50 100 100 0', 0.5)         // { x: 50, y: 50, angle: 0 }
+pointsToPath([{ x: 0, y: 0 }, { x: 50, y: 50 }, { x: 100, y: 0 }], { curviness: 1, closed: false })
+shapeToPathData({ tag: 'circle', attributes: { cx: '50', cy: '50', r: '40' } })  // 'M90 50 A40 40 …'
+```
+
+`morphPath(from, to, progress, { shapeIndex? })` blends two paths: subpaths are
+paired, the start point and winding are chosen automatically (or forced with
+`shapeIndex`), and corners of both shapes are kept. `pointAtDistance(segments,
+distance, start?, end?)` samples a run of parsed segments; `parsePath(d).subpaths`
+lists each subpath's segment range, length and whether it is closed.
+
+`parsePath` reads every SVG path command, absolute or relative, including compact
+notation (`10-20`, `.5.5`, exponents, unseparated arc flags). It normalises to
+absolute lines and cubic beziers (`Q`/`T` exactly, `S`/`T` with reflected
+controls, arcs split into ≤90° cubics). Results are cached (bounded).
+
+### GSAP-style: `motionPath`
+
+`tf`, `timeline()` and `live` accept `motionPath: { path, curviness, autoRotate, start, end }`
+(or shorthand path data / points). `live` also accepts a selector or element for
+`path`, plus `align` and `alignOrigin`. See [gsap-compat.md](gsap-compat.md#motion-paths).
+
+---
+
+## Text Tracks
+
+Animate text by typing or scrambling from one string to another.
+
+```typescript
+interface TextConfig {
+  from?: string           // text at progress 0 (default '')
+  to: string              // text at progress 1
+  mode: 'type' | 'scramble'
+  chars?: 'upperCase' | 'lowerCase' | 'upperAndLowerCase' | 'numbers' | string
+  refreshRate?: number    // scramble: random-character changes per second (default 20)
+  revealDelay?: number    // scramble: fraction of the tween before characters settle
+  tweenLength?: boolean   // scramble: grow/shrink length over the tween (default true)
+  rightToLeft?: boolean   // reveal / type from the end
+  seed?: number           // scramble: fixes the random characters
+}
+
+interface TextTrack {
+  id: string
+  target: string
+  property: 'text'
+  textConfig: TextConfig
+  keyframes: Keyframe<number>[]   // progress 0-1, with easing
+  delay?: number; endDelay?: number; targets?: string[]; stagger?: StaggerConfig
+}
+```
+
+The timeline expands progress into a `text` value in the animation state; the DOM
+and SVG adapters set it as `textContent`, and the Canvas adapter as a text
+target's `text`. `textAt(config, progress, elapsedMs)` computes the string
+directly. It is pure: scramble characters come from a hash of the seed, position
+and refresh step, so the same inputs always give the same string.
+
+In `type` mode, the new text overwrites the old one character at a time over the
+longer of the two strings, so typing towards shorter text deletes as it goes.
 
 ---
 
@@ -1183,6 +1257,49 @@ timeline.onUpdate = (state) => {
 
 Pure helpers `quadMatrix(target, canvasWidth, canvasHeight)` and
 `parseColor(hex)` are exported for testing and for building your own renderer.
+
+---
+
+## Inertia Tracks
+
+A throw: a value released with a velocity that slows under friction and comes to rest.
+
+```typescript
+interface InertiaConfig {
+  from: number
+  velocity: number              // units per second at release
+  friction?: number             // decay rate per second (default 4)
+  min?: number
+  max?: number
+  end?: number | number[]       // snap to multiples of a number, or the nearest listed value
+  restDelta?: number            // settle threshold (default: scales with distance)
+}
+
+interface InertiaTrack {
+  id: string
+  target: string
+  property: string
+  kind: 'inertia'
+  inertia: InertiaConfig
+  delay?: number; targets?: string[]; stagger?: StaggerConfig
+}
+```
+
+`x(t) = from + (rest − from)(1 − e^(−friction·t))`, where `rest` is the free
+throw's stopping point (`from + velocity / friction`), snapped, then clamped to
+bounds. Settling takes the same time for any distance, like springs.
+
+```typescript
+inertiaValueAt(config, timeMs): number
+inertiaVelocityAt(config, timeMs): number
+inertiaRest(config): number          // where it comes to rest
+naturalRest(config): number          // where a free throw would stop
+inertiaDuration(config): number      // ms until settled
+bakeInertiaTrack(track, options?): Track<number>
+```
+
+`Timeline.replaceTrack(id, track)` swaps a track in place, keeping its position
+in the track order (which decides ties between overlapping tracks).
 
 ---
 

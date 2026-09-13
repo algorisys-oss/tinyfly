@@ -2,7 +2,7 @@ import { For, Show, createMemo, createSignal, createEffect, onCleanup } from 'so
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
 import type { Track, AnyTrack } from '../../engine'
-import { hasKeyframes, isSpringTrack } from '../../engine'
+import { hasKeyframes, isSpringTrack, isInertiaTrack } from '../../engine'
 import { trackLabelWidth } from '../utils/track-label-width'
 import './timeline-view.css'
 
@@ -50,7 +50,7 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
   // the timeline's track player memoises its simulation, whereas calling
   // `springDuration` here would re-run the whole integration on every render.
   const springSpanMs = (track: AnyTrack): number => {
-    if (!isSpringTrack(track)) return 0
+    if (!isSpringTrack(track) && !isInertiaTrack(track)) return 0
     const span = props.store.state.timeline?.getTrackSpan(track.id)
     return span ? span.to - span.from : 0
   }
@@ -312,10 +312,10 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
                 {/* Spring tracks have no keyframes to drag — their shape comes
                     from parameters — so they draw as a span from start to
                     settle instead of a row of dots. */}
-                <Show when={isSpringTrack(track)}>
+                <Show when={isSpringTrack(track) || isInertiaTrack(track)}>
                   <div
                     class="spring-span"
-                    title="Spring track — edit its parameters in Properties"
+                    title={`${isInertiaTrack(track) ? 'Inertia' : 'Spring'} track — edit its parameters in Properties`}
                     style={{
                       left: `${timeToX(track.delay ?? 0) - props.store.state.scrollPosition}px`,
                       width: `${Math.max(2, timeToX(springSpanMs(track)))}px`,

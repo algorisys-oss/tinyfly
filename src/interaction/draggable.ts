@@ -56,6 +56,12 @@ export interface DraggableOptions {
   /** Starting position */
   initialX?: number
   initialY?: number
+  /**
+   * Where the target is when a gesture begins. Use when something else can move
+   * it between drags — a throw with inertia, say — so the next drag starts from
+   * where it actually is rather than where the last drag left it.
+   */
+  getPosition?: () => { x: number; y: number }
 
   /** mode: 'scrub' — the timeline to scrub */
   timeline?: Timeline
@@ -96,6 +102,11 @@ export class Draggable {
     this.observer = new Observer({
       target: options.target,
       onPress: (state) => {
+        const current = options.getPosition?.()
+        if (current) {
+          this.x = current.x
+          this.y = current.y
+        }
         this.originX = this.x
         this.originY = this.y
         options.onPress?.(state)

@@ -169,7 +169,7 @@ describe('spring tracks', () => {
 })
 
 describe('repeatDelay', () => {
-  it('holds at the boundary before the next iteration', () => {
+  it('holds the finished frame through the pause, then starts over', () => {
     const tl = new Timeline({
       id: 't',
       tracks: [fade('a')],
@@ -178,16 +178,35 @@ describe('repeatDelay', () => {
     tl.play()
 
     tl.tick(1000) // reach the end, arm the delay
-    expect(tl.currentTime).toBe(0)
+    expect(tl.currentTime).toBe(1000)
+    expect(tl.getStateAtTime(tl.currentTime).values.get('box')?.get('opacity')).toBe(1)
 
-    tl.tick(200) // still waiting
-    expect(tl.currentTime).toBe(0)
+    tl.tick(200) // still waiting, still showing the end
+    expect(tl.currentTime).toBe(1000)
 
-    tl.tick(300) // delay consumed exactly
+    tl.tick(300) // delay consumed exactly: back to the start
     expect(tl.currentTime).toBe(0)
 
     tl.tick(100) // now advancing again
     expect(tl.currentTime).toBe(100)
+  })
+
+  it('emits the finished frame while it waits', () => {
+    const tl = new Timeline({ id: 't', tracks: [fade('a')], config: { loop: -1, repeatDelay: 500 } })
+    const seen: number[] = []
+    tl.onUpdate = (state) => seen.push(state.values.get('box')?.get('opacity') as number)
+    tl.play()
+    tl.tick(1000)
+    tl.tick(200)
+    expect(seen).toEqual([1, 1])
+  })
+
+  it('carries leftover time past the pause into the next iteration', () => {
+    const tl = new Timeline({ id: 't', tracks: [fade('a')], config: { loop: -1, repeatDelay: 500 } })
+    tl.play()
+    tl.tick(1000)
+    tl.tick(650)
+    expect(tl.currentTime).toBe(150)
   })
 
   it('does not hold when unset', () => {
@@ -345,5 +364,99 @@ describe('getTrackSpan', () => {
 
   it('is undefined for an unknown track', () => {
     expect(new Timeline({ id: 't' }).getTrackSpan('nope')).toBeUndefined()
+  })
+})
+
+/**
+ * Several tracks on one target+property. A sequence of tweens has to play as a
+ * sequence: a later track holds its starting value but must not apply it before
+ * it starts, or it hides everything before it.
+ */
+describe('resolving several tracks on one property', () => {
+  const x = (id: string, from: number, to: number, a: number, b: number, extra = {}) =>
+    createTrack({ id, target: 'box', property: 'x', keyframes: [{ time: from, value: a }, { time: to, value: b }], ...extra })
+  const xAt = (tl: Timeline, t: number) => tl.getStateAtTime(t).values.get('box')?.get('x')
+
+  it('plays back-to-back tracks in order', () => {
+    const tl = new Timeline({ id: 't', tracks: [x('go', 0, 1000, 0, 100), x('back', 1000, 2000, 100, 0)] })
+    expect([0, 500, 1000, 1500, 2000].map((t) => xAt(tl, t))).toEqual([0, 50, 100, 50, 0])
+  })
+
+  it('holds the earlier track\'s end value in a gap before the next starts', () => {
+    const tl = new Timeline({ id: 't', tracks: [x('a', 0, 500, 0, 100), x('b', 900, 1400, 300, 0)] })
+    expect(xAt(tl, 700)).toBe(100)
+    expect(xAt(tl, 900)).toBe(300)
+  })
+
+  it('shows the first track\'s start value before anything has started', () => {
+    const tl = new Timeline({ id: 't', tracks: [x('later', 800, 1000, 50, 60), x('first', 200, 400, 10, 20)] })
+    expect(xAt(tl, 0)).toBe(10)
+  })
+
+  it('gives an overlap to the track that started last, whichever was added first', () => {
+    const tl = new Timeline({ id: 't', tracks: [x('late', 500, 1500, 1000, 2000), x('early', 0, 1000, 0, 100)] })
+    expect(xAt(tl, 250)).toBe(25)
+    expect(xAt(tl, 750)).toBe(1250)
+  })
+
+  it('breaks ties on start time in favour of the track added last', () => {
+    const tl = new Timeline({ id: 't', tracks: [x('a', 0, 1000, 0, 0), x('b', 0, 1000, 7, 7)] })
+    expect(xAt(tl, 500)).toBe(7)
+  })
+
+  it('uses each staggered target\'s own start', () => {
+    const tl = new Timeline({
+      id: 't',
+      tracks: [
+        createTrack({ id: 'in', target: 'a', targets: ['a', 'b'], property: 'x', keyframes: [{ time: 0, value: 0 }, { time: 100, value: 10 }] }),
+        createTrack({ id: 'out', target: 'a', targets: ['a', 'b'], property: 'x', stagger: { each: 500 }, delay: 200, keyframes: [{ time: 0, value: 10 }, { time: 100, value: 0 }] }),
+      ],
+    })
+    const values = tl.getStateAtTime(400).values
+    expect(values.get('a')?.get('x')).toBe(0) // its "out" ran 200–300 and finished at 0
+    expect(values.get('b')?.get('x')).toBe(10) // its "out" starts at 700: "in" still applies
+  })
+
+  it('resolves motion paths by the same rule', () => {
+    const tl = new Timeline({
+      id: 't',
+      tracks: [
+        { id: 'p1', target: 'dot', property: 'motionPath', motionPathConfig: { pathData: 'M0 0 L100 0' }, keyframes: [{ time: 0, value: 0 }, { time: 1000, value: 1 }] },
+        { id: 'p2', target: 'dot', property: 'motionPath', motionPathConfig: { pathData: 'M0 50 L100 50' }, keyframes: [{ time: 1000, value: 0 }, { time: 2000, value: 1 }] },
+      ],
+    })
+    expect(tl.getStateAtTime(500).values.get('dot')?.get('motionPathY')).toBe(0)
+    expect(tl.getStateAtTime(1500).values.get('dot')?.get('motionPathY')).toBe(50)
+  })
+
+  it('reports the later-starting track as the conflict winner', () => {
+    const tl = new Timeline({ id: 't', tracks: [x('late', 500, 1500, 0, 1), x('early', 0, 1000, 0, 1)] })
+    expect(tl.findConflicts()[0]).toMatchObject({ winningTrackId: 'late', losingTrackId: 'early' })
+  })
+
+  it('recomputes after tracks are removed', () => {
+    const tl = new Timeline({ id: 't', tracks: [x('a', 0, 1000, 0, 100), x('b', 0, 1000, 5, 5)] })
+    expect(xAt(tl, 500)).toBe(5)
+    tl.removeTrack('b')
+    expect(xAt(tl, 500)).toBe(50)
+  })
+})
+
+describe('replaceTrack', () => {
+  const t = (id: string, value: number) =>
+    createTrack({ id, target: 'box', property: 'x', keyframes: [{ time: 0, value }, { time: 1000, value }] })
+
+  it('swaps a track in place, keeping the order', () => {
+    const tl = new Timeline({ id: 't', tracks: [t('a', 1), t('b', 2), t('c', 3)] })
+    tl.replaceTrack('a', t('a2', 9))
+    expect(tl.tracks.map((track) => track.id)).toEqual(['a2', 'b', 'c'])
+    // Order decides ties: 'c' was added last, so it still wins.
+    expect(tl.getStateAtTime(500).values.get('box')?.get('x')).toBe(3)
+  })
+
+  it('does nothing for an unknown id', () => {
+    const tl = new Timeline({ id: 't', tracks: [t('a', 1)] })
+    tl.replaceTrack('nope', t('z', 5))
+    expect(tl.tracks.map((track) => track.id)).toEqual(['a'])
   })
 })

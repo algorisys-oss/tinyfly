@@ -193,6 +193,16 @@ export class Observer {
 
   private onPointerDown = (e: Event) => {
     const pe = e as PointerEvent
+    // Capture the pointer so a fast drag keeps reporting moves (and the release)
+    // after it leaves the element — otherwise a flick loses its velocity.
+    const element = this.target as Partial<Element>
+    if (typeof pe.pointerId === 'number' && typeof element.setPointerCapture === 'function') {
+      try {
+        element.setPointerCapture(pe.pointerId)
+      } catch {
+        // Not every pointer can be captured (synthetic events, some browsers); dragging still works.
+      }
+    }
     this.begin(pe.clientX, pe.clientY, e)
   }
 

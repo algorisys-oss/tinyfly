@@ -1,5 +1,6 @@
 import type { AnimationState, AnimatableValue } from '../../engine/types'
 import { FILTER_PROPERTIES, composeFilter, type FilterValues } from '../filter-utils'
+import { setTextContent } from '../text-content'
 
 /** Properties that need px units when numeric */
 const PX_PROPERTIES = new Set([
@@ -165,6 +166,8 @@ export class DOMAdapter {
         // Consumed below, as the first function of the composed transform.
       } else if (property === 'shine') {
         // Handled after the loop (needs the composed base colour).
+      } else if (property === 'text' && typeof value === 'string') {
+        setTextContent(element, value)
       } else if (property === 'd' && typeof value === 'string') {
         // Shape morph: drive the child <path>'s geometry (the registered target
         // is the element wrapper; the actual path is inside its <svg>). Avoid

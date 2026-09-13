@@ -1,7 +1,7 @@
 import { createSignal, createMemo, For, Show } from 'solid-js'
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
-import { hasKeyframes } from '../../engine'
+import { hasKeyframes, isTextTrack, isInertiaTrack } from '../../engine'
 import { createCollapsed } from '../utils/use-collapsed'
 import './track-panel.css'
 
@@ -40,16 +40,16 @@ export const TrackPanel: Component<TrackPanelProps> = (props) => {
   const conflicts = createMemo(() => props.store.trackConflicts())
 
   /**
-   * Tooltip for a track whose values never reach the screen. The engine
-   * resolves overlaps as last-added-wins, so the winner is named here rather
-   * than leaving the user to guess why a track does nothing.
+   * Tooltip for a track whose values are overridden. The engine gives an
+   * overlap to the track that starts later (ties: added later), so the winner is
+   * named here rather than leaving the user to guess why a track does nothing.
    */
   const overrideReason = (trackId: string): string | undefined => {
     const conflict = conflicts().find((c) => c.losingTrackId === trackId)
     if (!conflict) return undefined
     return (
       `Overridden: another track also animates ${conflict.target}.${conflict.property} ` +
-      `over the same times. The later track (${conflict.winningTrackId}) wins.`
+      `over the same times. ${conflict.winningTrackId}, which starts later, wins where they overlap.`
     )
   }
 
@@ -74,6 +74,25 @@ export const TrackPanel: Component<TrackPanelProps> = (props) => {
       property,
       spring: { from: 0, to: 1, stiffness: 180, damping: 12, mass: 1 },
     })
+
+    setNewTarget('')
+    setNewProperty('')
+    setShowAddForm(false)
+    props.store.selectTrack(id)
+  }
+
+  /**
+   * Add an inertia track for the same target/property: a throw that slows to
+   * rest. Seeded as a rightward throw from 0 (friction 4 → rests at 200), then
+   * tuned in Properties.
+   */
+  const handleAddInertia = () => {
+    const target = newTarget().trim()
+    const property = newProperty().trim()
+    if (!target || !property) return
+
+    const id = `${target}-${property}-inertia-${Date.now()}`
+    props.store.addInertiaTrack({ id, target, property, inertia: { from: 0, velocity: 800, friction: 4 } })
 
     setNewTarget('')
     setNewProperty('')
@@ -129,6 +148,13 @@ export const TrackPanel: Component<TrackPanelProps> = (props) => {
               >
                 Add Spring
               </button>
+              <button
+                class="confirm-btn secondary"
+                onClick={handleAddInertia}
+                title="A throw with friction: set velocity, friction and snapping in Properties"
+              >
+                Add Inertia
+              </button>
             </div>
           </div>
         )}
@@ -165,7 +191,13 @@ export const TrackPanel: Component<TrackPanelProps> = (props) => {
                     <span class="track-conflict" aria-label="Overridden">⚠</span>
                   </Show>
                   <span class="keyframe-count">
-                    {hasKeyframes(track) ? `${track.keyframes.length} kf` : 'spring'}
+                    {isTextTrack(track)
+                      ? 'text'
+                      : hasKeyframes(track)
+                        ? `${track.keyframes.length} kf`
+                        : isInertiaTrack(track)
+                          ? 'inertia'
+                          : 'spring'}
                   </span>
                   <button
                     class="remove-btn"

@@ -17,7 +17,21 @@ export function getMotionPathPoint(
   config: MotionPathConfig,
   progress: number
 ): MotionPathPoint {
-  const point = getPointAtProgress(config.pathData, progress);
+  const point = { ...getPointAtProgress(config.pathData, progress) };
+
+  if (config.matrix) {
+    const [a, b, c, d, e, f] = config.matrix;
+    const { x, y } = point;
+    point.x = a * x + c * y + e;
+    point.y = b * x + d * y + f;
+
+    // Transform the tangent direction too, so auto-rotation follows the path as
+    // drawn after scaling, skewing or flipping.
+    const radians = (point.angle * Math.PI) / 180;
+    const tx = Math.cos(radians);
+    const ty = Math.sin(radians);
+    point.angle = (Math.atan2(b * tx + d * ty, a * tx + c * ty) * 180) / Math.PI;
+  }
 
   // Apply rotation offset if specified
   if (config.autoRotate && config.rotateOffset) {

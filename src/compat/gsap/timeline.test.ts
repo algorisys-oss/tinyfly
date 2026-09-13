@@ -493,3 +493,13 @@ describe('startValue option', () => {
     expect(tracksOf(tl).filter((t) => t.property === 'x')[1].keyframes[0].value).toBe(10)
   })
 })
+
+describe('chained tweens on one property play in sequence', () => {
+  it('shows the first tween while it runs, not the second tween\'s start value', () => {
+    const tl = timeline()
+    tl.fromTo('box', { x: 0 }, { x: 100, duration: 1, ease: 'none' })
+    tl.to('box', { x: 0, duration: 1, ease: 'none' })
+    const xAt = (ms: number) => tl.timeline.getStateAtTime(ms).values.get('box')!.get('x')
+    expect([0, 500, 1000, 1500, 2000].map(xAt)).toEqual([0, 50, 100, 50, 0])
+  })
+})

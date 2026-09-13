@@ -20,13 +20,25 @@ data (a string starting with a moveto) and routes it to a **path morph**:
 
 ```ts
 // src/engine/path/path-morph.ts
-morphPath(fromD, toD, progress, samples = 64)
+morphPath(fromD, toD, progress, { shapeIndex? })
 ```
 
-Both paths are sampled uniformly along their length with
-`getPointAtProgress`, and the sampled points are blended by `progress` — so any
-two shapes morph smoothly and **deterministically**, with no DOM required (it
-runs in the engine, workers, and tests).
+Both paths are resampled into matching point lists, which are blended by
+`progress`. The matching is worked out once per pair of shapes and cached:
+
+- **Subpaths are paired** when both paths have the same number, so holes morph
+  into holes.
+- **The start point and winding are chosen** so points travel least (about each
+  shape's centre) — nothing twists or turns inside out. Pass `shapeIndex` to
+  force a particular alignment.
+- **Corners are kept**: samples are spaced by length and always include every
+  corner of both shapes.
+- Open paths stay open; at progress 0 and 1 the original strings come back
+  exactly.
+
+It is deterministic and needs no DOM (it runs in the engine, workers, and tests).
+From code, use `morphSVG` in `live` or `tf` — see
+[gsap-compat.md](gsap-compat.md#shape-morphing).
 
 ## Where it renders
 
@@ -40,9 +52,10 @@ Because morphing is engine-level, it works everywhere a `d` value can be applied
 
 ## Limitations / later
 
-- The morph is sampled to a 64-point polyline, so very sharp corners soften
-  slightly mid-tween (endpoints stay faithful).
+- Mid-morph shapes are drawn as dense polylines (about one point per 2.5px of
+  length, plus every corner), so curves are faithful at normal sizes; very large
+  curved shapes can show faint facets mid-tween.
 - Fill/stroke morph independently via their own tracks; only geometry is tweened
   by the `d` track.
-- Authoring targets are polygon/star today; morphing to an arbitrary hand-drawn
-  path is a later addition.
+- In the editor, authoring targets are polygon/star today. From code, `morphSVG`
+  morphs between any paths or basic shapes.
