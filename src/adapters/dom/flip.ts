@@ -87,8 +87,12 @@ export function buildFlipTracks(
 
     // The element is already in its final position; we animate it *back* to
     // where it was and let it return. That is the "Invert" in FLIP.
-    const deltaX = from.left - to.left
-    const deltaY = from.top - to.top
+    //
+    // Offsets are between centres, not corners: scale happens about the
+    // element's centre (the CSS default origin), so a corner offset would leave
+    // a resized element off by half its change in size.
+    const deltaX = from.left + from.width / 2 - (to.left + to.width / 2)
+    const deltaY = from.top + from.height / 2 - (to.top + to.height / 2)
 
     if (deltaX !== 0 || deltaY !== 0) {
       tracks.push(

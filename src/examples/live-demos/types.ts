@@ -20,5 +20,11 @@ export interface LiveDemo {
   tags: string[]
   /** Markup the demo animates, including a scoped `<style>` block */
   html: string
+  /**
+   * The demo's motion comes from measuring real layout (Flip). Environments
+   * without layout (the unit tests' happy-dom) can run it, but cannot see it move;
+   * its motion is verified in a browser instead.
+   */
+  requiresLayout?: boolean
   run(live: LiveApi, root: HTMLElement): void | (() => void)
 }

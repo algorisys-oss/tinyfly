@@ -7,6 +7,7 @@ import { resolveLiveMotionPath } from './live-motion-path'
 import { convertToPath, pathDataOf, resolveMorphShape } from './live-morph'
 import { toMs } from './vars'
 import { createLiveDraggable, type LiveDraggable, type LiveDraggableOptions } from './live-draggable'
+import { flipFrom, getFlipState, type FlipState, type FlipVars } from './live-flip'
 
 /**
  * The live facade: GSAP-style calls that play on real elements straight away.
@@ -286,6 +287,12 @@ export interface LiveApi {
    * morphed (selectors resolve within the stage's root). Changes the document.
    */
   convertToPath(targets: string | Element | ArrayLike<Element>): Element[]
+  /** Record where elements appear, before a layout change (GSAP's `Flip.getState`). */
+  getFlipState(targets: TargetInput): FlipState
+  /** Animate recorded elements from where they were to their new layout (GSAP's `Flip.from`). */
+  flipFrom(state: FlipState, vars?: FlipVars): LiveTimeline
+  /** Record, run `change`, and animate the difference — in one call. */
+  flip(targets: TargetInput, change: () => void, vars?: FlipVars): LiveTimeline
   /** Drag an element, and throw it with inertia on release (GSAP's Draggable + InertiaPlugin). */
   draggable(target: TargetInput, options?: LiveDraggableOptions): LiveDraggable
   /** The stage these calls play on. */
@@ -321,6 +328,13 @@ export function createLive(stage: Stage = new Stage()): LiveApi {
     set: (target, vars) => single(vars).set(target, vars),
     convertToPath: (targets) => convertToPath(targets, stage.root),
     draggable: (target, options) => createLiveDraggable(api, stage, target, options),
+    getFlipState: (targets) => getFlipState(stage, targets),
+    flipFrom: (state, vars) => flipFrom(stage, (options) => new LiveTimeline(stage, options), state, vars),
+    flip: (targets, change, vars) => {
+      const state = getFlipState(stage, targets)
+      change()
+      return flipFrom(stage, (options) => new LiveTimeline(stage, options), state, { targets, ...vars })
+    },
   }
   return api
 }

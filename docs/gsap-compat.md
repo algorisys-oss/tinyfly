@@ -40,10 +40,10 @@ hand-written tinyfly example starts with.
 
 ## Playing on real elements: `live`
 
-> Twenty-nine runnable demos are on the Examples page under **GSAP-style**
+> Thirty-three runnable demos are on the Examples page under **GSAP-style**
 > (`/examples?category=gsap`), each with its code and **Copy code**: motion
 > paths and orbits, shape and menu morphs, scrambled and typed text, dashboard
-> stats, draggable throws (slots, carousel, swipe cards), friction, stagger,
+> stats, Flip layouts (shuffle, filter, layout switch, expand), draggable throws (slots, carousel, swipe cards), friction, stagger,
 > labels, 3D card flips, composition, playback controls, baked eases, and
 > interaction effects like a magnetic button, proximity grid, dock
 > magnification, velocity skew, card stack, infinite marquee, split-text reveal
@@ -163,6 +163,8 @@ releases its elements, and ignores any autoplay still queued.
 | `scrambleText: 'Hi'` / `{ text, chars, revealDelay, speed, tweenLength, rightToLeft }` | same | Seeded, so it replays identically |
 | `inertia: { x: { velocity, min, max, end, resistance } }` | same | Compiles to inertia tracks — see [Inertia](#inertia-and-dragging) |
 | `Draggable.create(el, { inertia: true, bounds, snap })` | `live.draggable(el, { inertia, bounds, snap })` | Throw uses the release velocity |
+| `Flip.getState(t)` / `Flip.from(state, vars)` | `live.getFlipState(t)` / `live.flipFrom(state, vars)` | See [Flip](#flip) |
+| `Flip.fit`, `absolute`, `nested` | — | Not yet; see Flip limits |
 
 Units: the facade speaks **seconds**, like GSAP. Everything it stores is in
 **milliseconds**, like the engine. The conversion happens at the boundary and
@@ -262,7 +264,7 @@ What GSAP sells as plugins, tinyfly ships as ordinary features:
 | ScrollTrigger | [`tinyfly/drivers`](./scroll-animation.md) — `ScrollDriver`, `VisibilityDriver`, plus a scroll-scrub preview in the editor |
 | Draggable / Observer | `live.draggable()`, and `tinyfly/interaction` — `Draggable`, `Observer` |
 | InertiaPlugin | The `inertia` tween option and inertia tracks — see [Inertia](#inertia-and-dragging) |
-| Flip | `flip()` in the DOM adapter — measures at author time, emits keyframes |
+| Flip | `live.flip()` / `live.getFlipState()` + `live.flipFrom()` — see [Flip](#flip); `flip()` in the DOM adapter for authoring |
 | MorphSVG | The `morphSVG` tween option — see [Shape morphing](#shape-morphing) |
 | MotionPathPlugin | The `motionPath` tween option — see [Motion paths](#motion-paths) |
 | DrawSVG | Stroke write-on, built in |
@@ -384,6 +386,44 @@ Spaces stay spaces while scrambling, so word shapes remain readable.
 
 `text` replaces the element's text content. Markup inside it (spans, links) is
 replaced too; animate an inner element if you need to keep the rest.
+
+## Flip
+
+Animate elements from where they were to where a layout change put them:
+
+```ts
+live.flip('.item', () => grid.classList.toggle('compact'), { duration: 0.6, ease: 'power2.inOut', stagger: 0.03 })
+
+// Or in two steps, when the change happens elsewhere:
+const state = live.getFlipState('.item')
+renderNewOrder()
+live.flipFrom(state, { duration: 0.5, targets: '.item' })
+```
+
+| Option | Meaning |
+|---|---|
+| `duration`, `ease` | As for any tween (default 0.6s, `power2.inOut`) |
+| `stagger` | Seconds between elements, in document order |
+| `scale` | Animate size changes with scaleX/scaleY (default `true`); `false` moves only |
+| `targets` | Elements that may have appeared in the change (`live.flip` passes its own) |
+| `enter` | Start values for newly visible elements (default `{ opacity: 0, scale: 0.6 }`), or `false` |
+| `onComplete` | Called when it finishes |
+
+Any change works: reorder the DOM, toggle classes, hide and show, resize.
+
+**How it measures.** Before the change, where each element *appears*, including
+the transform it may be animating with. After, where it is *laid out*, ignoring
+transforms. Offsets are between centres, since scale happens about the centre.
+Each element then gets an ordinary `fromTo` back to rest, so the result is plain
+track data.
+
+**Interrupting is smooth.** Starting a flip while another is running takes over
+each element from where it appears right now.
+
+**Limits.** Size changes scale the element, so its content scales too during
+the animation (text looks stretched mid-flip). Elements that disappear are not
+animated out, because they are no longer rendered to see. There is no `absolute`
+or `nested` mode yet.
 
 ## Inertia and dragging
 

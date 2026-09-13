@@ -67,7 +67,7 @@ describe('live demos', () => {
         frames.advance(16)
         seen.add(snapshot())
       }
-      expect(seen.size, demo.id).toBeGreaterThan(1)
+      if (!demo.requiresLayout) expect(seen.size, demo.id).toBeGreaterThan(1)
 
       expect(() => {
         cleanup?.()

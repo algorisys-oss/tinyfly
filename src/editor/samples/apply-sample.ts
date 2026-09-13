@@ -1,4 +1,4 @@
-import type { MotionPathTrack } from '../../engine/types'
+import type { MotionPathTrack, TextTrack, InertiaTrack, Track } from '../../engine/types'
 import type { EditorStore } from '../stores/editor-store'
 import type { SceneStore } from '../stores/scene-store'
 import type { ProjectStore } from '../stores/project-store'
@@ -44,6 +44,28 @@ export function applySample(stores: SampleStores, sample: SampleDefinition): voi
   })
 
   sample.tracks.forEach((track, index) => {
+    const id = `${sample.id}-track-${index}`
+
+    if ('textConfig' in track && track.property === 'text') {
+      const text = track as Omit<TextTrack, 'id'>
+      const first = text.keyframes[0]
+      const last = text.keyframes[text.keyframes.length - 1]
+      store.addTextTrack({
+        target: text.target,
+        textConfig: text.textConfig,
+        startMs: first?.time ?? 0,
+        durationMs: last && first ? last.time - first.time : 1000,
+        easing: last?.easing,
+      })
+      return
+    }
+
+    if ('kind' in track && track.kind === 'inertia') {
+      const inertia = track as Omit<InertiaTrack, 'id'>
+      store.addInertiaTrack({ id, target: inertia.target, property: inertia.property, inertia: inertia.inertia, delay: inertia.delay })
+      return
+    }
+
     if (isMotionPathSampleTrack(track)) {
       const first = track.keyframes[0]
       const last = track.keyframes[track.keyframes.length - 1]
@@ -56,7 +78,7 @@ export function applySample(stores: SampleStores, sample: SampleDefinition): voi
         easing: last?.easing,
       })
     } else {
-      store.addTrack({ id: `${sample.id}-track-${index}`, ...track })
+      store.addTrack({ id, ...(track as Omit<Track, 'id'>) })
     }
   })
 

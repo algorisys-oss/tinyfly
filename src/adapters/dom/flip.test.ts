@@ -156,3 +156,18 @@ describe('flip', () => {
     expect(tracks[0].id.startsWith('reorder-card')).toBe(true)
   })
 })
+
+describe('buildFlipTracks with a size change', () => {
+  it('offsets by centres, so scaling about the centre lands on the old box', () => {
+    const element = { getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }) } as unknown as Element
+    const targets = [{ name: 'card', element }]
+    const before = recordFlipState(targets)
+    ;(element as unknown as { getBoundingClientRect: () => object }).getBoundingClientRect = () => ({ left: 0, top: 0, width: 200, height: 200 })
+    const tracks = buildFlipTracks(before, targets)
+    const first = (property: string) => tracks.find((t) => t.property === property)?.keyframes[0].value
+    // Old centre (50,50); new centre (100,100); half the size.
+    expect(first('x')).toBe(-50)
+    expect(first('y')).toBe(-50)
+    expect(first('scaleX')).toBe(0.5)
+  })
+})

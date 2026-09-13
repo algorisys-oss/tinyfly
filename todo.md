@@ -1201,7 +1201,20 @@ ergonomics, and it had never been published.
         the timeline, inspector. Demos: Throw to Slots, Inertia Carousel,
         Friction. Verified in Chrome: flicks glide and land exactly (0.00px) on
         slots; carousel settles on card boundaries within bounds.
-  - [ ] **Flip on live elements** — `live.flip()` through the shared stage.
+  - [x] **Flip on live elements.** `live.getFlipState` / `live.flipFrom` /
+        `live.flip`: visual box before (transforms included), layout box after
+        (transforms ignored), centre offsets + scale, stagger in document order,
+        `enter` for newly visible elements, and smooth takeover of a running
+        flip. Also fixed the editor `flip()` offsetting by corners (resized
+        elements landed off). Demos: Shuffle Grid, Filter Gallery, Layout
+        Switch, Expand Tile — verified in Chrome: 0.00px jump at the first
+        frame, exact landing, interrupt continuity.
+  - [x] **More samples in the editor library** using the new engine features:
+        Decode Headline, Scramble Countdown, Throw & Settle, Badge Morph, Stats
+        Decode. Samples can now hold text and inertia tracks.
+  - [x] **Fixed:** embed/export HTML omitted `data-element-type="text"`, so an
+        animated text `fill` painted a background box instead of colouring text.
+  - [ ] Flip: `absolute` / `nested` modes (content scales during a resize flip).
   - [x] **More GSAP-style examples** (29 total): Menu Morph, Draw & Follow,
         Orbits, Swipe Cards, Card Flip, Stats Decode — each verified in Chrome
         with measurements (dot 0.05px from drawn tip; planets ≤0.58px from

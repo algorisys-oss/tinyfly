@@ -49,7 +49,7 @@ describe('copied live demo pages run', () => {
         step()
         seen.add(styles())
       }
-      expect(seen.size, demo.id).toBeGreaterThan(1)
+      if (!demo.requiresLayout) expect(seen.size, demo.id).toBeGreaterThan(1)
       stage.destroy()
     })
   }

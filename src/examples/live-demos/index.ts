@@ -28,6 +28,10 @@ import { orbits } from './orbits'
 import { swipeCards } from './swipe-cards'
 import { cardFlip3d } from './card-flip-3d'
 import { statsDecode } from './stats-decode'
+import { flipShuffle } from './flip-shuffle'
+import { flipFilter } from './flip-filter'
+import { flipLayout } from './flip-layout'
+import { flipExpand } from './flip-expand'
 import staggerGridSource from './stagger-grid.js?raw'
 import labelSequenceSource from './label-sequence.js?raw'
 import composedMotionSource from './composed-motion.js?raw'
@@ -57,6 +61,10 @@ import orbitsSource from './orbits.js?raw'
 import swipeCardsSource from './swipe-cards.js?raw'
 import cardFlip3dSource from './card-flip-3d.js?raw'
 import statsDecodeSource from './stats-decode.js?raw'
+import flipShuffleSource from './flip-shuffle.js?raw'
+import flipFilterSource from './flip-filter.js?raw'
+import flipLayoutSource from './flip-layout.js?raw'
+import flipExpandSource from './flip-expand.js?raw'
 
 export type { LiveDemo } from './types'
 
@@ -83,6 +91,10 @@ export function extractCode(source: string): string {
 const withCode = (demo: LiveDemo, source: string): LiveDemoWithCode => ({ ...demo, code: extractCode(source) })
 
 export const liveDemos: LiveDemoWithCode[] = [
+  withCode(flipShuffle, flipShuffleSource),
+  withCode(flipFilter, flipFilterSource),
+  withCode(flipLayout, flipLayoutSource),
+  withCode(flipExpand, flipExpandSource),
   withCode(motionPathAlign, motionPathAlignSource),
   withCode(motionPathPoints, motionPathPointsSource),
   withCode(shapeMorph, shapeMorphSource),

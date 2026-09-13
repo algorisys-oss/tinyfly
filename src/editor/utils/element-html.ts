@@ -111,7 +111,9 @@ export function generateElementHtml(element: SceneElement, indent: string = '  '
 
     case 'text': {
       const text = element as TextElement
-      return `${indent}<div data-tinyfly="${element.name}" style="${style}">${text.text}</div>`
+      // data-element-type tells the DOM adapter that `fill` means text colour
+      // here; without it an animated fill paints the element's background.
+      return `${indent}<div data-tinyfly="${element.name}" data-element-type="text" style="${style}">${text.text}</div>`
     }
 
     case 'image': {

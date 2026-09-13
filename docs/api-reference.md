@@ -1577,6 +1577,20 @@ live.timeline(options?: LiveTimelineOptions)      // chainable .to/.from/.fromTo
 (`new Stage({ scheduler?, root? })`). `stage.tick(ms)` advances it by hand, and
 `stage.destroy()` stops everything on it and releases its elements.
 
+### Flip
+
+```typescript
+live.getFlipState(targets): LiveFlipState
+live.flipFrom(state, { duration?, ease?, stagger?, scale?, targets?, enter?, onComplete? }): LiveTimeline
+live.flip(targets, change: () => void, vars?): LiveTimeline
+```
+
+Measures where elements appear before a layout change (transforms included) and
+where they are laid out after (transforms ignored), then animates each from the
+difference back to rest using centre offsets, plus scale for size changes.
+Newly visible elements get the `enter` animation. A flip that starts while
+another is running takes over each element from where it appears.
+
 ### Browser bundle
 
 `tinyfly/browser` (and `lib/browser/tinyfly.iife.js` for `<script>` tags, global

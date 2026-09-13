@@ -93,7 +93,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Resizable preview** - Drag the splitter between the preview and the timeline to resize (double-click to reset)
 - **Stroke write-on** - Animate a path's stroke drawing itself on (DOM + SVG renderers); one-click "Write On" preset
 - **Embed code** - Generate copy-paste code for websites (single scene or full sequence)
-- **Examples** - One page (`/examples`, the **Examples** toolbar button) for every ready-made animation: editable examples open in the editor as a new project, code examples show their timeline JSON and HTML to copy. Includes a **GSAP-style** section of 29 runnable `live.to()` demos (motion paths, orbits, shape and menu morphs, scramble text, draggable throws, swipe cards, 3D card flips, magnetic button, proximity grid, marquee, split text, SVG draw…), and every card has **Copy code** for a complete standalone HTML page. Hover-to-play previews, search, and filters for kind and category (GSAP-style, Showcase, Basics, Motion, Text, UI, Loaders, Effects, Data, Camera, Scroll, and **Algorisys** product demos)
+- **Examples** - One page (`/examples`, the **Examples** toolbar button) for every ready-made animation: editable examples open in the editor as a new project, code examples show their timeline JSON and HTML to copy. Includes a **GSAP-style** section of 33 runnable `live.to()` demos (Flip layouts, motion paths, orbits, shape and menu morphs, scramble text, draggable throws, swipe cards, 3D card flips, magnetic button, proximity grid, marquee, split text, SVG draw…), and every card has **Copy code** for a complete standalone HTML page. Hover-to-play previews, search, and filters for kind and category (GSAP-style, Showcase, Basics, Motion, Text, UI, Loaders, Effects, Data, Camera, Scroll, and **Algorisys** product demos)
 
 ## Documentation
 
@@ -448,6 +448,8 @@ timeline.addTrack({
   spring: { from: 0, to: 1, stiffness: 200, damping: 12 },
 })
 ```
+
+**Flip**: `live.flip('.item', () => reorder())` animates any layout change — reorders, class toggles, filters, resizes — from where elements were to where they land, and interrupts smoothly.
 
 **Inertia and dragging**: throw elements with `live.draggable(el, { bounds, inertia: { end: slots } })` or the `inertia` tween option. Friction is exact closed-form decay, snapping lands precisely, and it all serializes like any track.
 

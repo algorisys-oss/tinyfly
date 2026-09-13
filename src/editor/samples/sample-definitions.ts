@@ -1,8 +1,9 @@
 import type { SceneElement } from '../stores/scene-store'
-import type { Track, MotionPathTrack } from '../../engine/types'
+import type { Track, MotionPathTrack, TextTrack, InertiaTrack } from '../../engine/types'
+import { engineFeatureSamples } from './engine-feature-samples'
 
 /** Track without ID for sample definitions */
-type SampleTrack = Omit<Track, 'id'> | Omit<MotionPathTrack, 'id'>
+export type SampleTrack = Omit<Track, 'id'> | Omit<MotionPathTrack, 'id'> | Omit<TextTrack, 'id'> | Omit<InertiaTrack, 'id'>
 
 /**
  * Sample animation definition
@@ -2181,6 +2182,7 @@ export const sampleDefinitions: SampleDefinition[] = [
       { target: 'Core', property: 'scale', keyframes: [{ time: 700, value: 0 }, { time: 1200, value: 1, easing: 'ease-out' }] },
     ],
   },
+  ...engineFeatureSamples,
 ]
 
 /**
