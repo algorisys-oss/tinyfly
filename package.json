@@ -1,6 +1,6 @@
 {
   "name": "tinyfly",
-  "version": "0.54.0",
+  "version": "0.54.1",
   "type": "module",
   "description": "Lightweight, API-driven animation engine and editor. The engine is framework-agnostic and runs in browsers, Web Workers, and Node.",
   "license": "MIT",
@@ -89,6 +89,7 @@
     "@solidjs/router": "^0.15.4",
     "@types/node": "^24.10.1",
     "happy-dom": "^20.5.0",
+    "playwright-core": "1.62.1",
     "solid-js": "^1.9.10",
     "typescript": "~5.9.3",
     "vite": "^7.2.4",

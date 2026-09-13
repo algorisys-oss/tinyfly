@@ -2,6 +2,7 @@ import type { AnimationState, AnimatableValue } from '../../engine/types'
 import { FILTER_PROPERTIES, composeFilter, type FilterValues } from '../filter-utils'
 import { shineStops } from '../shine-utils'
 import { setTextContent } from '../text-content'
+import { ensureSvgTransformBox } from '../svg-transform-box'
 
 const SVG_NS = 'http://www.w3.org/2000/svg'
 
@@ -154,6 +155,7 @@ export class SVGAdapter {
     if (Object.keys(transforms).length > 0) {
       const transformString = this.buildCssTransformString(transforms)
       ;(element as SVGElement & { style: CSSStyleDeclaration }).style.transform = transformString
+      ensureSvgTransformBox(element)
     }
 
     // Apply transform-origin. SVG defaults its origin to the user-space origin

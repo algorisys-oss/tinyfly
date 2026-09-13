@@ -13,13 +13,13 @@ function z(e) {
 function Be(e) {
   return e.property === "motionPath" && "motionPathConfig" in e;
 }
-function er(e) {
+function nr(e) {
   return typeof e == "object" && e !== null && "x" in e && "y" in e && "angle" in e;
 }
 function vn(e) {
   return "keyframes" in e;
 }
-class nr {
+class ir {
   _currentTime = 0;
   _isRunning = !1;
   onTick = null;
@@ -45,7 +45,7 @@ class nr {
     this._currentTime = t;
   }
 }
-class ir {
+class sr {
   _currentTime = 0;
   _isRunning = !1;
   _lastFrameTime = null;
@@ -210,17 +210,17 @@ class St {
     this.samples.length > mt && (this.settledStep = mt);
   }
 }
-function sr(e, t) {
+function rr(e, t) {
   return new St(e).valueAt(t);
 }
-function rr(e) {
+function or(e) {
   return new St(e).settleTime();
 }
-function or(e) {
+function ar(e) {
   const t = e.stiffness ?? R.stiffness, n = e.damping ?? R.damping, i = e.mass ?? R.mass;
   return n < 2 * Math.sqrt(t * i);
 }
-function ar(e) {
+function cr(e) {
   const t = e.stiffness ?? R.stiffness, n = e.mass ?? R.mass;
   return 2 * Math.sqrt(t * n);
 }
@@ -254,18 +254,18 @@ function ht(e) {
   const i = Math.log(t / n) / At(e);
   return Math.min(kn, i * 1e3);
 }
-function Ot(e, t) {
+function Yt(e, t) {
   if (t <= 0) return e.from;
   const n = lt(e);
   if (t >= ht(e)) return n;
   const i = At(e);
   return e.from + (n - e.from) * (1 - Math.exp(-i * t / 1e3));
 }
-function cr(e, t) {
+function lr(e, t) {
   const n = At(e), i = lt(e);
   return t >= ht(e) ? 0 : (i - e.from) * n * Math.exp(-n * Math.max(0, t) / 1e3);
 }
-const Re = (e) => e, Pn = (e) => e * e, _n = (e) => 1 - (1 - e) * (1 - e), Cn = (e) => e < 0.5 ? 2 * e * e : 1 - Math.pow(-2 * e + 2, 2) / 2, De = (e) => e * e * e, Xe = (e) => 1 - Math.pow(1 - e, 3), Ye = (e) => e < 0.5 ? 4 * e * e * e : 1 - Math.pow(-2 * e + 2, 3) / 2, $n = De, Bn = Xe, In = Ye, Ln = {
+const Re = (e) => e, Pn = (e) => e * e, _n = (e) => 1 - (1 - e) * (1 - e), Cn = (e) => e < 0.5 ? 2 * e * e : 1 - Math.pow(-2 * e + 2, 2) / 2, De = (e) => e * e * e, Xe = (e) => 1 - Math.pow(1 - e, 3), Oe = (e) => e < 0.5 ? 4 * e * e * e : 1 - Math.pow(-2 * e + 2, 3) / 2, $n = De, Bn = Xe, In = Oe, Ln = {
   linear: Re,
   "ease-in": $n,
   "ease-out": Bn,
@@ -275,7 +275,7 @@ const Re = (e) => e, Pn = (e) => e * e, _n = (e) => 1 - (1 - e) * (1 - e), Cn = 
   "ease-in-out-quad": Cn,
   "ease-in-cubic": De,
   "ease-out-cubic": Xe,
-  "ease-in-out-cubic": Ye
+  "ease-in-out-cubic": Oe
 };
 function Fn(e) {
   const [t, n, i, s] = e, r = 3 * t, a = 3 * (i - t) - r, c = 1 - r - a, l = 3 * n, o = 3 * (s - n) - l, u = 1 - l - o, f = (p) => ((c * p + a) * p + r) * p, h = (p) => ((u * p + o) * p + l) * p, d = (p) => (3 * c * p + 2 * a) * p + r, m = (p) => {
@@ -305,10 +305,10 @@ function Fn(e) {
     return h(g);
   };
 }
-function Oe(e) {
+function Ye(e) {
   return e === void 0 ? Re : Wt(e) ? Fn(e.points) : Ln[e];
 }
-const ee = 32, Rn = 256, G = /* @__PURE__ */ new Map(), Dn = /[MmLlHhVvCcSsQqTtAaZz]/, Xn = /^[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/, Yn = {
+const ee = 32, Rn = 256, G = /* @__PURE__ */ new Map(), Dn = /[MmLlHhVvCcSsQqTtAaZz]/, Xn = /^[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/, On = {
   M: 2,
   L: 2,
   H: 1,
@@ -320,7 +320,7 @@ const ee = 32, Rn = 256, G = /* @__PURE__ */ new Map(), Dn = /[MmLlHhVvCcSsQqTtA
   A: 7,
   Z: 0
 };
-function On(e) {
+function Yn(e) {
   const t = [];
   let n = 0, i = null;
   const s = () => {
@@ -420,8 +420,8 @@ function st(e) {
   const u = /* @__PURE__ */ new Set(), f = (p) => {
     o < 0 && (o = 0), p.subpath = o, n.push(p);
   };
-  for (const { type: p, args: g } of On(e)) {
-    const y = p.toUpperCase(), v = p !== y, T = Yn[y];
+  for (const { type: p, args: g } of Yn(e)) {
+    const y = p.toUpperCase(), v = p !== y, T = On[y];
     if (y === "Z") {
       (i !== r || s !== a) && f(tt(i, s, r, a)), o >= 0 && u.add(o), i = r, s = a, c = l = null;
       continue;
@@ -540,13 +540,13 @@ function Un(e, t) {
   const { segments: n, totalLength: i } = st(e);
   return qe(n, Math.max(0, Math.min(1, t)) * i);
 }
-function lr() {
+function hr() {
   G.clear();
 }
-function hr(e) {
+function ur(e) {
   return st(e).totalLength;
 }
-const Wn = 24, zn = 320, Hn = 2.5, et = 72, ur = 64, Gn = 128, j = /* @__PURE__ */ new Map(), ie = (e) => Math.round(e * 100) / 100;
+const Wn = 24, zn = 320, Hn = 2.5, et = 72, fr = 64, Gn = 128, j = /* @__PURE__ */ new Map(), ie = (e) => Math.round(e * 100) / 100;
 function se(e, t) {
   const { segments: n, subpaths: i, totalLength: s } = st(e);
   if (n.length === 0) return [];
@@ -645,13 +645,13 @@ function ti(e, t, n, i = {}) {
   }
   return a;
 }
-function fr() {
+function dr() {
   j.clear();
 }
 function ut(e) {
   return /^\s*[Mm]\s*[-+]?(?:\d|\.\d)/.test(e);
 }
-const O = (e, t, n) => e + (t - e) * n, Ne = 512, Et = /* @__PURE__ */ new Map(), Pt = /* @__PURE__ */ new Map();
+const Y = (e, t, n) => e + (t - e) * n, Ne = 512, Et = /* @__PURE__ */ new Map(), Pt = /* @__PURE__ */ new Map();
 function ce(e) {
   const t = Et.get(e);
   if (t) return t;
@@ -677,13 +677,13 @@ function fe(e) {
 }
 const ii = (e, t, n) => {
   if (le(e) && le(t)) {
-    const [i, s, r] = ce(e), [a, c, l] = ce(t), o = O(i, a, n), u = O(s, c, n), f = O(r, l, n);
+    const [i, s, r] = ce(e), [a, c, l] = ce(t), o = Y(i, a, n), u = Y(s, c, n), f = Y(r, l, n);
     return ni(o, u, f);
   }
   if ((he(e) || ue(e)) && (he(t) || ue(t))) {
-    const i = fe(e), s = fe(t), r = Math.round(O(i[0], s[0], n)), a = Math.round(O(i[1], s[1], n)), c = Math.round(O(i[2], s[2], n));
+    const i = fe(e), s = fe(t), r = Math.round(Y(i[0], s[0], n)), a = Math.round(Y(i[1], s[1], n)), c = Math.round(Y(i[2], s[2], n));
     if (i.length === 4 || s.length === 4) {
-      const l = i[3] ?? 1, o = s[3] ?? 1, u = O(l, o, n);
+      const l = i[3] ?? 1, o = s[3] ?? 1, u = Y(l, o, n);
       return `rgba(${r}, ${a}, ${c}, ${u})`;
     }
     return `rgb(${r}, ${a}, ${c})`;
@@ -692,11 +692,11 @@ const ii = (e, t, n) => {
 }, si = (e, t, n) => {
   const i = Math.min(e.length, t.length), s = [];
   for (let r = 0; r < i; r++)
-    s.push(O(e[r], t[r], n));
+    s.push(Y(e[r], t[r], n));
   return s;
 }, de = (e, t, n) => n < 1 ? e : t, ri = (e, t, n) => ti(e, t, n);
 function Ve(e) {
-  return typeof e == "number" ? O : Array.isArray(e) ? si : typeof e == "string" ? e.startsWith("#") || e.startsWith("rgb") ? ii : ut(e) ? ri : de : de;
+  return typeof e == "number" ? Y : Array.isArray(e) ? si : typeof e == "string" ? e.startsWith("#") || e.startsWith("rgb") ? ii : ut(e) ? ri : de : de;
 }
 const Ue = 1e3 / 60;
 function We(e, t = {}) {
@@ -711,7 +711,7 @@ function ze(e, t = {}) {
   const n = e.inertia;
   return He(
     e,
-    (i) => Ot(n, i),
+    (i) => Yt(n, i),
     ht(n),
     n.from,
     lt(n),
@@ -733,7 +733,7 @@ function He(e, t, n, i, s, r) {
   };
 }
 function oi(e, t, n, i = {}) {
-  const s = i.intervalMs ?? Ue, r = typeof n == "function" ? n : Oe(n), a = Ve(e.value), c = t.time - e.time;
+  const s = i.intervalMs ?? Ue, r = typeof n == "function" ? n : Ye(n), a = Ve(e.value), c = t.time - e.time;
   if (c <= 0) return [t];
   const l = [];
   for (let o = s; o < c; o += s) {
@@ -746,7 +746,7 @@ function oi(e, t, n, i = {}) {
   }
   return l.push({ ...t, easing: "linear" }), l;
 }
-function dr(e, t) {
+function pr(e, t) {
   return z(e) ? We(e, t) : W(e) ? ze(e, t) : e;
 }
 function Ge(e, t) {
@@ -840,7 +840,7 @@ class Ct {
       return;
     if (i.time === t)
       return i.value;
-    const r = s.time - i.time, a = (t - i.time) / r, l = Oe(s.easing)(a);
+    const r = s.time - i.time, a = (t - i.time) / r, l = Ye(s.easing)(a);
     return Ve(i.value)(i.value, s.value, l);
   }
   /**
@@ -889,13 +889,13 @@ class li {
     this.track = t, this.targets = V(t), this.duration = ht(t.inertia);
   }
   getValueAtTime(t) {
-    return Ot(this.track.inertia, t - Q(0, this.targets.length, this.track.delay, this.track.stagger));
+    return Yt(this.track.inertia, t - Q(0, this.targets.length, this.track.delay, this.track.stagger));
   }
   getTargetValues(t) {
     const n = this.targets.length, i = [];
     for (let s = 0; s < n; s++) {
       const r = Q(s, n, this.track.delay, this.track.stagger);
-      i.push({ target: this.targets[s], value: Ot(this.track.inertia, t - r), start: r });
+      i.push({ target: this.targets[s], value: Yt(this.track.inertia, t - r), start: r });
     }
     return i;
   }
@@ -918,7 +918,7 @@ function je(e, t) {
   }
   return e.autoRotate && e.rotateOffset && (n.angle += e.rotateOffset), n;
 }
-function pr(e, t, n, i) {
+function mr(e, t, n, i) {
   const s = t + (n - t) * i;
   return je(e, s);
 }
@@ -1339,34 +1339,34 @@ function pi(e) {
     property: e.property,
     kind: "inertia",
     inertia: Ze(e.inertia),
-    ...Y(e)
+    ...O(e)
   } : z(e) ? {
     id: e.id,
     target: e.target,
     property: e.property,
     kind: "spring",
     spring: { ...e.spring },
-    ...Y(e)
+    ...O(e)
   } : ct(e) ? {
     id: e.id,
     target: e.target,
     property: "text",
     textConfig: { ...e.textConfig },
     keyframes: e.keyframes.map(Bt),
-    ...Y(e)
+    ...O(e)
   } : Be(e) ? {
     id: e.id,
     target: e.target,
     property: "motionPath",
     motionPathConfig: { ...e.motionPathConfig },
     keyframes: e.keyframes.map(Bt),
-    ...Y(e)
+    ...O(e)
   } : {
     id: e.id,
     target: e.target,
     property: e.property,
     keyframes: e.keyframes.map(Bt),
-    ...Y(e)
+    ...O(e)
   };
 }
 function Ze(e) {
@@ -1379,7 +1379,7 @@ function Bt(e) {
     ...e.easing && { easing: e.easing }
   };
 }
-function Y(e) {
+function O(e) {
   const t = e.endDelay;
   return {
     ...e.delay !== void 0 && { delay: e.delay },
@@ -1397,7 +1397,7 @@ function mi(e) {
       property: t.property,
       kind: "inertia",
       inertia: Ze(t.inertia),
-      ...Y(t)
+      ...O(t)
     };
   }
   if (z(e)) {
@@ -1408,7 +1408,7 @@ function mi(e) {
       property: t.property,
       kind: "spring",
       spring: { ...t.spring },
-      ...Y(t)
+      ...O(t)
     };
   }
   if (ct(e)) {
@@ -1419,7 +1419,7 @@ function mi(e) {
       property: "text",
       textConfig: { ...t.textConfig },
       keyframes: [...t.keyframes].sort((n, i) => n.time - i.time),
-      ...Y(t)
+      ...O(t)
     };
   }
   if (e.property === "motionPath" && "motionPathConfig" in e) {
@@ -1430,7 +1430,7 @@ function mi(e) {
       property: "motionPath",
       motionPathConfig: { ...t.motionPathConfig },
       keyframes: n,
-      ...Y(t)
+      ...O(t)
     };
   }
   return Nt({
@@ -1438,7 +1438,7 @@ function mi(e) {
     target: e.target,
     property: e.property,
     keyframes: e.keyframes,
-    ...Y(e)
+    ...O(e)
   });
 }
 function gi(e) {
@@ -1463,10 +1463,10 @@ function rt(e) {
     tracks: e.tracks.map(mi)
   });
 }
-function mr(e) {
+function gr(e) {
   return JSON.stringify(gi(e));
 }
-function gr(e) {
+function yr(e) {
   const t = JSON.parse(e);
   return rt(t);
 }
@@ -1588,7 +1588,7 @@ function Pi(e, t, n, i, s) {
   const r = s.minify ? "" : " ", a = (t / 1e3).toFixed(2), c = bi(Ei(n)), l = i.loop === -1 ? "infinite" : i.loop ? i.loop + 1 : 1, o = i.alternate ? "alternate" : "normal";
   return `animation:${r}${e} ${a}s ${c} ${l} ${o}`;
 }
-function yr(e, t = {}) {
+function br(e, t = {}) {
   const {
     classPrefix: n = "tinyfly",
     includeKeyframes: i = !0,
@@ -1852,7 +1852,7 @@ function Ii(e, t = {}) {
     layers: o
   };
 }
-function br(e, t = {}) {
+function Tr(e, t = {}) {
   return JSON.stringify(Ii(e, t));
 }
 const vt = 5, K = 1 << vt * 3, Lt = 8 - vt;
@@ -2119,8 +2119,8 @@ class tn {
     return new Blob([t.slice()], { type: "image/gif" });
   }
 }
-const Tr = tn;
-function wr(e, t) {
+const wr = tn;
+function vr(e, t) {
   const { width: n, height: i, frameRate: s = 30, backgroundColor: r, renderFrame: a } = t, c = document.createElement("canvas");
   c.width = n, c.height = i;
   const l = c.getContext("2d");
@@ -2139,7 +2139,7 @@ function wr(e, t) {
   }
   return { frames: h, duration: o, frameCount: h.length };
 }
-async function vr(e, t) {
+async function xr(e, t) {
   const {
     width: n,
     height: i,
@@ -2171,7 +2171,7 @@ async function vr(e, t) {
   }
   return m.encode();
 }
-function xr(e, t = "animation.gif") {
+function Mr(e, t = "animation.gif") {
   const n = URL.createObjectURL(e), i = document.createElement("a");
   i.href = n, i.download = t, document.body.appendChild(i), i.click(), document.body.removeChild(i), URL.revokeObjectURL(n);
 }
@@ -2182,7 +2182,7 @@ function Ft(e, t) {
 function pe(e, t) {
   return (e[t] | e[t + 1] << 8 | e[t + 2] << 16 | e[t + 3] << 24) >>> 0;
 }
-function Yi(e) {
+function Oi(e) {
   if (e.length < 12 || Ft(e, 0) !== "RIFF" || Ft(e, 8) !== "WEBP")
     throw new Error("Not a WebP file — the browser may not support canvas WebP encoding");
   let t = null, n = null, i = 0, s = 0, r = !1, a = 12;
@@ -2203,7 +2203,7 @@ function Yi(e) {
   if (!t) throw new Error("WebP file contained no VP8 or VP8L image data");
   return { image: t, alpha: n, width: i, height: s, hasAlpha: r };
 }
-class Oi {
+class Yi {
   loops;
   background;
   frames = [];
@@ -2222,7 +2222,7 @@ class Oi {
    * @param durationMs How long the frame is shown, in milliseconds.
    */
   addFrame(t, n) {
-    const i = Yi(t);
+    const i = Oi(t);
     i.hasAlpha && (this.hasAlpha = !0), this.frames.push({ bitstream: i, durationMs: n });
   }
   /** Assemble the animated WebP byte stream. */
@@ -2269,7 +2269,7 @@ function Ni(e, t) {
     );
   });
 }
-async function Mr(e, t) {
+async function Sr(e, t) {
   const {
     width: n,
     height: i,
@@ -2289,7 +2289,7 @@ async function Mr(e, t) {
   f.width = n, f.height = i;
   const h = f.getContext("2d");
   if (!h) throw new Error("Failed to get canvas 2D context");
-  const d = new Oi(n, i, { loops: r }), m = e.duration, p = 1e3 / s, g = Math.max(1, Math.round(m / p));
+  const d = new Yi(n, i, { loops: r }), m = e.duration, p = 1e3 / s, g = Math.max(1, Math.round(m / p));
   for (let y = 0; y < g; y++) {
     if (u?.aborted) throw new Error("Export aborted");
     const v = Math.min(y * p, m);
@@ -2299,7 +2299,7 @@ async function Mr(e, t) {
   }
   return d.encode();
 }
-function Sr(e, t = "animation.webp") {
+function Ar(e, t = "animation.webp") {
   const n = URL.createObjectURL(e), i = document.createElement("a");
   i.href = n, i.download = t, document.body.appendChild(i), i.click(), i.remove(), setTimeout(() => URL.revokeObjectURL(n), 1e3);
 }
@@ -2497,7 +2497,7 @@ const Hi = [
 function Ht() {
   return typeof MediaRecorder > "u" || typeof MediaRecorder.isTypeSupported != "function" ? [] : Hi.filter((e) => MediaRecorder.isTypeSupported(e.mimeType));
 }
-function Ar() {
+function kr() {
   return typeof document > "u" ? !1 : at() || Ht().length > 0;
 }
 const nn = "mp4-webcodecs";
@@ -2549,7 +2549,7 @@ async function ji(e) {
   }
   return await p, new Blob(m, { type: c });
 }
-async function kr(e) {
+async function Er(e) {
   const t = Gi();
   if (t.length === 0)
     throw new Error("This browser cannot export video");
@@ -2566,11 +2566,11 @@ async function kr(e) {
     signal: e.signal
   }), extension: n.extension } : { blob: await ji({ ...e, mimeType: n.id }), extension: n.extension };
 }
-function Er(e, t = "animation.webm") {
+function Pr(e, t = "animation.webm") {
   const n = URL.createObjectURL(e), i = document.createElement("a");
   i.href = n, i.download = t, document.body.appendChild(i), i.click(), i.remove(), setTimeout(() => URL.revokeObjectURL(n), 1e3);
 }
-function Pr(e, t, n, i = 8) {
+function _r(e, t, n, i = 8) {
   const s = Math.max(1, Math.floor(e)), r = Math.max(1, Math.min(Math.floor(i) || 1, s)), a = Math.ceil(s / r);
   return {
     frames: s,
@@ -2582,16 +2582,16 @@ function Pr(e, t, n, i = 8) {
     sheetHeight: a * n
   };
 }
-function _r(e, t) {
+function Cr(e, t) {
   const n = e % t.columns, i = Math.floor(e / t.columns);
   return { index: e, col: n, row: i, x: n * t.frameWidth, y: i * t.frameHeight };
 }
-function Cr(e, t) {
+function $r(e, t) {
   const n = Math.max(1, Math.floor(e)), i = [];
   for (let s = 0; s < n; s++) i.push(s / n * t);
   return i;
 }
-function $r(e, t, n) {
+function Br(e, t, n) {
   return {
     frameWidth: e.frameWidth,
     frameHeight: e.frameHeight,
@@ -2602,7 +2602,7 @@ function $r(e, t, n) {
     durationMs: n
   };
 }
-function Br(e) {
+function Ir(e) {
   let t = 2166136261;
   for (let n = 0; n < e.length; n++)
     t ^= e.charCodeAt(n), t = Math.imul(t, 16777619);
@@ -2625,12 +2625,12 @@ function Zi(e, t, n, i) {
   const s = Math.floor((n - t) / i), r = Math.round(e.next() * s);
   return t + r * i;
 }
-function Ir(e, t) {
+function Lr(e, t) {
   if (t.length !== 0)
     return t[Math.floor(e.next() * t.length)];
 }
 const rn = /^([+\-*/])=\s*(-?[\d.]+)$/, on = /^random\(\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*(?:,\s*(-?[\d.]+)\s*)?\)$/i;
-function Lr(e) {
+function Fr(e) {
   return typeof e != "string" ? !1 : rn.test(e.trim()) || on.test(e.trim());
 }
 function an(e, t = {}) {
@@ -2669,7 +2669,7 @@ function Qi(e, t = 0, n) {
   }
   return i;
 }
-class Fr {
+class Rr {
   random;
   constructor(t) {
     this.random = Ki(t);
@@ -3314,6 +3314,11 @@ function vs(e, t) {
   }
   e.textContent !== t && (e.textContent = t);
 }
+function xs(e) {
+  if (!("ownerSVGElement" in e)) return;
+  const t = e.style;
+  !t || t.transformBox || (t.transformBox = "fill-box", t.transformOrigin || (t.transformOrigin = "50% 50%"));
+}
 const Te = /* @__PURE__ */ new Set([
   "width",
   "height",
@@ -3340,7 +3345,7 @@ const Te = /* @__PURE__ */ new Set([
   "gap",
   "rowGap",
   "columnGap"
-]), xs = /* @__PURE__ */ new Set([
+]), Ms = /* @__PURE__ */ new Set([
   "x",
   "y",
   "z",
@@ -3358,7 +3363,7 @@ const Te = /* @__PURE__ */ new Set([
   "motionPathX",
   "motionPathY",
   "motionPathRotate"
-]), Ms = /* @__PURE__ */ new Set(["originX", "originY"]), Ss = /* @__PURE__ */ new Set(["clipTop", "clipRight", "clipBottom", "clipLeft"]), As = {
+]), Ss = /* @__PURE__ */ new Set(["originX", "originY"]), As = /* @__PURE__ */ new Set(["clipTop", "clipRight", "clipBottom", "clipLeft"]), ks = {
   fill: "backgroundColor",
   stroke: "borderColor",
   strokeWidth: "borderWidth",
@@ -3410,12 +3415,12 @@ class U {
     const c = n.has("motionPathX"), l = n.has("motionPathY"), o = n.has("motionPathRotate");
     for (const [h, d] of n)
       if (!(h === "x" && c) && !(h === "y" && l) && !((h === "rotate" || h === "rotateZ") && o)) {
-        if (xs.has(h)) {
+        if (Ms.has(h)) {
           const m = this.buildTransformPart(h, d);
           m && i.push(m);
-        } else if (Ms.has(h))
+        } else if (Ss.has(h))
           typeof d == "number" && ((s ??= {})[h] = d);
-        else if (Ss.has(h))
+        else if (As.has(h))
           typeof d == "number" && ((r ??= {})[h] = d);
         else if (ys.has(h))
           (a ??= {})[h] = d;
@@ -3432,7 +3437,7 @@ class U {
     const u = n.get("shine");
     typeof u == "number" && this.applyShine(t, u);
     const f = n.get("perspective");
-    if (typeof f == "number" && i.unshift(`perspective(${f}px)`), i.length > 0 && (t.style.transform = i.join(" ")), s) {
+    if (typeof f == "number" && i.unshift(`perspective(${f}px)`), i.length > 0 && (t.style.transform = i.join(" "), xs(t)), s) {
       const h = s.originX ?? 50, d = s.originY ?? 50;
       t.style.transformOrigin = `${h}% ${d}%`;
     }
@@ -3501,16 +3506,16 @@ class U {
    */
   applyStyleProperty(t, n, i) {
     let s;
-    n === "fill" && t.dataset.elementType === "text" ? s = "color" : s = As[n] ?? n;
+    n === "fill" && t.dataset.elementType === "text" ? s = "color" : s = ks[n] ?? n;
     let r;
     typeof i == "number" ? Te.has(n) || Te.has(s) ? r = `${i}px` : r = String(i) : Array.isArray(i) ? r = i.join(", ") : r = i, t.style[s] = r;
   }
 }
-const ks = {
+const Es = {
   request: (e) => requestAnimationFrame(e),
   cancel: (e) => cancelAnimationFrame(e)
 };
-class Es {
+class Ps {
   adapter = new U();
   scheduler;
   rootOption;
@@ -3528,7 +3533,7 @@ class Es {
   lastTimestamp = null;
   destroyed = !1;
   constructor(t = {}) {
-    this.scheduler = t.scheduler ?? ks, this.rootOption = t.root;
+    this.scheduler = t.scheduler ?? Es, this.rootOption = t.root;
   }
   // --- targets ------------------------------------------------------------
   /**
@@ -3645,7 +3650,7 @@ class Es {
   elementsOf(t) {
     if (typeof t == "string")
       return Array.from(this.root.querySelectorAll(t));
-    if (Ps(t)) return [t];
+    if (_s(t)) return [t];
     const n = [];
     for (const i of Array.from(t))
       n.push(...this.elementsOf(i));
@@ -3662,7 +3667,7 @@ class Es {
     return this.names.set(t, i), this.elements.set(i, t), this.adapter.registerTarget(i, t), i;
   }
 }
-function Ps(e) {
+function _s(e) {
   return typeof e == "object" && e !== null && e.nodeType === 1;
 }
 function xt(e) {
@@ -3674,18 +3679,18 @@ function xt(e) {
   return t.transform = n, i;
 }
 const we = (e) => typeof e == "object" && e !== null && e.nodeType === 1;
-function _s(e) {
+function Cs(e) {
   const t = {};
   for (const n of Array.from(e.attributes)) t[n.name] = n.value;
   return t;
 }
-function Cs(e) {
+function $s(e) {
   const t = e.getScreenCTM?.();
   if (t) return [t.a, t.b, t.c, t.d, t.e, t.f];
   const n = e.getBoundingClientRect();
   return [1, 0, 0, 1, n.left, n.top];
 }
-function $s(e, t) {
+function Bs(e, t) {
   const n = typeof e == "string" || Array.isArray(e) || we(e) ? { path: e } : e, { align: i, alignOrigin: s, path: r, ...a } = n, c = (M) => {
     const x = we(M) ? M : t.query(M);
     return x || t.warn(`gsap-compat: motionPath could not find "${String(M)}"`), x;
@@ -3695,7 +3700,7 @@ function $s(e, t) {
     o = r;
   else {
     l = c(r);
-    const M = l && Gt({ tag: l.localName, attributes: _s(l) });
+    const M = l && Gt({ tag: l.localName, attributes: Cs(l) });
     l && !M && t.warn(`gsap-compat: motionPath element <${l.localName}> has no path geometry`), o = M ?? "";
   }
   const u = { ...a, path: o };
@@ -3705,7 +3710,7 @@ function $s(e, t) {
     return i === !0 && t.warn("gsap-compat: motionPath align: true needs the path to be an element"), u;
   const h = t.targets[0];
   if (!h) return u;
-  const [d, m, p, g, y, v] = Cs(f), T = xt(h), [w, b] = s ?? [0.5, 0.5];
+  const [d, m, p, g, y, v] = $s(f), T = xt(h), [w, b] = s ?? [0.5, 0.5];
   for (const M of t.targets.slice(1)) {
     const x = xt(M);
     if (Math.abs(x.left - T.left) > 0.5 || Math.abs(x.top - T.top) > 0.5) {
@@ -3726,26 +3731,26 @@ function pn(e) {
   const t = Gt({ tag: e.localName, attributes: dn(e) });
   return t || (e.querySelector("path")?.getAttribute("d") ?? null);
 }
-function Bs(e, t, n) {
+function Is(e, t, n) {
   const i = hn(e);
   if (typeof i == "string" && ut(i)) return i;
   const s = fn(i) ? i : typeof i == "string" ? t(i) : null, r = pn(s);
   return r || (n(`gsap-compat: morphSVG could not find a shape for "${String(i)}"`), "");
 }
-const Is = /* @__PURE__ */ new Set(["cx", "cy", "r", "rx", "ry", "x", "y", "width", "height", "x1", "y1", "x2", "y2", "points"]);
-function Ls(e, t = document) {
+const Ls = /* @__PURE__ */ new Set(["cx", "cy", "r", "rx", "ry", "x", "y", "width", "height", "x1", "y1", "x2", "y2", "points"]);
+function Fs(e, t = document) {
   return (typeof e == "string" ? Array.from(t.querySelectorAll(e)) : fn(e) ? [e] : Array.from(e)).map((i) => {
     if (i.localName === "path") return i;
     const s = Gt({ tag: i.localName, attributes: dn(i) });
     if (!s || !i.parentNode) return i;
     const r = i.ownerDocument.createElementNS("http://www.w3.org/2000/svg", "path");
     for (const a of Array.from(i.attributes))
-      Is.has(a.name) || r.setAttribute(a.name, a.value);
+      Ls.has(a.name) || r.setAttribute(a.name, a.value);
     return r.setAttribute("d", s), i.parentNode.replaceChild(r, i), r;
   });
 }
 const ve = 0.3;
-class Fs {
+class Rs {
   options;
   target;
   running = !1;
@@ -3854,7 +3859,7 @@ class Fs {
 function xe() {
   return typeof performance < "u" ? performance.now() : Date.now();
 }
-function Rs(e, t, n) {
+function Ds(e, t, n) {
   let i = { delta: 0, line: null }, s = n;
   for (const r of e)
     for (const a of t) {
@@ -3863,7 +3868,7 @@ function Rs(e, t, n) {
     }
   return i;
 }
-function Ds(e, t) {
+function Xs(e, t) {
   return t <= 0 ? [] : e.map((n) => Math.round(n / t) * t);
 }
 class mn {
@@ -3878,7 +3883,7 @@ class mn {
   snappedX = null;
   snappedY = null;
   constructor(t) {
-    this.options = t, this.x = t.initialX ?? 0, this.y = t.initialY ?? 0, this.observer = new Fs({
+    this.options = t, this.x = t.initialX ?? 0, this.y = t.initialY ?? 0, this.observer = new Rs({
       target: t.target,
       onPress: (n) => {
         const i = t.getPosition?.();
@@ -3931,7 +3936,7 @@ class mn {
     if (n <= 0) return;
     const i = this.options.scrubDistance ?? 500;
     if (i === 0) return;
-    const s = (this.options.axis ?? "both") === "y" ? this.y : this.x, r = Xs(s / i);
+    const s = (this.options.axis ?? "both") === "y" ? this.y : this.x, r = Os(s / i);
     t.pause(), t.seek(r * n);
   }
   /**
@@ -3944,9 +3949,9 @@ class mn {
   applyConstraints(t, n) {
     let i = t;
     const s = [
-      ...Ds([i], this.options.snap ?? 0),
+      ...Xs([i], this.options.snap ?? 0),
       ...(n === "x" ? this.options.snapLinesX : this.options.snapLinesY) ?? []
-    ], r = Rs([i], s, this.snapThreshold());
+    ], r = Ds([i], s, this.snapThreshold());
     i += r.delta, n === "x" ? this.snappedX = r.line : this.snappedY = r.line;
     const a = this.options.bounds;
     if (a) {
@@ -3956,10 +3961,10 @@ class mn {
     return i;
   }
 }
-function Xs(e) {
+function Os(e) {
   return e < 0 ? 0 : e > 1 ? 1 : e;
 }
-function Rr(e) {
+function Dr(e) {
   const t = new mn(e);
   return t.start(), t;
 }
@@ -3976,7 +3981,7 @@ function Se(e, t) {
 function Ae(e) {
   return Array.isArray(e) ? [...e] : e;
 }
-function Os(e, t, n, i = {}) {
+function qs(e, t, n, i = {}) {
   const [s] = t.resolveTargets(n), r = s ? t.elementFor(s) : void 0;
   if (!s || !r)
     throw new Error(`gsap-compat: live.draggable could not find ${String(n)}`);
@@ -4029,23 +4034,23 @@ function Os(e, t, n, i = {}) {
     }
   };
 }
-const qs = { opacity: 0, scale: 0.6 };
-function Ns(e) {
+const Ns = { opacity: 0, scale: 0.6 };
+function Vs(e) {
   const t = e.getBoundingClientRect();
   return t.width === 0 && t.height === 0 ? null : { cx: t.left + t.width / 2, cy: t.top + t.height / 2, width: t.width, height: t.height };
 }
-function Vs(e) {
+function Us(e) {
   const t = xt(e);
   return t.width === 0 && t.height === 0 ? null : { cx: t.left + t.width / 2, cy: t.top + t.height / 2, width: t.width, height: t.height };
 }
 function ke(e, t) {
   const i = e.resolveTargets(t).map((r) => e.elementFor(r)).filter((r) => !!r), s = /* @__PURE__ */ new Map();
-  for (const r of i) s.set(r, Ns(r));
+  for (const r of i) s.set(r, Vs(r));
   return { elements: i, boxes: s };
 }
-const Yt = /* @__PURE__ */ new WeakMap();
+const Ot = /* @__PURE__ */ new WeakMap();
 function Ee(e, t, n, i = {}) {
-  const s = i.duration ?? 0.6, r = i.ease ?? "power2.inOut", a = i.stagger ?? 0, c = i.scale !== !1, l = i.enter === void 0 ? qs : i.enter, o = new Set(n.elements);
+  const s = i.duration ?? 0.6, r = i.ease ?? "power2.inOut", a = i.stagger ?? 0, c = i.scale !== !1, l = i.enter === void 0 ? Ns : i.enter, o = new Set(n.elements);
   if (i.targets !== void 0)
     for (const d of e.resolveTargets(i.targets)) {
       const m = e.elementFor(d);
@@ -4056,14 +4061,14 @@ function Ee(e, t, n, i = {}) {
   ), f = t({ onComplete: i.onComplete });
   let h = 0;
   for (const d of u) {
-    const m = n.boxes.get(d) ?? null, p = Vs(d);
+    const m = n.boxes.get(d) ?? null, p = Us(d);
     if (!p) continue;
     const [g] = e.resolveTargets(d);
-    Yt.get(d)?.timeline.removeTracks({ target: g });
+    Ot.get(d)?.timeline.removeTracks({ target: g });
     const y = h * a;
     if (!m) {
       if (l === !1) continue;
-      f.fromTo(d, { x: 0, y: 0, scaleX: 1, scaleY: 1, ...l }, { ...Us(l), x: 0, y: 0, scaleX: 1, scaleY: 1, duration: s, ease: r, delay: y }, 0), Yt.set(d, f), h++;
+      f.fromTo(d, { x: 0, y: 0, scaleX: 1, scaleY: 1, ...l }, { ...Ws(l), x: 0, y: 0, scaleX: 1, scaleY: 1, duration: s, ease: r, delay: y }, 0), Ot.set(d, f), h++;
       continue;
     }
     const v = m.cx - p.cx, T = m.cy - p.cy, w = c ? m.width / p.width : 1, b = c ? m.height / p.height : 1;
@@ -4080,11 +4085,11 @@ function Ee(e, t, n, i = {}) {
       { x: v, y: T, scaleX: w, scaleY: b },
       { x: 0, y: 0, scaleX: 1, scaleY: 1, duration: s, ease: r, delay: y },
       0
-    ), Yt.set(d, f), h++;
+    ), Ot.set(d, f), h++;
   }
   return f;
 }
-function Us(e) {
+function Ws(e) {
   const t = {};
   for (const n of Object.keys(e))
     t[n] = n === "opacity" || n.startsWith("scale") ? 1 : 0;
@@ -4212,7 +4217,7 @@ class bt {
     const i = (a) => this.options.onWarning?.(a), s = (a) => this.stage.query(a);
     let r = t;
     if (t.motionPath !== void 0) {
-      const a = $s(t.motionPath, {
+      const a = Bs(t.motionPath, {
         query: s,
         targets: n.map((c) => this.stage.elementFor(c)).filter((c) => !!c),
         warn: i
@@ -4220,7 +4225,7 @@ class bt {
       r = { ...r, motionPath: a };
     }
     if (t.morphSVG !== void 0) {
-      const a = Bs(t.morphSVG, s, i), { morphSVG: c, ...l } = r;
+      const a = Is(t.morphSVG, s, i), { morphSVG: c, ...l } = r;
       r = a ? { ...r, morphSVG: a } : l;
     }
     return r;
@@ -4228,13 +4233,13 @@ class bt {
   resolve(t) {
     const n = this.stage.resolveTargets(t);
     if (n.length === 0) {
-      this.options.onWarning?.(`gsap-compat: no elements found for target ${zs(t)}`);
+      this.options.onWarning?.(`gsap-compat: no elements found for target ${Hs(t)}`);
       return;
     }
     return n;
   }
 }
-function Ws(e = new Es()) {
+function zs(e = new Ps()) {
   const t = (i) => {
     const { config: s } = Tt(i);
     return new bt(e, {
@@ -4253,8 +4258,8 @@ function Ws(e = new Es()) {
     from: (i, s) => t(s).from(i, s),
     fromTo: (i, s, r) => t(r).fromTo(i, s, r),
     set: (i, s) => t(s).set(i, s),
-    convertToPath: (i) => Ls(i, e.root),
-    draggable: (i, s) => Os(n, e, i, s),
+    convertToPath: (i) => Fs(i, e.root),
+    draggable: (i, s) => qs(n, e, i, s),
     getFlipState: (i) => ke(e, i),
     flipFrom: (i, s) => Ee(e, (r) => new bt(e, r), i, s),
     flip: (i, s, r) => {
@@ -4264,8 +4269,8 @@ function Ws(e = new Es()) {
   };
   return n;
 }
-const ft = /* @__PURE__ */ Ws();
-function zs(e) {
+const ft = /* @__PURE__ */ zs();
+function Hs(e) {
   return typeof e == "string" ? `"${e}"` : String(e);
 }
 class Pe {
@@ -4307,7 +4312,7 @@ class Pe {
     });
   }
 }
-function Hs(e, t, n, i, s) {
+function Gs(e, t, n, i, s) {
   const r = n - s;
   if (r < 0) {
     t.paused || t.pause(), t.currentTime = 0;
@@ -4365,7 +4370,7 @@ class gn {
   /** Sync all discovered media targets to a timeline time. */
   syncAllMedia(t, n) {
     for (const i of this.mediaTargets)
-      Hs(i.sync, i.el, t, n, i.startTime);
+      Gs(i.sync, i.el, t, n, i.startTime);
   }
   /**
    * Load animation from inline JSON string.
@@ -4525,14 +4530,14 @@ class gn {
     }
   }
 }
-async function Dr(e, t, n = {}) {
+async function Xr(e, t, n = {}) {
   const i = new gn(e, { ...n, autoplay: !0 });
   return await i.load(t), i;
 }
-function Xr(e, t = {}) {
+function Or(e, t = {}) {
   return new gn(e, t);
 }
-class Gs {
+class js {
   container;
   containerA;
   containerB;
@@ -4802,10 +4807,10 @@ class Gs {
   }
 }
 async function Yr(e, t, n = {}) {
-  const i = new Gs(e, { ...n, autoplay: !0 });
+  const i = new js(e, { ...n, autoplay: !0 });
   return await i.load(t), i;
 }
-const Or = { type: "none", duration: 0 }, _e = {
+const qr = { type: "none", duration: 0 }, _e = {
   top: 0,
   left: 0,
   start: 0,
@@ -4824,7 +4829,7 @@ function Ce(e) {
     return Number.isNaN(n) ? void 0 : n / 100;
   }
 }
-function js(e) {
+function Ks(e) {
   if (typeof e == "number")
     return { elementFraction: 0, viewportFraction: 0, offsetPx: 0, absolutePx: e };
   let t = 0;
@@ -4844,22 +4849,22 @@ function js(e) {
   };
 }
 function $e(e, t, n) {
-  const i = js(n), s = i.absolutePx !== void 0 ? e.top + i.absolutePx : e.top + e.height * i.elementFraction, r = t * i.viewportFraction;
+  const i = Ks(n), s = i.absolutePx !== void 0 ? e.top + i.absolutePx : e.top + e.height * i.elementFraction, r = t * i.viewportFraction;
   return s - r + i.offsetPx;
 }
-function Ks(e, t, n, i) {
+function Zs(e, t, n, i) {
   const s = $e(e, t, n), a = $e(e, t, i) - s;
-  return a <= 0 ? s <= 0 ? 1 : 0 : Zs(-s / a);
+  return a <= 0 ? s <= 0 ? 1 : 0 : Qs(-s / a);
 }
-function Zs(e) {
+function Qs(e) {
   return e < 0 ? 0 : e > 1 ? 1 : e === 0 ? 0 : e;
 }
-function Qs(e, t, n, i) {
+function Js(e, t, n, i) {
   if (n <= 0) return t;
   const s = 1 - Math.exp(-(i / 1e3) / n);
   return e + (t - e) * s;
 }
-class Js {
+class tr {
   timeline;
   trigger;
   behaviour;
@@ -4906,11 +4911,11 @@ class Js {
     this.options.onLeave?.(), this.behaviour === "reset" && this.timeline.stop();
   }
 }
-function qr(e) {
-  const t = new Js(e);
+function Nr(e) {
+  const t = new tr(e);
   return t.start(), t;
 }
-class tr {
+class er {
   timeline;
   options;
   running = !1;
@@ -4949,7 +4954,7 @@ class tr {
     const t = this.triggerRect();
     if (!t) return;
     const n = this.viewportHeight(), i = this.targetProgress;
-    this.targetProgress = Ks(
+    this.targetProgress = Zs(
       t,
       n,
       this.options.start ?? "top bottom",
@@ -4980,7 +4985,7 @@ class tr {
     const t = (n) => {
       if (!this.running) return;
       const i = this.lastFrameTime === null ? 16.67 : n - this.lastFrameTime;
-      this.lastFrameTime = n, this.displayProgress = Qs(
+      this.lastFrameTime = n, this.displayProgress = Js(
         this.displayProgress,
         this.targetProgress,
         this.smoothing(),
@@ -5007,11 +5012,11 @@ class tr {
     return t ? t.clientHeight : typeof window < "u" ? window.innerHeight : 0;
   }
 }
-function Nr(e) {
-  const t = new tr(e);
+function Vr(e) {
+  const t = new er(e);
   return t.start(), t;
 }
-function Vr(e) {
+function Ur(e) {
   const { timeline: t } = e, n = new U();
   for (const [o, u] of Object.entries(e.targets)) {
     const f = typeof u == "string" ? document.querySelector(u) : u;
@@ -5052,7 +5057,7 @@ function Vr(e) {
     }
   };
 }
-const Ur = {
+const Wr = {
   timeline: gs,
   to(e, t, n) {
     const i = new Z(n);
@@ -5070,112 +5075,112 @@ const Ur = {
     const i = new Z(n);
     return i.set(e, t), i;
   }
-}, Wr = ft.to, zr = ft.from, Hr = ft.fromTo, Gr = ft.set, jr = ft.timeline;
+}, zr = ft.to, Hr = ft.from, Gr = ft.fromTo, jr = ft.set, Kr = ft.timeline;
 export {
   ot as ByteWriter,
-  ir as Clock,
+  sr as Clock,
   Z as CompatTimeline,
   Ue as DEFAULT_BAKE_INTERVAL_MS,
   te as DEFAULT_INERTIA_FRICTION,
   R as DEFAULT_SPRING,
-  Or as DEFAULT_TRANSITION,
+  qr as DEFAULT_TRANSITION,
   mn as Draggable,
   tn as GIFEncoder,
   kn as INERTIA_MAX_DURATION_MS,
   li as InertiaTrackPlayer,
   bt as LiveTimeline,
-  ur as MORPH_SAMPLES,
+  fr as MORPH_SAMPLES,
   nn as MP4_WEBCODECS,
-  nr as ManualClock,
+  ir as ManualClock,
   Pe as MediaSync,
-  Fs as Observer,
+  Rs as Observer,
   Fi as PaletteMatcher,
   Fe as SPRING_MAX_DURATION_MS,
   it as SPRING_STEP_MS,
-  tr as ScrollDriver,
-  Tr as SimpleGIFEncoder,
+  er as ScrollDriver,
+  wr as SimpleGIFEncoder,
   St as SpringSampler,
   ci as SpringTrackPlayer,
-  Es as Stage,
+  Ps as Stage,
   Ke as Timeline,
   gn as TinyflyPlayer,
-  Gs as TinyflySequencer,
+  js as TinyflySequencer,
   Ct as TrackPlayer,
-  Fr as ValueResolver,
-  Js as VisibilityDriver,
-  Oi as WebPEncoder,
+  Rr as ValueResolver,
+  tr as VisibilityDriver,
+  Yi as WebPEncoder,
   oi as bakeEasing,
   ze as bakeInertiaTrack,
   We as bakeSpringTrack,
   Li as buildPalette,
   ui as charactersFor,
-  Zs as clamp01,
-  fr as clearMorphCache,
-  lr as clearPathCache,
-  Xr as create,
+  Qs as clamp01,
+  dr as clearMorphCache,
+  hr as clearPathCache,
+  Or as create,
   Fn as createCubicBezier,
-  Ws as createLive,
+  zs as createLive,
   Ki as createRandom,
   Nt as createTrack,
-  ar as criticalDamping,
+  cr as criticalDamping,
   rt as deserializeTimeline,
   mi as deserializeTrack,
-  xr as downloadGIF,
-  Er as downloadVideo,
-  Sr as downloadWebP,
-  Rr as draggable,
+  Mr as downloadGIF,
+  Pr as downloadVideo,
+  Ar as downloadWebP,
+  Dr as draggable,
   $n as easeIn,
   De as easeInCubic,
   In as easeInOut,
-  Ye as easeInOutCubic,
+  Oe as easeInOutCubic,
   Cn as easeInOutQuad,
   Pn as easeInQuad,
   Bn as easeOut,
   Xe as easeOutCubic,
   _n as easeOutQuad,
-  yr as exportToCSS,
-  vr as exportToGIF,
+  br as exportToCSS,
+  xr as exportToGIF,
   Ii as exportToLottie,
-  br as exportToLottieJSON,
+  Tr as exportToLottieJSON,
   zi as exportToMP4,
   ji as exportToVideo,
-  Mr as exportToWebP,
-  kr as exportVideo,
-  wr as extractFrames,
-  _r as frameCell,
-  zr as from,
-  gr as fromJSON,
-  Hr as fromTo,
-  Oe as getEasingFunction,
+  Sr as exportToWebP,
+  Er as exportVideo,
+  vr as extractFrames,
+  Cr as frameCell,
+  Hr as from,
+  yr as fromJSON,
+  Gr as fromTo,
+  Ye as getEasingFunction,
   Ve as getInterpolator,
   je as getMotionPathPoint,
-  hr as getPathLength,
+  ur as getPathLength,
   Un as getPointAtProgress,
   Ht as getSupportedVideoCodecs,
   Gi as getVideoExportFormats,
-  Ds as gridLinesFor,
+  Xs as gridLinesFor,
   vn as hasKeyframes,
-  Br as hashSeed,
+  Ir as hashSeed,
   ht as inertiaDuration,
   lt as inertiaRest,
-  Ot as inertiaValueAt,
-  cr as inertiaVelocityAt,
+  Yt as inertiaValueAt,
+  lr as inertiaVelocityAt,
   si as interpolateArray,
   ii as interpolateColor,
-  pr as interpolateMotionPath,
-  O as interpolateNumber,
+  mr as interpolateMotionPath,
+  Y as interpolateNumber,
   ri as interpolatePathString,
   de as interpolateString,
   Wt as isCubicBezierEasing,
   W as isInertiaTrack,
-  er as isMotionPathPoint,
+  nr as isMotionPathPoint,
   Be as isMotionPathTrack,
   ut as isPathData,
   z as isSpringTrack,
   ct as isTextTrack,
-  or as isUnderdamped,
-  Lr as isUnresolved,
-  Ar as isVideoExportSupported,
+  ar as isUnderdamped,
+  Fr as isUnresolved,
+  kr as isVideoExportSupported,
   at as isWebCodecsMP4Supported,
   qi as isWebPExportSupported,
   Re as linear,
@@ -5188,46 +5193,46 @@ export {
   wt as naturalRest,
   Ce as parseEdge,
   st as parsePath,
-  js as parseTrigger,
-  Yi as parseWebPBitstream,
+  Ks as parseTrigger,
+  Oi as parseWebPBitstream,
   Wi as pickAVCCodec,
-  Dr as play,
+  Xr as play,
   Yr as playSequence,
-  qr as playWhenVisible,
+  Nr as playWhenVisible,
   qe as pointAtDistance,
   Ji as pointsToPath,
   Ri as quantizeImage,
-  Vr as quickPlay,
+  Ur as quickPlay,
   sn as randomBetween,
-  Ir as randomChoice,
+  Lr as randomChoice,
   Zi as randomSnapped,
   Qi as resolveSequence,
   an as resolveValue,
-  Ks as scrollProgress,
-  Nr as scrubOnScroll,
+  Zs as scrollProgress,
+  Vr as scrubOnScroll,
   gi as serializeTimeline,
   pi as serializeTrack,
-  Gr as set,
+  jr as set,
   Gt as shapeToPathData,
   ai as simplifyKeyframes,
-  Qs as smoothToward,
-  Rs as snapAxis,
-  rr as springDuration,
-  sr as springValueAt,
-  Cr as spriteFrameTimes,
-  Pr as spriteSheetLayout,
-  $r as spriteSheetMeta,
+  Js as smoothToward,
+  Ds as snapAxis,
+  or as springDuration,
+  rr as springValueAt,
+  $r as spriteFrameTimes,
+  _r as spriteSheetLayout,
+  Br as spriteSheetMeta,
   Ie as staggerDistance,
   Le as staggerOffset,
   Mn as staggerOffsets,
   Mt as staggerSpan,
-  Hs as syncMediaElement,
+  Gs as syncMediaElement,
   di as textAt,
-  Ur as tf,
-  jr as timeline,
-  Wr as to,
-  mr as toJSON,
-  dr as toKeyframedTrack,
+  Wr as tf,
+  Kr as timeline,
+  zr as to,
+  gr as toJSON,
+  pr as toKeyframedTrack,
   Ge as toKeyframedTracks,
   V as trackTargets,
   $e as triggerDistance

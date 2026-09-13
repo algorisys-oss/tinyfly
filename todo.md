@@ -1021,13 +1021,25 @@ Not features. The v0.50.1 post-mortem says this is where the real gap is.
 
 #### 27C.1 — Cross-browser testing
 
-- [ ] The suite has only ever run in Node, and the editor has only ever been
-      driven in Chromium. **Firefox and WebKit are completely unverified.**
-- [ ] Playwright across all three engines for: the editor smoke path, persistence
-      (this is where the `DataCloneError` bug lived), adapters, and export.
-- [ ] Highest-risk areas by prior evidence: IndexedDB, `structuredClone`,
-      WebCodecs (MP4 export), `background-clip: text` (shine), `transform-box`
-      (SVG origin).
+- [x] `npm run e2e` (`e2e/`): `playwright-core` (pinned, no bundled browsers)
+      drives Chromium (system Chrome), Firefox and WebKit against the dev server;
+      checks import source modules into `e2e/harness.html` and measure results.
+- [x] Covered: editor smoke path + all three renderers, IndexedDB persistence
+      across reload, `structuredClone`, path parser vs native SVG geometry,
+      DOM/SVG/Canvas adapters by rendered pixels and boxes, `background-clip:
+      text` (shine), `transform-box` (SVG origin), GIF/WebP/MP4 export, all 33
+      GSAP-style demos under real input, motion-path and Flip precision.
+- [x] **Chromium 150 and Firefox 153: all 19 checks pass**, with identical
+      precision (path geometry within 0.025px, Flip 0.00px jump, MP4 exports
+      in both).
+- [x] **Found and fixed:** SVG content rotated/scaled around the SVG's origin
+      (top-left) in both the SVG and DOM adapters unless an origin was
+      animated; HTML and canvas pivot on the element's centre. Both adapters now
+      default SVG content to `transform-box: fill-box` + centre (author origins
+      still win). The editor had hidden it with inline styles on its own markup.
+- [ ] **WebKit not run yet**: the host lacks `libavif16` (needs
+      `sudo apt-get install libavif16`); then `npm run e2e -- --browser webkit`.
+- [ ] Run `npm run e2e` in CI.
 
 #### 27C.2 — Performance benchmark against GSAP ✓ (first pass)
 

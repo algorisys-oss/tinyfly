@@ -1,4 +1,4 @@
-# tinyfly CDN bundles (v0.54.0)
+# tinyfly CDN bundles (v0.54.1)
 
 Built from this commit by the release process — do not edit by hand.
 
@@ -12,7 +12,7 @@ Built from this commit by the release process — do not edit by hand.
 Load one of the `tinyfly` globals, not both.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.54.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.54.1/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -22,10 +22,10 @@ As an ES module:
 
 ```html
 <script type="module">
-  import { live } from 'https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.54.0/cdn/tinyfly.esm.js'
+  import { live } from 'https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.54.1/cdn/tinyfly.esm.js'
   live.to('.box', { x: 200, duration: 1 })
 </script>
 ```
 
-Pin a version tag (`@v0.54.0`) in production. `@main` follows the latest publish
+Pin a version tag (`@v0.54.1`) in production. `@main` follows the latest publish
 and is cached by jsDelivr for up to a day.

@@ -567,9 +567,32 @@ npm run dev
 # Run tests
 npm test
 
+# Cross-browser checks in Chromium, Firefox and WebKit (see e2e/README.md)
+npx playwright-core install firefox webkit   # once
+npm run e2e
+
 # Build for production
 npm run build
 ```
+
+### Cross-browser checks
+
+`npm run e2e` runs tinyfly in real Chromium, Firefox and WebKit and measures the
+results rather than just looking for errors:
+
+- **Engine:** the path parser against each browser's own SVG geometry, determinism,
+  and `structuredClone`.
+- **Adapters:** transforms, shine clipped to the glyphs (`background-clip: text`), SVG
+  rotating in place (`transform-box`), and canvas drawing, all checked by the pixels
+  and boxes actually rendered.
+- **Exports:** GIF, WebP and MP4 (WebCodecs).
+- **Demos:** every GSAP-style demo animating under real mouse input, plus Flip and
+  motion-path precision.
+- **Editor:** adding elements, playing in all three renderers, and IndexedDB
+  persistence across a reload.
+
+Latest run: Chromium 150 and Firefox 153 pass all 19 checks. WebKit needs
+`libavif16` on Linux hosts (`sudo apt-get install libavif16`).
 
 ### Test Coverage
 

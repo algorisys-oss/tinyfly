@@ -1,6 +1,7 @@
 import type { AnimationState, AnimatableValue } from '../../engine/types'
 import { FILTER_PROPERTIES, composeFilter, type FilterValues } from '../filter-utils'
 import { setTextContent } from '../text-content'
+import { ensureSvgTransformBox } from '../svg-transform-box'
 
 /** Properties that need px units when numeric */
 const PX_PROPERTIES = new Set([
@@ -208,6 +209,7 @@ export class DOMAdapter {
       // set for nothing. It would only pay off for tracks that have settled,
       // which is not the case worth optimising for.
       element.style.transform = transformParts.join(' ')
+      ensureSvgTransformBox(element)
     }
 
     // Apply transform-origin. A missing axis defaults to 50% (the CSS default),
