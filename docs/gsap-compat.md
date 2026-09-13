@@ -74,7 +74,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.60.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.61.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -330,6 +330,7 @@ What GSAP sells as plugins, tinyfly ships as ordinary features:
 
 | GSAP plugin | tinyfly |
 |---|---|
+| ScrollSmoother | `live.smoothScroll()` — eased wheel scrolling with `data-speed` / `data-lag` parallax, on the page's real scroll position — see [Smooth scrolling](#smooth-scrolling) |
 | ScrollTrigger | `scrollTrigger` on `live` (scrub, pin, toggleActions) — see [Scroll triggers](#scroll-triggers); [`tinyfly/drivers`](./scroll-animation.md) underneath, plus a scroll-scrub preview in the editor |
 | Draggable / Observer | `live.draggable()`, and `tinyfly/interaction` — `Draggable`, `Observer` |
 | InertiaPlugin | The `inertia` tween option and inertia tracks — see [Inertia](#inertia-and-dragging) |
@@ -573,6 +574,54 @@ The trigger's horizontal positions are solved against the row's own motion (the
 `x` tracks moving its ancestors), and turned into the row's vertical scroll range.
 Create the row's timeline first, keep its motion steady in one direction (an
 `ease: 'none'` slide is the usual case), and don't pin inside it.
+
+## Smooth scrolling
+
+`live.smoothScroll()` eases wheel scrolling, like GSAP's ScrollSmoother, and adds
+parallax layers:
+
+```js
+const smoother = live.smoothScroll({ smooth: 0.9, effects: true })
+
+// <h2 data-speed="0.8">   scrolls at 80% of the page's speed
+// <img data-lag="0.3">    catches up with the page 0.3s after it moves
+
+smoother.scrollTo('#contact', { offset: -80 })   // anchor links, eased
+smoother.paused(true)                            // e.g. while a modal is open
+```
+
+It does not move the page inside a transformed wrapper, as ScrollSmoother does.
+Wheel input is eased, but the browser's **own scroll position** is what moves. So:
+
+- scroll triggers, pins (`position: sticky`), `position: fixed`, anchor links,
+  find-in-page and scroll restoration all work unchanged;
+- touch, keyboard and scrollbar scrolling stay native, and smoothing continues
+  from wherever they leave the page;
+- pinch-zoom, sideways wheels and scrollable areas inside the page keep their own
+  scrolling (mark any other area `data-smooth-ignore`).
+
+| Option | Default | |
+|---|---|---|
+| `smooth` | `0.8` | Seconds to catch up with the wheel; `0` turns smoothing off |
+| `wheelMultiplier` | `1` | Scales wheel distance |
+| `effects` | `false` | `true` for `[data-speed], [data-lag]`, or your own selector |
+| `scroller` | the window | A scrolling element or selector |
+| `reducedMotion` | the system setting | With reduced motion there is no smoothing and no effects |
+| `onUpdate(state)` | — | `{ scroll, target, progress, velocity }` after each moving frame |
+
+- **`data-speed`**: the element sits at its natural place when centred in the
+  viewport, and drifts by `(1 − speed)` of the scroll distance either side of it.
+- **Effects** are written to the CSS `translate` property, so they combine with
+  tweens on `transform`. Don't put them on a scroll trigger's `trigger` element;
+  put them on a child.
+- **Re-measuring**: effects are measured again whenever scroll triggers re-measure
+  (on resize and `live.refreshScroll()`), with the layers at rest while triggers
+  measure, and after pins have changed the layout.
+- `smoother.state`, `smoother.refresh()`, and `smoother.kill()`. Contexts and
+  `matchMedia` kill it on revert.
+
+The [Agency Landing Page showcase](../src/examples/showcases/agency-landing.js) turns
+it on outside reduced motion, alongside its pinned sections.
 
 ## Values that change every event: `quickTo`
 

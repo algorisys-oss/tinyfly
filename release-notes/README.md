@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.61.0](v0.61.0.md) | 2026-09-14 | `live.smoothScroll()`: eased wheel scrolling with `data-speed` / `data-lag` parallax on the real scroll position, so triggers and pins keep working |
 | [v0.60.0](v0.60.0.md) | 2026-09-14 | The course is complete: 9 modules, 64 checked steps up to an award-style landing page; per-element stagger fixed; Ganesh Chaturthi showcase; Copy JSON in the studio |
 | [v0.59.0](v0.59.0.md) | 2026-09-14 | Refreshing any page works on Hostinger (`.htaccess`) and other hosts; editor moves to `/studio` (`/app` redirects); Learn: Foundations module (animation as data) |
 | [v0.58.0](v0.58.0.md) | 2026-09-14 | Interactive course at `/learn` (module 1: GSAP-style API, 10 checked steps); a shareable page for every example at `/examples/<id>` |

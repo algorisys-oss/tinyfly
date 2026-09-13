@@ -166,7 +166,7 @@ GitHub. No npm required.
 GSAP-shaped functions at the top level:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.60.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.61.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -477,6 +477,7 @@ timeline.addTrack({
 - Plain-object targets and `live.ticker` — drive canvas, Three.js or shader uniforms on the same frame as the DOM
 - Survives resizes and breakpoints — function values, `invalidateOnRefresh`, `splitText` `autoSplit`, `live.matchMedia()` (a real reduced-motion mode) and `live.context()` cleanup
 - `live.quickTo` for pointer and scroll-driven values; `snap`, `markers` and `containerAnimation` on scroll triggers
+- `live.smoothScroll` eased wheel scrolling with `data-speed` / `data-lag` parallax, on the real scroll position so triggers and pins keep working
 - `live.imageSequence` scroll-scrubbed frame sequences, `live.pageTransition` route changes with shared elements, and `CustomEase` / `CustomBounce` / `CustomWiggle`
 
 See the **Agency Landing Page** showcase on the Examples page (`/showcase/agency-landing`).

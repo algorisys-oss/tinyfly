@@ -14,6 +14,31 @@ export default {
     await page.waitForSelector('.ag-title .line', { timeout: 30000 })
     await page.waitForTimeout(1500)
 
+    // Smooth scrolling: a wheel turn eases the real scroll position over several frames.
+    await page.mouse.move(640, 400)
+    await page.mouse.wheel(0, 600)
+    const wheel = await page.evaluate(async () => {
+      const samples = []
+      const started = performance.now()
+      await new Promise((resolve) => {
+        const frame = () => {
+          samples.push(Math.round(scrollY))
+          if (performance.now() - started < 1800) requestAnimationFrame(frame)
+          else resolve()
+        }
+        requestAnimationFrame(frame)
+      })
+      const between = samples.filter((y) => y > 30 && y < 570).length
+      return { final: samples[samples.length - 1], between }
+    })
+    results.push({
+      label: 'showcase: the wheel scrolls smoothly, easing the real scroll position',
+      ok: Math.abs(wheel.final - 600) <= 2 && wheel.between >= 5,
+      detail: `ends at ${wheel.final}px after ${wheel.between} in-between frames`,
+    })
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await page.waitForTimeout(300)
+
     const pin = await page.evaluate(async () => {
       const settle = (ms) => new Promise((r) => setTimeout(r, ms))
       const spacer = document.querySelector('.pin-spacer')
@@ -33,6 +58,25 @@ export default {
       label: 'showcase: work section pinned while its track travels with scroll',
       ok: pin.travel > 100 && Math.abs(pin.top) < 1 && Math.abs(pin.x + pin.travel * 0.5) < pin.travel * 0.02,
       detail: `travel ${pin.travel}px, section top ${pin.top.toFixed(1)}, track x ${pin.x.toFixed(1)}`,
+    })
+
+    const parallax = await page.evaluate(async () => {
+      const settle = (ms) => new Promise((r) => setTimeout(r, ms))
+      const heading = document.querySelector('.ag-gallery h2')
+      const shiftOf = () => Number.parseFloat(heading.style.getPropertyValue('translate').split(' ')[1] ?? '0') || 0
+      // Scroll so its natural top (without its own shift) sits 20% down the viewport.
+      window.scrollTo(0, heading.getBoundingClientRect().top - shiftOf() + scrollY - innerHeight * 0.2)
+      await settle(400)
+      const shift = shiftOf()
+      const naturalTop = heading.getBoundingClientRect().top - shift
+      // data-speed 0.8: offset is 20% of how far past centre the page has scrolled.
+      const expected = (innerHeight / 2 - naturalTop - heading.offsetHeight / 2) * (1 - 0.8)
+      return { shift, expected }
+    })
+    results.push({
+      label: 'showcase: data-speed layers move at their own speed',
+      ok: parallax.expected > 10 && Math.abs(parallax.shift - parallax.expected) < 1.5,
+      detail: `shifted ${parallax.shift.toFixed(1)}px, expected ${parallax.expected.toFixed(1)}px`,
     })
 
     const stats = await page.evaluate(async () => {

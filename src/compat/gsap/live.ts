@@ -12,7 +12,7 @@ import { flipFrom, getFlipState, type FlipState, type FlipVars } from './live-fl
 import { splitText, type SplitTextOptions, type SplitTextResult } from './split-text'
 import { createScrollTrigger, type ScrollTriggerVars } from './live-scroll'
 import { resolveDrawSvg } from './draw-svg-vars'
-import { ScrollDriver } from '../../drivers'
+import { ScrollDriver, SmoothScroll, type SmoothScrollOptions } from '../../drivers'
 import { LiveContext, LiveMatchMedia, type Revertible } from './live-context'
 import { ImageSequence, type ImageSequenceOptions } from './image-sequence'
 import { pageTransition, type PageTransitionOptions } from './live-transition'
@@ -42,6 +42,11 @@ import { staggerOffsets } from '../../engine'
  *   a timeline are all in place first. `paused: true` (or calling any playback
  *   method before then) opts out.
  */
+
+/** Options for `live.smoothScroll`: a selector may name the scroller. */
+export interface LiveSmoothScrollOptions extends Omit<SmoothScrollOptions, 'scroller'> {
+  scroller?: string | HTMLElement | null
+}
 
 export interface LiveTimelineOptions extends Omit<CompatTimelineOptions, 'startValue'> {
   /** Do not start automatically (GSAP's `paused`) */
@@ -434,8 +439,14 @@ export interface LiveApi {
    * (GSAP's `ScrollTrigger.create`). `destroy()` it when done.
    */
   scrollTrigger(vars: ScrollTriggerVars & { trigger: string | Element }): ScrollDriver | undefined
-  /** Re-measure every scroll trigger, after layout changes a resize would not catch. */
+  /** Re-measure every scroll trigger and smoother, after layout changes a resize would not catch. */
   refreshScroll(): void
+  /**
+   * Smooth wheel scrolling, with `data-speed` / `data-lag` parallax when `effects`
+   * is set (GSAP's ScrollSmoother). The browser's scroll position still moves, so
+   * scroll triggers and pins work unchanged. Off under reduced motion. `kill()` it when done.
+   */
+  smoothScroll(options?: LiveSmoothScrollOptions): SmoothScroll
   /**
    * Collect everything the live API creates while `fn` runs (and later, inside
    * `ctx.add()`), so `ctx.revert()` undoes it all. Selectors resolve within `scope`.
@@ -510,7 +521,16 @@ export function createLive(stage: Stage = new Stage()): LiveApi {
     stage,
     ticker: stage.ticker,
     scrollTrigger: (vars) => track(createScrollTrigger(stage, vars)),
-    refreshScroll: () => ScrollDriver.refreshAll(),
+    refreshScroll: () => {
+      ScrollDriver.refreshAll()
+      SmoothScroll.refreshAll()
+    },
+    smoothScroll: (options = {}) => {
+      const scroller =
+        typeof options.scroller === 'string' ? (stage.collector?.scope ?? stage.root).querySelector<HTMLElement>(options.scroller) : options.scroller
+      // Effects are measured again whenever scroll triggers measure (and pin), so order doesn't matter.
+      return track(new SmoothScroll({ ...options, scroller }).start())
+    },
     context: (fn, scope) => {
       const context = new LiveContext(stage, scope)
       if (fn) context.add(() => fn(context))

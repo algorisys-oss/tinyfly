@@ -1697,8 +1697,16 @@ starter fails in the unit gate, and every step passes in Chromium, Firefox and W
       Fixed while reviewing: per-element tweens (drawSVG, morphSVG, text, objects,
       function values) ignored stagger `amount` and `from`, and piled delays up.
       None of the remaining gaps needs third-party code:
-  - [ ] **Smooth scrolling (ScrollSmoother):** a native smoothed-scroll wrapper plus
-        `data-speed` / `data-lag` parallax, feeding `ScrollDriver`; pins must still work
+  - [x] **Smooth scrolling (ScrollSmoother):** `SmoothScroll` in `tinyfly/drivers` and
+        `live.smoothScroll()`. Eases the wheel on the real scroll position (not a
+        transformed wrapper), so triggers, sticky pins, fixed elements and anchors are
+        unchanged; touch, keys and scrollbar stay native and are followed. `data-speed` /
+        `data-lag` layers on CSS `translate`; rested while `ScrollDriver`s measure and
+        re-measured after pins (`ScrollDriver.onRefresh`). `scrollTo(offset | element |
+        selector, { offset, duration })`, `paused()`, reduced motion off. On in the Agency
+        Landing showcase; e2e checks the wheel eases and parallax lands to 1.5px in 3 browsers
+    - [ ] A course step for it (Scroll module), and `data-speed="auto"` for images in
+          clipped frames
   - [ ] **Timeline callbacks and control:** `onRepeat`, `onReverseComplete`, `tl.call()`,
         `addPause()`, `tweenTo()` / `tweenFromTo()`, `live.delayedCall()`,
         `live.killTweensOf()`

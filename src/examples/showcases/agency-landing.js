@@ -129,16 +129,16 @@ export const html = `<style>
     .join('')}</section>
 
   <section class="ag-services">
-    <h2>What we do</h2>
+    <h2 data-speed="0.85">What we do</h2>
     ${services
       .map(([title, body, icon]) => `<div class="ag-service"><svg class="ag-icon" viewBox="0 0 48 48" aria-hidden="true">${icon}</svg><div class="ag-service-body"><h3>${title}</h3><p>${body}</p></div><span class="ag-service-arrow" aria-hidden="true">→</span></div>`)
       .join('')}
   </section>
 
   <section class="ag-gallery">
-    <h2>Inside the studio</h2>
+    <h2 data-speed="0.8">Inside the studio</h2>
     <div class="ag-tiles">${photos
-      .map(([name, a, b], i) => `<div class="ag-tile" data-flip-id="photo-${i}" style="background: linear-gradient(135deg, ${a}, ${b})">${name}</div>`)
+      .map(([name, a, b], i) => `<div class="ag-tile" data-flip-id="photo-${i}"${i % 3 === 1 ? ' data-lag="0.25"' : ''} style="background: linear-gradient(135deg, ${a}, ${b})">${name}</div>`)
       .join('')}</div>
     <div class="ag-lightbox" hidden><div class="ag-lightbox-inner"><div class="ag-lightbox-img"></div><div class="ag-lightbox-caption"></div></div></div>
   </section>
@@ -167,6 +167,11 @@ export function run(live, root) {
     const events = new AbortController() // removes every listener on revert
     const on = (target, type, handler) => target.addEventListener(type, handler, { signal: events.signal })
     root.classList.toggle('ag-reduced', reduce)
+
+    // ── Smooth wheel scrolling, with parallax layers (data-speed / data-lag) ─
+    // The page's real scroll position still moves, so every trigger and pin
+    // below works unchanged. Touch, keys and the scrollbar stay native.
+    if (!reduce) live.smoothScroll({ smooth: 0.9, effects: true })
 
     // ── Hero: headline lines rise from behind their own edge ───────────────
     // autoSplit re-measures the lines when the width changes. The intro plays
@@ -421,8 +426,8 @@ export const agencyLanding = {
   id: 'agency-landing',
   name: 'Agency Landing Page',
   description:
-    'A full-page, award-site-style landing: masked headline reveal, pointer-lit canvas, velocity marquee, scroll-lit manifesto, pinned horizontal work that survives resizes, count-ups, drawn icons, a shared-element lightbox and springy type — with a real reduced-motion mode.',
-  tags: ['scrollTrigger', 'pin', 'splitText', 'drawSVG', 'spring', 'flip', 'ticker', 'matchMedia', 'invalidateOnRefresh'],
+    'A full-page, award-site-style landing: smooth scrolling with parallax, masked headline reveal, pointer-lit canvas, velocity marquee, scroll-lit manifesto, pinned horizontal work that survives resizes, count-ups, drawn icons, a shared-element lightbox and springy type — with a real reduced-motion mode.',
+  tags: ['smoothScroll', 'scrollTrigger', 'pin', 'splitText', 'drawSVG', 'spring', 'flip', 'ticker', 'matchMedia', 'invalidateOnRefresh'],
   html,
   run,
 }

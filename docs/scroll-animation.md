@@ -179,6 +179,18 @@ On touch devices, resizes that only change the height by less than a quarter
   is the pure solver, and `live` builds `container` for you from
   `containerAnimation`.
 
+### Smooth scrolling
+
+`SmoothScroll` (and `live.smoothScroll()`) eases wheel scrolling on the page's
+real scroll position, so drivers follow it with no setup, and adds `data-speed` /
+`data-lag` parallax layers. It rests those layers while drivers measure and
+measures them again after pins apply (`ScrollDriver.onRefresh`). See
+[Smooth scrolling](./gsap-compat.md#smooth-scrolling).
+
+```ts
+const smoother = new SmoothScroll({ smooth: 0.8, effects: true }).start()
+```
+
 ### Smooth-scroll libraries
 
 Libraries that keep native scrolling (Lenis, and Locomotive Scroll v5 built on

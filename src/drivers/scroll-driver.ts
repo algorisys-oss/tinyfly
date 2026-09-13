@@ -105,8 +105,32 @@ const IDLE_MS = 120
 
 /** Every started driver, in start order, so a resize refreshes them top-down. */
 const started: ScrollDriver[] = []
+
+/**
+ * Things that move elements by scroll position (a smooth scroller's parallax
+ * layers) and so must stand still while ranges are measured, then measure again
+ * once pins have changed the layout.
+ */
+export interface ScrollRefreshListener {
+  beforeRefresh(): void
+  afterRefresh(): void
+}
+const refreshListeners = new Set<ScrollRefreshListener>()
+let afterRefreshQueued = false
+/** A driver measured on its own (it started, or refresh() was called): tell listeners once, after this task. */
+const queueAfterRefresh = () => {
+  if (afterRefreshQueued || refreshListeners.size === 0) return
+  afterRefreshQueued = true
+  queueMicrotask(() => {
+    afterRefreshQueued = false
+    for (const listener of refreshListeners) listener.afterRefresh()
+  })
+}
+
 const refreshAll = () => {
+  for (const listener of refreshListeners) listener.beforeRefresh()
   for (const driver of started) driver.refresh()
+  for (const listener of refreshListeners) listener.afterRefresh()
 }
 
 /** The viewport size at the last refresh, to recognise resizes that change nothing that matters. */
@@ -237,6 +261,12 @@ export class ScrollDriver implements Driver {
     refreshAll()
   }
 
+  /** Be told around every re-measure; returns a function that stops it. */
+  static onRefresh(listener: ScrollRefreshListener): () => void {
+    refreshListeners.add(listener)
+    return () => refreshListeners.delete(listener)
+  }
+
   /** Current scroll progress, 0..1. */
   get progress(): number {
     return this.targetProgress
@@ -281,6 +311,7 @@ export class ScrollDriver implements Driver {
     // than easing in from 0.
     this.updateFrom(scroll, !this.measured)
     this.measured = true
+    queueAfterRefresh()
   }
 
   /** Same as `refresh()`. */
