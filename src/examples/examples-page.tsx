@@ -66,7 +66,11 @@ const CardHeader: Component<{ example: Example }> = (props) => {
   return (
     <>
       <div class="example-header">
-        <h3>{props.example.name}</h3>
+        <h3>
+          <A href={`/examples/${props.example.id}`} class="example-title-link">
+            {props.example.name}
+          </A>
+        </h3>
         <div class="example-badges">
           <span class="example-kind" classList={{ 'kind-code': props.example.kind === 'code' }}>
             {props.example.kind === 'code' ? 'Code' : 'Editable'}
@@ -83,7 +87,12 @@ const CardHeader: Component<{ example: Example }> = (props) => {
  * An example made in the editor. Shows a still frame; plays while hovered (or
  * after Play, for touch screens). "Open in editor" loads it into a new project.
  */
-const EditableExampleCard: Component<{ example: EditableExample }> = (props) => {
+/** `single`: shown on its own page, so it plays straight away rather than on hover. */
+interface CardProps {
+  single?: boolean
+}
+
+const EditableExampleCard: Component<{ example: EditableExample } & CardProps> = (props) => {
   const navigate = useNavigate()
   let stageRef: HTMLDivElement | undefined
   let adapter: DOMAdapter | undefined
@@ -124,12 +133,13 @@ const EditableExampleCard: Component<{ example: EditableExample }> = (props) => 
       if (name) adapter!.registerTarget(name, node as HTMLElement)
     })
     showPoster()
+    if (props.single) play()
   })
 
   onCleanup(() => stopLoop?.())
 
   return (
-    <div class="example-card" onMouseEnter={play} onMouseLeave={stop}>
+    <div class="example-card" onMouseEnter={play} onMouseLeave={() => !props.single && stop()}>
       <CardHeader example={props.example} />
 
       <div class="example-preview">
@@ -176,7 +186,7 @@ type RendererType = 'dom' | 'canvas'
  * An example for your own page: a timeline plus the markup it animates. Plays
  * on DOM or Canvas, and shows the JSON and HTML to copy.
  */
-const CodeExampleCard: Component<{ example: CodeCatalogExample }> = (props) => {
+const CodeExampleCard: Component<{ example: CodeCatalogExample } & CardProps> = (props) => {
   const code = props.example.code
   let containerRef: HTMLDivElement | undefined
   let canvasRef: HTMLCanvasElement | undefined
@@ -230,6 +240,7 @@ const CodeExampleCard: Component<{ example: CodeCatalogExample }> = (props) => {
     setRenderer(next)
   }
 
+  onMount(() => props.single && togglePlay())
   onCleanup(() => stopLoop?.())
 
   return (
@@ -295,7 +306,7 @@ const CodeExampleCard: Component<{ example: CodeCatalogExample }> = (props) => {
  * the pointer enters (or on Play) and is torn down completely when it leaves —
  * the stage destroyed and the markup reset — so every run starts clean.
  */
-const LiveExampleCard: Component<{ example: LiveCatalogExample }> = (props) => {
+const LiveExampleCard: Component<{ example: LiveCatalogExample } & CardProps> = (props) => {
   const demo = props.example.demo
   let stageRef: HTMLDivElement | undefined
   let teardown: (() => void) | null = null
@@ -321,10 +332,11 @@ const LiveExampleCard: Component<{ example: LiveCatalogExample }> = (props) => {
     setIsRunning(false)
   }
 
+  onMount(() => props.single && start())
   onCleanup(() => teardown?.())
 
   return (
-    <div class="example-card" onMouseEnter={start} onMouseLeave={stop}>
+    <div class="example-card" onMouseEnter={start} onMouseLeave={() => !props.single && stop()}>
       <CardHeader example={props.example} />
 
       <div class="example-preview">
@@ -356,6 +368,18 @@ const LiveExampleCard: Component<{ example: LiveCatalogExample }> = (props) => {
         <pre>{demo.html.trim()}</pre>
       </details>
     </div>
+  )
+}
+
+/** The right card for an example's kind. */
+export const ExampleCard: Component<{ example: Example } & CardProps> = (props) => {
+  const example = props.example
+  return example.kind === 'editable' ? (
+    <EditableExampleCard example={example} single={props.single} />
+  ) : example.format === 'live' ? (
+    <LiveExampleCard example={example} single={props.single} />
+  ) : (
+    <CodeExampleCard example={example} single={props.single} />
   )
 }
 
@@ -480,15 +504,7 @@ export const ExamplesPage: Component = () => {
 
       <main class="examples-grid">
         <For each={visible()}>
-          {(example) =>
-            example.kind === 'editable' ? (
-              <EditableExampleCard example={example} />
-            ) : example.format === 'live' ? (
-              <LiveExampleCard example={example} />
-            ) : (
-              <CodeExampleCard example={example} />
-            )
-          }
+          {(example) => <ExampleCard example={example} />}
         </For>
 
         <Show when={visible().length === 0}>

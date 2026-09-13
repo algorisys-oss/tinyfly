@@ -802,6 +802,10 @@ as the editor's Embed; for GSAP-style examples it is the demo's code, unchanged.
 Scroll code examples also have **Drive it from scroll**, showing how to scrub the
 same timeline from scroll position.
 
+Every example also has its own page at `/examples/<id>`. Click its title to open it,
+or use **Copy link** there to share it. On its own page an example plays without
+hovering and lists more from the same category.
+
 Use the search box to find examples by name, description or tag. Search and filters
 are part of the URL, so `/examples?kind=code&category=scroll` links straight to a
 filtered view. Examples are a good way to learn: study how they use tracks,
@@ -847,7 +851,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.57.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.58.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed

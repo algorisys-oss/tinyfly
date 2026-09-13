@@ -36,13 +36,13 @@ const STEPS = [
 
 const GALLERY = [
   { name: 'Agency Landing Page', href: '/showcase/agency-landing', tone: '#c6ff3d' },
-  { name: 'Pinned horizontal scroll', href: '/examples?q=pinned', tone: '#4a9eff' },
-  { name: 'Line mask reveal', href: '/examples?q=line%20mask', tone: '#f59e0b' },
-  { name: 'Shared element gallery', href: '/examples?q=shared', tone: '#ec4899' },
-  { name: 'Spring release', href: '/examples?q=spring', tone: '#8b5cf6' },
-  { name: 'Shape morphing', href: '/examples?q=morph', tone: '#10b981' },
-  { name: 'Scramble text', href: '/examples?q=scramble', tone: '#ef4444' },
-  { name: 'Flip layouts', href: '/examples?q=flip', tone: '#0ea5e9' },
+  { name: 'Pinned horizontal scroll', href: '/examples/live-pinned-horizontal', tone: '#4a9eff' },
+  { name: 'Line mask reveal', href: '/examples/live-line-mask-reveal', tone: '#f59e0b' },
+  { name: 'Shared element gallery', href: '/examples/live-shared-element-gallery', tone: '#ec4899' },
+  { name: 'Spring release', href: '/examples/live-spring-release', tone: '#8b5cf6' },
+  { name: 'Shape morphing', href: '/examples/live-shape-morph', tone: '#10b981' },
+  { name: 'Scramble text', href: '/examples/live-scramble-text', tone: '#ef4444' },
+  { name: 'Flip layouts', href: '/examples/live-flip-shuffle', tone: '#0ea5e9' },
 ]
 
 export const LandingPage: Component = () => {
@@ -109,6 +109,7 @@ export const LandingPage: Component = () => {
             <BrandMark size={30} />
           </A>
           <div class="lp-nav-links">
+            <A href="/learn">Learn</A>
             <A href="/examples">Examples</A>
             <A href="/showcase/agency-landing">Showcase</A>
             <A href="/docs">Docs</A>
@@ -305,6 +306,7 @@ export const LandingPage: Component = () => {
             Open the editor
           </A>
           <div class="lp-footer-links">
+            <A href="/learn">Learn</A>
             <A href="/examples">Examples</A>
             <A href="/docs">Docs</A>
             <A href="/docs/gsap-compat">GSAP-style API</A>

@@ -337,6 +337,9 @@ export const Toolbar: Component<ToolbarProps> = (props) => {
               Embed…
             </button>
             <div class="toolbar-more-sep" />
+            <a class="toolbar-more-item" href="/learn" onClick={() => setShowMore(false)}>
+              Learn tinyfly
+            </a>
             <a class="toolbar-more-item" href="/docs" onClick={() => setShowMore(false)}>
               Docs
             </a>

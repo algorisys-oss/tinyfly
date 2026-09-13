@@ -640,3 +640,97 @@
   border-color: #ef4444;
   color: #ef4444;
 }
+
+/* ── Card titles link to the example's own page ─────────────────────── */
+.example-title-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.example-title-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ── One example on its own page ─────────────────────────────────────── */
+.example-single {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 24px 32px 64px;
+}
+
+.example-single-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.example-single-category {
+  color: #4a9eff;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+}
+
+.example-single .example-card {
+  cursor: default;
+}
+
+.example-single .example-preview {
+  min-height: 260px;
+}
+
+.example-single .preview-hint {
+  display: none;
+}
+
+.example-related {
+  margin-top: 40px;
+}
+
+.example-related h2 {
+  margin: 0 0 12px;
+  color: #fff;
+  font-size: 18px;
+}
+
+.example-related ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.example-related li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+}
+
+.example-related a {
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.example-related a:hover {
+  color: #4a9eff;
+}
+
+.example-related span {
+  color: #888;
+  font-size: 13px;
+}
+
+@media (max-width: 600px) {
+  .example-single {
+    padding: 16px;
+  }
+}

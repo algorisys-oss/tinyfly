@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.58.0](v0.58.0.md) | 2026-09-14 | Interactive course at `/learn` (module 1: GSAP-style API, 10 checked steps); a shareable page for every example at `/examples/<id>` |
 | [v0.57.0](v0.57.0.md) | 2026-09-14 | Scroll trigger `snap`, `markers` and `containerAnimation`; `live.imageSequence`; `live.pageTransition` with shared elements; CustomEase / CustomBounce / CustomWiggle; `onUpdate` fires while scrubbing |
 | [v0.56.0](v0.56.0.md) | 2026-09-13 | Landing page at `/` built with tinyfly, editor at `/app` (lazy routes); resize-proof values (`invalidate`, function values, `autoSplit`); `live.context` / `live.matchMedia` with a real reduced-motion mode; `live.quickTo`; brand mark with animated beta badge; MIT license; WebKit passes e2e |
 | [v0.55.0](v0.55.0.md) | 2026-09-13 | Award-site motion on `live`: `scrollTrigger` with pinning, `splitText`, `drawSVG`, springs with momentum, shared-element Flip, object targets and ticker; Agency Landing Page showcase; `llms.txt` and complete docs; exporters moved to `tinyfly/export` (engine 26.8 → 15.8 KB gz) |

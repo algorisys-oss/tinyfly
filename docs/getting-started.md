@@ -26,7 +26,8 @@ npm run dev      # start the editor
 ```
 
 Open the address it prints (usually **http://localhost:5173**). That is the
-tinyfly home page; the editor is at **/app** (or click **Open the editor**).
+tinyfly home page; the editor is at **/app** (or click **Open the editor**), and a
+hands-on course at **/learn** teaches the code API step by step.
 Nothing you make is uploaded anywhere — it all lives in your browser.
 
 ---
@@ -182,7 +183,7 @@ with a GSAP-style call (durations are in seconds here):
 ```html
 <div class="box" style="width:60px;height:60px;background:#4a9eff"></div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.57.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.58.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>

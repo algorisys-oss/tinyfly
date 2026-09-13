@@ -1535,6 +1535,10 @@ in one click.
       nav and the editor, Examples and Docs headers; `/tinyfly.svg` replaces the Vite favicon
 - [x] Static `<noscript>` fallback text and links in `index.html`
 - [ ] Open Graph image for link previews
+- [x] Every example on its own page, `/examples/<id>`, for sharing: card titles link to
+      it; it plays without hovering; Copy link; more from the same category; page
+      title set; unknown ids say so; the landing gallery links to these pages;
+      e2e `example-pages` check in Chromium, Firefox and WebKit
 - [ ] Gallery cards show live miniature previews of the demos instead of colour fields
 
 ---
@@ -1564,32 +1568,35 @@ section by section.
 - **Keep moving:** hints, "show solution", "reset step", progress saved
   locally, and every step deep-linkable (`/learn/scroll/pinning`).
 
-### 29A — Lesson runtime
+### 29A — Lesson runtime (pilot shipped)
 
-- [ ] `/learn` route: course map (modules → lessons → steps) with progress, and a
-      **Learn** button in the editor toolbar and on the Examples page
-- [ ] Step layout: explanation | code | preview (stacked on phones); run on edit
-      (debounced), Reset, Hint, Solution, Next; errors shown inline with the line
-- [ ] Preview sandbox: a scoped `Stage` per run and teardown between runs (scroll
-      triggers, pins, tickers, listeners); scroll lessons get a scroll container
-      preview; the Stage + scroller setup is shared with the Examples page
-- [ ] Check API: `expect.track(target, property)`, `expect.valueAt(target, property, ms)`,
-      `expect.eases`, `expect.pinned`, `expect.dom(selector)`, each with a
-      friendly failure message; celebrate on pass
-- [ ] Timeline scrubber under the preview (reuses engine `seek`) and an
-      "inspect JSON" drawer, so learners see that code compiles to data
-- [ ] Progress in IndexedDB (same backend seam as projects); export and reset progress
-- [ ] "Open in editor" where a step's result is an editor animation;
-      "Copy as page" (standalone HTML) at the end of each module
+- [x] `/learn` course map (modules → lessons → steps, progress dots, Start / Continue,
+      Reset progress, "coming next" modules) and `/learn/:module/:lesson/:step`;
+      **Learn** in the landing nav and footer and the editor's More menu
+- [x] Step layout: explanation (markdown, progressive hints) | code (tab inserts
+      spaces, drafts saved) | preview + scrubber + Replay + checks; run 400ms after
+      typing; Reset, Show solution, Back / Next (Skip before passing); stacked on phones
+- [x] Runner (`src/learn/runner.ts`): the step's markup, a fresh scoped `Stage` per run
+      destroyed before the next, `live` recorded so checks see every timeline built
+- [x] Checks read compiled data, never screenshots: `context.definitions`,
+      `tracks(selector, property)`, `valueAt(selector, property, seconds)` (state at a
+      time, independent of playback), `duration()`; builders `animates`, `valueIs`,
+      `durationIs`, `easeIs`, `staggerIs`, `timelineCount`, `custom` with
+      learner-facing messages
+- [x] Progress and drafts in localStorage (a course needs no more; IndexedDB not needed)
+- [ ] "Inspect JSON" drawer beside the preview
+- [ ] Scroll-container previews for the scroll module
+- [ ] "Open in editor" / "Copy as page" at the end of a module
 
 ### 29B — Curriculum
 
 1. **Foundations.** Timelines, tracks and keyframes as JSON; duration and delay;
    easing, with an interactive curve visualiser; interpolation of numbers,
    colours and paths.
-2. **The GSAP-style API.** `live.to` / `from` / `fromTo` / `set`; targets and
-   selectors; stagger (`each`, `amount`, `from`); timelines and the position
-   parameter (`'<'`, `'-=0.2'`, labels); repeat, yoyo, controls.
+2. **The GSAP-style API.** ✓ pilot: 3 lessons, 10 steps — first tween (`to`, duration
+   and ease, `from`, `fromTo`), many elements (selectors, `stagger`, `from: 'center'`),
+   timelines (sequencing, the position parameter, repeat and yoyo). Still to add:
+   labels, `set`, playback controls.
 3. **The editor.** Build the same animation visually, compare its exported JSON
    with lesson 1, and embed it. A guided overlay reuses the Help Tour.
 4. **Motion craft.** Easing personality, overlap and offset, anticipation and
@@ -1620,10 +1627,10 @@ section by section.
 
 ### 29D — Quality gates
 
-- [ ] Unit test: every step's **solution** passes its checks, and every
-      **starter** fails at least one (so no step is already solved)
-- [ ] e2e `learn` check (Chromium, Firefox, WebKit): open every module, run each
-      solution, all checks pass, no page errors; phone-width layout check
+- [x] Unit test (`course.test.ts`): every step's **solution** passes its checks, and
+      every **starter** fails at least one
+- [x] e2e `learn` check (Chromium, Firefox, WebKit): every step via Show solution passes,
+      progress is remembered, phone width fits, no page errors
 - [ ] Lessons listed in the doc manifest, so `llms-full.txt` includes the course
 - [ ] Keyboard-only walkthrough of a full module; code panel and preview labelled
       for screen readers

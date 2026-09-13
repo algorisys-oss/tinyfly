@@ -7,8 +7,11 @@ import { Splash } from './splash'
 // front page does not download the editor, the exporters or the docs.
 const Editor = lazy(() => import('./editor').then((m) => ({ default: m.Editor })))
 const ExamplesPage = lazy(() => import('./examples/examples-page').then((m) => ({ default: m.ExamplesPage })))
+const ExamplePage = lazy(() => import('./examples/example-page').then((m) => ({ default: m.ExamplePage })))
 const ShowcasePage = lazy(() => import('./examples/showcase-page').then((m) => ({ default: m.ShowcasePage })))
 const DocsViewer = lazy(() => import('./docs').then((m) => ({ default: m.DocsViewer })))
+const LearnHome = lazy(() => import('./learn').then((m) => ({ default: m.LearnHome })))
+const LearnStep = lazy(() => import('./learn').then((m) => ({ default: m.LearnStep })))
 
 /** The splash belongs to the editor; the landing page and the rest open straight away. */
 const opensInEditor = () => window.location.pathname === '/app' || window.location.pathname.startsWith('/app/')
@@ -26,10 +29,13 @@ function App() {
           <Route path="/" component={LandingPage} />
           <Route path="/app" component={Editor} />
           <Route path="/examples" component={ExamplesPage} />
+          <Route path="/examples/:id" component={ExamplePage} />
           <Route path="/showcase/:id" component={ShowcasePage} />
           {/* The gallery and the editor's Samples dialog merged into /examples. */}
           <Route path="/gallery" component={() => <Navigate href="/examples" />} />
           <Route path="/docs/:page?" component={DocsViewer} />
+          <Route path="/learn" component={LearnHome} />
+          <Route path="/learn/:module/:lesson/:step?" component={LearnStep} />
         </Router>
       </Show>
     </>

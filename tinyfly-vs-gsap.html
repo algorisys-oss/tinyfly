@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>tinyfly vs GSAP — Awwwards Readiness Review</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: #2a2a3a;
+    --accent: #7c6ff5;
+    --green: #4ade80;
+    --yellow: #fbbf24;
+    --red: #f87171;
+    --blue: #60a5fa;
+    --text: #e2e0f0;
+    --muted: #8884a8;
+    --radius: 10px;
+    --font: system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", "Fira Code", "Courier New", monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 15px; line-height: 1.6; }
+  body { max-width: 1100px; margin: 0 auto; padding: 2.5rem 1.5rem 5rem; }
+
+  /* HERO */
+  .hero { text-align: center; padding: 3rem 0 2.5rem; }
+  .hero-eyebrow { font-size: 0.72rem; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); margin-bottom: .75rem; }
+  .hero h1 { font-size: clamp(1.7rem, 4.5vw, 2.6rem); font-weight: 800; letter-spacing: -.02em; line-height: 1.18; }
+  .hero h1 span { color: var(--accent); }
+  .hero-sub { color: var(--muted); margin-top: .75rem; font-size: .9rem; max-width: 560px; margin-left: auto; margin-right: auto; }
+
+  /* VERDICT BANNER */
+  .verdict { background: #1a1730; border: 1px solid var(--accent); border-radius: var(--radius); padding: 1.5rem 2rem; margin: 2rem 0; display: flex; gap: 1.5rem; align-items: flex-start; }
+  .verdict-icon { font-size: 2rem; flex-shrink: 0; }
+  .verdict-body h2 { font-size: 1rem; font-weight: 700; color: var(--accent); margin-bottom: .35rem; }
+  .verdict-body p { color: var(--text); font-size: .875rem; }
+
+  /* SECTION LABELS */
+  .section-title { font-size: .62rem; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); margin: 2.5rem 0 1rem; border-bottom: 1px solid var(--border); padding-bottom: .5rem; }
+
+  /* SCORE CARDS */
+  .score-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: .9rem; margin-bottom: 2rem; }
+  .score-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem 1rem; }
+  .score-card .label { font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .45rem; }
+  .score-card .bar-row { display: flex; align-items: center; gap: .6rem; }
+  .score-card .bar-bg { flex: 1; height: 5px; background: var(--border); border-radius: 99px; overflow: hidden; min-width: 0; }
+  .score-card .bar-fill { height: 100%; border-radius: 99px; }
+  .score-card .score-val { font-size: .82rem; font-weight: 700; min-width: 28px; text-align: right; flex-shrink: 0; }
+  .score-card .sub { font-size: .68rem; color: var(--muted); margin-top: .4rem; line-height: 1.4; }
+
+  /* TABLE */
+  .cmp-table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 2rem; overflow-x: auto; }
+  .cmp-table { width: 100%; border-collapse: collapse; min-width: 640px; }
+  .cmp-table thead th { background: var(--surface2); padding: .6rem 1rem; font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); text-align: left; border-bottom: 1px solid var(--border); }
+  .cmp-table tbody tr { border-bottom: 1px solid var(--border); }
+  .cmp-table tbody tr:last-child { border-bottom: none; }
+  .cmp-table tbody td { padding: .65rem 1rem; font-size: .82rem; vertical-align: top; }
+  .cat-row td { background: var(--surface2); color: var(--accent); font-size: .66rem !important; letter-spacing: .12em; text-transform: uppercase; padding: .4rem 1rem !important; font-weight: 600; }
+
+  /* PILLS */
+  .pill { display: inline-block; border-radius: 99px; padding: .12rem .5rem; font-size: .68rem; font-weight: 600; white-space: nowrap; }
+  .pill-green  { background: #14532d22; color: var(--green);  border: 1px solid #16a34a44; }
+  .pill-yellow { background: #78350f22; color: var(--yellow); border: 1px solid #d9770644; }
+  .pill-red    { background: #450a0a22; color: var(--red);    border: 1px solid #dc262644; }
+  .pill-blue   { background: #1e3a5f22; color: var(--blue);   border: 1px solid #3b82f644; }
+  .pill-accent { background: #2d1f6e22; color: var(--accent); border: 1px solid #7c6ff544; }
+
+  /* AWWWARDS GRID */
+  .aww-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
+  @media (max-width: 640px) { .aww-grid { grid-template-columns: 1fr; } }
+  .aww-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.2rem; }
+  .aww-card h3 { font-size: .82rem; font-weight: 700; margin-bottom: .55rem; }
+  .aww-card ul { list-style: none; }
+  .aww-card ul li { font-size: .78rem; color: var(--muted); padding: .18rem 0; display: flex; gap: .5rem; align-items: flex-start; line-height: 1.4; }
+  .aww-card ul li::before { content: "›"; color: var(--accent); flex-shrink: 0; margin-top: .05rem; }
+  .aww-card.win  h3 { color: var(--green); }
+  .aww-card.gap  h3 { color: var(--yellow); }
+  .aww-card.miss h3 { color: var(--red); }
+  .aww-card.blue h3 { color: var(--blue); }
+
+  /* CODE COMPARE */
+  .code-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+  @media (max-width: 640px) { .code-compare { grid-template-columns: 1fr; } }
+  .code-block { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .code-block-header { display: flex; align-items: center; gap: .5rem; padding: .45rem .8rem; background: var(--surface2); border-bottom: 1px solid var(--border); font-size: .68rem; color: var(--muted); }
+  .code-block-header .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .code-block pre { padding: .9rem 1rem; font-family: var(--mono); font-size: .71rem; line-height: 1.65; color: #c5c0e8; overflow-x: auto; white-space: pre; }
+  .kw  { color: #a78bfa; }
+  .fn  { color: #60a5fa; }
+  .str { color: #86efac; }
+  .num { color: #fbbf24; }
+  .cm  { color: #6b7280; font-style: italic; }
+
+  /* PRINCIPLE BOX */
+  .principle-card { background: var(--surface); border: 1px solid var(--accent); border-radius: var(--radius); padding: 1.2rem 1.4rem; margin-bottom: 2rem; }
+  .principle-card h3 { font-size: .85rem; font-weight: 700; color: var(--accent); margin-bottom: .6rem; }
+  .principle-card p { font-size: .82rem; color: var(--muted); margin-bottom: .8rem; }
+  .principle-card ul { list-style: none; }
+  .principle-card ul li { font-size: .8rem; padding: .22rem 0; display: flex; gap: .5rem; color: var(--muted); line-height: 1.4; }
+
+  /* USE CASE TABLE */
+  .use-table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 2rem; overflow-x: auto; }
+  .use-table { width: 100%; border-collapse: collapse; min-width: 480px; }
+  .use-table thead th { background: var(--surface2); padding: .55rem 1rem; font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); text-align: left; border-bottom: 1px solid var(--border); }
+  .use-table tbody tr { border-bottom: 1px solid var(--border); }
+  .use-table tbody tr:last-child { border-bottom: none; }
+  .use-table tbody td { padding: .65rem 1rem; font-size: .82rem; vertical-align: top; }
+
+  /* FINAL BOX */
+  .final-box { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.75rem 2rem; margin-top: 2rem; }
+  .final-box h2 { font-size: 1.05rem; font-weight: 800; margin-bottom: 1rem; }
+  .final-box ol { padding-left: 1.2rem; }
+  .final-box ol li { font-size: .855rem; margin-bottom: .6rem; color: var(--text); }
+  .final-box ol li strong { color: var(--accent); }
+
+  /* FOOTER */
+  footer { margin-top: 4rem; border-top: 1px solid var(--border); padding-top: 1rem; text-align: center; font-size: .72rem; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">Technical Review · tinyfly v0.55.0</div>
+  <h1>Where tinyfly stands to build<br><span>Awwwards-calibre</span> websites<br>— compared to GSAP</h1>
+  <p class="hero-sub">A grounded capability comparison based on the actual codebase — no speculation, every claim traced to source files.</p>
+</div>
+
+<!-- VERDICT -->
+<div class="verdict">
+  <div class="verdict-icon">⚡</div>
+  <div class="verdict-body">
+    <h2>Bottom line</h2>
+    <p>tinyfly covers ~85% of the GSAP surface area needed for Awwwards-level work. All the core motion techniques — scroll scrubbing, pinning, split-text reveals, springs, inertia, SVG morphing, motion paths, Flip — are implemented and tested. The gaps are runtime dynamism (per-frame function values, ScrollSmoother), a handful of polish features (page transitions, image-sequence scrubbing), and an ecosystem that is still pre-v1. For greenfield award-site work it is production-capable today; for drop-in GSAP replacement it is not.</p>
+  </div>
+</div>
+
+<!-- SCORE CARDS -->
+<div class="section-title">Capability Score by Domain (out of 10)</div>
+<div class="score-grid">
+  <div class="score-card">
+    <div class="label">Core Transforms</div>
+    <div class="bar-row">
+      <div class="bar-bg"><div class="bar-fill" style="width:95%;background:var(--green)"></div></div>
+      <div class="score-val" style="color:var(--green)">9.5</div>
+    </div>
+    <div class="sub">x, y, rotate, scale, skew, opacity, perspective, clip-path</div>
+  </div>
+  <div class="score-card">
+    <div class="label">Scroll Animation</div>
+    <div class="bar-row">
+      <div class="bar-bg"><div class="bar-fill" style="width:85%;background:var(--green)"></div></div>
+      <div class="score-val" style="color:var(--green)">8.5</div>
+    </div>
+    <div class="sub">Scrub, pin, callbacks, nested scrollers. Missing ScrollSmoother.</div>
+  </div>
+  <div class="score-card">
+    <div class="label">Pointer / Interaction</div>
+    <div class="bar-row">
+      <div class="bar-bg"><div class="bar-fill" style="width:88%;background:var(--green)"></div></div>
+      <div class="score-val" style="color:var(--green)">8.8</div>
+    </div>
+    <div class="sub">quickTo, magnetic, proximity, draggable, inertia throw</div>
+  </div>
+  <div class="score-card">
+    <div class="label">Text Effects</div>
+    <div class="bar-row">
+      <div class="bar-bg"><div class="bar-fill" style="width:90%;background:var(--green)"></div></div>
+      <div class="score-val" style="color:var(--green)">9.0</div>
+    </div>
+    <div class="sub">SplitText chars/words/lines, masks, autoSplit, scramble, typewriter</div>
+  </div>
+  <div class="score-card">
+    <div class="label">SVG &amp; Paths</div>
+    <div class="bar-row">
+      <div class="bar-bg"><div class="bar-fill" style="width:92%;background:var(--green)"></div></div>
+      <div class="score-val" style="color:var(--green)">9.2</div>
+    </div>
+    <div class="sub">drawSVG, morphSVG, motionPath, autoRotate</div>
+  </div>
+  <div class="score-card">
+    <div class="label">Physics</div>
+    <div class="bar-row">
+      <div class="bar-bg"><div class="bar-fill" style="width:90%;background:var(--green)"></div></div>
+      <div class="score-val" style="color:var(--green)">9.0</div>
+    </div>
+    <div class="sub">Springs (5 presets), inertia, friction, bounds, snap</div>
+  </div>
+  <div class="score-card">
+    <div class="label">Layout Transitions</div>
+    <div class="bar-row">
+      <div class="bar-bg"><div class="bar-fill" style="width:82%;background:var(--yellow)"></div></div>
+      <div class="score-val" style="color:var(--yellow)">8.2</div>
+    </div>
+    <div class="sub">Flip + shared-element transitions via data-flip-id</div>
+  </div>
+  <div class="score-card">
+    <div class="label">Easing</div>
+    <div class="bar-row">
+      <div class="bar-bg"><div class="bar-fill" style="width:80%;background:var(--yellow)"></div></div>
+      <div class="score-val" style="color:var(--yellow)">8.0</div>
+    </div>
+    <div class="sub">9 built-in + cubic-bezier custom. Elastic/bounce baked, not runtime native.</div>
+  </div>
+  <div class="score-card">
+    <div class="label">Timeline API</div>
+    <div class="bar-row">
+      <div class="bar-bg"><div class="bar-fill" style="width:88%;background:var(--green)"></div></div>
+      <div class="score-val" style="color:var(--green)">8.8</div>
+    </div>
+    <div class="sub">.to/.from/.fromTo, position param, stagger, labels, callbacks</div>
+  </div>
+  <div class="score-card">
+    <div class="label">Runtime Dynamism</div>
+    <div class="bar-row">
+      <div class="bar-bg"><div class="bar-fill" style="width:50%;background:var(--red)"></div></div>
+      <div class="score-val" style="color:var(--red)">5.0</div>
+    </div>
+    <div class="sub">No per-frame function values; compile-time random only (by design)</div>
+  </div>
+  <div class="score-card">
+    <div class="label">Page Transitions</div>
+    <div class="bar-row">
+      <div class="bar-bg"><div class="bar-fill" style="width:35%;background:var(--red)"></div></div>
+      <div class="score-val" style="color:var(--red)">3.5</div>
+    </div>
+    <div class="sub">No built-in page transition system (planned Phase 28B.6)</div>
+  </div>
+  <div class="score-card">
+    <div class="label">Ecosystem / DX</div>
+    <div class="bar-row">
+      <div class="bar-bg"><div class="bar-fill" style="width:60%;background:var(--yellow)"></div></div>
+      <div class="score-val" style="color:var(--yellow)">6.0</div>
+    </div>
+    <div class="sub">Not on npm yet, pre-v1, smaller community than GSAP</div>
+  </div>
+</div>
+
+<!-- AWWWARDS PATTERNS -->
+<div class="section-title">Awwwards Signature Patterns — Coverage</div>
+<div class="aww-grid">
+  <div class="aww-card win">
+    <h3>✅ Fully Covered</h3>
+    <ul>
+      <li>Scroll-scrubbed entrance reveals (ScrollDriver + stagger)</li>
+      <li>Pinned horizontal scroll panels</li>
+      <li>Letter-by-letter / line-masked text reveals (SplitText)</li>
+      <li>Smooth cursor follower with lag (quickTo trail)</li>
+      <li>Magnetic button attraction (proximity + spring)</li>
+      <li>macOS dock magnification effect</li>
+      <li>SVG path drawing reveals (drawSVG)</li>
+      <li>Icon morphing on hover (morphSVG)</li>
+      <li>Animate along SVG path (motionPath + autoRotate)</li>
+      <li>Spring-based UI feedback (5 named presets)</li>
+      <li>Card shuffle with Flip layout animation</li>
+      <li>Shared-element gallery transitions (data-flip-id)</li>
+      <li>Velocity skew on scroll</li>
+      <li>Swipeable card stacks with inertia throw</li>
+      <li>Infinite marquee / looping ticker</li>
+      <li>Canvas 2D custom objects animated</li>
+      <li>3D card flip (perspective)</li>
+      <li>Counter / stats number reveal</li>
+      <li>Reduced motion detection (matchMedia)</li>
+      <li>Scramble text effect</li>
+    </ul>
+  </div>
+  <div class="aww-card gap">
+    <h3>⚠ Partial / Workaround Needed</h3>
+    <ul>
+      <li>Smooth scroll parallax — works with Lenis via driver.update(), but no built-in ScrollSmoother</li>
+      <li>Elastic / bounce eases — baked to keyframes at author-time (visual result is equivalent)</li>
+      <li>Runtime random values — compile-time only; can't vary each loop iteration at runtime</li>
+      <li>Image-sequence video scrubbing — planned Phase 28B.5; manual drawImage loop needed today</li>
+      <li>steps() easing — baked to intermediate keyframes</li>
+      <li>React/Vue lifecycle cleanup — live.context() exists but no useGSAP()-style hook yet</li>
+    </ul>
+  </div>
+  <div class="aww-card miss">
+    <h3>❌ Not Yet Available</h3>
+    <ul>
+      <li>Built-in page / route transition system (Phase 28B.6, planned)</li>
+      <li>ScrollSmoother (smooth scroll + parallax layers)</li>
+      <li>Per-frame function values (gsap.utils.pipe, per-update random)</li>
+      <li>npm package (CDN or local build only)</li>
+      <li>Framework wrappers (@tinyfly/react, etc.)</li>
+      <li>Community plugins / ecosystem</li>
+    </ul>
+  </div>
+  <div class="aww-card blue">
+    <h3>🔵 tinyfly Ahead of GSAP</h3>
+    <ul>
+      <li>Visual keyframe editor with live scroll-preview built-in</li>
+      <li>All animations portable as plain JSON (designer ↔ developer handoff)</li>
+      <li>Export: CSS keyframes, Lottie, GIF, WebP, MP4, sprite sheet</li>
+      <li>Canvas 2D &amp; WebGL animation targets (GSAP is DOM/SVG only)</li>
+      <li>Gradient animation built-in (no plugin needed)</li>
+      <li>Deterministic engine — no getComputedStyle surprises</li>
+      <li>Spring tracks are serializable and editable in the editor</li>
+      <li>Aria-aware SplitText (screen reader correct by default)</li>
+      <li>Grapheme cluster support in SplitText (emoji-safe via Intl.Segmenter)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- FEATURE TABLE -->
+<div class="section-title">Feature-by-Feature Comparison</div>
+<div class="cmp-table-wrap">
+  <table class="cmp-table">
+    <thead>
+      <tr>
+        <th style="width:36%">Feature</th>
+        <th style="width:28%">tinyfly</th>
+        <th style="width:22%">GSAP</th>
+        <th style="width:14%">Delta</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="cat-row"><td colspan="4">Core Transforms &amp; Rendering</td></tr>
+      <tr>
+        <td>x, y, rotate, scale, skew, opacity</td>
+        <td><span class="pill pill-green">✓ Full</span> CSS transform compilation</td>
+        <td><span class="pill pill-green">✓ Full</span></td>
+        <td>Parity</td>
+      </tr>
+      <tr>
+        <td>clip-path, perspective</td>
+        <td><span class="pill pill-green">✓</span> clipPath, transformPerspective</td>
+        <td><span class="pill pill-green">✓</span></td>
+        <td>Parity</td>
+      </tr>
+      <tr>
+        <td>DOM, Canvas, SVG, WebGL targets</td>
+        <td><span class="pill pill-green">✓</span> All four adapters</td>
+        <td><span class="pill pill-blue">DOM/SVG only</span></td>
+        <td>tinyfly ahead</td>
+      </tr>
+      <tr>
+        <td>Plain object targets (Three.js, uniforms)</td>
+        <td><span class="pill pill-green">✓</span></td>
+        <td><span class="pill pill-green">✓</span></td>
+        <td>Parity</td>
+      </tr>
+      <tr>
+        <td>Gradient animation</td>
+        <td><span class="pill pill-green">✓</span> Linear &amp; radial, animatable stops</td>
+        <td><span class="pill pill-yellow">Via plugin</span></td>
+        <td>tinyfly built-in</td>
+      </tr>
+      <tr>
+        <td>CSS filter animation (blur/glow)</td>
+        <td><span class="pill pill-green">✓</span> All adapters</td>
+        <td><span class="pill pill-green">✓</span></td>
+        <td>Parity</td>
+      </tr>
+
+      <tr class="cat-row"><td colspan="4">Easing &amp; Physics</td></tr>
+      <tr>
+        <td>power1–4, sine, expo, circ, back</td>
+        <td><span class="pill pill-yellow">Mapped</span> 40+ GSAP names → cubic-bezier</td>
+        <td><span class="pill pill-green">✓ Native</span></td>
+        <td>Approx, not exact</td>
+      </tr>
+      <tr>
+        <td>elastic, bounce, steps(n)</td>
+        <td><span class="pill pill-yellow">Baked</span> Sampled to intermediate keyframes</td>
+        <td><span class="pill pill-green">✓ Runtime</span></td>
+        <td>Gap: not runtime-native</td>
+      </tr>
+      <tr>
+        <td>Custom cubic-bezier</td>
+        <td><span class="pill pill-green">✓</span> + visual editor with drag handles</td>
+        <td><span class="pill pill-green">✓</span></td>
+        <td>Parity + editor</td>
+      </tr>
+      <tr>
+        <td>Springs (serializable)</td>
+        <td><span class="pill pill-green">✓</span> Fixed-timestep, deterministic, 5 presets</td>
+        <td><span class="pill pill-green">✓ Via plugin</span></td>
+        <td>tinyfly built-in + JSON portable</td>
+      </tr>
+      <tr>
+        <td>Inertia / throw</td>
+        <td><span class="pill pill-green">✓</span> Closed-form, bounds, snap, friction</td>
+        <td><span class="pill pill-green">✓ InertiaPlugin</span></td>
+        <td>Parity</td>
+      </tr>
+
+      <tr class="cat-row"><td colspan="4">Sequencing &amp; Timelines</td></tr>
+      <tr>
+        <td>Timeline .to/.from/.fromTo/.set</td>
+        <td><span class="pill pill-green">✓</span></td>
+        <td><span class="pill pill-green">✓</span></td>
+        <td>Parity</td>
+      </tr>
+      <tr>
+        <td>Position parameter (&lt;, &gt;, +=, labels)</td>
+        <td><span class="pill pill-green">✓</span> Full GSAP position syntax</td>
+        <td><span class="pill pill-green">✓</span></td>
+        <td>Parity</td>
+      </tr>
+      <tr>
+        <td>Stagger</td>
+        <td><span class="pill pill-green">✓</span> Baked by default; runtime option available</td>
+        <td><span class="pill pill-green">✓</span></td>
+        <td>Parity</td>
+      </tr>
+      <tr>
+        <td>Nested timelines</td>
+        <td><span class="pill pill-yellow">Compile-time</span> Flattened at author time</td>
+        <td><span class="pill pill-green">✓ Runtime</span></td>
+        <td>Gap for dynamic composition</td>
+      </tr>
+      <tr>
+        <td>Loop, yoyo, repeatDelay</td>
+        <td><span class="pill pill-green">✓</span></td>
+        <td><span class="pill pill-green">✓</span></td>
+        <td>Parity</td>
+      </tr>
+      <tr>
+        <td>Per-frame function values</td>
+        <td><span class="pill pill-red">✗</span> Compile-time only (determinism rule)</td>
+        <td><span class="pill pill-green">✓</span></td>
+        <td>Gap</td>
+      </tr>
+
+      <tr class="cat-row"><td colspan="4">Scroll</td></tr>
+      <tr>
+        <td>Scroll scrubbing (ScrollTrigger equiv.)</td>
+        <td><span class="pill pill-green">✓</span> ScrollDriver — exact or smoothed</td>
+        <td><span class="pill pill-green">✓ ScrollTrigger</span></td>
+        <td>Parity</td>
+      </tr>
+      <tr>
+        <td>Trigger position syntax</td>
+        <td><span class="pill pill-green">✓</span> Keywords, %, offsets, functions</td>
+        <td><span class="pill pill-green">✓</span></td>
+        <td>Parity</td>
+      </tr>
+      <tr>
+        <td>Pinning</td>
+        <td><span class="pill pill-green">✓</span> CSS sticky, auto spacer, destroy()</td>
+        <td><span class="pill pill-green">✓</span></td>
+        <td>Parity</td>
+      </tr>
+      <tr>
+        <td>Horizontal scroll</td>
+        <td><span class="pill pill-green">✓</span> pinned-horizontal demo</td>
+        <td><span class="pill pill-green">✓</span></td>
+        <td>Parity</td>
+      </tr>
+      <tr>
+        <td>onEnter / onLeave / onEnterBack / onLeaveBack</td>
+        <td><span class="pill pill-green">✓</span></td>
+        <td><span class="pill pill-green">✓</span></td>
+        <td>Parity</td>
+      </tr>
+      <tr>
+        <td>Nested / custom scrollers</td>
+        <td><span class="pill pill-green">✓</span> scroller option</td>
+        <td><span class="pill pill-green">✓</span></td>
+        <td>Parity</td>
+      </tr>
+      <tr>
+        <td>Lenis / Locomotive Scroll</td>
+        <td><span class="pill pill-green">✓</span> driver.update(scroll) bridge</td>
+        <td><span class="pill pill-green">✓</span></td>
+        <td>Parity</td>
+      </tr>
+      <tr>
+        <td>ScrollSmoother</td>
+        <td><span class="pill pill-red">✗ Planned</span> Phase 28B.6</td>
+        <td><span class="pill pill-green">✓ Plugin</span></td>
+        <td>Gap</td>
+      </tr>
+      <tr>
+        <td>Image-sequence scrubbing</td>
+        <td><span class="pill pill-red">✗ Planned</span> Phase 28B.5</td>
+        <td><span class="pill pill-green">✓</span></td>
+        <td>Gap</td>
+      </tr>
+
+      <tr class="cat-row"><td colspan="4">Pointer &amp; Interaction</td></tr>
+      <tr>
+        <td>quickTo (reusable tween setter)</td>
+        <td><span class="pill pill-green">✓</span> live.quickTo</td>
+        <td><span class="pill pill-green">✓ quickTo</span></td>
+        <td>Parity</td>
+      </tr>
+      <tr>
+        <td>Draggable + inertia throw</td>
+        <td><span class="pill pill-green">✓</span> Bounds, snap, axis-lock</td>
+        <td><span class="pill pill-green">✓ Draggable</span></td>
+        <td>Parity</td>
+      </tr>
+      <tr>
+        <td>Pointer/wheel/touch Observer</td>
+        <td><span class="pill pill-green">✓</span> Normalised Observer (velocity, delta)</td>
+        <td><span class="pill pill-green">✓ Observer</span></td>
+        <td>Parity</td>
+      </tr>
+      <tr>
+        <td>Magnetic button pattern</td>
+        <td><span class="pill pill-green">✓</span> magnetic-button live demo</td>
+        <td><span class="pill pill-blue">DIY</span></td>
+        <td>tinyfly has demo</td>
+      </tr>
+      <tr>
+        <td>Velocity-based skew on scroll</td>
+        <td><span class="pill pill-green">✓</span> velocity-skew demo</td>
+        <td><span class="pill pill-blue">DIY</span></td>
+        <td>tinyfly has demo</td>
+      </tr>
+
+      <tr class="cat-row"><td colspan="4">Text Effects</td></tr>
+      <tr>
+        <td>SplitText (chars/words/lines)</td>
+        <td><span class="pill pill-green">✓</span> +masks, autoSplit, aria-label</td>
+        <td><span class="pill pill-green">✓ SplitText</span></td>
+        <td>Parity + aria built-in</td>
+      </tr>
+      <tr>
+        <td>Typewriter / scramble text</td>
+        <td><span class="pill pill-green">✓</span> TextTrack with TypeTextVars/ScrambleTextVars</td>
+        <td><span class="pill pill-green">✓ Via plugin</span></td>
+        <td>Parity</td>
+      </tr>
+      <tr>
+        <td>Grapheme clusters (emoji-safe)</td>
+        <td><span class="pill pill-green">✓</span> Intl.Segmenter</td>
+        <td><span class="pill pill-yellow">Partial</span></td>
+        <td>tinyfly ahead</td>
+      </tr>
+
+      <tr class="cat-row"><td colspan="4">SVG &amp; Paths</td></tr>
+      <tr>
+        <td>SVG line drawing (drawSVG)</td>
+        <td><span class="pill pill-green">✓</span> strokeDasharray/offset animation</td>
+        <td><span class="pill pill-green">✓ DrawSVGPlugin</span></td>
+        <td>Parity</td>
+      </tr>
+      <tr>
+        <td>SVG morphing (morphSVG)</td>
+        <td><span class="pill pill-green">✓</span> Sample-and-lerp on path d</td>
+        <td><span class="pill pill-green">✓ MorphSVGPlugin</span></td>
+        <td>Parity</td>
+      </tr>
+      <tr>
+        <td>Motion path (motionPath)</td>
+        <td><span class="pill pill-green">✓</span> autoRotate, matrix transform</td>
+        <td><span class="pill pill-green">✓ MotionPathPlugin</span></td>
+        <td>Parity</td>
+      </tr>
+
+      <tr class="cat-row"><td colspan="4">Layout Transitions &amp; Page</td></tr>
+      <tr>
+        <td>Flip (layout animation)</td>
+        <td><span class="pill pill-green">✓</span> Measure before/after, 2-keyframe tracks</td>
+        <td><span class="pill pill-green">✓ Flip plugin</span></td>
+        <td>Parity</td>
+      </tr>
+      <tr>
+        <td>Shared element transitions</td>
+        <td><span class="pill pill-green">✓</span> data-flip-id shared elements</td>
+        <td><span class="pill pill-green">✓ Flip plugin</span></td>
+        <td>Parity</td>
+      </tr>
+      <tr>
+        <td>Page transitions (route-level)</td>
+        <td><span class="pill pill-red">✗ Planned</span></td>
+        <td><span class="pill pill-blue">DIY</span></td>
+        <td>Both lack batteries-included</td>
+      </tr>
+
+      <tr class="cat-row"><td colspan="4">Developer Experience</td></tr>
+      <tr>
+        <td>Visual keyframe editor</td>
+        <td><span class="pill pill-green">✓</span> Full editor + scroll preview</td>
+        <td><span class="pill pill-red">✗</span></td>
+        <td>tinyfly ahead</td>
+      </tr>
+      <tr>
+        <td>JSON-portable animations</td>
+        <td><span class="pill pill-green">✓</span> All animations serialize</td>
+        <td><span class="pill pill-red">✗</span> Code-only</td>
+        <td>tinyfly ahead</td>
+      </tr>
+      <tr>
+        <td>Export (CSS / Lottie / GIF / MP4)</td>
+        <td><span class="pill pill-green">✓</span> Full exporter suite</td>
+        <td><span class="pill pill-red">✗</span></td>
+        <td>tinyfly ahead</td>
+      </tr>
+      <tr>
+        <td>npm published</td>
+        <td><span class="pill pill-red">✗</span> CDN / local build only</td>
+        <td><span class="pill pill-green">✓</span></td>
+        <td>Gap</td>
+      </tr>
+      <tr>
+        <td>Framework wrappers (React/Vue/Svelte)</td>
+        <td><span class="pill pill-yellow">Planned</span> Phase 27C.4</td>
+        <td><span class="pill pill-green">✓ @gsap/react etc.</span></td>
+        <td>Gap</td>
+      </tr>
+      <tr>
+        <td>matchMedia / reduced motion</td>
+        <td><span class="pill pill-green">✓</span> live.matchMedia()</td>
+        <td><span class="pill pill-green">✓</span></td>
+        <td>Parity</td>
+      </tr>
+      <tr>
+        <td>Scoped cleanup</td>
+        <td><span class="pill pill-green">✓</span> live.context()</td>
+        <td><span class="pill pill-green">✓ gsap.context()</span></td>
+        <td>Parity</td>
+      </tr>
+      <tr>
+        <td>Zero external dependencies</td>
+        <td><span class="pill pill-green">✓</span></td>
+        <td><span class="pill pill-green">✓</span></td>
+        <td>Parity</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- CODE SIDE BY SIDE -->
+<div class="section-title">API Similarity — Side by Side</div>
+
+<div class="code-compare">
+  <div class="code-block">
+    <div class="code-block-header">
+      <div class="dot" style="background:#f87171"></div>
+      GSAP — scroll-scrubbed reveal
+    </div>
+    <pre><span class="fn">gsap</span>.from(<span class="str">".card"</span>, {
+  <span class="kw">y</span>: <span class="num">80</span>, <span class="kw">opacity</span>: <span class="num">0</span>,
+  <span class="kw">stagger</span>: <span class="num">0.08</span>,
+  scrollTrigger: {
+    trigger: <span class="str">".section"</span>,
+    start: <span class="str">"top 80%"</span>,
+    end: <span class="str">"bottom top"</span>,
+    scrub: <span class="num">1</span>
+  }
+})</pre>
+  </div>
+  <div class="code-block">
+    <div class="code-block-header">
+      <div class="dot" style="background:#7c6ff5"></div>
+      tinyfly — identical result
+    </div>
+    <pre><span class="fn">live</span>.from(<span class="str">".card"</span>, {
+  <span class="kw">y</span>: <span class="num">80</span>, <span class="kw">opacity</span>: <span class="num">0</span>,
+  <span class="kw">stagger</span>: <span class="num">0.08</span>,
+  scrollTrigger: {
+    trigger: <span class="str">".section"</span>,
+    start: <span class="str">"top 80%"</span>,
+    end: <span class="str">"bottom top"</span>,
+    scrub: <span class="num">1</span>
+  }
+})</pre>
+  </div>
+</div>
+
+<div class="code-compare">
+  <div class="code-block">
+    <div class="code-block-header">
+      <div class="dot" style="background:#f87171"></div>
+      GSAP — magnetic cursor
+    </div>
+    <pre><span class="kw">const</span> xTo = <span class="fn">gsap</span>.quickTo(<span class="str">"#btn"</span>, <span class="str">"x"</span>, {
+  duration: <span class="num">0.4</span>,
+  ease: <span class="str">"power3.out"</span>
+})
+btn.addEventListener(<span class="str">"mousemove"</span>, e =&gt; {
+  xTo(e.clientX - cx)
+})</pre>
+  </div>
+  <div class="code-block">
+    <div class="code-block-header">
+      <div class="dot" style="background:#7c6ff5"></div>
+      tinyfly — identical result
+    </div>
+    <pre><span class="kw">const</span> xTo = <span class="fn">live</span>.quickTo(<span class="str">"#btn"</span>, <span class="str">"x"</span>, {
+  duration: <span class="num">0.4</span>,
+  ease: <span class="str">"power3.out"</span>
+})
+btn.addEventListener(<span class="str">"mousemove"</span>, e =&gt; {
+  xTo(e.clientX - cx)
+})</pre>
+  </div>
+</div>
+
+<div class="code-compare">
+  <div class="code-block">
+    <div class="code-block-header">
+      <div class="dot" style="background:#f87171"></div>
+      GSAP — SplitText reveal
+    </div>
+    <pre><span class="kw">const</span> split = <span class="kw">new</span> <span class="fn">SplitText</span>(<span class="str">".hero"</span>, {
+  type: <span class="str">"chars,lines"</span>,
+  mask: <span class="str">"lines"</span>
+})
+<span class="fn">gsap</span>.from(split.chars, {
+  y: <span class="num">40</span>, opacity: <span class="num">0</span>,
+  stagger: <span class="num">0.04</span>,
+  ease: <span class="str">"power3.out"</span>
+})</pre>
+  </div>
+  <div class="code-block">
+    <div class="code-block-header">
+      <div class="dot" style="background:#7c6ff5"></div>
+      tinyfly — identical result
+    </div>
+    <pre><span class="kw">const</span> split = <span class="fn">live</span>.splitText(<span class="str">".hero"</span>, {
+  type: <span class="str">"chars,lines"</span>,
+  mask: <span class="str">"lines"</span>
+})
+<span class="fn">live</span>.from(split.chars, {
+  y: <span class="num">40</span>, opacity: <span class="num">0</span>,
+  stagger: <span class="num">0.04</span>,
+  ease: <span class="str">"power3.out"</span>
+})</pre>
+  </div>
+</div>
+
+<!-- PRINCIPLE -->
+<div class="section-title">The Key Principled Difference</div>
+<div class="principle-card">
+  <h3>The Determinism Rule</h3>
+  <p>tinyfly's most important architectural divergence from GSAP: <strong>no <code>getComputedStyle</code>. No per-frame function values. Values are resolved at compile time and written into JSON.</strong></p>
+  <ul>
+    <li><span style="color:var(--yellow);flex-shrink:0">›</span><span style="margin-left:.3rem"><strong style="color:var(--text)">fromTo() is strongly preferred</strong> — always provide both start and end values. tinyfly logs a dev warning if it falls to a static default; GSAP silently reads the computed style.</span></li>
+    <li><span style="color:var(--yellow);flex-shrink:0">›</span><span style="margin-left:.3rem"><strong style="color:var(--text)">No repeatRefresh</strong> — values don't re-resolve each loop iteration.</span></li>
+    <li><span style="color:var(--yellow);flex-shrink:0">›</span><span style="margin-left:.3rem"><strong style="color:var(--text)">No runtime random</strong> — gsap.utils.random() inside vars is rejected; use compile-time equivalent.</span></li>
+    <li><span style="color:var(--green);flex-shrink:0">›</span><span style="margin-left:.3rem"><strong style="color:var(--text)">Upside:</strong> Any animation round-trips as JSON, opens in the editor, plays identically everywhere, and is fully inspectable.</span></li>
+  </ul>
+</div>
+
+<!-- USE CASE TABLE -->
+<div class="section-title">When to Use tinyfly</div>
+<div class="use-table-wrap">
+  <table class="use-table">
+    <thead>
+      <tr><th style="width:50%">Use case</th><th>Recommendation</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Greenfield award site (no GSAP history)</td>
+        <td><span class="pill pill-green">✅ Go for it</span> — covers all patterns, editor is a real productivity win</td>
+      </tr>
+      <tr>
+        <td>Porting existing GSAP project</td>
+        <td><span class="pill pill-yellow">⚠ Partial</span> — expect friction on getComputedStyle patterns and elastic eases</td>
+      </tr>
+      <tr>
+        <td>Smooth scroll stack (Lenis + parallax)</td>
+        <td><span class="pill pill-yellow">⚠ Workaround</span> — Lenis + driver.update() bridge; no native ScrollSmoother</td>
+      </tr>
+      <tr>
+        <td>Route-level page transitions</td>
+        <td><span class="pill pill-yellow">⚠ Roll your own</span> — live.context() + Flip; or wait for Phase 28B.6</td>
+      </tr>
+      <tr>
+        <td>Canvas / Three.js + scroll storytelling</td>
+        <td><span class="pill pill-green">✅ tinyfly ahead</span> — single frame loop for DOM + canvas + WebGL</td>
+      </tr>
+      <tr>
+        <td>Agency project needing long-term support SLA</td>
+        <td><span class="pill pill-red">⚠ Risk</span> — pre-v1, not on npm; weigh against GSAP's proven track record</td>
+      </tr>
+      <tr>
+        <td>Animator / designer collaboration</td>
+        <td><span class="pill pill-green">✅ tinyfly ahead</span> — visual editor + JSON export unlocks real designer handoff</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- FINAL VERDICT -->
+<div class="final-box">
+  <h2>🏆 Final Verdict</h2>
+  <ol>
+    <li><strong>Greenfield award site today:</strong> tinyfly has every technique you need — scroll scrubbing, pinning, split-text, springs, magnetic cursors, SVG draw, morphing, Flip, shared elements. You won't hit a wall on any standard Awwwards pattern.</li>
+    <li><strong>API familiarity:</strong> If you know GSAP, tinyfly's <code>live.*</code> API is near-identical for the 90% case. The main adjustment: always use <code>fromTo()</code> with explicit start values since tinyfly never calls <code>getComputedStyle</code>.</li>
+    <li><strong>Real gaps for complex award sites:</strong> (a) No ScrollSmoother — use Lenis with <code>driver.update(scroll)</code>; (b) No built-in page transitions — roll your own with Flip + live.context(); (c) Elastic/bounce eases are "baked" — visually equivalent but keyframe-heavy in JSON.</li>
+    <li><strong>Unique tinyfly advantage:</strong> The visual editor genuinely helps with timing complex scroll sequences. JSON-portability means designers and developers can share and inspect animations — and you get Lottie/GIF/MP4 export for free.</li>
+    <li><strong>Not a drop-in GSAP replacement:</strong> Code does not port unchanged. The determinism rule is a principled constraint, not a bug — but it requires a mental model shift from GSAP users.</li>
+    <li><strong>Maturity caveat:</strong> v0.55, not yet on npm, smaller community. For client production sites that need long-term support, this is the honest risk to weigh against GSAP's proven track record.</li>
+  </ol>
+</div>
+
+<footer>
+  tinyfly v0.55.0 &nbsp;·&nbsp; Review based on src/, docs/, todo.md &nbsp;·&nbsp; Made with IBM Bob
+</footer>
+
+</body>
+</html>
