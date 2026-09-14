@@ -135,6 +135,13 @@ npm install @algorisys/tinyfly
 
 Or use it with no build step from the [GitHub CDN](#use-from-a-script-tag-no-build-step).
 
+It also installs a `tinyfly` command for teaching figures in build pipelines:
+
+```bash
+npx tinyfly validate figure.json --markup figure.svg        # fails the build on broken figures
+npx tinyfly render figure.json figure.svg --at end > end.svg  # a static frame for RSS, email, print
+```
+
 The package ships these entry points. Each is tree-shakeable, so you pay only
 for what you import:
 
@@ -169,6 +176,7 @@ live.to('.box', { x: 200, duration: 1, ease: 'power2.out' })
 
 ```jsx
 // React: everything the setup creates is reverted when the component unmounts
+import { useRef } from 'react'
 import { useTinyfly } from '@algorisys/tinyfly/react'
 
 function Hero() {
@@ -217,9 +225,24 @@ itself.
 | `cdn/tinyfly-player.iife.js` | Player only (~17 KB gzipped), for playing editor exports |
 | `cdn/tinyfly-embed.iife.js` | Only teaching figures (~19 KB gzipped): player, step controls, auto-mount |
 
-Replace `@v0.59.0` with the version you want. **Pin a version in production**:
-a tag's files never change. `@main` follows the latest release, which jsDelivr
-caches for up to a day. Load one `tinyfly` global, not both.
+Replace `@v0.66.0` with the version you want. **Pin a version in production**:
+a tag's files never change, and each release's `cdn/README.md` lists an SRI hash
+for `integrity=`. `@main` follows the latest release, which jsDelivr caches for up
+to a day. Loading more than one bundle is safe: they add to the same `tinyfly`
+global.
+
+A teaching figure needs no code at all:
+
+```html
+<figure data-tinyfly-embed data-options='{"stepMode": true}'>
+  <svg viewBox="0 0 720 200">…<rect data-tinyfly="cell-3" …/>…</svg>
+  <script type="application/json" data-tinyfly-timeline>{ …timeline JSON with markers… }</script>
+  <figcaption>Appending to a full slice</figcaption>
+</figure>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.66.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
+```
+
+See [Teaching Animations](docs/teaching.md).
 
 Every card on the [Examples page](docs/editor-guide.md#examples) has **Copy code**, which gives you a
 complete HTML page already using these URLs.
@@ -234,7 +257,9 @@ This produces:
 
 - `lib/engine/tinyfly-engine.js` (ESM) and `.umd.cjs` — the engine
 - `lib/player/tinyfly-player.{es,umd,iife}.js` — the standalone DOM player
-- `lib/addons/{adapters,export,gsap-compat,drivers,interaction}.js` — the optional entry points
+- `lib/addons/{adapters,export,gsap-compat,drivers,interaction,teach}.js` — the optional entry points
+- `lib/frameworks/{react,vue,svelte,solid}.js` — the framework hooks
+- `lib/embed/tinyfly-embed.{iife.js,js}` — teaching embeds; `lib/cli/tools.js` — the `tinyfly` command
 - `lib/browser/tinyfly.{iife,umd}.js` and `tinyfly.js` — the all-in-one bundle
 - `lib/types/**` — TypeScript declarations
 
@@ -294,26 +319,28 @@ animate();
 
 ### Embedding Animations
 
+With a bundler (Vite, webpack, Next.js…):
+
+```js
+import { play } from '@algorisys/tinyfly/player'
+
+// Load from a JSON file (e.g. exported from the studio)
+play('#animation', './animation.json', { loop: -1 })
+
+// Or pass the JSON directly
+play('#animation', { id: 'my-animation', config: { duration: 1000 }, tracks: [/* … */] })
+```
+
+Without a build step, the player bundle puts the same functions on a `tinyfly` global:
+
 ```html
 <div id="animation">
   <div data-tinyfly="box" style="width: 60px; height: 60px; background: #4a9eff;"></div>
 </div>
 
-<script type="module">
-  import { play } from '@algorisys/tinyfly/player';
-
-  // Load from JSON file
-  play('#animation', './animation.json', {
-    loop: -1,
-    autoplay: true
-  });
-
-  // Or use inline JSON
-  play('#animation', {
-    id: 'my-animation',
-    config: { duration: 1000 },
-    tracks: [...]
-  });
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.66.0/cdn/tinyfly-player.iife.js"></script>
+<script>
+  tinyfly.play('#animation', './animation.json', { loop: -1 })
 </script>
 ```
 
