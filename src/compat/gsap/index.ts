@@ -1,5 +1,5 @@
 /**
- * tinyfly/gsap-compat — a GSAP-flavoured authoring surface.
+ * @algorisys/tinyfly/gsap-compat — a GSAP-flavoured authoring surface.
  *
  * Familiar, not compatible. GSAP code will not run unchanged; this gives GSAP
  * users a syntax they recognise that compiles to ordinary tinyfly JSON.

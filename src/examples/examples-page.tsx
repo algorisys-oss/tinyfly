@@ -360,7 +360,7 @@ const LiveExampleCard: Component<{ example: LiveCatalogExample } & CardProps> = 
       <details class="example-code" open>
         <summary>Code</summary>
         <p class="example-code-note">
-          <code>live</code> is <code>import {'{ live }'} from 'tinyfly/gsap-compat'</code>, or the{' '}
+          <code>live</code> is <code>import {'{ live }'} from '@algorisys/tinyfly/gsap-compat'</code>, or the{' '}
           <code>tinyfly</code> global from the script bundle (<code>tinyfly.to</code>, <code>tinyfly.timeline</code>).
         </p>
         <pre>{demo.code}</pre>

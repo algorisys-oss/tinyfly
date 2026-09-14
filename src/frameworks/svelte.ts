@@ -4,7 +4,7 @@ import { live as sharedLive, type LiveApi, type LiveContext } from '../compat/gs
  * `tinyfly/svelte`: a Svelte action (no Svelte import needed).
  *
  *     <script>
- *       import { tinyfly } from 'tinyfly/svelte'
+ *       import { tinyfly } from '@algorisys/tinyfly/svelte'
  *       const intro = (live) => live.from('.title', { y: 40, opacity: 0 })
  *     </script>
  *     <section use:tinyfly={intro}><h1 class="title">Hi</h1></section>

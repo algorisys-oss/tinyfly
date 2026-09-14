@@ -116,7 +116,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 ## Installation
 
 ```bash
-npm install tinyfly
+npm install @algorisys/tinyfly
 ```
 
 Or use it with no build step from the [GitHub CDN](#use-from-a-script-tag-no-build-step).
@@ -126,36 +126,36 @@ for what you import:
 
 | Import | What it is | Environments |
 |---|---|---|
-| `tinyfly` | The engine — `Timeline`, tracks, easing, JSON | Browser, Web Worker, Node |
-| `tinyfly/player` | `TinyflyPlayer`, `MediaSync`, sequencer — plays editor JSON on the DOM | Browser |
-| `tinyfly/export` | `exportToCSS`, `exportToLottie`, GIF / WebP / MP4 / sprite-sheet export | Browser (CSS and Lottie anywhere) |
-| `tinyfly/adapters` | `DOMAdapter`, `CanvasAdapter`, `SVGAdapter`, `WebGLAdapter` — apply timeline state to a render target | Browser |
-| `tinyfly/gsap-compat` | GSAP-style `live.to()` / `timeline()`, plus the compiling `tf` facade | Browser (`tf` anywhere) |
-| `tinyfly/drivers` | `ScrollDriver`, `VisibilityDriver` | Browser |
-| `tinyfly/interaction` | `Observer`, `Draggable` | Browser |
-| `tinyfly/embed` | Teaching embeds: the player with step controls, captions and one-script `[data-tinyfly-embed]` mounting; `validateEmbed`, `renderFrame` | Browser (tools anywhere) |
-| `tinyfly/teach` | `lesson()` step builder and diagram primitives (cells, pointer, stack, queue, table, pipeline) | Anywhere |
-| `tinyfly/react`, `tinyfly/vue`, `tinyfly/svelte`, `tinyfly/solid` | `useTinyfly` hooks, a Svelte action and a Solid primitive: `live` animations scoped to a component and reverted on unmount | Browser (frameworks are optional peer dependencies) |
-| `tinyfly/browser` | Everything above in one bundle | Browser |
+| `@algorisys/tinyfly` | The engine — `Timeline`, tracks, easing, JSON | Browser, Web Worker, Node |
+| `@algorisys/tinyfly/player` | `TinyflyPlayer`, `MediaSync`, sequencer — plays editor JSON on the DOM | Browser |
+| `@algorisys/tinyfly/export` | `exportToCSS`, `exportToLottie`, GIF / WebP / MP4 / sprite-sheet export | Browser (CSS and Lottie anywhere) |
+| `@algorisys/tinyfly/adapters` | `DOMAdapter`, `CanvasAdapter`, `SVGAdapter`, `WebGLAdapter` — apply timeline state to a render target | Browser |
+| `@algorisys/tinyfly/gsap-compat` | GSAP-style `live.to()` / `timeline()`, plus the compiling `tf` facade | Browser (`tf` anywhere) |
+| `@algorisys/tinyfly/drivers` | `ScrollDriver`, `VisibilityDriver` | Browser |
+| `@algorisys/tinyfly/interaction` | `Observer`, `Draggable` | Browser |
+| `@algorisys/tinyfly/embed` | Teaching embeds: the player with step controls, captions and one-script `[data-tinyfly-embed]` mounting; `validateEmbed`, `renderFrame` | Browser (tools anywhere) |
+| `@algorisys/tinyfly/teach` | `lesson()` step builder and diagram primitives (cells, pointer, stack, queue, table, pipeline) | Anywhere |
+| `@algorisys/tinyfly/react`, `@algorisys/tinyfly/vue`, `@algorisys/tinyfly/svelte`, `@algorisys/tinyfly/solid` | `useTinyfly` hooks, a Svelte action and a Solid primitive: `live` animations scoped to a component and reverted on unmount | Browser (frameworks are optional peer dependencies) |
+| `@algorisys/tinyfly/browser` | Everything above in one bundle | Browser |
 
 ```js
 // The framework-agnostic engine (browser, Web Worker, or Node)
-import { Timeline, createTrack } from 'tinyfly'
+import { Timeline, createTrack } from '@algorisys/tinyfly'
 
 // The DOM player + media sync (browser)
-import { TinyflyPlayer, MediaSync } from 'tinyfly/player'
+import { TinyflyPlayer, MediaSync } from '@algorisys/tinyfly/player'
 
 // Render adapters: apply timeline state to DOM, Canvas, SVG or WebGL (browser)
-import { DOMAdapter } from 'tinyfly/adapters'
+import { DOMAdapter } from '@algorisys/tinyfly/adapters'
 
 // GSAP-style animation of real elements (browser)
-import { live } from 'tinyfly/gsap-compat'
+import { live } from '@algorisys/tinyfly/gsap-compat'
 live.to('.box', { x: 200, duration: 1, ease: 'power2.out' })
 ```
 
 ```jsx
 // React: everything the setup creates is reverted when the component unmounts
-import { useTinyfly } from 'tinyfly/react'
+import { useTinyfly } from '@algorisys/tinyfly/react'
 
 function Hero() {
   const root = useRef(null)
@@ -242,7 +242,7 @@ Open [http://localhost:5173](http://localhost:5173) for the landing page; the vi
 ### Using the Engine (API)
 
 ```typescript
-import { Timeline, createTrack } from 'tinyfly';
+import { Timeline, createTrack } from '@algorisys/tinyfly';
 
 // Create a timeline
 const timeline = new Timeline({
@@ -283,7 +283,7 @@ animate();
 </div>
 
 <script type="module">
-  import { play } from 'tinyfly/player';
+  import { play } from '@algorisys/tinyfly/player';
 
   // Load from JSON file
   play('#animation', './animation.json', {
@@ -366,7 +366,7 @@ Custom cubic-bezier easing:
 ### Player
 
 ```typescript
-import { TinyflyPlayer, play, create } from 'tinyfly/player';
+import { TinyflyPlayer, play, create } from '@algorisys/tinyfly/player';
 
 // Quick play
 const player = await play('#container', 'animation.json', options);
@@ -399,7 +399,7 @@ player.seek(2000); // audio jumps to 2s
 player.detachMedia();
 
 // Or use the primitive directly with any { currentTime, paused, play, pause }:
-import { MediaSync } from 'tinyfly/player';
+import { MediaSync } from '@algorisys/tinyfly/player';
 const sync = new MediaSync(audio, { driftTolerance: 0.15 });
 sync.update(timelineMs, isPlaying);
 ```
@@ -407,7 +407,7 @@ sync.update(timelineMs, isPlaying);
 ### Sequencer (Multi-Scene)
 
 ```typescript
-import { TinyflySequencer, playSequence } from 'tinyfly/player';
+import { TinyflySequencer, playSequence } from '@algorisys/tinyfly/player';
 
 // Quick play all scenes in sequence
 const sequencer = await playSequence('#container', 'sequence.json', {
@@ -438,9 +438,9 @@ Three optional entry points sit outside the engine. Each is opt-in and
 tree-shakeable, so an embed that only plays an animation pays nothing for them.
 
 ```ts
-import { ScrollDriver, VisibilityDriver } from 'tinyfly/drivers'
-import { Observer, Draggable } from 'tinyfly/interaction'
-import { timeline, quickPlay } from 'tinyfly/gsap-compat'
+import { ScrollDriver, VisibilityDriver } from '@algorisys/tinyfly/drivers'
+import { Observer, Draggable } from '@algorisys/tinyfly/interaction'
+import { timeline, quickPlay } from '@algorisys/tinyfly/gsap-compat'
 ```
 
 **Scroll-driven animation** is a *driver*, not a special timeline. The engine is
@@ -490,7 +490,7 @@ timeline.addTrack({
 - Plain-object targets and `live.ticker` — drive canvas, Three.js or shader uniforms on the same frame as the DOM
 - Survives resizes and breakpoints — function values, `invalidateOnRefresh`, `splitText` `autoSplit`, `live.matchMedia()` (a real reduced-motion mode) and `live.context()` cleanup
 - `live.utils` (clamp, mapRange, interpolate, wrap, snap, seeded random, distribute, pipe…), `"random(…)"` values, `repeatRefresh`, `live.getProperty`; native elastic / bounce / back / steps eases
-- Teaching animations ([guide](docs/teaching.md)): markers and captions in the JSON, a player that steps, respects reduced motion and pauses off screen, step controls with predict-then-reveal questions, one-script declarative embeds, `tinyfly/teach` diagram primitives, and `npx tinyfly validate` / `render`
+- Teaching animations ([guide](docs/teaching.md)): markers and captions in the JSON, a player that steps, respects reduced motion and pauses off screen, step controls with predict-then-reveal questions, one-script declarative embeds, `@algorisys/tinyfly/teach` diagram primitives, and `npx @algorisys/tinyfly validate` / `render`
 - Timeline callbacks and control: `tl.call`, `tl.addPause`, `tl.tweenTo` / `tweenFromTo`, `onRepeat`, `onReverseComplete`, tween callbacks inside timelines, `live.delayedCall`, `live.killTweensOf`
 - `live.quickTo` for pointer and scroll-driven values; `snap`, `markers` and `containerAnimation` on scroll triggers
 - `live.smoothScroll` eased wheel scrolling with `data-speed` / `data-lag` parallax, on the real scroll position so triggers and pins keep working
@@ -512,7 +512,7 @@ For a page that just wants things to move, **`live`** plays straight onto
 elements — CSS selectors, elements or node lists, no target map, no loop:
 
 ```ts
-import { live } from 'tinyfly/gsap-compat'
+import { live } from '@algorisys/tinyfly/gsap-compat'
 
 live.to('.card', { y: -20, opacity: 1, duration: 0.6, stagger: 0.08, ease: 'power3.out' })
 live.to('#logo', { rotate: 360, duration: 2, repeat: -1 })
@@ -571,11 +571,11 @@ tinyfly/
 - [x] Shine sweep (highlight clipped to glyphs, all renderers)
 - [x] Audio/video sync (`MediaSync` / `player.attachMedia()`)
 - [x] WebGL adapter (minimal: textured/solid quads with transform, opacity, tint)
-- [x] Scroll-driven playback + visibility triggers (`tinyfly/drivers`)
-- [x] Drag / pointer interaction layer (`tinyfly/interaction`)
+- [x] Scroll-driven playback + visibility triggers (`@algorisys/tinyfly/drivers`)
+- [x] Drag / pointer interaction layer (`@algorisys/tinyfly/interaction`)
 - [x] Deterministic spring tracks
 - [x] FLIP layout transitions
-- [x] GSAP-flavoured compat facade (`tinyfly/gsap-compat`)
+- [x] GSAP-flavoured compat facade (`@algorisys/tinyfly/gsap-compat`)
 - [x] Scroll-scrub preview in the editor (runs the real driver, not a simulation)
 - [x] Overlapping-track warnings in the Tracks panel
 - [x] Spring curves in the graph editor

@@ -8,8 +8,8 @@ import { DOMAdapter } from '../adapters/dom'
  *
  * Both are used by the `tinyfly` command:
  *
- *     npx tinyfly validate slice.json --markup slice.svg
- *     npx tinyfly render slice.json slice.svg --at end > slice-final.svg
+ *     npx @algorisys/tinyfly validate slice.json --markup slice.svg
+ *     npx @algorisys/tinyfly render slice.json slice.svg --at end > slice-final.svg
  */
 
 export interface EmbedProblem {

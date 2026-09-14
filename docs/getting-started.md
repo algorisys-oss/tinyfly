@@ -192,7 +192,7 @@ with a GSAP-style call (durations are in seconds here):
 In a project with a bundler, the same API is a module import:
 
 ```typescript
-import { live } from 'tinyfly/gsap-compat'
+import { live } from '@algorisys/tinyfly/gsap-compat'
 
 live.to('.box', { x: 200, duration: 1 })
 ```
@@ -208,8 +208,8 @@ Underneath, an animation is a timeline of tracks. Times here are in
 milliseconds:
 
 ```typescript
-import { Timeline, createTrack } from 'tinyfly'
-import { DOMAdapter } from 'tinyfly/adapters'
+import { Timeline, createTrack } from '@algorisys/tinyfly'
+import { DOMAdapter } from '@algorisys/tinyfly/adapters'
 
 // 1. A timeline that loops forever
 const timeline = new Timeline({ id: 'fade', config: { duration: 1000, loop: -1 } })

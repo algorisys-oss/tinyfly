@@ -24,8 +24,8 @@ Practical examples for common animation patterns using the tinyfly API.
 The simplest animation — fade an element from invisible to visible.
 
 ```typescript
-import { Timeline, createTrack } from 'tinyfly'
-import { DOMAdapter } from 'tinyfly/adapters'
+import { Timeline, createTrack } from '@algorisys/tinyfly'
+import { DOMAdapter } from '@algorisys/tinyfly/adapters'
 
 const timeline = new Timeline({
   id: 'fade-in',
@@ -66,7 +66,7 @@ requestAnimationFrame(animate)
 Animate position, opacity, and rotation simultaneously.
 
 ```typescript
-import { Timeline, createTrack } from 'tinyfly'
+import { Timeline, createTrack } from '@algorisys/tinyfly'
 
 const timeline = new Timeline({
   id: 'multi-prop',
@@ -180,7 +180,7 @@ The engine automatically detects color values and uses color interpolation (blen
 Define precise easing curves using cubic bezier control points.
 
 ```typescript
-import { createCubicBezier } from 'tinyfly'
+import { createCubicBezier } from '@algorisys/tinyfly'
 
 // Create a custom "bounce" feel
 const bounceEase = createCubicBezier([0.68, -0.55, 0.265, 1.55])
@@ -218,7 +218,7 @@ Load a previously exported animation from a JSON file.
 ### Using TinyflyPlayer
 
 ```typescript
-import { TinyflyPlayer } from 'tinyfly/player'
+import { TinyflyPlayer } from '@algorisys/tinyfly/player'
 
 const player = new TinyflyPlayer('#animation-container', {
   loop: -1,
@@ -241,7 +241,7 @@ player.destroy()
 ### Using Serialization Directly
 
 ```typescript
-import { fromJSON } from 'tinyfly'
+import { fromJSON } from '@algorisys/tinyfly'
 
 const response = await fetch('./my-animation.json')
 const json = await response.text()
@@ -281,8 +281,8 @@ timeline.play()
 Animate shapes on a `<canvas>` element.
 
 ```typescript
-import { Timeline, createTrack } from 'tinyfly'
-import { CanvasAdapter } from 'tinyfly/adapters'
+import { Timeline, createTrack } from '@algorisys/tinyfly'
+import { CanvasAdapter } from '@algorisys/tinyfly/adapters'
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement
 const ctx = canvas.getContext('2d')!
@@ -386,8 +386,8 @@ Animate SVG elements directly.
 ```
 
 ```typescript
-import { Timeline, createTrack } from 'tinyfly'
-import { SVGAdapter } from 'tinyfly/adapters'
+import { Timeline, createTrack } from '@algorisys/tinyfly'
+import { SVGAdapter } from '@algorisys/tinyfly/adapters'
 
 const adapter = new SVGAdapter()
 adapter.registerTarget('ball', document.getElementById('ball') as SVGElement)
@@ -440,7 +440,7 @@ requestAnimationFrame(animate)
 Play multiple scenes in order with transitions between them.
 
 ```typescript
-import { TinyflySequencer } from 'tinyfly/player'
+import { TinyflySequencer } from '@algorisys/tinyfly/player'
 
 const sequencer = new TinyflySequencer('#container', {
   loop: -1,
@@ -523,7 +523,7 @@ sequencer.destroy()
 Build animations entirely from code, without the visual editor.
 
 ```typescript
-import { Timeline, createTrack, toJSON } from 'tinyfly'
+import { Timeline, createTrack, toJSON } from '@algorisys/tinyfly'
 
 function createBounceAnimation(targetName: string, duration = 1000): Timeline {
   const timeline = new Timeline({
@@ -589,8 +589,8 @@ console.log(json)  // Save this JSON, use it with TinyflyPlayer later
 Animate an element along a curved SVG path.
 
 ```typescript
-import { Timeline } from 'tinyfly'
-import type { MotionPathTrack } from 'tinyfly'
+import { Timeline } from '@algorisys/tinyfly'
+import type { MotionPathTrack } from '@algorisys/tinyfly'
 
 const timeline = new Timeline({
   id: 'path-animation',

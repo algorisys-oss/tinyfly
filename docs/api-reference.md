@@ -31,10 +31,10 @@ Complete reference for the tinyfly animation engine, player, and adapters.
 - [Flip](#flip)
 - [GSAP Compat](#gsap-compat)
 
-Entry points: `tinyfly` (engine), `tinyfly/export` (CSS, Lottie, GIF, WebP,
-video and sprite-sheet exporters), `tinyfly/player`, `tinyfly/adapters` (DOM,
-Canvas, SVG and WebGL adapters, Flip helpers), `tinyfly/drivers`,
-`tinyfly/interaction`, `tinyfly/gsap-compat`, and `tinyfly/browser` (the live
+Entry points: `tinyfly` (engine), `@algorisys/tinyfly/export` (CSS, Lottie, GIF, WebP,
+video and sprite-sheet exporters), `@algorisys/tinyfly/player`, `@algorisys/tinyfly/adapters` (DOM,
+Canvas, SVG and WebGL adapters, Flip helpers), `@algorisys/tinyfly/drivers`,
+`@algorisys/tinyfly/interaction`, `@algorisys/tinyfly/gsap-compat`, and `@algorisys/tinyfly/browser` (the live
 runtime and everything except the exporters, for `<script>` tags).
 
 ---
@@ -648,7 +648,7 @@ along the path.
 ### Path utilities
 
 ```typescript
-import { parsePath, getPointAtProgress, getPathLength, pointsToPath, shapeToPathData, morphPath } from 'tinyfly'
+import { parsePath, getPointAtProgress, getPathLength, pointsToPath, shapeToPathData, morphPath } from '@algorisys/tinyfly'
 
 getPathLength('M0 0 L30 40')                          // 50
 getPointAtProgress('M0 0 Q50 100 100 0', 0.5)         // { x: 50, y: 50, angle: 0 }
@@ -1007,7 +1007,7 @@ Locks media to a timeline. Depends only on a small structural subset of
 browser.
 
 ```typescript
-import { MediaSync, syncMediaElement } from 'tinyfly/player'
+import { MediaSync, syncMediaElement } from '@algorisys/tinyfly/player'
 
 interface SyncableMedia {
   currentTime: number        // seconds
@@ -1045,7 +1045,7 @@ Applies animation state to HTML elements using CSS transforms and styles.
 ### Usage
 
 ```typescript
-import { DOMAdapter } from 'tinyfly/adapters'
+import { DOMAdapter } from '@algorisys/tinyfly/adapters'
 
 const adapter = new DOMAdapter()
 adapter.registerTarget('box', document.getElementById('my-box'))
@@ -1103,7 +1103,7 @@ Draws animated shapes on a Canvas 2D context.
 ### Usage
 
 ```typescript
-import { CanvasAdapter } from 'tinyfly/adapters'
+import { CanvasAdapter } from '@algorisys/tinyfly/adapters'
 
 const canvas = document.getElementById('my-canvas') as HTMLCanvasElement
 const ctx = canvas.getContext('2d')
@@ -1246,7 +1246,7 @@ Applies animation state to SVG elements.
 ### Usage
 
 ```typescript
-import { SVGAdapter } from 'tinyfly/adapters'
+import { SVGAdapter } from '@algorisys/tinyfly/adapters'
 
 const adapter = new SVGAdapter()
 const circle = document.querySelector('circle') as SVGElement
@@ -1290,13 +1290,13 @@ Same interface as DOMAdapter:
 
 ## Export Formats
 
-The exporters are their own entry point, `tinyfly/export`, so the engine stays
+The exporters are their own entry point, `@algorisys/tinyfly/export`, so the engine stays
 small for pages that only play animations (the exporters are about half its size).
 
 ### CSS Export
 
 ```typescript
-import { exportToCSS } from 'tinyfly/export'
+import { exportToCSS } from '@algorisys/tinyfly/export'
 
 interface CSSExportOptions {
   classPrefix?: string              // CSS class prefix (default: 'tinyfly')
@@ -1325,7 +1325,7 @@ Generates standard CSS `@keyframes` animations. Combines transform properties au
 ### Lottie Export
 
 ```typescript
-import { exportToLottie } from 'tinyfly/export'
+import { exportToLottie } from '@algorisys/tinyfly/export'
 
 interface LottieExportOptions {
   name?: string                     // Animation name
@@ -1350,7 +1350,7 @@ Exports animations in the Lottie/bodymovin format. Supports position, rotation, 
 ### GIF Export
 
 ```typescript
-import { extractFrames } from 'tinyfly/export'
+import { extractFrames } from '@algorisys/tinyfly/export'
 
 interface GIFExportOptions {
   width: number
@@ -1392,7 +1392,7 @@ exportToWebP(timeline: Timeline, options: WebPExportOptions): Promise<Blob>
 ### Video Export
 
 ```typescript
-import { exportVideo, exportToMP4, exportToVideo, getVideoExportFormats, isVideoExportSupported } from 'tinyfly/export'
+import { exportVideo, exportToMP4, exportToVideo, getVideoExportFormats, isVideoExportSupported } from '@algorisys/tinyfly/export'
 
 isVideoExportSupported(): boolean
 getVideoExportFormats(): VideoExportFormat[]   // { id, label, extension, deterministic }, best first
@@ -1424,7 +1424,7 @@ JSON string.
 ```typescript
 import {
   spriteSheetLayout, frameCell, spriteFrameTimes, spriteSheetMeta
-} from 'tinyfly'
+} from '@algorisys/tinyfly'
 
 const layout = spriteSheetLayout(frames, frameWidth, frameHeight, maxColumns) // grid + sheet size
 const cell   = frameCell(index, layout)          // { index, col, row, x, y }
@@ -1447,7 +1447,7 @@ for moving, scaling, rotating and fading rectangles and images. Paths, text and
 gradients are out of scope — use the Canvas or SVG adapter for those.
 
 ```typescript
-import { WebGLAdapter } from 'tinyfly/adapters'
+import { WebGLAdapter } from '@algorisys/tinyfly/adapters'
 
 const gl = canvas.getContext('webgl')!
 const adapter = new WebGLAdapter(gl)
@@ -1544,7 +1544,7 @@ other track.
 ```typescript
 import {
   SpringSampler, springValueAt, springDuration, isUnderdamped, criticalDamping,
-} from 'tinyfly'
+} from '@algorisys/tinyfly'
 
 springDuration({ from: 0, to: 100 })     // natural settle time in ms
 springValueAt({ from: 0, to: 100 }, 120) // value at 120ms
@@ -1609,7 +1609,7 @@ per-letter stagger bakes: it keeps every letter's keyframes draggable.
 Pure helpers, shared by the editor, the engine and the compat facade:
 
 ```typescript
-import { staggerOffset, staggerOffsets, staggerSpan, staggerDistance } from 'tinyfly'
+import { staggerOffset, staggerOffsets, staggerSpan, staggerDistance } from '@algorisys/tinyfly'
 
 staggerOffsets(3, { each: 100 })   // [0, 100, 200]
 staggerSpan(4, { each: 100 })      // 300 — how far it extends a timeline
@@ -1632,7 +1632,7 @@ Turning a computed animation into plain keyframes, for export formats that only
 understand keyframes (CSS, Lottie) and for eases with no closed form.
 
 ```typescript
-import { bakeSpringTrack, bakeEasing, toKeyframedTracks, simplifyKeyframes } from 'tinyfly'
+import { bakeSpringTrack, bakeEasing, toKeyframedTracks, simplifyKeyframes } from '@algorisys/tinyfly'
 
 bakeSpringTrack(springTrack, { intervalMs: 1000 / 60, tolerance: 0.01 })
 bakeEasing(fromKeyframe, toKeyframe, elasticFn, { intervalMs: 16 })
@@ -1651,7 +1651,7 @@ Relative and random values are resolved when the timeline is **built**, not when
 it runs, so what lands in the JSON is a plain number.
 
 ```typescript
-import { ValueResolver, resolveValue, resolveSequence, createRandom } from 'tinyfly'
+import { ValueResolver, resolveValue, resolveSequence, createRandom } from '@algorisys/tinyfly'
 
 resolveValue('+=100', { base: 50 })          // 150
 resolveSequence(['+=100', '+=100'], 0)       // [100, 200]
@@ -1674,7 +1674,7 @@ touch the DOM; the engine never imports them. See
 [scroll-animation.md](scroll-animation.md).
 
 ```typescript
-import { VisibilityDriver, ScrollDriver, scrollProgress } from 'tinyfly/drivers'
+import { VisibilityDriver, ScrollDriver, scrollProgress } from '@algorisys/tinyfly/drivers'
 
 new VisibilityDriver({ timeline, trigger, behaviour: 'once' }).start()
 new ScrollDriver({ timeline, trigger, start: 'top bottom', end: 'bottom top', scrub: true }).start()
@@ -1740,7 +1740,7 @@ Live input. **Has no serializable representation** — a dragged position is not
 part of an animation document.
 
 ```typescript
-import { Observer, Draggable } from 'tinyfly/interaction'
+import { Observer, Draggable } from '@algorisys/tinyfly/interaction'
 
 // Drag to scrub a timeline
 new Draggable({ target: el, mode: 'scrub', timeline, scrubDistance: 500 }).start()
@@ -1765,7 +1765,7 @@ defaults to half the grid size, so a plain `snap: n` behaves like rounding.
 FLIP layout transitions, compiled to ordinary keyframes at authoring time.
 
 ```typescript
-import { flip, recordFlipState, buildFlipTracks } from 'tinyfly/adapters'
+import { flip, recordFlipState, buildFlipTracks } from '@algorisys/tinyfly/adapters'
 
 const tracks = flip(
   [{ name: 'card', element: cardEl }],
@@ -1787,7 +1787,7 @@ A GSAP-flavoured authoring surface that desugars to ordinary tracks. See
 [gsap-compat.md](gsap-compat.md) for the full mapping table.
 
 ```typescript
-import { timeline, quickPlay } from 'tinyfly/gsap-compat'
+import { timeline, quickPlay } from '@algorisys/tinyfly/gsap-compat'
 
 const tl = timeline()
 tl.fromTo('box', { x: 0 }, { x: 200, duration: 1, ease: 'power2.out' })
@@ -1802,7 +1802,7 @@ loop, replacing the usual boilerplate.
 ### `live` — play on real elements
 
 ```typescript
-import { live, createLive, Stage } from 'tinyfly/gsap-compat'
+import { live, createLive, Stage } from '@algorisys/tinyfly/gsap-compat'
 
 live.to('.box', { x: 200, duration: 1 })          // → LiveTimeline, already playing
 live.from(target, vars)
@@ -2100,7 +2100,7 @@ another is running takes over each element from where it appears.
 
 ### Browser bundle
 
-`tinyfly/browser` (and `lib/browser/tinyfly.iife.js` for `<script>` tags, global
+`@algorisys/tinyfly/browser` (and `lib/browser/tinyfly.iife.js` for `<script>` tags, global
 `tinyfly`) re-exports the engine, player, drivers, interaction, `tf`, `live`,
 `Stage` and `quickPlay`, with `to`, `from`, `fromTo`, `set`, `timeline`,
 `ticker` and `splitText` at the top level bound to `live`.

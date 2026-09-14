@@ -67,7 +67,7 @@ describe('scroll examples', () => {
 
   it('each snippet imports from the drivers entry point', () => {
     for (const ex of scroll()) {
-      expect(ex.driverSnippet, ex.id).toContain("from 'tinyfly/drivers'")
+      expect(ex.driverSnippet, ex.id).toContain("from '@algorisys/tinyfly/drivers'")
     }
   })
 

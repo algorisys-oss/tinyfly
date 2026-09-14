@@ -340,10 +340,10 @@ https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v{version}/cdn/tinyfly.iife.js
 
 | File | What | Global |
 |---|---|---|
-| `tinyfly.iife.js` | Everything: engine, player, `live` (GSAP-style), drivers, interaction | `tinyfly` |
-| `tinyfly.umd.js` | The same, as UMD | `tinyfly` |
+| `tinyfly.iife.js` | Everything: engine, player, `live` (GSAP-style), drivers, interaction | `@algorisys/tinyfly` |
+| `tinyfly.umd.js` | The same, as UMD | `@algorisys/tinyfly` |
 | `tinyfly.esm.js` | The same, as an ES module | — |
-| `tinyfly-player.iife.js` | Player only, for playing exported JSON | `tinyfly` |
+| `tinyfly-player.iife.js` | Player only, for playing exported JSON | `@algorisys/tinyfly` |
 
 Pin a version tag in production. The script never moves an existing tag, so a
 pinned URL keeps serving the same file; bump the version in `package.json` to

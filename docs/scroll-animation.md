@@ -10,7 +10,7 @@ scroll-driven without changing it, and a scroll animation still exports to the
 same JSON.
 
 ```ts
-import { VisibilityDriver, ScrollDriver } from 'tinyfly/drivers'
+import { VisibilityDriver, ScrollDriver } from '@algorisys/tinyfly/drivers'
 ```
 
 ## Which driver do you want?
@@ -24,7 +24,7 @@ IntersectionObserver.
 Each has a one-call form that creates the driver and starts it:
 
 ```ts
-import { playWhenVisible, scrubOnScroll } from 'tinyfly/drivers'
+import { playWhenVisible, scrubOnScroll } from '@algorisys/tinyfly/drivers'
 
 const visible = playWhenVisible({ timeline, trigger: section })   // a started VisibilityDriver
 const scrub = scrubOnScroll({ timeline, trigger: panel, scrub: true })  // a started ScrollDriver
@@ -47,7 +47,7 @@ new ScrollDriver({
 ## VisibilityDriver
 
 ```ts
-import { VisibilityDriver } from 'tinyfly/drivers'
+import { VisibilityDriver } from '@algorisys/tinyfly/drivers'
 
 const driver = new VisibilityDriver({
   timeline,
@@ -76,7 +76,7 @@ Call `driver.reset()` to let a `once` driver fire again.
 ## ScrollDriver
 
 ```ts
-import { ScrollDriver } from 'tinyfly/drivers'
+import { ScrollDriver } from '@algorisys/tinyfly/drivers'
 
 const driver = new ScrollDriver({
   timeline,

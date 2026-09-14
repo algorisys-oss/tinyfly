@@ -1,5 +1,5 @@
 {
-  "name": "tinyfly",
+  "name": "@algorisys/tinyfly",
   "version": "0.64.0",
   "type": "module",
   "description": "Lightweight, API-driven animation engine and editor. The engine is framework-agnostic and runs in browsers, Web Workers, and Node.",
@@ -110,6 +110,9 @@
     "bin",
     "lib/types"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

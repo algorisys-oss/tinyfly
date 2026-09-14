@@ -71,4 +71,4 @@ Thanks to the following contributors for this release:
 ## Links
 
 - **Full Changelog:** https://github.com/algorisys-oss/tinyfly/compare/vX.Y.Z...vA.B.C
-- **NPM:** https://www.npmjs.com/package/tinyfly/v/X.Y.Z
+- **NPM:** https://www.npmjs.com/package/@algorisys/tinyfly/v/X.Y.Z

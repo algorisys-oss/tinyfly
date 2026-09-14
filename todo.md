@@ -298,7 +298,7 @@ wave, assemble, typewriter, shine/mask reveal, blur-in).
 - [x] Audio/video sync (`MediaSync`, `player.attachMedia()`; exported from the player bundle)
 - [x] Documentation (getting started, editor guide, API reference, examples, in-app viewer)
 - [x] Docs completeness pass: file format covers every track kind (spring, inertia, text, motion-path `matrix`, scheduling, `repeatDelay`); API reference covers Timeline queries, type guards, Stage, drivers helpers, media sync and video export; editor guide and getting started match the current toolbar and track form; stale CDN versions, player paths and import paths fixed
-- [x] `tinyfly/adapters` package entry (DOM, Canvas, SVG, WebGL adapters) so the documented adapter imports resolve
+- [x] `@algorisys/tinyfly/adapters` package entry (DOM, Canvas, SVG, WebGL adapters) so the documented adapter imports resolve
 - [x] Docs for language models: `llms.txt` at the repo root (checked by a file-snapshot test), and the built editor serves `/llms.txt`, `/llms-full.txt` and raw `/docs/<page>.md` (`vite-llms-plugin.ts`); one doc manifest (`src/docs/doc-manifest.ts`) feeds these and the in-app viewer
 - [x] In-app docs viewer: all 14 user docs grouped by section, deep links (`/docs/<page>#anchor`), links between docs stay in the app (design notes open on GitHub), section-level search, meta description in `index.html`; e2e `docs` check (Chromium, Firefox)
 - [x] Example gallery (14 professional examples with DOM/Canvas renderer toggle)
@@ -355,7 +355,7 @@ Gap analysis vs a full Adobe Animate workflow and a phased plan — see
 
 ---
 
-## Phase 25: GSAP-flavoured compat facade (`tinyfly/gsap-compat`) ✓
+## Phase 25: GSAP-flavoured compat facade (`@algorisys/tinyfly/gsap-compat`) ✓
 
 **Goal:** give GSAP-literate developers a familiar imperative surface without
 letting imperative semantics into the engine. The facade is a *desugarer*: every
@@ -368,7 +368,7 @@ handed to a normal `Timeline`. Nothing new enters `src/engine/core`.
 
 ### Placement & rules
 
-- Lives in `src/compat/gsap/`, published as a separate entry `tinyfly/gsap-compat`
+- Lives in `src/compat/gsap/`, published as a separate entry `@algorisys/tinyfly/gsap-compat`
   (add to `exports` in `package.json`, build via a third Vite lib config).
 - Depends **only** on the public engine API (`Timeline`, `createTrack`, easing
   helpers). Zero new engine exports; zero DOM imports in the compile step.
@@ -553,7 +553,7 @@ have no answer at all.
      timeline entirely and is therefore *not* serializable. Must be documented
      as a live-interaction API with no JSON representation.
 - [x] Keep this out of the engine and out of the default player bundle — separate
-      entry `tinyfly/interaction`, opt-in, so embed size is unaffected.
+      entry `@algorisys/tinyfly/interaction`, opt-in, so embed size is unaffected.
 
 ### 26C — Deterministic springs & inertia (a second track kind)
 
@@ -705,11 +705,11 @@ All nine slices are implemented and tested (1085 tests, up from 731). New module
 | Baking (springs + eases) | `src/engine/core/bake.ts` |
 | Compile-time values + seeded PRNG | `src/engine/authoring/` |
 | Track queries + conflict detection | `Timeline.getTracks/removeTracks/findConflicts` |
-| Scroll + visibility drivers | `src/drivers/` → `tinyfly/drivers` |
-| Pointer/drag interaction | `src/interaction/` → `tinyfly/interaction` |
+| Scroll + visibility drivers | `src/drivers/` → `@algorisys/tinyfly/drivers` |
+| Pointer/drag interaction | `src/interaction/` → `@algorisys/tinyfly/interaction` |
 | FLIP | `src/adapters/dom/flip.ts` |
 | WebGL adapter | `src/adapters/webgl/` |
-| GSAP compat facade | `src/compat/gsap/` → `tinyfly/gsap-compat` |
+| GSAP compat facade | `src/compat/gsap/` → `@algorisys/tinyfly/gsap-compat` |
 
 Add-ons build to `lib/addons` via `vite.config.addons.ts`, with the engine
 externalised to the bare `tinyfly` specifier — importing both `tinyfly` and an
@@ -1129,7 +1129,7 @@ ergonomics, and it had never been published.
       stops when nothing is playing.
 - [x] Start values from what tinyfly last applied (via a new `startValue` hook on
       `CompatTimeline`) — resolved once at build time, still no DOM reads.
-- [x] All-in-one browser bundle `lib/browser/tinyfly.{iife,umd}.js` + `tinyfly/browser`
+- [x] All-in-one browser bundle `lib/browser/tinyfly.{iife,umd}.js` + `@algorisys/tinyfly/browser`
       entry, global `tinyfly` with `to/from/fromTo/set/timeline` at the top level.
       ~29 KB gzipped. Verified in headless Chrome from a plain `<script>` tag.
 - [x] `package.json` ready for npm: `private` removed, repository/keywords,
@@ -1295,7 +1295,7 @@ value for effort.
 ### 28.2 — Split text utility ✓
 
 - [x] `live.splitText(target, { type: 'chars,words,lines', mask })` (and
-      `splitText` from `tinyfly/gsap-compat`, `tinyfly.splitText`) returns
+      `splitText` from `@algorisys/tinyfly/gsap-compat`, `tinyfly.splitText`) returns
       `{ elements, chars, words, lines, masks, revert() }`
 - [x] Lines measured once from layout (a word starts a line below the middle of
       the line's first word; `<br>` breaks); inline markup (`<em>`, `<a>`) is
@@ -1365,12 +1365,12 @@ value for effort.
 ### 28.7 — Smaller core entry ✓
 
 - [x] GIF / WebP / MP4 / video / sprite-sheet / CSS / Lottie exporters moved from
-      the `tinyfly` entry to `tinyfly/export` (built in the add-ons config, its own
+      the `tinyfly` entry to `@algorisys/tinyfly/export` (built in the add-ons config, its own
       files bundled in, the engine external)
 - [x] Measured (gzip): engine entry 26.8 KB → 15.8 KB; script-tag bundle 37.3 KB →
       32.1 KB *including* 28.1–28.6; tree-shaken Timeline + createTrack ≈ 8.5 KB
-- [x] Breaking for `import { exportToCSS } from 'tinyfly'` and `tinyfly.exportTo…` on
-      the script-tag global — import from `tinyfly/export`; docs updated
+- [x] Breaking for `import { exportToCSS } from '@algorisys/tinyfly'` and `tinyfly.exportTo…` on
+      the script-tag global — import from `@algorisys/tinyfly/export`; docs updated
 
 ### 28.8 — Showcase: a full award-site-style page ✓
 
@@ -1701,7 +1701,7 @@ starter fails in the unit gate, and every step passes in Chromium, Firefox and W
       Fixed while reviewing: per-element tweens (drawSVG, morphSVG, text, objects,
       function values) ignored stagger `amount` and `from`, and piled delays up.
       None of the remaining gaps needs third-party code:
-  - [x] **Smooth scrolling (ScrollSmoother):** `SmoothScroll` in `tinyfly/drivers` and
+  - [x] **Smooth scrolling (ScrollSmoother):** `SmoothScroll` in `@algorisys/tinyfly/drivers` and
         `live.smoothScroll()`. Eases the wheel on the real scroll position (not a
         transformed wrapper), so triggers, sticky pins, fixed elements and anchors are
         unchanged; touch, keys and scrollbar stay native and are followed. `data-speed` /
@@ -1743,11 +1743,11 @@ starter fails in the unit gate, and every step passes in Chromium, Firefox and W
     - [x] npm package: exports per entry were already in place (`npm pack` dry run: 396 kB,
           119 files); `release:npm` added and made step 4 of "ship it" in CLAUDE.md (needs a
           one-time `npm login`). First publish happens on the next "ship it"
-    - [x] Framework wrappers (27C.4) on `live.context()`: `tinyfly/react` `useTinyfly`
-          (scope, dependencies, `contextSafe`), `tinyfly/vue` composable (scope, watch),
-          `tinyfly/svelte` action, `tinyfly/solid` `createTinyfly` — each < 1 kB, frameworks
+    - [x] Framework wrappers (27C.4) on `live.context()`: `@algorisys/tinyfly/react` `useTinyfly`
+          (scope, dependencies, `contextSafe`), `@algorisys/tinyfly/vue` composable (scope, watch),
+          `@algorisys/tinyfly/svelte` action, `@algorisys/tinyfly/solid` `createTinyfly` — each < 1 kB, frameworks
           optional peers, built by `vite.config.frameworks.ts` against the shared
-          `tinyfly/gsap-compat`; tested by mounting in React 19, Vue 3, Solid
+          `@algorisys/tinyfly/gsap-compat`; tested by mounting in React 19, Vue 3, Solid
     - [x] Ecosystem entry point instead of a plugin API: `docs/extending.md` — adapters,
           plain-object targets, eases and stagger offsets, the contract for a new track kind,
           contributing gallery examples
@@ -1793,7 +1793,7 @@ Every gap from the Go series spike on teachyourselfcoding.com, fixed:
       steps jump; follows changes to the media query
 - [x] **4. Play when visible:** `playWhenVisible` (IntersectionObserver + hidden tabs);
       autoplay waits until first seen
-- [x] **5. Controls:** `tinyfly/embed` `createControls` — restart, prev, play/pause, next,
+- [x] **5. Controls:** `@algorisys/tinyfly/embed` `createControls` — restart, prev, play/pause, next,
       scrub, step counter, speed, caption, question + Reveal; keys only inside the figure;
       CSS custom properties; labels passed in. `tinyfly-embed.iife.js` on the CDN
 - [x] **6. SVG paint:** the DOM adapter writes `fill` / `stroke` / `strokeWidth` /
@@ -1806,11 +1806,11 @@ Every gap from the Go series spike on teachyourselfcoding.com, fixed:
       `data-src`, `data-options`, `data-labels`, `data-controls`, `data-alt`;
       `mountAll()`, and automatic with `data-tinyfly-auto`; SVG gets `role="img"` + a name
 - [x] **10. Static rendering:** `renderFrame(markup, definition, at)` with no DOM (the DOM
-      adapter on stand-in elements), and `npx tinyfly render`
-- [x] **11. Validation:** `validateEmbed` + `npx tinyfly validate --markup` (targets,
+      adapter on stand-in elements), and `npx @algorisys/tinyfly render`
+- [x] **11. Validation:** `validateEmbed` + `npx @algorisys/tinyfly validate --markup` (targets,
       marker order / range / duplicates, late keyframes, orphan captions; warnings for
       missing captions and unanimated elements)
-- [x] **12. Diagram primitives:** `tinyfly/teach` — `lesson()` step builder; `cells`,
+- [x] **12. Diagram primitives:** `@algorisys/tinyfly/teach` — `lesson()` step builder; `cells`,
       `pointer`, `stack`, `queue`, `table`, `pipeline`, `figure`
 - [x] **13. Predict-then-reveal:** `pause` + `question` markers; controls show the question
       and a Reveal button

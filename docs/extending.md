@@ -28,7 +28,7 @@ uniforms, a terminal, a LED strip. Its whole contract is a method that takes an
 `AnimationState`:
 
 ```ts
-import { Timeline, type AnimationState } from 'tinyfly'
+import { Timeline, type AnimationState } from '@algorisys/tinyfly'
 
 class ConsoleAdapter {
   private readonly targets = new Map<string, { label: string }>()

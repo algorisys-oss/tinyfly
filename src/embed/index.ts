@@ -1,5 +1,5 @@
 /**
- * tinyfly/embed — teaching embeds: the player, step controls and declarative
+ * @algorisys/tinyfly/embed — teaching embeds: the player, step controls and declarative
  * auto-mounting in one bundle, plus build-time `validateEmbed` and `renderFrame`.
  *
  *     <script src="…/tinyfly-embed.iife.js" data-tinyfly-auto></script>

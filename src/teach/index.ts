@@ -1,5 +1,5 @@
 /**
- * tinyfly/teach — authoring helpers for teaching animations: `lesson()` writes
+ * @algorisys/tinyfly/teach — authoring helpers for teaching animations: `lesson()` writes
  * steps as timeline JSON, and diagram primitives (cells, pointer, stack, queue,
  * table, pipeline) produce SVG markup with matching step helpers. They run
  * anywhere (browser, Node, a build script); the output is ordinary markup and

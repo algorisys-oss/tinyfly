@@ -10,8 +10,8 @@ path for all of that:
 |---|---|
 | **Markers** in the JSON | Named steps: step through them, stop at them, caption them |
 | **The player** | Shows a frame on load; steps between markers; respects reduced motion; pauses off screen |
-| **`tinyfly/embed`** | Step controls with captions and questions, and one-script declarative mounting for CMS pages |
-| **`tinyfly/teach`** | A `lesson()` step builder, and diagram primitives (cells, pointer, stack, queue, table, pipeline) |
+| **`@algorisys/tinyfly/embed`** | Step controls with captions and questions, and one-script declarative mounting for CMS pages |
+| **`@algorisys/tinyfly/teach`** | A `lesson()` step builder, and diagram primitives (cells, pointer, stack, queue, table, pipeline) |
 | **The `tinyfly` command** | `validate` for build pipelines; `render` a frame to static SVG for RSS, email and print |
 
 ## Quick start: one script, declarative figures
@@ -117,7 +117,7 @@ player.subscribe(render)   // called when time, play state or the marker changes
 The embed bundle has them built in. To add them to your own player:
 
 ```js
-import { createControls } from 'tinyfly/embed'
+import { createControls } from '@algorisys/tinyfly/embed'
 createControls(player, figureElement, { labels: { play: 'Reproducir' }, speeds: [0.5, 1, 2] })
 ```
 
@@ -130,10 +130,10 @@ createControls(player, figureElement, { labels: { play: 'Reproducir' }, speeds: 
   `tf-ctl`.
 - **Text:** all visible text comes from `labels`.
 
-## Authoring with `tinyfly/teach`
+## Authoring with `@algorisys/tinyfly/teach`
 
 ```js
-import { lesson, figure, cells, pointer } from 'tinyfly/teach'
+import { lesson, figure, cells, pointer } from '@algorisys/tinyfly/teach'
 
 const slice = cells({ id: 's', values: [1, 2, 3, ''], x: 20, y: 30 })
 const len = pointer({ id: 'len', label: 'len', x: slice.center(2).x, y: 100 })
@@ -176,9 +176,9 @@ They run anywhere: in a browser, or in Node while a static site builds.
 ## In build pipelines
 
 ```bash
-npx tinyfly validate append.json --markup append.svg
-npx tinyfly render append.json append.svg --at end > append-final.svg
-npx tinyfly render append.json append.svg --at full > append-question.svg
+npx @algorisys/tinyfly validate append.json --markup append.svg
+npx @algorisys/tinyfly render append.json append.svg --at end > append-final.svg
+npx @algorisys/tinyfly render append.json append.svg --at full > append-question.svg
 ```
 
 **`validate`** exits with code 1 when:
@@ -194,7 +194,7 @@ are never animated.
 **`render`** writes the state at `start`, `end`, a time in ms, or a marker id into
 each animated element's `style` and text. The result is a static figure for RSS
 readers, email, print, AMP and Open Graph images. The same functions are exported as
-`validateEmbed` and `renderFrame` from `tinyfly/embed`.
+`validateEmbed` and `renderFrame` from `@algorisys/tinyfly/embed`.
 
 ## Format version
 

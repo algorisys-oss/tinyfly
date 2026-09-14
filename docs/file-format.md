@@ -432,7 +432,7 @@ The engine's serialized timeline — what `serializeTimeline(timeline)` (or
 the editor's JSON export and import write and read.
 
 ```ts
-import { serializeTimeline, toJSON, fromJSON } from 'tinyfly'
+import { serializeTimeline, toJSON, fromJSON } from '@algorisys/tinyfly'
 
 const definition = serializeTimeline(timeline)   // TimelineDefinition object
 const json = toJSON(timeline)                    // the same, as a string
@@ -505,8 +505,8 @@ pending delay.
 ### Consuming a Timeline (custom integration)
 
 ```ts
-import { deserializeTimeline } from 'tinyfly'
-import { DOMAdapter } from 'tinyfly/adapters'
+import { deserializeTimeline } from '@algorisys/tinyfly'
+import { DOMAdapter } from '@algorisys/tinyfly/adapters'
 
 const timeline = deserializeTimeline(json)   // json = Timeline Definition
 const adapter = new DOMAdapter()

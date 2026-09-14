@@ -1,6 +1,6 @@
 # GSAP compatibility layer
 
-`tinyfly/gsap-compat` gives GSAP-literate developers a syntax they recognise.
+`@algorisys/tinyfly/gsap-compat` gives GSAP-literate developers a syntax they recognise.
 
 **It is familiar, not compatible.** GSAP code will not run unchanged against it,
 and it is not a drop-in replacement. What it does is *desugar* a GSAP-shaped API
@@ -15,17 +15,17 @@ bottom — several of the gaps are principled choices, not missing work.
 ## Install and import
 
 ```ts
-import { tf, timeline } from 'tinyfly/gsap-compat'
+import { tf, timeline } from '@algorisys/tinyfly/gsap-compat'
 ```
 
 The engine is a peer import, so you get one copy of `Timeline` whether you
-import `tinyfly`, `tinyfly/gsap-compat`, or both.
+import `tinyfly`, `@algorisys/tinyfly/gsap-compat`, or both.
 
 ## A first animation
 
 ```ts
-import { timeline } from 'tinyfly/gsap-compat'
-import { quickPlay } from 'tinyfly/gsap-compat'
+import { timeline } from '@algorisys/tinyfly/gsap-compat'
+import { quickPlay } from '@algorisys/tinyfly/gsap-compat'
 
 const tl = timeline()
 tl.fromTo('box', { x: 0, opacity: 0 }, { x: 200, opacity: 1, duration: 1, ease: 'power2.out' })
@@ -57,7 +57,7 @@ hand-written tinyfly example starts with.
 wire. `live` compiles the same way and then plays the result on the page:
 
 ```ts
-import { live } from 'tinyfly/gsap-compat'
+import { live } from '@algorisys/tinyfly/gsap-compat'
 
 live.to('.box', { x: 200, duration: 1, ease: 'power2.out' })
 live.from('.card', { opacity: 0, y: 30, duration: 0.6, stagger: 0.1 })
@@ -240,7 +240,7 @@ rather than throwing.
 Build a curve once, name it, and use the name as an ease anywhere:
 
 ```js
-import { CustomEase, CustomBounce, CustomWiggle } from 'tinyfly/gsap-compat'   // or live.customEase(...)
+import { CustomEase, CustomBounce, CustomWiggle } from '@algorisys/tinyfly/gsap-compat'   // or live.customEase(...)
 
 CustomEase.create('hop', 'M0,0 C0.25,0 0.3,1.35 0.55,1.15 C0.75,1 0.85,1 1,1')
 CustomEase.create('snappy', [0.7, 0, 0.9, 0.4])       // bezier points
@@ -341,8 +341,8 @@ What GSAP sells as plugins, tinyfly ships as ordinary features:
 | GSAP plugin | tinyfly |
 |---|---|
 | ScrollSmoother | `live.smoothScroll()` — eased wheel scrolling with `data-speed` / `data-lag` parallax, on the page's real scroll position — see [Smooth scrolling](#smooth-scrolling) |
-| ScrollTrigger | `scrollTrigger` on `live` (scrub, pin, toggleActions) — see [Scroll triggers](#scroll-triggers); [`tinyfly/drivers`](./scroll-animation.md) underneath, plus a scroll-scrub preview in the editor |
-| Draggable / Observer | `live.draggable()`, and `tinyfly/interaction` — `Draggable`, `Observer` |
+| ScrollTrigger | `scrollTrigger` on `live` (scrub, pin, toggleActions) — see [Scroll triggers](#scroll-triggers); [`@algorisys/tinyfly/drivers`](./scroll-animation.md) underneath, plus a scroll-scrub preview in the editor |
+| Draggable / Observer | `live.draggable()`, and `@algorisys/tinyfly/interaction` — `Draggable`, `Observer` |
 | InertiaPlugin | The `inertia` tween option and inertia tracks — see [Inertia](#inertia-and-dragging) |
 | Flip | `live.flip()` / `live.getFlipState()` + `live.flipFrom()` — see [Flip](#flip); `flip()` in the DOM adapter for authoring |
 | MorphSVG | The `morphSVG` tween option — see [Shape morphing](#shape-morphing) |
@@ -802,7 +802,7 @@ draggables, smooth scrolling) when the component goes away:
 
 ```jsx
 // React
-import { useTinyfly } from 'tinyfly/react'
+import { useTinyfly } from '@algorisys/tinyfly/react'
 const root = useRef(null)
 const { contextSafe } = useTinyfly((live) => {
   live.from('.title', { y: 40, opacity: 0 })
@@ -812,26 +812,26 @@ const onClick = contextSafe(() => live.to('.cta', { scale: 1.1 }))  // handlers 
 
 ```js
 // Vue (<script setup>)
-import { useTinyfly } from 'tinyfly/vue'
+import { useTinyfly } from '@algorisys/tinyfly/vue'
 const root = ref(null)
 useTinyfly((live) => live.from('.title', { y: 40, opacity: 0 }), { scope: root, watch: [lang] })
 ```
 
 ```svelte
 <!-- Svelte: an action, no import from svelte needed -->
-<script>import { tinyfly } from 'tinyfly/svelte'</script>
+<script>import { tinyfly } from '@algorisys/tinyfly/svelte'</script>
 <section use:tinyfly={(live) => live.from('.title', { y: 40, opacity: 0 })}>…</section>
 ```
 
 ```jsx
 // Solid
-import { createTinyfly } from 'tinyfly/solid'
+import { createTinyfly } from '@algorisys/tinyfly/solid'
 let root
 createTinyfly((live) => live.from('.title', { y: 40, opacity: 0 }), () => root)
 ```
 
 The frameworks are optional peer dependencies, and each wrapper is under 1 KB. All
-of them use the shared `live` from `tinyfly/gsap-compat`; pass `live` (the
+of them use the shared `live` from `@algorisys/tinyfly/gsap-compat`; pass `live` (the
 `options.live` field, or the last argument for Svelte and Solid) to use a stage of
 your own.
 
@@ -1099,7 +1099,7 @@ live.draggable('.card', {
 The same spring as a track, without the GSAP-style API:
 
 ```ts
-import { Timeline } from 'tinyfly'
+import { Timeline } from '@algorisys/tinyfly'
 
 const timeline = new Timeline({ id: 'springy' })
 timeline.addTrack({
@@ -1165,7 +1165,7 @@ live.getProperty('.card', 'x')           // what tinyfly last applied
 the concrete number is what lands in the JSON:
 
 ```ts
-import { ValueResolver } from 'tinyfly'
+import { ValueResolver } from '@algorisys/tinyfly'
 
 const resolver = new ValueResolver(2024) // the seed
 resolver.resolveSequence([0, '+=100', 'random(-50, 50)'])
@@ -1177,7 +1177,7 @@ resolver.seed // store this alongside the timeline to reproduce it
 ## Full example
 
 ```ts
-import { timeline, quickPlay } from 'tinyfly/gsap-compat'
+import { timeline, quickPlay } from '@algorisys/tinyfly/gsap-compat'
 
 const tl = timeline({
   repeat: -1,

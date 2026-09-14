@@ -6,7 +6,7 @@ const ENGINE_DIR = resolve(__dirname, 'src/engine')
 const EXPORT_DIR = resolve(__dirname, 'src/engine/export')
 
 /**
- * Rewrite imports that resolve into the engine to the bare `tinyfly` specifier
+ * Rewrite imports that resolve into the engine to the bare `@algorisys/tinyfly` specifier
  * and mark them external.
  *
  * Without this each add-on inlines its own copy of the engine, so a consumer
@@ -27,7 +27,7 @@ function externaliseEngine(): Plugin {
       if (!resolved.startsWith(ENGINE_DIR)) return null
       // Inside the export entry, its own files are bundled into it.
       if (resolved.startsWith(EXPORT_DIR) && importer.startsWith(EXPORT_DIR)) return null
-      return { id: 'tinyfly', external: true }
+      return { id: '@algorisys/tinyfly', external: true }
     },
   }
 }

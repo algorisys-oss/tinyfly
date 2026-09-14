@@ -881,7 +881,7 @@ export const codeExamples: CodeExample[] = [
         fillStyle: '#4a9eff',
       } as CodeCanvasTarget,
     ],
-    driverSnippet: `import { VisibilityDriver } from 'tinyfly/drivers'
+    driverSnippet: `import { VisibilityDriver } from '@algorisys/tinyfly/drivers'
 
 // Play once, the first time the panel scrolls into view.
 new VisibilityDriver({
@@ -945,7 +945,7 @@ new VisibilityDriver({
       { name: 'mid', type: 'rect', x: 70, y: 175, width: 160, height: 50, fillStyle: '#3d6b8f' } as CodeCanvasTarget,
       { name: 'near', type: 'rect', x: 100, y: 195, width: 100, height: 45, fillStyle: '#4a9eff' } as CodeCanvasTarget,
     ],
-    driverSnippet: `import { ScrollDriver } from 'tinyfly/drivers'
+    driverSnippet: `import { ScrollDriver } from '@algorisys/tinyfly/drivers'
 
 // Tie the playhead to scroll position across the whole section.
 new ScrollDriver({
@@ -1003,7 +1003,7 @@ new ScrollDriver({
         originX: 0,
       } as CodeCanvasTarget,
     ],
-    driverSnippet: `import { ScrollDriver } from 'tinyfly/drivers'
+    driverSnippet: `import { ScrollDriver } from '@algorisys/tinyfly/drivers'
 
 // Fixed 1200px of scrubbing, starting when the article's top hits the top.
 new ScrollDriver({
