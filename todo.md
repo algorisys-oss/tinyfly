@@ -1842,6 +1842,13 @@ Every gap from the Go series spike on teachyourselfcoding.com, fixed:
 
 ## Backlog / For Review
 
+- [x] **Export Animation Document** — More → Export Animation Document downloads
+  the scene's elements, tracks and canvas as one `*.animation.json`
+  (`toAnimationDocument` in `src/editor/utils/animation-document.ts`). Export JSON
+  writes the timeline alone, which another app cannot draw: YappyDraw's tinyfly
+  import rebuilds the shapes from this file.
+  - [ ] Import JSON… does not read Animation Documents yet (it expects a timeline).
+
 - [x] **Esc closes any dialog** — every dialog (AI Settings, Project Settings,
   Export, Embed, Samples, Shortcuts, Transition) closes on Escape from anywhere
   on the page, via a shared `useEscapeClose(isOpen, onClose)` hook. It listens on

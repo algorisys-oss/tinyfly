@@ -128,6 +128,8 @@ On a tablet, tap **Save** any time for peace of mind.
 (or WebM) video, a sprite sheet, or **CSS** / **Lottie** code. The **More** menu
 has **Embed…** for copy-paste HTML for a website, and **Export JSON** to save the
 raw animation as a `.json` file you can re-import later with **Import JSON…**.
+**Export Animation Document** saves the elements together with the tracks, for
+apps that rebuild the shapes themselves, such as YappyDraw.
 
 That's the whole loop: **add → animate → ease → play → export.**
 

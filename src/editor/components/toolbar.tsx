@@ -4,6 +4,9 @@ import type { EditorStore } from '../stores/editor-store'
 import type { ProjectStore } from '../stores/project-store'
 import type { SceneStore } from '../stores/scene-store'
 import { copyText } from '../../examples/copy-code-button'
+import { serializeTimeline } from '../../engine'
+import { toAnimationDocument } from '../utils/animation-document'
+import { slugifyFilename } from '../utils/filename'
 import './toolbar.css'
 
 interface ToolbarProps {
@@ -110,6 +113,28 @@ export const Toolbar: Component<ToolbarProps> = (props) => {
 
   const handleExport = () => {
     props.store.exportToFile()
+  }
+
+  /**
+   * Download the scene as an Animation Document: elements plus tracks, so apps
+   * such as Yappy can rebuild the shapes. Export JSON writes the timeline alone.
+   */
+  const handleExportDocument = () => {
+    const timeline = props.store.state.timeline
+    if (!timeline || !props.sceneStore) return
+    const doc = toAnimationDocument(
+      serializeTimeline(timeline),
+      timeline.duration,
+      props.sceneStore.state.elements,
+      props.projectStore?.currentProject().canvas,
+    )
+    const blob = new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${slugifyFilename(doc.name ?? '')}.animation.json`
+    link.click()
+    URL.revokeObjectURL(url)
   }
 
   const handleImportClick = () => {
@@ -346,6 +371,14 @@ export const Toolbar: Component<ToolbarProps> = (props) => {
               onClick={() => { handleExport(); setShowMore(false) }}
             >
               Export JSON
+            </button>
+            <button
+              class="toolbar-more-item"
+              disabled={!props.store.state.timeline || !props.sceneStore}
+              title="Elements and tracks in one file, for apps that rebuild the shapes (such as Yappy)"
+              onClick={() => { handleExportDocument(); setShowMore(false) }}
+            >
+              Export Animation Document
             </button>
             <button
               class="toolbar-more-item"

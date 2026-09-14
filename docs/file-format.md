@@ -52,6 +52,14 @@ their properties change over time).
 - `tracks` — array of [Tracks](#tracks-and-keyframes). A track's `target` matches
   an **element `name`** (see below).
 
+The editor writes one with **More → Export Animation Document** (`*.animation.json`).
+Besides the fields above it adds `name`, playback options other than duration
+under `config` (`loop`, `speed`, `markers`…), `captions` when present, and keeps
+each element's `id` (groups refer to their children by id). Its tracks are the
+editor's tracks unchanged, so springs, staggers and scheduling fields survive for
+a reader that runs the engine; the editor's own loader reads the subset in
+[Track kinds](#track-kinds-in-an-animation-document).
+
 > **Key rule:** in the Animation Document, tracks bind to elements by **`name`**,
 > not `id`. Element `id`s are assigned by the editor on load; names are what you
 > author against. Every `track.target` must equal some `element.name`.

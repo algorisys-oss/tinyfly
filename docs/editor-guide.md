@@ -51,7 +51,7 @@ left to right:
 - **Export** — open the export dialog: **CSS**, **Lottie**, **GIF**, **WebP**,
   **MP4** (MP4 or WebM, depending on the browser) or **Sprite** sheet. See
   [Export Formats](#export-formats).
-- **More** (⋯) — a menu with **Import JSON…**, **Export JSON**, **Copy JSON** (the timeline's JSON on the clipboard, e.g. to paste into a [Learn](/learn) step), **Embed…**
+- **More** (⋯) — a menu with **Import JSON…**, **Export JSON** (the timeline only), **Export Animation Document** (the scene's elements and tracks in one file, for apps that rebuild the shapes, such as YappyDraw; see [File format](file-format.md#1-animation-document)), **Copy JSON** (the timeline's JSON on the clipboard, e.g. to paste into a [Learn](/learn) step), **Embed…**
   (copy-paste embed code), **Docs** (this documentation, in-app) and **Keyboard
   Shortcuts** (or press `?`).
 
