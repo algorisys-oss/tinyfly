@@ -53,8 +53,18 @@ export interface ScrollDriverOptions {
    * trigger. Content after it is pushed down by the pinned distance.
    */
   pin?: boolean | Element
+  /**
+   * `false` pins without pushing the content after the pin down, so it scrolls up
+   * underneath (GSAP's `pinSpacing: false`). Default `true`.
+   */
+  pinSpacing?: boolean
   /** Scroll container (default: the window) */
   scroller?: HTMLElement | null
+  /**
+   * The scroller scrolls sideways: positions use `left` / `right` edges, progress
+   * follows `scrollLeft`, and pins hold horizontally. Default `false`.
+   */
+  horizontal?: boolean
   /**
    * After scrolling stops inside the range, scroll on to the nearest point: a
    * progress step (`0.25`), a list of progress points, a function, or
@@ -202,8 +212,11 @@ export class ScrollDriver implements Driver {
     this.timeline?.pause()
 
     const pinned = this.options.pin === true ? this.options.trigger : this.options.pin || null
-    if (pinned && !this.options.container) this.pin = new ScrollPin(pinned as HTMLElement)
-    if (this.options.markers && typeof document !== 'undefined') {
+    if (pinned && !this.options.container) {
+      this.pin = new ScrollPin(pinned as HTMLElement, { axis: this.options.horizontal ? 'x' : 'y', spacing: this.options.pinSpacing !== false })
+    }
+    // Markers are drawn for vertical scrolling only.
+    if (this.options.markers && !this.options.horizontal && typeof document !== 'undefined') {
       this.markers = new ScrollMarkers(document, this.options.scroller ?? null, this.options.markers)
     }
 
@@ -443,11 +456,13 @@ export class ScrollDriver implements Driver {
 
   private scrollTo(offset: number): void {
     const scroller = this.options.scroller
+    const to = this.options.horizontal ? { left: offset } : { top: offset }
     if (scroller) {
-      if (typeof scroller.scrollTo === 'function') scroller.scrollTo({ top: offset, behavior: 'instant' })
+      if (typeof scroller.scrollTo === 'function') scroller.scrollTo({ ...to, behavior: 'instant' })
+      else if (this.options.horizontal) scroller.scrollLeft = offset
       else scroller.scrollTop = offset
     } else if (typeof window !== 'undefined') {
-      window.scrollTo({ top: offset, behavior: 'instant' })
+      window.scrollTo({ ...to, behavior: 'instant' })
     }
   }
 
@@ -532,8 +547,9 @@ export class ScrollDriver implements Driver {
 
   private scrollPosition(): number {
     const scroller = this.options.scroller
-    if (scroller) return scroller.scrollTop ?? 0
-    return typeof window !== 'undefined' ? (window.scrollY ?? 0) : 0
+    const horizontal = this.options.horizontal
+    if (scroller) return (horizontal ? scroller.scrollLeft : scroller.scrollTop) ?? 0
+    return typeof window !== 'undefined' ? ((horizontal ? window.scrollX : window.scrollY) ?? 0) : 0
   }
 
   private triggerRect(): { top: number; bottom: number; height: number } | null {
@@ -542,20 +558,30 @@ export class ScrollDriver implements Driver {
     return this.relativeRect(el.getBoundingClientRect())
   }
 
-  /** A viewport rect, relative to the scroll container when there is one. */
-  private relativeRect(box: { top: number; bottom: number; height: number }): { top: number; bottom: number; height: number } {
+  /**
+   * A viewport rect along the scroll axis, relative to the scroll container when
+   * there is one. Horizontal scrolling reports left / right / width as top / bottom / height.
+   */
+  private relativeRect(box: { top: number; bottom: number; height: number; left?: number; right?: number; width?: number }): { top: number; bottom: number; height: number } {
+    const horizontal = this.options.horizontal
+    const start = horizontal ? (box.left ?? 0) : box.top
+    const end = horizontal ? (box.right ?? 0) : box.bottom
+    const size = horizontal ? (box.width ?? 0) : box.height
     const scroller = this.options.scroller
     if (scroller && typeof scroller.getBoundingClientRect === 'function') {
       const host = scroller.getBoundingClientRect()
-      return { top: box.top - host.top, bottom: box.bottom - host.top, height: box.height }
+      const origin = horizontal ? host.left : host.top
+      return { top: start - origin, bottom: end - origin, height: size }
     }
-    return { top: box.top, bottom: box.bottom, height: box.height }
+    return { top: start, bottom: end, height: size }
   }
 
+  /** The viewport's size along the scroll axis. */
   private viewportHeight(): number {
     const scroller = this.options.scroller
-    if (scroller) return scroller.clientHeight
-    return typeof window !== 'undefined' ? window.innerHeight : 0
+    const horizontal = this.options.horizontal
+    if (scroller) return horizontal ? scroller.clientWidth : scroller.clientHeight
+    return typeof window !== 'undefined' ? (horizontal ? window.innerWidth : window.innerHeight) : 0
   }
 }
 

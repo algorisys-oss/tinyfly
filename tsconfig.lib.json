@@ -12,6 +12,6 @@
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.lib.tsbuildinfo",
     "types": []
   },
-  "include": ["src/engine", "src/adapters", "src/player", "src/drivers", "src/interaction", "src/compat", "src/browser"],
+  "include": ["src/engine", "src/adapters", "src/player", "src/drivers", "src/interaction", "src/compat", "src/browser", "src/frameworks"],
   "exclude": ["**/*.test.ts"]
 }

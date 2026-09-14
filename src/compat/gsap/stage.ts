@@ -1,3 +1,4 @@
+import { createUtils, type LiveUtils } from './utils'
 import type { Timeline, AnimationState, AnimatableValue } from '../../engine'
 import { DOMAdapter } from '../../adapters/dom'
 import type { ContextCollector, ContextHost } from './live-context'
@@ -104,6 +105,9 @@ export class Stage implements ContextHost {
    * driven — for `live.killTweensOf`. Finished one-off timelines leave it.
    */
   readonly liveTimelines = new Set<{ killTweensOf(names: string[], properties?: string[]): void }>()
+
+  /** GSAP-style utilities, with this stage's seeded random sequence (`live.utils`). */
+  readonly utils: LiveUtils = createUtils()
 
   /** Playing timelines, in activation order. */
   private readonly active = new Map<Timeline, ActiveEntry>()

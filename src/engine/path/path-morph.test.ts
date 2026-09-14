@@ -95,8 +95,26 @@ describe('morphPath', () => {
   it('samples curves densely enough to stay smooth', () => {
     const circle = 'M100 50 A50 50 0 1 1 0 50 A50 50 0 1 1 100 50 Z'
     const points = coords(morphPath(circle, 'M100 50 A50 50 0 1 1 0 50 A50 50 0 1 1 100 50 Z M0 0', 0.5))
-    expect(points.length).toBeGreaterThan(100)
     for (const [x, y] of points) expect(Math.abs(Math.hypot(x - 50, y - 50) - 50)).toBeLessThan(0.1)
+    // Between kept points the straight chords stay close to the circle, however few there are.
+    for (let i = 0; i < points.length; i++) {
+      const [ax, ay] = points[i]
+      const [bx, by] = points[(i + 1) % points.length]
+      expect(50 - Math.hypot((ax + bx) / 2 - 50, (ay + by) / 2 - 50)).toBeLessThan(0.25)
+    }
+
+  })
+
+  it('thins straight and gentle stretches, keeping corners exact', () => {
+    const wide = 'M0 0 L1000 0 L1000 10 L0 10 Z'
+    const tall = 'M0 0 L10 0 L10 1000 L0 1000 Z'
+    const points = coords(morphPath(wide, tall, 0.5))
+    expect(points.length).toBeLessThan(12)
+    // Corners are kept, so the blend reaches exactly as far as the dense plan does.
+    const xs = points.map(([x]) => x)
+    const ys = points.map(([, y]) => y)
+    clearMorphCache()
+    expect([Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)]).toEqual([0, 505, 0, 505])
   })
 
   it('is deterministic, including after clearing its cache', () => {

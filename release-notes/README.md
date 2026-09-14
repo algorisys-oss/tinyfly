@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.63.0](v0.63.0.md) | 2026-09-14 | GSAP parity: native elastic / bounce / back / steps eases, `live.utils` + seeded random + `repeatRefresh`, keyframes, grid staggers, rotation dragging, `scrollBatch` / `scrollTo`, horizontal scrollers, `pinSpacing: false`; React / Vue / Svelte / Solid hooks; faster morphing; first npm release |
 | [v0.62.0](v0.62.0.md) | 2026-09-14 | Timeline callbacks and control (`call`, `addPause`, `tweenTo`, `onRepeat`, `onReverseComplete`, tween callbacks in timelines, `delayedCall`, `killTweensOf`); `onUpdate` sees the current frame; Ganesh Chaturthi Poster showcase |
 | [v0.61.0](v0.61.0.md) | 2026-09-14 | `live.smoothScroll()`: eased wheel scrolling with `data-speed` / `data-lag` parallax on the real scroll position, so triggers and pins keep working |
 | [v0.60.0](v0.60.0.md) | 2026-09-14 | The course is complete: 9 modules, 64 checked steps up to an award-style landing page; per-element stagger fixed; Ganesh Chaturthi showcase; Copy JSON in the studio |

@@ -6,7 +6,7 @@ import { Stage, type ObjectTarget, type TargetInput, type Ticker } from './stage
 import type { AnimatableValue } from '../../engine'
 import { resolveLiveMotionPath } from './live-motion-path'
 import { convertToPath, pathDataOf, resolveMorphShape } from './live-morph'
-import { toMs, toStaggerConfig } from './vars'
+import { toMs, toStaggerConfig, type StaggerContext } from './vars'
 import { createLiveDraggable, type LiveDraggable, type LiveDraggableOptions } from './live-draggable'
 import { flipFrom, getFlipState, type FlipState, type FlipVars } from './live-flip'
 import { splitText, type SplitTextOptions, type SplitTextResult } from './split-text'
@@ -18,6 +18,10 @@ import { ImageSequence, type ImageSequenceOptions } from './image-sequence'
 import { pageTransition, type PageTransitionOptions } from './live-transition'
 import { CustomBounce, CustomEase, CustomWiggle } from './custom-eases'
 import { playheadCrossings, type Direction, type Playhead } from './playhead-crossings'
+import { isRandomString, type LiveUtils } from './utils'
+import { defaultFor } from './defaults'
+import { expandKeyframes, hasKeyframes } from './keyframes-vars'
+import { scrollBatch, scrollTo, type ScrollBatchVars, type ScrollDestination, type ScrollToVars } from './live-scroll-to'
 import type { CubicBezierPoints, CustomBounceOptions, CustomWiggleOptions } from '../../engine'
 import { staggerOffsets } from '../../engine'
 
@@ -60,6 +64,12 @@ export interface LiveTimelineOptions extends Omit<CompatTimelineOptions, 'startV
   onRepeat?: () => void
   /** On arriving back at the start after `reverse()` */
   onReverseComplete?: () => void
+  /**
+   * Rebuild the timeline at every repeat (GSAP's `repeatRefresh`): function values
+   * and `"random(…)"` strings are drawn again, so each loop differs. The random
+   * sequence is seeded, so a replay of the page is still identical.
+   */
+  repeatRefresh?: boolean
   /**
    * Drive this timeline from scrolling: scrub it, pin, or play/reverse it as a
    * range is crossed. It does not autoplay.
@@ -165,6 +175,8 @@ export class LiveTimeline {
         return undefined
       },
       startVelocity: (target, property) => stage.velocityOf(target, property),
+      layoutColumns: (targets) => columnsInFirstRow(targets.map((name) => stage.elementFor(name))),
+      random: () => stage.utils.random(0, 1),
     })
 
     this.compat.timeline.onComplete = () => {
@@ -203,6 +215,7 @@ export class LiveTimeline {
   // --- building -----------------------------------------------------------
 
   to(target: TargetInput, vars: TweenVars, position?: Position): this {
+    if (hasKeyframes(vars)) return this.record(() => this.keyframed(target, vars, position))
     return this.record(() => this.tween(target, [vars], position, ([v], names, at) => this.compat.to(names, v, at)))
   }
 
@@ -472,6 +485,21 @@ export class LiveTimeline {
     this.options.onUpdate?.()
   }
 
+  /**
+   * Rebuild for a new loop, keeping the playhead where the engine put it. Unlike
+   * `invalidate()`, start values are not re-read from a rewound render: the
+   * rebuilt tweens start where the recorded calls say, with fresh function values.
+   */
+  private refreshForRepeat(): void {
+    const time = this.timeline.currentTime
+    this.compat.reset()
+    this.events = []
+    this.ranges = []
+    for (const step of this.recipe) step()
+    this.syncDuration()
+    this.timeline.seek(Math.min(time, this.timeline.duration))
+  }
+
   /** After each frame this timeline played: callbacks crossed, repeats, completion. */
   private afterFrame(): void {
     const engine = this.timeline
@@ -504,7 +532,7 @@ export class LiveTimeline {
 
   /** Fire events and repeats between two playheads. Returns true if a pause stopped it. */
   private runCrossings(from: Playhead, to: Playhead, holding: boolean): boolean {
-    if (this.events.length === 0 && this.ranges.length === 0 && !this.options.onRepeat) return false
+    if (this.events.length === 0 && this.ranges.length === 0 && !this.options.onRepeat && !this.options.repeatRefresh) return false
     const events = this.events
     const { crossings, passes } = playheadCrossings(
       events.map((event) => event.time),
@@ -515,6 +543,8 @@ export class LiveTimeline {
     for (const crossing of crossings) {
       if (this.killed) return true
       if (crossing.kind === 'repeat') {
+        // Draw function and random values again for the loop that starts now.
+        if (this.options.repeatRefresh) this.refreshForRepeat()
         this.options.onRepeat?.()
         continue
       }
@@ -574,18 +604,62 @@ export class LiveTimeline {
     this.buildTween(names, varsList, position, build)
   }
 
+  /**
+   * A tween with `keyframes`: its segments one after another, from the tween's
+   * position and delay. With `stagger`, each target plays the whole sequence,
+   * offset like any stagger. Callbacks belong to the sequence as a whole.
+   */
+  private keyframed(target: TargetInput, vars: TweenVars, position: Position | undefined): void {
+    const names = this.resolve(target)
+    if (!names) return
+    const segments = expandKeyframes(vars)
+    if (segments.length === 0) return
+
+    const config = names.length > 1 ? toStaggerConfig(vars.stagger, this.staggerContext(names)) : undefined
+    // Targets as elements / objects: names are not selectors.
+    const targets = names.map((name) => this.targetFor(name)).filter((item): item is Element | ObjectTarget => item !== undefined)
+    const groups: Array<Array<Element | ObjectTarget>> = config ? targets.map((item) => [item]) : [targets]
+    const offsets = config ? staggerOffsets(names.length, config).map((ms) => ms / 1000) : [0]
+    const base = this.compat.timeOf(position) / 1000 + toMs(vars.delay, 0) / 1000
+
+    let start = Infinity
+    let end = -Infinity
+    groups.forEach((group, i) => {
+      segments.forEach((segment, j) => {
+        const at: Position = j === 0 ? base + offsets[i] : '>'
+        this.tween(group as TargetInput, [segment], at, ([v], buildNames, buildAt) => this.compat.to(buildNames, v, buildAt))
+        start = Math.min(start, this.compat.lastStart)
+        end = Math.max(end, this.compat.lastEnd)
+      })
+    })
+    if (start === Infinity) return
+    const { onStart, onUpdate, onComplete } = vars
+    if (onStart) this.events.push({ time: start, direction: 'forward', run: onStart })
+    if (onUpdate) this.ranges.push({ start, end, run: onUpdate })
+    if (onComplete) this.events.push({ time: end, direction: 'forward', run: onComplete })
+  }
+
+  private staggerContext(names: string[]): StaggerContext {
+    return {
+      count: names.length,
+      columnsFromLayout: () => columnsInFirstRow(names.map((name) => this.stage.elementFor(name))),
+      random: () => this.stage.utils.random(0, 1),
+    }
+  }
+
   private buildTween(
     names: string[],
     varsList: TweenVars[],
     position: Position | undefined,
     build: (varsList: TweenVars[], names: string[], position?: Position) => void
   ): void {
+    const targets = names.map((name) => this.targetFor(name))
     const perElement =
       names.length > 1 &&
       (varsList.some(differsPerElement) || names.some((name) => this.stage.objectFor(name) !== undefined))
     if (!perElement) {
       const first = this.targetFor(names[0])
-      build(varsList.map((vars) => this.prepare(resolveFunctionValues(vars, 0, first), names)), names, position)
+      build(varsList.map((vars) => this.prepare(resolveFunctionValues(vars, 0, first, this.stage.utils, targets), names)), names, position)
       return
     }
 
@@ -593,7 +667,7 @@ export class LiveTimeline {
     // stagger's each / amount / from, in seconds, as they would for one shared track.
     const last = varsList.length - 1
     const { stagger, ...rest } = varsList[last]
-    const config = toStaggerConfig(stagger)
+    const config = toStaggerConfig(stagger, this.staggerContext(names))
     const offsets = config ? staggerOffsets(names.length, config).map((ms) => ms / 1000) : names.map(() => 0)
     // The first element goes at the position, after its delay and offset. Each later
     // one goes relative to the previous element's start ('<'), which already includes
@@ -603,7 +677,7 @@ export class LiveTimeline {
       const step = i === 0 ? 0 : offsets[i] - offsets[i - 1]
       const at = i === 0 ? position : `<${step < 0 ? '-' : '+'}${Math.abs(step).toFixed(6)}`
       const perTarget = varsList.map((vars, k) => (k === last ? { ...rest, delay } : vars))
-      const resolved = perTarget.map((vars) => this.prepare(resolveFunctionValues(vars, i, this.targetFor(name)), [name]))
+      const resolved = perTarget.map((vars) => this.prepare(resolveFunctionValues(vars, i, this.targetFor(name), this.stage.utils, targets), [name]))
       build(resolved, [name], at)
     })
   }
@@ -667,6 +741,17 @@ export class LiveTimeline {
 /** The GSAP-shaped entry points, bound to one stage. */
 export interface LiveApi {
   timeline(options?: LiveTimelineOptions): LiveTimeline
+  /**
+   * GSAP's utilities: `clamp`, `mapRange`, `normalize`, `interpolate`, `wrap`,
+   * `wrapYoyo`, `snap`, `random`, `shuffle`, `distribute`, `pipe`, `splitColor`,
+   * `getUnit`. Random draws are seeded (`utils.seed(n)`), so pages replay identically.
+   */
+  readonly utils: LiveUtils
+  /**
+   * The value tinyfly last applied to a property (or a plain object's own value),
+   * falling back to the property's static default. tinyfly never reads computed styles.
+   */
+  getProperty(target: TargetInput, property: string): AnimatableValue | undefined
   /** Run `callback` after `delay` seconds, on the stage's clock (GSAP's `delayedCall`). `kill()` cancels it. */
   delayedCall(delay: number, callback: (...args: never[]) => void, params?: unknown[]): LiveTimeline
   /**
@@ -694,6 +779,16 @@ export interface LiveApi {
    * (GSAP's `ScrollTrigger.create`). `destroy()` it when done.
    */
   scrollTrigger(vars: ScrollTriggerVars & { trigger: string | Element }): ScrollDriver | undefined
+  /**
+   * One scroll trigger per element, with elements that cross an edge close
+   * together delivered in one callback (GSAP's `ScrollTrigger.batch`).
+   */
+  scrollBatch(targets: string | Element | ArrayLike<Element>, vars: ScrollBatchVars): ScrollDriver[]
+  /**
+   * Animate scrolling to an offset, element, selector or `'max'` (GSAP's
+   * ScrollToPlugin). Stops if the reader scrolls. Also: `live.to(window, { scrollTo })`.
+   */
+  scrollTo(destination: ScrollDestination, vars?: ScrollToVars): LiveTimeline
   /** Re-measure every scroll trigger and smoother, after layout changes a resize would not catch. */
   refreshScroll(): void
   /**
@@ -764,12 +859,13 @@ export function createLive(stage: Stage = new Stage()): LiveApi {
       onComplete: config.onComplete,
       onRepeat: config.onRepeat as (() => void) | undefined,
       onReverseComplete: config.onReverseComplete as (() => void) | undefined,
+      repeatRefresh: config.repeatRefresh as boolean | undefined,
       scrollTrigger: config.scrollTrigger,
     })
   }
 
   const withoutCallbacks = (vars: TweenVars): TweenVars => {
-    const { onStart: _start, onUpdate: _update, onComplete: _complete, onRepeat: _repeat, onReverseComplete: _reverse, ...rest } = vars
+    const { onStart: _start, onUpdate: _update, onComplete: _complete, onRepeat: _repeat, onReverseComplete: _reverse, repeatRefresh: _refresh, ...rest } = vars
     return rest
   }
 
@@ -782,7 +878,17 @@ export function createLive(stage: Stage = new Stage()): LiveApi {
   const api: LiveApi = {
     stage,
     ticker: stage.ticker,
+    utils: stage.utils,
+    getProperty: (target, property) => {
+      const [name] = stage.resolveTargets(target)
+      if (name === undefined) return undefined
+      const object = stage.objectFor(name)
+      if (object) return (object as Record<string, unknown>)[property] as AnimatableValue | undefined
+      return stage.appliedValue(name, property) ?? defaultFor(property)
+    },
     scrollTrigger: (vars) => track(createScrollTrigger(stage, vars)),
+    scrollBatch: (targets, vars) => scrollBatch(stage, targets, vars).map((driver) => track(driver)),
+    scrollTo: (destination, vars) => scrollTo(api, stage, destination, vars),
     refreshScroll: () => {
       ScrollDriver.refreshAll()
       SmoothScroll.refreshAll()
@@ -833,7 +939,21 @@ export function createLive(stage: Stage = new Stage()): LiveApi {
     },
     timeline: (options) => new LiveTimeline(stage, options),
     // A single tween's callbacks are its timeline's, so they are not placed again as events.
-    to: (target, vars) => single(vars).to(target, withoutCallbacks(vars)),
+    to: (target, vars) => {
+      // GSAP's ScrollToPlugin form: live.to(window, { scrollTo: '#id', duration: 1 }).
+      if (vars.scrollTo !== undefined) {
+        const { scrollTo: destination, ...rest } = vars as TweenVars & { scrollTo: ScrollDestination | { offsetX?: number; offsetY?: number } }
+        const offsets = typeof destination === 'object' && destination !== null && !('nodeType' in destination) ? (destination as { offsetX?: number; offsetY?: number }) : {}
+        const isScroller = typeof target !== 'string' && target !== window && (target as Element).nodeType === 1
+        return scrollTo(api, stage, destination as ScrollDestination, {
+          ...(rest as ScrollToVars),
+          offsetX: offsets.offsetX,
+          offsetY: offsets.offsetY,
+          scroller: isScroller ? (target as HTMLElement) : undefined,
+        })
+      }
+      return single(vars).to(target, withoutCallbacks(vars))
+    },
     from: (target, vars) => single(vars).from(target, withoutCallbacks(vars)),
     fromTo: (target, fromVars, toVars) => single(toVars).fromTo(target, fromVars, withoutCallbacks(toVars)),
     set: (target, vars) => single(vars).set(target, withoutCallbacks(vars)),
@@ -889,21 +1009,42 @@ function differsPerElement(vars: TweenVars): boolean {
 }
 
 function hasFunctionValues(vars: TweenVars): boolean {
-  return Object.entries(vars).some(([key, value]) => typeof value === 'function' && !RESERVED_KEYS.has(key))
+  return Object.entries(vars).some(([key, value]) => (typeof value === 'function' || isRandomString(value)) && !RESERVED_KEYS.has(key))
 }
 
 /**
- * Call function values (`x: (index, target) => …`) for one target. Callbacks and
- * a function `ease` are configuration, not values, and are left alone.
+ * Call function values (`x: (index, target, targets) => …`) and draw
+ * `"random(…)"` strings for one target. Callbacks and a function `ease` are
+ * configuration, not values, and are left alone.
  */
-function resolveFunctionValues(vars: TweenVars, index: number, target: Element | ObjectTarget | undefined): TweenVars {
+function resolveFunctionValues(
+  vars: TweenVars,
+  index: number,
+  target: Element | ObjectTarget | undefined,
+  utils: LiveUtils,
+  targets: unknown[]
+): TweenVars {
   if (!hasFunctionValues(vars)) return vars
   const resolved: TweenVars = {}
   for (const [key, value] of Object.entries(vars)) {
-    resolved[key] =
-      typeof value === 'function' && !RESERVED_KEYS.has(key) ? (value as (i: number, t: unknown) => unknown)(index, target) : value
+    if (RESERVED_KEYS.has(key)) resolved[key] = value
+    else if (typeof value === 'function') resolved[key] = (value as (i: number, t: unknown, all: unknown[]) => unknown)(index, target, targets)
+    else if (isRandomString(value)) resolved[key] = utils.resolveRandomString(value)
+    else resolved[key] = value
   }
   return resolved
+}
+
+/** For `grid: 'auto'`: how many elements sit on the first row (same top, within a pixel). */
+function columnsInFirstRow(elements: Array<Element | undefined>): number {
+  const tops = elements.map((element) => element?.getBoundingClientRect().top)
+  if (tops[0] === undefined) return elements.length
+  let columns = 0
+  for (const top of tops) {
+    if (top === undefined || Math.abs(top - tops[0]) > 1) break
+    columns++
+  }
+  return Math.max(1, columns)
 }
 
 /** The length of an SVG shape's stroke, measured once; undefined for anything else. */

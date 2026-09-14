@@ -506,6 +506,10 @@ Each keyframe has an easing setting that controls how the value transitions FROM
 - **ease-in-cubic** — Cubic ease in (steeper)
 - **ease-out-cubic** — Cubic ease out
 - **ease-in-out-cubic** — Cubic ease in-out
+- **elastic** — Overshoots and wobbles into place; set mode (in / out / in-out), amplitude and period
+- **bounce** — Rebounds off the end value; set mode
+- **back (overshoot)** — Goes past the value, then settles; set mode and overshoot
+- **steps** — Holds, then jumps; set the number of steps and where the jumps happen
 - **Custom cubic-bezier** — Define your own curve with the visual curve editor
 
 ### Looping, speed and direction
@@ -851,7 +855,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.62.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.63.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed

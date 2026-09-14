@@ -36,6 +36,7 @@ Key facts:
 ## Guides
 
 - [Scroll Animation](https://raw.githubusercontent.com/algorisys-oss/tinyfly/main/docs/scroll-animation.md): Scroll-driven and play-when-visible animation with ScrollDriver and VisibilityDriver.
+- [Extending tinyfly](https://raw.githubusercontent.com/algorisys-oss/tinyfly/main/docs/extending.md): Writing a render adapter, animating any object with live and the ticker, custom and parametric eases, stagger offsets, adding a track kind, and contributing gallery examples.
 - [Deployment](https://raw.githubusercontent.com/algorisys-oss/tinyfly/main/docs/DEPLOYMENT.md): Building and hosting the editor, and serving the player bundles.
 
 ## Optional

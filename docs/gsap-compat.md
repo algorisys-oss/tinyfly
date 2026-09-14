@@ -74,7 +74,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.62.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.63.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -185,6 +185,10 @@ releases its elements, and ignores any autoplay still queued.
 | Position `"label+=1"` | same | |
 | `stagger: 0.1` | same | Compiles to one multi-target track |
 | `stagger: { each, amount, from }` | same | `from`: start/end/center/edges/index |
+| `stagger: { grid, from: 'random' \| [x, y], axis, ease }` | same | Worked out into explicit `stagger.offsets` in the JSON; `grid: 'auto'` reads rows from layout |
+| `keyframes: [...]` / `{ '50%': {...} }` / `{ x: [...] }`, `easeEach` | same (`live`) | Consecutive segment tweens; with `stagger`, each target plays the whole sequence |
+| `Draggable` `type: 'rotation'` | `live.draggable(el, { type: 'rotation' })` | |
+| `ScrollTrigger.batch`, `ScrollToPlugin` | `live.scrollBatch`, `live.scrollTo` / `live.to(window, { scrollTo })` | |
 | `repeat` / `yoyo` | `repeat` / `yoyo` on `timeline()` | → `loop` / `alternate` |
 | `repeatDelay` | `repeatDelay` on `timeline()` | |
 | `timeScale()` | `timeScale()` | → `config.speed` |
@@ -195,6 +199,8 @@ releases its elements, and ignores any autoplay still queued.
 | `tl.tweenTo(pos)` / `tl.tweenFromTo(a, b)` | same (`live`) | |
 | `onRepeat`, `onReverseComplete`, tween callbacks inside timelines | same (`live`) | |
 | `gsap.delayedCall` / `gsap.killTweensOf` | `live.delayedCall` / `live.killTweensOf` | |
+| `gsap.utils.*`, `gsap.getProperty` | `live.utils.*`, `live.getProperty` | Seeded random — see [Utilities](#utilities-random-values-and-repeatrefresh) |
+| `"random(-100, 100, 5)"`, `repeatRefresh` | same (`live`) | |
 | Tween `.kill()` | handle returned by `to()` etc. | Removes only that tween's tracks |
 | `motionPath: { path, autoRotate, start, end }` | same | Compiles to a motion-path track — see [Motion paths](#motion-paths) |
 | `motionPath: [{x, y}, …]` + `curviness` | same | Points become a smooth path at build time |
@@ -222,7 +228,8 @@ Most GSAP eases map to an exact built-in or a close cubic-bezier:
 | `none`, `linear` | `linear` |
 | `power1.*`, `power2.*` | Exact built-ins: `power1` is quad, `power2` is cubic, as in GSAP |
 | `power3.*`, `power4.*`, `sine.*`, `expo.*`, `circ.*`, `back.*` | Cubic-bezier |
-| `elastic.*`, `bounce.*`, `steps(n)` | **Needs baking** — see below |
+| `elastic.*(amplitude, period)`, `bounce.*`, `back.*(overshoot)` | Parametric ease: `{ type: 'elastic', mode, amplitude, period }` … — exact, one keyframe |
+| `steps(n)` | `{ type: 'steps', count: n + 1, position: 'none' }` — GSAP's n + 1 levels from 0 to 1 |
 
 GSAP 2 spellings (`Power2.easeOut`) and bare families (`power2`, which defaults
 to `.out`) are both accepted. An unrecognised name falls back to `ease-out`
@@ -258,22 +265,22 @@ live.to('.bell', { rotate: 20, ease: 'shake' })      // swings ±20° and comes 
   it, even without `bakeEases`, so the JSON plays without the curve. The generators
   are pure functions in the engine (`customEase`, `customBounce`, `customWiggle`).
 
-### Eases that must be baked
+### Elastic, bounce, back and steps
 
-Elastic, bounce and steps overshoot or jump. No single cubic-bezier can express
-that, because a bezier ease is monotonic and these are not. Two options:
+These overshoot or jump, which no cubic-bezier can do. They compile to the
+engine's **parametric eases** — small, exact JSON evaluated when played — so the
+motion is GSAP's own curve and the keyframe stays editable in the studio:
 
-```ts
-// Default: warns, falls back to a smooth curve.
-const tl = timeline({ onWarning: console.warn })
-
-// Opt in: samples the ease into intermediate keyframes.
-const tl = timeline({ bakeEases: true, bakeIntervalMs: 1000 / 60 })
+```js
+live.to('.ball', { y: 300, ease: 'bounce.out' })
+live.to('.card', { scale: 1, ease: 'elastic.out(1.2, 0.4)' })   // → { type: 'elastic', mode: 'out', amplitude: 1.2, period: 0.4 }
+live.to('.clock', { rotate: 360, ease: 'steps(12)' })
 ```
 
-Baking keeps the output portable — a player reading the JSON needs no elastic
-implementation — at the cost of many more keyframes. That is why it is off by
-default.
+A plain `back.*` keeps its cubic-bezier (CSS can play that); `back.out(3)` with an
+overshoot becomes parametric. CSS and Lottie exports sample parametric eases into
+keyframes. For a player that predates them, `timeline({ bakeEases: true })` samples
+them at build time instead.
 
 For a real spring rather than an elastic *ease*, use a
 [spring track](#springs) instead; it is one line of parameters rather than a
@@ -320,12 +327,11 @@ reasoning below is still the bar any such proposal has to clear.
 
 | Not supported | Why | Instead |
 |---|---|---|
-| Runtime function values (`x: () => Math.random() * 100`) | Cannot serialize; different every run | Compile-time `"random(-100, 100)"` with a recorded seed — see [authoring values](#compile-time-values) |
-| `repeatRefresh` | Same reason | — |
+| Per-frame function values (a value recomputed on every frame) | Cannot serialize; the JSON would not describe the animation | Function values and `"random(…)"` run when a tween is built (and again with `repeatRefresh`); for truly per-frame values use `quickTo` or `ticker.add` |
 | Implicit `getComputedStyle` start values | Breaks determinism | The resolution chain above |
 | `overwrite: 'auto'` | Needs live tween objects mutating each other | `timeline.removeTracks(filter)`, and `findConflicts()` to detect overlaps |
 | Plugins (ScrollTrigger, Draggable, Flip, MorphSVG…) | A plugin system would let arbitrary code into the evaluation path | Built in as first-class features — see below |
-| `gsap.utils.*`, `matchMedia`, `context`, `quickSetter` | Out of scope for an animation engine | Host-app concerns |
+| `quickSetter` | Writes outside the timeline, so nothing could serialize it | `live.quickTo`, which re-aims one real tween |
 | Function eases | Cannot serialize | Named ease, or `{ type: 'cubic-bezier', points }` |
 
 ### The plugin equivalents
@@ -543,7 +549,37 @@ would not catch.
 On touch devices, resizes that only change the height a little (the address bar
 showing and hiding) do not refresh, so pins do not jump mid-scroll.
 
-Not supported: `pinSpacing: false`, `anticipatePin`, horizontal scrollers.
+- **`pinSpacing: false`** pins without pushing later content down; it scrolls up
+  underneath the pinned element.
+- **`horizontal: true`** is for a scroller that scrolls sideways. Positions use `left`
+  / `right` (`start: 'left right'`), progress follows `scrollLeft`, and pins hold
+  horizontally. Markers are vertical only.
+- **`anticipatePin` isn't needed.** Pins use `position: sticky`, so the browser holds
+  them on the compositor, with no hand-off frame where a pin could lag behind fast
+  scrolling.
+
+### Batches and scrolling to a place
+
+```js
+// Cards that enter together animate together (GSAP's ScrollTrigger.batch).
+live.scrollBatch('.card', {
+  start: 'top 85%',
+  interval: 0.1,        // seconds to collect elements that cross together
+  batchMax: 6,
+  onEnter: (cards) => live.from(cards, { y: 40, opacity: 0, stagger: 0.08 }),
+})
+
+// Scroll as an animation (GSAP's ScrollToPlugin).
+live.scrollTo('#pricing', { duration: 1, offset: 80, ease: 'power2.inOut' })
+live.to(window, { scrollTo: { y: '#pricing', offsetY: 80 }, duration: 1 })
+live.scrollTo('max')                          // the bottom
+live.scrollTo({ x: 600 }, { scroller: '.gallery' })
+```
+
+`scrollTo` measures the destination once, at the start. It is an ordinary live
+timeline, so it can be killed and takes callbacks. Wheel, touch or key input stops
+it (`autoKill: false` to keep going). With `live.smoothScroll()` running,
+`smoother.scrollTo()` does the same and keeps smoothing afterwards.
 
 ### Snapping, markers and horizontal sections
 
@@ -758,6 +794,47 @@ The [Agency Landing Page showcase](../src/examples/showcases/agency-landing.js)
 wraps its whole page this way. Under reduced motion there is no pinning, parallax
 or marquee, and values appear at their final state.
 
+### Framework hooks
+
+Each wrapper runs a setup inside `live.context()`, scoped to a component's element.
+It reverts everything the setup made (tweens, scroll triggers and pins, split text,
+draggables, smooth scrolling) when the component goes away:
+
+```jsx
+// React
+import { useTinyfly } from 'tinyfly/react'
+const root = useRef(null)
+const { contextSafe } = useTinyfly((live) => {
+  live.from('.title', { y: 40, opacity: 0 })
+}, { scope: root, dependencies: [lang] })            // re-run (after reverting) when lang changes
+const onClick = contextSafe(() => live.to('.cta', { scale: 1.1 }))  // handlers join the context
+```
+
+```js
+// Vue (<script setup>)
+import { useTinyfly } from 'tinyfly/vue'
+const root = ref(null)
+useTinyfly((live) => live.from('.title', { y: 40, opacity: 0 }), { scope: root, watch: [lang] })
+```
+
+```svelte
+<!-- Svelte: an action, no import from svelte needed -->
+<script>import { tinyfly } from 'tinyfly/svelte'</script>
+<section use:tinyfly={(live) => live.from('.title', { y: 40, opacity: 0 })}>…</section>
+```
+
+```jsx
+// Solid
+import { createTinyfly } from 'tinyfly/solid'
+let root
+createTinyfly((live) => live.from('.title', { y: 40, opacity: 0 }), () => root)
+```
+
+The frameworks are optional peer dependencies, and each wrapper is under 1 KB. All
+of them use the shared `live` from `tinyfly/gsap-compat`; pass `live` (the
+`options.live` field, or the last argument for Svelte and Solid) to use a stage of
+your own.
+
 ## Page transitions
 
 `live.pageTransition` animates a client-side route change. It plays the old view
@@ -963,11 +1040,19 @@ live.draggable('.strip', { type: 'x', bounds: { minX: -480, maxX: 0 }, inertia: 
 
 | Option | Meaning |
 |---|---|
-| `type` | `'x'`, `'y'` or `'x,y'` (default) |
-| `bounds` | An element (selector or element) to stay inside, or `{ minX, maxX, minY, maxY }` offsets |
-| `snap` | Grid size while dragging |
+| `type` | `'x'`, `'y'`, `'x,y'` (default), or `'rotation'` to spin it about its centre |
+| `bounds` | An element (selector or element) to stay inside, or `{ minX, maxX, minY, maxY }` offsets; for rotation `{ minRotation, maxRotation }` |
+| `snap` | Grid size while dragging (degrees, for rotation) |
 | `inertia` | `true`, or `{ friction, resistance, end }` — `end` as a grid size, per-axis `{ x, y }`, or `{x, y}` points (nearest in 2D wins) |
 | `onPress`, `onDrag`, `onRelease(velocity)`, `onThrowComplete` | Callbacks |
+
+```ts
+// A volume knob: drag around it, 0–270°, snapping to 15°, and flick to spin on.
+live.draggable('.knob', { type: 'rotation', bounds: { minRotation: 0, maxRotation: 270 }, snap: 15, inertia: true })
+```
+
+Rotation follows the pointer's angle about the element's centre. It keeps turning
+past ±180° without jumping, and `draggable.rotation` reads it.
 
 Dragging writes positions straight to the stage; the throw is an ordinary
 inertia tween. Picking the element up mid-throw stops it where it is. Give
@@ -1029,6 +1114,50 @@ timeline.addTrack({
 Spring tracks are integrated at a fixed timestep from t=0, so scrubbing
 backwards gives the same values as playing forwards and two runs are identical.
 The animation is the *parameters*, so it serializes like anything else.
+
+## Utilities, random values and `repeatRefresh`
+
+`live.utils` has GSAP's utility functions. Most return a reusable function when the
+last argument is left out:
+
+```js
+const { clamp, mapRange, interpolate, wrap, snap, random, distribute, pipe } = live.utils
+
+const toPercent = mapRange(0, innerWidth, 0, 100)
+const colour = interpolate('#c6ff3d', '#ec4899', 0.5)
+const lane = wrap(['left', 'middle', 'right'])      // lane(4) → 'middle'
+const settle = pipe(clamp(0, 100), snap(5))
+
+live.to('.dot', {
+  x: 'random(-200, 200, 10)',            // per element, as in GSAP
+  y: () => random(-50, 50),
+  scale: distribute({ base: 0.5, amount: 1, from: 'center' }),
+})
+
+live.timeline({ repeat: -1, repeatRefresh: true })   // new random values every loop
+  .to('.star', { x: 'random(-300, 300)', y: 'random(-200, 200)', duration: 1.2 })
+
+live.getProperty('.card', 'x')           // what tinyfly last applied
+```
+
+- **Functions:**
+  - maths: `clamp`, `mapRange`, `normalize`, `interpolate` (numbers, colours, arrays,
+    objects);
+  - cycling: `wrap` (ranges or arrays), `wrapYoyo`;
+  - snapping and random: `snap` (increment, values, radius), `random` (range, snap, or
+    array), `shuffle`;
+  - composing: `distribute`, `pipe`;
+  - parsing: `splitColor`, `getUnit`.
+- **Random is seeded.** `random`, `shuffle` and `"random(…)"` share one sequence per
+  stage, starting from seed 1. A page builds the same "random" layout on every load,
+  and a replay is identical. Call `live.utils.seed(Date.now())` if it should differ.
+- **Function values** are called with `(index, target, targets)` when the tween is
+  built, and again by `invalidate()` and scroll refreshes.
+- **`repeatRefresh: true`** rebuilds the timeline at each repeat, so function and
+  random values are drawn again. The rebuilt tweens start from where the previous loop
+  left the values, as in GSAP.
+- **`getProperty`** returns the value tinyfly last applied, or a plain object's own
+  value, falling back to the property's static default. It never reads computed styles.
 
 ## Compile-time values
 

@@ -155,6 +155,8 @@ function easingToLottieTangents(easing: EasingType): { i: { x: number[]; y: numb
     },
   }
 
+  // Parametric eases are sampled into keyframes before export; this is only a fallback.
+  if (typeof easing !== 'string') return linear
   return easings[easing] ?? linear
 }
 

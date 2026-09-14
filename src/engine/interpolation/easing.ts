@@ -1,5 +1,5 @@
-import type { EasingFunction, EasingType, BuiltInEasingType, CubicBezierPoints } from '../types'
-import { isCubicBezierEasing } from '../types'
+import type { EasingFunction, EasingType, BuiltInEasingType, CubicBezierPoints, EaseMode, ParametricEasing, StepsEasing } from '../types'
+import { isCubicBezierEasing, isParametricEasing } from '../types'
 
 /**
  * Linear easing - no acceleration or deceleration.
@@ -147,6 +147,88 @@ export function createCubicBezier(points: CubicBezierPoints): EasingFunction {
   }
 }
 
+/** Turn an ease-out curve into the requested mode. */
+function withMode(out: EasingFunction, mode: EaseMode = 'out'): EasingFunction {
+  if (mode === 'out') return out
+  const easeIn: EasingFunction = (t) => 1 - out(1 - t)
+  if (mode === 'in') return easeIn
+  return (t) => (t < 0.5 ? easeIn(t * 2) / 2 : out(t * 2 - 1) / 2 + 0.5)
+}
+
+/** Elastic ease-out: overshoots and oscillates before settling (GSAP's elastic). */
+export function elasticOut(amplitude = 1, period = 0.3): EasingFunction {
+  const a = Math.max(1, amplitude)
+  const s = (period / (2 * Math.PI)) * Math.asin(1 / a)
+  return (t) => {
+    if (t <= 0) return 0
+    if (t >= 1) return 1
+    return a * Math.pow(2, -10 * t) * Math.sin(((t - s) * (2 * Math.PI)) / period) + 1
+  }
+}
+
+/** Bounce ease-out: rebounds off the end value with decreasing height. */
+export const bounceOut: EasingFunction = (t) => {
+  const n = 7.5625
+  const d = 2.75
+  if (t <= 0) return 0
+  if (t >= 1) return 1
+  if (t < 1 / d) return n * t * t
+  if (t < 2 / d) {
+    const t2 = t - 1.5 / d
+    return n * t2 * t2 + 0.75
+  }
+  if (t < 2.5 / d) {
+    const t2 = t - 2.25 / d
+    return n * t2 * t2 + 0.9375
+  }
+  const t2 = t - 2.625 / d
+  return n * t2 * t2 + 0.984375
+}
+
+/** Back ease-out: goes past the end by `overshoot`, then settles. */
+export function backOut(overshoot = 1.70158): EasingFunction {
+  return (t) => {
+    if (t <= 0) return 0
+    if (t >= 1) return 1
+    const p = t - 1
+    return p * p * ((overshoot + 1) * p + overshoot) + 1
+  }
+}
+
+/** A stepped ease with CSS `steps()` semantics. */
+export function stepsEasing(count: number, position: StepsEasing['position'] = 'end'): EasingFunction {
+  const n = Math.max(1, Math.floor(count))
+  return (t) => {
+    if (t >= 1) return 1
+    if (t <= 0) return position === 'start' || position === 'both' ? (position === 'start' ? 1 / n : 1 / (n + 1)) : 0
+    const step = Math.floor(t * n)
+    switch (position) {
+      case 'start':
+        return Math.min(1, (step + 1) / n)
+      case 'both':
+        return (step + 1) / (n + 1)
+      case 'none':
+        return n === 1 ? 0 : Math.min(1, step / (n - 1))
+      default:
+        return step / n
+    }
+  }
+}
+
+/** The function for a parametric ease. */
+export function parametricEasing(easing: ParametricEasing): EasingFunction {
+  switch (easing.type) {
+    case 'steps':
+      return stepsEasing(easing.count, easing.position)
+    case 'elastic':
+      return withMode(elasticOut(easing.amplitude, easing.period), easing.mode)
+    case 'bounce':
+      return withMode(bounceOut, easing.mode)
+    case 'back':
+      return withMode(backOut(easing.overshoot), easing.mode)
+  }
+}
+
 /**
  * Get an easing function by its type identifier.
  * Returns linear if type is undefined.
@@ -162,6 +244,10 @@ export function getEasingFunction(type: EasingType | undefined): EasingFunction 
     return createCubicBezier(type.points)
   }
 
-  // Handle built-in easing types
-  return easingMap[type]
+  if (isParametricEasing(type)) {
+    return parametricEasing(type)
+  }
+
+  // Handle built-in easing types (an unknown name plays linearly rather than throwing)
+  return easingMap[type] ?? linear
 }

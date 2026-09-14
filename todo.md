@@ -1102,8 +1102,8 @@ value:
 
 #### 27C.4 — Framework wrappers
 
-- [ ] Thin `useTinyfly` hooks for React, Vue and Svelte — load a definition,
-      register targets, drive the loop, dispose on unmount (pairs with 27A.4).
+- [x] Thin `useTinyfly` hooks for React and Vue, a Svelte action and a Solid primitive —
+      `live.context()` scoped to the component, reverted on unmount (Phase 29E).
 - [ ] Deliberately thin: the engine stays framework-agnostic, and these live in
       their own entry points.
 
@@ -1719,32 +1719,52 @@ starter fails in the unit gate, and every step passes in Chromium, Firefox and W
         doesn't. Found on the way: the stage ran callbacks before applying the frame, so
         `onUpdate` read the previous frame's values (a count-up's last write was one frame
         stale); it now flushes first. Also `onComplete` fired on reverse completion
-  - [ ] **`repeatRefresh`:** re-run function values on each repeat (reuses `invalidate()`),
-        with a seeded random so every loop stays reproducible
-  - [ ] **Utilities:** `live.utils` — clamp, mapRange, interpolate, wrap, snap, random
-        (seeded), toArray, distribute; `live.getProperty()`
-  - [ ] **ScrollTrigger extras:** `ScrollTrigger.batch`-style grouped reveals,
-        `pinSpacing: false`, horizontal scrollers, `anticipatePin`
-  - [ ] **Scroll-to:** animate a scroller to a position, element or label (anchor links)
-  - [ ] **Tween `keyframes` arrays** in vars (`keyframes: [{ x: 100 }, { y: 50 }]`)
-  - [ ] **Stagger `grid`** for live (2D ripple from a cell)
-  - [ ] **Draggable `type: 'rotation'`** (knobs, dials)
+  - [x] **`repeatRefresh`:** rebuilds at each repeat so function and `"random(…)"` values
+        are drawn again; starts from where the previous loop left values (as GSAP)
+  - [x] **Utilities:** `live.utils` — clamp, mapRange, normalize, interpolate, wrap,
+        wrapYoyo, snap, random, shuffle, distribute, pipe, splitColor, getUnit, seed; one
+        seeded sequence per stage so pages replay identically. `"random(…)"` strings in
+        tween vars (per element); function values get `(index, target, targets)`;
+        `live.getProperty()` (applied value, object value, or static default)
+  - [x] **ScrollTrigger extras:** `live.scrollBatch` (interval, batchMax, grouped
+        callbacks), `pinSpacing: false` (spacer gives the distance back with a negative
+        margin), `horizontal: true` scrollers (left/right positions, scrollLeft, sticky
+        `left` pins). `anticipatePin` is unnecessary by design: sticky pins are held by the
+        browser, with no hand-off frame
+  - [x] **Scroll-to:** `live.scrollTo(offset | element | selector | 'max' | { x, y },
+        { duration, ease, offset, scroller, autoKill })` and `live.to(window, { scrollTo })`
+  - [x] **Tween `keyframes`:** array, percentage and value-array forms with `easeEach`;
+        with stagger each target plays the whole sequence
+  - [x] **Stagger `grid`:** `grid: [rows, cols] | 'auto'`, `from: 'random' | [x, y]`,
+        `axis`, `ease` — worked out into explicit `stagger.offsets` (new engine field)
+  - [x] **Draggable `type: 'rotation'`:** angle about the centre, unwrapped past ±180°,
+        `{ minRotation, maxRotation }`, snap in degrees, inertia spin
   - [ ] **Distribution (next, in this order):**
-    - [ ] npm package: `exports` map per entry (core, live, drivers, interaction,
-          player), bundled `.d.ts`, `npm publish` step in `release:oss` (`tinyfly` and
-          `@algorisys/tinyfly` are both free today)
-    - [ ] Framework wrappers (27C.4) on `live.context()`: React `useTinyfly` first, then
-          Vue composable, Svelte action, Solid primitive — each its own entry point
-    - [ ] Ecosystem entry point instead of a plugin API: contributor docs for writing an
-          adapter and a custom track type, and a gallery of community examples
-  - [ ] **Morph performance:** `morphPath` (`src/engine/path/path-morph.ts`) profiled at
-        ~77ms/s of script for 10 continuously morphing paths in Chrome, despite cached morph
-        plans (found by the Ganesh poster showcase). Check whether plan lookup / point
-        allocation still runs per frame; add a benchmark in the e2e harness
-  - [ ] **Native eases instead of baked keyframes:** engine `EasingType` gains
-        `{ type: 'steps', count, position }`, `{ type: 'elastic', amplitude, period, mode }`,
-        `{ type: 'bounce', mode }` — evaluated at play time, small editable JSON, GSAP
-        names map to them, CSS export emits `steps()` natively, Lottie/CSS bake only at export
+    - [x] npm package: exports per entry were already in place (`npm pack` dry run: 396 kB,
+          119 files); `release:npm` added and made step 4 of "ship it" in CLAUDE.md (needs a
+          one-time `npm login`). First publish happens on the next "ship it"
+    - [x] Framework wrappers (27C.4) on `live.context()`: `tinyfly/react` `useTinyfly`
+          (scope, dependencies, `contextSafe`), `tinyfly/vue` composable (scope, watch),
+          `tinyfly/svelte` action, `tinyfly/solid` `createTinyfly` — each < 1 kB, frameworks
+          optional peers, built by `vite.config.frameworks.ts` against the shared
+          `tinyfly/gsap-compat`; tested by mounting in React 19, Vue 3, Solid
+    - [x] Ecosystem entry point instead of a plugin API: `docs/extending.md` — adapters,
+          plain-object targets, eases and stagger offsets, the contract for a new track kind,
+          contributing gallery examples
+  - [x] **Morph performance:** `morphPath` profiled at ~77ms/s for 10 continuously
+        morphing paths (Ganesh poster). Per frame it built a key string from both path
+        strings and wrote every dense sample (up to 320 per subpath). Plans are now thinned
+        once (joint Ramer–Douglas–Peucker over both shapes, 0.2-unit tolerance, corners and
+        curvature kept) and looked up through a nested cache with a last-pair memo: the
+        10-path benchmark went from 43.5 to 24.4 ms/s (points per path 335 → 184)
+  - [x] **Native eases instead of baked keyframes:** engine `EasingType` gains parametric
+        `steps` (CSS jump positions), `elastic` (mode, amplitude, period), `bounce` (mode),
+        `back` (mode, overshoot) — evaluated at play time, one keyframe in JSON. GSAP names
+        map to them with their parameters (`elastic.out(1.2, 0.4)`, `back.out(3)`, `steps(n)`
+        as GSAP's n + 1 levels). CSS / Lottie exports sample them (`expandParametricEasings`);
+        the studio's easing picker has them with their settings. Found on the way: on `live`,
+        elastic / bounce / steps silently played **linear** (baking was opt-in and nothing
+        opted in)
   - Partial list review (2026-09-14): smooth-scroll parallax ✓ (v0.61, no Lenis needed),
     image-sequence scrubbing ✓ (v0.57); lifecycle hooks → framework wrappers above;
     per-loop random → `repeatRefresh` with seeded random above

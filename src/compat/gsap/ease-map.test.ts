@@ -71,27 +71,28 @@ describe('mapEase — serializable eases', () => {
   })
 })
 
-describe('mapEase — eases that need baking', () => {
-  it('flags elastic', () => {
-    const mapped = mapEase('elastic.out')
-    expect(mapped.requiresBaking).toBe('elastic')
-    expect(mapped.fn).toBeTypeOf('function')
+describe('mapEase — parametric eases', () => {
+  it('maps elastic to a parametric ease, with GSAP parameters', () => {
+    expect(mapEase('elastic.out').easing).toEqual({ type: 'elastic', mode: 'out' })
+    expect(mapEase('elastic.inOut(1.2, 0.4)').easing).toEqual({ type: 'elastic', mode: 'in-out', amplitude: 1.2, period: 0.4 })
+    expect(mapEase('Elastic(2)').easing).toEqual({ type: 'elastic', mode: 'out', amplitude: 2 })
+    expect(mapEase('elastic.out').fn).toBeTypeOf('function')
   })
 
-  it('flags bounce', () => {
-    expect(mapEase('bounce.out').requiresBaking).toBe('bounce')
+  it('maps bounce and back with an overshoot', () => {
+    expect(mapEase('bounce.in').easing).toEqual({ type: 'bounce', mode: 'in' })
+    expect(mapEase('back.out(3)').easing).toEqual({ type: 'back', mode: 'out', overshoot: 3 })
+    // A plain back ease keeps its exact cubic-bezier.
+    expect(isCubicBezierEasing(mapEase('back.out').easing)).toBe(true)
   })
 
-  it('flags steps', () => {
-    const mapped = mapEase('steps(5)')
-    expect(mapped.requiresBaking).toBe('steps')
-    expect(mapped.fn).toBeTypeOf('function')
+  it("maps steps(n) to GSAP's n + 1 levels", () => {
+    expect(mapEase('steps(5)').easing).toEqual({ type: 'steps', count: 6, position: 'none' })
   })
 
-  it('easeRequiresBaking agrees', () => {
-    expect(easeRequiresBaking('elastic.out')).toBe(true)
-    expect(easeRequiresBaking('bounce.in')).toBe(true)
-    expect(easeRequiresBaking('steps(3)')).toBe(true)
+  it('only registered custom curves still need sampling', () => {
+    expect(easeRequiresBaking('elastic.out')).toBe(false)
+    expect(easeRequiresBaking('steps(3)')).toBe(false)
     expect(easeRequiresBaking('power2.out')).toBe(false)
   })
 })
@@ -149,9 +150,11 @@ describe('steps', () => {
     expect(ease(1)).toBe(1)
   })
 
-  it('holds within a step', () => {
+  it('holds within a step: steps(4) has five levels, 0.2 apart in time', () => {
     const ease = steps(4)
-    expect(ease(0.05)).toBe(ease(0.2))
+    expect(ease(0.05)).toBe(ease(0.15))
+    expect(ease(0.25)).toBe(0.25)
+    expect(ease(0.85)).toBe(1)
   })
 
   it('never exceeds 1', () => {

@@ -63,8 +63,20 @@ interface CubicBezierEasing {
   points: [number, number, number, number]  // [cp1x, cp1y, cp2x, cp2y]
 }
 
-type EasingType = BuiltInEasingType | CubicBezierEasing
+type EaseMode = 'in' | 'out' | 'in-out'
+
+type ParametricEasing =
+  | { type: 'steps'; count: number; position?: 'start' | 'end' | 'none' | 'both' }
+  | { type: 'elastic'; mode?: EaseMode; amplitude?: number; period?: number }
+  | { type: 'bounce'; mode?: EaseMode }
+  | { type: 'back'; mode?: EaseMode; overshoot?: number }
+
+type EasingType = BuiltInEasingType | CubicBezierEasing | ParametricEasing
 ```
+
+Parametric eases are evaluated when played, so they stay one keyframe in JSON.
+`isParametricEasing(easing)` tells them apart; `expandParametricEasings(track)`
+samples them into linear keyframes for keyframe-only formats.
 
 ### Keyframe
 

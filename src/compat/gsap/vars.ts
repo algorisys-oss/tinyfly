@@ -1,3 +1,4 @@
+import { gridOffsets, needsExplicitOffsets, type GridStagger } from './stagger-grid'
 import type { EasingType } from '../../engine'
 import type { StaggerConfig, StaggerFrom } from '../../engine'
 import type { Position } from './position'
@@ -26,6 +27,10 @@ export const RESERVED_KEYS = new Set([
   'onStart',
   'onRepeat',
   'onReverseComplete',
+  'repeatRefresh',
+  'keyframes',
+  'easeEach',
+  'scrollTo',
   'id',
   'immediateRender',
   'overwrite',
@@ -50,6 +55,12 @@ export interface TweenVars {
   onRepeat?: () => void
   /** On arriving back at the start after `reverse()` */
   onReverseComplete?: () => void
+  /** Rebuild on every repeat, so function and `"random(…)"` values are drawn again each loop */
+  repeatRefresh?: boolean
+  /** Consecutive segments: an array of tweens, percentages of `duration`, or value arrays (live) */
+  keyframes?: unknown
+  /** The ease of each segment in percentage / value-array keyframes (default 'power1.inOut') */
+  easeEach?: string
   id?: string
   paused?: boolean
   /** Animate numeric properties with spring physics instead of duration + ease — see spring-vars.ts */
@@ -64,7 +75,14 @@ export interface TweenVars {
 export interface GsapStagger {
   each?: number
   amount?: number
-  from?: StaggerFrom
+  /** Where the ripple starts; `'random'` and `[x, y]` ratios too, with explicit offsets */
+  from?: StaggerFrom | 'random' | [number, number]
+  /** `[rows, columns]`, or `'auto'` to read rows from the layout (live) */
+  grid?: [number, number] | 'auto'
+  /** Measure distance along one axis only */
+  axis?: 'x' | 'y'
+  /** Distribute the offsets through an ease */
+  ease?: string
 }
 
 export interface SplitVars {
@@ -95,15 +113,27 @@ export function toMs(seconds: number | undefined, fallback: number): number {
   return seconds === undefined ? fallback : seconds * 1000
 }
 
+/** What an advanced stagger (grid, random, eased) needs to be worked out. */
+export interface StaggerContext {
+  count: number
+  /** How many targets share the first row, for `grid: 'auto'` */
+  columnsFromLayout?: () => number
+  random?: () => number
+}
+
 /** Convert a GSAP stagger (seconds) to the engine's StaggerConfig (ms). */
-export function toStaggerConfig(stagger: number | GsapStagger | undefined): StaggerConfig | undefined {
+export function toStaggerConfig(stagger: number | GsapStagger | undefined, context?: StaggerContext): StaggerConfig | undefined {
   if (stagger === undefined) return undefined
   if (typeof stagger === 'number') return { each: stagger * 1000 }
+  if (needsExplicitOffsets(stagger)) {
+    const offsets = gridOffsets(context?.count ?? 0, stagger as GridStagger, context ?? {})
+    return { offsets: offsets.map((seconds) => seconds * 1000) }
+  }
 
   return {
     ...(stagger.each !== undefined && { each: stagger.each * 1000 }),
     ...(stagger.amount !== undefined && { amount: stagger.amount * 1000 }),
-    ...(stagger.from !== undefined && { from: stagger.from }),
+    ...(stagger.from !== undefined && { from: stagger.from as StaggerFrom }),
   }
 }
 

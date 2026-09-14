@@ -63,6 +63,7 @@ export function maxStaggerDistance(count: number, from: StaggerFrom = 'start'): 
  * nothing should do nothing rather than guess a default.
  */
 export function staggerOffset(index: number, count: number, config: StaggerConfig): number {
+  if (config.offsets) return config.offsets[index] ?? 0
   const from = config.from ?? 'start'
   const distance = staggerDistance(index, count, from)
 

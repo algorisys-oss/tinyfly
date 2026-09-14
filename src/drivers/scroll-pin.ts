@@ -17,17 +17,33 @@
  * scroller with `overflow: hidden`/`auto` stops it sticking.
  */
 
+export interface ScrollPinOptions {
+  /** `'x'` pins in a sideways-scrolling container (sticky `left`). Default `'y'`. */
+  axis?: 'x' | 'y'
+  /**
+   * `false`: the spacer gives back the pinned distance with a negative margin, so
+   * content after the pin scrolls up underneath it instead of waiting. Default `true`.
+   */
+  spacing?: boolean
+}
+
 export class ScrollPin {
   readonly element: HTMLElement
   readonly spacer: HTMLElement
-  private readonly saved: { position: string; top: string }
+  private readonly saved: { position: string; top: string; left: string }
+  private readonly axis: 'x' | 'y'
+  private readonly spacing: boolean
 
-  constructor(element: HTMLElement) {
+  constructor(element: HTMLElement, options: ScrollPinOptions = {}) {
     this.element = element
+    this.axis = options.axis ?? 'y'
+    this.spacing = options.spacing ?? true
     const doc = element.ownerDocument
     this.spacer = doc.createElement('div')
     this.spacer.className = 'pin-spacer'
-    this.saved = { position: element.style.position, top: element.style.top }
+    this.saved = { position: element.style.position, top: element.style.top, left: element.style.left }
+    // Sideways, the spacer sits in the row like the element did.
+    if (this.axis === 'x') this.spacer.style.flexShrink = '0'
 
     element.replaceWith(this.spacer)
     this.spacer.appendChild(element)
@@ -41,20 +57,29 @@ export class ScrollPin {
   release(): void {
     this.element.style.position = this.saved.position
     this.element.style.top = this.saved.top
+    this.element.style.left = this.saved.left
   }
 
   /** Stick at `topPx` from the scroller's top for `distancePx` of scrolling. */
   apply(topPx: number, distancePx: number): void {
-    const height = this.element.offsetHeight
-    this.spacer.style.height = `${height + Math.max(0, distancePx)}px`
+    const distance = Math.max(0, distancePx)
     this.element.style.position = 'sticky'
-    this.element.style.top = `${topPx}px`
+    if (this.axis === 'x') {
+      this.spacer.style.width = `${this.element.offsetWidth + distance}px`
+      this.spacer.style.marginRight = this.spacing ? '' : `-${distance}px`
+      this.element.style.left = `${topPx}px`
+    } else {
+      this.spacer.style.height = `${this.element.offsetHeight + distance}px`
+      this.spacer.style.marginBottom = this.spacing ? '' : `-${distance}px`
+      this.element.style.top = `${topPx}px`
+    }
   }
 
   /** Remove the spacer and restore the element's own styles. */
   destroy(): void {
     this.element.style.position = this.saved.position
     this.element.style.top = this.saved.top
+    this.element.style.left = this.saved.left
     if (this.spacer.parentNode) this.spacer.replaceWith(this.element)
   }
 }

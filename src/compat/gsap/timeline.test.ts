@@ -228,13 +228,18 @@ describe('stagger', () => {
 })
 
 describe('non-bezier eases', () => {
-  it('warns and falls back when baking is off', () => {
+  it('keeps elastic as one parametric keyframe when baking is off, with no warning', () => {
     const onWarning = vi.fn()
     const tl = timeline({ onWarning })
     tl.fromTo('box', { x: 0 }, { x: 100, duration: 1, ease: 'elastic.out' })
 
-    expect(trackFor(tl, 'x').keyframes).toHaveLength(2)
-    expect(onWarning.mock.calls.some((c) => /cubic-bezier/.test(c[0]))).toBe(true)
+    const keyframes = trackFor(tl, 'x').keyframes
+    expect(keyframes).toHaveLength(2)
+    expect(keyframes[1].easing).toEqual({ type: 'elastic', mode: 'out' })
+    expect(onWarning).not.toHaveBeenCalled()
+    // …and it plays as elastic: past 100 on the way.
+    const peak = Math.max(...Array.from({ length: 100 }, (_, i) => tl.timeline.getStateAtTime(i * 10).values.get('box')!.get('x') as number))
+    expect(peak).toBeGreaterThan(100)
   })
 
   it('bakes into intermediate keyframes when enabled', () => {

@@ -16,6 +16,11 @@
  * - **Corners are kept.** Samples are dense (spaced by length) and always
  *   include every segment end of both shapes, so a star's points and a square's
  *   corners are exact at every frame, not cut off between samples.
+ * - **Then the plan is thinned.** A sample that lies within `PLAN_TOLERANCE` of the
+ *   straight line between its kept neighbours in *both* shapes is dropped: every
+ *   blend of the two stays within about that distance too. Smooth and straight
+ *   stretches keep few points, tight curves keep many — per-frame work scales
+ *   with how curvy the shapes are, not how big.
  *
  * At progress 0 and 1 the original strings are returned untouched. Deterministic
  * and DOM-free, like the rest of the engine.
@@ -34,8 +39,15 @@ const ALIGN_SAMPLES = 72
 /** Kept for compatibility: the old fixed sample count. */
 export const MORPH_SAMPLES = 64
 
+/** Largest distance, in path units, a thinned plan may stray from the dense one. */
+const PLAN_TOLERANCE = 0.2
+
 const PLAN_CACHE_LIMIT = 128
-const planCache = new Map<string, MorphPlan>()
+/** Plans by shape index, then from, then to — no key strings built per frame. */
+const planCache = new Map<string, Map<string, Map<string, MorphPlan>>>()
+let planCount = 0
+/** The last plan looked up, since a morphing path asks for the same pair every frame. */
+let lastPlan: { from: string; to: string; shapeIndex: MorphOptions['shapeIndex']; plan: MorphPlan } | undefined
 
 interface Run {
   segments: PathSegment[]
@@ -194,13 +206,68 @@ function planPair(from: Run, to: Run, options: MorphOptions): PairPlan {
     fromPoints.push(...pointOnRun(from, f))
     toPoints.push(...pointOnRun(to, mapFraction(f, alignment, closed)))
   }
-  return { from: fromPoints, to: toPoints, closed }
+  return thinPair({ from: fromPoints, to: toPoints, closed })
+}
+
+/**
+ * Drop samples that sit on the chord between their kept neighbours in both
+ * shapes (Ramer–Douglas–Peucker over the pair together, so indices stay matched).
+ */
+function thinPair(pair: PairPlan): PairPlan {
+  const n = pair.from.length / 2
+  if (n <= 3) return pair
+  const keep = new Uint8Array(n)
+  keep[0] = 1
+  keep[n - 1] = 1
+  const stack: Array<[number, number]> = [[0, n - 1]]
+  while (stack.length > 0) {
+    const [first, last] = stack.pop()!
+    let worst = -1
+    let worstDistance = PLAN_TOLERANCE
+    for (let i = first + 1; i < last; i++) {
+      const d = Math.max(chordDistance(pair.from, first, last, i), chordDistance(pair.to, first, last, i))
+      if (d > worstDistance) {
+        worstDistance = d
+        worst = i
+      }
+    }
+    if (worst !== -1) {
+      keep[worst] = 1
+      stack.push([first, worst], [worst, last])
+    }
+  }
+  const from: number[] = []
+  const to: number[] = []
+  for (let i = 0; i < n; i++) {
+    if (!keep[i]) continue
+    from.push(pair.from[i * 2], pair.from[i * 2 + 1])
+    to.push(pair.to[i * 2], pair.to[i * 2 + 1])
+  }
+  return { from, to, closed: pair.closed }
+}
+
+/** Distance from point `i` to the segment between points `a` and `b` of a flat point list. */
+function chordDistance(points: number[], a: number, b: number, i: number): number {
+  const ax = points[a * 2]
+  const ay = points[a * 2 + 1]
+  const dx = points[b * 2] - ax
+  const dy = points[b * 2 + 1] - ay
+  const px = points[i * 2] - ax
+  const py = points[i * 2 + 1] - ay
+  const lengthSquared = dx * dx + dy * dy
+  const t = lengthSquared === 0 ? 0 : Math.max(0, Math.min(1, (px * dx + py * dy) / lengthSquared))
+  return Math.hypot(px - t * dx, py - t * dy)
 }
 
 function planFor(from: string, to: string, options: MorphOptions): MorphPlan {
-  const key = `${options.shapeIndex ?? 'auto'}|${from}|${to}`
-  const cached = planCache.get(key)
-  if (cached) return cached
+  const shapeIndex = options.shapeIndex
+  if (lastPlan && lastPlan.from === from && lastPlan.to === to && lastPlan.shapeIndex === shapeIndex) return lastPlan.plan
+  const byFrom = planCache.get(String(shapeIndex ?? 'auto'))?.get(from)
+  const cached = byFrom?.get(to)
+  if (cached) {
+    lastPlan = { from, to, shapeIndex, plan: cached }
+    return cached
+  }
 
   const separate = parsePath(from).subpaths.filter((s) => s.length > 0).length ===
     parsePath(to).subpaths.filter((s) => s.length > 0).length
@@ -211,8 +278,18 @@ function planFor(from: string, to: string, options: MorphOptions): MorphPlan {
     pairs: fromRuns.map((run, i) => planPair(run, toRuns[i], options)),
   }
 
-  if (planCache.size >= PLAN_CACHE_LIMIT) planCache.delete(planCache.keys().next().value!)
-  planCache.set(key, plan)
+  if (planCount >= PLAN_CACHE_LIMIT) {
+    planCache.clear()
+    planCount = 0
+  }
+  const indexKey = String(shapeIndex ?? 'auto')
+  const byIndex = planCache.get(indexKey) ?? new Map<string, Map<string, MorphPlan>>()
+  planCache.set(indexKey, byIndex)
+  const targets = byIndex.get(from) ?? new Map<string, MorphPlan>()
+  byIndex.set(from, targets)
+  targets.set(to, plan)
+  planCount++
+  lastPlan = { from, to, shapeIndex, plan }
   return plan
 }
 
@@ -246,6 +323,8 @@ export function morphPath(from: string, to: string, progress: number, options: M
 /** Forget cached morph plans (useful for memory management). */
 export function clearMorphCache(): void {
   planCache.clear()
+  planCount = 0
+  lastPlan = undefined
 }
 
 /** True when a string looks like SVG path data (starts with a moveto). */

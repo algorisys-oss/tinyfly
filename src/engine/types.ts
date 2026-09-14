@@ -32,12 +32,56 @@ export interface CubicBezierEasing {
   points: CubicBezierPoints;
 }
 
-/** Easing type - either built-in string or custom cubic-bezier */
-export type EasingType = BuiltInEasingType | CubicBezierEasing;
+/** Which end of an ease carries its character: `out` settles at the end (the default). */
+export type EaseMode = 'in' | 'out' | 'in-out';
+
+/**
+ * A stepped ease (CSS `steps()`): the value holds, then jumps. `position` says
+ * where the jumps are, as in CSS: `end` (default) jumps at the end of each step,
+ * `start` at the beginning, `none` holds both ends (`count` stops, `count − 1`
+ * jumps), `both` jumps at both ends.
+ */
+export interface StepsEasing {
+  type: 'steps';
+  count: number;
+  position?: 'start' | 'end' | 'none' | 'both';
+}
+
+/** Overshoots and oscillates. `amplitude` ≥ 1 scales the overshoot; `period` is the oscillation length (0.3). */
+export interface ElasticEasing {
+  type: 'elastic';
+  mode?: EaseMode;
+  amplitude?: number;
+  period?: number;
+}
+
+/** Rebounds off the end value with decreasing height. */
+export interface BounceEasing {
+  type: 'bounce';
+  mode?: EaseMode;
+}
+
+/** Pulls back past the start (or pushes past the end) by `overshoot` (1.70158). */
+export interface BackEasing {
+  type: 'back';
+  mode?: EaseMode;
+  overshoot?: number;
+}
+
+/** Eases with parameters that are evaluated at play time, not approximated. */
+export type ParametricEasing = StepsEasing | ElasticEasing | BounceEasing | BackEasing;
+
+/** Easing type - a built-in name, a custom cubic-bezier, or a parametric ease */
+export type EasingType = BuiltInEasingType | CubicBezierEasing | ParametricEasing;
 
 /** Type guard to check if easing is a cubic-bezier */
 export function isCubicBezierEasing(easing: EasingType | undefined): easing is CubicBezierEasing {
   return typeof easing === 'object' && easing !== null && easing.type === 'cubic-bezier';
+}
+
+/** Type guard for steps / elastic / bounce / back eases */
+export function isParametricEasing(easing: EasingType | undefined): easing is ParametricEasing {
+  return typeof easing === 'object' && easing !== null && easing.type !== 'cubic-bezier';
 }
 
 /** A single keyframe defining a value at a specific time */
@@ -95,6 +139,11 @@ export interface StaggerConfig {
   amount?: number;
   /** Which target gets offset 0 and which way the fan runs (default: 'start') */
   from?: StaggerFrom;
+  /**
+   * Explicit milliseconds per target, in target order — for layouts no 1D fan
+   * describes (grids, random order). Wins over `each`, `amount` and `from`.
+   */
+  offsets?: number[];
 }
 
 /** Timeline playback state */

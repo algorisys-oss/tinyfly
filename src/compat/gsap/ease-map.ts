@@ -1,28 +1,21 @@
-import type { EasingType, EasingFunction, CubicBezierPoints } from '../../engine'
+import type { EasingType, EasingFunction, CubicBezierPoints, ParametricEasing } from '../../engine'
+import { getEasingFunction } from '../../engine'
 
 /**
  * GSAP ease names mapped onto tinyfly easings.
  *
  * Most of GSAP's eases are smooth curves that a cubic-bezier reproduces closely
- * enough that nobody can tell. Three families cannot be expressed as a bezier at
- * all, because a bezier is monotonic in value and they are not:
+ * enough that nobody can tell. Four families are not beziers — `elastic`
+ * oscillates, `bounce` rebounds, `back` with an overshoot of its own, and `steps`
+ * jumps — and map to the engine's parametric eases (`{ type: 'elastic', … }`),
+ * which serialize as small JSON and are evaluated exactly when played.
  *
- *   - `elastic` overshoots and oscillates
- *   - `bounce`  rebounds off the end value
- *   - `steps`   jumps discretely
- *
- * Those are returned as raw functions, and the caller bakes them into
- * intermediate keyframes (see `bakeEasing`). That keeps the JSON portable — a
- * player reading the file needs no elastic implementation — at the cost of more
- * keyframes, which is why baking is opt-in.
+ * Registered curves (CustomEase, CustomBounce, CustomWiggle) have no closed form
+ * and are sampled into keyframes when a tween uses them.
  */
 
-/**
- * Eases with no closed form in our easing set; these must be baked. `custom` is a
- * registered curve (CustomEase, CustomBounce, CustomWiggle): those are always
- * baked, since smoothing a curve someone drew would silently change it.
- */
-export type NonBezierEase = 'elastic' | 'bounce' | 'steps' | 'custom'
+/** Eases that must be sampled into keyframes: registered custom curves. */
+export type NonBezierEase = 'custom'
 
 export interface MappedEase {
   /** A serializable easing, when one exists */
@@ -92,65 +85,26 @@ export function normaliseEaseName(name: string): string {
   // GSAP 2 spellings: "easeOut" / "easeInOut" suffixes.
   key = key.replace(/\.ease(in|out|inout)$/, '.$1')
 
-  // A family with no direction defaults to "out", as GSAP does.
-  if (!key.includes('.') && !key.startsWith('steps') && key !== 'none' && key !== 'linear') {
-    key = `${key}.out`
+  // A family with no direction defaults to "out", as GSAP does ("elastic(1, 0.3)" too).
+  const family = /^([a-z]+\d?)(\(.*\))?$/.exec(key)
+  if (family && family[1] !== 'steps' && key !== 'none' && key !== 'linear') {
+    key = `${family[1]}.out${family[2] ?? ''}`
   }
 
   return key
 }
 
-/**
- * Elastic ease — overshoots and oscillates before settling.
- * `amplitude` scales the overshoot; `period` the oscillation rate.
- */
-export function elasticOut(amplitude = 1, period = 0.3): EasingFunction {
-  return (t) => {
-    if (t === 0 || t === 1) return t
-    const s = (period / (2 * Math.PI)) * Math.asin(1 / Math.max(1, amplitude))
-    return amplitude * Math.pow(2, -10 * t) * Math.sin(((t - s) * (2 * Math.PI)) / period) + 1
-  }
-}
+// The curves themselves live in the engine; re-exported for existing imports.
+export { elasticOut, bounceOut, backOut, stepsEasing } from '../../engine'
 
-export function elasticIn(amplitude = 1, period = 0.3): EasingFunction {
-  const out = elasticOut(amplitude, period)
-  return (t) => 1 - out(1 - t)
-}
-
-export function elasticInOut(amplitude = 1, period = 0.3): EasingFunction {
-  const inFn = elasticIn(amplitude, period)
-  const outFn = elasticOut(amplitude, period)
-  return (t) => (t < 0.5 ? inFn(t * 2) / 2 : outFn(t * 2 - 1) / 2 + 0.5)
-}
-
-/** Bounce ease — rebounds off the end value with decreasing height. */
-export const bounceOut: EasingFunction = (t) => {
-  const n = 7.5625
-  const d = 2.75
-
-  if (t < 1 / d) return n * t * t
-  if (t < 2 / d) {
-    const t2 = t - 1.5 / d
-    return n * t2 * t2 + 0.75
-  }
-  if (t < 2.5 / d) {
-    const t2 = t - 2.25 / d
-    return n * t2 * t2 + 0.9375
-  }
-  const t2 = t - 2.625 / d
-  return n * t2 * t2 + 0.984375
-}
-
-export const bounceIn: EasingFunction = (t) => 1 - bounceOut(1 - t)
-
-export const bounceInOut: EasingFunction = (t) =>
-  t < 0.5 ? bounceIn(t * 2) / 2 : bounceOut(t * 2 - 1) / 2 + 0.5
-
-/** Stepped ease — holds, then jumps, `count` times across the segment. */
-export function steps(count: number): EasingFunction {
-  const n = Math.max(1, Math.floor(count))
-  return (t) => Math.min(1, Math.floor(t * n) / (n - 1 || 1))
-}
+/** GSAP elastic.in with the given parameters. */
+export const elasticIn = (amplitude = 1, period = 0.3): EasingFunction => getEasingFunction({ type: 'elastic', mode: 'in', amplitude, period })
+/** GSAP elastic.inOut with the given parameters. */
+export const elasticInOut = (amplitude = 1, period = 0.3): EasingFunction => getEasingFunction({ type: 'elastic', mode: 'in-out', amplitude, period })
+export const bounceIn: EasingFunction = getEasingFunction({ type: 'bounce', mode: 'in' })
+export const bounceInOut: EasingFunction = getEasingFunction({ type: 'bounce', mode: 'in-out' })
+/** GSAP's steps(n): n + 1 levels from 0 to 1. */
+export const steps = (count: number): EasingFunction => getEasingFunction({ type: 'steps', count: Math.max(1, Math.floor(count)) + 1, position: 'none' })
 
 /**
  * Map a GSAP ease name to something tinyfly can use.
@@ -163,24 +117,31 @@ export function mapEase(name: string): MappedEase {
   if (registered) return registered
   const key = normaliseEaseName(name)
 
-  // steps(n) carries its own argument.
+  // steps(n): GSAP holds n + 1 levels from 0 to 1 — CSS steps(n + 1, jump-none).
   const stepsMatch = /^steps\(\s*(\d+)\s*\)$/.exec(key)
   if (stepsMatch) {
-    return { fn: steps(Number.parseInt(stepsMatch[1], 10)), requiresBaking: 'steps' }
+    const count = Math.max(1, Number.parseInt(stepsMatch[1], 10))
+    const easing: ParametricEasing = { type: 'steps', count: count + 1, position: 'none' }
+    return { easing, fn: getEasingFunction(easing) }
   }
 
-  if (key.startsWith('elastic')) {
-    const direction = key.split('.')[1] ?? 'out'
-    const fn =
-      direction === 'in' ? elasticIn() : direction === 'inout' ? elasticInOut() : elasticOut()
-    return { fn, requiresBaking: 'elastic' }
-  }
-
-  if (key.startsWith('bounce')) {
-    const direction = key.split('.')[1] ?? 'out'
-    const fn =
-      direction === 'in' ? bounceIn : direction === 'inout' ? bounceInOut : bounceOut
-    return { fn, requiresBaking: 'bounce' }
+  // elastic / bounce / back, with GSAP's optional parameters: "elastic.out(1, 0.3)", "back.out(2)".
+  const parametric = /^(elastic|bounce|back)\.(in|out|inout)(?:\(([^)]*)\))?$/.exec(key)
+  if (parametric) {
+    const [, family, direction, rawArgs] = parametric
+    const args = (rawArgs ?? '').split(',').map((arg) => Number.parseFloat(arg)).filter((arg) => Number.isFinite(arg))
+    const mode = direction === 'inout' ? 'in-out' : (direction as 'in' | 'out')
+    // Plain back eases keep their exact cubic-bezier (smaller, and CSS can play it).
+    if (family === 'back' && args.length === 0 && key in BEZIER_EASES) {
+      return { easing: { type: 'cubic-bezier', points: BEZIER_EASES[key] } }
+    }
+    const easing: ParametricEasing =
+      family === 'elastic'
+        ? { type: 'elastic', mode, ...(args[0] !== undefined && { amplitude: args[0] }), ...(args[1] !== undefined && { period: args[1] }) }
+        : family === 'bounce'
+          ? { type: 'bounce', mode }
+          : { type: 'back', mode, ...(args[0] !== undefined && { overshoot: args[0] }) }
+    return { easing, fn: getEasingFunction(easing) }
   }
 
   // Prefer an exact built-in — smaller JSON and no bezier evaluation at runtime.

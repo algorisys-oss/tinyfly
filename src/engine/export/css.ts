@@ -56,7 +56,9 @@ function easingToCSS(easing: EasingType): string {
     const [cp1x, cp1y, cp2x, cp2y] = easing.points
     return `cubic-bezier(${cp1x}, ${cp1y}, ${cp2x}, ${cp2y})`
   }
-  return easingToCss[easing]
+  // Parametric eases are sampled into keyframes before export; this is only a fallback.
+  if (typeof easing !== 'string') return 'linear'
+  return easingToCss[easing] ?? 'linear'
 }
 
 /**

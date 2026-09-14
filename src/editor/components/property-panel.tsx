@@ -3,9 +3,10 @@ import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
 import type { ProjectStore } from '../stores/project-store'
 import { isGradient, createLinearGradient, createRadialGradient, type SceneStore, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type SymbolInstanceElement, type FillValue, type LinearGradient, type RadialGradient } from '../stores/scene-store'
-import type { EasingType, BuiltInEasingType, CubicBezierPoints } from '../../engine'
+import type { EasingType, BuiltInEasingType, CubicBezierPoints, ParametricEasing, EaseMode } from '../../engine'
 import {
   isCubicBezierEasing,
+  isParametricEasing,
   hasKeyframes,
   isSpringTrack,
   isTextTrack,
@@ -41,6 +42,14 @@ const BUILTIN_EASING_OPTIONS: BuiltInEasingType[] = [
   'ease-out-cubic',
   'ease-in-out-cubic',
 ]
+
+/** Eases with settings, and what each starts with when chosen. */
+const PARAMETRIC_EASING_DEFAULTS: Record<ParametricEasing['type'], ParametricEasing> = {
+  elastic: { type: 'elastic', mode: 'out', amplitude: 1, period: 0.3 },
+  bounce: { type: 'bounce', mode: 'out' },
+  back: { type: 'back', mode: 'out', overshoot: 1.70158 },
+  steps: { type: 'steps', count: 5, position: 'end' },
+}
 
 /** Default control points for custom cubic-bezier */
 const DEFAULT_CUBIC_BEZIER: CubicBezierPoints = [0.25, 0.1, 0.25, 1.0]
@@ -216,6 +225,8 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
       const currentEasing = selectedKeyframe()?.easing
       const points = isCubicBezierEasing(currentEasing) ? currentEasing.points : DEFAULT_CUBIC_BEZIER
       props.store.updateKeyframe(track.id, index, { easing: { type: 'cubic-bezier', points } })
+    } else if (value in PARAMETRIC_EASING_DEFAULTS) {
+      props.store.updateKeyframe(track.id, index, { easing: { ...PARAMETRIC_EASING_DEFAULTS[value as ParametricEasing['type']] } })
     } else {
       // Use built-in easing
       props.store.updateKeyframe(track.id, index, { easing: value as BuiltInEasingType })
@@ -230,10 +241,26 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
     props.store.updateKeyframe(track.id, index, { easing: { type: 'cubic-bezier', points } })
   }
 
+  /** Change one setting of the selected keyframe's parametric ease. */
+  const updateParametricEasing = (changes: Partial<Record<string, unknown>>) => {
+    const track = selectedTrack()
+    const index = selectedKeyframeIndex()
+    const easing = selectedKeyframe()?.easing
+    if (!track || index === null || !isParametricEasing(easing)) return
+    props.store.updateKeyframe(track.id, index, { easing: { ...easing, ...changes } as ParametricEasing })
+  }
+
+  /** A numeric input's value, or undefined while it is being cleared. */
+  const numberFrom = (e: Event): number | undefined => {
+    const value = Number.parseFloat((e.target as HTMLInputElement).value)
+    return Number.isFinite(value) ? value : undefined
+  }
+
   // Helper to get easing value for the select dropdown
   const getEasingSelectValue = (easing: EasingType | undefined): string => {
     if (easing === undefined) return 'linear'
     if (isCubicBezierEasing(easing)) return 'custom'
+    if (isParametricEasing(easing)) return easing.type
     return easing
   }
 
@@ -1820,9 +1847,66 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
                     {BUILTIN_EASING_OPTIONS.map((easing) => (
                       <option value={easing}>{easing}</option>
                     ))}
+                    <option value="elastic">elastic</option>
+                    <option value="bounce">bounce</option>
+                    <option value="back">back (overshoot)</option>
+                    <option value="steps">steps</option>
                     <option value="custom">Custom Curve...</option>
                   </select>
                 </div>
+                <Show when={(() => { const easing = keyframe().easing; return isParametricEasing(easing) ? easing : undefined })()}>
+                  {(easing) => (
+                    <>
+                      <Show when={easing().type !== 'steps'}>
+                        <div class="property-row">
+                          <label>Ease mode</label>
+                          <select
+                            value={(easing() as { mode?: EaseMode }).mode ?? 'out'}
+                            onChange={(e) => updateParametricEasing({ mode: (e.target as HTMLSelectElement).value as EaseMode })}
+                          >
+                            <option value="in">in</option>
+                            <option value="out">out</option>
+                            <option value="in-out">in-out</option>
+                          </select>
+                        </div>
+                      </Show>
+                      <Show when={easing().type === 'elastic'}>
+                        <div class="property-row">
+                          <label>Amplitude</label>
+                          <input type="number" min="1" step="0.1" value={(easing() as { amplitude?: number }).amplitude ?? 1} onInput={(e) => { const v = numberFrom(e); if (v !== undefined) updateParametricEasing({ amplitude: Math.max(1, v) }) }} />
+                        </div>
+                        <div class="property-row">
+                          <label>Period</label>
+                          <input type="number" min="0.05" step="0.05" value={(easing() as { period?: number }).period ?? 0.3} onInput={(e) => { const v = numberFrom(e); if (v !== undefined) updateParametricEasing({ period: Math.max(0.05, v) }) }} />
+                        </div>
+                      </Show>
+                      <Show when={easing().type === 'back'}>
+                        <div class="property-row">
+                          <label>Overshoot</label>
+                          <input type="number" min="0" step="0.1" value={(easing() as { overshoot?: number }).overshoot ?? 1.70158} onInput={(e) => { const v = numberFrom(e); if (v !== undefined) updateParametricEasing({ overshoot: Math.max(0, v) }) }} />
+                        </div>
+                      </Show>
+                      <Show when={easing().type === 'steps'}>
+                        <div class="property-row">
+                          <label>Steps</label>
+                          <input type="number" min="1" step="1" value={(easing() as { count: number }).count} onInput={(e) => { const v = numberFrom(e); if (v !== undefined) updateParametricEasing({ count: Math.max(1, Math.round(v)) }) }} />
+                        </div>
+                        <div class="property-row">
+                          <label>Jump</label>
+                          <select
+                            value={(easing() as { position?: string }).position ?? 'end'}
+                            onChange={(e) => updateParametricEasing({ position: (e.target as HTMLSelectElement).value })}
+                          >
+                            <option value="end">at end of each step</option>
+                            <option value="start">at start of each step</option>
+                            <option value="none">hold both ends</option>
+                            <option value="both">at both ends</option>
+                          </select>
+                        </div>
+                      </Show>
+                    </>
+                  )}
+                </Show>
                 <Show when={isCubicBezierEasing(keyframe().easing)}>
                   <div class="curve-editor-section">
                     <CurveEditor

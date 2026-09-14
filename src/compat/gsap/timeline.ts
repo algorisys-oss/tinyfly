@@ -2,6 +2,8 @@ import {
   Timeline,
   createTrack,
   bakeEasing,
+  getEasingFunction,
+  isParametricEasing,
   staggerSpan,
   type Track,
   type Keyframe,
@@ -17,6 +19,7 @@ import {
   springDuration,
 } from '../../engine'
 import { mapEase } from './ease-map'
+import { seededRandom } from './utils'
 import { resolvePosition, type Position, type PositionContext } from './position'
 import { splitVars, toMs, toStaggerConfig, type TweenVars } from './vars'
 import { defaultFor } from './defaults'
@@ -72,15 +75,19 @@ export interface CompatTimelineOptions {
    */
   startVelocity?: (target: string, property: string) => number | undefined
   /**
-   * Bake eases that no cubic-bezier can express (elastic, bounce, steps) into
-   * intermediate keyframes. Off by default because it multiplies keyframe
-   * count; without it those eases fall back to their nearest smooth curve.
+   * Sample elastic, bounce, back and steps eases into intermediate keyframes
+   * instead of keeping them as parametric eases — for players that predate
+   * parametric eases. Off by default: the parametric form is exact and small.
    */
   bakeEases?: boolean
   /** Interval between baked keyframes, in milliseconds (default: one 60fps frame) */
   bakeIntervalMs?: number
   /** Called when a start value falls through to a static default */
   onWarning?: (message: string) => void
+  /** For `stagger: { grid: 'auto' }`: how many of these targets share the first row */
+  layoutColumns?: (targets: string[]) => number
+  /** Random draws for `stagger: { from: 'random' }` (default: seeded from 1) */
+  random?: () => number
 }
 
 /** Handle for one compiled tween — the nearest thing we have to a GSAP Tween. */
@@ -101,6 +108,7 @@ export class CompatTimeline {
 
   private options: CompatTimelineOptions
   private cursor = 0
+  private readonly fallbackRandom = seededRandom(1)
   private previousStart = 0
   private previousEnd = 0
   private labels = new Map<string, number>()
@@ -340,7 +348,11 @@ export class CompatTimeline {
     const start = resolvePosition(position, this.context())
     const delay = toMs(config.delay, 0)
     const duration = toMs(config.duration, 500)
-    const stagger = toStaggerConfig(config.stagger)
+    const stagger = toStaggerConfig(config.stagger, {
+      count: targets.length,
+      columnsFromLayout: this.options.layoutColumns ? () => this.options.layoutColumns!(targets) : undefined,
+      random: this.options.random ?? this.fallbackRandom,
+    })
 
     const easing = this.easingFor(config.ease)
     const trackIds: string[] = []
@@ -518,20 +530,13 @@ export class CompatTimeline {
 
     const mapped = typeof rawEase === 'string' ? mapEase(rawEase) : undefined
 
-    if (mapped?.requiresBaking && (this.options.bakeEases || mapped.requiresBaking === 'custom') && mapped.fn) {
-      return [
-        first,
-        ...bakeEasing(first, { time: duration, value: to }, mapped.fn, {
-          intervalMs: this.options.bakeIntervalMs,
-        }),
-      ]
-    }
-
-    if (mapped?.requiresBaking && !this.options.bakeEases) {
-      this.warn(
-        `ease "${rawEase}" cannot be represented as a cubic-bezier; ` +
-          `falling back to a smooth curve. Pass { bakeEases: true } to sample it into keyframes.`
-      )
+    // Registered curves have no closed form and are always sampled. Parametric
+    // eases (elastic, bounce, back, steps) stay one keyframe unless `bakeEases`
+    // asks for keyframes a player without them can read.
+    const sample = mapped?.requiresBaking === 'custom' || (this.options.bakeEases && isParametricEasing(easing))
+    if (sample) {
+      const fn = mapped?.fn ?? getEasingFunction(easing)
+      return [first, ...bakeEasing(first, { time: duration, value: to }, fn, { intervalMs: this.options.bakeIntervalMs })]
     }
 
     return [first, { time: duration, value: to, ...(easing && { easing }) }]

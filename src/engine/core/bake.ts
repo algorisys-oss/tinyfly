@@ -1,5 +1,5 @@
 import type { AnyTrack, Track, Keyframe, EasingType, KeyframedTrack, SpringTrack, InertiaTrack } from '../types'
-import { isSpringTrack, isInertiaTrack, hasKeyframes } from '../types'
+import { isSpringTrack, isInertiaTrack, hasKeyframes, isParametricEasing } from '../types'
 import { getEasingFunction } from '../interpolation/easing'
 import { getInterpolator } from '../interpolation/interpolators'
 import { SpringSampler } from './spring'
@@ -152,12 +152,33 @@ export function toKeyframedTrack(track: AnyTrack, options?: BakeOptions): Keyfra
   return track
 }
 
-/** Bake a whole track list for export. */
+/**
+ * Sample every segment that arrives on a parametric ease (steps, elastic, bounce,
+ * back) into linear keyframes, for formats that only understand keyframes and
+ * beziers. Other segments are kept as they are. Returns the track itself when
+ * there is nothing to sample.
+ */
+export function expandParametricEasings<T extends KeyframedTrack>(track: T, options: BakeOptions = {}): T {
+  const keyframes = track.keyframes as Keyframe[]
+  if (!keyframes.some((kf) => isParametricEasing(kf.easing))) return track
+  const expanded: Keyframe[] = keyframes.length > 0 ? [keyframes[0]] : []
+  for (let i = 1; i < keyframes.length; i++) {
+    const keyframe = keyframes[i]
+    if (isParametricEasing(keyframe.easing)) expanded.push(...bakeEasing(keyframes[i - 1], keyframe, keyframe.easing, options))
+    else expanded.push(keyframe)
+  }
+  return { ...track, keyframes: expanded }
+}
+
+/** Bake a whole track list for export: computed tracks and parametric eases become keyframes. */
 export function toKeyframedTracks(tracks: AnyTrack[], options?: BakeOptions): KeyframedTrack[] {
-  return tracks.filter(hasKeyframes).concat(
-    tracks.filter(isSpringTrack).map((t) => bakeSpringTrack(t, options)),
-    tracks.filter(isInertiaTrack).map((t) => bakeInertiaTrack(t, options))
-  )
+  return tracks
+    .filter(hasKeyframes)
+    .map((t) => expandParametricEasings(t, options))
+    .concat(
+      tracks.filter(isSpringTrack).map((t) => bakeSpringTrack(t, options)),
+      tracks.filter(isInertiaTrack).map((t) => bakeInertiaTrack(t, options))
+    )
 }
 
 /**

@@ -220,3 +220,43 @@ describe('delayedCall and killTweensOf', () => {
     expect(document.getElementById('a')!.style.transform).toBe(before)
   })
 })
+
+describe('random values and repeatRefresh', () => {
+  it('draws "random(…)" values per element, the same on every page load', async () => {
+    document.body.innerHTML = '<i class="dot"></i><i class="dot"></i><i class="dot"></i>'
+    const build = () => {
+      const api = createLive(new Stage({ scheduler: manualScheduler().scheduler }))
+      const tl = api.to('.dot', { x: 'random(-100, 100, 1)', duration: 1, paused: true })
+      return tl.toDefinition().tracks.map((track) => ('keyframes' in track ? track.keyframes[track.keyframes.length - 1].value : undefined))
+    }
+    const first = build()
+    expect(first).toHaveLength(3)
+    expect(new Set(first).size).toBeGreaterThan(1)
+    expect(build()).toEqual(first)
+  })
+
+  it('draws new values on each loop with repeatRefresh', async () => {
+    const object = { x: 0 }
+    const destinations: unknown[] = []
+    const destination = () => {
+      const [track] = tl.toDefinition().tracks
+      return 'keyframes' in track ? track.keyframes[track.keyframes.length - 1].value : undefined
+    }
+    const tl = live
+      .timeline({ repeat: 3, repeatRefresh: true, onRepeat: () => destinations.push(destination()) })
+      .to(object, { x: () => live.utils.random(0, 1000, 1), duration: 0.2, ease: 'none' })
+    destinations.push(destination())
+    await play(1000)
+    expect(destinations).toHaveLength(4)
+    expect(new Set(destinations).size).toBe(4)
+  })
+
+  it('getProperty reads what tinyfly applied, or an object’s own value', async () => {
+    const object = { zoom: 2 }
+    expect(live.getProperty(object, 'zoom')).toBe(2)
+    live.to('#a', { x: 40, duration: 0.1 })
+    await play(200)
+    expect(live.getProperty('#a', 'x')).toBe(40)
+    expect(live.getProperty('#b', 'opacity')).toBe(1)
+  })
+})

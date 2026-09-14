@@ -31,11 +31,14 @@ export interface LiveThrowOptions {
 }
 
 export interface LiveDraggableOptions {
-  /** Which axes move: 'x', 'y' or 'x,y' (default) */
-  type?: 'x' | 'y' | 'x,y'
-  /** Keep the element inside another element (selector or element), or explicit offsets */
-  bounds?: string | Element | DragBounds
-  /** Snap to a grid of this size, in pixels, while dragging */
+  /** Which axes move: 'x', 'y' or 'x,y' (default); `'rotation'` spins it about its centre (knobs, dials) */
+  type?: 'x' | 'y' | 'x,y' | 'rotation'
+  /**
+   * Keep the element inside another element (selector or element), or explicit
+   * offsets; for rotation, `{ minRotation, maxRotation }` in degrees
+   */
+  bounds?: string | Element | DragBounds | RotationBounds
+  /** Snap to a grid of this size, in pixels (degrees, for rotation), while dragging */
   snap?: number
   /** Throw on release. `true` uses the defaults. */
   inertia?: boolean | LiveThrowOptions
@@ -47,16 +50,23 @@ export interface LiveDraggableOptions {
   onThrowComplete?: () => void
 }
 
+export interface RotationBounds {
+  minRotation?: number
+  maxRotation?: number
+}
+
 export interface LiveDraggable {
-  /** The underlying interaction */
-  readonly draggable: Draggable
+  /** The underlying interaction (undefined for `type: 'rotation'`, which tracks the pointer itself) */
+  readonly draggable: Draggable | undefined
   /** Where the element is now */
   readonly position: { x: number; y: number }
+  /** Its rotation in degrees */
+  readonly rotation: number
   /** Stop listening and stop any throw in progress */
   destroy(): void
 }
 
-const AXIS: Record<NonNullable<LiveDraggableOptions['type']>, DragAxis> = { x: 'x', y: 'y', 'x,y': 'both' }
+const AXIS: Record<'x' | 'y' | 'x,y', DragAxis> = { x: 'x', y: 'y', 'x,y': 'both' }
 
 const isElement = (value: unknown): value is Element =>
   typeof value === 'object' && value !== null && (value as Node).nodeType === 1
@@ -90,7 +100,9 @@ export function createLiveDraggable(
     throw new Error(`gsap-compat: live.draggable could not find ${String(target)}`)
   }
 
-  const axis = AXIS[options.type ?? 'x,y']
+  if (options.type === 'rotation') return createRotationDraggable(live, stage, name, element, options)
+
+  const axis = AXIS[(options.type ?? 'x,y') as 'x' | 'y' | 'x,y']
   const position = () => {
     const x = stage.appliedValue(name, 'x')
     const y = stage.appliedValue(name, 'y')
@@ -176,9 +188,118 @@ export function createLiveDraggable(
     get position() {
       return position()
     },
+    get rotation() {
+      const rotate = stage.appliedValue(name, 'rotate')
+      return typeof rotate === 'number' ? rotate : 0
+    },
     destroy() {
       stopThrow()
       draggable.destroy()
+    },
+  }
+}
+
+/**
+ * `type: 'rotation'`: the angle of the pointer about the element's centre turns
+ * it. Dragging past ±180° keeps turning (no jump), bounds clamp in degrees, and a
+ * release with `inertia` spins on as an ordinary inertia tween on `rotate`.
+ */
+function createRotationDraggable(live: LiveApi, stage: Stage, name: string, element: Element, options: LiveDraggableOptions): LiveDraggable {
+  const bounds = (typeof options.bounds === 'object' && options.bounds !== null && !isElement(options.bounds) ? options.bounds : {}) as RotationBounds
+  const rotation = () => {
+    const rotate = stage.appliedValue(name, 'rotate')
+    return typeof rotate === 'number' ? rotate : 0
+  }
+  const clamp = (degrees: number) => Math.min(bounds.maxRotation ?? Infinity, Math.max(bounds.minRotation ?? -Infinity, degrees))
+
+  let currentThrow: LiveTimeline | null = null
+  let pressed = false
+  let pointerId: number | undefined
+  let centre = { x: 0, y: 0 }
+  let lastAngle = 0
+  let unclamped = 0
+  let samples: Array<{ time: number; rotation: number }> = []
+
+  const angleOf = (event: PointerEvent) => (Math.atan2(event.clientY - centre.y, event.clientX - centre.x) * 180) / Math.PI
+
+  const onDown = (event: PointerEvent) => {
+    if (pressed) return
+    currentThrow?.kill()
+    currentThrow = null
+    pressed = true
+    pointerId = event.pointerId
+    ;(element as HTMLElement).setPointerCapture?.(event.pointerId)
+    const box = element.getBoundingClientRect()
+    centre = { x: box.left + box.width / 2, y: box.top + box.height / 2 }
+    lastAngle = angleOf(event)
+    unclamped = rotation()
+    samples = [{ time: performance.now(), rotation: unclamped }]
+    options.onPress?.()
+  }
+
+  const onMove = (event: PointerEvent) => {
+    if (!pressed || event.pointerId !== pointerId) return
+    const angle = angleOf(event)
+    // The shortest turn since the last move, so crossing ±180° keeps going.
+    let delta = angle - lastAngle
+    if (delta > 180) delta -= 360
+    if (delta < -180) delta += 360
+    lastAngle = angle
+    unclamped += delta
+    let next = clamp(unclamped)
+    if (options.snap) next = clamp(Math.round(next / options.snap) * options.snap)
+    stage.apply(name, { rotate: next })
+    const now = performance.now()
+    samples.push({ time: now, rotation: next })
+    while (samples.length > 2 && now - samples[0].time > 100) samples.shift()
+    const position = { x: 0, y: 0 }
+    options.onDrag?.(position)
+  }
+
+  const onUp = (event: PointerEvent) => {
+    if (!pressed || event.pointerId !== pointerId) return
+    pressed = false
+    const first = samples[0]
+    const last = samples[samples.length - 1]
+    const seconds = first && last ? (last.time - first.time) / 1000 : 0
+    const velocity = seconds > 0 ? (last.rotation - first.rotation) / seconds : 0
+    options.onRelease?.({ x: velocity, y: 0 })
+    if (!options.inertia) return
+    const settings: LiveThrowOptions = options.inertia === true ? {} : options.inertia
+    const friction = settings.friction ?? (settings.resistance !== undefined ? resistanceToFriction(settings.resistance) : 4)
+    const end = typeof settings.end === 'number' || Array.isArray(settings.end) ? settings.end : undefined
+    currentThrow = live.to(element, {
+      inertia: {
+        rotate: {
+          velocity,
+          friction,
+          min: bounds.minRotation,
+          max: bounds.maxRotation,
+          end: Array.isArray(end) ? (end as unknown as number[]).filter((value) => typeof value === 'number') : end,
+        },
+      },
+      onComplete: () => options.onThrowComplete?.(),
+    })
+  }
+
+  element.addEventListener('pointerdown', onDown as EventListener)
+  element.addEventListener('pointermove', onMove as EventListener)
+  element.addEventListener('pointerup', onUp as EventListener)
+  element.addEventListener('pointercancel', onUp as EventListener)
+  ;(element as HTMLElement).style.touchAction = 'none'
+
+  return {
+    draggable: undefined,
+    position: { x: 0, y: 0 },
+    get rotation() {
+      return rotation()
+    },
+    destroy() {
+      currentThrow?.kill()
+      element.removeEventListener('pointerdown', onDown as EventListener)
+      element.removeEventListener('pointermove', onMove as EventListener)
+      element.removeEventListener('pointerup', onUp as EventListener)
+      element.removeEventListener('pointercancel', onUp as EventListener)
     },
   }
 }

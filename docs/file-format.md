@@ -229,6 +229,19 @@ ease-in-cubic      ease-out-cubic      ease-in-out-cubic
 
 `points` are `[cp1x, cp1y, cp2x, cp2y]` (CSS `cubic-bezier` order).
 
+…or a **parametric ease**, evaluated exactly when played:
+
+```jsonc
+{ "type": "elastic", "mode": "out", "amplitude": 1, "period": 0.3 }  // overshoots and oscillates
+{ "type": "bounce", "mode": "out" }                                   // rebounds off the end
+{ "type": "back", "mode": "out", "overshoot": 1.70158 }               // goes past, then settles
+{ "type": "steps", "count": 5, "position": "end" }                     // holds, then jumps
+```
+
+`mode` is `"in"`, `"out"` (default) or `"in-out"`. `position` follows CSS
+`steps()`: `"end"` (default), `"start"`, `"none"` (hold both ends) or `"both"`.
+CSS and Lottie exports sample these into keyframes.
+
 ### Motion-path tracks
 
 A track can animate an element **along an SVG path** instead of listing X/Y
@@ -361,7 +374,7 @@ when unset.
 | `delay` | number (ms) | Shift the whole track later. `"delay": 200` is the same as adding 200 to every keyframe's `time`. |
 | `endDelay` | number (ms) | Extra time held after the last keyframe. Extends the track's (and so the timeline's) duration without changing its final value. Keyframe and text tracks only. |
 | `targets` | string[] | Drive several targets from this one track. When present, `target` is ignored. |
-| `stagger` | `{ each?, amount?, from? }` | Offsets each of `targets` in time. Ignored without `targets`. |
+| `stagger` | `{ each?, amount?, from?, offsets? }` | Offsets each of `targets` in time. Ignored without `targets`. |
 
 `stagger` fields:
 
@@ -369,6 +382,8 @@ when unset.
 - `amount` — total spread in ms, divided across the targets. Wins over `each`.
 - `from` — which target starts first: `"start"` (default), `"end"`,
   `"center"`, `"edges"`, or a target index.
+- `offsets` — explicit ms per target, in order, for layouts no 1D fan describes
+  (grids, random order). Wins over the other fields.
 
 With neither `each` nor `amount`, every offset is `0`.
 

@@ -43,6 +43,10 @@ export interface ScrollTriggerVars {
   pin?: boolean | string | Element
   /** Scroll container (element or selector); default the window */
   scroller?: string | HTMLElement
+  /** The scroller scrolls sideways: `'left right'` positions, horizontal pins */
+  horizontal?: boolean
+  /** `false`: content after the pin scrolls up underneath it instead of being pushed down */
+  pinSpacing?: boolean
   /**
    * Without `scrub`: what to do on enter, leave, enter back, leave back — each one
    * of play, pause, resume, reverse, restart, reset, complete, none.
@@ -163,6 +167,8 @@ export function createScrollTrigger(
     scrub: scrub === false ? undefined : scrub,
     pin: vars.pin === true ? true : element(vars.pin as string | Element | undefined),
     scroller: element(vars.scroller) as HTMLElement | undefined,
+    horizontal: vars.horizontal,
+    pinSpacing: vars.pinSpacing,
     onRefresh: vars.invalidateOnRefresh && animation?.invalidate ? () => animation.invalidate!() : undefined,
     snap: vars.snap === undefined ? undefined : resolveSnap(vars.snap, animation),
     markers: vars.markers,

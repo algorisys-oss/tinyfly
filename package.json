@@ -1,6 +1,6 @@
 {
   "name": "tinyfly",
-  "version": "0.62.0",
+  "version": "0.63.0",
   "type": "module",
   "description": "Lightweight, API-driven animation engine and editor. The engine is framework-agnostic and runs in browsers, Web Workers, and Node.",
   "license": "MIT",
@@ -70,6 +70,22 @@
       "import": "./lib/browser/tinyfly.js",
       "require": "./lib/browser/tinyfly.umd.js"
     },
+    "./react": {
+      "types": "./lib/types/frameworks/react.d.ts",
+      "import": "./lib/frameworks/react.js"
+    },
+    "./vue": {
+      "types": "./lib/types/frameworks/vue.d.ts",
+      "import": "./lib/frameworks/vue.js"
+    },
+    "./svelte": {
+      "types": "./lib/types/frameworks/svelte.d.ts",
+      "import": "./lib/frameworks/svelte.js"
+    },
+    "./solid": {
+      "types": "./lib/types/frameworks/solid.d.ts",
+      "import": "./lib/frameworks/solid.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -77,6 +93,7 @@
     "lib/player",
     "lib/addons",
     "lib/browser",
+    "lib/frameworks",
     "lib/types"
   ],
   "scripts": {
@@ -97,12 +114,33 @@
   "devDependencies": {
     "@solidjs/router": "^0.15.4",
     "@types/node": "^24.10.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "happy-dom": "^20.5.0",
     "playwright-core": "1.62.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
     "solid-js": "^1.9.10",
     "typescript": "~5.9.3",
     "vite": "^7.2.4",
     "vite-plugin-solid": "^2.11.10",
-    "vitest": "^4.0.18"
+    "vitest": "^4.0.18",
+    "vue": "^3.5.42"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "vue": ">=3.3",
+    "solid-js": ">=1.8"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "vue": {
+      "optional": true
+    },
+    "solid-js": {
+      "optional": true
+    }
   }
 }

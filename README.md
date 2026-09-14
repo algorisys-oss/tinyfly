@@ -119,9 +119,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 npm install tinyfly
 ```
 
-> **Not on npm yet.** The package is prepared for publishing but has not been
-> published. Until it is, use the [GitHub CDN](#use-from-a-script-tag-no-build-step)
-> below, or build it locally and `npm install /path/to/tinyfly`.
+Or use it with no build step from the [GitHub CDN](#use-from-a-script-tag-no-build-step).
 
 The package ships these entry points. Each is tree-shakeable, so you pay only
 for what you import:
@@ -135,6 +133,7 @@ for what you import:
 | `tinyfly/gsap-compat` | GSAP-style `live.to()` / `timeline()`, plus the compiling `tf` facade | Browser (`tf` anywhere) |
 | `tinyfly/drivers` | `ScrollDriver`, `VisibilityDriver` | Browser |
 | `tinyfly/interaction` | `Observer`, `Draggable` | Browser |
+| `tinyfly/react`, `tinyfly/vue`, `tinyfly/svelte`, `tinyfly/solid` | `useTinyfly` hooks, a Svelte action and a Solid primitive: `live` animations scoped to a component and reverted on unmount | Browser (frameworks are optional peer dependencies) |
 | `tinyfly/browser` | Everything above in one bundle | Browser |
 
 ```js
@@ -152,8 +151,20 @@ import { live } from 'tinyfly/gsap-compat'
 live.to('.box', { x: 200, duration: 1, ease: 'power2.out' })
 ```
 
+```jsx
+// React: everything the setup creates is reverted when the component unmounts
+import { useTinyfly } from 'tinyfly/react'
+
+function Hero() {
+  const root = useRef(null)
+  useTinyfly((live) => live.from('.title', { y: 40, opacity: 0 }), { scope: root })
+  return <section ref={root}><h1 className="title">Hello</h1></section>
+}
+```
+
 TypeScript declarations ship with every entry point. Works with any framework
-(React, Vue, Svelte, Solid, Angular) or none — the engine has no dependencies.
+or none; the engine has no dependencies. See
+[framework hooks](docs/gsap-compat.md#framework-hooks) for Vue, Svelte and Solid.
 
 ### Use from a `<script>` tag (no build step)
 
@@ -166,7 +177,7 @@ GitHub. No npm required.
 GSAP-shaped functions at the top level:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.62.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.63.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -476,6 +487,7 @@ timeline.addTrack({
 - Flip shared elements — `data-flip-id` grows a thumbnail into a different hero element
 - Plain-object targets and `live.ticker` — drive canvas, Three.js or shader uniforms on the same frame as the DOM
 - Survives resizes and breakpoints — function values, `invalidateOnRefresh`, `splitText` `autoSplit`, `live.matchMedia()` (a real reduced-motion mode) and `live.context()` cleanup
+- `live.utils` (clamp, mapRange, interpolate, wrap, snap, seeded random, distribute, pipe…), `"random(…)"` values, `repeatRefresh`, `live.getProperty`; native elastic / bounce / back / steps eases
 - Timeline callbacks and control: `tl.call`, `tl.addPause`, `tl.tweenTo` / `tweenFromTo`, `onRepeat`, `onReverseComplete`, tween callbacks inside timelines, `live.delayedCall`, `live.killTweensOf`
 - `live.quickTo` for pointer and scroll-driven values; `snap`, `markers` and `containerAnimation` on scroll triggers
 - `live.smoothScroll` eased wheel scrolling with `data-speed` / `data-lag` parallax, on the real scroll position so triggers and pins keep working

@@ -119,3 +119,40 @@ describe('live.draggable', () => {
     expect(() => live.draggable('#missing')).toThrow(/could not find/)
   })
 })
+
+describe('live.draggable rotation', () => {
+  // happy-dom lays nothing out, so the card's centre is at (0, 0).
+  it('turns with the pointer about the centre, past ±180° without a jump', () => {
+    const dial = live.draggable('#card', { type: 'rotation' })
+    pointer(card(), 'pointerdown', 100, 0, 0) // 0°
+    pointer(card(), 'pointermove', 0, 100, 16) // 90°
+    expect(dial.rotation).toBeCloseTo(90)
+    pointer(card(), 'pointermove', -100, 0, 32) // 180°
+    pointer(card(), 'pointermove', 0, -100, 48) // 270° (atan2 says -90°)
+    expect(dial.rotation).toBeCloseTo(270)
+    expect(card().style.transform).toContain('rotate(270deg)')
+    pointer(card(), 'pointerup', 0, -100, 64)
+  })
+
+  it('clamps to rotation bounds and snaps in degrees', () => {
+    const dial = live.draggable('#card', { type: 'rotation', bounds: { minRotation: 0, maxRotation: 45 }, snap: 15 })
+    pointer(card(), 'pointerdown', 100, 0, 0)
+    pointer(card(), 'pointermove', 100, 50, 16) // ~26.6° → 30
+    expect(dial.rotation).toBe(30)
+    pointer(card(), 'pointermove', 0, 100, 32) // 90° → 45
+    expect(dial.rotation).toBe(45)
+    pointer(card(), 'pointerup', 0, 100, 48)
+  })
+
+  it('spins on with inertia after a flick', async () => {
+    const dial = live.draggable('#card', { type: 'rotation', inertia: true })
+    pointer(card(), 'pointerdown', 100, 0, 0)
+    pointer(card(), 'pointermove', 71, 71, 16)
+    pointer(card(), 'pointermove', 0, 100, 32)
+    pointer(card(), 'pointerup', 0, 100, 40)
+    const released = dial.rotation
+    await Promise.resolve()
+    run(600)
+    expect(dial.rotation).toBeGreaterThan(released + 10)
+  })
+})

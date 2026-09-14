@@ -100,6 +100,12 @@ export const DOCS: DocEntry[] = [
     section: 'Guides',
   },
   {
+    id: 'extending',
+    title: 'Extending tinyfly',
+    summary: 'Writing a render adapter, animating any object with live and the ticker, custom and parametric eases, stagger offsets, adding a track kind, and contributing gallery examples.',
+    section: 'Guides',
+  },
+  {
     id: 'DEPLOYMENT',
     title: 'Deployment',
     summary: 'Building and hosting the editor, and serving the player bundles.',
