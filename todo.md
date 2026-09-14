@@ -1886,6 +1886,17 @@ Every gap from the Go series spike on teachyourselfcoding.com, fixed:
   - [x] Hardened: the scene is flushed on `beforeunload` + `visibilitychange`, so
     the 1000 ms auto-save debounce can't swallow the last edit on a fast reload.
 
+- [x] **BUG (fixed, [#1](https://github.com/algorisys-oss/tinyfly/issues/1)): typing
+  into a text element's Content field stops after one character** — focus left
+  the field after each keystroke. **Root cause:** every `updateElement` replaces
+  the element object, and the Property panel's type-specific section was a
+  reactive child of that object, so it was rebuilt on every edit, destroying the
+  focused input. The field's 150 ms debounce only delayed it. Every text field in
+  that section had the same problem (hex colour, font family, media URL, SVG path).
+  - [x] Fixed: the section is keyed on the element's id + type and reads a
+    live view of the selected element, so fields update in place.
+  - [x] e2e `editor` check types slower than the debounce and asserts focus stays.
+
 - [x] **Artboard background is project data** — `ProjectCanvas.background`
   (default `#252525`) drives the preview instead of a hard-coded CSS rule, is
   editable in Project Settings, serializes with the project, and is the default

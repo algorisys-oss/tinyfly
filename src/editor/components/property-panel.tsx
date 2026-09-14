@@ -1,8 +1,8 @@
-import { createMemo, createSignal, createEffect, on, untrack, Show, Switch, Match, For } from 'solid-js'
+import { createMemo, createSignal, createEffect, on, untrack, Show, For } from 'solid-js'
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
 import type { ProjectStore } from '../stores/project-store'
-import { isGradient, createLinearGradient, createRadialGradient, type SceneStore, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type SymbolInstanceElement, type FillValue, type LinearGradient, type RadialGradient } from '../stores/scene-store'
+import { isGradient, createLinearGradient, createRadialGradient, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type SymbolInstanceElement, type FillValue, type LinearGradient, type RadialGradient } from '../stores/scene-store'
 import type { EasingType, BuiltInEasingType, CubicBezierPoints, ParametricEasing, EaseMode } from '../../engine'
 import {
   isCubicBezierEasing,
@@ -129,6 +129,30 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
       { defer: true }
     )
   )
+
+  /**
+   * Identity of the selected element for the type-specific section: it is
+   * rebuilt only when this changes (another element, or a different type).
+   */
+  const selectedElementKey = createMemo(() => {
+    const element = selectedElement()
+    return element ? `${element.id}:${element.type}` : null
+  })
+
+  /**
+   * A read-through view of the selected element, handed to the type-specific
+   * render functions. Every property read goes to the current
+   * `selectedElement()`, so `value={element.fill}` in their JSX tracks the store
+   * and updates the field in place.
+   *
+   * Every edit replaces the element object in the scene store. Passing that
+   * object directly made the whole section re-render on each edit, which
+   * destroyed the focused input — typing into Content stopped after one
+   * character (github.com/algorisys-oss/tinyfly/issues/1).
+   */
+  const liveElement = new Proxy({} as SceneElement, {
+    get: (_target, key) => (selectedElement() as Record<PropertyKey, unknown> | null)?.[key],
+  })
 
   // Camera inspector: pan/zoom/rotate at the playhead. Reading timelineVersion +
   // currentTime keeps the shown value live as the playhead moves or tracks change.
@@ -1362,6 +1386,23 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
     )
   }
 
+  /** Properties for the selected element's type, bound to the live element view. */
+  const renderTypeSpecificProperties = () => {
+    switch (liveElement.type) {
+      case 'rect': return renderRectProperties(liveElement as RectElement)
+      case 'circle': return renderCircleProperties(liveElement as CircleElement)
+      case 'text': return renderTextProperties(liveElement as TextElement)
+      case 'line': return renderLineProperties(liveElement as LineElement)
+      case 'arrow': return renderArrowProperties(liveElement as ArrowElement)
+      case 'path': return renderPathProperties(liveElement as PathElement)
+      case 'image': return renderImageProperties(liveElement as ImageElement)
+      case 'audio': return renderAudioProperties(liveElement as AudioElement)
+      case 'video': return renderVideoProperties(liveElement as VideoElement)
+      case 'symbol': return renderSymbolProperties(liveElement as SymbolInstanceElement)
+      default: return null
+    }
+  }
+
   // Path segment helpers
   const addPathSegment = (segmentType: 'L' | 'Q' | 'C') => {
     const element = selectedElement() as PathElement
@@ -1401,7 +1442,7 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
 
   const renderPathProperties = (element: PathElement) => {
     // For SVG paths, we only support string fill values (not gradients)
-    const fillStr = typeof element.fill === 'string' ? element.fill : 'transparent'
+    const fillStr = () => (typeof element.fill === 'string' ? element.fill : 'transparent')
 
     return (
     <>
@@ -1528,12 +1569,12 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
           <label>Fill</label>
           <input
             type="color"
-            value={fillStr === 'transparent' ? '#000000' : fillStr}
+            value={fillStr() === 'transparent' ? '#000000' : fillStr()}
             onChange={handleColorChange('fill')}
           />
           <input
             type="text"
-            value={fillStr}
+            value={fillStr()}
             onInput={handleColorChange('fill')}
             class="color-text"
           />
@@ -2044,38 +2085,10 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
               </Show>
 
               {/* Type-specific properties */}
-              <Switch>
-                <Match when={element().type === 'rect'}>
-                  {renderRectProperties(element() as RectElement)}
-                </Match>
-                <Match when={element().type === 'circle'}>
-                  {renderCircleProperties(element() as CircleElement)}
-                </Match>
-                <Match when={element().type === 'text'}>
-                  {renderTextProperties(element() as TextElement)}
-                </Match>
-                <Match when={element().type === 'line'}>
-                  {renderLineProperties(element() as LineElement)}
-                </Match>
-                <Match when={element().type === 'arrow'}>
-                  {renderArrowProperties(element() as ArrowElement)}
-                </Match>
-                <Match when={element().type === 'path'}>
-                  {renderPathProperties(element() as PathElement)}
-                </Match>
-                <Match when={element().type === 'image'}>
-                  {renderImageProperties(element() as ImageElement)}
-                </Match>
-                <Match when={element().type === 'audio'}>
-                  {renderAudioProperties(element() as AudioElement)}
-                </Match>
-                <Match when={element().type === 'video'}>
-                  {renderVideoProperties(element() as VideoElement)}
-                </Match>
-                <Match when={element().type === 'symbol'}>
-                  {renderSymbolProperties(element() as SymbolInstanceElement)}
-                </Match>
-              </Switch>
+              {/* Keyed on id + type and rendered untracked: fields update in place (see liveElement) */}
+              <Show when={selectedElementKey()} keyed>
+                {(_key) => renderTypeSpecificProperties()}
+              </Show>
 
               <div class="property-actions">
                 <button class="delete-btn" onClick={handleDeleteElement}>

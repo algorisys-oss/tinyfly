@@ -22,7 +22,12 @@ export default {
     const contentInput = page.locator('.property-row', { has: page.locator('label', { hasText: /^Content$/ }) }).locator('input').first()
     await contentInput.click()
     await page.keyboard.press(process.platform === 'darwin' ? 'Meta+a' : 'Control+a')
-    await page.keyboard.type('Persisted', { delay: 10 })
+    // Slower than the Content field's 150ms debounce, so each keystroke reaches the
+    // store while typing — which used to rebuild the field and drop focus (issue #1).
+    await page.keyboard.type('Persisted', { delay: 200 })
+    const stillFocused = await contentInput.evaluate((el) => el === document.activeElement)
+    const typed = await contentInput.inputValue()
+    results.push({ label: 'typing into Content keeps focus across store updates', ok: stillFocused && typed === 'Persisted', detail: `focused: ${stillFocused}, value: ${JSON.stringify(typed)}` })
     await page.locator('.preview-panel').click({ position: { x: 5, y: 5 } })
     await page.waitForTimeout(300)
     const elements = await page.locator('.preview-panel [data-element-type]').count()
