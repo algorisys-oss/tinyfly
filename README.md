@@ -1,6 +1,11 @@
 # tinyfly
 
+[![npm](https://img.shields.io/npm/v/@algorisys/tinyfly)](https://www.npmjs.com/package/@algorisys/tinyfly)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 A lightweight, API-driven animation engine and visual editor for creating high-performance, embeddable animations.
+
+**Try it:** [studio](https://tinyfly.app/studio) · [interactive course](https://tinyfly.app/learn) · [examples](https://tinyfly.app/examples) · `npm install @algorisys/tinyfly`
 
 **GSAP-level power with Excalidraw-level simplicity.**
 
@@ -14,7 +19,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 
 ### Animation Capabilities
 - **Timeline-based** - Orchestrate multiple tracks with precise timing
-- **Rich easing** - Linear, quad, cubic, custom cubic-bezier, and more
+- **Rich easing** - Linear, quad, cubic, custom cubic-bezier, and parametric `elastic` / `bounce` / `back` / `steps` eases that stay one small, exact keyframe in JSON
 - **Interpolation** - Numbers, colors, and arrays
 - **Playback control** - Play, pause, stop, seek, reverse, speed adjustment
 - **Looping** - Finite loops, infinite loops, ping-pong (alternate), and `repeatDelay` between iterations
@@ -29,6 +34,13 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Play when visible** - `VisibilityDriver` plays on appearance (`once` / `repeat` / `reset`) via IntersectionObserver
 - **Drag & pointer input** - `Observer` normalises pointer/touch/wheel; `Draggable` supports bounds, axis lock, grid/edge snapping (shared with the editor stage), and drag-to-scrub
 - **FLIP transitions** - `flip()` measures a layout change in the DOM layer and emits ordinary keyframes, keeping the engine free of live layout reads
+
+### Teaching Animations
+- **Markers and captions in the JSON** - Named steps (`pause`, `question` for predict-then-reveal) and captions per language, kept out of the tracks so translation never touches timing
+- **A player that teaches** - Shows a real frame on load, steps between markers (`next` / `prev` / `stepMode`), respects `prefers-reduced-motion`, and pauses off screen
+- **One-script embeds** - `tinyfly-embed.iife.js` with `data-tinyfly-auto` mounts every `[data-tinyfly-embed]` figure with step controls, announced captions and an accessible SVG, with no per-post JavaScript
+- **Authoring kit** - `lesson()` step builder and diagram primitives (array cells, pointer, stack, queue / channel, table, pipeline) in `@algorisys/tinyfly/teach`
+- **Build tools** - `npx @algorisys/tinyfly validate` catches broken figures in CI; `render` writes a frame to static SVG for RSS, email and print
 
 ### Render Adapters
 - **DOM** - CSS transforms, opacity, colors, clip-path reveal, filters, shine, transform-origin, perspective
@@ -106,6 +118,8 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - [Examples](docs/examples.md) — Code examples for common animation patterns
 - [Scroll Animation](docs/scroll-animation.md) — Scroll-driven and visibility-triggered playback via drivers
 - [GSAP Compatibility](docs/gsap-compat.md) — The GSAP-flavoured API, the mapping table, and what we deliberately don't do
+- [Teaching Animations](docs/teaching.md) — Step-through figures: markers, captions, the stepping player, controls, declarative embeds, `tinyfly/teach`, validate and render
+- [Extending tinyfly](docs/extending.md) — Writing adapters, custom eases and stagger offsets, adding a track kind, contributing examples
 - [Deployment](docs/DEPLOYMENT.md) — Hosting, Docker, and CDN configuration
 - [2D Animation Roadmap](docs/2d-animation-roadmap.md) — Adobe Animate gap analysis and phased plan (symbols/library, camera, onion skinning, …)
 
@@ -363,6 +377,14 @@ Custom cubic-bezier easing:
 }
 ```
 
+Parametric eases, evaluated exactly when played:
+```typescript
+{ type: 'elastic', mode: 'out', amplitude: 1, period: 0.3 }
+{ type: 'bounce', mode: 'in-out' }
+{ type: 'back', mode: 'out', overshoot: 1.70158 }
+{ type: 'steps', count: 5, position: 'end' }   // CSS steps() jump positions
+```
+
 ### Player
 
 ```typescript
@@ -379,6 +401,23 @@ player.pause();
 player.seek(500);
 player.setSpeed(2);
 player.destroy();
+
+// Teaching: markers, steps and captions
+const lessonPlayer = new TinyflyPlayer('#figure', { stepMode: true, playWhenVisible: true });
+await lessonPlayer.load('slice.json');   // shows the first frame straight away
+lessonPlayer.next();                     // animate to the next marker
+lessonPlayer.prev();                     // jump back a step
+lessonPlayer.caption();                  // the current step's caption, in the page's language
+```
+
+Or skip the code entirely with declarative embeds (see [Teaching Animations](docs/teaching.md)):
+
+```html
+<figure data-tinyfly-embed data-options='{"stepMode": true}'>
+  <svg viewBox="0 0 720 200">…</svg>
+  <script type="application/json" data-tinyfly-timeline>{ …timeline JSON… }</script>
+</figure>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.64.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 ### Audio / Video Sync
@@ -559,7 +598,7 @@ tinyfly/
 - [x] Visual curve editor for custom easing
 - [x] npm engine package + CDN player build (`npm run build:libs`)
 - [x] All-in-one `<script>` bundle with a GSAP-shaped `tinyfly` global, and `live.to()` that plays on real elements
-- [ ] Publish to npm
+- [x] Publish to npm as [`@algorisys/tinyfly`](https://www.npmjs.com/package/@algorisys/tinyfly)
 
 ### Future
 - [x] Scene transitions (fade, slide between scenes)
@@ -591,9 +630,12 @@ tinyfly/
 - [x] Inertia / throw as an `inertia` track kind
 - [x] Text tracks: type-on and scramble text
 - [x] CustomEase, CustomBounce, CustomWiggle
-- [ ] Framework wrappers (React / Vue / Svelte)
+- [x] Framework wrappers (`@algorisys/tinyfly/react`, `/vue`, `/svelte`, `/solid`)
 - [x] Scroll pinning (`scrollTrigger: { pin }`), split text, drawSVG, springs and shared-element Flip on `live` ([Phase 28](todo.md))
 - [x] Interactive tutorial at `/learn` — 9 modules from keyframes to an award-style landing page, checked in three browsers ([Phase 29](todo.md))
+- [x] GSAP parity: native eases, `live.utils`, keyframes, grid staggers, rotation dragging, scroll batch / scroll-to, smooth scrolling, timeline callbacks ([Phase 29E](todo.md))
+- [x] Teaching embeds: markers, captions, stepping player, controls, declarative mounting, `tinyfly/teach`, validate / render ([Phase 30](todo.md))
+- [ ] Editor UI for markers and captions
 - [ ] Nested timelines at runtime, explicit track priority
 - [ ] React Native adapter
 - [ ] Collaborative editing
@@ -633,8 +675,12 @@ results rather than just looking for errors:
   motion-path precision.
 - **Editor:** adding elements, playing in all three renderers, and IndexedDB
   persistence across a reload.
+- **Site:** the landing page, docs, every example page, the showcases (pins, smooth
+  scrolling, parallax, reduced motion) and every course step.
+- **Embeds:** keyboard stepping in the focused figure only, captions in the page
+  language, SVG paint, labelled images, play-when-visible and reduced motion.
 
-Latest run: Chromium 150, Firefox 153 and WebKit 26.5 pass all 33 checks. In WebKit
+Latest run: Chromium 150, Firefox 153 and WebKit 26.5 pass every check. In WebKit
 on Linux, MP4 export is reported as a note: Playwright's WebKit build crashes while
 starting its bundled GStreamer, before tinyfly's code runs. WebKit needs `libavif16`
 on Linux hosts, and the runner removes the GTK/GIO variables a snap-installed
@@ -643,18 +689,20 @@ load.
 
 ### Test Coverage
 
-`npm test` runs 1,711 unit tests in 99 files, all passing:
+`npm test` runs 1,999 unit tests in 121 files, all passing:
 
 | Area | Tests |
 |---|---|
-| Engine (`src/engine`: timeline, easing, paths, text, exports, serialization) | 498 |
+| Engine (`src/engine`: timeline, easing, paths, text, exports, serialization) | 521 |
 | Editor (`src/editor`: stores, utils, presets, AI, samples) | 393 |
-| Examples page and GSAP-style demos (`src/examples`) | 206 |
-| GSAP-style API (`src/compat/gsap`) | 201 |
+| GSAP-style API (`src/compat/gsap`) | 328 |
+| Examples page, GSAP-style demos and showcases (`src/examples`) | 235 |
 | Render adapters (`src/adapters`) | 134 |
-| Player, media sync and sequencer (`src/player`) | 83 |
-| Drivers and interaction (`src/drivers`, `src/interaction`) | 108 |
+| Interactive course (`src/learn`) | 129 |
+| Drivers and interaction (`src/drivers`, `src/interaction`) | 136 |
+| Player, media sync, sequencer and teaching (`src/player`) | 92 |
 | Docs viewer and `llms.txt` (`src/docs`) | 14 |
+| Embeds, teaching kit, framework hooks, landing (`src/embed`, `src/teach`, `src/frameworks`, `src/landing`) | 17 |
 
 ## Contributing
 
