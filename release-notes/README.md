@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.66.0](v0.66.0.md) | 2026-09-14 | `tinyfly.iife.js` includes teaching embeds (`data-tinyfly-auto`, controls, `mountAll`), +3 kB gzipped |
 | [v0.65.0](v0.65.0.md) | 2026-09-14 | Steps and captions in the studio (Steps lane, step inspector, M / [ / ]); embed fixes from the first rollout (Reveal row, empty caption strip, shared global), `stepFormat`, `data-markers` |
 | [v0.64.0](v0.64.0.md) | 2026-09-14 | Teaching animations: markers and captions, a stepping player (initial frame, reduced motion, play-when-visible), step controls with questions, one-script declarative embeds, `tinyfly/teach` primitives, `npx tinyfly validate` / `render`, SVG paint fix, `formatVersion`, SRI |
 | [v0.63.0](v0.63.0.md) | 2026-09-14 | GSAP parity: native elastic / bounce / back / steps eases, `live.utils` + seeded random + `repeatRefresh`, keyframes, grid staggers, rotation dragging, `scrollBatch` / `scrollTo`, horizontal scrollers, `pinSpacing: false`; React / Vue / Svelte / Solid hooks; faster morphing; first npm release |

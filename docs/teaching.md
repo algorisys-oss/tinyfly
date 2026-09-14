@@ -24,12 +24,21 @@ path for all of that:
 </figure>
 
 <!-- once, anywhere on the page (a site-wide footer is fine) -->
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.65.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.66.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 Every `[data-tinyfly-embed]` mounts when the page is ready, with no per-post
 JavaScript, so optimisation plugins that defer or strip inline scripts don't break
 it. Without `data-tinyfly-auto`, call `tinyfly.mountAll()` yourself.
+
+**Which script:**
+
+| Script | Use it when |
+|---|---|
+| `tinyfly.iife.js` (~53 kB gzipped) | The site also animates with code (`tinyfly.to`, scroll triggers, …). It includes the embeds too; `data-tinyfly-auto` works the same |
+| `tinyfly-embed.iife.js` (~19 kB gzipped) | The page only shows teaching figures |
+
+Loading more than one is safe: they add to the same `tinyfly` global.
 
 | Attribute | Meaning |
 |---|---|

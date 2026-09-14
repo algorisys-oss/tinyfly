@@ -1832,6 +1832,10 @@ Every gap from the Go series spike on teachyourselfcoding.com, fixed:
       with no captions (hidden then); IIFE bundles merge into one `tinyfly` global
       (`output.extend`); `labels.stepFormat` for the visible counter; reduced motion vs
       `initialFrame` documented; `data-markers="0,2300,3800"` shorthand
+- [x] **One script for everything:** `tinyfly.iife.js` includes the teaching embeds
+      (controls, `mountAll`, `data-tinyfly-auto`), +3 kB gzipped; build-time
+      `validateEmbed` / `renderFrame` stay in npm and the CLI; `tinyfly-embed.iife.js`
+      remains the small teaching-only bundle. Auto-mount shared in `embed/auto-mount.ts`
 - [ ] Next: a `hold` easing alias; RTL caption layout
 
 ---

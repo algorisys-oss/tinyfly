@@ -11,12 +11,19 @@
  * facade (they play on real elements). The engine, the player, the compiling
  * `tf` facade, drivers and interaction are all available on the same global.
  *
+ * Teaching embeds are included too: step controls (`createControls`), declarative
+ * mounting (`mountAll`, or automatically when the script tag has
+ * `data-tinyfly-auto`). The build-time `validateEmbed` / `renderFrame` stay in
+ * `@algorisys/tinyfly/embed` and the CLI. For a page that only shows teaching
+ * figures, `tinyfly-embed.iife.js` is the smaller choice.
+ *
  * Bundler users should import the individual entry points instead
  * (`tinyfly`, `tinyfly/player`, `tinyfly/gsap-compat`, …) so unused parts
  * tree-shake away; this file exists for pages with no build step.
  */
 
 import { live } from '../compat/gsap/live'
+import { autoMountFromCurrentScript } from '../embed/auto-mount'
 
 export const to = live.to
 export const from = live.from
@@ -55,3 +62,10 @@ export {
   CustomBounce,
   CustomWiggle,
 } from '../compat/gsap'
+export { createControls, DEFAULT_LABELS } from '../embed/controls'
+export type { Controls, ControlsOptions, ControlLabels } from '../embed/controls'
+export { mount, mountAll, unmount } from '../embed/mount'
+export type { MountedEmbed, MountOptions } from '../embed/mount'
+
+// Teaching figures mount themselves when the script tag has data-tinyfly-auto.
+autoMountFromCurrentScript()

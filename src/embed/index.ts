@@ -8,7 +8,7 @@
  * page is ready. Otherwise call `tinyfly.mountAll()`.
  */
 
-import { mountAll } from './mount'
+import { autoMountFromCurrentScript } from './auto-mount'
 
 export { TinyflyPlayer, play, create } from '../player/player'
 export type { PlayerOptions } from '../player/player'
@@ -19,11 +19,5 @@ export type { MountedEmbed, MountOptions } from './mount'
 export { validateEmbed, renderFrame, targetNamesIn } from './tools'
 export type { EmbedProblem, FrameAt } from './tools'
 
-// Auto-mount when loaded with data-tinyfly-auto. `currentScript` is only set while
-// the script first runs, so it is read now.
-const script = typeof document !== 'undefined' ? (document.currentScript as HTMLScriptElement | null) : null
-if (script?.hasAttribute('data-tinyfly-auto')) {
-  const start = () => void mountAll()
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true })
-  else start()
-}
+// Auto-mount when loaded with data-tinyfly-auto.
+autoMountFromCurrentScript()

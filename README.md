@@ -189,11 +189,13 @@ Every release publishes browser bundles to the `cdn/` folder of
 its version, and [jsDelivr](https://www.jsdelivr.com/) serves them straight from
 GitHub. No npm required.
 
-`tinyfly.iife.js` (~29 KB gzipped) puts everything on one `tinyfly` global, with
-GSAP-shaped functions at the top level:
+`tinyfly.iife.js` (~53 KB gzipped) puts everything on one `tinyfly` global, with
+GSAP-shaped functions at the top level. Teaching embeds are included: add
+`data-tinyfly-auto` to the script tag and every `[data-tinyfly-embed]` figure mounts
+itself.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.65.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.66.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -209,10 +211,11 @@ GSAP-shaped functions at the top level:
 
 | File | What |
 |---|---|
-| `cdn/tinyfly.iife.js` | Everything, on a `tinyfly` global |
+| `cdn/tinyfly.iife.js` | Everything, on a `tinyfly` global, including teaching embeds |
 | `cdn/tinyfly.umd.js` | The same, as UMD |
 | `cdn/tinyfly.esm.js` | The same, as an ES module: `import { live } from '…/cdn/tinyfly.esm.js'` |
-| `cdn/tinyfly-player.iife.js` | Player only (~11 KB gzipped), for playing editor exports |
+| `cdn/tinyfly-player.iife.js` | Player only (~17 KB gzipped), for playing editor exports |
+| `cdn/tinyfly-embed.iife.js` | Only teaching figures (~19 KB gzipped): player, step controls, auto-mount |
 
 Replace `@v0.59.0` with the version you want. **Pin a version in production**:
 a tag's files never change. `@main` follows the latest release, which jsDelivr
@@ -417,7 +420,7 @@ Or skip the code entirely with declarative embeds (see [Teaching Animations](doc
   <svg viewBox="0 0 720 200">…</svg>
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON… }</script>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.65.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.66.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 ### Audio / Video Sync
