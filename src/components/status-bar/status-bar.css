@@ -73,6 +73,11 @@
   gap: 4px;
 }
 
+.status-bar-separator {
+  margin: 0 6px;
+  color: #555;
+}
+
 .status-bar-heart {
   color: #ff6b6b;
   font-size: 13px;

@@ -315,6 +315,12 @@ export const LandingPage: Component = () => {
             </a>
             <a href="/llms.txt">llms.txt</a>
             <span>v{__APP_VERSION__}</span>
+            <span>
+              SDD by Rajesh Pillai at{' '}
+              <a href="https://www.algorisys.com" target="_blank" rel="noopener">
+                Algorisys Technologies
+              </a>
+            </span>
           </div>
         </footer>
       </div>

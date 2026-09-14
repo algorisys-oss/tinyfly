@@ -1849,6 +1849,10 @@ Every gap from the Go series spike on teachyourselfcoding.com, fixed:
   import rebuilds the shapes from this file.
   - [ ] Import JSON… does not read Animation Documents yet (it expects a timeline).
 
+- [x] **Footer credit** — "SDD by Rajesh Pillai at Algorisys Technologies"
+  (links to https://www.algorisys.com) in the studio status bar, the landing page
+  footer and the README.
+
 - [x] **Esc closes any dialog** — every dialog (AI Settings, Project Settings,
   Export, Embed, Samples, Shortcuts, Transition) closes on Escape from anywhere
   on the page, via a shared `useEscapeClose(isOpen, onClose)` hook. It listens on

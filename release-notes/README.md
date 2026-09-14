@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.67.1](v0.67.1.md) | 2026-09-14 | Footer credit: SDD by Rajesh Pillai at Algorisys Technologies |
 | [v0.67.0](v0.67.0.md) | 2026-09-14 | Studio: More → Export Animation Document (elements + tracks in one file, for apps such as YappyDraw) |
 | [v0.66.1](v0.66.1.md) | 2026-09-14 | Fix: typing in the Property panel's text fields no longer loses focus after each character ([#1](https://github.com/algorisys-oss/tinyfly/issues/1)) |
 | [v0.66.0](v0.66.0.md) | 2026-09-14 | `tinyfly.iife.js` includes teaching embeds (`data-tinyfly-auto`, controls, `mountAll`), +3 kB gzipped |

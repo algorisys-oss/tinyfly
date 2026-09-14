@@ -52,6 +52,11 @@ export const StatusBar: Component<StatusBarProps> = (props) => {
         >
           Algorisys OSS Team
         </a>
+        <span class="status-bar-separator" aria-hidden="true">·</span>
+        SDD by Rajesh Pillai at{' '}
+        <a href="https://www.algorisys.com" target="_blank" rel="noopener noreferrer">
+          Algorisys Technologies
+        </a>
       </div>
     </div>
   )
