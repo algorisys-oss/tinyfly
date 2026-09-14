@@ -16,7 +16,8 @@ import { createControls, type Controls, type ControlsOptions } from './controls'
  *     <script src="…/tinyfly-embed.iife.js" data-tinyfly-auto></script>
  *
  * Or call `tinyfly.mountAll()` yourself. The timeline may also come from a URL
- * (`data-src="slice.json"`). Translated captions can sit beside it in a
+ * (`data-src="slice.json"`). A timeline without markers can take steps by time
+ * from `data-markers="0,2300,3800"`. Translated captions can sit beside it in a
  * `<script type="application/json" data-tinyfly-captions>`. `data-controls="false"`
  * leaves the controls out, and `data-labels` passes control labels as JSON.
  *
@@ -58,7 +59,17 @@ export async function mount(element: HTMLElement, options: MountOptions = {}): P
 
   const inline = element.querySelector('script[data-tinyfly-timeline]')
   const source = element.getAttribute('data-src')
-  const definition = inline ? parseJson<TimelineDefinition>(inline.textContent, 'timeline', element) : undefined
+  let definition = inline ? parseJson<TimelineDefinition>(inline.textContent, 'timeline', element) : undefined
+  // data-markers="0,2300,3800": steps by time, for timelines written without markers.
+  const markerTimes = parseMarkerTimes(element.getAttribute('data-markers'))
+  if (!definition && source && markerTimes) {
+    // The markers must be added before the player sees the timeline, so fetch it here.
+    const response = await fetch(source)
+    if (response.ok) definition = (await response.json()) as TimelineDefinition
+  }
+  if (definition && markerTimes && !definition.config.markers?.length) {
+    definition.config = { ...definition.config, markers: markerTimes.map((time, i) => ({ id: `step-${i + 1}`, time })) }
+  }
   if (!definition && !source) {
     console.warn('tinyfly: embed has no timeline (a <script type="application/json" data-tinyfly-timeline> or data-src)', element)
     return undefined
@@ -93,6 +104,18 @@ export async function mount(element: HTMLElement, options: MountOptions = {}): P
     else element.appendChild(entry.controls.element)
   }
   return entry
+}
+
+/** `"0, 2300, 3800"` → `[0, 2300, 3800]` (sorted, invalid entries skipped). */
+function parseMarkerTimes(value: string | null): number[] | undefined {
+  if (!value) return undefined
+  const times = value
+    .split(/[\s,]+/)
+    .filter(Boolean)
+    .map(Number)
+    .filter((time) => Number.isFinite(time) && time >= 0)
+    .sort((a, b) => a - b)
+  return times.length > 0 ? times : undefined
 }
 
 /** Mount every `[data-tinyfly-embed]` under `root` that is not mounted yet. */

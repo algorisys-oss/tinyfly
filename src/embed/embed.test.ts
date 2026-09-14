@@ -100,6 +100,34 @@ describe('mountAll', () => {
   })
 })
 
+describe('mount details', () => {
+  it('takes steps from data-markers when the timeline has none', async () => {
+    const plain: TimelineDefinition = { id: 'p', config: { duration: 1000 }, tracks: lesson.tracks }
+    document.body.innerHTML = `<figure data-tinyfly-embed data-markers="900, 0,x, 400">${svg}<script type="application/json" data-tinyfly-timeline>${JSON.stringify(plain)}</script></figure>`
+    const [entry] = await mountAll()
+    expect(entry.player.markers).toEqual([
+      { id: 'step-1', time: 0 },
+      { id: 'step-2', time: 400 },
+      { id: 'step-3', time: 900 },
+    ])
+    // No labels or captions: the caption line is hidden; the counter uses stepFormat.
+    const caption = entry.controls!.element.querySelector('.tf-ctl-caption') as HTMLElement
+    expect(caption.hidden).toBe(true)
+    unmount(entry.element)
+  })
+
+  it('formats the visible step counter from labels', async () => {
+    document.body.innerHTML = `<figure id="f">${svg}</figure>`
+    const figure = document.getElementById('f')!
+    const player = new TinyflyPlayer(figure)
+    await player.load(lesson)
+    const controls = createControls(player, figure, { labels: { stepFormat: '第 {index} 步，共 {total} 步' } })
+    player.goToMarker('ask')
+    expect(controls.element.querySelector('.tf-ctl-step')!.textContent).toBe('第 2 步，共 2 步')
+    controls.destroy()
+  })
+})
+
 describe('validateEmbed', () => {
   it('passes a good embed', () => {
     const problems = validateEmbed(lesson, { markup: svg })

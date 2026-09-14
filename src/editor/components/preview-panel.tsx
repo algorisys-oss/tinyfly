@@ -1390,6 +1390,20 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
       }
     }
 
+    // A selected step (timeline marker) owns Delete and Esc, so they never reach
+    // the element that may still be selected on the stage.
+    const selectedMarkerId = props.store.state.selectedMarkerId
+    if (selectedMarkerId && !e.metaKey && !e.ctrlKey && (e.key === 'Delete' || e.key === 'Backspace')) {
+      e.preventDefault()
+      props.store.deleteMarker(selectedMarkerId)
+      return
+    }
+    if (selectedMarkerId && e.key === 'Escape' && !maximized()) {
+      e.preventDefault()
+      props.store.selectMarker(null)
+      return
+    }
+
     // Esc exits the maximized preview.
     if (e.key === 'Escape' && maximized()) {
       e.preventDefault()

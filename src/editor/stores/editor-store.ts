@@ -23,9 +23,22 @@ import type {
   TextConfig,
   InertiaTrack,
   InertiaConfig,
+  TimelineMarker,
 } from '../../engine'
 import { type AnimationPreset, resolvePresetKeyframe, isSpringPresetTrack } from '../presets'
 import type { SceneElement } from './scene-store'
+import {
+  insertMarker,
+  patchMarker,
+  removeMarker as removeMarkerFrom,
+  setCaption,
+  captionLanguages,
+  removeCaptionLanguage,
+  normaliseLanguage,
+  neighbourMarker,
+  type Captions,
+  type MarkerPatch,
+} from '../utils/markers'
 
 /**
  * A full editor snapshot for undo/redo: the timeline AND the scene elements, so a
@@ -56,6 +69,10 @@ export interface EditorState {
   selectedKeyframes: KeyframeRef[]
   zoom: number
   scrollPosition: number
+  /** The marker (step) being inspected, if any */
+  selectedMarkerId: string | null
+  /** Caption languages added in this session but not filled in yet */
+  pendingCaptionLanguages: string[]
 }
 
 const initialState: EditorState = {
@@ -65,6 +82,8 @@ const initialState: EditorState = {
   selectedKeyframes: [],
   zoom: 1,
   scrollPosition: 0,
+  selectedMarkerId: null,
+  pendingCaptionLanguages: [],
 }
 
 /** Floor for an explicit timeline duration (ms) — a zero-length scene is unusable. */
@@ -173,6 +192,9 @@ export function createEditorStore() {
     sceneHooks?.setElements(deepCopy(snapshot.elements))
     setState('selectedTrackId', null)
     setState('selectedKeyframeIndex', null)
+    if (state.selectedMarkerId && !state.timeline?.markers.some((marker) => marker.id === state.selectedMarkerId)) {
+      setState('selectedMarkerId', null)
+    }
     bumpVersion()
   }
 
@@ -773,10 +795,12 @@ export function createEditorStore() {
   function selectTrack(trackId: string | null) {
     setState('selectedTrackId', trackId)
     setState('selectedKeyframeIndex', null)
+    if (trackId !== null) setState('selectedMarkerId', null)
   }
 
   // Select a keyframe
   function selectKeyframe(trackId: string, keyframeIndex: number | null) {
+    setState('selectedMarkerId', null)
     setState('selectedTrackId', trackId)
     setState('selectedKeyframeIndex', keyframeIndex)
     setState('selectedKeyframes', keyframeIndex === null ? [] : [{ trackId, index: keyframeIndex }])
@@ -1051,6 +1075,95 @@ export function createEditorStore() {
     }
   }
 
+  // --- Markers (steps) and captions ------------------------------------------
+
+  /** Apply marker/caption changes to the timeline as one undoable edit. */
+  function commitMarkers(markers: TimelineMarker[], captions: Captions | undefined) {
+    if (!state.timeline) return
+    pushHistory()
+    state.timeline.setMarkers(markers)
+    state.timeline.setCaptions(captions)
+    bumpVersion()
+  }
+
+  /** Add a step at a time (default: the playhead) and select it. */
+  function addMarker(time: number = currentTime()): string | undefined {
+    if (!state.timeline) return undefined
+    const result = insertMarker(state.timeline.markers, Math.min(time, state.timeline.duration))
+    if (result.markers !== state.timeline.markers && result.markers.length !== state.timeline.markers.length) {
+      commitMarkers(result.markers, state.timeline.captions)
+    }
+    selectMarker(result.id)
+    return result.id
+  }
+
+  /** Edit a step. Returns an error message when the edit is refused (e.g. a taken id). */
+  function updateMarker(id: string, patch: MarkerPatch): string | undefined {
+    if (!state.timeline) return undefined
+    const result = patchMarker(state.timeline.markers, state.timeline.captions, id, patch, state.timeline.duration)
+    if (result.error) return result.error
+    commitMarkers(result.markers, result.captions)
+    if (state.selectedMarkerId === id) setState('selectedMarkerId', result.id)
+    return undefined
+  }
+
+  /**
+   * Move a step while dragging: no history entry per pixel. Call `pushHistory()`
+   * once when the drag starts.
+   */
+  function moveMarkerLive(id: string, time: number) {
+    if (!state.timeline) return
+    const result = patchMarker(state.timeline.markers, state.timeline.captions, id, { time }, state.timeline.duration)
+    state.timeline.setMarkers(result.markers)
+    bumpVersion()
+  }
+
+  function deleteMarker(id: string) {
+    if (!state.timeline) return
+    const result = removeMarkerFrom(state.timeline.markers, state.timeline.captions, id)
+    commitMarkers(result.markers, result.captions)
+    if (state.selectedMarkerId === id) setState('selectedMarkerId', null)
+  }
+
+  function selectMarker(id: string | null) {
+    setState('selectedMarkerId', id)
+    if (id !== null) {
+      setState('selectedTrackId', null)
+      setState('selectedKeyframeIndex', null)
+      setState('selectedKeyframes', [])
+    }
+  }
+
+  /** Move the playhead to the previous or next step. Returns the step reached. */
+  function seekToMarker(direction: 1 | -1): TimelineMarker | undefined {
+    if (!state.timeline) return undefined
+    const marker = neighbourMarker(state.timeline.markers, currentTime(), direction)
+    if (marker) {
+      pause()
+      seek(marker.time)
+    }
+    return marker
+  }
+
+  function setMarkerCaption(language: string, id: string, text: string) {
+    if (!state.timeline) return
+    commitMarkers(state.timeline.markers, setCaption(state.timeline.captions, language, id, text))
+  }
+
+  /** Offer a caption language in the inspector. Returns the normalised tag, or undefined if invalid. */
+  function addCaptionLanguage(raw: string): string | undefined {
+    const language = normaliseLanguage(raw)
+    if (!language) return undefined
+    if (!state.pendingCaptionLanguages.includes(language)) setState('pendingCaptionLanguages', [...state.pendingCaptionLanguages, language])
+    return language
+  }
+
+  function deleteCaptionLanguage(language: string) {
+    setState('pendingCaptionLanguages', state.pendingCaptionLanguages.filter((candidate) => candidate !== language))
+    if (!state.timeline?.captions?.[language]) return
+    commitMarkers(state.timeline.markers, removeCaptionLanguage(state.timeline.captions, language))
+  }
+
   // Zoom controls
   function setZoom(zoom: number) {
     setState('zoom', Math.max(0.1, Math.min(10, zoom)))
@@ -1166,6 +1279,18 @@ export function createEditorStore() {
     return new Set(trackConflicts().map((c) => c.losingTrackId))
   })
 
+  /** The timeline's steps, in time order. */
+  const markers = createMemo(() => {
+    timelineVersion()
+    return state.timeline?.markers ?? []
+  })
+  const captions = createMemo(() => {
+    timelineVersion()
+    return state.timeline?.captions
+  })
+  const selectedMarker = createMemo(() => markers().find((marker) => marker.id === state.selectedMarkerId) ?? null)
+  const languages = createMemo(() => captionLanguages(captions(), state.pendingCaptionLanguages))
+
   const canUndo = () => undoStack().length > 0
   const canRedo = () => redoStack().length > 0
 
@@ -1182,6 +1307,21 @@ export function createEditorStore() {
     trackConflicts,
     overriddenTrackIds,
     timelineVersion,
+    markers,
+    captions,
+    selectedMarker,
+    captionLanguages: languages,
+
+    // Marker (step) and caption actions
+    addMarker,
+    updateMarker,
+    moveMarkerLive,
+    deleteMarker,
+    selectMarker,
+    seekToMarker,
+    setMarkerCaption,
+    addCaptionLanguage,
+    deleteCaptionLanguage,
 
     // Timeline actions
     addSpringTrack,

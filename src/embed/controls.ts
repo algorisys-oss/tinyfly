@@ -27,6 +27,11 @@ export interface ControlLabels {
   /** Announced before the step number, e.g. "Step" → "Step 2 of 5" */
   step: string
   of: string
+  /**
+   * The visible step counter, with `{index}` and `{total}`: `"{index} / {total}"`
+   * (default), `"Step {index} of {total}"`, `"第 {index} 步，共 {total} 步"`.
+   */
+  stepFormat: string
 }
 
 export const DEFAULT_LABELS: ControlLabels = {
@@ -40,6 +45,7 @@ export const DEFAULT_LABELS: ControlLabels = {
   reveal: 'Reveal',
   step: 'Step',
   of: 'of',
+  stepFormat: '{index} / {total}',
 }
 
 export interface ControlsOptions {
@@ -78,6 +84,9 @@ const STYLES = `
 .tf-ctl-caption { margin: 6px 2px 0; min-height: 1.4em; }
 .tf-ctl-question { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 2px 0; font-weight: 600; }
 .tf-ctl-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+/* The hidden attribute only hides through the browser's default stylesheet; any rule
+   above that sets display would override it, so enforce it for everything here. */
+.tf-ctl [hidden] { display: none !important; }
 `
 
 function ensureStyles(doc: Document): void {
@@ -94,6 +103,8 @@ export function createControls(player: TinyflyPlayer, container: HTMLElement, op
   const labels = { ...DEFAULT_LABELS, ...options.labels }
   const speeds = options.speeds ?? [0.5, 1, 2]
   const hasMarkers = () => player.markers.length > 0
+  /** Whether any step could show a caption: a label, or a caption in any language. */
+  const hasAnyCaption = () => player.markers.some((marker) => marker.label !== undefined || player.caption(marker.id) !== undefined)
 
   const root = doc.createElement('div')
   root.className = 'tf-ctl'
@@ -188,18 +199,23 @@ export function createControls(player: TinyflyPlayer, container: HTMLElement, op
     if (markers.length > 0) {
       const current = player.currentMarker
       const index = current ? markers.indexOf(current) + 1 : 0
-      step.textContent = `${index} / ${markers.length}`
+      step.textContent = labels.stepFormat.replace('{index}', String(index)).replace('{total}', String(markers.length))
       step.setAttribute('aria-label', `${labels.step} ${index} ${labels.of} ${markers.length}`)
       prev.disabled = player.currentTime <= 0.5
       next.disabled = player.currentTime >= duration - 0.5
 
       const text = player.caption() ?? ''
       if (caption.textContent !== text) caption.textContent = text
+      // Figures that draw their step text inside the SVG have nothing to caption:
+      // no strip under the bar. With any caption at all, the line keeps its height
+      // so the bar does not jump as steps change.
+      caption.hidden = !hasAnyCaption()
       const waiting = !playing && current?.question !== undefined && Math.abs(player.currentTime - current.time) < 1
       question.hidden = !waiting
       if (waiting && questionText.textContent !== current!.question) questionText.textContent = current!.question!
     } else {
       question.hidden = true
+      caption.hidden = true
     }
   }
   const unsubscribe = player.subscribe(update)

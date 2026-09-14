@@ -1,0 +1,83 @@
+.marker-nav {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.marker-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: #ccc;
+  cursor: pointer;
+}
+
+.marker-field label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  color: #aaa;
+}
+
+.marker-inspector textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  background: #252525;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.4;
+  resize: vertical;
+}
+
+.marker-inspector textarea:focus {
+  outline: none;
+  border-color: #4a9eff;
+}
+
+.marker-caption {
+  margin-bottom: 10px;
+}
+
+.marker-caption-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.marker-language {
+  font: 600 11px monospace;
+  color: #fbd38d;
+}
+
+.marker-remove-language {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: transparent;
+  color: #aaa;
+  cursor: pointer;
+}
+
+.marker-remove-language:hover {
+  border-color: #ff6666;
+  color: #ff6666;
+}
+
+.marker-add-language button {
+  flex: 0 0 auto;
+}
+
+.marker-error {
+  margin: -4px 0 8px;
+  font-size: 11px;
+  color: #ff8080;
+}

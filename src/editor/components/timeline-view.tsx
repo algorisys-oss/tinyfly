@@ -4,6 +4,7 @@ import type { EditorStore } from '../stores/editor-store'
 import type { Track, AnyTrack } from '../../engine'
 import { hasKeyframes, isSpringTrack, isInertiaTrack } from '../../engine'
 import { trackLabelWidth } from '../utils/track-label-width'
+import { TimelineSteps } from './timeline-steps'
 import './timeline-view.css'
 
 interface TimelineViewProps {
@@ -267,6 +268,9 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
           />
         </div>
       </div>
+
+      {/* Steps (markers) */}
+      <TimelineSteps store={props.store} timeToX={timeToX} xToTime={xToTime} />
 
       {/* Tracks */}
       <div class="timeline-tracks" ref={tracksRef} onMouseDown={onTracksMouseDown}>

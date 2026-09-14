@@ -193,7 +193,7 @@ GitHub. No npm required.
 GSAP-shaped functions at the top level:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.64.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.65.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -417,7 +417,7 @@ Or skip the code entirely with declarative embeds (see [Teaching Animations](doc
   <svg viewBox="0 0 720 200">…</svg>
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON… }</script>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.64.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.65.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 ### Audio / Video Sync

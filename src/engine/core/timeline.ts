@@ -63,8 +63,7 @@ export interface TimelineOptions {
 export class Timeline {
   readonly id: string
   readonly name?: string
-  /** Caption text per language, per marker id */
-  readonly captions?: Record<string, Record<string, string>>
+  private _captions?: Record<string, Record<string, string>>
 
   private _tracks: AnyTrack[] = []
   private _trackPlayers: Map<string, AnyTrackPlayer> = new Map()
@@ -91,7 +90,7 @@ export class Timeline {
   constructor(options: TimelineOptions) {
     this.id = options.id
     this.name = options.name
-    this.captions = options.captions
+    this._captions = options.captions
     this._config = options.config ?? {}
     this._explicitDuration = options.config?.duration
 
@@ -621,6 +620,27 @@ export class Timeline {
   /** The timeline's markers, in time order (empty when it has none). */
   get markers(): TimelineMarker[] {
     return [...(this._config.markers ?? [])].sort((a, b) => a.time - b.time)
+  }
+
+  /** Replace the markers (kept in time order); an empty list removes them. */
+  setMarkers(markers: TimelineMarker[] | undefined): void {
+    const next = markers && markers.length > 0 ? [...markers].sort((a, b) => a.time - b.time).map((marker) => ({ ...marker })) : undefined
+    const config = { ...this._config }
+    if (next) config.markers = next
+    else delete config.markers
+    this._config = config
+  }
+
+  /** Caption text per language, per marker id */
+  get captions(): Record<string, Record<string, string>> | undefined {
+    return this._captions
+  }
+
+  /** Replace the captions; languages with no captions are dropped. */
+  setCaptions(captions: Record<string, Record<string, string>> | undefined): void {
+    const next: Record<string, Record<string, string>> = {}
+    for (const [language, byMarker] of Object.entries(captions ?? {})) next[language] = { ...byMarker }
+    this._captions = Object.keys(next).length > 0 ? next : undefined
   }
 
   /** Start the between-iterations pause, if the timeline configures one. */

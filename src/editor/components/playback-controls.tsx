@@ -64,8 +64,22 @@ export const PlaybackControls: Component<PlaybackControlsProps> = (props) => {
     props.store.seek(time)
   }
 
-  // Keyboard shortcuts for undo/redo
+  // Keyboard shortcuts for undo/redo, and for steps (markers)
   const handleKeyDown = (e: KeyboardEvent) => {
+    const typing = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement || (e.target as HTMLElement | null)?.isContentEditable
+    if (!typing && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      if (e.key === 'm' || e.key === 'M') {
+        e.preventDefault()
+        props.store.addMarker()
+        return
+      }
+      if (e.key === '[' || e.key === ']') {
+        e.preventDefault()
+        const marker = props.store.seekToMarker(e.key === ']' ? 1 : -1)
+        if (marker) props.store.selectMarker(marker.id)
+        return
+      }
+    }
     if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
       e.preventDefault()
       if (e.shiftKey) {
@@ -140,6 +154,31 @@ export const PlaybackControls: Component<PlaybackControlsProps> = (props) => {
         >
           <span class="play-icon">{props.store.isPlaying() ? '❚❚' : '▶'}</span>
         </button>
+
+        <Show when={props.store.markers().length > 0}>
+          <button
+            class="control-btn"
+            onClick={() => {
+              const marker = props.store.seekToMarker(-1)
+              if (marker) props.store.selectMarker(marker.id)
+            }}
+            title="Previous step ([)"
+            aria-label="Previous step"
+          >
+            ⏮
+          </button>
+          <button
+            class="control-btn"
+            onClick={() => {
+              const marker = props.store.seekToMarker(1)
+              if (marker) props.store.selectMarker(marker.id)
+            }}
+            title="Next step (])"
+            aria-label="Next step"
+          >
+            ⏭
+          </button>
+        </Show>
       </div>
 
       <div class="time-display">

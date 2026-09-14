@@ -19,6 +19,8 @@ export default defineConfig({
       output: {
         // Ensure consistent naming
         entryFileNames: 'tinyfly-player.[format].js',
+        // Several tinyfly bundles on one page add to one `tinyfly` global instead of replacing it.
+        extend: true,
       }
     }
   }

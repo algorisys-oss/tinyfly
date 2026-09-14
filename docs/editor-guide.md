@@ -512,6 +512,32 @@ Each keyframe has an easing setting that controls how the value transitions FROM
 - **steps** — Holds, then jumps; set the number of steps and where the jumps happen
 - **Custom cubic-bezier** — Define your own curve with the visual curve editor
 
+### Steps (markers) and captions
+
+Steps turn an animation into a step-through teaching figure: players can go step
+by step, stop at a step, ask a question there, and show a caption for it in each
+language. They are saved in the timeline JSON as `config.markers` and `captions`.
+See [Teaching Animations](teaching.md).
+
+- **Add a step:** press **M**, click **+** in the **Steps** lane under the time
+  ruler, or double-click the lane. The step is added at the playhead, or where you
+  double-clicked, and opens in Properties.
+- **Move a step:** drag its flag. A drag is one undo step.
+- **Go between steps:** **[** and **]**, or ⏮ / ⏭ in the playback controls.
+- **Edit a step** in Properties:
+  - **Label:** the step's caption in the animation's own language.
+  - **Time** and **Id:** captions and links refer to the step by its id. Renaming it
+    moves its captions along.
+  - **Pause here:** playback stops at this step, even when playing through.
+  - **Question:** shown while stopped here, with a **Reveal** button in the embed
+    controls. Adding one turns on Pause.
+  - **Captions:** add a language (`es`, `pt-BR`, `zh-CN`), then write each step's
+    caption. A step without one shows its label, and the inspector lists the missing
+    languages.
+- **Delete a step:** **Delete**, or **Delete Step** in Properties. Its captions go with it.
+
+Red flags mark steps that pause. A **?** marks steps that ask a question.
+
 ### Looping, speed and direction
 
 The editor has no loop, speed or direction controls. These are playback settings,
@@ -855,7 +881,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.64.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.65.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed

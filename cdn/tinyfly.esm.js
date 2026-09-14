@@ -1075,8 +1075,7 @@ function Ws(i, t, e = 0) {
 class yi {
   id;
   name;
-  /** Caption text per language, per marker id */
-  captions;
+  _captions;
   _tracks = [];
   _trackPlayers = /* @__PURE__ */ new Map();
   _motionPathTracks = /* @__PURE__ */ new Map();
@@ -1098,7 +1097,7 @@ class yi {
   onUpdate = null;
   onComplete = null;
   constructor(t) {
-    if (this.id = t.id, this.name = t.name, this.captions = t.captions, this._config = t.config ?? {}, this._explicitDuration = t.config?.duration, t.tracks)
+    if (this.id = t.id, this.name = t.name, this._captions = t.captions, this._config = t.config ?? {}, this._explicitDuration = t.config?.duration, t.tracks)
       for (const e of t.tracks)
         this.addTrack(e);
   }
@@ -1445,6 +1444,21 @@ class yi {
   get markers() {
     return [...this._config.markers ?? []].sort((t, e) => t.time - e.time);
   }
+  /** Replace the markers (kept in time order); an empty list removes them. */
+  setMarkers(t) {
+    const e = t && t.length > 0 ? [...t].sort((n, r) => n.time - r.time).map((n) => ({ ...n })) : void 0, s = { ...this._config };
+    e ? s.markers = e : delete s.markers, this._config = s;
+  }
+  /** Caption text per language, per marker id */
+  get captions() {
+    return this._captions;
+  }
+  /** Replace the captions; languages with no captions are dropped. */
+  setCaptions(t) {
+    const e = {};
+    for (const [s, n] of Object.entries(t ?? {})) e[s] = { ...n };
+    this._captions = Object.keys(e).length > 0 ? e : void 0;
+  }
   /** Start the between-iterations pause, if the timeline configures one. */
   _armRepeatDelay() {
     this._repeatDelayRemaining = this._config.repeatDelay ?? 0;
@@ -1614,7 +1628,7 @@ function Hs(i) {
       ...t && { markers: t.map((e) => ({ ...e })) }
     },
     tracks: i.tracks.map(Us),
-    ...i.captions && { captions: i.captions }
+    ...i.captions && { captions: JSON.parse(JSON.stringify(i.captions)) }
   };
 }
 function pt(i) {

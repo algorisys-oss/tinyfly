@@ -88,6 +88,28 @@ export default {
     await page.emulateMedia({ reducedMotion: 'no-preference' })
     results.push({ label: 'embed: reduced motion shows the final frame without playing', ok: !reduced.playing && reduced.atEnd, detail: JSON.stringify(reduced) })
 
+    // A figure whose steps have no question and no caption shows neither row.
+    const plain = await page.evaluate(async () => {
+      const holder = document.createElement('div')
+      const definition = { id: 'plain', config: { duration: 1000 }, tracks: [{ id: 'x', target: 'dot', property: 'x', keyframes: [{ time: 0, value: 0 }, { time: 1000, value: 50 }] }] }
+      holder.innerHTML = `<figure data-tinyfly-embed data-markers="0, 400, 900" data-labels='{"stepFormat":"Step {index} of {total}"}'><svg viewBox="0 0 100 20"><circle data-tinyfly="dot" cx="10" cy="10" r="5"/></svg><script type="application/json" data-tinyfly-timeline>${JSON.stringify(definition)}</script></figure>`
+      document.body.prepend(holder)
+      const [entry] = await window.__embed.mountAll(holder)
+      entry.player.goToMarker('step-2')
+      const bar = entry.controls.element
+      return {
+        question: getComputedStyle(bar.querySelector('.tf-ctl-question')).display,
+        caption: getComputedStyle(bar.querySelector('.tf-ctl-caption')).display,
+        step: bar.querySelector('.tf-ctl-step').textContent,
+        markers: entry.player.markers.map((marker) => marker.time).join(','),
+      }
+    })
+    results.push({
+      label: 'embed: no question or caption row when steps have none; data-markers and stepFormat',
+      ok: plain.question === 'none' && plain.caption === 'none' && plain.step === 'Step 2 of 3' && plain.markers === '0,400,900',
+      detail: JSON.stringify(plain),
+    })
+
     results.push({ label: 'embed: no page errors', ok: errors.length === 0, detail: errors.join('; ') })
     return results
   },

@@ -29,6 +29,15 @@ const shortcutCategories: ShortcutCategory[] = [
     ],
   },
   {
+    name: 'Steps',
+    shortcuts: [
+      { keys: ['M'], description: 'Add a step (marker) at the playhead' },
+      { keys: ['['], description: 'Go to the previous step' },
+      { keys: [']'], description: 'Go to the next step' },
+      { keys: ['Delete'], description: 'Delete the selected step' },
+    ],
+  },
+  {
     name: 'Selection',
     shortcuts: [
       { keys: ['Ctrl', 'A'], description: 'Select all elements' },

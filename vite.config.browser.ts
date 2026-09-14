@@ -14,6 +14,9 @@ export default defineConfig({
       fileName: (format) => `tinyfly.${format === 'es' ? 'js' : `${format}.js`}`,
     },
     minify: 'esbuild',
+    // Several tinyfly bundles on one page (the player on some pages, the embed on
+    // others, or two plugins) add to one `tinyfly` global instead of replacing it.
+    rollupOptions: { output: { extend: true } },
     outDir: 'lib/browser',
     emptyOutDir: true,
     copyPublicDir: false,

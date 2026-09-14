@@ -18,6 +18,9 @@ export default defineConfig({
       formats: ['iife', 'es'],
     },
     minify: 'esbuild',
+    // Several tinyfly bundles on one page (the player on some pages, the embed on
+    // others, or two plugins) add to one `tinyfly` global instead of replacing it.
+    rollupOptions: { output: { extend: true } },
     outDir: 'lib/embed',
     emptyOutDir: true,
     copyPublicDir: false,

@@ -171,7 +171,7 @@ export function serializeTimeline(timeline: Timeline): TimelineDefinition {
       ...(markers && { markers: markers.map((marker) => ({ ...marker })) }),
     },
     tracks: timeline.tracks.map(serializeTrack),
-    ...(timeline.captions && { captions: timeline.captions }),
+    ...(timeline.captions && { captions: JSON.parse(JSON.stringify(timeline.captions)) as Record<string, Record<string, string>> }),
   }
 }
 

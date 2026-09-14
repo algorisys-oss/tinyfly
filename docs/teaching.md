@@ -24,7 +24,7 @@ path for all of that:
 </figure>
 
 <!-- once, anywhere on the page (a site-wide footer is fine) -->
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.64.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.65.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 Every `[data-tinyfly-embed]` mounts when the page is ready, with no per-post
@@ -37,6 +37,7 @@ it. Without `data-tinyfly-auto`, call `tinyfly.mountAll()` yourself.
 | `data-src` | Load the timeline from a URL instead of an inline script |
 | `data-controls="false"` | No controls (a looping illustration) |
 | `data-labels` | Control labels as JSON: `'{"play": "Reproducir", "next": "Siguiente"}'` |
+| `data-markers` | Steps by time for a timeline without markers: `"0,2300,3800"` (ids `step-1`, `step-2`, …) |
 | `data-alt` | The figure's accessible name (otherwise its `<figcaption>`) |
 | `<script type="application/json" data-tinyfly-captions>` | Translated captions for this figure |
 
@@ -95,7 +96,7 @@ player.subscribe(render)   // called when time, play state or the marker changes
 
 | Option | Default | |
 |---|---|---|
-| `initialFrame` | `'start'` | The frame shown on load: `'start'`, `'end'`, a time in ms, or `'none'` |
+| `initialFrame` | `'start'` | The frame shown on load: `'start'`, `'end'`, a time in ms, or `'none'`. Reduced motion takes precedence and shows the final frame; set `respectReducedMotion: false` to opt out |
 | `stepMode` | `false` | `play()` runs to the next marker and stops |
 | `respectReducedMotion` | `true` | Under `prefers-reduced-motion: reduce`: never autoplay, show the final frame, steps jump. Follows changes |
 | `playWhenVisible` | `false` (embeds: `true`) | Pause off screen and in hidden tabs; `autoplay` waits until the figure is seen |
@@ -128,7 +129,14 @@ createControls(player, figureElement, { labels: { play: 'Reproducir' }, speeds: 
 - **Styling:** use custom properties on `.tf-ctl`: `--tf-ctl-fg`, `--tf-ctl-bg`,
   `--tf-ctl-accent`, `--tf-ctl-radius`, `--tf-ctl-font`. Every class is prefixed
   `tf-ctl`.
-- **Text:** all visible text comes from `labels`.
+- **Text:** all visible text comes from `labels`. The step counter reads
+  `"{index} / {total}"` by default; set `labels.stepFormat` to use words, e.g.
+  `"Step {index} of {total}"` or `"第 {index} 步，共 {total} 步"`.
+- **Empty rows:** with no captions (no marker labels and no translations) the caption
+  line is left out, and the question row only appears at a step that asks one.
+- **Several bundles:** `tinyfly-player.iife.js`, `tinyfly-embed.iife.js` and
+  `tinyfly.iife.js` add to one `tinyfly` global, so loading more than one keeps every
+  bundle's functions.
 
 ## Authoring with `@algorisys/tinyfly/teach`
 

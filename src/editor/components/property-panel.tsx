@@ -22,6 +22,7 @@ import { CurveEditor } from './curve-editor'
 import { polyStarPath, type PolyStarKind } from '../utils/poly-star'
 import { TextAnimationCreator, TextTrackInspector } from './text-animation-panel'
 import { InertiaInspector } from './inertia-inspector'
+import { MarkerInspector } from './marker-inspector'
 import './property-panel.css'
 
 interface PropertyPanelProps {
@@ -117,7 +118,17 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
     return track ? isUnderdamped(track.spring) : false
   })
 
-  const selectedElement = createMemo(() => props.sceneStore.selectedElement())
+  // A selected step (marker) takes the panel; picking an element on the stage gives it back.
+  const selectedElement = createMemo(() => (props.store.selectedMarker() ? null : props.sceneStore.selectedElement()))
+  createEffect(
+    on(
+      () => props.sceneStore.selectedElement(),
+      (element) => {
+        if (element && props.store.state.selectedMarkerId) props.store.selectMarker(null)
+      },
+      { defer: true }
+    )
+  )
 
   // Camera inspector: pan/zoom/rotate at the playhead. Reading timelineVersion +
   // currentTime keeps the shown value live as the playhead moves or tracks change.
@@ -1655,6 +1666,8 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
       </div>
 
       <div class="panel-content">
+        <Show when={props.store.selectedMarker()}>{(marker) => <MarkerInspector store={props.store} marker={marker()} />}</Show>
+
         {/* Spring tracks are authored as parameters, not keyframes — the engine
             derives the motion — so they get their own inspector rather than a
             keyframe row. */}
@@ -2074,7 +2087,7 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
         </Show>
 
         {/* Camera inspector: shown when a camera exists and nothing else is selected */}
-        <Show when={!selectedKeyframe() && !selectedElement() && hasCamera()}>
+        <Show when={!props.store.selectedMarker() && !selectedKeyframe() && !selectedElement() && hasCamera()}>
           <div class="property-section">
             <h4>🎥 Camera</h4>
             <p class="property-hint">
@@ -2129,7 +2142,7 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
         </Show>
 
         {/* Show no selection message */}
-        <Show when={!selectedKeyframe() && !selectedElement() && !hasCamera()}>
+        <Show when={!props.store.selectedMarker() && !selectedKeyframe() && !selectedElement() && !hasCamera()}>
           <div class="no-selection">
             <p>Select an element or keyframe to edit properties</p>
           </div>

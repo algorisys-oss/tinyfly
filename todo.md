@@ -1104,8 +1104,8 @@ value:
 
 - [x] Thin `useTinyfly` hooks for React and Vue, a Svelte action and a Solid primitive —
       `live.context()` scoped to the component, reverted on unmount (Phase 29E).
-- [ ] Deliberately thin: the engine stays framework-agnostic, and these live in
-      their own entry points.
+- [x] Deliberately thin: the engine stays framework-agnostic, and these live in
+      their own entry points (each < 1 kB, frameworks as optional peers).
 
 #### 27C.5 — Broaden the test suite's parameter space
 
@@ -1141,8 +1141,8 @@ ergonomics, and it had never been published.
       `cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v<version>/cdn/tinyfly.iife.js`.
       Copy code pages pin to it. OSS `package.json` keeps the lib build scripts.
       First real publish happens at the next "ship it".
-- [ ] **Publish to npm.** Needs the account and a final call on the package name
-      (`tinyfly` was unclaimed as of 2026-09-13).
+- [x] **Publish to npm.** Published as `@algorisys/tinyfly` v0.64.0 (2026-09-14): npm
+      rejected the unscoped `tinyfly` as too similar to `tiny-lr`.
 - [x] **One Examples page.** The editor's Samples dialog and the separate `/gallery`
       page were two catalogs that overlapped. Merged into `/examples`
       (`src/examples/`), reached from a single **Examples** toolbar button:
@@ -1739,7 +1739,7 @@ starter fails in the unit gate, and every step passes in Chromium, Firefox and W
         `axis`, `ease` — worked out into explicit `stagger.offsets` (new engine field)
   - [x] **Draggable `type: 'rotation'`:** angle about the centre, unwrapped past ±180°,
         `{ minRotation, maxRotation }`, snap in degrees, inertia spin
-  - [ ] **Distribution (next, in this order):**
+  - [x] **Distribution (next, in this order):**
     - [x] npm package: exports per entry were already in place (`npm pack` dry run: 396 kB,
           119 files); `release:npm` added and made step 4 of "ship it" in CLAUDE.md (needs a
           one-time `npm login`). First publish happens on the next "ship it"
@@ -1819,7 +1819,20 @@ Every gap from the Go series spike on teachyourselfcoding.com, fixed:
 - e2e `embed` check (Chromium, Firefox, WebKit): keyboard stepping only in the focused
   figure, captions in the page language, SVG fill painted, labelled image, autoplay waits
   until seen and pauses off screen, reduced motion final frame
-- [ ] Next: editor UI for markers and captions; a `hold` easing alias; RTL caption layout
+- [x] **Editor UI for markers and captions:** a **Steps** lane under the time ruler (flags,
+      click to select and seek, drag to retime as one undo step, double-click / **M** / **+**
+      to add); a step inspector in Properties (label, time, id with caption rename, pause,
+      question, captions per language with missing-language hints, delete); **[** / **]**
+      and ⏮ / ⏭ step the playhead; Delete / Esc on the selected step. Pure helpers in
+      `editor/utils/markers.ts`; engine `Timeline.setMarkers` / `setCaptions`; captions
+      deep-copied in snapshots. e2e `editor-steps` in Chromium, Firefox and WebKit
+- [x] **Fixes from the teachyourselfcoding.com rollout** (`education-animation-fixes.md`):
+      the Reveal row showed with no question (`hidden` lost to `display: flex`; now
+      `.tf-ctl [hidden] { display: none !important }`); an empty caption strip on figures
+      with no captions (hidden then); IIFE bundles merge into one `tinyfly` global
+      (`output.extend`); `labels.stepFormat` for the visible counter; reduced motion vs
+      `initialFrame` documented; `data-markers="0,2300,3800"` shorthand
+- [ ] Next: a `hold` easing alias; RTL caption layout
 
 ---
 

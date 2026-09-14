@@ -1,0 +1,106 @@
+.timeline-steps {
+  display: flex;
+  height: 22px;
+  background: #1d1d20;
+  border-bottom: 1px solid #333;
+}
+
+.steps-gutter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  width: var(--track-label-w, 120px);
+  padding: 0 4px 0 8px;
+  background: #202020;
+  border-right: 1px solid #333;
+  flex-shrink: 0;
+}
+
+.steps-title {
+  font-size: 11px;
+  color: #9a9aa3;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.steps-add {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #2a2a2e;
+  color: #ddd;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.steps-add:hover:not(:disabled) {
+  background: #35353a;
+  border-color: #f59e0b;
+}
+
+.steps-lane {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.step-flag {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: grab;
+  z-index: 8;
+  white-space: nowrap;
+}
+
+.step-flag.dragging {
+  cursor: grabbing;
+}
+
+.step-pin {
+  width: 2px;
+  height: 100%;
+  background: #f59e0b;
+}
+
+.step-label {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 1px 5px;
+  border-radius: 0 4px 4px 0;
+  background: rgba(245, 158, 11, 0.16);
+  color: #fbd38d;
+  font-size: 11px;
+}
+
+.step-flag.pause .step-pin {
+  background: #ef4444;
+}
+
+.step-flag.pause .step-label {
+  background: rgba(239, 68, 68, 0.16);
+  color: #fecaca;
+}
+
+.step-flag.selected .step-label {
+  background: #f59e0b;
+  color: #111;
+}
+
+.step-flag.pause.selected .step-label {
+  background: #ef4444;
+  color: #fff;
+}
+
+.step-flag:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: -2px;
+}

@@ -21,7 +21,8 @@ export interface PlayerOptions {
   /**
    * Which frame to show as soon as the animation loads, before anything plays:
    * `'start'` (default), `'end'`, a time in milliseconds, or `'none'` to leave the
-   * markup as it is.
+   * markup as it is. Reduced motion takes precedence and shows the final frame
+   * (see `respectReducedMotion`).
    */
   initialFrame?: 'start' | 'end' | 'none' | number
   /**
