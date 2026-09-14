@@ -2,6 +2,7 @@ import { createLive, Stage, type FrameScheduler, type LiveApi, type LiveTimeline
 import { deserializeTimeline, type AnimatableValue, type Timeline, type TimelineDefinition } from '../engine'
 import { DOMAdapter } from '../adapters/dom'
 import type { CheckContext, Step } from './types'
+import { learnerWarning } from './warnings'
 
 /**
  * Runs a step's code: a fresh stage scoped to the preview, the step's markup, the
@@ -24,6 +25,12 @@ export interface Playable {
 
 export interface RunResult {
   error?: string
+  /**
+   * What the live API warned about, reworded for the learner (see `learnerWarning`).
+   * Scroll triggers are set up a microtask after the code runs, so more may arrive
+   * after `runStep` returns: pass `onWarning` to hear about each one.
+   */
+  warnings: string[]
   context: CheckContext
   timelines: Playable[]
   /** Stop everything the run started */
@@ -35,11 +42,20 @@ export interface RunOptions {
   scheduler?: FrameScheduler
   /** Answer `prefers-reduced-motion` queries this way while the code runs, instead of asking the browser */
   reducedMotion?: boolean
+  /** Called with each learner-facing warning as it happens */
+  onWarning?: (message: string) => void
 }
 
 export function runStep(step: Step, code: string, root: HTMLElement, options: RunOptions = {}): RunResult {
   root.innerHTML = step.markup
-  const stage = new Stage({ root, scheduler: options.scheduler })
+  const warnings: string[] = []
+  const onWarning = (message: string) => {
+    const reworded = learnerWarning(message)
+    if (reworded === undefined || warnings.includes(reworded)) return
+    warnings.push(reworded)
+    options.onWarning?.(reworded)
+  }
+  const stage = new Stage({ root, scheduler: options.scheduler, onWarning })
   const live = createLive(stage)
   const timelines: Playable[] = []
   const keep = (timeline: LiveTimeline) => (timelines.push(timeline), timeline)
@@ -49,6 +65,7 @@ export function runStep(step: Step, code: string, root: HTMLElement, options: Ru
     return playable
   }
   const calls: { method: string; args: unknown[] }[] = []
+  const smoothers: { kill(): void }[] = []
   const record = <F extends (...args: never[]) => unknown>(method: string, fn: F): F =>
     ((...args: Parameters<F>) => {
       calls.push({ method, args })
@@ -64,6 +81,12 @@ export function runStep(step: Step, code: string, root: HTMLElement, options: Ru
     scrollTrigger: record('scrollTrigger', live.scrollTrigger),
     imageSequence: record('imageSequence', live.imageSequence),
     pageTransition: record('pageTransition', live.pageTransition),
+    smoothScroll: record('smoothScroll', (smoothOptions) => {
+      // Not owned by the stage: stop it with the run, or it keeps steering a replaced scroller.
+      const smoother = live.smoothScroll(smoothOptions)
+      smoothers.push(smoother)
+      return smoother
+    }),
     quickTo: record('quickTo', (target, property, vars) => {
       const setter = live.quickTo(target, property, vars)
       timelines.push(setter.tween)
@@ -134,7 +157,7 @@ export function runStep(step: Step, code: string, root: HTMLElement, options: Ru
       element.dispatchEvent(new EventType(type, { bubbles: true, cancelable: true, clientX: init.clientX ?? 0, clientY: init.clientY ?? 0 }))
     },
     rerun(rerunOptions) {
-      const again = runStep(step, code, offscreenRoot(root), { ...options, ...rerunOptions })
+      const again = runStep(step, code, offscreenRoot(root), { ...options, ...rerunOptions, onWarning: undefined })
       reruns.push(again)
       if (again.error) throw new Error(again.error)
       return again.context
@@ -150,10 +173,12 @@ export function runStep(step: Step, code: string, root: HTMLElement, options: Ru
 
   return {
     error,
+    warnings,
     context,
     timelines,
     destroy: () => {
       for (const again of reruns.splice(0)) again.destroy()
+      for (const smoother of smoothers.splice(0)) smoother.kill()
       stage.destroy()
       if (root.hasAttribute('data-learn-offscreen')) root.remove()
     },

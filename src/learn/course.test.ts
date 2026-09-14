@@ -34,6 +34,16 @@ describe('every step', () => {
       expect(failed.map((result) => `${result.label}: ${result.message}`)).toEqual([])
     })
 
+    it(`${key}: the solution runs without warnings`, async () => {
+      const root = document.createElement('div')
+      const run = runStep(location.step, location.step.solution, root, { scheduler })
+      // Scroll triggers are created a microtask after the code runs, and may warn then.
+      await Promise.resolve()
+      await Promise.resolve()
+      run.destroy()
+      expect(run.warnings).toEqual([])
+    })
+
     it(`${key}: the starter does not already pass`, () => {
       const root = document.createElement('div')
       const run = runStep(location.step, location.step.starter, root, { scheduler })

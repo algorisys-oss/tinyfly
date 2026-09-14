@@ -30,7 +30,7 @@ import { elementsBounds, shiftElement } from './utils/element-bounds'
 import { serializeTimeline, deserializeTimeline } from '../engine'
 import { StatusBar } from '../components'
 import { useNavigate, useSearchParams } from '@solidjs/router'
-import { applySample, getSampleById } from './samples'
+import { applySample, getSampleById, HANDOFF_PARAM, takeStashedSample } from './samples'
 import './editor.css'
 
 interface EditorInnerProps {
@@ -586,7 +586,7 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
   }
 
   const navigate = useNavigate()
-  const [searchParams, setSearchParams] = useSearchParams<{ example?: string }>()
+  const [searchParams, setSearchParams] = useSearchParams<{ example?: string; sample?: string }>()
 
   /** Save, then leave for the Examples page. */
   const openExamples = () => {
@@ -596,16 +596,19 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
   }
 
   /**
-   * `/studio?example=<id>` — sent here by "Open in editor" on the Examples page.
+   * `/studio?example=<id>` — sent here by "Open in editor" on the Examples page,
+   * or `/studio?sample=handoff` from the course, with the sample in session storage.
    * The example lands in a new project, so it never overwrites existing work.
    * The parameter is removed straight away so a reload does not create another.
    */
   function openExampleFromUrl() {
     const id = searchParams.example
-    if (!id) return
-    setSearchParams({ example: undefined }, { replace: true })
+    const handoff = searchParams.sample === HANDOFF_PARAM
+    if (!id && !handoff) return
+    setSearchParams({ example: undefined, sample: undefined }, { replace: true })
 
-    const sample = getSampleById(id)
+    // `?sample=handoff`: a sample another page stashed for this tab ("Open in editor" in the course).
+    const sample = handoff ? takeStashedSample() : getSampleById(id!)
     if (!sample) return
 
     setIsSwitchingScene(true)

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import markupCss from './code-examples.css?raw'
-import { BROWSER_BUNDLE_URL, editableExamplePage, liveDemoPage, timelineExamplePage } from './standalone-page'
+import { BROWSER_BUNDLE_URL, editableExamplePage, lessonPage, liveDemoPage, timelineExamplePage } from './standalone-page'
+import { allSteps, stepKey } from '../learn/course'
 import { liveDemos } from './live-demos'
 import { codeExamples } from './code-examples'
 import { sampleDefinitions } from '../editor/samples'
@@ -24,6 +25,7 @@ describe('standalone pages', () => {
     ...liveDemos.map((demo) => [demo.id, liveDemoPage(demo)] as const),
     ...codeExamples.map((example) => [example.id, timelineExamplePage(example, markupCss)] as const),
     ...sampleDefinitions.map((sample) => [sample.id, editableExamplePage(sample)] as const),
+    ...allSteps.map((location) => [`learn/${stepKey(location)}`, lessonPage(location.step.title, location.step.markup, location.step.solution)] as const),
   ]
 
   it('pins the GitHub CDN bundle to this version', () => {
@@ -33,7 +35,7 @@ describe('standalone pages', () => {
   })
 
   it('covers every example', () => {
-    expect(pages).toHaveLength(liveDemos.length + codeExamples.length + sampleDefinitions.length)
+    expect(pages).toHaveLength(liveDemos.length + codeExamples.length + sampleDefinitions.length + allSteps.length)
   })
 
   for (const [id, html] of pages) {

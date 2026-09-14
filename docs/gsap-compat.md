@@ -163,6 +163,18 @@ adapter — useful for tests (pass a `scheduler`), or for a widget that should n
 compose with the rest of the page. `new Stage({ root })` resolves selectors inside
 `root` only. `stage.tick(ms)` drives it by hand.
 
+**Warnings.** Mistakes that would otherwise do nothing quietly (a selector that
+matches no elements, `drawSVG` on something that isn't a stroked shape, a `spring`
+on a colour, which eases instead) are reported to `onWarning`. Give it to the stage
+to hear about every `live` tween and timeline on it; a timeline's own `onWarning`
+takes precedence:
+
+```js
+const live = createLive(new Stage({ onWarning: (message) => console.warn(message) }))
+live.to('.missing', { x: 100 })
+// gsap-compat: no elements found for target ".missing"
+```
+
 Elements stay registered with the stage once animated. For long-lived single-page
 apps that create and discard many elements, use a `Stage` per view and call
 `stage.destroy()` when the view goes away. It stops everything on that stage,

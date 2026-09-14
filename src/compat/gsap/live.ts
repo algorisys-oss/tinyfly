@@ -150,8 +150,9 @@ export class LiveTimeline {
   /** Set by `reverse()`: arriving at the start is a reverse completion */
   private backwards = false
 
-  constructor(stage: Stage, options: LiveTimelineOptions = {}) {
+  constructor(stage: Stage, timelineOptions: LiveTimelineOptions = {}) {
     this.stage = stage
+    const options: LiveTimelineOptions = { ...timelineOptions, onWarning: timelineOptions.onWarning ?? stage.onWarning }
     this.options = options
     this.compat = new CompatTimeline({
       ...options,

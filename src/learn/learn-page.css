@@ -322,6 +322,42 @@ html:has(.learn) #root {
   font: 13px ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
+.learn-code-keys {
+  margin: 6px 0 0;
+  color: var(--learn-muted);
+  font-size: 12px;
+}
+
+.learn-warnings {
+  margin: 8px 0 0;
+  padding: 8px 12px 8px 28px;
+  border-radius: 8px;
+  background: rgba(255, 196, 0, 0.08);
+  color: #ffd166;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.learn-warnings li + li {
+  margin-top: 4px;
+}
+
+.learn-take-away {
+  padding: 12px 14px;
+  border: 1px solid var(--learn-line);
+  border-radius: 12px;
+}
+
+.learn-take-away p {
+  margin: 0 0 10px;
+}
+
+.learn-take-away-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .learn-preview {
   min-height: 180px;
   border-radius: 12px;

@@ -136,3 +136,22 @@ export function editableExamplePage(sample: SampleDefinition): string {
 tinyfly.play('#stage', animation, { loop: -1 })`,
   })
 }
+
+/**
+ * A course step as a page of its own: the step's markup (with its `<style>`) and the
+ * learner's code, with `live`, `play` and `root` defined as the lesson runner does.
+ */
+export function lessonPage(title: string, markup: string, code: string): string {
+  return page({
+    title,
+    style: 'body {\n  margin: 0;\n  padding: 24px;\n  background: #111;\n  color: #e0e0e0;\n  font-family: system-ui, sans-serif;\n}',
+    body: `<div id="lesson">\n${indent(markup, 2)}\n</div>`,
+    script: `// As in the course: \`live\` animates the markup, \`play(animation)\` plays timeline JSON
+// on its data-tinyfly elements, and \`root\` is the element the markup lives in.
+const live = tinyfly.live
+const root = document.getElementById('lesson')
+const play = (animation) => tinyfly.play(root, animation)
+
+${code.trim()}`,
+  })
+}

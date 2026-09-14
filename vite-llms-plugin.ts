@@ -3,12 +3,14 @@ import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import { DOCS } from './src/docs/doc-manifest.ts'
 import { buildLlmsTxt, buildLlmsFullTxt } from './src/docs/llms-text.ts'
+import { course } from './src/learn/course.ts'
+import { courseMarkdown } from './src/learn/course-text.ts'
 
 /**
  * Publishes the docs for language models alongside the editor:
  *
  *   /llms.txt           index of the docs (https://llmstxt.org)
- *   /llms-full.txt      every doc in one file
+ *   /llms-full.txt      every doc, then the interactive course, in one file
  *   /docs/<id>.md       each doc as raw markdown
  *
  * Emitted into the build, and served by the dev server, straight from `docs/`.
@@ -19,7 +21,7 @@ export function llmsPlugin(): Plugin {
   const files = (): Map<string, string> => {
     const out = new Map<string, string>()
     out.set('llms.txt', buildLlmsTxt({ docUrl: (id) => `docs/${id}.md`, fullUrl: 'llms-full.txt' }))
-    out.set('llms-full.txt', buildLlmsFullTxt(readDoc))
+    out.set('llms-full.txt', buildLlmsFullTxt(readDoc, courseMarkdown(course)))
     for (const doc of DOCS) out.set(`docs/${doc.id}.md`, readDoc(doc.id))
     return out
   }

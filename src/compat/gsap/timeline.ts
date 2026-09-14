@@ -379,6 +379,10 @@ export class CompatTimeline {
         fromValue = toValue
       }
 
+      if (spring !== undefined && (typeof fromValue !== 'number' || typeof toValue !== 'number')) {
+        this.warn(`spring works on numbers, so "${property}" on "${targets[0]}" eases instead`)
+      }
+
       if (spring !== undefined && typeof fromValue === 'number' && typeof toValue === 'number') {
         const springConfig = {
           ...springParameters(spring),

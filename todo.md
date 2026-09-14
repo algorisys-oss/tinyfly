@@ -1575,8 +1575,8 @@ section by section.
 - **No new heavy dependencies.** The code panel is a lightweight editor (textarea
   plus highlighting overlay), not CodeMirror or Monaco, unless an evidence gate
   shows the textarea cannot work.
-- **Lessons are plain data.** Each step is a file under `src/learn/lessons/`
-  holding markdown text, starter code, a solution and checks. Content can be
+- **Lessons are plain data.** Each module is a file under `src/learn/modules/`
+  holding every step's markdown text, starter code, a solution and checks. Content can be
   added without touching the runtime, and it is testable.
 - **Keep moving:** hints, "show solution", "reset step", progress saved
   locally, and every step deep-linkable (`/learn/scroll/pinning`).
@@ -1606,7 +1606,10 @@ section by section.
 - [x] Scroll-container previews for the scroll module: the markup is a `.scroller` box and
       triggers pass `scroller: '.scroller'`; pins (sticky) and pinned horizontal rows work
       inside it (checked in Chrome)
-- [ ] "Open in editor" / "Copy as page" at the end of a module
+- [x] "Copy as page" / "Open in editor" at the end of a module: the step's markup and the
+      code as it stands, as a standalone page (`lessonPage`, compiled in the standalone-page
+      test for every step), and for JSON lessons a new studio project (`lessonSample`: a box
+      per `data-tinyfly` target, handed over in session storage as `/studio?sample=handoff`)
 
 ### 29B — Curriculum
 
@@ -1648,6 +1651,8 @@ section by section.
    (`scroller: '.scroller'`, pins use sticky positioning so they work inside it). The
    runner also records `to`/`from`/`fromTo`/`set`/`timeline` vars, so checks read
    each `scrollTrigger`; the velocity check calls `onUpdate` as scrolling would.
+   Smooth scrolling ✓ (4th lesson): `live.smoothScroll({ scroller, smooth, effects })`
+   with `data-speed` / `data-lag` layers; the runner kills smoothers with the run.
    Still to add: horizontal pinned sections with `containerAnimation`, snap.
 8. **Accessibility and performance.** ✓ 3 lessons, 5 steps — reduced motion (two
    modes with `live.matchMedia` on both `prefers-reduced-motion` values, a fade instead
@@ -1665,17 +1670,21 @@ section by section.
    written in `onUpdate`, `once`), details (icons drawn per row with reverse toggle
    actions, a lightbox grown from its tile with `getFlipState` / `flipFrom`, spring
    letters). It ends at the whole page, whose Copy code is the standalone file.
-   Still to add: the hero canvas and the magnetic button as capstone steps (both are
-   taught in Interaction and Accessibility and performance).
+   Hero canvas ✓ (a glow object aimed with `quickTo`, drawn on the ticker, stopped by
+   `onLeave` / `onEnterBack`) and magnetic button ✓ (`quickTo` springs measured from
+   `offsetLeft`, home on `pointerleave`) added as capstone steps.
 
-**Course complete: 9 modules, 27 lessons, 64 steps.** Every solution passes and every
+**Course complete: 9 modules, 28 lessons, 67 steps.** Every solution passes and every
 starter fails in the unit gate, and every step passes in Chromium, Firefox and WebKit.
 
 ### 29C — Engine and API work the course needs
 
 - [x] Reduced-motion helper: `live.matchMedia()` (Phase 28B) is the real API lesson 8 teaches
-- [ ] Friendlier `onWarning` messages, surfaced inline in lessons: no targets
-      found, drawSVG on a non-shape, spring on a colour
+- [x] Friendlier `onWarning` messages, surfaced inline in lessons: no targets
+      found, drawSVG on a non-shape, spring on a colour (`learnerWarning`). Found on the
+      way: `live` never delivered warnings (its timelines had no `onWarning`), and a spring
+      on a non-number eased silently. Now `new Stage({ onWarning })` reports every live
+      timeline's warnings, and a spring on a colour warns. Gate: no solution warns
 - [x] `live.quickTo` (Phase 28B), taught in lesson 6 (magnetic pull) and 7 (velocity skew)
 - [x] Per-element stagger spaced evenly: tweens built one per element (drawSVG, morphSVG,
       text, function values, objects) placed each at `'<'` and then added `i * each`, so
@@ -1688,9 +1697,11 @@ starter fails in the unit gate, and every step passes in Chromium, Firefox and W
       every **starter** fails at least one
 - [x] e2e `learn` check (Chromium, Firefox, WebKit): every step via Show solution passes,
       progress is remembered, phone width fits, no page errors
-- [ ] Lessons listed in the doc manifest, so `llms-full.txt` includes the course
-- [ ] Keyboard-only walkthrough of a full module; code panel and preview labelled
-      for screen readers
+- [x] The course in `llms-full.txt` (`courseMarkdown`: every step's text, link and
+      solution, after the docs), with a test
+- [x] Keyboard: Tab indents in the code box and **Esc then Tab** leaves it (it trapped
+      keyboard users before; checked in Chromium), said under the box via
+      `aria-describedby`; code, preview, checks and warnings labelled for screen readers
 
 ### 29E — After the course
 
@@ -1709,8 +1720,8 @@ starter fails in the unit gate, and every step passes in Chromium, Firefox and W
         re-measured after pins (`ScrollDriver.onRefresh`). `scrollTo(offset | element |
         selector, { offset, duration })`, `paused()`, reduced motion off. On in the Agency
         Landing showcase; e2e checks the wheel eases and parallax lands to 1.5px in 3 browsers
-    - [ ] A course step for it (Scroll module), and `data-speed="auto"` for images in
-          clipped frames
+    - [x] A course step for it (Scroll module)
+    - [ ] `data-speed="auto"` for images in clipped frames
   - [x] **Timeline callbacks and control:** `onRepeat`, `onReverseComplete`, `tl.call()`,
         `addPause()`, `tweenTo()` / `tweenFromTo()`, `live.delayedCall()`,
         `live.killTweensOf()`, and tween `onStart` / `onUpdate` / `onComplete` inside

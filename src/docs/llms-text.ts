@@ -26,7 +26,7 @@ const SUMMARY =
 
 const KEY_FACTS = `Key facts:
 
-- Package: \`tinyfly\` (prepared for npm but not yet published; until then use the script tag below, or build the repo and install it locally). Entry points: \`tinyfly\` (engine), \`tinyfly/export\` (CSS, Lottie, GIF, video exporters), \`tinyfly/player\`, \`tinyfly/adapters\` (DOM, Canvas, SVG, WebGL), \`tinyfly/gsap-compat\` (GSAP-style API), \`tinyfly/drivers\` (scroll, visibility), \`tinyfly/interaction\` (Observer, Draggable), \`tinyfly/browser\` (the GSAP-style runtime plus engine, player, drivers and interaction — no exporters — for script tags).
+- Package: \`@algorisys/tinyfly\` on npm (\`npm install @algorisys/tinyfly\`). Entry points: \`@algorisys/tinyfly\` (engine), \`/player\`, \`/export\` (CSS, Lottie, GIF, video exporters), \`/adapters\` (DOM, Canvas, SVG, WebGL), \`/gsap-compat\` (GSAP-style API), \`/drivers\` (scroll, visibility, smooth scroll), \`/interaction\` (Observer, Draggable), \`/teach\` (lesson steps and diagram primitives), \`/embed\` (teaching embeds), \`/react\`, \`/vue\`, \`/svelte\`, \`/solid\` (framework wrappers), and \`/browser\` (the GSAP-style runtime plus engine, player, drivers and interaction — no exporters — for script tags). A CLI: \`npx @algorisys/tinyfly validate\` and \`render\`.
 - Script tag: \`https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v{version}/cdn/tinyfly.iife.js\` defines a global \`tinyfly\`, e.g. \`tinyfly.to('.box', { x: 200, duration: 1 })\`. Replace \`{version}\` with a release tag.
 - The GSAP-style \`live\` API covers \`scrollTrigger\` (scrub, pin, toggleActions), \`splitText\` (chars, words, lines, masks), \`drawSVG\`, \`spring\`, \`morphSVG\`, \`motionPath\`, text/scramble, inertia and Draggable, Flip (including shared elements by \`data-flip-id\`), plain-object targets and \`live.ticker\`.
 - Times in JSON timelines are milliseconds; durations in the GSAP-style API are seconds, as in GSAP.
@@ -38,7 +38,7 @@ export function buildLlmsTxt(options: LlmsTxtOptions): string {
   const lines: string[] = ['# tinyfly', '', `> ${SUMMARY}`, '', KEY_FACTS, '']
 
   if (options.fullUrl) {
-    lines.push(`All documentation in a single file: [llms-full.txt](${options.fullUrl})`, '')
+    lines.push(`All documentation and the interactive course in a single file: [llms-full.txt](${options.fullUrl})`, '')
   }
 
   for (const section of DOC_SECTIONS) {
@@ -62,10 +62,12 @@ export function buildLlmsTxt(options: LlmsTxtOptions): string {
  * Every doc in manifest order, each under a marker naming its file, so a model
  * reading one long file still knows where each part came from.
  */
-export function buildLlmsFullTxt(readDoc: (id: string) => string): string {
+export function buildLlmsFullTxt(readDoc: (id: string) => string, courseText?: string): string {
   const parts = [`# tinyfly — full documentation\n\n> ${SUMMARY}\n\n${KEY_FACTS}\n`]
   for (const doc of DOCS) {
     parts.push(`<!-- docs/${doc.id}.md -->\n\n${readDoc(doc.id).trim()}\n`)
   }
+  // The course lives in the app, not docs/, so the caller renders it (see `courseMarkdown`).
+  if (courseText) parts.push(`<!-- learn: the interactive course -->\n\n${courseText.trim()}\n`)
   return parts.join('\n---\n\n')
 }

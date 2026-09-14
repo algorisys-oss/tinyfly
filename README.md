@@ -106,7 +106,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Stroke write-on** - Animate a path's stroke drawing itself on (DOM + SVG renderers); one-click "Write On" preset
 - **Embed code** - Generate copy-paste code for websites (single scene or full sequence)
 - **Landing page** - `/` introduces tinyfly with tinyfly itself: a masked headline, a pointer-led canvas, a live code playground that shows the JSON its code compiles to, a pinned feature story, a gallery and a copyable script tag, with a reduced-motion mode. It loads without the editor, which lives at `/studio` (lazy-loaded, as are Examples, Showcase and Docs)
-- **Learn** - An interactive course at `/learn`: short steps with live code, a preview you can scrub, and checks that read what your code compiled to. Nine modules, 64 steps: Foundations (animation as JSON), the GSAP-style API, the Editor (build in the studio, Copy JSON, compare with code), Motion craft (timing, anticipation, springs), Text and SVG, Interaction (hover, quickTo, drag and throw, Flip, canvas), Scroll (reveals, scrub, pinning, velocity), Accessibility and performance (a real reduced-motion mode, keyboard parity, transforms, pausing off-screen work), and a Capstone that rebuilds the Agency Landing Page section by section
+- **Learn** - An interactive course at `/learn`: short steps with live code, a preview you can scrub, and checks that read what your code compiled to. Nine modules, 28 lessons, 67 steps: Foundations (animation as JSON), the GSAP-style API, the Editor (build in the studio, Copy JSON, compare with code), Motion craft (timing, anticipation, springs), Text and SVG, Interaction (hover, quickTo, drag and throw, Flip, canvas), Scroll (reveals, scrub, pinning, velocity, smooth scrolling with parallax), Accessibility and performance (a real reduced-motion mode, keyboard parity, transforms, pausing off-screen work), and a Capstone that rebuilds the Agency Landing Page section by section, from the pointer-lit hero canvas to the magnetic button. Mistakes that would fail silently (a selector that matches nothing, `drawSVG` on a non-shape, a spring on a colour) show as plain-language warnings beside the code, and the last step of each module offers **Copy as page** and, for JSON lessons, **Open in editor**. The course is also in `llms-full.txt`
 - **Examples** - One page (`/examples`, the **Examples** toolbar button), and a shareable page for every example at `/examples/<id>` for every ready-made animation: editable examples open in the editor as a new project, code examples show their timeline JSON and HTML to copy. Includes a full-page **Agency Landing Page** showcase and a **GSAP-style** section of 41 runnable `live.to()` demos (Flip layouts and shared elements, pinned horizontal scroll, line mask reveals, spring release, canvas from object tweens, motion paths, orbits, shape and menu morphs, scramble text, draggable throws, swipe cards, 3D card flips, magnetic button, proximity grid, marquee, split text, SVG draw…), and every card has **Copy code** for a complete standalone HTML page. Hover-to-play previews, search, and filters for kind and category (GSAP-style, Showcase, Basics, Motion, Text, UI, Loaders, Effects, Data, Camera, Scroll, and **Algorisys** product demos)
 
 ## Documentation
@@ -203,7 +203,7 @@ GSAP-shaped functions at the top level. Teaching embeds are included: add
 itself.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.67.1/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.68.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -225,7 +225,7 @@ itself.
 | `cdn/tinyfly-player.iife.js` | Player only (~17 KB gzipped), for playing editor exports |
 | `cdn/tinyfly-embed.iife.js` | Only teaching figures (~19 KB gzipped): player, step controls, auto-mount |
 
-Replace `@v0.67.1` with the version you want. **Pin a version in production**:
+Replace `@v0.68.0` with the version you want. **Pin a version in production**:
 a tag's files never change, and each release's `cdn/README.md` lists an SRI hash
 for `integrity=`. `@main` follows the latest release, which jsDelivr caches for up
 to a day. Loading more than one bundle is safe: they add to the same `tinyfly`
@@ -239,7 +239,7 @@ A teaching figure needs no code at all:
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON with markers… }</script>
   <figcaption>Appending to a full slice</figcaption>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.67.1/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.68.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
 ```
 
 See [Teaching Animations](docs/teaching.md).
@@ -338,7 +338,7 @@ Without a build step, the player bundle puts the same functions on a `tinyfly` g
   <div data-tinyfly="box" style="width: 60px; height: 60px; background: #4a9eff;"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.67.1/cdn/tinyfly-player.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.68.0/cdn/tinyfly-player.iife.js"></script>
 <script>
   tinyfly.play('#animation', './animation.json', { loop: -1 })
 </script>
@@ -447,7 +447,7 @@ Or skip the code entirely with declarative embeds (see [Teaching Animations](doc
   <svg viewBox="0 0 720 200">…</svg>
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON… }</script>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.67.1/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.68.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 ### Audio / Video Sync

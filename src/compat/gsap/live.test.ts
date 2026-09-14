@@ -231,6 +231,41 @@ describe('live timelines', () => {
   })
 })
 
+describe('stage warnings', () => {
+  const warningLive = () => {
+    const warnings: string[] = []
+    const api = createLive(new Stage({ scheduler: manualScheduler().scheduler, onWarning: (message) => warnings.push(message) }))
+    return { api, warnings }
+  }
+
+  it('reports a tween whose selector matches nothing', () => {
+    const { api, warnings } = warningLive()
+    api.to('.missing', { x: 10, duration: 1 })
+    expect(warnings).toEqual(['gsap-compat: no elements found for target ".missing"'])
+  })
+
+  it('reports drawSVG on an element that is not a shape', () => {
+    const { api, warnings } = warningLive()
+    api.fromTo('#box', { drawSVG: 0 }, { drawSVG: true, duration: 1 })
+    expect(warnings.some((message) => message.includes('drawSVG needs an SVG shape'))).toBe(true)
+  })
+
+  it('reports a spring on a colour, which eases instead', () => {
+    const { api, warnings } = warningLive()
+    const tl = api.fromTo('#box', { backgroundColor: '#000000' }, { backgroundColor: '#ffffff', spring: 'bouncy' })
+    expect(warnings).toEqual(['gsap-compat: spring works on numbers, so "backgroundColor" on "#box" eases instead'])
+    expect(tl.toDefinition().tracks.some((track) => 'keyframes' in track)).toBe(true)
+  })
+
+  it("lets a timeline's own onWarning take precedence", () => {
+    const { api, warnings } = warningLive()
+    const own: string[] = []
+    api.timeline({ onWarning: (message) => own.push(message) }).to('.missing', { x: 10, duration: 1 })
+    expect(own).toHaveLength(1)
+    expect(warnings).toEqual([])
+  })
+})
+
 describe('Stage.destroy()', () => {
   it('stops running animations and the loop', async () => {
     const tl = live.timeline({ repeat: -1 }).to('#box', { x: 100, duration: 0.5 })

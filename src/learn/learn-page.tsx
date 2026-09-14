@@ -6,6 +6,10 @@ import { renderMarkdown } from '../docs/markdown'
 import { allSteps, course, findStep, stepKey } from './course'
 import { checkIsolated, runStep, type CheckResult, type RunResult } from './runner'
 import { completedSteps, draftFor, markCompleted, resetProgress, saveDraft } from './progress'
+import { lessonSample } from './lesson-project'
+import { lessonPage } from '../examples/standalone-page'
+import { copyText } from '../examples/copy-code-button'
+import { HANDOFF_PARAM, stashSampleForStudio } from '../editor/samples'
 import './learn-page.css'
 
 const LearnHeader: Component<{ trail?: string }> = (props) => (
@@ -104,6 +108,10 @@ export const LearnStep: Component = () => {
   const [code, setCode] = createSignal('')
   const [results, setResults] = createSignal<CheckResult[]>([])
   const [error, setError] = createSignal<string | undefined>()
+  const [warnings, setWarnings] = createSignal<string[]>([])
+  const [copied, setCopied] = createSignal<'idle' | 'copied' | 'failed'>('idle')
+  /** Escape, then Tab, leaves the code box (Tab alone indents), so keyboard users aren't trapped */
+  let tabLeaves = false
   const [showHint, setShowHint] = createSignal(0)
   const [scrub, setScrub] = createSignal<number | undefined>()
   const [completed, setCompleted] = createSignal(false)
@@ -115,7 +123,8 @@ export const LearnStep: Component = () => {
     const current = location()
     if (!current || !preview) return
     run?.destroy()
-    run = runStep(current.step, source, preview)
+    setWarnings([])
+    run = runStep(current.step, source, preview, { onWarning: (message) => setWarnings((list) => [...list, message]) })
     setError(run.error)
     // Checks fire clicks and hovers, so they run on a hidden copy, not the preview.
     const checked = checkIsolated(current.step, source, preview)
@@ -134,6 +143,7 @@ export const LearnStep: Component = () => {
       const source = draftFor(stepKey(current)) ?? current.step.starter
       setCode(source)
       setShowHint(0)
+      setCopied('idle')
       setCompleted(completedSteps().has(stepKey(current)))
       queueMicrotask(() => execute(source))
     })
@@ -172,9 +182,49 @@ export const LearnStep: Component = () => {
     return current ? `${current.lesson.steps.indexOf(current.step) + 1} / ${current.lesson.steps.length}` : ''
   }
 
+  const isModuleEnd = () => {
+    const current = location()
+    return !!current && next()?.module !== current.module
+  }
+
+  /** The step's markup and the code as it is now, as a page to save and open. */
+  const copyPage = async () => {
+    const current = location()
+    if (!current) return
+    try {
+      await copyText(lessonPage(`${current.module.title}: ${current.step.title}`, current.step.markup, code()))
+      setCopied('copied')
+    } catch {
+      setCopied('failed')
+    }
+  }
+
+  /** Available when the code played JSON on `data-tinyfly` elements, which the studio can hold. */
+  const studioSample = createMemo(() => {
+    const current = location()
+    results() // recomputed after every run
+    if (!current || !isModuleEnd() || !run || run.error || !preview) return undefined
+    const names = [...preview.querySelectorAll('[data-tinyfly]')].map((element) => element.getAttribute('data-tinyfly')!)
+    return lessonSample(current.step.title, run.context.definitions, names)
+  })
+
+  const openInEditor = () => {
+    const sample = studioSample()
+    if (!sample) return
+    stashSampleForStudio(sample)
+    navigate(`/studio?sample=${HANDOFF_PARAM}`)
+  }
+
   const handleKey = (event: KeyboardEvent) => {
-    // Tab inserts two spaces in the editor instead of leaving it.
-    if (event.key !== 'Tab' || event.shiftKey) return
+    // Tab inserts two spaces in the editor instead of leaving it — unless Escape
+    // was pressed just before, which lets keyboard users move on.
+    if (event.key === 'Escape') {
+      tabLeaves = true
+      return
+    }
+    const leave = tabLeaves
+    tabLeaves = false
+    if (event.key !== 'Tab' || event.shiftKey || leave) return
     event.preventDefault()
     const area = event.currentTarget as HTMLTextAreaElement
     const { selectionStart, selectionEnd, value } = area
@@ -211,7 +261,7 @@ export const LearnStep: Component = () => {
               </Show>
             </section>
 
-            <section class="learn-editor">
+            <section class="learn-editor" aria-label="Code">
               <div class="learn-pane-bar">
                 <span>Your code</span>
                 <span class="learn-pane-actions">
@@ -226,25 +276,34 @@ export const LearnStep: Component = () => {
               <textarea
                 spellcheck={false}
                 aria-label="Code for this step"
+                aria-describedby="learn-code-keys"
                 value={code()}
                 onInput={(event) => edit(event.currentTarget.value)}
                 onKeyDown={handleKey}
               />
+              <p id="learn-code-keys" class="learn-code-keys">
+                Runs as you type. Tab indents; press Esc then Tab to move on.
+              </p>
               <Show when={error()}>
                 <p class="learn-error" role="status">
                   {error()}
                 </p>
               </Show>
+              <Show when={warnings().length > 0}>
+                <ul class="learn-warnings" role="status" aria-label="Warnings">
+                  <For each={warnings()}>{(warning) => <li innerHTML={renderInline(warning)} />}</For>
+                </ul>
+              </Show>
             </section>
 
-            <section class="learn-output">
+            <section class="learn-output" aria-label="Preview and checks">
               <div class="learn-pane-bar">
                 <span>Preview</span>
                 <button class="learn-link-button" onClick={replay}>
                   Replay
                 </button>
               </div>
-              <div class="learn-preview" ref={preview} />
+              <div class="learn-preview" ref={preview} role="region" aria-label="Preview of the animation" />
               <label class="learn-scrub">
                 <span>Scrub</span>
                 <input
@@ -258,7 +317,7 @@ export const LearnStep: Component = () => {
                 />
               </label>
 
-              <ul class="learn-checks" aria-live="polite">
+              <ul class="learn-checks" aria-live="polite" aria-label="Checks">
                 <For each={results()}>
                   {(result) => (
                     <li classList={{ passed: result.passed }}>
@@ -275,6 +334,24 @@ export const LearnStep: Component = () => {
                   )}
                 </For>
               </ul>
+
+              <Show when={isModuleEnd()}>
+                <div class="learn-take-away">
+                  <p>
+                    <strong>End of {current().module.title}.</strong> Keep what you built:
+                  </p>
+                  <div class="learn-take-away-actions">
+                    <button class="learn-button" onClick={copyPage} aria-live="polite">
+                      {copied() === 'copied' ? 'Copied!' : copied() === 'failed' ? 'Copy failed' : 'Copy as page'}
+                    </button>
+                    <Show when={studioSample()}>
+                      <button class="learn-button" onClick={openInEditor}>
+                        Open in editor
+                      </button>
+                    </Show>
+                  </div>
+                </div>
+              </Show>
 
               <div class="learn-nav">
                 <Show when={previous()}>

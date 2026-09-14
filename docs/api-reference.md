@@ -2061,6 +2061,7 @@ new Stage(options?: StageOptions)
 interface StageOptions {
   scheduler?: FrameScheduler   // { request(cb): number; cancel(id): void } — default requestAnimationFrame
   root?: ParentNode            // where selectors resolve (default: document)
+  onWarning?: (message: string) => void  // warnings from every live timeline on this stage
 }
 
 type ObjectTarget = Record<string, unknown>

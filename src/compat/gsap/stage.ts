@@ -66,6 +66,12 @@ export interface StageOptions {
   scheduler?: FrameScheduler
   /** Document used to resolve selector targets (default: the global document) */
   root?: ParentNode
+  /**
+   * Called with a message when a live tween on this stage can't do what it was asked
+   * (no elements matched, drawSVG on a non-shape, spring on a colour…). A timeline's
+   * own `onWarning` takes precedence.
+   */
+  onWarning?: (message: string) => void
 }
 
 interface ActiveEntry {
@@ -81,6 +87,8 @@ export class Stage implements ContextHost {
   private readonly adapter = new DOMAdapter()
   private readonly scheduler: FrameScheduler
   private readonly rootOption?: ParentNode
+  /** Where live timelines on this stage report warnings, unless they have their own `onWarning` */
+  readonly onWarning?: (message: string) => void
 
   /** Element → engine target name. The engine only ever sees names. */
   private names = new WeakMap<Element, string>()
@@ -124,6 +132,7 @@ export class Stage implements ContextHost {
   constructor(options: StageOptions = {}) {
     this.scheduler = options.scheduler ?? browserScheduler
     this.rootOption = options.root
+    this.onWarning = options.onWarning
   }
 
   // --- targets ------------------------------------------------------------

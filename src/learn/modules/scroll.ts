@@ -5,7 +5,8 @@ import { custom, valueIs } from '../checks'
  * Module 7: scroll. The preview is its own scrolling box, so every trigger passes
  * `scroller: '.scroller'`; on a real page you leave that out and the window
  * scrolls. Checks read the `scrollTrigger` options the code passed and the tracks
- * it built; the velocity step calls `onUpdate` as scrolling would.
+ * it built; the velocity step calls `onUpdate` as scrolling would, and the smooth
+ * scrolling step reads the options passed to `live.smoothScroll`.
  */
 
 const STYLE = `<style>
@@ -18,6 +19,9 @@ const STYLE = `<style>
   .panel-inner { font-size: 30px; font-weight: 800; }
   .gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 0 20px 240px; }
   .gallery .card { width: auto; margin: 0; }
+  .depth { position: relative; height: 260px; overflow: hidden; display: grid; place-items: center; background: #16161a; }
+  .far { position: absolute; font-size: 90px; font-weight: 800; color: #26262d; }
+  .near { position: relative; font-size: 28px; font-weight: 800; }
 </style>`
 
 const hint = (text: string) => `<div class="spacer">${text}</div>`
@@ -25,6 +29,7 @@ const oneCard = `${STYLE}<div class="scroller">${hint('Scroll down ↓')}<div cl
 const threeCards = `${STYLE}<div class="scroller">${hint('Scroll down ↓')}<div class="card">One</div><div class="card">Two</div><div class="card">Three</div>${hint('')}</div>`
 const article = `${STYLE}<div class="scroller"><div class="bar"></div><div class="content">${'<p>Scroll this article. The bar along the top shows how far through it you are, because its scaleX follows the scroll position exactly.</p>'.repeat(8)}</div></div>`
 const pinned = `${STYLE}<div class="scroller">${hint('Scroll down ↓')}<section class="panel"><div class="panel-inner">Pinned</div></section>${hint('…and it lets go')}</div>`
+const depth = `${STYLE}<div class="scroller">${hint('Scroll with the wheel ↓')}<section class="depth"><div class="far">DEPTH</div><h2 class="near">Near and far</h2></section>${hint('')}${hint('')}</div>`
 const gallery = `${STYLE}<div class="scroller">${hint('Scroll fast ↓')}<div class="gallery">${'<div class="card">✦</div>'.repeat(8)}</div></div>`
 
 type Vars = Record<string, unknown> & { scrollTrigger?: Record<string, unknown> }
@@ -45,7 +50,7 @@ const inScroller = custom('Watches the preview’s scroller', (context) => {
 export const scrollModule: Module = {
   id: 'scroll',
   title: 'Scroll',
-  summary: 'Reveals as things scroll into view, scroll-scrubbed progress, pinned sections and effects driven by scroll speed.',
+  summary: 'Reveals as things scroll into view, scroll-scrubbed progress, pinned sections, effects driven by scroll speed, and smooth scrolling with parallax.',
   lessons: [
     {
       id: 'reveals',
@@ -214,6 +219,48 @@ Skewing by speed makes a gallery feel like it has weight: fast scrolling leans t
             }),
           ],
           hints: ['`onUpdate: ({ velocity }) => skew(velocity / -300)`'],
+        },
+      ],
+    },
+    {
+      id: 'smooth',
+      title: 'Smooth scrolling',
+      summary: 'Ease the wheel, and give layers their own speed for depth.',
+      steps: [
+        {
+          id: 'smooth-scroll',
+          title: 'Smooth scrolling and parallax',
+          body: `\`live.smoothScroll()\` eases **wheel** scrolling: the page glides to where the wheel sent it, over \`smooth\` seconds. It moves the real scroll position, so every trigger and pin you built still works. Touch, keys and the scrollbar stay native, and with reduced motion it turns itself off.
+
+With \`effects: true\` it also moves layers marked with data attributes:
+
+- \`data-speed="0.6"\` scrolls at 60% of the page's speed, so the layer seems further away.
+- \`data-lag="0.25"\` catches up with the page a quarter of a second late.
+
+**Your turn:** give \`.far\` a speed of \`0.6\` and \`.near\` a lag of \`0.25\`, then smooth the preview's scroller with \`smooth: 1\` and effects on. Scroll the preview with a mouse wheel or trackpad to feel it.`,
+          markup: depth,
+          starter: `const far = root.querySelector('.far')\nconst near = root.querySelector('.near')\n\n// mark the layers, then smooth the scroller\n`,
+          solution: `const far = root.querySelector('.far')\nconst near = root.querySelector('.near')\n\nfar.dataset.speed = '0.6'\nnear.dataset.lag = '0.25'\n\nlive.smoothScroll({ scroller: '.scroller', smooth: 1, effects: true })`,
+          checks: [
+            custom('Smooths the preview’s scroller over 1s', (context) => {
+              const options = context.calls('smoothScroll')[0]?.args[0] as Record<string, unknown> | undefined
+              if (!options) return 'Call `live.smoothScroll({ … })`.'
+              return (options.scroller === '.scroller' && options.smooth === 1) || "Pass `scroller: '.scroller', smooth: 1`."
+            }),
+            custom('Turns on effects', (context) => {
+              const options = context.calls('smoothScroll')[0]?.args[0] as Record<string, unknown> | undefined
+              return options?.effects === true || 'Pass `effects: true`, or the data attributes do nothing.'
+            }),
+            custom('The far layer scrolls slower', (context) => {
+              const speed = context.root.querySelector<HTMLElement>('.far')?.dataset.speed
+              return speed === '0.6' || `\`.far\` needs \`data-speed\` of \`0.6\` (it is ${speed ?? 'not set'}).`
+            }),
+            custom('The heading lags behind', (context) => {
+              const lag = context.root.querySelector<HTMLElement>('.near')?.dataset.lag
+              return lag === '0.25' || `\`.near\` needs \`data-lag\` of \`0.25\` (it is ${lag ?? 'not set'}).`
+            }),
+          ],
+          hints: ["`far.dataset.speed = '0.6'` sets `data-speed` (and `near.dataset.lag` sets `data-lag`).", "`live.smoothScroll({ scroller: '.scroller', smooth: 1, effects: true })`"],
         },
       ],
     },

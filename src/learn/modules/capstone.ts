@@ -12,7 +12,8 @@ const STYLE = `<style>
   .scroller { position: relative; height: 240px; overflow-y: auto; overflow-x: hidden; border-radius: 10px; background: #0b0b0c; color: #f2efe9; font-family: system-ui, sans-serif; }
   .spacer { height: 240px; display: grid; place-items: center; color: #6b6b73; font-size: 13px; }
   .ag-hero { position: relative; height: 240px; display: flex; align-items: flex-end; padding: 0 18px 22px; }
-  .ag-title { margin: 0; font-size: 34px; line-height: 0.95; letter-spacing: -0.04em; font-weight: 800; max-width: 11ch; }
+  .ag-blobs { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .ag-title { position: relative; margin: 0; font-size: 34px; line-height: 0.95; letter-spacing: -0.04em; font-weight: 800; max-width: 11ch; }
   .ag-title em { font-style: italic; font-weight: 300; color: #c6ff3d; }
   .ag-marquee { border-block: 1px solid #262626; padding: 14px 0; overflow: hidden; white-space: nowrap; }
   .ag-marquee-track { display: inline-flex; gap: 22px; padding-right: 22px; font-size: 30px; font-weight: 700; }
@@ -45,6 +46,7 @@ const STYLE = `<style>
 const scroller = (inner: string, before = 'Scroll down ↓') => `${STYLE}<div class="scroller">${before ? `<div class="spacer">${before}</div>` : ''}${inner}<div class="spacer"></div></div>`
 
 const hero = `${STYLE}<div class="scroller"><header class="ag-hero"><h1 class="ag-title">We make brands move with <em>intent</em></h1></header><div class="spacer">Scroll ↓</div><div class="spacer"></div></div>`
+const heroCanvas = `${STYLE}<div class="scroller"><header class="ag-hero"><canvas class="ag-blobs"></canvas><h1 class="ag-title">We make brands move with <em>intent</em></h1></header><div class="spacer">Scroll ↓</div><div class="spacer"></div></div>`
 const words = ['Motion', 'Interaction', 'Scroll', 'Type']
 const marqueeRun = words.map((word) => `<span>${word}</span><i>✦</i>`).join('')
 const marquee = scroller(`<div class="ag-marquee"><div class="ag-marquee-track">${marqueeRun}${marqueeRun}</div></div>`, 'Scroll fast ↓')
@@ -118,7 +120,7 @@ export const capstoneModule: Module = {
     {
       id: 'hero',
       title: 'Hero',
-      summary: 'A headline that rises from behind its lines, and drifts away as you scroll.',
+      summary: 'A headline that rises from behind its lines, drifts away as you scroll, over a glow that follows the pointer.',
       steps: [
         {
           id: 'headline',
@@ -166,6 +168,116 @@ The page opens with its headline rising line by line, each from behind its own e
             valueIs('.ag-title', 'opacity', 0.15),
           ],
           hints: ["`live.timeline({ scrollTrigger: { … } }).to('.ag-title', { y: 180, scale: 0.9, opacity: 0.15, ease: 'none' })`"],
+        },
+        {
+          id: 'canvas',
+          title: 'A glow that follows the pointer',
+          body: `Behind the headline, a canvas draws a soft glow that trails the pointer. Three things from earlier modules make it: a **plain object** tweened with \`quickTo\` (Interaction), drawn on the **ticker**, which stops while the hero is **off screen** (Accessibility and performance).
+
+Pointer positions are measured in pixels from the hero's corner, which is also the canvas's.
+
+**Your turn:** aim \`glow.x\` and \`glow.y\` at the pointer as it moves over \`.ag-hero\` with two \`quickTo\` setters (\`0.6\`s, \`power3.out\`). Draw on the ticker, and take \`draw\` off it when the hero scrolls away (\`onLeave\`), putting it back on the way up (\`onEnterBack\`).`,
+          markup: heroCanvas,
+          starter: `const hero = root.querySelector('.ag-hero')
+const canvas = root.querySelector('.ag-blobs')
+const ctx = canvas.getContext('2d')
+const glow = { x: 240, y: 80 }
+
+// Size the canvas when the window resizes, not every frame.
+const size = () => {
+  canvas.width = canvas.clientWidth
+  canvas.height = canvas.clientHeight
+}
+size()
+window.addEventListener('resize', size)
+
+function draw() {
+  if (!ctx) return
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  const gradient = ctx.createRadialGradient(glow.x, glow.y, 0, glow.x, glow.y, 160)
+  gradient.addColorStop(0, 'rgba(198, 255, 61, 0.35)')
+  gradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
+  ctx.fillStyle = gradient
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+}
+\n// follow the pointer, and draw while the hero is on screen\n`,
+          solution: `const hero = root.querySelector('.ag-hero')
+const canvas = root.querySelector('.ag-blobs')
+const ctx = canvas.getContext('2d')
+const glow = { x: 240, y: 80 }
+
+// Size the canvas when the window resizes, not every frame.
+const size = () => {
+  canvas.width = canvas.clientWidth
+  canvas.height = canvas.clientHeight
+}
+size()
+window.addEventListener('resize', size)
+
+function draw() {
+  if (!ctx) return
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  const gradient = ctx.createRadialGradient(glow.x, glow.y, 0, glow.x, glow.y, 160)
+  gradient.addColorStop(0, 'rgba(198, 255, 61, 0.35)')
+  gradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
+  ctx.fillStyle = gradient
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+}
+
+const glowX = live.quickTo(glow, 'x', { duration: 0.6, ease: 'power3.out' })
+const glowY = live.quickTo(glow, 'y', { duration: 0.6, ease: 'power3.out' })
+
+hero.addEventListener('pointermove', (event) => {
+  const box = hero.getBoundingClientRect()
+  glowX(event.clientX - box.left)
+  glowY(event.clientY - box.top)
+})
+
+live.ticker.add(draw)
+live.scrollTrigger({
+  trigger: hero,
+  scroller: '.scroller',
+  start: 'top bottom',
+  end: 'bottom top',
+  onLeave: () => live.ticker.remove(draw),
+  onEnterBack: () => live.ticker.add(draw),
+})`,
+          checks: [
+            custom('Tweens the glow with quickTo', (context) => {
+              const calls = context.calls('quickTo')
+              const properties = calls.map((call) => call.args[1])
+              const onObject = calls.every((call) => !(call.args[0] instanceof Element))
+              return (calls.length > 0 && onObject && properties.includes('x') && properties.includes('y')) || "Create `live.quickTo(glow, 'x', …)` and `live.quickTo(glow, 'y', …)`."
+            }),
+            custom('Moving the pointer moves the glow', (context) => {
+              const box = context.root.querySelector('.ag-hero')!.getBoundingClientRect()
+              context.fire('.ag-hero', 'pointermove', { clientX: box.left + 120, clientY: box.top + 50 })
+              const end = (property: string) => {
+                const track = context.tracks().find((candidate) => candidate.property === property && candidate.target.startsWith('obj-'))
+                return track && 'keyframes' in track ? track.keyframes[track.keyframes.length - 1].value : undefined
+              }
+              const x = end('x')
+              const y = end('y')
+              return (typeof x === 'number' && typeof y === 'number' && Math.abs(x - 120) < 1 && Math.abs(y - 50) < 1) || `A pointer 120px right and 50px down the hero should aim the glow at 120, 50 (it aimed at ${x}, ${y}).`
+            }),
+            custom('Draws on the ticker', (context) => context.calls('ticker.add').some((call) => typeof call.args[0] === 'function') || 'Add `live.ticker.add(draw)`.'),
+            custom('Stops drawing off screen, and starts again on the way back', (context) => {
+              const vars = context.calls('scrollTrigger')[0]?.args[0] as { scroller?: unknown; onLeave?: () => void; onEnterBack?: () => void } | undefined
+              if (!vars) return "Watch the hero with `live.scrollTrigger({ trigger: hero, scroller: '.scroller', … })`."
+              if (vars.scroller !== '.scroller') return "Give the trigger `scroller: '.scroller'`."
+              const removed = context.calls('ticker.remove').length
+              vars.onLeave?.()
+              if (context.calls('ticker.remove').length === removed) return '`onLeave` should remove `draw` from the ticker.'
+              const added = context.calls('ticker.add').length
+              vars.onEnterBack?.()
+              return context.calls('ticker.add').length > added || '`onEnterBack` should add `draw` back.'
+            }),
+          ],
+          hints: [
+            "Make the setters once: `const glowX = live.quickTo(glow, 'x', { duration: 0.6, ease: 'power3.out' })`.",
+            'In the listener: `const box = hero.getBoundingClientRect()`, then `glowX(event.clientX - box.left)`.',
+            '`onLeave: () => live.ticker.remove(draw), onEnterBack: () => live.ticker.add(draw)`',
+          ],
         },
       ],
     },
@@ -324,7 +436,7 @@ The half-width depends on the font size, so pass a **function** and rebuild on r
     {
       id: 'details',
       title: 'Details',
-      summary: 'Icons that draw in, a lightbox that grows from its tile, and a springy sign-off.',
+      summary: 'Icons that draw in, a lightbox that grows from its tile, a springy sign-off and a magnetic button.',
       steps: [
         {
           id: 'services',
@@ -390,8 +502,6 @@ The half-width depends on the font size, so pass a **function** and rebuild on r
           title: 'A springy sign-off',
           body: `The page signs off with big letters bouncing into place on **springs** when the footer arrives. A spring has no fixed duration: it settles when physics says so.
 
-When you finish this step, open the **[whole page](/showcase/agency-landing)**: every section you built, wrapped in \`live.matchMedia\` for a real reduced-motion mode. **Copy code** there gives you a standalone HTML file to make your own.
-
 **Your turn:** split \`.ag-big\` into chars, and bring them from \`y: 160, rotate: 14\` on \`spring: 'bouncy'\`, \`0.04\` apart, when \`.ag-contact\` reaches \`'top 65%'\`.`,
           markup: contact,
           starter: `const big = live.splitText('.ag-big', { type: 'chars' })\n`,
@@ -413,6 +523,67 @@ When you finish this step, open the **[whole page](/showcase/agency-landing)**: 
             }),
           ],
           hints: ["`live.fromTo(big.chars, { y: 160, rotate: 14 }, { y: 0, rotate: 0, spring: 'bouncy', stagger: 0.04, scrollTrigger: { … } })`"],
+        },
+        {
+          id: 'magnet',
+          title: 'A magnetic button',
+          body: `The last detail: the contact button **leans toward the pointer** and springs home when it leaves. It is the magnetic pull from Interaction, with two changes that make it feel physical.
+
+- **Springs instead of a duration.** \`quickTo(magnet, 'x', { spring: 'snappy' })\` re-aims a spring on every move and keeps its momentum, so quick flicks overshoot a little.
+- **Measure the layout, not the rendered box.** \`getBoundingClientRect()\` includes the transform the pull just applied, so the centre would chase the pointer. \`offsetLeft\` / \`offsetTop\` ignore transforms.
+
+Then open the **[whole page](/showcase/agency-landing)**: every section you built, wrapped in \`live.matchMedia\` for a real reduced-motion mode. **Copy code** there gives you a standalone HTML file to make your own.
+
+**Your turn:** on \`pointermove\`, pull \`.ag-magnet\` \`0.35\` of the way from its centre to the pointer on \`snappy\` springs, and send it back to \`0, 0\` on \`pointerleave\`.`,
+          markup: contact,
+          starter: `const magnet = root.querySelector('.ag-magnet')
+\n// lean toward the pointer, spring home when it leaves\n`,
+          solution: `const magnet = root.querySelector('.ag-magnet')
+const magnetX = live.quickTo(magnet, 'x', { spring: 'snappy' })
+const magnetY = live.quickTo(magnet, 'y', { spring: 'snappy' })
+
+magnet.addEventListener('pointermove', (event) => {
+  // Measured from the layout box, which the pull doesn't move, so it can't feed back on itself.
+  const centreX = magnet.offsetLeft + magnet.offsetWidth / 2
+  const centreY = magnet.offsetTop + magnet.offsetHeight / 2
+  const box = magnet.offsetParent?.getBoundingClientRect() ?? { left: 0, top: 0 }
+  magnetX((event.clientX - box.left - centreX) * 0.35)
+  magnetY((event.clientY - box.top - centreY) * 0.35)
+})
+
+magnet.addEventListener('pointerleave', () => {
+  magnetX(0)
+  magnetY(0)
+})`,
+          checks: [
+            custom('Springs for x and y', (context) => {
+              const calls = context.calls('quickTo')
+              const springy = (property: string) => calls.some((call) => call.args[1] === property && (call.args[2] as Record<string, unknown> | undefined)?.spring === 'snappy')
+              return (springy('x') && springy('y')) || "Create `live.quickTo(magnet, 'x', { spring: 'snappy' })`, and the same for `y`."
+            }),
+            custom('Leans 0.35 of the way to the pointer', (context) => {
+              const magnet = context.root.querySelector<HTMLElement>('.ag-magnet')!
+              const box = magnet.offsetParent?.getBoundingClientRect() ?? { left: 0, top: 0 }
+              const centreX = box.left + magnet.offsetLeft + magnet.offsetWidth / 2
+              const centreY = box.top + magnet.offsetTop + magnet.offsetHeight / 2
+              context.fire('.ag-magnet', 'pointermove', { clientX: centreX + 40, clientY: centreY - 20 })
+              const x = context.valueAt('.ag-magnet', 'x', 60)
+              const y = context.valueAt('.ag-magnet', 'y', 60)
+              return (typeof x === 'number' && typeof y === 'number' && Math.abs(x - 14) < 0.5 && Math.abs(y + 7) < 0.5) || `A pointer 40px right of centre and 20px above should pull it to x: 14, y: -7 (it went to ${x}, ${y}).`
+            }),
+            custom('Springs home when the pointer leaves', (context) => {
+              const magnet = context.root.querySelector<HTMLElement>('.ag-magnet')!
+              context.fire('.ag-magnet', 'pointermove', { clientX: magnet.offsetLeft + 200, clientY: magnet.offsetTop })
+              context.fire('.ag-magnet', 'pointerleave')
+              const x = context.valueAt('.ag-magnet', 'x', 60)
+              const y = context.valueAt('.ag-magnet', 'y', 60)
+              return (typeof x === 'number' && typeof y === 'number' && Math.abs(x) < 0.5 && Math.abs(y) < 0.5) || `On \`pointerleave\`, send both setters to 0 (it rests at ${x}, ${y}).`
+            }),
+          ],
+          hints: [
+            "`const centreX = magnet.offsetLeft + magnet.offsetWidth / 2`, and `const box = magnet.offsetParent?.getBoundingClientRect() ?? { left: 0, top: 0 }`.",
+            '`magnetX((event.clientX - box.left - centreX) * 0.35)`',
+          ],
         },
       ],
     },

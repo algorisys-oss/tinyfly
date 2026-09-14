@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { DOCS, DOC_SECTIONS } from './doc-manifest'
 import { buildLlmsTxt, buildLlmsFullTxt } from './llms-text'
 import { repoLlmsTxt } from './repo-llms'
+import { allSteps, course, stepKey } from '../learn/course'
+import { courseMarkdown } from '../learn/course-text'
 
 const files = import.meta.glob<string>('../../docs/*.md', { query: '?raw', import: 'default', eager: true })
 const contents = new Map(Object.entries(files).map(([path, text]) => [path.replace(/^.*\/|\.md$/g, ''), text]))
@@ -58,5 +60,15 @@ describe('llms-full.txt', () => {
       last = at
     }
     expect(full).toContain(readDoc('api-reference').trim())
+  })
+
+  it('ends with the course, every step linked with its solution', () => {
+    const full = buildLlmsFullTxt(readDoc, courseMarkdown(course))
+    const at = full.indexOf('<!-- learn: the interactive course -->')
+    expect(at).toBeGreaterThan(full.indexOf(`<!-- docs/${DOCS[DOCS.length - 1].id}.md -->`))
+    for (const location of allSteps) {
+      expect(full).toContain(`Step: \`/learn/${stepKey(location)}\``)
+      expect(full).toContain(location.step.solution.trim())
+    }
   })
 })
