@@ -29,6 +29,20 @@ describe('doc manifest', () => {
   })
 })
 
+describe('CDN pins in the docs', () => {
+  // The docs and README show script tags pinned to a release. They drift a release
+  // behind unless the pin is bumped with the version, so check it here.
+  const readme = import.meta.glob<string>('../../README.md', { query: '?raw', import: 'default', eager: true })
+  const texts = [...contents.entries(), ...Object.values(readme).map((text) => ['README', text] as const)]
+
+  it(`point at this version (v${__APP_VERSION__})`, () => {
+    const stale = texts.flatMap(([id, text]) =>
+      [...text.matchAll(/algorisys-oss\/tinyfly@v(\d+\.\d+\.\d+)/g)].filter((match) => match[1] !== __APP_VERSION__).map((match) => `${id}: v${match[1]}`)
+    )
+    expect(stale).toEqual([])
+  })
+})
+
 describe('llms.txt', () => {
   const text = buildLlmsTxt({ docUrl: (id) => `docs/${id}.md`, fullUrl: 'llms-full.txt' })
 

@@ -1860,6 +1860,11 @@ Every gap from the Go series spike on teachyourselfcoding.com, fixed:
   import rebuilds the shapes from this file.
   - [ ] Import JSON… does not read Animation Documents yet (it expects a timeline).
 
+- [x] **Docs CDN pins kept current** — five docs still pinned script tags to v0.66.0
+  (only the README was bumped at release). All now name the current version, and a test
+  (`llms-text.test.ts`) fails when a pinned CDN link in `docs/` or the README doesn't
+  match `package.json`.
+
 - [x] **Footer credit** — "SDD by Rajesh Pillai at Algorisys Technologies"
   (links to https://www.algorisys.com) in the studio status bar, the landing page
   footer and the README.

@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.68.1](v0.68.1.md) | 2026-09-15 | Docs: script-tag examples pinned to the current release, with a test that keeps them there |
 | [v0.68.0](v0.68.0.md) | 2026-09-15 | Course: hero canvas, magnetic button and smooth scrolling steps; warnings in lessons; Copy as page / Open in editor; course in llms-full.txt; `new Stage({ onWarning })` |
 | [v0.67.1](v0.67.1.md) | 2026-09-14 | Footer credit: SDD by Rajesh Pillai at Algorisys Technologies |
 | [v0.67.0](v0.67.0.md) | 2026-09-14 | Studio: More → Export Animation Document (elements + tracks in one file, for apps such as YappyDraw) |
