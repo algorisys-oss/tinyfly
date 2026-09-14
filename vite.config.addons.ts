@@ -50,6 +50,7 @@ export default defineConfig({
         drivers: resolve(__dirname, 'src/drivers/index.ts'),
         interaction: resolve(__dirname, 'src/interaction/index.ts'),
         'gsap-compat': resolve(__dirname, 'src/compat/gsap/index.ts'),
+        teach: resolve(__dirname, 'src/teach/index.ts'),
       },
       formats: ['es'],
     },

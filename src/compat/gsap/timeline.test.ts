@@ -441,6 +441,7 @@ describe('output contract', () => {
     tl.to('box', { x: 200, duration: 0.5 }, '-=0.25')
 
     expect(tl.toDefinition()).toEqual({
+      formatVersion: 1,
       id: 'golden',
       name: undefined,
       config: {},

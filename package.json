@@ -1,6 +1,6 @@
 {
   "name": "tinyfly",
-  "version": "0.63.0",
+  "version": "0.64.0",
   "type": "module",
   "description": "Lightweight, API-driven animation engine and editor. The engine is framework-agnostic and runs in browsers, Web Workers, and Node.",
   "license": "MIT",
@@ -34,6 +34,9 @@
   "types": "./lib/types/engine/index.d.ts",
   "unpkg": "./lib/browser/tinyfly.iife.js",
   "jsdelivr": "./lib/browser/tinyfly.iife.js",
+  "bin": {
+    "tinyfly": "./bin/tinyfly.mjs"
+  },
   "exports": {
     ".": {
       "types": "./lib/types/engine/index.d.ts",
@@ -70,6 +73,14 @@
       "import": "./lib/browser/tinyfly.js",
       "require": "./lib/browser/tinyfly.umd.js"
     },
+    "./teach": {
+      "types": "./lib/types/teach/index.d.ts",
+      "import": "./lib/addons/teach.js"
+    },
+    "./embed": {
+      "types": "./lib/types/embed/index.d.ts",
+      "import": "./lib/embed/tinyfly-embed.js"
+    },
     "./react": {
       "types": "./lib/types/frameworks/react.d.ts",
       "import": "./lib/frameworks/react.js"
@@ -94,6 +105,9 @@
     "lib/addons",
     "lib/browser",
     "lib/frameworks",
+    "lib/embed",
+    "lib/cli",
+    "bin",
     "lib/types"
   ],
   "scripts": {
@@ -103,8 +117,11 @@
     "build:player": "vite build --config vite.config.player.ts",
     "build:addons": "vite build --config vite.config.addons.ts",
     "build:browser": "vite build --config vite.config.browser.ts",
+    "build:frameworks": "vite build --config vite.config.frameworks.ts",
+    "build:embed": "vite build --config vite.config.embed.ts",
+    "build:cli": "vite build --config vite.config.cli.ts",
     "build:types": "tsc -p tsconfig.lib.json",
-    "build:libs": "npm run build:engine && npm run build:player && npm run build:addons && npm run build:browser && npm run build:types",
+    "build:libs": "npm run build:engine && npm run build:player && npm run build:addons && npm run build:frameworks && npm run build:embed && npm run build:cli && npm run build:browser && npm run build:types",
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",

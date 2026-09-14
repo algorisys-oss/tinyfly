@@ -693,4 +693,4 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.63.0/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.64.0/cdn/tinyfly-player.iife.js`.

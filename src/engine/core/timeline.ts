@@ -1,6 +1,7 @@
 import type {
   Track,
   TimelineConfig,
+  TimelineMarker,
   TimelineDefinition,
   AnimationState,
   PlaybackState,
@@ -11,7 +12,7 @@ import type {
   SpringTrack,
   TextTrack,
 } from '../types'
-import { isMotionPathTrack, isSpringTrack, isTextTrack, isInertiaTrack } from '../types'
+import { isMotionPathTrack, isSpringTrack, isTextTrack, isInertiaTrack, FORMAT_VERSION } from '../types'
 import { TrackPlayer, SpringTrackPlayer, InertiaTrackPlayer, trackTargets } from './track'
 import { getMotionPathPoint } from '../path/motion-path'
 import { textAt } from '../text/text-value'
@@ -52,6 +53,8 @@ export interface TimelineOptions {
   name?: string
   tracks?: AnyTrack[]
   config?: TimelineConfig
+  /** Caption text per language, per marker id (carried through unchanged) */
+  captions?: Record<string, Record<string, string>>
 }
 
 /**
@@ -60,6 +63,8 @@ export interface TimelineOptions {
 export class Timeline {
   readonly id: string
   readonly name?: string
+  /** Caption text per language, per marker id */
+  readonly captions?: Record<string, Record<string, string>>
 
   private _tracks: AnyTrack[] = []
   private _trackPlayers: Map<string, AnyTrackPlayer> = new Map()
@@ -86,6 +91,7 @@ export class Timeline {
   constructor(options: TimelineOptions) {
     this.id = options.id
     this.name = options.name
+    this.captions = options.captions
     this._config = options.config ?? {}
     this._explicitDuration = options.config?.duration
 
@@ -598,11 +604,23 @@ export class Timeline {
    */
   toDefinition(): TimelineDefinition {
     return {
+      formatVersion: FORMAT_VERSION,
       id: this.id,
       name: this.name,
       config: { ...this._config },
       tracks: [...this._tracks],
+      ...(this.captions && { captions: this.captions }),
     }
+  }
+
+  /** The playback configuration, as loaded (read-only). */
+  get config(): Readonly<TimelineConfig> {
+    return this._config
+  }
+
+  /** The timeline's markers, in time order (empty when it has none). */
+  get markers(): TimelineMarker[] {
+    return [...(this._config.markers ?? [])].sort((a, b) => a.time - b.time)
   }
 
   /** Start the between-iterations pause, if the timeline configures one. */

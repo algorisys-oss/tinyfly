@@ -183,7 +183,7 @@ with a GSAP-style call (durations are in seconds here):
 ```html
 <div class="box" style="width:60px;height:60px;background:#4a9eff"></div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.63.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.64.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>

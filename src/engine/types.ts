@@ -164,10 +164,37 @@ export interface TimelineConfig {
   alternate?: boolean;
   /** Milliseconds to hold at the end before starting the next loop iteration */
   repeatDelay?: number;
+  /**
+   * Named points in time, in order — the steps of a teaching animation. Players
+   * can step between them, stop at them and show their captions.
+   */
+  markers?: TimelineMarker[];
 }
+
+/** A named step on a timeline. */
+export interface TimelineMarker {
+  /** Unique within the timeline; captions are keyed by it */
+  id: string;
+  /** Milliseconds from the start */
+  time: number;
+  /** A short label, in the timeline's own language (captions can translate it) */
+  label?: string;
+  /** Playback stops here, even when not stepping (predict-then-reveal) */
+  pause?: boolean;
+  /** A question to show while stopped here, before revealing the next step */
+  question?: string;
+}
+
+/** The JSON format version this engine writes and reads. */
+export const FORMAT_VERSION = 1;
 
 /** Serializable timeline definition */
 export interface TimelineDefinition {
+  /**
+   * The format version the file was written for (absent means 1). A reader
+   * refuses files from a newer format rather than playing them wrongly.
+   */
+  formatVersion?: number;
   /** Unique identifier */
   id: string;
   /** Human-readable name */
@@ -176,6 +203,11 @@ export interface TimelineDefinition {
   config: TimelineConfig;
   /** Tracks in this timeline (keyframed, motion-path, or spring) */
   tracks: AnyTrack[];
+  /**
+   * Caption text per language, per marker id: `{ en: { grow: 'The slice grows' } }`.
+   * Kept out of the tracks so translating an animation never touches its timing.
+   */
+  captions?: Record<string, Record<string, string>>;
 }
 
 /** Current state of an animation at a given time */

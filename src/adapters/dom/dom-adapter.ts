@@ -76,6 +76,22 @@ const PROPERTY_MAP: Record<string, string> = {
 }
 
 /**
+ * On SVG elements, paint properties are SVG presentation styles, not box styles:
+ * `fill` colours the shape (on HTML it is the background).
+ */
+const SVG_PROPERTY_MAP: Record<string, string> = {
+  fill: 'fill',
+  stroke: 'stroke',
+  strokeWidth: 'strokeWidth',
+  strokeDasharray: 'strokeDasharray',
+  strokeDashoffset: 'strokeDashoffset',
+  fillOpacity: 'fillOpacity',
+  strokeOpacity: 'strokeOpacity',
+}
+
+const SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
+
+/**
  * DOMAdapter applies animation state to HTML elements.
  * It maps animation properties to CSS styles and handles
  * transform composition.
@@ -318,7 +334,13 @@ export class DOMAdapter {
     // Map property name to CSS equivalent
     // For text elements, 'fill' should map to 'color' (text color), not 'backgroundColor'
     let cssProperty: string
-    if (property === 'fill' && element.dataset.elementType === 'text') {
+    const svg = (element as Element).namespaceURI === SVG_NAMESPACE
+    if (svg && property in SVG_PROPERTY_MAP) {
+      // SVG user units: no px suffix; dash patterns as a list.
+      const svgValue = Array.isArray(value) ? value.join(', ') : String(value)
+      ;(element.style as unknown as Record<string, string>)[SVG_PROPERTY_MAP[property]] = svgValue
+      return
+    } else if (property === 'fill' && element.dataset?.elementType === 'text') {
       cssProperty = 'color'
     } else {
       cssProperty = PROPERTY_MAP[property] ?? property

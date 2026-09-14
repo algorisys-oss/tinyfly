@@ -100,6 +100,12 @@ export const DOCS: DocEntry[] = [
     section: 'Guides',
   },
   {
+    id: 'teaching',
+    title: 'Teaching Animations',
+    summary: 'Step-through explanatory figures: markers, captions in several languages, the teaching player, step controls, one-script declarative embeds, tinyfly/teach diagram primitives, and validate / render for build pipelines.',
+    section: 'Guides',
+  },
+  {
     id: 'extending',
     title: 'Extending tinyfly',
     summary: 'Writing a render adapter, animating any object with live and the ticker, custom and parametric eases, stagger offsets, adding a track kind, and contributing gallery examples.',

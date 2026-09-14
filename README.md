@@ -133,6 +133,8 @@ for what you import:
 | `tinyfly/gsap-compat` | GSAP-style `live.to()` / `timeline()`, plus the compiling `tf` facade | Browser (`tf` anywhere) |
 | `tinyfly/drivers` | `ScrollDriver`, `VisibilityDriver` | Browser |
 | `tinyfly/interaction` | `Observer`, `Draggable` | Browser |
+| `tinyfly/embed` | Teaching embeds: the player with step controls, captions and one-script `[data-tinyfly-embed]` mounting; `validateEmbed`, `renderFrame` | Browser (tools anywhere) |
+| `tinyfly/teach` | `lesson()` step builder and diagram primitives (cells, pointer, stack, queue, table, pipeline) | Anywhere |
 | `tinyfly/react`, `tinyfly/vue`, `tinyfly/svelte`, `tinyfly/solid` | `useTinyfly` hooks, a Svelte action and a Solid primitive: `live` animations scoped to a component and reverted on unmount | Browser (frameworks are optional peer dependencies) |
 | `tinyfly/browser` | Everything above in one bundle | Browser |
 
@@ -177,7 +179,7 @@ GitHub. No npm required.
 GSAP-shaped functions at the top level:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.63.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.64.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -488,6 +490,7 @@ timeline.addTrack({
 - Plain-object targets and `live.ticker` — drive canvas, Three.js or shader uniforms on the same frame as the DOM
 - Survives resizes and breakpoints — function values, `invalidateOnRefresh`, `splitText` `autoSplit`, `live.matchMedia()` (a real reduced-motion mode) and `live.context()` cleanup
 - `live.utils` (clamp, mapRange, interpolate, wrap, snap, seeded random, distribute, pipe…), `"random(…)"` values, `repeatRefresh`, `live.getProperty`; native elastic / bounce / back / steps eases
+- Teaching animations ([guide](docs/teaching.md)): markers and captions in the JSON, a player that steps, respects reduced motion and pauses off screen, step controls with predict-then-reveal questions, one-script declarative embeds, `tinyfly/teach` diagram primitives, and `npx tinyfly validate` / `render`
 - Timeline callbacks and control: `tl.call`, `tl.addPause`, `tl.tweenTo` / `tweenFromTo`, `onRepeat`, `onReverseComplete`, tween callbacks inside timelines, `live.delayedCall`, `live.killTweensOf`
 - `live.quickTo` for pointer and scroll-driven values; `snap`, `markers` and `containerAnimation` on scroll triggers
 - `live.smoothScroll` eased wheel scrolling with `data-speed` / `data-lag` parallax, on the real scroll position so triggers and pins keep working

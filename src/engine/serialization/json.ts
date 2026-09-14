@@ -1,5 +1,5 @@
 import type { Keyframe, AnimatableValue, Track, TimelineDefinition, AnyTrack, MotionPathTrack, SpringTrack, TextTrack, InertiaTrack } from '../types'
-import { isMotionPathTrack, isSpringTrack, isTextTrack, isInertiaTrack } from '../types'
+import { isMotionPathTrack, isSpringTrack, isTextTrack, isInertiaTrack, FORMAT_VERSION } from '../types'
 import { Timeline } from '../core/timeline'
 import { createTrack } from '../core/track'
 
@@ -157,7 +157,9 @@ export function deserializeTrack(data: AnyTrack): AnyTrack {
  * Serialize a Timeline to a TimelineDefinition object.
  */
 export function serializeTimeline(timeline: Timeline): TimelineDefinition {
+  const markers = timeline['_config'].markers
   return {
+    formatVersion: FORMAT_VERSION,
     id: timeline.id,
     name: timeline.name,
     config: {
@@ -166,20 +168,30 @@ export function serializeTimeline(timeline: Timeline): TimelineDefinition {
       speed: timeline['_config'].speed,
       alternate: timeline['_config'].alternate,
       repeatDelay: timeline['_config'].repeatDelay,
+      ...(markers && { markers: markers.map((marker) => ({ ...marker })) }),
     },
     tracks: timeline.tracks.map(serializeTrack),
+    ...(timeline.captions && { captions: timeline.captions }),
   }
 }
 
 /**
- * Deserialize a TimelineDefinition to a Timeline instance.
+ * Deserialize a TimelineDefinition to a Timeline instance. A file written for a
+ * newer format version is refused with a clear error rather than played wrongly.
  */
 export function deserializeTimeline(definition: TimelineDefinition): Timeline {
+  const version = definition.formatVersion ?? 1
+  if (version > FORMAT_VERSION) {
+    throw new Error(
+      `tinyfly: this animation uses format version ${version}, but this tinyfly reads up to version ${FORMAT_VERSION}. Update tinyfly to play it.`
+    )
+  }
   return new Timeline({
     id: definition.id,
     name: definition.name,
     config: definition.config,
     tracks: definition.tracks.map(deserializeTrack),
+    captions: definition.captions,
   })
 }
 

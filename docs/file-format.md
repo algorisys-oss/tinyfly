@@ -445,6 +445,7 @@ objects. Use `serializeTimeline` when you need a detached copy.
 
 ```jsonc
 {
+  "formatVersion": 1,              // optional; absent means 1
   "id": "scene-1",
   "name": "My Animation",          // optional
   "config": {
@@ -452,7 +453,13 @@ objects. Use `serializeTimeline` when you need a detached copy.
     "loop": 0,                     // 0 = play once, -1 = infinite, N = repeat N more times
     "speed": 1,                    // playback multiplier
     "alternate": false,            // ping-pong direction each loop
-    "repeatDelay": 500             // ms to wait between loop iterations
+    "repeatDelay": 500,            // ms to wait between loop iterations
+    "markers": [                   // optional named steps, in time order
+      { "id": "full", "time": 1400, "label": "cap is full", "pause": true, "question": "What happens next?" }
+    ]
+  },
+  "captions": {                    // optional: per language, per marker id
+    "es": { "full": "la capacidad está llena" }
   },
   "tracks": [
     {
@@ -480,6 +487,14 @@ Differences from the Animation Document:
 - `tracks` may mix every track kind: keyframe, [motion-path](#motion-path-tracks),
   [text](#text-tracks), [spring](#spring-tracks) and [inertia](#inertia-tracks),
   each with the [scheduling fields](#track-scheduling).
+
+**Markers** name steps: players step between them, stop at `pause` markers and
+show `question`s. **Captions** translate marker labels without touching the tracks.
+See [Teaching animations](teaching.md).
+
+**`formatVersion`** is the format a file was written for. Readers refuse a newer
+version with a clear error. Optional additions keep the version; a change an older
+reader would misread bumps it.
 
 `repeatDelay` applies when the timeline loops (`loop` is not `0`). Going
 forward, the playhead **holds the last frame** for the delay, then wraps to the

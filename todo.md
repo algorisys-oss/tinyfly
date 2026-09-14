@@ -1781,6 +1781,48 @@ gates → modules 1, 3 → 4–7 (with 29C as each needs it) → 8 → 9 capston
 
 ---
 
+## Phase 30: Teaching embeds (from `education-animation.md`)
+
+Every gap from the Go series spike on teachyourselfcoding.com, fixed:
+
+- [x] **1. Frame on load:** `initialFrame: 'start' | 'end' | ms | 'none'` (default start)
+- [x] **2. Markers + step API:** `config.markers [{ id, time, label, pause, question }]`;
+      player `next()` (animated), `prev()`, `goToMarker()`, `currentMarker`, `onMarker`,
+      `stepMode`; stops worked out with the engine's `playheadCrossings` (moved from compat)
+- [x] **3. Reduced motion:** `respectReducedMotion` (default on): no autoplay, final frame,
+      steps jump; follows changes to the media query
+- [x] **4. Play when visible:** `playWhenVisible` (IntersectionObserver + hidden tabs);
+      autoplay waits until first seen
+- [x] **5. Controls:** `tinyfly/embed` `createControls` — restart, prev, play/pause, next,
+      scrub, step counter, speed, caption, question + Reveal; keys only inside the figure;
+      CSS custom properties; labels passed in. `tinyfly-embed.iife.js` on the CDN
+- [x] **6. SVG paint:** the DOM adapter writes `fill` / `stroke` / `strokeWidth` /
+      `strokeDasharray` / `strokeDashoffset` as SVG styles on SVG elements
+- [x] **7. Discrete text:** already worked (strings switch at the keyframe; `text` via the
+      adapter); documented, with `steps` count 1 for held numbers
+- [x] **8. Captions:** `captions[lang][markerId]` in the JSON, player `captions` option and
+      `data-tinyfly-captions` script; page `lang` with region fallback; `aria-live` line
+- [x] **9. Declarative auto-mount:** `[data-tinyfly-embed]` + `data-tinyfly-timeline` /
+      `data-src`, `data-options`, `data-labels`, `data-controls`, `data-alt`;
+      `mountAll()`, and automatic with `data-tinyfly-auto`; SVG gets `role="img"` + a name
+- [x] **10. Static rendering:** `renderFrame(markup, definition, at)` with no DOM (the DOM
+      adapter on stand-in elements), and `npx tinyfly render`
+- [x] **11. Validation:** `validateEmbed` + `npx tinyfly validate --markup` (targets,
+      marker order / range / duplicates, late keyframes, orphan captions; warnings for
+      missing captions and unanimated elements)
+- [x] **12. Diagram primitives:** `tinyfly/teach` — `lesson()` step builder; `cells`,
+      `pointer`, `stack`, `queue`, `table`, `pipeline`, `figure`
+- [x] **13. Predict-then-reveal:** `pause` + `question` markers; controls show the question
+      and a Reveal button
+- [x] **14. Release hygiene:** SRI hashes for every `cdn/*.js` in `cdn/README.md`;
+      `formatVersion` written, newer versions refused, policy documented
+- e2e `embed` check (Chromium, Firefox, WebKit): keyboard stepping only in the focused
+  figure, captions in the page language, SVG fill painted, labelled image, autoplay waits
+  until seen and pauses off screen, reduced motion final frame
+- [ ] Next: editor UI for markers and captions; a `hold` easing alias; RTL caption layout
+
+---
+
 ## Backlog / For Review
 
 - [x] **Esc closes any dialog** — every dialog (AI Settings, Project Settings,

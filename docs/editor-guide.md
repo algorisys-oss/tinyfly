@@ -855,7 +855,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.63.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.64.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed
