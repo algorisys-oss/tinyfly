@@ -181,6 +181,33 @@ export class CompatTimeline {
 
   // --- sequencing ---------------------------------------------------------
 
+  /** Start of the tween (after its delay) or call added last, in milliseconds. */
+  get lastStart(): number {
+    return this.previousStart
+  }
+
+  /** End of the tween or call added last, in milliseconds. */
+  get lastEnd(): number {
+    return this.previousEnd
+  }
+
+  /**
+   * Place a zero-length event (a callback or a pause) at a position, as a tween of
+   * no duration would be: `'<'` and `'>'` after it refer to it. Returns its time in ms.
+   */
+  addEvent(position?: Position): number {
+    const time = Math.max(0, resolvePosition(position, this.context()))
+    this.previousStart = time
+    this.previousEnd = time
+    this.cursor = Math.max(this.cursor, time)
+    return time
+  }
+
+  /** Resolve a position (seconds, label, relative) to milliseconds without adding anything. */
+  timeOf(position: Position): number {
+    return resolvePosition(position, this.context())
+  }
+
   /** Name a point in time, for use as a position parameter. */
   addLabel(name: string, position?: Position): this {
     this.labels.set(name, resolvePosition(position, this.context()))

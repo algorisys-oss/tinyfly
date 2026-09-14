@@ -24,6 +24,8 @@ export const RESERVED_KEYS = new Set([
   'onComplete',
   'onUpdate',
   'onStart',
+  'onRepeat',
+  'onReverseComplete',
   'id',
   'immediateRender',
   'overwrite',
@@ -44,6 +46,10 @@ export interface TweenVars {
   onComplete?: () => void
   onUpdate?: () => void
   onStart?: () => void
+  /** Each time a repeat begins */
+  onRepeat?: () => void
+  /** On arriving back at the start after `reverse()` */
+  onReverseComplete?: () => void
   id?: string
   paused?: boolean
   /** Animate numeric properties with spring physics instead of duration + ease — see spring-vars.ts */

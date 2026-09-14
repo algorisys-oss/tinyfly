@@ -17,6 +17,7 @@ import { LiveContext, LiveMatchMedia, type Revertible } from './live-context'
 import { ImageSequence, type ImageSequenceOptions } from './image-sequence'
 import { pageTransition, type PageTransitionOptions } from './live-transition'
 import { CustomBounce, CustomEase, CustomWiggle } from './custom-eases'
+import { playheadCrossings, type Direction, type Playhead } from './playhead-crossings'
 import type { CubicBezierPoints, CustomBounceOptions, CustomWiggleOptions } from '../../engine'
 import { staggerOffsets } from '../../engine'
 
@@ -55,6 +56,10 @@ export interface LiveTimelineOptions extends Omit<CompatTimelineOptions, 'startV
   /** Called after each frame this timeline is applied */
   onUpdate?: () => void
   onComplete?: () => void
+  /** Each time a repeat begins */
+  onRepeat?: () => void
+  /** On arriving back at the start after `reverse()` */
+  onReverseComplete?: () => void
   /**
    * Drive this timeline from scrolling: scrub it, pin, or play/reverse it as a
    * range is crossed. It does not autoplay.
@@ -70,6 +75,34 @@ export interface QuickToVars {
   ease?: string
   /** Move on a spring instead; each re-target keeps the current velocity */
   spring?: TweenVars['spring']
+}
+
+/** Options for `tl.tweenTo()` / `tl.tweenFromTo()`. */
+export interface TweenToVars {
+  /** Seconds; default the distance at the timeline's own speed */
+  duration?: number
+  /** Default `'none'` */
+  ease?: string
+  onStart?: () => void
+  onUpdate?: () => void
+  onComplete?: () => void
+}
+
+/** A point on a timeline that runs something when the playhead crosses it. */
+interface TimelineEvent {
+  time: number
+  run: () => void
+  /** Only when crossed this way (tween onStart / onComplete are forward only) */
+  direction?: Direction
+  /** Stop the playhead exactly here before running */
+  pause?: boolean
+}
+
+/** A tween's onUpdate: runs on frames whose movement overlaps the tween. */
+interface RangeCallback {
+  start: number
+  end: number
+  run: () => void
 }
 
 /** Call it with a value to animate toward it. */
@@ -95,6 +128,17 @@ export class LiveTimeline {
   /** The first element any tween targeted: a scroll trigger's default trigger. */
   private firstElement?: Element
   private scrollDriver?: ScrollDriver
+  /** Callbacks and pauses placed on the timeline (`call`, `addPause`, tween onStart / onComplete) */
+  private events: TimelineEvent[] = []
+  private ranges: RangeCallback[] = []
+  /** Where the playhead was when callbacks were last worked out */
+  private playhead: Playhead = { time: 0, iteration: 0, direction: 'forward', fresh: true }
+  /** A plain repeat is waiting out its delay; the next loop starts fresh from 0 */
+  private waitingToWrap = false
+  /** The engine finished during this frame; completion callbacks run after the frame's events */
+  private finishedThisFrame = false
+  /** Set by `reverse()`: arriving at the start is a reverse completion */
+  private backwards = false
 
   constructor(stage: Stage, options: LiveTimelineOptions = {}) {
     this.stage = stage
@@ -123,8 +167,11 @@ export class LiveTimeline {
       startVelocity: (target, property) => stage.velocityOf(target, property),
     })
 
-    this.compat.timeline.onComplete = () => options.onComplete?.()
+    this.compat.timeline.onComplete = () => {
+      this.finishedThisFrame = true
+    }
     stage.collector?.track(this)
+    stage.liveTimelines.add(this)
 
     this.autoplayPending = !options.paused && !options.scrollTrigger
     if (options.scrollTrigger) {
@@ -199,10 +246,62 @@ export class LiveTimeline {
     this.compat.progress(0)
     this.stage.render(this.timeline)
     this.compat.reset()
+    this.events = []
+    this.ranges = []
     for (const step of this.recipe) step()
+    this.syncDuration()
     this.compat.progress(progress)
     this.stage.render(this.timeline)
     return this
+  }
+
+  /**
+   * Run `callback` when the playhead crosses `position` (default: the end so far),
+   * in either direction (GSAP's `call`). It takes no time, but a call after the
+   * last tween makes the timeline that long.
+   */
+  call(callback: (...args: never[]) => void, params: unknown[] = [], position?: Position): this {
+    return this.record(() => {
+      const time = this.compat.addEvent(position)
+      this.events.push({ time, run: () => (callback as (...args: unknown[]) => void)(...params) })
+    })
+  }
+
+  /** Pause exactly at `position` when the playhead reaches it, then run `callback`. `play()` continues. */
+  addPause(position?: Position, callback?: (...args: never[]) => void, params: unknown[] = []): this {
+    return this.record(() => {
+      const time = this.compat.addEvent(position)
+      this.events.push({ time, pause: true, run: () => (callback as ((...args: unknown[]) => void) | undefined)?.(...params) })
+    })
+  }
+
+  /**
+   * Pause, and animate the playhead from where it is to `position` (seconds or a
+   * label), firing callbacks on the way. Returns the tween that moves it.
+   */
+  tweenTo(position: number | string, vars: TweenToVars = {}): LiveTimeline {
+    return this.tweenFromTo(this.timeline.currentTime / 1000, position, vars)
+  }
+
+  /** Jump to `from`, then animate the playhead to `to` (seconds or labels). */
+  tweenFromTo(from: number | string, to: number | string, vars: TweenToVars = {}): LiveTimeline {
+    this.pause()
+    this.seek(from)
+    const start = this.timeline.currentTime
+    const end = Math.max(0, Math.min(this.timeline.duration, this.compat.timeOf(to)))
+    const playhead = { time: start }
+    const seconds = vars.duration ?? Math.abs(end - start) / 1000 / (this.timeScale() || 1)
+    const driver = new LiveTimeline(this.stage, { onStart: vars.onStart, onComplete: vars.onComplete })
+    driver.to(playhead, {
+      time: end,
+      duration: seconds,
+      ease: vars.ease ?? 'none',
+      onUpdate: () => {
+        this.moveTo(playhead.time)
+        vars.onUpdate?.()
+      },
+    })
+    return driver
   }
 
   // --- playback -----------------------------------------------------------
@@ -213,9 +312,19 @@ export class LiveTimeline {
       this.started = true
       this.options.onStart?.()
     }
+    const wasPlaying = this.timeline.playbackState === 'playing'
+    const wasPaused = this.timeline.playbackState === 'paused'
     this.timeline.play()
+    if (!wasPlaying) {
+      // Starting over (or for the first time) at the start: callbacks placed there fire.
+      const engine = this.timeline
+      const atStart = engine.direction === 'forward' ? engine.currentTime === 0 : engine.currentTime === engine.duration
+      this.playhead = { ...this.readPlayhead(), fresh: atStart && !wasPaused }
+      this.waitingToWrap = false
+    }
+    this.stage.liveTimelines.add(this)
     this.stage.render(this.timeline)
-    this.stage.activate(this.timeline, { onUpdate: this.options.onUpdate })
+    this.stage.activate(this.timeline, { onUpdate: () => this.afterFrame() })
     return this
   }
 
@@ -234,11 +343,13 @@ export class LiveTimeline {
   /** Play from the start. */
   restart(): this {
     this.timeline.stop()
+    this.backwards = false
     return this.play()
   }
 
   /** Flip direction and keep playing (from the end, if already finished). */
   reverse(): this {
+    this.backwards = !this.backwards
     const finishedForward =
       this.timeline.playbackState === 'idle' && this.timeline.direction === 'forward'
     this.timeline.reverse()
@@ -264,19 +375,22 @@ export class LiveTimeline {
     this.autoplayPending = false
     this.compat.seek(position)
     this.stage.render(this.timeline)
+    // A jump: callbacks between here and there do not fire (GSAP's default).
+    this.playhead = this.readPlayhead()
+    this.waitingToWrap = false
     this.options.onUpdate?.()
     return this
   }
 
-  /** Read or set progress, 0..1. Setting applies immediately. */
+  /**
+   * Read or set progress, 0..1. Setting applies immediately and fires the
+   * callbacks crossed on the way, so a scroll scrub runs them.
+   */
   progress(value?: number): number {
     if (value === undefined) return this.compat.progress()
     this.autoplayPending = false
-    const result = this.compat.progress(value)
-    this.stage.render(this.timeline)
-    // A scroll scrub moves the playhead this way, so updates must fire here too.
-    this.options.onUpdate?.()
-    return result
+    this.moveTo(Math.max(0, Math.min(1, value)) * this.timeline.duration)
+    return this.compat.progress()
   }
 
   timeScale(value?: number): number {
@@ -295,6 +409,7 @@ export class LiveTimeline {
   /** Stop and remove every tween, and any scroll trigger (and its pin). Elements keep the values last applied. */
   kill(): this {
     this.killed = true
+    this.stage.liveTimelines.delete(this)
     this.scrollDriver?.destroy()
     this.scrollDriver = undefined
     this.autoplayPending = false
@@ -309,11 +424,118 @@ export class LiveTimeline {
     return this.compat.toDefinition()
   }
 
+  /**
+   * Remove the tweens on these targets (and only these properties, if given)
+   * from this timeline — `live.killTweensOf` asks every live timeline. A tween on
+   * several elements shares one track, so it stops for all of them.
+   */
+  killTweensOf(names: string[], properties?: string[]): void {
+    for (const name of names) {
+      for (const property of properties ?? [undefined]) {
+        this.timeline.removeTracks({ target: name, ...(property !== undefined && { property }) })
+      }
+    }
+    if (this.timeline.tracks.length === 0 && this.events.length === 0) this.kill()
+  }
+
   /** Run a building step now, and keep it so `invalidate()` can run it again. */
   private record(step: () => void): this {
     this.recipe.push(step)
     step()
+    this.syncDuration()
     return this
+  }
+
+  /** A call or pause after the last tween extends the timeline to reach it. */
+  private syncDuration(): void {
+    if (this.events.length === 0) return
+    this.timeline.setDuration(undefined)
+    const last = Math.max(...this.events.map((event) => event.time))
+    if (last > this.timeline.duration) this.timeline.setDuration(last)
+  }
+
+  private readPlayhead(): Playhead {
+    const engine = this.timeline
+    return { time: engine.currentTime, iteration: engine.loopIteration, direction: engine.direction }
+  }
+
+  /** Set the playhead to a time (ms) within the current loop, firing what it crosses. */
+  private moveTo(time: number): void {
+    const from = this.playhead
+    this.timeline.seek(time)
+    this.stage.render(this.timeline)
+    const to: Playhead = { time: this.timeline.currentTime, iteration: this.timeline.loopIteration, direction: time >= from.time ? 'forward' : 'reverse' }
+    const moved = { ...from, iteration: to.iteration, direction: to.direction }
+    this.playhead = { ...this.readPlayhead() }
+    this.waitingToWrap = false
+    this.runCrossings(moved, to, false)
+    this.options.onUpdate?.()
+  }
+
+  /** After each frame this timeline played: callbacks crossed, repeats, completion. */
+  private afterFrame(): void {
+    const engine = this.timeline
+    const holding = engine.repeatDelayRemaining > 0
+    if (this.waitingToWrap && holding) {
+      this.options.onUpdate?.()
+      return
+    }
+    this.waitingToWrap = false
+    const from = this.playhead
+    const to = this.readPlayhead()
+    this.playhead = to
+    const alternate = this.options.yoyo === true
+    if (holding && !alternate && to.iteration > from.iteration) {
+      this.playhead = { time: 0, iteration: to.iteration, direction: 'forward', fresh: true }
+      this.waitingToWrap = true
+    }
+    const stopped = this.runCrossings(from, to, holding)
+    this.options.onUpdate?.()
+
+    if (this.finishedThisFrame && !stopped) {
+      this.finishedThisFrame = false
+      const atStart = engine.currentTime === 0 && engine.direction === 'reverse'
+      if (!this.scrollDriver && !alternate) this.stage.liveTimelines.delete(this)
+      if (atStart && this.backwards) this.options.onReverseComplete?.()
+      else this.options.onComplete?.()
+    }
+    this.finishedThisFrame = false
+  }
+
+  /** Fire events and repeats between two playheads. Returns true if a pause stopped it. */
+  private runCrossings(from: Playhead, to: Playhead, holding: boolean): boolean {
+    if (this.events.length === 0 && this.ranges.length === 0 && !this.options.onRepeat) return false
+    const events = this.events
+    const { crossings, passes } = playheadCrossings(
+      events.map((event) => event.time),
+      from,
+      to,
+      { duration: this.timeline.duration, alternate: this.options.yoyo === true, holding }
+    )
+    for (const crossing of crossings) {
+      if (this.killed) return true
+      if (crossing.kind === 'repeat') {
+        this.options.onRepeat?.()
+        continue
+      }
+      const event = events[crossing.index]
+      if (event.direction && event.direction !== crossing.direction) continue
+      if (event.pause) {
+        this.timeline.seek(event.time)
+        this.stage.render(this.timeline)
+        this.pause()
+        this.playhead = this.readPlayhead()
+        this.waitingToWrap = false
+        event.run()
+        return true
+      }
+      event.run()
+    }
+    for (const range of this.ranges) {
+      const overlaps = passes.some(([a, b]) => a !== b && Math.max(a, b) >= range.start && Math.min(a, b) <= range.end)
+      if (overlaps) range.run()
+    }
+    return false
   }
 
   /**
@@ -332,6 +554,32 @@ export class LiveTimeline {
     const names = this.resolve(target)
     if (!names) return
 
+    // A tween's own callbacks become events at its start and end.
+    const { onStart, onUpdate, onComplete } = varsList[varsList.length - 1]
+    if (onStart || onUpdate || onComplete) {
+      let start = Infinity
+      let end = -Infinity
+      const measured: typeof build = (list, buildNames, at) => {
+        build(list, buildNames, at)
+        start = Math.min(start, this.compat.lastStart)
+        end = Math.max(end, this.compat.lastEnd)
+      }
+      this.buildTween(names, varsList, position, measured)
+      if (start === Infinity) return
+      if (onStart) this.events.push({ time: start, direction: 'forward', run: onStart })
+      if (onUpdate) this.ranges.push({ start, end, run: onUpdate })
+      if (onComplete) this.events.push({ time: end, direction: 'forward', run: onComplete })
+      return
+    }
+    this.buildTween(names, varsList, position, build)
+  }
+
+  private buildTween(
+    names: string[],
+    varsList: TweenVars[],
+    position: Position | undefined,
+    build: (varsList: TweenVars[], names: string[], position?: Position) => void
+  ): void {
     const perElement =
       names.length > 1 &&
       (varsList.some(differsPerElement) || names.some((name) => this.stage.objectFor(name) !== undefined))
@@ -419,6 +667,13 @@ export class LiveTimeline {
 /** The GSAP-shaped entry points, bound to one stage. */
 export interface LiveApi {
   timeline(options?: LiveTimelineOptions): LiveTimeline
+  /** Run `callback` after `delay` seconds, on the stage's clock (GSAP's `delayedCall`). `kill()` cancels it. */
+  delayedCall(delay: number, callback: (...args: never[]) => void, params?: unknown[]): LiveTimeline
+  /**
+   * Stop every tween on these targets — only the given properties (an array or
+   * `'x,y'`), if any — in every live timeline (GSAP's `killTweensOf`).
+   */
+  killTweensOf(target: TargetInput, properties?: string | string[]): void
   to(target: TargetInput, vars: TweenVars): LiveTimeline
   from(target: TargetInput, vars: TweenVars): LiveTimeline
   fromTo(target: TargetInput, fromVars: TweenVars, toVars: TweenVars): LiveTimeline
@@ -507,8 +762,15 @@ export function createLive(stage: Stage = new Stage()): LiveApi {
       onStart: config.onStart,
       onUpdate: config.onUpdate,
       onComplete: config.onComplete,
+      onRepeat: config.onRepeat as (() => void) | undefined,
+      onReverseComplete: config.onReverseComplete as (() => void) | undefined,
       scrollTrigger: config.scrollTrigger,
     })
+  }
+
+  const withoutCallbacks = (vars: TweenVars): TweenVars => {
+    const { onStart: _start, onUpdate: _update, onComplete: _complete, onRepeat: _repeat, onReverseComplete: _reverse, ...rest } = vars
+    return rest
   }
 
   /** Register something with the context collecting right now, if any. */
@@ -570,10 +832,17 @@ export function createLive(stage: Stage = new Stage()): LiveApi {
       return Object.assign(setter, { tween, kill: () => tween.kill() }) as QuickTo
     },
     timeline: (options) => new LiveTimeline(stage, options),
-    to: (target, vars) => single(vars).to(target, vars),
-    from: (target, vars) => single(vars).from(target, vars),
-    fromTo: (target, fromVars, toVars) => single(toVars).fromTo(target, fromVars, toVars),
-    set: (target, vars) => single(vars).set(target, vars),
+    // A single tween's callbacks are its timeline's, so they are not placed again as events.
+    to: (target, vars) => single(vars).to(target, withoutCallbacks(vars)),
+    from: (target, vars) => single(vars).from(target, withoutCallbacks(vars)),
+    fromTo: (target, fromVars, toVars) => single(toVars).fromTo(target, fromVars, withoutCallbacks(toVars)),
+    set: (target, vars) => single(vars).set(target, withoutCallbacks(vars)),
+    delayedCall: (delay, callback, params) => new LiveTimeline(stage).call(callback, params, delay),
+    killTweensOf: (target, properties) => {
+      const names = stage.resolveTargets(target)
+      const only = typeof properties === 'string' ? properties.split(',').map((property) => property.trim()).filter(Boolean) : properties
+      for (const timeline of [...stage.liveTimelines]) timeline.killTweensOf(names, only)
+    },
     convertToPath: (targets) => convertToPath(targets, stage.root),
     splitText: (targets, options) => {
       const root = stage.collector?.scope ?? stage.root

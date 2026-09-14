@@ -74,7 +74,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.61.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.62.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -191,6 +191,10 @@ releases its elements, and ignores any autoplay still queued.
 | `progress()` | `progress()` | |
 | `seek(t)` / `seek('label')` | same | Seconds |
 | `play/pause/reverse/restart/kill` | same | |
+| `tl.call(fn, params, pos)` / `tl.addPause(pos, fn)` | same (`live`) | See [Callbacks and control](#callbacks-and-control) |
+| `tl.tweenTo(pos)` / `tl.tweenFromTo(a, b)` | same (`live`) | |
+| `onRepeat`, `onReverseComplete`, tween callbacks inside timelines | same (`live`) | |
+| `gsap.delayedCall` / `gsap.killTweensOf` | `live.delayedCall` / `live.killTweensOf` | |
 | Tween `.kill()` | handle returned by `to()` etc. | Removes only that tween's tracks |
 | `motionPath: { path, autoRotate, start, end }` | same | Compiles to a motion-path track — see [Motion paths](#motion-paths) |
 | `motionPath: [{x, y}, …]` + `curviness` | same | Points become a smooth path at build time |
@@ -574,6 +578,42 @@ The trigger's horizontal positions are solved against the row's own motion (the
 `x` tracks moving its ancestors), and turned into the row's vertical scroll range.
 Create the row's timeline first, keep its motion steady in one direction (an
 `ease: 'none'` slide is the usual case), and don't pin inside it.
+
+## Callbacks and control
+
+Callbacks are runtime behaviour, like `onComplete`: they are not part of the JSON.
+On `live` timelines they fire when the playhead **crosses** their time, whether it
+is playing, looping, yoyoing or being scrubbed with `progress()` (so a scroll scrub
+runs them). A `seek()` jumps without firing, as in GSAP.
+
+```js
+const tl = live.timeline({ onRepeat: () => …, onReverseComplete: () => … })
+  .to('.intro', { opacity: 1, onStart: () => …, onComplete: () => … })
+  .call(showMenu, [menu])                 // at the end so far; any position works
+  .addPause('+=0.5', () => waitForClick())  // stops exactly there; tl.play() continues
+  .addLabel('details')
+  .to('.details', { y: 0 })
+
+tl.tweenTo('details', { duration: 0.8, ease: 'power2.inOut' })  // animates the playhead
+live.delayedCall(2, hideToast)            // a call on the stage's clock; kill() cancels
+live.killTweensOf('.card', 'x,y')         // stop what moves these, in every timeline
+```
+
+- **Order.** Callbacks at the same time run in the order they were added. A frame
+  that crosses a loop runs the rest of that loop's callbacks, then `onRepeat`, then
+  the next loop's.
+- **Tween callbacks** inside a timeline run at that tween's own start and end
+  (forward). `onUpdate` runs on every frame whose movement overlaps the tween.
+- **`call` and `addPause`** take no time, but one placed after the last tween makes
+  the timeline long enough to reach it.
+- **`onComplete` / `onReverseComplete`.** Arriving back at the start after
+  `reverse()` calls `onReverseComplete`, not `onComplete`.
+- **`tweenTo` / `tweenFromTo`** pause the timeline and return the tween moving the
+  playhead. Its default duration is the distance at the timeline's own speed, with
+  `ease: 'none'`.
+- **`killTweensOf`** removes only the matching properties when given. A staggered
+  tween on several elements is one track, so it stops for all of them.
+- Callbacks run after the frame is applied, so they read this frame's values.
 
 ## Smooth scrolling
 

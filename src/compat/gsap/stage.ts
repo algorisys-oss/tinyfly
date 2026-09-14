@@ -99,6 +99,12 @@ export class Stage implements ContextHost {
   private tickerTime = 0
   private tickerFrame = 0
 
+  /**
+   * Live timelines that may still move something — playing, paused or scroll
+   * driven — for `live.killTweensOf`. Finished one-off timelines leave it.
+   */
+  readonly liveTimelines = new Set<{ killTweensOf(names: string[], properties?: string[]): void }>()
+
   /** Playing timelines, in activation order. */
   private readonly active = new Map<Timeline, ActiveEntry>()
 
@@ -278,6 +284,7 @@ export class Stage implements ContextHost {
     this.objects.clear()
     this.objectNames = new WeakMap()
     this.tickerCallbacks.clear()
+    this.liveTimelines.clear()
     this.applied.clear()
     this.dirty.clear()
   }
@@ -307,7 +314,8 @@ export class Stage implements ContextHost {
    * (or tests) can drive the stage directly.
    */
   tick(deltaMs: number): void {
-    for (const [timeline, entry] of [...this.active]) {
+    const ticked = [...this.active]
+    for (const [timeline] of ticked) {
       // The engine does not advance (or emit) a zero-length timeline, which
       // would otherwise stay "playing" forever and keep the loop alive.
       if (timeline.duration <= 0) {
@@ -316,9 +324,13 @@ export class Stage implements ContextHost {
       } else {
         timeline.tick(deltaMs)
       }
+    }
+    // Apply the frame before callbacks run, so they read this frame's values
+    // (an onUpdate writing a counted-up number, a tween driving a playhead).
+    this.flush()
+    for (const [timeline, entry] of ticked) {
       entry.onUpdate?.()
-
-      if (timeline.playbackState !== 'playing') this.active.delete(timeline)
+      if (timeline.playbackState !== 'playing' && this.active.get(timeline) === entry) this.active.delete(timeline)
     }
     this.flush()
     this.runTicker(deltaMs)

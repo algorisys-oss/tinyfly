@@ -115,6 +115,10 @@ export class Timeline {
     this._explicitDuration = duration
     if (duration !== undefined) {
       this._config = { ...this._config, duration }
+    } else if (this._config.duration !== undefined) {
+      const config = { ...this._config }
+      delete config.duration
+      this._config = config
     }
   }
 
@@ -132,6 +136,11 @@ export class Timeline {
 
   get loopIteration(): number {
     return this._loopIteration
+  }
+
+  /** Milliseconds of `repeatDelay` still to wait at a loop boundary (0 when not waiting). */
+  get repeatDelayRemaining(): number {
+    return this._repeatDelayRemaining
   }
 
   get speed(): number {

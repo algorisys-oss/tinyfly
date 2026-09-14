@@ -1549,6 +1549,10 @@ in one click.
 - [x] Festive showcase `/showcase/ganesh-chaturthi` (`src/examples/showcases/ganesh-chaturthi.js`):
       hand-drawn SVG Ganesh ji and Mooshak, drawn-in rangoli, flickering diyas, petals on a ticker
       canvas, springy split-text greeting, tap-to-hop Mooshak, pointer parallax, reduced-motion mode
+- [x] Second festive showcase `/showcase/ganesh-chaturthi-poster` (`src/examples/showcases/ganesh-chaturthi-poster.js`),
+      a company greeting poster (the original stays): cream paper, marigold garlands swinging in, Algorisys
+      wordmark, masked split-char headline, drawn-in growth arrow, SVG Ganesh ji with a morphing red cloth,
+      crown glint, rangoli carpet, petals on a ticker canvas, tap for blessings, phone layout, reduced-motion still
 
 ---
 
@@ -1707,9 +1711,14 @@ starter fails in the unit gate, and every step passes in Chromium, Firefox and W
         Landing showcase; e2e checks the wheel eases and parallax lands to 1.5px in 3 browsers
     - [ ] A course step for it (Scroll module), and `data-speed="auto"` for images in
           clipped frames
-  - [ ] **Timeline callbacks and control:** `onRepeat`, `onReverseComplete`, `tl.call()`,
+  - [x] **Timeline callbacks and control:** `onRepeat`, `onReverseComplete`, `tl.call()`,
         `addPause()`, `tweenTo()` / `tweenFromTo()`, `live.delayedCall()`,
-        `live.killTweensOf()`
+        `live.killTweensOf()`, and tween `onStart` / `onUpdate` / `onComplete` inside
+        timelines (were silently ignored). A pure `playheadCrossings` works out what each
+        frame passed across loops, yoyo and repeat delays; `progress()` fires, `seek()`
+        doesn't. Found on the way: the stage ran callbacks before applying the frame, so
+        `onUpdate` read the previous frame's values (a count-up's last write was one frame
+        stale); it now flushes first. Also `onComplete` fired on reverse completion
   - [ ] **`repeatRefresh`:** re-run function values on each repeat (reuses `invalidate()`),
         with a seeded random so every loop stays reproducible
   - [ ] **Utilities:** `live.utils` — clamp, mapRange, interpolate, wrap, snap, random
@@ -1720,8 +1729,28 @@ starter fails in the unit gate, and every step passes in Chromium, Firefox and W
   - [ ] **Tween `keyframes` arrays** in vars (`keyframes: [{ x: 100 }, { y: 50 }]`)
   - [ ] **Stagger `grid`** for live (2D ripple from a cell)
   - [ ] **Draggable `type: 'rotation'`** (knobs, dials)
-  - [ ] **Distribution:** publish to npm (`npm view tinyfly` 404s today; the CDN is the
-        GitHub mirror via jsDelivr) and the 27C.4 framework hooks
+  - [ ] **Distribution (next, in this order):**
+    - [ ] npm package: `exports` map per entry (core, live, drivers, interaction,
+          player), bundled `.d.ts`, `npm publish` step in `release:oss` (`tinyfly` and
+          `@algorisys/tinyfly` are both free today)
+    - [ ] Framework wrappers (27C.4) on `live.context()`: React `useTinyfly` first, then
+          Vue composable, Svelte action, Solid primitive — each its own entry point
+    - [ ] Ecosystem entry point instead of a plugin API: contributor docs for writing an
+          adapter and a custom track type, and a gallery of community examples
+  - [ ] **Morph performance:** `morphPath` (`src/engine/path/path-morph.ts`) profiled at
+        ~77ms/s of script for 10 continuously morphing paths in Chrome, despite cached morph
+        plans (found by the Ganesh poster showcase). Check whether plan lookup / point
+        allocation still runs per frame; add a benchmark in the e2e harness
+  - [ ] **Native eases instead of baked keyframes:** engine `EasingType` gains
+        `{ type: 'steps', count, position }`, `{ type: 'elastic', amplitude, period, mode }`,
+        `{ type: 'bounce', mode }` — evaluated at play time, small editable JSON, GSAP
+        names map to them, CSS export emits `steps()` natively, Lottie/CSS bake only at export
+  - Partial list review (2026-09-14): smooth-scroll parallax ✓ (v0.61, no Lenis needed),
+    image-sequence scrubbing ✓ (v0.57); lifecycle hooks → framework wrappers above;
+    per-loop random → `repeatRefresh` with seeded random above
+  - Parity check (user's list, 2026-09-14): page transitions ✓ (v0.57), ScrollSmoother ✓
+    (v0.61); per-frame function values stay out by design (not serializable) — covered
+    by `quickTo` / `ticker`, with `repeatRefresh` + `live.utils` above
   - By design, not gaps: elastic / bounce / steps are baked into keyframes (JSON stays
     portable), nested timelines are flattened, no per-frame function values
 

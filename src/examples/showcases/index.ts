@@ -3,6 +3,8 @@ import { agencyLanding } from './agency-landing'
 import agencyLandingSource from './agency-landing.js?raw'
 import { ganeshChaturthi } from './ganesh-chaturthi'
 import ganeshChaturthiSource from './ganesh-chaturthi.js?raw'
+import { ganeshChaturthiPoster } from './ganesh-chaturthi-poster'
+import ganeshChaturthiPosterSource from './ganesh-chaturthi-poster.js?raw'
 
 /**
  * Full-page showcases: whole sites built from the GSAP-style API, running on the
@@ -13,6 +15,7 @@ import ganeshChaturthiSource from './ganesh-chaturthi.js?raw'
 export const showcases: LiveDemoWithCode[] = [
   { ...agencyLanding, code: extractCode(agencyLandingSource) },
   { ...ganeshChaturthi, code: extractCode(ganeshChaturthiSource) },
+  { ...ganeshChaturthiPoster, code: extractCode(ganeshChaturthiPosterSource) },
 ]
 
 export function findShowcase(id: string): LiveDemoWithCode | undefined {
