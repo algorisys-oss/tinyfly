@@ -213,13 +213,14 @@ export default {
     await page.click('#fs-native .tf-ctl-fullscreen')
     await page.waitForTimeout(600)
     const during = await fsState('fs-native')
-    await page.keyboard.press('Escape')
+    // In native mode Esc belongs to the browser, and automated key presses don't reach it, so leave
+    // the way the browser does: the controls must follow the browser leaving full screen.
+    await page.evaluate(() => document.exitFullscreen?.())
     await page.waitForTimeout(600)
-    if ((await fsState('fs-native')).active) { await page.click('#fs-native .tf-ctl-fullscreen'); await page.waitForTimeout(400) }
     const after = await fsState('fs-native')
     const fills = (s) => s.active && s.figW >= s.vw - 2 && s.figH >= s.vh - 2 && s.svgW > before.svgW
     results.push({
-      label: 'embed fullscreen: the button fills the screen (native or overlay) over host figure CSS, and Esc or the button leaves it',
+      label: 'embed fullscreen: the button fills the screen (native where allowed) over host figure CSS, and the controls follow the browser leaving it',
       ok: !before.active && fills(during) && during.pressed === 'true' && !after.active && !after.native,
       detail: JSON.stringify({ before, during, after }),
     })
@@ -238,6 +239,26 @@ export default {
       ok: overlay.overlay && !overlay.native && overlay.figW >= overlay.vw - 2 && overlay.figH >= overlay.vh - 2 && overlay.svgW >= Math.min(overlay.vw - 40, 640 * 0.5) && scrollLocked === 'hidden' && !overlayAfter.active,
       detail: JSON.stringify({ overlay, scrollLocked, overlayAfter }),
     })
+
+    // A phone on its side: the drawing gets the width, and the controls sit beside it.
+    await page.setViewportSize({ width: 844, height: 390 })
+    await page.click('#fs-overlay .tf-ctl-fullscreen')
+    await page.waitForTimeout(300)
+    const landscape = await page.evaluate(() => {
+      const fig = document.getElementById('fs-overlay')
+      const svg = fig.querySelector('svg'), box = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal
+      const scale = Math.min(box.width / vb.width, box.height / vb.height)
+      const bar = fig.querySelector('.tf-ctl').getBoundingClientRect()
+      return { drawnW: Math.round(vb.width * scale), vw: innerWidth, barLeft: Math.round(bar.left), svgRight: Math.round(box.right), barBottom: Math.round(bar.bottom), vh: innerHeight }
+    })
+    await page.keyboard.press('Escape')
+    await page.setViewportSize({ width: 1280, height: 900 })
+    results.push({
+      label: 'embed fullscreen: on a short landscape screen the controls sit beside the drawing, and the drawing keeps most of the width',
+      ok: landscape.drawnW >= landscape.vw * 0.5 && landscape.barLeft >= landscape.svgRight - 1 && landscape.barBottom <= landscape.vh,
+      detail: JSON.stringify(landscape),
+    })
+    await page.evaluate(() => document.getElementById('fs-overlay-holder').remove())
 
     results.push({ label: 'embed: no page errors', ok: errors.length === 0, detail: errors.join('; ') })
     return results

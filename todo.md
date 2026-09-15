@@ -1868,7 +1868,9 @@ Every gap from the Go series spike on teachyourselfcoding.com, fixed:
       request is refused; scroll lock and Esc for the overlay; F key; `tf-fullscreen`
       layout makes the SVG take the remaining space over host figure CSS. Unit tests for
       both routes and refusal; e2e in Chromium, Firefox and WebKit measures the drawing
-      filling the viewport over a host `max-width` and `min-width`
+      filling the viewport over a host `max-width` and `min-width`. v0.70.1: on short
+      landscape screens the controls sit in a column beside the drawing (529px drawn on an
+      844×390 viewport, up from about 233px)
 - [ ] Next: a `hold` easing alias; RTL caption layout
 
 ---

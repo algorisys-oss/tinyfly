@@ -137,6 +137,13 @@ const STYLES = `
 .tf-fullscreen > * { flex: none; }
 .tf-fullscreen > svg, .tf-fullscreen > canvas { flex: 1 1 0; min-height: 0; width: 100% !important; min-width: 0 !important; height: 100% !important; }
 .tf-fullscreen-overlay { position: fixed !important; inset: 0; z-index: 2147483000; }
+/* A short landscape screen (a phone on its side): stacking the controls under the drawing
+   leaves the drawing a thin strip, so put them in a column beside it instead. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .tf-fullscreen { display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(200px, 34%); grid-auto-rows: min-content; column-gap: 12px; align-content: start; }
+  .tf-fullscreen > svg, .tf-fullscreen > canvas { grid-column: 1; grid-row: 1 / span 12; height: calc(100vh - 24px) !important; height: calc(100dvh - 24px) !important; }
+  .tf-fullscreen > :not(svg):not(canvas) { grid-column: 2; }
+}
 `
 
 let choiceGroups = 0

@@ -25,7 +25,7 @@ path for all of that:
 </figure>
 
 <!-- once, anywhere on the page (a site-wide footer is fine) -->
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.70.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.70.1/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 Every `[data-tinyfly-embed]` mounts when the page is ready, with no per-post
@@ -171,6 +171,9 @@ or in code, `createControls(player, figure, { fullscreen: true })`.
   remaining space, scaled to fit. Those rules use `!important` on purpose, so a host
   page's figure CSS, such as a `max-width` or a phone `min-width`, can't keep the drawing
   at its in-page size. The background comes from `--tf-fullscreen-bg` (default white).
+- **Short landscape screens** (a phone on its side, up to 520px tall): the controls and
+  captions move into a column beside the drawing, so the drawing keeps most of the width
+  instead of shrinking into the strip left above a stack of controls.
 - **Accessibility:** the button is labelled `labels.fullscreen` / `labels.exitFullscreen`
   ("Full screen", "Exit full screen") and reports its state with `aria-pressed`.
 - **From code:** `controls.fullscreen.enter()`, `.exit()` and `.active`.
