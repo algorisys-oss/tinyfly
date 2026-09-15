@@ -11,12 +11,13 @@
 import { autoMountFromCurrentScript } from './auto-mount'
 
 export { TinyflyPlayer, play, create } from '../player/player'
-export type { PlayerOptions } from '../player/player'
+export type { PlayerOptions, Scenario, LoadScenariosOptions } from '../player/player'
 export { createControls, DEFAULT_LABELS } from './controls'
 export type { Controls, ControlsOptions, ControlLabels } from './controls'
 export { mount, mountAll, unmount } from './mount'
 export type { MountedEmbed, MountOptions } from './mount'
-export { validateEmbed, renderFrame, targetNamesIn } from './tools'
+export { bindChoiceHotspots } from './choices'
+export { validateEmbed, validateScenarios, renderFrame, targetNamesIn } from './tools'
 export type { EmbedProblem, FrameAt } from './tools'
 
 // Auto-mount when loaded with data-tinyfly-auto.

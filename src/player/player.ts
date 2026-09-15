@@ -70,6 +70,32 @@ interface SymbolInstance {
   timeline: Timeline
 }
 
+/**
+ * One of several timelines a figure can play, chosen by the reader: "No cache" and
+ * "With cache", or a healthy cluster and one whose leader is down. All scenarios
+ * animate the same markup.
+ */
+export interface Scenario {
+  id: string
+  /** What the reader sees on the choice (default: the id) */
+  label?: string
+  timeline: TimelineDefinition
+}
+
+export interface LoadScenariosOptions {
+  /** The scenario shown first (default: the first in the list) */
+  initial?: string
+}
+
+/** What an element looked like before any timeline drew on it. */
+interface AuthoredState {
+  style: string | null
+  /** Only for elements that hold nothing but text */
+  text?: string
+  /** Shape-morph geometry: the path element and its authored `d` */
+  path?: { element: Element; d: string | null }
+}
+
 export interface TargetMapping {
   [targetName: string]: HTMLElement | string
 }
@@ -96,6 +122,9 @@ export class TinyflyPlayer {
   private mediaSync: MediaSync | undefined
   private mediaTargets: MediaTarget[] = []
   private symbolInstances: SymbolInstance[] = []
+  private scenarioList: Scenario[] = []
+  private scenarioId: string | undefined
+  private readonly authored = new Map<Element, AuthoredState>()
 
   private markerList: TimelineMarker[] = []
   private readonly listeners = new Set<() => void>()
@@ -134,6 +163,12 @@ export class TinyflyPlayer {
    * Load animation from a URL or JSON object.
    */
   async load(source: string | TimelineDefinition): Promise<void> {
+    this.scenarioList = []
+    this.scenarioId = undefined
+    await this.loadSource(source)
+  }
+
+  private async loadSource(source: string | TimelineDefinition): Promise<void> {
     let definition: TimelineDefinition
 
     if (typeof source === 'string') {
@@ -147,19 +182,31 @@ export class TinyflyPlayer {
       definition = source
     }
 
-    // Apply options to config
-    if (this.options.speed !== undefined) {
-      definition.config = { ...definition.config, speed: this.options.speed }
-    }
-    if (this.options.loop !== undefined) {
-      definition.config = { ...definition.config, loop: this.options.loop }
-    }
-    if (this.options.alternate !== undefined) {
-      definition.config = { ...definition.config, alternate: this.options.alternate }
-    }
+    this.useDefinition(definition)
 
-    // Create timeline from definition
-    this.timeline = deserializeTimeline(definition)
+    // Show a real frame straight away, so the figure is right before anyone interacts.
+    this.showInitialFrame()
+    this.watchReducedMotion()
+    this.watchVisibility()
+
+    if (this.options.autoplay && !this.reducedMotion) {
+      if (this.options.playWhenVisible && !this.onScreen) this.autoplayWhenSeen = true
+      else this.play()
+    }
+  }
+
+  /**
+   * Make a definition the current timeline: targets, symbols and media bound, no
+   * frame drawn and nothing played. The definition itself is not modified, so a
+   * scenario's timeline can be used again.
+   */
+  private useDefinition(definition: TimelineDefinition): void {
+    const config = { ...definition.config }
+    if (this.options.speed !== undefined) config.speed = this.options.speed
+    if (this.options.loop !== undefined) config.loop = this.options.loop
+    if (this.options.alternate !== undefined) config.alternate = this.options.alternate
+
+    this.timeline = deserializeTimeline({ ...definition, config })
     this.markerList = this.timeline.markers
     this.lastMarkerId = null
 
@@ -179,15 +226,99 @@ export class TinyflyPlayer {
 
     // Discover embedded media (audio/video) to sync with the timeline
     this.scanMedia()
+  }
 
-    // Show a real frame straight away, so the figure is right before anyone interacts.
-    this.showInitialFrame()
-    this.watchReducedMotion()
-    this.watchVisibility()
+  // --- scenarios: the reader chooses which timeline plays --------------------
 
-    if (this.options.autoplay && !this.reducedMotion) {
-      if (this.options.playWhenVisible && !this.onScreen) this.autoplayWhenSeen = true
-      else this.play()
+  /**
+   * Load several timelines for the same markup, and show one. The reader switches
+   * with `setScenario`; the embed's controls and `data-tinyfly-choose` hotspots
+   * call it.
+   */
+  async loadScenarios(scenarios: Scenario[], options: LoadScenariosOptions = {}): Promise<void> {
+    if (scenarios.length === 0) throw new Error('tinyfly: loadScenarios needs at least one scenario')
+    const ids = new Set<string>()
+    for (const scenario of scenarios) {
+      if (ids.has(scenario.id)) throw new Error(`tinyfly: scenario id "${scenario.id}" is used more than once`)
+      ids.add(scenario.id)
+    }
+    const first = options.initial === undefined ? scenarios[0] : scenarios.find((scenario) => scenario.id === options.initial)
+    if (!first) throw new Error(`tinyfly: there is no scenario "${options.initial}"`)
+    this.scenarioList = [...scenarios]
+    this.scenarioId = first.id
+    await this.loadSource(first.timeline)
+  }
+
+  /** The scenarios to choose from (empty for a single timeline). */
+  get scenarios(): Array<{ id: string; label: string }> {
+    return this.scenarioList.map((scenario) => ({ id: scenario.id, label: scenario.label ?? scenario.id }))
+  }
+
+  /** The id of the scenario showing, if scenarios were loaded. */
+  get scenario(): string | undefined {
+    return this.scenarioId
+  }
+
+  /**
+   * Switch to another scenario. Whatever the previous one drew is undone first.
+   * The reader stays at the same step when the new scenario has a marker with the
+   * same id, stays at the end if they were at the end, and otherwise starts from
+   * the beginning. Playback continues if it was playing. Under reduced motion the
+   * new scenario's final frame shows. Returns false for an unknown id.
+   */
+  setScenario(id: string): boolean {
+    const next = this.scenarioList.find((scenario) => scenario.id === id)
+    if (!next || !this.timeline) return false
+    if (id === this.scenarioId) return true
+
+    const wasPlaying = this.isPlaying
+    const atEnd = this.currentTime >= this.duration - 0.5
+    const markerId = this.currentMarker?.id
+
+    this.stopAnimationLoop()
+    this.stepping = false
+    this.pausedByVisibility = false
+    this.restoreAuthored()
+    this.scenarioId = id
+    this.useDefinition(next.timeline)
+    this.lastMarkerId = null
+
+    let time = 0
+    if (this.reducedMotion || atEnd) time = this.duration
+    else if (markerId !== undefined) time = this.markers.find((marker) => marker.id === markerId)?.time ?? 0
+    this.seek(time)
+
+    if (wasPlaying && !this.reducedMotion) {
+      this.stepping = this.options.stepMode === true
+      this.startPlaying()
+    } else {
+      this.notify()
+    }
+    return true
+  }
+
+  /** Remember how an element was authored, the first time it becomes a target. */
+  private rememberAuthored(element: Element): void {
+    if (this.authored.has(element)) return
+    const state: AuthoredState = { style: element.getAttribute('style') }
+    if (element.children.length === 0) state.text = element.textContent ?? ''
+    const path = element.tagName.toLowerCase() === 'path' ? element : element.querySelector('path')
+    if (path) state.path = { element: path, d: path.getAttribute('d') }
+    this.authored.set(element, state)
+  }
+
+  /** Put every target back the way it was authored. */
+  private restoreAuthored(): void {
+    for (const [element, state] of this.authored) {
+      if (state.style === null) element.removeAttribute('style')
+      else element.setAttribute('style', state.style)
+      if (state.text !== undefined && element.textContent !== state.text) element.textContent = state.text
+      if (state.path) {
+        if (state.path.d === null) state.path.element.removeAttribute('d')
+        else state.path.element.setAttribute('d', state.path.d)
+      }
+      const data = (element as HTMLElement).dataset
+      if (data) delete data.shineBase
     }
   }
 
@@ -305,7 +436,6 @@ export class TinyflyPlayer {
     if (!this.options.playWhenVisible || typeof window === 'undefined') return
     if (typeof IntersectionObserver === 'function') {
       this.visibilityObserver?.disconnect()
-    this.listeners.clear()
       this.visibilityObserver = new IntersectionObserver((entries) => {
         for (const entry of entries) this.onScreen = entry.isIntersecting
         this.updateVisibility()
@@ -381,10 +511,12 @@ export class TinyflyPlayer {
     if (typeof element === 'string') {
       const el = this.container.querySelector(element) as HTMLElement
       if (el) {
+        this.rememberAuthored(el)
         this.targets[name] = el
         this.adapter.registerTarget(name, el)
       }
     } else {
+      this.rememberAuthored(element)
       this.targets[name] = element
       this.adapter.registerTarget(name, element)
     }
@@ -589,6 +721,7 @@ export class TinyflyPlayer {
     this.adapter.clearTargets()
     for (const inst of this.symbolInstances) inst.adapter.clearTargets()
     this.symbolInstances = []
+    this.authored.clear()
     this.timeline = null
   }
 

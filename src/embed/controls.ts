@@ -2,8 +2,9 @@ import type { TinyflyPlayer } from '../player/player'
 
 /**
  * Controls for a teaching animation: play / pause, step back and forward
- * (through markers), restart, a scrub bar, speed, the current step's caption, and
- * a question to answer before the next step is revealed.
+ * (through markers), restart, a scrub bar, speed, the current step's caption, a
+ * question to answer before the next step is revealed, and — when the player has
+ * scenarios — a choice between them (a group of options, or a stepped slider).
  *
  * Kept out of the player and engine builds. Styled only through CSS custom
  * properties on the bar (`--tf-ctl-fg`, `--tf-ctl-bg`, `--tf-ctl-accent`,
@@ -32,6 +33,8 @@ export interface ControlLabels {
    * (default), `"Step {index} of {total}"`, `"第 {index} 步，共 {total} 步"`.
    */
   stepFormat: string
+  /** Names the scenario choice: "Scenario", or what is being chosen ("Cache", "Servers") */
+  scenario: string
 }
 
 export const DEFAULT_LABELS: ControlLabels = {
@@ -46,6 +49,7 @@ export const DEFAULT_LABELS: ControlLabels = {
   step: 'Step',
   of: 'of',
   stepFormat: '{index} / {total}',
+  scenario: 'Scenario',
 }
 
 export interface ControlsOptions {
@@ -59,6 +63,11 @@ export interface ControlsOptions {
   keyboardScope?: HTMLElement
   /** Where to put the bar (default: right after the player's container) */
   mount?: HTMLElement
+  /**
+   * How the reader chooses a scenario: `'buttons'` (default), a group of options,
+   * or `'slider'`, for scenarios that are points on a scale (1, 10, 100 servers).
+   */
+  scenarioControl?: 'buttons' | 'slider'
 }
 
 export interface Controls {
@@ -87,7 +96,21 @@ const STYLES = `
 /* The hidden attribute only hides through the browser's default stylesheet; any rule
    above that sets display would override it, so enforce it for everything here. */
 .tf-ctl [hidden] { display: none !important; }
+.tf-ctl-choices { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0 0; padding: 0; border: 0; }
+.tf-ctl-choices legend { float: left; margin-right: 4px; padding: 0; font-weight: 600; }
+.tf-ctl-choice { position: relative; display: inline-flex; }
+.tf-ctl-choice input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.tf-ctl-choice span { display: inline-block; padding: 6px 12px; border-radius: var(--tf-ctl-radius); background: var(--tf-ctl-bg); cursor: pointer; }
+.tf-ctl-choice input:checked + span { background: var(--tf-ctl-accent); color: #fff; }
+.tf-ctl-choice input:focus-visible + span { outline: 2px solid var(--tf-ctl-accent); outline-offset: 2px; }
+.tf-ctl-choice-slider { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0 0; }
+.tf-ctl-choice-slider span { font-weight: 600; }
+.tf-ctl-choice-slider input { flex: 1 1 140px; accent-color: var(--tf-ctl-accent); }
+.tf-ctl-choice-slider input:focus-visible { outline: 2px solid var(--tf-ctl-accent); outline-offset: 2px; }
+.tf-ctl-choice-slider output { font-variant-numeric: tabular-nums; min-width: 4em; }
 `
+
+let choiceGroups = 0
 
 function ensureStyles(doc: Document): void {
   if (doc.getElementById(STYLE_ID)) return
@@ -182,6 +205,9 @@ export function createControls(player: TinyflyPlayer, container: HTMLElement, op
   question.append(questionText, reveal)
   root.append(question)
 
+  const choices = createScenarioChoice(player, doc, labels.scenario, options.scenarioControl ?? 'buttons')
+  if (choices) root.append(choices.element)
+
   const mountPoint = options.mount
   if (mountPoint) mountPoint.appendChild(root)
   else container.insertAdjacentElement('afterend', root)
@@ -217,6 +243,7 @@ export function createControls(player: TinyflyPlayer, container: HTMLElement, op
       question.hidden = true
       caption.hidden = true
     }
+    choices?.update()
   }
   const unsubscribe = player.subscribe(update)
   update()
@@ -268,4 +295,74 @@ export function createControls(player: TinyflyPlayer, container: HTMLElement, op
       root.remove()
     },
   }
+}
+
+/** The reader's choice between the player's scenarios, or nothing when there is only one. */
+function createScenarioChoice(
+  player: TinyflyPlayer,
+  doc: Document,
+  legend: string,
+  kind: 'buttons' | 'slider'
+): { element: HTMLElement; update(): void } | undefined {
+  const scenarios = player.scenarios
+  if (scenarios.length < 2) return undefined
+
+  if (kind === 'slider') {
+    const element = doc.createElement('div')
+    element.className = 'tf-ctl-choice-slider'
+    const name = doc.createElement('span')
+    name.textContent = legend
+    name.setAttribute('aria-hidden', 'true')
+    const slider = doc.createElement('input')
+    slider.type = 'range'
+    slider.min = '0'
+    slider.max = String(scenarios.length - 1)
+    slider.step = '1'
+    slider.setAttribute('aria-label', legend)
+    const output = doc.createElement('output')
+    output.setAttribute('aria-hidden', 'true')
+    slider.addEventListener('input', () => {
+      const chosen = scenarios[Number(slider.value)]
+      if (chosen) player.setScenario(chosen.id)
+    })
+    element.append(name, slider, output)
+    const update = () => {
+      const index = Math.max(0, scenarios.findIndex((scenario) => scenario.id === player.scenario))
+      if (doc.activeElement !== slider) slider.value = String(index)
+      const label = scenarios[index].label
+      if (output.textContent !== label) output.textContent = label
+      slider.setAttribute('aria-valuetext', label)
+    }
+    return { element, update }
+  }
+
+  const element = doc.createElement('fieldset')
+  element.className = 'tf-ctl-choices'
+  const title = doc.createElement('legend')
+  title.textContent = legend
+  element.append(title)
+  const groupName = `tf-ctl-scenario-${++choiceGroups}`
+  const radios = scenarios.map((scenario) => {
+    const label = doc.createElement('label')
+    label.className = 'tf-ctl-choice'
+    const radio = doc.createElement('input')
+    radio.type = 'radio'
+    radio.name = groupName
+    radio.value = scenario.id
+    radio.addEventListener('change', () => {
+      if (radio.checked) player.setScenario(scenario.id)
+    })
+    const text = doc.createElement('span')
+    text.textContent = scenario.label
+    label.append(radio, text)
+    element.append(label)
+    return radio
+  })
+  const update = () => {
+    for (const radio of radios) {
+      const checked = radio.value === player.scenario
+      if (radio.checked !== checked) radio.checked = checked
+    }
+  }
+  return { element, update }
 }

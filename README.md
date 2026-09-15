@@ -39,6 +39,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Markers and captions in the JSON** - Named steps (`pause`, `question` for predict-then-reveal) and captions per language, kept out of the tracks so translation never touches timing
 - **A player that teaches** - Shows a real frame on load, steps between markers (`next` / `prev` / `stepMode`), respects `prefers-reduced-motion`, and pauses off screen
 - **One-script embeds** - `tinyfly-embed.iife.js` with `data-tinyfly-auto` mounts every `[data-tinyfly-embed]` figure with step controls, announced captions and an accessible SVG, with no per-post JavaScript
+- **Scenarios** - Several timelines on one figure, and the reader chooses which plays: a group of options, a stepped slider, or clickable parts of the SVG (`data-tinyfly-choose`). Switching undoes the previous scenario's drawing and keeps the reader at the same step
 - **Authoring kit** - `lesson()` step builder and diagram primitives (array cells, pointer, stack, queue / channel, table, pipeline) in `@algorisys/tinyfly/teach`
 - **Build tools** - `npx @algorisys/tinyfly validate` catches broken figures in CI; `render` writes a frame to static SVG for RSS, email and print
 
@@ -118,7 +119,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - [Examples](docs/examples.md) — Code examples for common animation patterns
 - [Scroll Animation](docs/scroll-animation.md) — Scroll-driven and visibility-triggered playback via drivers
 - [GSAP Compatibility](docs/gsap-compat.md) — The GSAP-flavoured API, the mapping table, and what we deliberately don't do
-- [Teaching Animations](docs/teaching.md) — Step-through figures: markers, captions, the stepping player, controls, declarative embeds, `tinyfly/teach`, validate and render
+- [Teaching Animations](docs/teaching.md) — Step-through figures: markers, captions, the stepping player, controls, declarative embeds, scenarios the reader chooses, `tinyfly/teach`, validate and render
 - [Extending tinyfly](docs/extending.md) — Writing adapters, custom eases and stagger offsets, adding a track kind, contributing examples
 - [Deployment](docs/DEPLOYMENT.md) — Hosting, Docker, and CDN configuration
 - [2D Animation Roadmap](docs/2d-animation-roadmap.md) — Adobe Animate gap analysis and phased plan (symbols/library, camera, onion skinning, …)
@@ -154,7 +155,7 @@ for what you import:
 | `@algorisys/tinyfly/gsap-compat` | GSAP-style `live.to()` / `timeline()`, plus the compiling `tf` facade | Browser (`tf` anywhere) |
 | `@algorisys/tinyfly/drivers` | `ScrollDriver`, `VisibilityDriver` | Browser |
 | `@algorisys/tinyfly/interaction` | `Observer`, `Draggable` | Browser |
-| `@algorisys/tinyfly/embed` | Teaching embeds: the player with step controls, captions and one-script `[data-tinyfly-embed]` mounting; `validateEmbed`, `renderFrame` | Browser (tools anywhere) |
+| `@algorisys/tinyfly/embed` | Teaching embeds: the player with step controls, captions, scenarios and one-script `[data-tinyfly-embed]` mounting; `validateEmbed`, `validateScenarios`, `renderFrame` | Browser (tools anywhere) |
 | `@algorisys/tinyfly/teach` | `lesson()` step builder and diagram primitives (cells, pointer, stack, queue, table, pipeline) | Anywhere |
 | `@algorisys/tinyfly/react`, `@algorisys/tinyfly/vue`, `@algorisys/tinyfly/svelte`, `@algorisys/tinyfly/solid` | `useTinyfly` hooks, a Svelte action and a Solid primitive: `live` animations scoped to a component and reverted on unmount | Browser (frameworks are optional peer dependencies) |
 | `@algorisys/tinyfly/browser` | Everything above in one bundle | Browser |
@@ -203,7 +204,7 @@ GSAP-shaped functions at the top level. Teaching embeds are included: add
 itself.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.68.1/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.69.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -225,7 +226,7 @@ itself.
 | `cdn/tinyfly-player.iife.js` | Player only (~17 KB gzipped), for playing editor exports |
 | `cdn/tinyfly-embed.iife.js` | Only teaching figures (~19 KB gzipped): player, step controls, auto-mount |
 
-Replace `@v0.68.1` with the version you want. **Pin a version in production**:
+Replace `@v0.69.0` with the version you want. **Pin a version in production**:
 a tag's files never change, and each release's `cdn/README.md` lists an SRI hash
 for `integrity=`. `@main` follows the latest release, which jsDelivr caches for up
 to a day. Loading more than one bundle is safe: they add to the same `tinyfly`
@@ -239,7 +240,7 @@ A teaching figure needs no code at all:
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON with markers… }</script>
   <figcaption>Appending to a full slice</figcaption>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.68.1/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.69.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
 ```
 
 See [Teaching Animations](docs/teaching.md).
@@ -338,7 +339,7 @@ Without a build step, the player bundle puts the same functions on a `tinyfly` g
   <div data-tinyfly="box" style="width: 60px; height: 60px; background: #4a9eff;"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.68.1/cdn/tinyfly-player.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.69.0/cdn/tinyfly-player.iife.js"></script>
 <script>
   tinyfly.play('#animation', './animation.json', { loop: -1 })
 </script>
@@ -447,7 +448,7 @@ Or skip the code entirely with declarative embeds (see [Teaching Animations](doc
   <svg viewBox="0 0 720 200">…</svg>
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON… }</script>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.68.1/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.69.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 ### Audio / Video Sync
@@ -719,20 +720,20 @@ load.
 
 ### Test Coverage
 
-`npm test` runs 1,999 unit tests in 121 files, all passing:
+`npm test` runs 2,191 unit tests in 127 files, all passing:
 
 | Area | Tests |
 |---|---|
 | Engine (`src/engine`: timeline, easing, paths, text, exports, serialization) | 521 |
-| Editor (`src/editor`: stores, utils, presets, AI, samples) | 393 |
-| GSAP-style API (`src/compat/gsap`) | 328 |
-| Examples page, GSAP-style demos and showcases (`src/examples`) | 235 |
+| Editor (`src/editor`: stores, utils, presets, AI, samples) | 409 |
+| GSAP-style API (`src/compat/gsap`) | 332 |
+| Examples page, GSAP-style demos and showcases (`src/examples`) | 302 |
 | Render adapters (`src/adapters`) | 134 |
-| Interactive course (`src/learn`) | 129 |
+| Interactive course (`src/learn`) | 211 |
 | Drivers and interaction (`src/drivers`, `src/interaction`) | 136 |
-| Player, media sync, sequencer and teaching (`src/player`) | 92 |
-| Docs viewer and `llms.txt` (`src/docs`) | 14 |
-| Embeds, teaching kit, framework hooks, landing (`src/embed`, `src/teach`, `src/frameworks`, `src/landing`) | 17 |
+| Player, media sync, sequencer, teaching and scenarios (`src/player`) | 103 |
+| Docs viewer and `llms.txt` (`src/docs`) | 16 |
+| Embeds, teaching kit, framework hooks, landing (`src/embed`, `src/teach`, `src/frameworks`, `src/landing`) | 27 |
 
 ## Contributing
 

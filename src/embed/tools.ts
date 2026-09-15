@@ -1,4 +1,5 @@
 import { deserializeTimeline, FORMAT_VERSION, type TimelineDefinition } from '../engine'
+import type { Scenario } from '../player/player'
 import { DOMAdapter } from '../adapters/dom'
 
 /**
@@ -83,6 +84,49 @@ export function validateEmbed(definition: TimelineDefinition, options: { markup?
       }
     }
     for (const name of names) if (!used.has(name)) warning(`data-tinyfly="${name}" is never animated`)
+  }
+  return problems
+}
+
+/** The `data-tinyfly-choose` scenario ids in a piece of markup. */
+function choiceIdsIn(markup: string): string[] {
+  const ids = new Set<string>()
+  for (const match of markup.matchAll(/data-tinyfly-choose\s*=\s*("([^"]*)"|'([^']*)')/g)) ids.add(match[2] ?? match[3])
+  return [...ids]
+}
+
+/**
+ * Problems in a figure with scenarios: everything `validateEmbed` checks, for each
+ * scenario (prefixed with its id), plus repeated ids and hotspots naming a scenario
+ * that does not exist. An element is reported as never animated only when no
+ * scenario animates it.
+ */
+export function validateScenarios(scenarios: Array<Pick<Scenario, 'id' | 'timeline'>>, options: { markup?: string } = {}): EmbedProblem[] {
+  const problems: EmbedProblem[] = []
+  if (scenarios.length === 1) problems.push({ level: 'warning', message: 'only one scenario, so the reader has nothing to choose' })
+
+  const ids = new Set<string>()
+  const used = new Set<string>()
+  for (const scenario of scenarios) {
+    if (ids.has(scenario.id)) {
+      problems.push({ level: 'error', message: `scenario id "${scenario.id}" is used more than once` })
+      continue
+    }
+    ids.add(scenario.id)
+    for (const problem of validateEmbed(scenario.timeline, options)) {
+      if (/is never animated$/.test(problem.message)) continue
+      problems.push({ level: problem.level, message: `scenario "${scenario.id}": ${problem.message}` })
+    }
+    for (const track of scenario.timeline.tracks) for (const target of [track.target, ...(track.targets ?? [])]) used.add(target)
+  }
+
+  if (options.markup !== undefined) {
+    for (const id of choiceIdsIn(options.markup)) {
+      if (!ids.has(id)) problems.push({ level: 'error', message: `data-tinyfly-choose="${id}" names no scenario` })
+    }
+    for (const name of targetNamesIn(options.markup)) {
+      if (!used.has(name)) problems.push({ level: 'warning', message: `data-tinyfly="${name}" is never animated in any scenario` })
+    }
   }
   return problems
 }

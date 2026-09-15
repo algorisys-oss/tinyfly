@@ -1,6 +1,7 @@
-import { TinyflyPlayer, type PlayerOptions } from '../player/player'
+import { TinyflyPlayer, type PlayerOptions, type Scenario } from '../player/player'
 import type { TimelineDefinition } from '../engine'
 import { createControls, type Controls, type ControlsOptions } from './controls'
+import { bindChoiceHotspots } from './choices'
 
 /**
  * Declarative embeds, for pages where inline init scripts get deferred,
@@ -21,6 +22,13 @@ import { createControls, type Controls, type ControlsOptions } from './controls'
  * `<script type="application/json" data-tinyfly-captions>`. `data-controls="false"`
  * leaves the controls out, and `data-labels` passes control labels as JSON.
  *
+ * Scenarios: give the figure several timelines, each with `data-scenario="id"` and
+ * `data-scenario-label="What the reader sees"`, and the reader chooses which one
+ * plays. The figure's own `data-scenario` picks the first shown,
+ * `data-scenario-legend` names the choice, and `data-scenario-control="slider"`
+ * makes it a stepped slider instead of a group of options. Elements with
+ * `data-tinyfly-choose="id"` become buttons that choose that scenario.
+ *
  * Embeds default to `playWhenVisible: true`. Each SVG without a role becomes a
  * labelled image (`role="img"`, named by `data-alt` or the figcaption), and the
  * step captions are announced as they change.
@@ -40,6 +48,7 @@ export interface MountOptions {
 }
 
 const mounted = new WeakMap<Element, MountedEmbed>()
+const unbindHotspots = new WeakMap<Element, () => void>()
 let captionIds = 0
 
 function parseJson<T>(text: string | null | undefined, what: string, element: Element): T | undefined {
@@ -57,20 +66,22 @@ export async function mount(element: HTMLElement, options: MountOptions = {}): P
   const existing = mounted.get(element)
   if (existing) return existing
 
-  const inline = element.querySelector('script[data-tinyfly-timeline]')
+  const inlineScripts = Array.from(element.querySelectorAll('script[data-tinyfly-timeline]'))
+  const inline = inlineScripts[0]
   const source = element.getAttribute('data-src')
-  let definition = inline ? parseJson<TimelineDefinition>(inline.textContent, 'timeline', element) : undefined
   // data-markers="0,2300,3800": steps by time, for timelines written without markers.
   const markerTimes = parseMarkerTimes(element.getAttribute('data-markers'))
+  const scenarios =
+    inlineScripts.length > 1 || inline?.hasAttribute('data-scenario') ? readScenarios(inlineScripts, markerTimes, element) : undefined
+  if (scenarios && scenarios.length === 0) return undefined
+  let definition = inline && !scenarios ? parseJson<TimelineDefinition>(inline.textContent, 'timeline', element) : undefined
   if (!definition && source && markerTimes) {
     // The markers must be added before the player sees the timeline, so fetch it here.
     const response = await fetch(source)
     if (response.ok) definition = (await response.json()) as TimelineDefinition
   }
-  if (definition && markerTimes && !definition.config.markers?.length) {
-    definition.config = { ...definition.config, markers: markerTimes.map((time, i) => ({ id: `step-${i + 1}`, time })) }
-  }
-  if (!definition && !source) {
+  if (definition && markerTimes) definition = withMarkerTimes(definition, markerTimes)
+  if (!definition && !source && !scenarios) {
     console.warn('tinyfly: embed has no timeline (a <script type="application/json" data-tinyfly-timeline> or data-src)', element)
     return undefined
   }
@@ -89,14 +100,23 @@ export async function mount(element: HTMLElement, options: MountOptions = {}): P
   const entry: MountedEmbed = { element, player }
   mounted.set(element, entry)
   element.setAttribute('data-tinyfly-mounted', '')
-  await player.load(definition ?? source!)
+  if (scenarios) {
+    const initial = element.getAttribute('data-scenario') ?? undefined
+    await player.loadScenarios(scenarios, { initial: scenarios.some((scenario) => scenario.id === initial) ? initial : undefined })
+    unbindHotspots.set(element, bindChoiceHotspots(player, element))
+  } else {
+    await player.load(definition ?? source!)
+  }
 
   if (element.getAttribute('data-controls') !== 'false') {
     const labels = parseJson<ControlsOptions['labels']>(element.getAttribute('data-labels'), 'data-labels', element)
     const caption = element.querySelector('figcaption')
+    const legend = element.getAttribute('data-scenario-legend')
+    const control = element.getAttribute('data-scenario-control')
     entry.controls = createControls(player, element, {
       ...options.controls,
-      labels: { ...options.controls?.labels, ...labels },
+      ...(control === 'slider' || control === 'buttons' ? { scenarioControl: control } : {}),
+      labels: { ...options.controls?.labels, ...labels, ...(legend ? { scenario: legend } : {}) },
       // Inside the figure, before its figcaption, so the caption stays last.
       mount: undefined,
     })
@@ -104,6 +124,29 @@ export async function mount(element: HTMLElement, options: MountOptions = {}): P
     else element.appendChild(entry.controls.element)
   }
   return entry
+}
+
+/** Every inline timeline as a scenario, skipping any whose JSON does not parse. */
+function readScenarios(scripts: Element[], markerTimes: number[] | undefined, element: Element): Scenario[] {
+  const scenarios: Scenario[] = []
+  scripts.forEach((script, index) => {
+    const timeline = parseJson<TimelineDefinition>(script.textContent, 'timeline', element)
+    if (!timeline) return
+    const id = script.getAttribute('data-scenario') || `scenario-${index + 1}`
+    if (scenarios.some((scenario) => scenario.id === id)) {
+      console.warn(`tinyfly: scenario id "${id}" is used more than once; the later one is skipped`, element)
+      return
+    }
+    const label = script.getAttribute('data-scenario-label') ?? undefined
+    scenarios.push({ id, label, timeline: markerTimes ? withMarkerTimes(timeline, markerTimes) : timeline })
+  })
+  return scenarios
+}
+
+/** The timeline with steps at these times, unless it already has markers. */
+function withMarkerTimes(definition: TimelineDefinition, times: number[]): TimelineDefinition {
+  if (definition.config.markers?.length) return definition
+  return { ...definition, config: { ...definition.config, markers: times.map((time, i) => ({ id: `step-${i + 1}`, time })) } }
 }
 
 /** `"0, 2300, 3800"` → `[0, 2300, 3800]` (sorted, invalid entries skipped). */
@@ -129,6 +172,8 @@ export async function mountAll(root: ParentNode = document, options: MountOption
 export function unmount(element: HTMLElement): void {
   const entry = mounted.get(element)
   if (!entry) return
+  unbindHotspots.get(element)?.()
+  unbindHotspots.delete(element)
   entry.controls?.destroy()
   entry.player.destroy()
   mounted.delete(element)

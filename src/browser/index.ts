@@ -65,6 +65,7 @@ export {
 export { createControls, DEFAULT_LABELS } from '../embed/controls'
 export type { Controls, ControlsOptions, ControlLabels } from '../embed/controls'
 export { mount, mountAll, unmount } from '../embed/mount'
+export { bindChoiceHotspots } from '../embed/choices'
 export type { MountedEmbed, MountOptions } from '../embed/mount'
 
 // Teaching figures mount themselves when the script tag has data-tinyfly-auto.

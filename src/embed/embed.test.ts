@@ -6,7 +6,7 @@ import type { TimelineDefinition } from '../engine'
 import { TinyflyPlayer } from '../player/player'
 import { createControls } from './controls'
 import { mountAll, unmount } from './mount'
-import { renderFrame, validateEmbed, targetNamesIn } from './tools'
+import { renderFrame, validateEmbed, validateScenarios, targetNamesIn } from './tools'
 
 const lesson: TimelineDefinition = {
   id: 'slice',
@@ -171,5 +171,149 @@ describe('renderFrame', () => {
     const atMarker = renderFrame(svg, lesson, 'one')
     expect(atMarker).toContain('translateX(50px)')
     expect(atMarker).toContain('>len = 3</text>')
+  })
+})
+
+describe('scenarios in embeds', () => {
+  const quick: TimelineDefinition = {
+    id: 'quick',
+    config: { duration: 500, markers: [{ id: 'one', time: 250, label: 'one, fast' }] },
+    tracks: [{ id: 'x', target: 'cell', property: 'x', keyframes: [{ time: 0, value: 0 }, { time: 500, value: 50 }] }],
+  }
+  const scenarioScripts = (extra = '') =>
+    `<script type="application/json" data-tinyfly-timeline data-scenario="slow" data-scenario-label="Slow path">${JSON.stringify(lesson)}</script>` +
+    `<script type="application/json" data-tinyfly-timeline data-scenario="fast" data-scenario-label="Fast path" ${extra}>${JSON.stringify(quick)}</script>`
+
+  it('mounts every timeline as a scenario, with a labelled choice group that switches', async () => {
+    document.body.innerHTML = `<figure data-tinyfly-embed data-scenario="fast" data-scenario-legend="Path">${svg}${scenarioScripts()}</figure>`
+    const [entry] = await mountAll()
+    expect(entry.player.scenarios.map((scenario) => scenario.label)).toEqual(['Slow path', 'Fast path'])
+    expect(entry.player.scenario).toBe('fast')
+
+    const group = entry.controls!.element.querySelector('.tf-ctl-choices') as HTMLFieldSetElement
+    expect(group.querySelector('legend')!.textContent).toBe('Path')
+    const radios = Array.from(group.querySelectorAll<HTMLInputElement>('input[type="radio"]'))
+    expect(radios.map((radio) => radio.parentElement!.textContent)).toEqual(['Slow path', 'Fast path'])
+    expect(radios[1].checked).toBe(true)
+    // One name per figure, so two figures' groups never share a selection.
+    expect(radios[0].name).toBe(radios[1].name)
+
+    radios[0].checked = true
+    radios[0].dispatchEvent(new Event('change', { bubbles: true }))
+    expect(entry.player.scenario).toBe('slow')
+
+    // Switching from code updates the group too.
+    entry.player.setScenario('fast')
+    expect(radios[1].checked).toBe(true)
+    unmount(entry.element)
+  })
+
+  it('a stepped slider, for scenarios that are points on a scale', async () => {
+    document.body.innerHTML = `<figure data-tinyfly-embed data-scenario-control="slider" data-scenario-legend="Servers">${svg}${scenarioScripts()}</figure>`
+    const [entry] = await mountAll()
+    const slider = entry.controls!.element.querySelector('.tf-ctl-choice-slider input[type="range"]') as HTMLInputElement
+    const output = entry.controls!.element.querySelector('.tf-ctl-choice-slider output')!
+    expect(slider.min).toBe('0')
+    expect(slider.max).toBe('1')
+    expect(slider.getAttribute('aria-label')).toBe('Servers')
+    expect(output.textContent).toBe('Slow path')
+    slider.value = '1'
+    slider.dispatchEvent(new Event('input', { bubbles: true }))
+    expect(entry.player.scenario).toBe('fast')
+    expect(output.textContent).toBe('Fast path')
+    expect(slider.getAttribute('aria-valuetext')).toBe('Fast path')
+    unmount(entry.element)
+  })
+
+  it('data-markers gives steps to each scenario that has none', async () => {
+    const plain: TimelineDefinition = { id: 'p', config: { duration: 1000 }, tracks: lesson.tracks }
+    document.body.innerHTML =
+      `<figure data-tinyfly-embed data-markers="0, 400">${svg}` +
+      `<script type="application/json" data-tinyfly-timeline data-scenario="a">${JSON.stringify(plain)}</script>` +
+      `<script type="application/json" data-tinyfly-timeline data-scenario="b">${JSON.stringify(lesson)}</script></figure>`
+    const [entry] = await mountAll()
+    expect(entry.player.markers.map((marker) => marker.id)).toEqual(['step-1', 'step-2'])
+    entry.player.setScenario('b')
+    expect(entry.player.markers.map((marker) => marker.id)).toEqual(['one', 'ask'])
+    // A scenario without a label shows its id.
+    expect(entry.player.scenarios[0].label).toBe('a')
+    unmount(entry.element)
+  })
+
+  it('elements marked data-tinyfly-choose are buttons that pick a scenario, with or without controls', async () => {
+    const hotspotSvg = svg.replace('</svg>', '<circle data-tinyfly-choose="fast" aria-label="Take the fast path" r="5"/></svg>')
+    document.body.innerHTML = `<figure data-tinyfly-embed data-controls="false">${hotspotSvg}${scenarioScripts()}</figure>`
+    const [entry] = await mountAll()
+    const hotspot = entry.element.querySelector('[data-tinyfly-choose]') as unknown as HTMLElement
+    expect(hotspot.getAttribute('role')).toBe('button')
+    expect(hotspot.getAttribute('tabindex')).toBe('0')
+    expect(hotspot.getAttribute('aria-pressed')).toBe('false')
+    hotspot.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    expect(entry.player.scenario).toBe('fast')
+    expect(hotspot.getAttribute('aria-pressed')).toBe('true')
+
+    entry.player.setScenario('slow')
+    const enter = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })
+    hotspot.dispatchEvent(enter)
+    expect(entry.player.scenario).toBe('fast')
+    expect(enter.defaultPrevented).toBe(true)
+    unmount(entry.element)
+    expect(hotspot.hasAttribute('role')).toBe(false)
+  })
+
+  it('Space on a hotspot chooses; it does not also play the figure', async () => {
+    const hotspotSvg = svg.replace('</svg>', '<circle data-tinyfly-choose="fast" r="5"/></svg>')
+    document.body.innerHTML = `<figure data-tinyfly-embed>${hotspotSvg}${scenarioScripts()}</figure>`
+    const [entry] = await mountAll()
+    const hotspot = entry.element.querySelector('[data-tinyfly-choose]') as unknown as HTMLElement
+    // No aria-label of its own: it is named after the scenario.
+    expect(hotspot.getAttribute('aria-label')).toBe('Fast path')
+    hotspot.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }))
+    expect(entry.player.scenario).toBe('fast')
+    expect(entry.player.isPlaying).toBe(false)
+    unmount(entry.element)
+  })
+
+  it('a single timeline shows no choices', async () => {
+    document.body.innerHTML = `<figure data-tinyfly-embed>${svg}<script type="application/json" data-tinyfly-timeline>${JSON.stringify(lesson)}</script></figure>`
+    const [entry] = await mountAll()
+    expect(entry.player.scenarios).toEqual([])
+    expect(entry.controls!.element.querySelector('.tf-ctl-choices, .tf-ctl-choice-slider')).toBeNull()
+    unmount(entry.element)
+  })
+})
+
+describe('validateScenarios', () => {
+  it('checks each scenario, ids, hotspots, and never-animated elements across all of them', () => {
+    const other: TimelineDefinition = {
+      id: 'other',
+      config: { duration: 1000 },
+      tracks: [{ id: 'y', target: 'ghost', property: 'y', keyframes: [{ time: 0, value: 0 }, { time: 1000, value: 5 }] }],
+    }
+    const markup = svg.replace('</svg>', '<g data-tinyfly="spare"/><circle data-tinyfly-choose="missing"/><circle data-tinyfly-choose="b"/></svg>')
+    const messages = validateScenarios(
+      [
+        { id: 'a', timeline: lesson },
+        { id: 'b', timeline: other },
+        { id: 'b', timeline: other },
+      ],
+      { markup }
+    ).map((problem) => `${problem.level}: ${problem.message}`)
+    expect(messages).toEqual(
+      expect.arrayContaining([
+        'error: scenario id "b" is used more than once',
+        expect.stringMatching(/^error: scenario "b": track "y" targets "ghost", but no element/),
+        'error: data-tinyfly-choose="missing" names no scenario',
+        'warning: data-tinyfly="spare" is never animated in any scenario',
+      ])
+    )
+    // cell and len are animated in scenario "a" only: not reported as unused.
+    expect(messages.some((message) => /"cell" is never animated|"len" is never animated/.test(message))).toBe(false)
+    expect(messages.some((message) => message.includes('data-tinyfly-choose="b"'))).toBe(false)
+  })
+
+  it('warns that one scenario is not a choice', () => {
+    const messages = validateScenarios([{ id: 'only', timeline: lesson }], { markup: svg }).map((problem) => `${problem.level}: ${problem.message}`)
+    expect(messages).toContain('warning: only one scenario, so the reader has nothing to choose')
   })
 })

@@ -110,6 +110,83 @@ export default {
       detail: JSON.stringify(plain),
     })
 
+    // Scenarios: the reader chooses which timeline plays, by option, slider or hotspot.
+    await page.evaluate(async () => {
+      const holder = document.createElement('div')
+      holder.id = 'scenario-holder'
+      const svg = '<svg viewBox="0 0 300 80" width="300" height="80"><rect data-tinyfly="box" x="10" y="10" width="60" height="60" style="fill: rgb(200, 200, 200)"/><text data-tinyfly="ms" x="100" y="45">idle</text><circle data-tinyfly-choose="down" cx="250" cy="40" r="20" fill="#333"/></svg>'
+      const slow = { id: 'up', config: { duration: 600, markers: [{ id: 'go', time: 0 }, { id: 'done', time: 600 }] }, tracks: [
+        { id: 'f', target: 'box', property: 'fill', keyframes: [{ time: 0, value: '#00ff00' }, { time: 600, value: '#00ff00' }] },
+        { id: 't', target: 'ms', property: 'text', keyframes: [{ time: 0, value: '0 ms' }, { time: 600, value: '600 ms' }] } ] }
+      const down = { id: 'down', config: { duration: 400, markers: [{ id: 'go', time: 0 }, { id: 'done', time: 400 }] }, tracks: [
+        { id: 'x', target: 'box', property: 'x', keyframes: [{ time: 0, value: 0 }, { time: 400, value: 40 }] } ] }
+      const scripts = (a, b) => `<script type="application/json" data-tinyfly-timeline data-scenario="up" data-scenario-label="${a}">${JSON.stringify(slow)}</script><script type="application/json" data-tinyfly-timeline data-scenario="down" data-scenario-label="${b}">${JSON.stringify(down)}</script>`
+      holder.innerHTML =
+        `<figure id="pick" data-tinyfly-embed data-scenario-legend="Leader" data-options='{"initialFrame":"end"}'>${svg}${scripts('Healthy', 'Leader down')}</figure>` +
+        `<figure id="scale" data-tinyfly-embed data-scenario-control="slider" data-scenario-legend="Servers">${svg.replace(/<circle[^>]*\/>/, '')}${scripts('1', '10')}</figure>`
+      document.body.prepend(holder)
+      window.__scenarioEmbeds = await window.__embed.mountAll(holder)
+    })
+
+    const radioSwitch = await page.evaluate(() => {
+      const figure = document.getElementById('pick')
+      const before = { fill: getComputedStyle(figure.querySelector('[data-tinyfly="box"]')).fill, text: figure.querySelector('[data-tinyfly="ms"]').textContent }
+      return { before, legend: figure.querySelector('.tf-ctl-choices legend').textContent }
+    })
+    // A real click on the visible option label.
+    await page.click('#pick .tf-ctl-choice:nth-of-type(2) span')
+    const afterRadio = await page.evaluate(() => {
+      const figure = document.getElementById('pick')
+      const box = figure.querySelector('[data-tinyfly="box"]')
+      return {
+        scenario: window.__scenarioEmbeds[0].player.scenario,
+        fill: getComputedStyle(box).fill,
+        text: figure.querySelector('[data-tinyfly="ms"]').textContent,
+        transform: box.style.transform,
+        pressed: figure.querySelector('[data-tinyfly-choose]').getAttribute('aria-pressed'),
+      }
+    })
+    results.push({
+      label: 'embed scenarios: clicking an option switches, undoing the previous scenario’s paint and text',
+      ok: radioSwitch.before.fill === 'rgb(0, 255, 0)' && radioSwitch.before.text === '600 ms' && afterRadio.scenario === 'down' &&
+        afterRadio.fill === 'rgb(200, 200, 200)' && afterRadio.text === 'idle' && afterRadio.transform === 'translateX(40px)' && afterRadio.pressed === 'true',
+      detail: JSON.stringify({ radioSwitch, afterRadio }),
+    })
+
+    // Keyboard: arrow keys move within the radio group, natively.
+    await page.focus('#pick .tf-ctl-choice:nth-of-type(2) input')
+    await page.keyboard.press('ArrowLeft')
+    const arrowed = await page.evaluate(() => window.__scenarioEmbeds[0].player.scenario)
+    results.push({ label: 'embed scenarios: arrow keys move through the options', ok: arrowed === 'up', detail: arrowed })
+
+    // Hotspot: a real click on the SVG circle, then Enter from the keyboard.
+    await page.click('#pick [data-tinyfly-choose]')
+    const clicked = await page.evaluate(() => window.__scenarioEmbeds[0].player.scenario)
+    await page.evaluate(() => window.__scenarioEmbeds[0].player.setScenario('up'))
+    await page.focus('#pick [data-tinyfly-choose]')
+    await page.keyboard.press('Enter')
+    const entered = await page.evaluate(() => ({ scenario: window.__scenarioEmbeds[0].player.scenario, playing: window.__scenarioEmbeds[0].player.isPlaying }))
+    results.push({
+      label: 'embed scenarios: an SVG hotspot chooses by click and by Enter',
+      ok: clicked === 'down' && entered.scenario === 'down',
+      detail: JSON.stringify({ clicked, entered }),
+    })
+
+    // Slider: keyboard on a real range input.
+    await page.focus('#scale .tf-ctl-choice-slider input')
+    await page.keyboard.press('ArrowRight')
+    const slid = await page.evaluate(() => ({
+      scenario: window.__scenarioEmbeds[1].player.scenario,
+      output: document.querySelector('#scale .tf-ctl-choice-slider output').textContent,
+      valuetext: document.querySelector('#scale .tf-ctl-choice-slider input').getAttribute('aria-valuetext'),
+    }))
+    results.push({
+      label: 'embed scenarios: the stepped slider chooses by keyboard and names the value',
+      ok: slid.scenario === 'down' && slid.output === '10' && slid.valuetext === '10',
+      detail: JSON.stringify(slid),
+    })
+    await page.evaluate(() => document.getElementById('scenario-holder').remove())
+
     results.push({ label: 'embed: no page errors', ok: errors.length === 0, detail: errors.join('; ') })
     return results
   },

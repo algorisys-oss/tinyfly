@@ -1,5 +1,5 @@
 export { TinyflyPlayer, play, create } from './player'
-export type { PlayerOptions, TargetMapping, SymbolAnimation } from './player'
+export type { PlayerOptions, TargetMapping, SymbolAnimation, Scenario, LoadScenariosOptions } from './player'
 export { MediaSync, syncMediaElement } from './media-sync'
 export type { SyncableMedia, MediaSyncOptions } from './media-sync'
 export { TinyflySequencer, playSequence } from './sequencer'

@@ -1847,6 +1847,20 @@ Every gap from the Go series spike on teachyourselfcoding.com, fixed:
       (controls, `mountAll`, `data-tinyfly-auto`), +3 kB gzipped; build-time
       `validateEmbed` / `renderFrame` stay in npm and the CLI; `tinyfly-embed.iife.js`
       remains the small teaching-only bundle. Auto-mount shared in `embed/auto-mount.ts`
+- [x] **Scenarios** (for the System Design series on teachyourselfcoding.com): several
+      timelines on one figure and the reader chooses. Player `loadScenarios`,
+      `scenarios`, `scenario`, `setScenario` (undoes the previous scenario's styles,
+      text and path geometry; keeps the step by marker id; end stays end; playing
+      stays playing; reduced motion shows the final frame). Embed: several
+      `data-tinyfly-timeline` scripts with `data-scenario` / `data-scenario-label`;
+      figure `data-scenario`, `data-scenario-legend`, `data-scenario-control`
+      (`buttons` radio group or stepped `slider`); `data-tinyfly-choose` hotspots as
+      toggle buttons (`bindChoiceHotspots`). `validateScenarios` and multi-file
+      `tinyfly validate`. e2e `embed`: option click, arrow keys, hotspot click and
+      Enter, slider by keyboard, computed paint reset, in Chromium, Firefox and WebKit
+- [x] **Fixed:** `watchVisibility` cleared the player's subscribers on every `load()`
+      (a stray `listeners.clear()` from v0.64.0), so controls stopped updating after
+      a second load
 - [ ] Next: a `hold` easing alias; RTL caption layout
 
 ---

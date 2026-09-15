@@ -11,6 +11,7 @@ path for all of that:
 | **Markers** in the JSON | Named steps: step through them, stop at them, caption them |
 | **The player** | Shows a frame on load; steps between markers; respects reduced motion; pauses off screen |
 | **`@algorisys/tinyfly/embed`** | Step controls with captions and questions, and one-script declarative mounting for CMS pages |
+| **Scenarios** | Several timelines on one figure, and the reader chooses: options, a stepped slider, or clickable parts of the SVG |
 | **`@algorisys/tinyfly/teach`** | A `lesson()` step builder, and diagram primitives (cells, pointer, stack, queue, table, pipeline) |
 | **The `tinyfly` command** | `validate` for build pipelines; `render` a frame to static SVG for RSS, email and print |
 
@@ -24,7 +25,7 @@ path for all of that:
 </figure>
 
 <!-- once, anywhere on the page (a site-wide footer is fine) -->
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.68.1/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.69.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 Every `[data-tinyfly-embed]` mounts when the page is ready, with no per-post
@@ -147,6 +148,90 @@ createControls(player, figureElement, { labels: { play: 'Reproducir' }, speeds: 
   `tinyfly.iife.js` add to one `tinyfly` global, so loading more than one keeps every
   bundle's functions.
 
+## Scenarios: let the reader change something
+
+Some ideas are a comparison, not a sequence: a request with and without a cache, a
+cluster before and after its leader fails, one server against ten. Give the figure
+one timeline per case, and the reader chooses which one plays.
+
+```html
+<figure data-tinyfly-embed data-scenario-legend="Cache">
+  <svg viewBox="0 0 720 240">
+    …<rect data-tinyfly="db" …/>…
+    <g data-tinyfly-choose="cache" aria-label="Turn the cache on">…</g>
+  </svg>
+  <script type="application/json" data-tinyfly-timeline
+          data-scenario="no-cache" data-scenario-label="Off">{ …timeline… }</script>
+  <script type="application/json" data-tinyfly-timeline
+          data-scenario="cache" data-scenario-label="On">{ …timeline… }</script>
+  <figcaption>The same request, with and without a cache.</figcaption>
+</figure>
+```
+
+Every scenario animates the same markup. The controls add a choice under the bar.
+
+| Attribute | On | Meaning |
+|---|---|---|
+| `data-scenario` | a timeline script | The scenario's id |
+| `data-scenario-label` | a timeline script | What the reader sees on the choice (default: the id) |
+| `data-scenario` | the figure | The scenario shown first (default: the first script) |
+| `data-scenario-legend` | the figure | Names the choice: "Cache", "Servers" (default: `labels.scenario`, "Scenario") |
+| `data-scenario-control` | the figure | `buttons` (default), a group of options; or `slider`, for points on a scale |
+| `data-tinyfly-choose` | any element inside | Makes it a button that chooses that scenario |
+
+**Two or more timeline scripts make a scenario figure.** One script with a
+`data-scenario` does too, and `validate` warns that it gives the reader nothing to
+choose. `data-markers` gives steps to every scenario that has none. Scenarios are
+inline only; `data-src` isn't read for them.
+
+**What switching does:**
+
+- **Clean slate:** whatever the previous scenario drew is undone first. Each
+  target's authored `style` attribute, its text (for elements holding only text)
+  and its path geometry are put back, then the new scenario draws. A box one
+  scenario paints red is back to its authored colour in a scenario that never
+  touches it.
+- **Same step:** when the new scenario has a marker with the current marker's id,
+  the reader lands on it. Give comparable moments the same ids ("ask", "answer")
+  and the reader can flip between cases without losing their place.
+- **The end stays the end.** Otherwise, the start.
+- **Playing stays playing.** A paused figure stays paused.
+- **Reduced motion:** the new scenario's final frame.
+
+**Choosing a control:**
+
+- **Options** (radio buttons) for distinct cases: "HTTP/2" or "HTTP/3", "Read
+  committed" or "Serializable". Arrow keys move between them.
+- **Slider** for points on a scale: 1, 10, 100 servers. It's a range input with one
+  stop per scenario, in script order. The value's label is shown beside it and
+  announced as `aria-valuetext`.
+- **Hotspots** for acting on the diagram itself: click the leader to take it down.
+  Each `[data-tinyfly-choose]` becomes a toggle button (`role="button"`,
+  `tabindex="0"`, `aria-pressed` while its scenario shows), chosen with a click,
+  Enter or Space. It's named by its own `aria-label` or else the scenario's label.
+  Hotspots work with `data-controls="false"` too.
+
+**Numbers come from the author, not the browser.** A slider's stops are
+precomputed timelines, not a formula evaluated on the page. That keeps figures
+deterministic and JSON-only, and lets a build script generate every stop from the
+same calculation the text quotes.
+
+From code:
+
+```js
+const player = tinyfly.create('#figure')
+await player.loadScenarios([
+  { id: 'no-cache', label: 'Off', timeline: slow },
+  { id: 'cache', label: 'On', timeline: fast },
+], { initial: 'no-cache' })
+
+player.scenarios          // [{ id: 'no-cache', label: 'Off' }, { id: 'cache', label: 'On' }]
+player.scenario           // 'no-cache'
+player.setScenario('cache')
+createControls(player, figure, { scenarioControl: 'slider', labels: { scenario: 'Cache' } })
+bindChoiceHotspots(player, figure)   // returns a function that unbinds them
+```
+
 ## Authoring with `@algorisys/tinyfly/teach`
 
 ```js
@@ -198,12 +283,21 @@ npx @algorisys/tinyfly render append.json append.svg --at end > append-final.svg
 npx @algorisys/tinyfly render append.json append.svg --at full > append-question.svg
 ```
 
+Pass every scenario's timeline to check a scenario figure. Each is named by its
+`id`:
+
+```bash
+npx @algorisys/tinyfly validate no-cache.json cache.json --markup cache-figure.svg
+```
+
 **`validate`** exits with code 1 when:
 
 - a track targets a `data-tinyfly` name the markup lacks;
 - a marker is out of order, duplicated or outside the animation;
 - a keyframe comes after an explicit duration;
-- a caption names an unknown marker.
+- a caption names an unknown marker;
+- with several timelines: two share an id, or a `data-tinyfly-choose` names no
+  scenario. Each timeline's problems are prefixed with its id.
 
 It also warns about markers missing a caption in some language, and elements that
 are never animated.
