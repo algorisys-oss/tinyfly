@@ -187,6 +187,58 @@ export default {
     })
     await page.evaluate(() => document.getElementById('scenario-holder').remove())
 
+    // Full screen: native where the browser allows it, an overlay where it doesn't. Host CSS that
+    // constrains figures (like a blog's max-width and a phone min-width) must not shrink the drawing.
+    const fsFigure = async (id, removeApi) => page.evaluate(async ({ id, removeApi }) => {
+      if (removeApi) { Element.prototype.requestFullscreen = undefined; Element.prototype.webkitRequestFullscreen = undefined }
+      const holder = document.createElement('div')
+      holder.id = `${id}-holder`
+      const definition = { id: 'fs', config: { duration: 400 }, tracks: [{ id: 'x', target: 'dot', property: 'x', keyframes: [{ time: 0, value: 0 }, { time: 400, value: 50 }] }] }
+      holder.innerHTML = `<style>.host-fig{max-width:30rem;margin:2em auto}.host-fig svg{display:block;width:100%;min-width:640px}</style>` +
+        `<figure id="${id}" class="host-fig" data-tinyfly-embed data-fullscreen="true"><svg viewBox="0 0 720 360"><circle data-tinyfly="dot" cx="20" cy="20" r="10"/></svg><script type="application/json" data-tinyfly-timeline>${JSON.stringify(definition)}</script></figure>`
+      document.body.prepend(holder)
+      await window.__embed.mountAll(holder)
+    }, { id, removeApi })
+    const fsState = (id) => page.evaluate((id) => {
+      const fig = document.getElementById(id)
+      const svg = fig.querySelector('svg').getBoundingClientRect()
+      const box = fig.getBoundingClientRect()
+      return { native: document.fullscreenElement === fig, overlay: fig.classList.contains('tf-fullscreen-overlay'), active: fig.classList.contains('tf-fullscreen'),
+        figW: Math.round(box.width), figH: Math.round(box.height), svgW: Math.round(svg.width), svgH: Math.round(svg.height),
+        vw: window.innerWidth, vh: window.innerHeight, pressed: fig.querySelector('.tf-ctl-fullscreen').getAttribute('aria-pressed') }
+    }, id)
+
+    await fsFigure('fs-native', false)
+    const before = await fsState('fs-native')
+    await page.click('#fs-native .tf-ctl-fullscreen')
+    await page.waitForTimeout(600)
+    const during = await fsState('fs-native')
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(600)
+    if ((await fsState('fs-native')).active) { await page.click('#fs-native .tf-ctl-fullscreen'); await page.waitForTimeout(400) }
+    const after = await fsState('fs-native')
+    const fills = (s) => s.active && s.figW >= s.vw - 2 && s.figH >= s.vh - 2 && s.svgW > before.svgW
+    results.push({
+      label: 'embed fullscreen: the button fills the screen (native or overlay) over host figure CSS, and Esc or the button leaves it',
+      ok: !before.active && fills(during) && during.pressed === 'true' && !after.active && !after.native,
+      detail: JSON.stringify({ before, during, after }),
+    })
+    await page.evaluate(() => document.getElementById('fs-native-holder').remove())
+
+    await fsFigure('fs-overlay', true)
+    await page.click('#fs-overlay .tf-ctl-fullscreen')
+    await page.waitForTimeout(300)
+    const overlay = await fsState('fs-overlay')
+    const scrollLocked = await page.evaluate(() => document.documentElement.style.overflow)
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(300)
+    const overlayAfter = await fsState('fs-overlay')
+    results.push({
+      label: 'embed fullscreen: without the Fullscreen API (iPhone) an overlay covers the viewport and locks scrolling; Esc restores',
+      ok: overlay.overlay && !overlay.native && overlay.figW >= overlay.vw - 2 && overlay.figH >= overlay.vh - 2 && overlay.svgW >= Math.min(overlay.vw - 40, 640 * 0.5) && scrollLocked === 'hidden' && !overlayAfter.active,
+      detail: JSON.stringify({ overlay, scrollLocked, overlayAfter }),
+    })
+
     results.push({ label: 'embed: no page errors', ok: errors.length === 0, detail: errors.join('; ') })
     return results
   },

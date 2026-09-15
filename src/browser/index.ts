@@ -63,7 +63,7 @@ export {
   CustomWiggle,
 } from '../compat/gsap'
 export { createControls, DEFAULT_LABELS } from '../embed/controls'
-export type { Controls, ControlsOptions, ControlLabels } from '../embed/controls'
+export type { Controls, ControlsOptions, ControlLabels, FullscreenControl } from '../embed/controls'
 export { mount, mountAll, unmount } from '../embed/mount'
 export { bindChoiceHotspots } from '../embed/choices'
 export type { MountedEmbed, MountOptions } from '../embed/mount'

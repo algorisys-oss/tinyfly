@@ -317,3 +317,115 @@ describe('validateScenarios', () => {
     expect(messages).toContain('warning: only one scenario, so the reader has nothing to choose')
   })
 })
+
+describe('fullscreen', () => {
+  const setup = async (options: Parameters<typeof createControls>[2] = { fullscreen: true }) => {
+    document.body.innerHTML = `<figure id="f">${svg}</figure>`
+    const figure = document.getElementById('f')!
+    const player = new TinyflyPlayer(figure)
+    await player.load(lesson)
+    const controls = createControls(player, figure, options)
+    const button = () => controls.element.querySelector('.tf-ctl-fullscreen') as HTMLButtonElement
+    return { figure, controls, button }
+  }
+  afterEach(() => {
+    delete (document as { fullscreenEnabled?: boolean }).fullscreenEnabled
+    delete (document as { fullscreenElement?: Element | null }).fullscreenElement
+    delete (document as { exitFullscreen?: () => Promise<void> }).exitFullscreen
+  })
+
+  it('has no button unless asked for', async () => {
+    const { button, controls } = await setup({})
+    expect(button()).toBeNull()
+    controls.destroy()
+  })
+
+  it('without the Fullscreen API (an iPhone) fills the viewport with an overlay, and Escape leaves it', async () => {
+    const { figure, controls, button } = await setup()
+    expect(button().getAttribute('aria-label')).toBe('Full screen')
+    expect(button().getAttribute('aria-pressed')).toBe('false')
+    document.documentElement.style.overflow = 'scroll'
+
+    button().click()
+    await Promise.resolve()
+    expect(figure.classList.contains('tf-fullscreen')).toBe(true)
+    expect(figure.classList.contains('tf-fullscreen-overlay')).toBe(true)
+    expect(document.documentElement.style.overflow).toBe('hidden')
+    expect(button().getAttribute('aria-pressed')).toBe('true')
+    expect(button().getAttribute('aria-label')).toBe('Exit full screen')
+    expect(controls.fullscreen!.active).toBe(true)
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await Promise.resolve()
+    expect(figure.classList.contains('tf-fullscreen')).toBe(false)
+    expect(document.documentElement.style.overflow).toBe('scroll')
+    expect(button().getAttribute('aria-pressed')).toBe('false')
+    controls.destroy()
+  })
+
+  it('F toggles it from the keyboard, inside the figure only', async () => {
+    const { figure, controls } = await setup()
+    figure.dispatchEvent(new KeyboardEvent('keydown', { key: 'f', bubbles: true }))
+    await Promise.resolve()
+    expect(controls.fullscreen!.active).toBe(true)
+    figure.dispatchEvent(new KeyboardEvent('keydown', { key: 'f', bubbles: true }))
+    await Promise.resolve()
+    expect(controls.fullscreen!.active).toBe(false)
+    controls.destroy()
+  })
+
+  it('uses the real Fullscreen API when there is one, and follows the browser leaving it', async () => {
+    const { figure, controls, button } = await setup()
+    ;(document as { fullscreenEnabled?: boolean }).fullscreenEnabled = true
+    const enter = vi.fn(async () => {
+      ;(document as { fullscreenElement?: Element | null }).fullscreenElement = figure
+      document.dispatchEvent(new Event('fullscreenchange'))
+    })
+    const exit = vi.fn(async () => {
+      ;(document as { fullscreenElement?: Element | null }).fullscreenElement = null
+      document.dispatchEvent(new Event('fullscreenchange'))
+    })
+    ;(figure as unknown as { requestFullscreen: () => Promise<void> }).requestFullscreen = enter
+    ;(document as { exitFullscreen?: () => Promise<void> }).exitFullscreen = exit
+
+    await controls.fullscreen!.enter()
+    expect(enter).toHaveBeenCalledTimes(1)
+    expect(figure.classList.contains('tf-fullscreen')).toBe(true)
+    expect(figure.classList.contains('tf-fullscreen-overlay')).toBe(false)
+    expect(button().getAttribute('aria-pressed')).toBe('true')
+
+    // The browser leaves fullscreen by itself (the reader pressed Esc): the controls follow.
+    ;(document as { fullscreenElement?: Element | null }).fullscreenElement = null
+    document.dispatchEvent(new Event('fullscreenchange'))
+    expect(figure.classList.contains('tf-fullscreen')).toBe(false)
+    expect(controls.fullscreen!.active).toBe(false)
+
+    await controls.fullscreen!.enter()
+    await controls.fullscreen!.exit()
+    expect(exit).toHaveBeenCalledTimes(1)
+    expect(figure.classList.contains('tf-fullscreen')).toBe(false)
+    controls.destroy()
+  })
+
+  it('falls back to the overlay when the browser refuses', async () => {
+    const { figure, controls } = await setup()
+    ;(document as { fullscreenEnabled?: boolean }).fullscreenEnabled = true
+    ;(figure as unknown as { requestFullscreen: () => Promise<void> }).requestFullscreen = () => Promise.reject(new Error('denied'))
+    await controls.fullscreen!.enter()
+    expect(figure.classList.contains('tf-fullscreen-overlay')).toBe(true)
+    controls.destroy()
+    // Destroying while full screen puts the page back.
+    expect(figure.classList.contains('tf-fullscreen')).toBe(false)
+  })
+
+  it('embeds turn it on with data-fullscreen', async () => {
+    document.body.innerHTML =
+      `<figure data-tinyfly-embed data-fullscreen="true" data-labels='{"fullscreen":"Pantalla completa"}'>${svg}<script type="application/json" data-tinyfly-timeline>${JSON.stringify(lesson)}</script></figure>` +
+      `<figure data-tinyfly-embed>${svg}<script type="application/json" data-tinyfly-timeline>${JSON.stringify(lesson)}</script></figure>`
+    const [on, off] = await mountAll()
+    expect(on.controls!.element.querySelector('.tf-ctl-fullscreen')!.getAttribute('aria-label')).toBe('Pantalla completa')
+    expect(off.controls!.element.querySelector('.tf-ctl-fullscreen')).toBeNull()
+    unmount(on.element)
+    unmount(off.element)
+  })
+})

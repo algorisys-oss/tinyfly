@@ -1861,6 +1861,14 @@ Every gap from the Go series spike on teachyourselfcoding.com, fixed:
 - [x] **Fixed:** `watchVisibility` cleared the player's subscribers on every `load()`
       (a stray `listeners.clear()` from v0.64.0), so controls stopped updating after
       a second load
+- [x] **Full screen for teaching figures** (asked for the System Design lessons):
+      `createControls({ fullscreen: true })` / `data-fullscreen="true"`. Fullscreen API
+      where the browser allows element fullscreen, a fixed overlay otherwise (iPhone
+      Safari has element fullscreen only on iPad, per MDN browser-compat-data) or when a
+      request is refused; scroll lock and Esc for the overlay; F key; `tf-fullscreen`
+      layout makes the SVG take the remaining space over host figure CSS. Unit tests for
+      both routes and refusal; e2e in Chromium, Firefox and WebKit measures the drawing
+      filling the viewport over a host `max-width` and `min-width`
 - [ ] Next: a `hold` easing alias; RTL caption layout
 
 ---

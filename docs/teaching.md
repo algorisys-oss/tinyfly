@@ -25,7 +25,7 @@ path for all of that:
 </figure>
 
 <!-- once, anywhere on the page (a site-wide footer is fine) -->
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.69.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.70.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 Every `[data-tinyfly-embed]` mounts when the page is ready, with no per-post
@@ -134,8 +134,9 @@ createControls(player, figureElement, { labels: { play: 'Reproducir' }, speeds: 
 
 - **Controls:** restart, previous step, play/pause, next step, a scrub bar, a step
   counter ("2 / 5"), speed, the caption line and the question.
-- **Keys:** while focus is inside that figure, Space plays or pauses, ← and → step, and
-  Home restarts. Several figures on one page never react to the same key press.
+- **Keys:** while focus is inside that figure, Space plays or pauses, ← and → step,
+  Home restarts, and F toggles full screen when it's on. Several figures on one page
+  never react to the same key press.
 - **Styling:** use custom properties on `.tf-ctl`: `--tf-ctl-fg`, `--tf-ctl-bg`,
   `--tf-ctl-accent`, `--tf-ctl-radius`, `--tf-ctl-font`. Every class is prefixed
   `tf-ctl`.
@@ -147,6 +148,32 @@ createControls(player, figureElement, { labels: { play: 'Reproducir' }, speeds: 
 - **Several bundles:** `tinyfly-player.iife.js`, `tinyfly-embed.iife.js` and
   `tinyfly.iife.js` add to one `tinyfly` global, so loading more than one keeps every
   bundle's functions.
+
+## Full screen
+
+A detailed diagram is easier to follow when it fills the screen. Turn on a full screen
+button per figure:
+
+```html
+<figure data-tinyfly-embed data-fullscreen="true">…</figure>
+```
+
+or in code, `createControls(player, figure, { fullscreen: true })`.
+
+- **Where the browser supports it:** the button uses the Fullscreen API on the figure,
+  so the figure, its controls and its captions fill the screen, and the browser's own
+  Esc leaves it.
+- **Where it doesn't:** iPhone Safari only supports element fullscreen on iPad. There,
+  and whenever the browser refuses a request, the figure becomes a fixed overlay over
+  the page, the page behind stops scrolling, and Esc or the button closes it.
+- **Layout:** in both modes the figure gets the class `tf-fullscreen` and becomes a
+  column: the controls and captions keep their size, and the SVG or canvas takes the
+  remaining space, scaled to fit. Those rules use `!important` on purpose, so a host
+  page's figure CSS, such as a `max-width` or a phone `min-width`, can't keep the drawing
+  at its in-page size. The background comes from `--tf-fullscreen-bg` (default white).
+- **Accessibility:** the button is labelled `labels.fullscreen` / `labels.exitFullscreen`
+  ("Full screen", "Exit full screen") and reports its state with `aria-pressed`.
+- **From code:** `controls.fullscreen.enter()`, `.exit()` and `.active`.
 
 ## Scenarios: let the reader change something
 

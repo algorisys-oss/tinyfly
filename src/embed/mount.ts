@@ -29,6 +29,8 @@ import { bindChoiceHotspots } from './choices'
  * makes it a stepped slider instead of a group of options. Elements with
  * `data-tinyfly-choose="id"` become buttons that choose that scenario.
  *
+ * `data-fullscreen="true"` adds a full screen button to the controls.
+ *
  * Embeds default to `playWhenVisible: true`. Each SVG without a role becomes a
  * labelled image (`role="img"`, named by `data-alt` or the figcaption), and the
  * step captions are announced as they change.
@@ -115,6 +117,7 @@ export async function mount(element: HTMLElement, options: MountOptions = {}): P
     const control = element.getAttribute('data-scenario-control')
     entry.controls = createControls(player, element, {
       ...options.controls,
+      ...(element.getAttribute('data-fullscreen') === 'true' ? { fullscreen: true } : {}),
       ...(control === 'slider' || control === 'buttons' ? { scenarioControl: control } : {}),
       labels: { ...options.controls?.labels, ...labels, ...(legend ? { scenario: legend } : {}) },
       // Inside the figure, before its figcaption, so the caption stays last.

@@ -5,6 +5,9 @@ import type { TinyflyPlayer } from '../player/player'
  * (through markers), restart, a scrub bar, speed, the current step's caption, a
  * question to answer before the next step is revealed, and — when the player has
  * scenarios — a choice between them (a group of options, or a stepped slider).
+ * With `fullscreen: true`, a button shows the figure full screen: through the
+ * Fullscreen API where the browser has it, and as a fixed overlay where it
+ * doesn't (iPhone Safari supports element fullscreen only on iPad).
  *
  * Kept out of the player and engine builds. Styled only through CSS custom
  * properties on the bar (`--tf-ctl-fg`, `--tf-ctl-bg`, `--tf-ctl-accent`,
@@ -13,7 +16,8 @@ import type { TinyflyPlayer } from '../player/player'
  * can speak its own language.
  *
  * Keys work while focus is inside the figure, so several figures on one page
- * never react to the same key: Space plays or pauses, ← and → step, Home restarts.
+ * never react to the same key: Space plays or pauses, ← and → step, Home restarts,
+ * and F toggles full screen when it's enabled.
  */
 
 export interface ControlLabels {
@@ -35,6 +39,8 @@ export interface ControlLabels {
   stepFormat: string
   /** Names the scenario choice: "Scenario", or what is being chosen ("Cache", "Servers") */
   scenario: string
+  fullscreen: string
+  exitFullscreen: string
 }
 
 export const DEFAULT_LABELS: ControlLabels = {
@@ -50,6 +56,8 @@ export const DEFAULT_LABELS: ControlLabels = {
   of: 'of',
   stepFormat: '{index} / {total}',
   scenario: 'Scenario',
+  fullscreen: 'Full screen',
+  exitFullscreen: 'Exit full screen',
 }
 
 export interface ControlsOptions {
@@ -68,10 +76,21 @@ export interface ControlsOptions {
    * or `'slider'`, for scenarios that are points on a scale (1, 10, 100 servers).
    */
   scenarioControl?: 'buttons' | 'slider'
+  /** Add a full screen button for the player's container (default false). F toggles it too. */
+  fullscreen?: boolean
+}
+
+export interface FullscreenControl {
+  /** Whether the figure is full screen now, by either route */
+  readonly active: boolean
+  enter(): Promise<void>
+  exit(): Promise<void>
 }
 
 export interface Controls {
   readonly element: HTMLElement
+  /** Present when `fullscreen` was enabled */
+  readonly fullscreen?: FullscreenControl
   destroy(): void
 }
 
@@ -108,6 +127,16 @@ const STYLES = `
 .tf-ctl-choice-slider input { flex: 1 1 140px; accent-color: var(--tf-ctl-accent); }
 .tf-ctl-choice-slider input:focus-visible { outline: 2px solid var(--tf-ctl-accent); outline-offset: 2px; }
 .tf-ctl-choice-slider output { font-variant-numeric: tabular-nums; min-width: 4em; }
+.tf-ctl-fullscreen { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; }
+.tf-ctl-fullscreen svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+/* Full screen, by either route. The figure becomes a column: the drawing takes the room
+   that's left after the controls and captions. !important because the host page's own
+   figure rules (a max-width, a min-width that makes a diagram scroll on phones) would
+   otherwise keep the drawing at its in-page size. */
+.tf-fullscreen { box-sizing: border-box !important; display: flex !important; flex-direction: column; width: 100% !important; max-width: none !important; height: 100vh; height: 100dvh; margin: 0 !important; padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)) !important; overflow: auto !important; background: var(--tf-fullscreen-bg, #fff); }
+.tf-fullscreen > * { flex: none; }
+.tf-fullscreen > svg, .tf-fullscreen > canvas { flex: 1 1 0; min-height: 0; width: 100% !important; min-width: 0 !important; height: 100% !important; }
+.tf-fullscreen-overlay { position: fixed !important; inset: 0; z-index: 2147483000; }
 `
 
 let choiceGroups = 0
@@ -190,6 +219,9 @@ export function createControls(player: TinyflyPlayer, container: HTMLElement, op
   bar.append(restart, prev, toggle, next, scrub, step)
   if (speeds.length > 0) bar.append(speed)
   root.append(bar)
+
+  const fullscreen = options.fullscreen ? createFullscreen(container, doc, labels) : undefined
+  if (fullscreen) bar.append(fullscreen.button)
 
   // Captions and questions are announced politely as they change.
   const caption = doc.createElement('p')
@@ -281,6 +313,12 @@ export function createControls(player: TinyflyPlayer, container: HTMLElement, op
         player.pause()
         player.seek(0)
         break
+      case 'f':
+      case 'F':
+        if (!fullscreen) return
+        event.preventDefault()
+        void (fullscreen.active ? fullscreen.exit() : fullscreen.enter())
+        break
     }
   }
   scope.addEventListener('keydown', onKey)
@@ -288,7 +326,15 @@ export function createControls(player: TinyflyPlayer, container: HTMLElement, op
 
   return {
     element: root,
+    fullscreen: fullscreen && {
+      get active() {
+        return fullscreen.active
+      },
+      enter: fullscreen.enter,
+      exit: fullscreen.exit,
+    },
     destroy() {
+      fullscreen?.destroy()
       unsubscribe()
       scope.removeEventListener('keydown', onKey)
       root.removeEventListener('keydown', onKey)
@@ -365,4 +411,113 @@ function createScenarioChoice(
     }
   }
   return { element, update }
+}
+
+type FullscreenDocument = Document & {
+  webkitFullscreenEnabled?: boolean
+  webkitFullscreenElement?: Element | null
+  webkitExitFullscreen?: () => Promise<void> | void
+}
+type FullscreenElement = HTMLElement & { webkitRequestFullscreen?: () => Promise<void> | void }
+
+const EXPAND_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>'
+const COLLAPSE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>'
+
+/**
+ * Full screen for one figure. The Fullscreen API when the browser offers it for
+ * elements; otherwise, or if the browser refuses, a fixed overlay that covers the
+ * viewport and stops the page behind it from scrolling. Both routes add the
+ * `tf-fullscreen` class, which the styles use to lay the figure out.
+ */
+function createFullscreen(container: HTMLElement, doc: Document, labels: ControlLabels) {
+  const fsDoc = doc as FullscreenDocument
+  const target = container as FullscreenElement
+  const button = doc.createElement('button')
+  button.type = 'button'
+  button.className = 'tf-ctl-btn tf-ctl-fullscreen'
+
+  let mode: 'native' | 'overlay' | undefined
+  let savedOverflow = ''
+
+  const render = () => {
+    const on = mode !== undefined
+    button.innerHTML = on ? COLLAPSE_ICON : EXPAND_ICON
+    const label = on ? labels.exitFullscreen : labels.fullscreen
+    button.setAttribute('aria-label', label)
+    button.title = label
+    button.setAttribute('aria-pressed', String(on))
+    container.classList.toggle('tf-fullscreen', on)
+    container.classList.toggle('tf-fullscreen-overlay', mode === 'overlay')
+  }
+
+  const nativeElement = () => fsDoc.fullscreenElement ?? fsDoc.webkitFullscreenElement ?? null
+  const onNativeChange = () => {
+    if (nativeElement() === container) mode = 'native'
+    else if (mode === 'native') mode = undefined
+    render()
+  }
+  const onOverlayKey = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') void exit()
+  }
+
+  const openOverlay = () => {
+    mode = 'overlay'
+    savedOverflow = doc.documentElement.style.overflow
+    doc.documentElement.style.overflow = 'hidden'
+    doc.addEventListener('keydown', onOverlayKey)
+    render()
+  }
+
+  async function enter(): Promise<void> {
+    if (mode) return
+    const request = target.requestFullscreen?.bind(target) ?? target.webkitRequestFullscreen?.bind(target)
+    const enabled = fsDoc.fullscreenEnabled ?? fsDoc.webkitFullscreenEnabled ?? false
+    if (request && enabled) {
+      try {
+        await request()
+        if (nativeElement() === container) {
+          mode = 'native'
+          render()
+          return
+        }
+      } catch {
+        // Refused (no user gesture, a policy, an iframe without allowfullscreen): use the overlay.
+      }
+    }
+    openOverlay()
+  }
+
+  async function exit(): Promise<void> {
+    if (mode === 'overlay') {
+      doc.removeEventListener('keydown', onOverlayKey)
+      doc.documentElement.style.overflow = savedOverflow
+      mode = undefined
+      render()
+    } else if (mode === 'native') {
+      mode = undefined
+      render()
+      const leave = fsDoc.exitFullscreen?.bind(fsDoc) ?? fsDoc.webkitExitFullscreen?.bind(fsDoc)
+      if (nativeElement() === container && leave) await leave()
+    }
+  }
+
+  button.addEventListener('click', () => void (mode ? exit() : enter()))
+  doc.addEventListener('fullscreenchange', onNativeChange)
+  doc.addEventListener('webkitfullscreenchange', onNativeChange)
+  render()
+
+  return {
+    button,
+    get active() {
+      return mode !== undefined
+    },
+    enter,
+    exit,
+    destroy() {
+      void exit()
+      doc.removeEventListener('fullscreenchange', onNativeChange)
+      doc.removeEventListener('webkitfullscreenchange', onNativeChange)
+      button.remove()
+    },
+  }
 }

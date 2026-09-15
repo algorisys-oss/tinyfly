@@ -39,6 +39,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Markers and captions in the JSON** - Named steps (`pause`, `question` for predict-then-reveal) and captions per language, kept out of the tracks so translation never touches timing
 - **A player that teaches** - Shows a real frame on load, steps between markers (`next` / `prev` / `stepMode`), respects `prefers-reduced-motion`, and pauses off screen
 - **One-script embeds** - `tinyfly-embed.iife.js` with `data-tinyfly-auto` mounts every `[data-tinyfly-embed]` figure with step controls, announced captions and an accessible SVG, with no per-post JavaScript
+- **Full screen** - `data-fullscreen="true"` adds a button that fills the screen with the figure, through the Fullscreen API or, on iPhone, an overlay; the drawing scales to the screen whatever the page's figure CSS says
 - **Scenarios** - Several timelines on one figure, and the reader chooses which plays: a group of options, a stepped slider, or clickable parts of the SVG (`data-tinyfly-choose`). Switching undoes the previous scenario's drawing and keeps the reader at the same step
 - **Authoring kit** - `lesson()` step builder and diagram primitives (array cells, pointer, stack, queue / channel, table, pipeline) in `@algorisys/tinyfly/teach`
 - **Build tools** - `npx @algorisys/tinyfly validate` catches broken figures in CI; `render` writes a frame to static SVG for RSS, email and print
@@ -204,7 +205,7 @@ GSAP-shaped functions at the top level. Teaching embeds are included: add
 itself.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.69.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.70.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -226,7 +227,7 @@ itself.
 | `cdn/tinyfly-player.iife.js` | Player only (~17 KB gzipped), for playing editor exports |
 | `cdn/tinyfly-embed.iife.js` | Only teaching figures (~19 KB gzipped): player, step controls, auto-mount |
 
-Replace `@v0.69.0` with the version you want. **Pin a version in production**:
+Replace `@v0.70.0` with the version you want. **Pin a version in production**:
 a tag's files never change, and each release's `cdn/README.md` lists an SRI hash
 for `integrity=`. `@main` follows the latest release, which jsDelivr caches for up
 to a day. Loading more than one bundle is safe: they add to the same `tinyfly`
@@ -240,7 +241,7 @@ A teaching figure needs no code at all:
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON with markers… }</script>
   <figcaption>Appending to a full slice</figcaption>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.69.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.70.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
 ```
 
 See [Teaching Animations](docs/teaching.md).
@@ -339,7 +340,7 @@ Without a build step, the player bundle puts the same functions on a `tinyfly` g
   <div data-tinyfly="box" style="width: 60px; height: 60px; background: #4a9eff;"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.69.0/cdn/tinyfly-player.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.70.0/cdn/tinyfly-player.iife.js"></script>
 <script>
   tinyfly.play('#animation', './animation.json', { loop: -1 })
 </script>
@@ -448,7 +449,7 @@ Or skip the code entirely with declarative embeds (see [Teaching Animations](doc
   <svg viewBox="0 0 720 200">…</svg>
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON… }</script>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.69.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.70.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 ### Audio / Video Sync
@@ -720,7 +721,7 @@ load.
 
 ### Test Coverage
 
-`npm test` runs 2,191 unit tests in 127 files, all passing:
+`npm test` runs 2,197 unit tests in 127 files, all passing:
 
 | Area | Tests |
 |---|---|
@@ -733,7 +734,7 @@ load.
 | Drivers and interaction (`src/drivers`, `src/interaction`) | 136 |
 | Player, media sync, sequencer, teaching and scenarios (`src/player`) | 103 |
 | Docs viewer and `llms.txt` (`src/docs`) | 16 |
-| Embeds, teaching kit, framework hooks, landing (`src/embed`, `src/teach`, `src/frameworks`, `src/landing`) | 27 |
+| Embeds, teaching kit, framework hooks, landing (`src/embed`, `src/teach`, `src/frameworks`, `src/landing`) | 33 |
 
 ## Contributing
 
