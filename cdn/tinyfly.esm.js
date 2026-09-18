@@ -6049,7 +6049,7 @@ function no(i, t, e = {}) {
     return O.type = "button", O.className = `tf-ctl-btn ${N}`.trim(), O.setAttribute("aria-label", M), O.title = M, O.textContent = I, O.addEventListener("click", L), O;
   }, f = h(s.restart, "⟲", () => {
     i.pause(), i.seek(0);
-  }), u = h(s.prev, "◀", () => i.prev()), d = h(s.play, "▶", () => i.isPlaying ? i.pause() : p(), "tf-ctl-primary"), m = h(s.next, "▶|", () => i.next()), p = () => {
+  }), u = h(s.prev, "|◀", () => i.prev()), d = h(s.play, "▶", () => i.isPlaying ? i.pause() : p(), "tf-ctl-primary"), m = h(s.next, "▶|", () => i.next()), p = () => {
     i.currentTime >= i.duration - 0.5 && i.seek(0), i.play();
   }, g = n.createElement("input");
   g.type = "range", g.className = "tf-ctl-scrub", g.min = "0", g.max = "1000", g.step = "1", g.setAttribute("aria-label", s.scrub), g.addEventListener("input", () => {

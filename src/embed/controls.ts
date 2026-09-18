@@ -187,7 +187,7 @@ export function createControls(player: TinyflyPlayer, container: HTMLElement, op
     player.pause()
     player.seek(0)
   })
-  const prev = button(labels.prev, '◀', () => player.prev())
+  const prev = button(labels.prev, '|◀', () => player.prev())
   const toggle = button(labels.play, '▶', () => (player.isPlaying ? player.pause() : playFromEnd()), 'tf-ctl-primary')
   const next = button(labels.next, '▶|', () => player.next())
 

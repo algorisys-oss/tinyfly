@@ -7,6 +7,9 @@ scripts/
 # Internal documentation
 CLAUDE.md
 
+# Internal marketing / launch material
+media/
+
 # IDE and editor configs (optional - uncomment if needed)
 # .vscode/
 # .idea/

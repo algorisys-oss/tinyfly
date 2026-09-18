@@ -9,8 +9,8 @@ const files = import.meta.glob<string>('../../docs/*.md', { query: '?raw', impor
 const contents = new Map(Object.entries(files).map(([path, text]) => [path.replace(/^.*\/|\.md$/g, ''), text]))
 const readDoc = (id: string) => contents.get(id) ?? ''
 
-/** Files in docs/ that are design notes or launch material, not user docs. */
-const INTERNAL_DOCS = ['2d-animation-roadmap', 'camera', 'symbols-and-library', 'producthunt-launch']
+/** Files in docs/ that are design notes, not user docs. */
+const INTERNAL_DOCS = ['2d-animation-roadmap', 'camera', 'symbols-and-library']
 
 describe('doc manifest', () => {
   it('points at files that exist', () => {
