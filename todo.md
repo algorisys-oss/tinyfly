@@ -1870,7 +1870,8 @@ Every gap from the Go series spike on teachyourselfcoding.com, fixed:
       both routes and refusal; e2e in Chromium, Firefox and WebKit measures the drawing
       filling the viewport over a host `max-width` and `min-width`. v0.70.1: on short
       landscape screens the controls sit in a column beside the drawing (529px drawn on an
-      844×390 viewport, up from about 233px)
+      844×390 viewport, up from about 233px). v0.70.2: the step buttons are `|◀` and `▶|`, a
+      mirrored pair
 - [ ] Next: a `hold` easing alias; RTL caption layout
 
 ---

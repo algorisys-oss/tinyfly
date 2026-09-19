@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.70.2](v0.70.2.md) | 2026-09-19 | The previous and next step buttons now look like a pair |
 | [v0.70.1](v0.70.1.md) | 2026-09-15 | Full screen on short landscape screens puts the controls beside the drawing |
 | [v0.70.0](v0.70.0.md) | 2026-09-15 | Full screen for teaching figures: the Fullscreen API, or an overlay on iPhone |
 | [v0.69.0](v0.69.0.md) | 2026-09-15 | Scenarios: several timelines on one teaching figure, chosen by options, a slider or SVG hotspots |
