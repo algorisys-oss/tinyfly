@@ -1,36 +1,6 @@
-import { defineConfig, type Plugin } from 'vite'
-import { resolve, dirname } from 'path'
-
-const ENGINE_DIR = resolve(__dirname, 'src/engine')
-/** The exporters live under the engine but ship as their own entry, `tinyfly/export`. */
-const EXPORT_DIR = resolve(__dirname, 'src/engine/export')
-
-/**
- * Rewrite imports that resolve into the engine to the bare `@algorisys/tinyfly` specifier
- * and mark them external.
- *
- * Without this each add-on inlines its own copy of the engine, so a consumer
- * importing both `tinyfly` and `tinyfly/gsap-compat` ends up with two
- * `Timeline` classes and `instanceof` checks that silently fail.
- *
- * Adapters are *not* externalised: `tinyfly/adapters` is its own entry, but
- * the small amount of adapter code another add-on uses is bundled into it so
- * add-ons do not depend on each other.
- */
-function externaliseEngine(): Plugin {
-  return {
-    name: 'tinyfly-externalise-engine',
-    enforce: 'pre',
-    resolveId(source, importer) {
-      if (!importer || !source.startsWith('.')) return null
-      const resolved = resolve(dirname(importer), source)
-      if (!resolved.startsWith(ENGINE_DIR)) return null
-      // Inside the export entry, its own files are bundled into it.
-      if (resolved.startsWith(EXPORT_DIR) && importer.startsWith(EXPORT_DIR)) return null
-      return { id: '@algorisys/tinyfly', external: true }
-    },
-  }
-}
+import { defineConfig } from 'vite'
+import { resolve } from 'path'
+import { externaliseEngine } from './vite-externalise-engine-plugin'
 
 // Library build of the optional add-on entry points: drivers (scroll /
 // visibility), the interaction layer (Observer / Draggable) and the

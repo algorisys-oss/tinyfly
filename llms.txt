@@ -37,6 +37,7 @@ Key facts:
 
 - [Scroll Animation](https://raw.githubusercontent.com/algorisys-oss/tinyfly/main/docs/scroll-animation.md): Scroll-driven and play-when-visible animation with ScrollDriver and VisibilityDriver.
 - [Teaching Animations](https://raw.githubusercontent.com/algorisys-oss/tinyfly/main/docs/teaching.md): Step-through explanatory figures: markers, captions in several languages, the teaching player, step controls, one-script declarative embeds, tinyfly/teach diagram primitives, and validate / render for build pipelines.
+- [Rendering Video from Code](https://raw.githubusercontent.com/algorisys-oss/tinyfly/main/docs/video-rendering.md): Rendering a scene to MP4 without a browser: `tinyfly video`, custom canvas targets drawn by code, timing from narration, SRT/WebVTT captions, stills, and porting Cairo scripts.
 - [Extending tinyfly](https://raw.githubusercontent.com/algorisys-oss/tinyfly/main/docs/extending.md): Writing a render adapter, animating any object with live and the ticker, custom and parametric eases, stagger offsets, adding a track kind, and contributing gallery examples.
 - [Deployment](https://raw.githubusercontent.com/algorisys-oss/tinyfly/main/docs/DEPLOYMENT.md): Building and hosting the editor, and serving the player bundles.
 

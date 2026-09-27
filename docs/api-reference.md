@@ -20,6 +20,7 @@ Complete reference for the tinyfly animation engine, player, and adapters.
 - [CanvasAdapter](#canvasadapter)
 - [SVGAdapter](#svgadapter)
 - [Export Formats](#export-formats)
+- [Headless Video](#headless-video)
 - [WebGLAdapter](#webgladapter)
 - [Inertia Tracks](#inertia-tracks)
 - [Spring Tracks](#spring-tracks)
@@ -34,8 +35,9 @@ Complete reference for the tinyfly animation engine, player, and adapters.
 Entry points: `tinyfly` (engine), `@algorisys/tinyfly/export` (CSS, Lottie, GIF, WebP,
 video and sprite-sheet exporters), `@algorisys/tinyfly/player`, `@algorisys/tinyfly/adapters` (DOM,
 Canvas, SVG and WebGL adapters, Flip helpers), `@algorisys/tinyfly/drivers`,
-`@algorisys/tinyfly/interaction`, `@algorisys/tinyfly/gsap-compat`, and `@algorisys/tinyfly/browser` (the live
-runtime and everything except the exporters, for `<script>` tags).
+`@algorisys/tinyfly/interaction`, `@algorisys/tinyfly/gsap-compat`, `@algorisys/tinyfly/browser` (the live
+runtime and everything except the exporters, for `<script>` tags), and `@algorisys/tinyfly/headless`
+(video and stills rendering in Node).
 
 ---
 
@@ -1214,6 +1216,23 @@ function animate() {
 }
 ```
 
+#### CustomTarget
+
+Drawn by code, animated by the timeline. The context is translated to `x`/`y`
+with opacity, transforms, fill, stroke and filters applied, so `draw` works in
+local coordinates. A track whose property is a key of `props` writes into
+`props`; base properties (`x`, `opacity`, `rotate`, …) behave as usual.
+
+```typescript
+{
+  type: 'custom'
+  x: number, y: number, width: number, height: number  // box = transform pivot
+  draw: (ctx: CanvasRenderingContext2D, target: CustomTarget, time: number) => void
+  props?: Record<string, AnimatableValue>              // values tracks may animate
+  opacity?: number, rotate?: number, scale?: number
+}
+```
+
 ### Gradient Support
 
 ```typescript
@@ -1436,6 +1455,58 @@ Pure helpers for packing animation frames into a grid PNG and writing matching
 metadata (frame size, columns/rows, count, fps). The editor's **Sprite** export
 uses them to render each frame into its cell and download `…-spritesheet.png` +
 `…-spritesheet.json`. See [sprite-sheet-export.md](sprite-sheet-export.md).
+
+---
+
+### Captions (SRT / WebVTT)
+
+```typescript
+import { toSRT, toWebVTT, captionCuesFromTimeline } from '@algorisys/tinyfly/export'
+
+interface CaptionCue { start: number; end: number; text: string } // ms
+
+toSRT(cues)       // "1\n00:00:00,350 --> 00:00:01,750\nMeet the figure.\n…"
+toWebVTT(cues)    // "WEBVTT\n\n00:00:00.350 --> …"
+captionCuesFromTimeline(definition, { language: 'es' }) // marker → next marker
+```
+
+---
+
+## Headless Video
+
+Render a scene to MP4 or PNG stills in Node (needs `@napi-rs/canvas` and
+`ffmpeg`). The guide is [Rendering Video from Code](video-rendering.md).
+
+```typescript
+import { renderVideo, renderStills, FrameRenderer, sceneCaptions } from '@algorisys/tinyfly/headless'
+
+await renderVideo(scene, { output: 'out.mp4', baseDir, scale, fps, crf, preset, audio, ffmpeg, onProgress })
+await renderStills(scene, { dir: 'stills', times?: [{ id, time }] })
+
+const renderer = new FrameRenderer(scene, { scale: 1 }) // no Node API: any 2D context
+renderer.render(ctx, timeMs)
+renderer.frameCount; renderer.frameTime(i); renderer.stillTimes()
+```
+
+| `VideoScene` field | Meaning |
+|---|---|
+| `width`, `height`, `fps` | Frame size and rate (fps default 30) |
+| `duration` | ms; defaults to the timeline's duration |
+| `timeline`, `targets` | A `TimelineDefinition` and the canvas targets it animates |
+| `background` | Colour, `'transparent'`, or `(ctx, frame) => void` drawn under the targets |
+| `draw` | `(ctx, frame) => void` drawn over the targets |
+| `audio`, `fonts` | Soundtrack and font files, relative to `baseDir` |
+| `captions` | Cues for `--srt` / `--vtt`; default from the timeline's markers |
+
+### Narration timing
+
+In the engine (`@algorisys/tinyfly`):
+
+```typescript
+planNarration(scenes: NarrationScene[], { lead = 350, gap = 300, tail = 550 }): NarrationPlan
+narrationMarkers(plan): TimelineMarker[]      // one per line, labelled with its text
+narrationSceneAt(plan, time): NarrationSceneTiming | undefined
+```
 
 ---
 

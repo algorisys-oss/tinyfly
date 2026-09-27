@@ -46,6 +46,11 @@ describe('filterExamples', () => {
     expect(code.every((e) => e.kind === 'code')).toBe(true)
   })
 
+  it('files the narrated scene under Video', () => {
+    expect(examples.find((e) => e.id === 'live-narrated-scene')?.category).toBe('video')
+    expect(examples.filter((e) => e.category === 'gsap').length).toBeGreaterThan(0)
+  })
+
   it('filters by category', () => {
     expect(filterExamples(examples, { category: 'scroll' }).every((e) => e.category === 'scroll')).toBe(true)
   })

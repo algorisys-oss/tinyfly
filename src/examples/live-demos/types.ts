@@ -1,4 +1,5 @@
 import type { LiveApi } from '../../compat/gsap'
+import type { ExampleCategory } from '../example-catalog'
 
 /**
  * A GSAP-style example that runs real `live` code on the Examples page.
@@ -18,6 +19,8 @@ export interface LiveDemo {
   name: string
   description: string
   tags: string[]
+  /** Gallery category (default `gsap`, the GSAP-style demos) */
+  category?: ExampleCategory
   /** Markup the demo animates, including a scoped `<style>` block */
   html: string
   /**

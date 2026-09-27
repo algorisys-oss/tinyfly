@@ -28,6 +28,7 @@ export type ExampleCategory =
   | 'data'
   | 'camera'
   | 'scroll'
+  | 'video'
   | 'products'
 
 export type ExampleKind = 'editable' | 'code'
@@ -73,6 +74,7 @@ export const exampleCategories: { id: ExampleCategory; label: string }[] = [
   { id: 'data', label: 'Data' },
   { id: 'camera', label: 'Camera' },
   { id: 'scroll', label: 'Scroll' },
+  { id: 'video', label: 'Video' },
   { id: 'products', label: 'Algorisys' },
 ]
 
@@ -134,7 +136,7 @@ function fromLiveDemo(demo: LiveDemoWithCode): LiveCatalogExample {
     id: demo.id,
     name: demo.name,
     description: demo.description,
-    category: 'gsap',
+    category: demo.category ?? 'gsap',
     tags: demo.tags,
     demo,
   }

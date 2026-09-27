@@ -106,6 +106,12 @@ export const DOCS: DocEntry[] = [
     section: 'Guides',
   },
   {
+    id: 'video-rendering',
+    title: 'Rendering Video from Code',
+    summary: 'Rendering a scene to MP4 without a browser: `tinyfly video`, custom canvas targets drawn by code, timing from narration, SRT/WebVTT captions, stills, and porting Cairo scripts.',
+    section: 'Guides',
+  },
+  {
     id: 'extending',
     title: 'Extending tinyfly',
     summary: 'Writing a render adapter, animating any object with live and the ticker, custom and parametric eases, stagger offsets, adding a track kind, and contributing gallery examples.',

@@ -16,6 +16,7 @@ Practical examples for common animation patterns using the tinyfly API.
 - [Programmatic Animation Builder](#programmatic-animation-builder)
 - [Motion Path](#motion-path)
 - [Embed with IIFE Player](#embed-with-iife-player)
+- [Video from Code](#video-from-code)
 
 ---
 
@@ -693,4 +694,68 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.70.2/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.71.0/cdn/tinyfly-player.iife.js`.
+
+---
+
+## Video from Code
+
+Render a scene to MP4 in Node, without a browser, with
+`npx tinyfly video scene.mjs`. The full guide is
+[Rendering Video from Code](video-rendering.md). Runnable scenes are in
+[`examples/headless-video/`](../examples/headless-video/):
+
+| Scene | Shows |
+|---|---|
+| [`stick-figure.mjs`](../examples/headless-video/stick-figure.mjs) | Narration timing, a code-drawn `custom` target posed by keyframes, a per-scene backdrop, captions |
+| [`bar-chart.mjs`](../examples/headless-video/bar-chart.mjs) | Timeline targets only: the whole animation is JSON |
+| [`cairo-style.mjs`](../examples/headless-video/cairo-style.mjs) | Pure immediate mode: a duration and `draw(ctx, { time })` |
+
+The smallest scene is a duration and a draw function:
+
+```js
+// hello.mjs  →  npx tinyfly video hello.mjs
+import { getEasingFunction } from '@algorisys/tinyfly'
+
+const ease = getEasingFunction('ease-out')
+
+export default {
+  width: 640,
+  height: 360,
+  duration: 2000,
+  background: '#0f1115',
+  draw(ctx, { time }) {
+    const t = ease(Math.min(1, time / 1500))
+    ctx.fillStyle = '#4a9eff'
+    ctx.beginPath()
+    ctx.arc(80 + t * 480, 180, 40, 0, Math.PI * 2)
+    ctx.fill()
+  },
+}
+```
+
+A code-drawn character animated by the timeline is a `custom` canvas target.
+Tracks write into the values it declares in `props`:
+
+```js
+targets: {
+  figure: {
+    type: 'custom',
+    x: 500, y: 300, width: 120, height: 300,
+    props: { arm: 0 },
+    draw(ctx, target) {
+      // local coordinates; target.props.arm goes 0 → 1 as its track plays
+    },
+  },
+},
+timeline: {
+  id: 'wave',
+  config: { duration: 2000 },
+  tracks: [{ id: 'arm', target: 'figure', property: 'arm', keyframes: [{ time: 0, value: 0 }, { time: 600, value: 1 }] }],
+},
+```
+
+In the browser, the Examples gallery's **Video** category has a live **Narrated Scene** card with the
+same idea: `planNarration()` times the lines, keyframes pose the figure, and a
+canvas is redrawn from the time on every frame.
+

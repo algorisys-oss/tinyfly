@@ -185,7 +185,7 @@ with a GSAP-style call (durations are in seconds here):
 ```html
 <div class="box" style="width:60px;height:60px;background:#4a9eff"></div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.70.2/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.71.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -296,6 +296,9 @@ Once you're comfortable, tinyfly has a lot more built in:
 - **🧅 Onion skinning** — see ghost frames around the playhead while you edit.
 - **Export** — GIF, WebP, MP4/WebM, a **sprite sheet** (PNG grid + JSON), CSS, or
   Lottie — plus copy-paste **embed** code.
+- **🎬 Video from code** — write a scene in JavaScript and render it to MP4 with
+  `npx tinyfly video`, no browser needed: narration timing, code-drawn
+  characters, captions and stills. See **[Rendering Video from Code](video-rendering.md)**.
 
 Each is covered in the **[Editor Guide](editor-guide.md)**. From code, the same
 features (plus Flip layout transitions and draggable throws) are in
@@ -308,3 +311,4 @@ features (plus Flip layout transitions and draggable throws) are in
 - **[File Format](file-format.md)** — the JSON behind it all, for integrations.
 - **[GSAP Compatibility](gsap-compat.md)** — the `live.to()` API for web pages.
 - **[API Reference](api-reference.md)** — the full engine/player/adapter API.
+- **[Rendering Video from Code](video-rendering.md)** — whole videos from a script, Cairo-style.

@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest'
 import { liveDemoPage } from './standalone-page'
 import { liveDemos } from './live-demos'
 import { createLive, Stage, type FrameScheduler } from '../compat/gsap'
+import * as engine from '../engine'
 import { exercise, snapshot as markup, stubSvgGeometry } from './live-demos/test-support'
 
 stubSvgGeometry()
@@ -36,7 +37,8 @@ describe('copied live demo pages run', () => {
         cb?.(now)
       }
 
-      expect(() => new Function('tinyfly', inline)({ live: createLive(stage) })).not.toThrow()
+      // The browser bundle's global carries the engine as well as `live`.
+      expect(() => new Function('tinyfly', inline)({ ...engine, live: createLive(stage) })).not.toThrow()
       await Promise.resolve()
       const styles = () => markup(document.body)
       const beforeInput = styles()

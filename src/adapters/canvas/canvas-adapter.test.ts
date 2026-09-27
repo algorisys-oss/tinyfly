@@ -721,3 +721,68 @@ describe('CanvasAdapter transform origin', () => {
     expect(translations[0]).toEqual([70, 50])
   })
 })
+
+describe('CanvasAdapter custom target', () => {
+  const makeCtx = () =>
+    ({
+      save: vi.fn(),
+      restore: vi.fn(),
+      translate: vi.fn(),
+      rotate: vi.fn(),
+      scale: vi.fn(),
+      globalAlpha: 1,
+    }) as unknown as CanvasRenderingContext2D
+
+  const state = (time: number, values: Record<string, Record<string, AnimatableValue>>): AnimationState => ({
+    values: new Map(Object.entries(values).map(([id, props]) => [id, new Map(Object.entries(props))])),
+    currentTime: time,
+    playbackState: 'paused',
+    direction: 'forward',
+    loopIteration: 0,
+  })
+
+  it('calls draw in local coordinates with the applied time', () => {
+    const adapter = new CanvasAdapter()
+    const ctx = makeCtx()
+    const draw = vi.fn()
+    adapter.registerTarget('figure', { type: 'custom', x: 100, y: 200, width: 50, height: 80, draw })
+    adapter.applyState(state(1500, {}))
+    adapter.render(ctx)
+
+    expect(ctx.translate).toHaveBeenCalledWith(100, 200)
+    expect(draw).toHaveBeenCalledTimes(1)
+    expect(draw.mock.calls[0][0]).toBe(ctx)
+    expect(draw.mock.calls[0][2]).toBe(1500)
+  })
+
+  it('routes tracks for declared props into props, and base properties as usual', () => {
+    const adapter = new CanvasAdapter()
+    const seen: Array<Record<string, AnimatableValue> | undefined> = []
+    const props = { wave: 0, mood: 'calm' }
+    adapter.registerTarget('figure', {
+      type: 'custom',
+      x: 0,
+      y: 0,
+      width: 10,
+      height: 10,
+      props,
+      draw: (_ctx, target) => seen.push({ ...target.props }),
+    })
+    adapter.applyState(state(0, { figure: { wave: 0.5, mood: 'happy', opacity: 0.25, x: 40 } }))
+    adapter.render(makeCtx())
+
+    expect(seen[0]).toEqual({ wave: 0.5, mood: 'happy' })
+    expect(adapter.getTarget('figure')?.opacity).toBe(0.25)
+    expect(adapter.getAnimationOffset('figure')).toEqual({ x: 40, y: 0 })
+    // The caller's props object is left untouched
+    expect(props).toEqual({ wave: 0, mood: 'calm' })
+  })
+
+  it('pivots transforms on the declared width and height', () => {
+    const adapter = new CanvasAdapter()
+    const ctx = makeCtx()
+    adapter.registerTarget('figure', { type: 'custom', x: 10, y: 20, width: 100, height: 40, rotate: 90, draw: () => {} })
+    adapter.render(ctx)
+    expect(ctx.translate).toHaveBeenNthCalledWith(1, 60, 40)
+  })
+})

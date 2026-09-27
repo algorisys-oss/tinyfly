@@ -79,6 +79,13 @@ The built-in adapters show the patterns to copy:
 - **Apply the whole state.** Don't cache "what changed" in the adapter; the engine
   and stage already avoid redundant work.
 
+**Before writing an adapter:** if you only need to draw something the built-in
+canvas shapes can't (a character, a chart, a prop), a `custom` canvas target may
+be enough. Its `draw(ctx, target, time)` function is your code, while the
+`CanvasAdapter` still positions, transforms and fades it and the timeline animates
+the values it declares in `props`. See
+[Rendering Video from Code](video-rendering.md#custom-targets).
+
 ## 2. Animating anything with `live`
 
 For most integrations you don't need an adapter at all. `live` tweens **plain
@@ -147,6 +154,11 @@ and what **Copy code** puts in a standalone page. Keep everything the animation
 uses inside that region, so the copied page runs as is. Register the module in the
 folder's `index.ts`. `npx vitest run src/examples` then runs it, checks that it
 cleans up, and builds its standalone page.
+
+Video scenes live in `examples/headless-video/` as `.mjs` modules that
+default-export a scene (see [Rendering Video from Code](video-rendering.md)).
+`npx vitest run src/headless` loads every scene there and draws each of its
+stills, so a scene that throws or draws nothing fails the tests.
 
 A good example:
 

@@ -129,8 +129,46 @@ export interface ImageTarget extends CanvasTargetBase {
   borderRadius?: number
 }
 
+/**
+ * Draws a custom target. The context is already translated to the target's
+ * `x`/`y` and has its opacity, transforms, fill, stroke and filter applied, so
+ * the function draws in local coordinates (0,0 to width,height). `time` is the
+ * timeline time in milliseconds of the state last applied.
+ */
+export type CustomDrawFunction = (
+  ctx: CanvasRenderingContext2D,
+  target: Readonly<CustomTarget>,
+  time: number
+) => void
+
+/**
+ * Custom target: drawing is done by code instead of a built-in shape.
+ *
+ * The timeline stays plain data. It animates the base properties (x, y,
+ * opacity, rotate, …) as for any target, plus any value declared in `props`:
+ * a track whose property is a key of `props` writes into `props`, so the draw
+ * function reads `target.props.pose` rather than keyframes. Only keys declared
+ * in `props` are routed there, so every animated value is visible up front.
+ */
+export interface CustomTarget extends CanvasTargetBase {
+  type: 'custom'
+  /** Bounding box size, used for the transform pivot, clip insets and gradients */
+  width: number
+  height: number
+  draw: CustomDrawFunction
+  /** Values the draw function reads, with their initial values */
+  props?: Record<string, AnimatableValue>
+}
+
 /** Union of all canvas target types */
-export type CanvasTarget = RectTarget | CircleTarget | TextTarget | LineTarget | PathTarget | ImageTarget
+export type CanvasTarget =
+  | RectTarget
+  | CircleTarget
+  | TextTarget
+  | LineTarget
+  | PathTarget
+  | ImageTarget
+  | CustomTarget
 
 /**
  * CanvasAdapter manages canvas drawing objects and applies
@@ -145,6 +183,8 @@ export class CanvasAdapter {
   private animationOffsets = new Map<string, { x: number; y: number }>()
   // Track alias IDs that point to the same target (for lookup only, not rendering)
   private aliases = new Map<string, string>()
+  // Time of the last applied state, passed to custom draw functions
+  private time = 0
 
   /**
    * Register a canvas drawing target.
@@ -163,7 +203,9 @@ export class CanvasAdapter {
     if (!this.targets.has(id)) {
       this.targetOrder.push(id)
     }
-    this.targets.set(id, { ...target })
+    // Custom targets get their own props object, so animating one never
+    // mutates the definition the caller passed in.
+    this.targets.set(id, target.type === 'custom' ? { ...target, props: { ...target.props } } : { ...target })
     // Initialize with zero offset
     this.animationOffsets.set(id, { x: 0, y: 0 })
   }
@@ -212,6 +254,7 @@ export class CanvasAdapter {
    * This matches how DOM/CSS transforms work (entire element moves together).
    */
   applyState(state: AnimationState): void {
+    this.time = state.currentTime
     for (const [targetId, properties] of state.values) {
       const target = this.targets.get(targetId)
       if (!target) continue
@@ -228,6 +271,8 @@ export class CanvasAdapter {
           } else if (property === 'y' || property === 'motionPathY') {
             offsets.y = value
           }
+        } else if (target.type === 'custom' && target.props && property in target.props) {
+          target.props[property] = value
         } else {
           // Map property name if needed
           const targetProperty = CanvasAdapter.PROPERTY_MAP[property] ?? property
@@ -392,6 +437,9 @@ export class CanvasAdapter {
       case 'image':
         this.renderImage(ctx, target)
         break
+      case 'custom':
+        this.renderCustom(ctx, target)
+        break
     }
 
     ctx.restore()
@@ -470,6 +518,7 @@ export class CanvasAdapter {
     switch (target.type) {
       case 'rect':
       case 'image':
+      case 'custom':
         return { x: target.x, y: target.y, width: target.width, height: target.height }
       case 'circle':
         return {
@@ -671,6 +720,14 @@ export class CanvasAdapter {
   }
 
   /**
+   * Render a custom target by calling its draw function in local coordinates.
+   */
+  private renderCustom(ctx: CanvasRenderingContext2D, target: CustomTarget): void {
+    ctx.translate(target.x, target.y)
+    target.draw(ctx, target, this.time)
+  }
+
+  /**
    * Transform pivot X: the target's centre, shifted by `originX` across its
    * own width. `originX: 0` pivots on the left edge, 100 on the right.
    */
@@ -696,6 +753,7 @@ export class CanvasAdapter {
     switch (target.type) {
       case 'rect':
       case 'image':
+      case 'custom':
         return target.width
       case 'circle':
         return target.radius * 2
@@ -713,6 +771,7 @@ export class CanvasAdapter {
     switch (target.type) {
       case 'rect':
       case 'image':
+      case 'custom':
         return target.height
       case 'circle':
         return target.radius * 2
@@ -732,6 +791,7 @@ export class CanvasAdapter {
     switch (target.type) {
       case 'rect':
       case 'image':
+      case 'custom':
         return target.x + target.width / 2
       case 'circle':
         return target.x
@@ -751,6 +811,7 @@ export class CanvasAdapter {
     switch (target.type) {
       case 'rect':
       case 'image':
+      case 'custom':
         return target.y + target.height / 2
       case 'circle':
         return target.y

@@ -1876,6 +1876,39 @@ Every gap from the Go series spike on teachyourselfcoding.com, fixed:
 
 ---
 
+## Phase 31: Video from code (Cairo-style workflow)
+
+Make a whole narrated video (like the pycairo stick-figure pipeline) from code,
+without a browser. Guide: `docs/video-rendering.md`; example:
+`examples/headless-video/stick-figure.mjs`.
+
+- [x] **Custom canvas target** — `type: 'custom'` with a `draw(ctx, target, time)`
+      function; drawn in local coordinates with the usual opacity/transforms/filters;
+      tracks write into declared `props`, so drawing is code and timing stays JSON
+- [x] **Narration timing** — `planNarration()` (lead / gap / tail, as in
+      `render.py`), `narrationMarkers()`, `narrationSceneAt()` in the engine
+- [x] **Captions** — `toSRT()`, `toWebVTT()`, `captionCuesFromTimeline()` in
+      `@algorisys/tinyfly/export`
+- [x] **Headless rendering** — `@algorisys/tinyfly/headless`: `FrameRenderer` (any 2D
+      context, deterministic per frame), `renderVideo()` (raw RGBA → ffmpeg → H.264 MP4,
+      optional audio), `renderStills()` (one PNG per marker step); `background` may be a
+      draw function, `draw` paints over the targets; scene fonts registered by family
+- [x] **CLI** — `tinyfly video <scene.mjs> [-o] [--stills] [--scale] [--fps] [--crf]
+      [--no-audio] [--srt] [--vtt]`
+- [x] `@napi-rs/canvas` as an optional peer dependency (Node has no canvas); ffmpeg on PATH
+- [x] **Examples** — `examples/headless-video/` (stick figure with narration, JSON-only
+      bar chart, Cairo-style sketch) drawn in tests (`src/headless/examples.test.ts`,
+      `@algorisys/tinyfly` aliased to the engine source in Vitest); gallery card
+      **Narrated Scene** (`live-narrated-scene`); `docs/examples.md` "Video from Code",
+      pointers in getting-started and extending. The copied-page test now gives demos
+      the engine on the `tinyfly` global, as the browser bundle does
+- [ ] Next: a stick-figure rig in `tinyfly/teach`-style helpers (poses as props, pose
+      blending), port one scene of the BRICS video as a benchmark
+- [ ] Next: a browser preview page for a scene module (scrub a `FrameRenderer` on a canvas)
+- [ ] Next: parallel frame rendering across worker threads for long videos
+
+---
+
 ## Backlog / For Review
 
 - [x] **Export Animation Document** — More → Export Animation Document downloads
