@@ -9,7 +9,8 @@
  *
  * The top-level `to` / `from` / `fromTo` / `set` / `timeline` are the live
  * facade (they play on real elements). The engine, the player, the compiling
- * `tf` facade, drivers and interaction are all available on the same global.
+ * `tf` facade, drivers, interaction and the `characters` stick figure are all
+ * available on the same global.
  *
  * Teaching embeds are included too: step controls (`createControls`), declarative
  * mounting (`mountAll`, or automatically when the script tag has
@@ -49,6 +50,8 @@ export * from '../engine'
 export * from '../player'
 export * from '../drivers'
 export * from '../interaction'
+// The stick-figure character: poses, blending, walk cycle, drawing.
+export * from '../characters'
 export {
   tf,
   live,

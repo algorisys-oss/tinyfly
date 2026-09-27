@@ -18,7 +18,8 @@ Runnable scenes are in [`examples/headless-video/`](../examples/headless-video/)
 a narrated stick figure (`stick-figure.mjs`), a bar chart made only of timeline
 targets (`bar-chart.mjs`) and a pure immediate-mode sketch (`cairo-style.mjs`).
 The Examples gallery's **Video** category has a **Narrated Scene** card that
-plays the same idea live in the browser.
+plays the same idea live in the browser, and a **Stick Figure** card for trying
+the poses.
 
 ## The scene
 
@@ -135,7 +136,8 @@ are the pure steps underneath, for audio you generate yourself.
 
 `@algorisys/tinyfly/characters` has a poseable stick figure. A pose is a set of
 numbers (joint angles in degrees, plus `mouth`, `smile` and `blink`), so poses
-blend and every joint can be a timeline track:
+blend and every joint can be a timeline track. It is also on the script-tag
+bundle's `tinyfly` global (`tinyfly.drawStickFigure`, `tinyfly.POSES`, …):
 
 ```js
 import { stickFigureTarget, poseTracks, POSES } from '@algorisys/tinyfly/characters'

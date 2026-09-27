@@ -694,7 +694,7 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.72.0/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.73.0/cdn/tinyfly-player.iife.js`.
 
 ---
 
@@ -755,7 +755,11 @@ timeline: {
 },
 ```
 
-In the browser, the Examples gallery's **Video** category has a live **Narrated Scene** card with the
-same idea: `planNarration()` times the lines, keyframes pose the figure, and a
-canvas is redrawn from the time on every frame.
+In the browser, the Examples gallery's **Video** category has two live cards:
+
+- **Narrated Scene**: the same idea. `planNarration()` times the lines,
+  `poseTracks()` turns named poses into keyframes, and a canvas is redrawn from
+  the time on every frame.
+- **Stick Figure**: the `characters` figure on its own. It blends from pose to
+  pose, and can walk and talk.
 

@@ -1918,6 +1918,9 @@ without a browser. Guide: `docs/video-rendering.md`; example:
 - [x] **Stills mid-caption** — `stillTimes()` takes each still halfway through a
       caption line (as the Cairo renderer does), not halfway to the next marker;
       `CaptionCue` gains an optional `id` for naming
+- [x] **Characters on the website** — the browser bundle (`tinyfly` global) now carries
+      `characters`; a new gallery card **Stick Figure** (pose picker, blend, walk, talk)
+      and **Narrated Scene** now poses its figure with `poseTracks` + `drawStickFigure`
 - [ ] Next: drawing helpers (speech bubbles, wrapped text, tags, quote cards) and a
       label-overlap check for stills
 - [ ] Next: named draw functions, so scenes with custom targets stay pure JSON
