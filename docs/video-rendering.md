@@ -10,7 +10,7 @@ npm install @algorisys/tinyfly @napi-rs/canvas   # @napi-rs/canvas: the 2D canva
 # ffmpeg must be on the PATH
 
 npx tinyfly video scene.mjs -o scene.mp4 --srt scene.srt
-npx tinyfly video scene.mjs --stills stills/     # one PNG per marker step
+npx tinyfly video scene.mjs --stills stills/     # one PNG per caption line (else per marker step)
 npx tinyfly video scene.mjs --scale 0.5 --fps 12 # quick preview
 ```
 
@@ -106,6 +106,79 @@ the timeline's `config.markers` (stills and players step through them), and pass
 `captions: plan.cues` so the caption file covers exactly the spoken spans. The
 audio must be assembled with the same pauses, or from the cue times.
 
+### From recorded lines
+
+With a voice-over recorded (or synthesised) one clip per line, let the clips set
+the timing. `voiceNarration` decodes every clip with ffmpeg, measures it from its
+samples, lays the lines out with `planNarration`, and writes the whole narration
+as one WAV whose lines start exactly at their cue times:
+
+```js
+import { voiceNarration } from '@algorisys/tinyfly/headless'
+
+const { plan, audio } = await voiceNarration(
+  [
+    { id: 'intro', lines: [{ text: 'Meet the figure.', audio: 'voice/01.wav' }] },
+    { id: 'wave', lines: [{ text: 'It waves,', audio: 'voice/02.wav' }, { text: 'and talks.', audio: 'voice/03.mp3' }] },
+  ],
+  { output: 'build/narration.wav', baseDir: new URL('.', import.meta.url).pathname, sampleRate: 48000 }
+)
+
+export default { /* …timeline built from plan… */ audio, captions: plan.cues }
+```
+
+Scene modules may use top-level `await`, or default-export an async function.
+`assembleNarration(plan, clips, sampleRate)` and `encodeWav(samples, sampleRate)`
+are the pure steps underneath, for audio you generate yourself.
+
+## Characters
+
+`@algorisys/tinyfly/characters` has a poseable stick figure. A pose is a set of
+numbers (joint angles in degrees, plus `mouth`, `smile` and `blink`), so poses
+blend and every joint can be a timeline track:
+
+```js
+import { stickFigureTarget, poseTracks, POSES } from '@algorisys/tinyfly/characters'
+
+targets: {
+  hero: stickFigureTarget({
+    x: 640, y: 620,                 // where the feet stand
+    style: { height: 340, color: '#1e3a8a', headFill: '#f2c49b', label: 'HERO', facing: 1 },
+  }),
+},
+timeline: {
+  id: 'hero',
+  config: { duration: 4000 },
+  tracks: [
+    ...poseTracks('hero', [
+      { time: 0, pose: 'rest' },
+      { time: 400, pose: 'wave', easing: 'ease-out' },
+      { time: 2000, pose: { rightShoulder: 90, rightElbow: 0 } }, // changes from the last key
+    ]),
+    // Walking and talking are props too
+    { id: 'walk', target: 'hero', property: 'walk', keyframes: [{ time: 0, value: 0 }, { time: 2000, value: 3 }] },
+    { id: 'walking', target: 'hero', property: 'walking', keyframes: [{ time: 0, value: 1 }, { time: 2000, value: 0 }] },
+    { id: 'talk', target: 'hero', property: 'talk', keyframes: [{ time: 2000, value: 1 }, { time: 3500, value: 1 }] },
+  ],
+},
+```
+
+| | |
+|---|---|
+| `POSES` | `rest`, `wave`, `cheer`, `shrug`, `point`, `think`, `handsOnHips`, `sad`, `surprised` |
+| `pose(changes)` | A full pose from the joints that differ from rest |
+| `blendPose(a, b, t)` | Linear blend of two poses |
+| `walkPose(phase, base?, stride?)` | A stride at `phase` (0 → 1 is one cycle), keeping `base`'s upper body |
+| `talkingMouth(time)` | A deterministic 0..1 chatter |
+| `drawStickFigure(ctx, pose, style)` | Draw with the feet at (0, 0), for `draw` functions |
+| `stickFigureTarget({ x, y, pose, style })` | A `custom` target whose props are the pose plus `walk`, `walking`, `talk` |
+| `poseTracks(target, keys)` | Tracks for a sequence of named or partial poses; only joints that leave rest get a track |
+
+Angles are degrees from hanging straight down; positive raises a limb outward.
+Elbows add to the upper arm's angle (past 180° the forearm folds back in), and
+knees swing the shin back toward the centre. The module is browser-safe, so the
+same figure draws on a web page's canvas.
+
 ## Captions
 
 `toSRT(cues)` and `toWebVTT(cues)` (in `@algorisys/tinyfly/export` and
@@ -149,8 +222,32 @@ renderer.render(canvas.getContext('2d'), timeMs)
 | `ease(seg(t, a, b))` | a keyframe track with an easing, or `getEasingFunction('ease-out')` in code |
 | `ctx.set_source_rgb`, `ctx.arc`, `ctx.stroke` | the Canvas 2D API: `fillStyle`, `arc`, `stroke` |
 | `ctx.push_group` + `paint_with_alpha` | `globalAlpha`, or a target's `opacity` track |
-| Reusable helpers (`figure()`, `tag()`) | custom targets, or plain functions called from `draw` |
+| `figure()`, `blend_pose()`, `walker()` | `stickFigureTarget`, `blendPose`, `walkPose` from `@algorisys/tinyfly/characters` |
+| TTS clips → `narration.wav` (`build_timeline`) | `voiceNarration()` |
+| Other helpers (`tag()`, `quote_card()`) | custom targets, or plain functions called from `draw` |
 | ffmpeg pipe + `write_srt` | `tinyfly video … --srt` |
+
+### Benchmark: one scene of a real Cairo video
+
+Scene 8 of a published pycairo explainer ("the table grows": 12 stick figures
+round a growing table, flying envelopes, a doorway, a quote card, a waiting
+room) was ported call for call to Canvas 2D and rendered at 1920×1080, 24 fps,
+1202 frames, with the same x264 settings (`medium`, CRF 20). Same machine, no other load:
+
+| | pycairo | tinyfly (`@napi-rs/canvas`) |
+|---|---|---|
+| Draw only | 24.4 s (20.3 ms/frame) | 5.4 s (4.5 ms/frame) |
+| Draw + encode to MP4 | 46.5 s | 52.3 s |
+
+- Drawing is about 4.5× faster. The finished video is not: both renders spend
+  most of their time in x264, so the encoder sets the pace.
+- The stills match frame for frame (mean pixel difference about 1/255). What
+  differs is text: Skia draws glyphs slightly narrower than Cairo.
+- The port was 235 lines for the scene (the Python was 125) plus 368 lines of
+  helpers carried over from the Cairo engine: tags, top captions, quote cards,
+  the round table, envelopes, doors, camera drift and a figure matching the
+  original proportions. Those helpers are what tinyfly still lacks, not engine
+  features.
 
 ## Requirements and limits
 

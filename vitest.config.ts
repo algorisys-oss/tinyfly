@@ -12,7 +12,10 @@ export default defineConfig({
   // without building lib/ first.
   resolve: {
     conditions: ['browser', 'development'],
-    alias: [{ find: /^@algorisys\/tinyfly$/, replacement: new URL('./src/engine/index.ts', import.meta.url).pathname }],
+    alias: [
+      { find: /^@algorisys\/tinyfly$/, replacement: new URL('./src/engine/index.ts', import.meta.url).pathname },
+      { find: /^@algorisys\/tinyfly\/characters$/, replacement: new URL('./src/characters/index.ts', import.meta.url).pathname },
+    ],
   },
   // Same as vite.config.ts, so code that reads the version works under test.
   define: { __APP_VERSION__: JSON.stringify(pkg.version) },

@@ -12,6 +12,8 @@ import { deserializeTimeline } from '../serialization'
 
 /** One caption. Times are milliseconds from the start. */
 export interface CaptionCue {
+  /** Optional name, e.g. a narration cue's `s0-l1`; used to name stills */
+  id?: string
   start: number
   end: number
   text: string

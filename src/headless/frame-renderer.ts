@@ -58,11 +58,15 @@ export class FrameRenderer {
   }
 
   /**
-   * Stills worth checking: the middle of each marker's step (from the marker
-   * to the next one, or the end), or the middle of the video when there are no
-   * markers.
+   * Stills worth checking: the middle of each caption (the moment a line is
+   * being spoken), else the middle of each marker's step (from the marker to
+   * the next one, or the end), else the middle of the video.
    */
   stillTimes(): Array<{ id: string; time: number }> {
+    const captions = this.scene.captions ?? []
+    if (captions.length > 0) {
+      return captions.map((cue, index) => ({ id: cue.id ?? `line-${index}`, time: (cue.start + cue.end) / 2 }))
+    }
     const markers = [...(this.scene.timeline?.config.markers ?? [])].sort((a, b) => a.time - b.time)
     if (markers.length === 0) return [{ id: 'middle', time: this.duration / 2 }]
     return markers.map((marker, index) => {

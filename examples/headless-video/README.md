@@ -14,7 +14,7 @@ resolves to the built package.
 
 | Scene | Shows |
 |---|---|
-| `stick-figure.mjs` | Narration timing (`planNarration`), a code-drawn `custom` target posed by keyframes, a per-scene backdrop, captions |
+| `stick-figure.mjs` | Narration timing (`planNarration`), the `characters` stick figure posed, walked and voiced by tracks, a per-scene backdrop, captions |
 | `bar-chart.mjs` | Timeline targets only: the whole animation is JSON |
 | `cairo-style.mjs` | Pure immediate mode: a duration and `draw(ctx, { time })` |
 

@@ -1902,8 +1902,25 @@ without a browser. Guide: `docs/video-rendering.md`; example:
       **Narrated Scene** (`live-narrated-scene`); `docs/examples.md` "Video from Code",
       pointers in getting-started and extending. The copied-page test now gives demos
       the engine on the `tinyfly` global, as the browser bundle does
-- [ ] Next: a stick-figure rig in `tinyfly/teach`-style helpers (poses as props, pose
-      blending), port one scene of the BRICS video as a benchmark
+- [x] **Narration audio** — `voiceNarration()` decodes each line's clip with ffmpeg,
+      times the lines from their samples and writes a sample-aligned WAV
+      (`assembleNarration`, `encodeWav` are the pure steps)
+- [x] **Stick-figure rig** — `@algorisys/tinyfly/characters`: numeric poses (joint
+      angles, mouth, smile, blink), `POSES` (rest, wave, cheer, shrug, point, think,
+      handsOnHips, sad, surprised), `blendPose`, `walkPose`, `talkingMouth`,
+      `drawStickFigure`, `stickFigureTarget` (props: pose + walk/walking/talk),
+      `poseTracks`; the stick-figure example uses it
+- [x] **BRICS benchmark** — scene 8 of the BRICS video ported call for call:
+      draw 4.5 ms/frame vs Cairo's 20.3 (1080p), end to end 52 s vs 46 s, since
+      x264 sets the pace; stills match (mean diff about 1/255). Missing pieces were
+      all drawing helpers (tag, quote card, round table, labels row, envelope, door,
+      camera drift). Results in `docs/video-rendering.md`
+- [x] **Stills mid-caption** — `stillTimes()` takes each still halfway through a
+      caption line (as the Cairo renderer does), not halfway to the next marker;
+      `CaptionCue` gains an optional `id` for naming
+- [ ] Next: drawing helpers (speech bubbles, wrapped text, tags, quote cards) and a
+      label-overlap check for stills
+- [ ] Next: named draw functions, so scenes with custom targets stay pure JSON
 - [ ] Next: a browser preview page for a scene module (scrub a `FrameRenderer` on a canvas)
 - [ ] Next: parallel frame rendering across worker threads for long videos
 

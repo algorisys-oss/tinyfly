@@ -108,7 +108,7 @@ export const DOCS: DocEntry[] = [
   {
     id: 'video-rendering',
     title: 'Rendering Video from Code',
-    summary: 'Rendering a scene to MP4 without a browser: `tinyfly video`, custom canvas targets drawn by code, timing from narration, SRT/WebVTT captions, stills, and porting Cairo scripts.',
+    summary: 'Rendering a scene to MP4 without a browser: `tinyfly video`, custom canvas targets drawn by code, timing from narration and recorded voice-over, the stick-figure character, SRT/WebVTT captions, stills, porting Cairo scripts, and a benchmark against pycairo.',
     section: 'Guides',
   },
   {

@@ -1,6 +1,6 @@
 {
   "name": "@algorisys/tinyfly",
-  "version": "0.71.0",
+  "version": "0.72.0",
   "type": "module",
   "description": "Lightweight, API-driven animation engine and editor. The engine is framework-agnostic and runs in browsers, Web Workers, and Node.",
   "license": "MIT",
@@ -96,6 +96,10 @@
     "./solid": {
       "types": "./lib/types/frameworks/solid.d.ts",
       "import": "./lib/frameworks/solid.js"
+    },
+    "./characters": {
+      "types": "./lib/types/characters/index.d.ts",
+      "import": "./lib/addons/characters.js"
     },
     "./headless": {
       "types": "./lib/types/headless/index.d.ts",

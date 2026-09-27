@@ -694,7 +694,7 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.71.0/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.72.0/cdn/tinyfly-player.iife.js`.
 
 ---
 
@@ -707,7 +707,7 @@ Render a scene to MP4 in Node, without a browser, with
 
 | Scene | Shows |
 |---|---|
-| [`stick-figure.mjs`](../examples/headless-video/stick-figure.mjs) | Narration timing, a code-drawn `custom` target posed by keyframes, a per-scene backdrop, captions |
+| [`stick-figure.mjs`](../examples/headless-video/stick-figure.mjs) | Narration timing, the `characters` stick figure posed, walked and voiced by tracks, a per-scene backdrop, captions |
 | [`bar-chart.mjs`](../examples/headless-video/bar-chart.mjs) | Timeline targets only: the whole animation is JSON |
 | [`cairo-style.mjs`](../examples/headless-video/cairo-style.mjs) | Pure immediate mode: a duration and `draw(ctx, { time })` |
 

@@ -122,6 +122,17 @@ describe('FrameRenderer', () => {
     expect(frameCount(1, 30)).toBe(1)
   })
 
+  it('takes stills mid-caption when the scene has captions', () => {
+    const captions = [
+      { id: 's0-l0', start: 100, end: 300, text: 'a' },
+      { start: 600, end: 700, text: 'b' },
+    ]
+    expect(new FrameRenderer({ ...scene(), captions }).stillTimes()).toEqual([
+      { id: 's0-l0', time: 200 },
+      { id: 'line-1', time: 650 },
+    ])
+  })
+
   it('needs a duration', () => {
     expect(() => new FrameRenderer({ width: 10, height: 10 })).toThrow(/duration/)
     expect(new FrameRenderer({ width: 10, height: 10, duration: 250 }).stillTimes()).toEqual([{ id: 'middle', time: 125 }])

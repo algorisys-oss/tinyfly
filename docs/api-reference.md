@@ -1481,7 +1481,7 @@ Render a scene to MP4 or PNG stills in Node (needs `@napi-rs/canvas` and
 import { renderVideo, renderStills, FrameRenderer, sceneCaptions } from '@algorisys/tinyfly/headless'
 
 await renderVideo(scene, { output: 'out.mp4', baseDir, scale, fps, crf, preset, audio, ffmpeg, onProgress })
-await renderStills(scene, { dir: 'stills', times?: [{ id, time }] })
+await renderStills(scene, { dir: 'stills', times?: [{ id, time }] }) // default: mid-caption, else mid-marker-step
 
 const renderer = new FrameRenderer(scene, { scale: 1 }) // no Node API: any 2D context
 renderer.render(ctx, timeMs)
@@ -1497,6 +1497,23 @@ renderer.frameCount; renderer.frameTime(i); renderer.stillTimes()
 | `draw` | `(ctx, frame) => void` drawn over the targets |
 | `audio`, `fonts` | Soundtrack and font files, relative to `baseDir` |
 | `captions` | Cues for `--srt` / `--vtt`; default from the timeline's markers |
+
+### Narration audio
+
+```typescript
+voiceNarration(scenes: VoicedScene[], { output, baseDir, sampleRate = 48000, ffmpeg, lead, gap, tail })
+  : Promise<{ plan: NarrationPlan; audio: string }>   // lines carry `audio` instead of `duration`
+decodeAudio(file, { sampleRate, ffmpeg }): Promise<Float32Array>   // mono float samples
+assembleNarration(plan, clips: Float32Array[], sampleRate): Float32Array  // pure
+encodeWav(samples, sampleRate): Uint8Array                                // pure, 16-bit mono
+```
+
+### Characters
+
+`@algorisys/tinyfly/characters` (browser-safe): `StickPose`, `REST_POSE`, `POSES`,
+`pose()`, `blendPose()`, `walkPose()`, `talkingMouth()`, `drawStickFigure()`,
+`stickFigureTarget()`, `poseTracks()`. See
+[Rendering Video from Code](video-rendering.md#characters).
 
 ### Narration timing
 

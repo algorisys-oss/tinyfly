@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { FrameRenderer } from './frame-renderer'
-import { ffmpegArgs } from './ffmpeg-args'
+import { ffmpegArgs, ffmpegExitError, ffmpegStartError } from './ffmpeg-args'
 import type { VideoScene } from './video-scene'
 
 /**
@@ -172,17 +172,8 @@ function startEncoder(ffmpeg: string, args: string[]) {
   child.stdin.on('error', () => {})
 
   const done = new Promise<void>((resolveDone, rejectDone) => {
-    child.on('error', (error: NodeJS.ErrnoException) => {
-      rejectDone(
-        error.code === 'ENOENT'
-          ? new Error(`tinyfly: "${ffmpeg}" was not found; install ffmpeg or pass its path`)
-          : error
-      )
-    })
-    child.on('close', (code) => {
-      if (code === 0) resolveDone()
-      else rejectDone(new Error(`tinyfly: ffmpeg exited with code ${code}${stderr ? `:\n${stderr.trim()}` : ''}`))
-    })
+    child.on('error', (error: NodeJS.ErrnoException) => rejectDone(ffmpegStartError(ffmpeg, error)))
+    child.on('close', (code) => (code === 0 ? resolveDone() : rejectDone(ffmpegExitError(code, stderr))))
   })
   // Until finish(), any exit is a failure, even a clean one.
   const exitedEarly = done.then(() => {

@@ -42,3 +42,18 @@ export function ffmpegArgs(options: FfmpegOptions): string[] {
   args.push('-movflags', '+faststart', output)
   return args
 }
+
+/** Decode any audio file ffmpeg reads to mono 32-bit float samples on stdout. */
+export function ffmpegDecodeArgs(input: string, sampleRate: number): string[] {
+  return ['-v', 'error', '-i', input, '-f', 'f32le', '-ac', '1', '-ar', String(sampleRate), '-']
+}
+
+/** The error to report when ffmpeg could not be started. */
+export function ffmpegStartError(ffmpeg: string, error: Error & { code?: string }): Error {
+  return error.code === 'ENOENT' ? new Error(`tinyfly: "${ffmpeg}" was not found; install ffmpeg or pass its path`) : error
+}
+
+/** The error to report when ffmpeg exited with a failure code. */
+export function ffmpegExitError(code: number | null, stderr: string): Error {
+  return new Error(`tinyfly: ffmpeg exited with code ${code}${stderr.trim() ? `:\n${stderr.trim()}` : ''}`)
+}

@@ -4,89 +4,66 @@
  *   npx tinyfly video examples/headless-video/stick-figure.mjs --srt stick-figure.srt
  *   npx tinyfly video examples/headless-video/stick-figure.mjs --stills stills/
  *
- * - planNarration() times three scenes from their line lengths (swap in the
- *   real clip durations of a voice-over and pass `audio`).
- * - The figure is a `custom` canvas target: code draws it, the timeline
- *   animates its pose values (`arm`, `mouth`) and its position.
+ * - planNarration() times the scenes from their line lengths. With recorded
+ *   lines, use voiceNarration() from '@algorisys/tinyfly/headless' instead: it
+ *   measures each clip and writes the narration WAV (see the note at the end).
+ * - The figure comes from '@algorisys/tinyfly/characters': poseTracks() turns
+ *   named poses into keyframe tracks, and `walk`, `walking` and `talk` tracks
+ *   make it walk and chatter.
  * - background() and draw() paint the backdrop and the caption each frame,
  *   Cairo-style, under and over the figure.
  */
 import { planNarration, narrationMarkers, narrationSceneAt } from '@algorisys/tinyfly'
+import { stickFigureTarget, poseTracks } from '@algorisys/tinyfly/characters'
 
 const W = 1280
 const H = 720
-const FLOOR = 600
+const FLOOR = 620
 
 const plan = planNarration([
-  { id: 'enter', lines: [{ text: 'Meet the figure.', duration: 1400 }] },
+  { id: 'enter', lines: [{ text: 'Meet the figure.', duration: 1600 }] },
   { id: 'wave', lines: [{ text: 'It waves hello,', duration: 1200 }, { text: 'and says so out loud.', duration: 1500 }] },
-  { id: 'leave', lines: [{ text: 'Then it walks off.', duration: 1600 }], tail: 400 },
+  { id: 'shrug', lines: [{ text: 'Then it runs out of things to say.', duration: 1800 }] },
+  { id: 'leave', lines: [{ text: 'So it walks off.', duration: 1400 }], tail: 400 },
 ])
-const at = (id) => plan.cues.find((cue) => cue.id === id)
+const cue = (id) => plan.cues.find((c) => c.id === id)
+const scene = (id) => plan.scenes.find((s) => s.id === id)
 
 /** Keyframes as plain data: [time, value, easing?] triples. */
-const track = (target, property, frames) => ({
-  id: `${target}-${property}`,
-  target,
+const track = (property, frames) => ({
+  id: `hero-${property}`,
+  target: 'hero',
   property,
   keyframes: frames.map(([time, value, easing]) => ({ time, value, ...(easing ? { easing } : {}) })),
 })
 
-const waveStart = at('s1-l0').start
-const leaveStart = plan.scenes[2].start
+const arrive = cue('s0-l0').end
+const leave = scene('leave').start + 200
+const end = plan.duration
+const talking = cue('s1-l1')
 
 const timeline = {
   id: 'stick-figure',
-  config: { duration: plan.duration, markers: narrationMarkers(plan) },
+  config: { duration: end, markers: narrationMarkers(plan) },
   tracks: [
-    track('figure', 'x', [[0, -200], [1200, 0, 'ease-out'], [leaveStart + 300, 0], [plan.duration, 900, 'ease-in']]),
-    track('figure', 'step', [[0, 0], [1200, 6], [leaveStart + 300, 6], [plan.duration, 14]]),
-    track('figure', 'arm', [[waveStart, 0], [waveStart + 300, 1, 'ease-out'], [leaveStart, 1], [leaveStart + 300, 0]]),
-    track('figure', 'mouth', [[at('s1-l1').start, 0], [at('s1-l1').start + 150, 1], [at('s1-l1').end, 1], [at('s1-l1').end + 150, 0]]),
+    // Walk in from the left, stop, and walk off to the right (x is an offset).
+    track('x', [[0, -720], [arrive, 0, 'ease-out'], [leave, 0], [end, 820, 'ease-in']]),
+    track('walk', [[0, 0], [arrive, 3], [leave, 3], [end, 6]]),
+    track('walking', [[0, 1], [arrive - 200, 1], [arrive, 0], [leave, 0], [leave + 200, 1]]),
+    track('talk', [[talking.start, 0], [talking.start + 100, 1], [talking.end, 1], [talking.end + 100, 0]]),
+    // Poses, by name, timed from the narration.
+    ...poseTracks('hero', [
+      { time: cue('s1-l0').start, pose: 'rest' },
+      { time: cue('s1-l0').start + 300, pose: 'wave', easing: 'ease-out' },
+      { time: talking.end, pose: 'wave' },
+      { time: cue('s2-l0').start + 300, pose: 'shrug', easing: 'ease-in-out' },
+      { time: leave - 100, pose: 'shrug' },
+      { time: leave + 200, pose: 'rest' },
+    ]),
   ],
 }
 
-/** A stick figure in local coordinates: feet at (60, 300). */
-function stickFigure(ctx, target, time) {
-  const { step, arm, mouth } = target.props
-  const swing = Math.sin(step * Math.PI) * 22
-  ctx.strokeStyle = '#1e3a8a'
-  ctx.lineWidth = 7
-  ctx.lineCap = 'round'
-  const line = (x1, y1, x2, y2) => {
-    ctx.beginPath()
-    ctx.moveTo(x1, y1)
-    ctx.lineTo(x2, y2)
-    ctx.stroke()
-  }
-  // legs and body
-  line(60, 200, 60 - 14 - swing, 300)
-  line(60, 200, 60 + 14 + swing, 300)
-  line(60, 200, 60, 100)
-  // left arm hangs; right arm lifts into a wave as `arm` goes 0 → 1
-  line(60, 120, 30 + swing / 2, 190)
-  const lift = arm * (Math.PI * 0.75)
-  const wiggle = arm * Math.sin(time / 90) * 0.25
-  const angle = Math.PI / 2 - lift + wiggle
-  line(60, 120, 60 + Math.cos(angle) * 75, 120 + Math.sin(angle) * 75)
-  // head, eyes and a mouth that opens while talking
-  ctx.fillStyle = '#f2c49b'
-  ctx.beginPath()
-  ctx.arc(60, 60, 40, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.stroke()
-  ctx.fillStyle = '#1e3a8a'
-  for (const x of [46, 74]) {
-    ctx.beginPath()
-    ctx.arc(x, 52, 5, 0, Math.PI * 2)
-    ctx.fill()
-  }
-  ctx.beginPath()
-  ctx.ellipse(60, 76, 12, 2 + mouth * 8 * Math.abs(Math.sin(time / 70)), 0, 0, Math.PI * 2)
-  ctx.fill()
-}
-
-const SKY = { enter: '#bfe6ff', wave: '#fde7d3', leave: '#e6f4ea' }
+const SKY = { enter: '#bfe6ff', wave: '#fde7d3', shrug: '#ede9fe', leave: '#e6f4ea' }
 
 export default {
   width: W,
@@ -96,15 +73,11 @@ export default {
   // Exact spoken spans; without this, captions run from marker to marker.
   captions: plan.cues,
   targets: {
-    figure: {
-      type: 'custom',
-      x: 500,
-      y: FLOOR - 300,
-      width: 120,
-      height: 300,
-      props: { step: 0, arm: 0, mouth: 0 },
-      draw: stickFigure,
-    },
+    hero: stickFigureTarget({
+      x: W / 2,
+      y: FLOOR + 10,
+      style: { height: 340, color: '#1e3a8a', headFill: '#f2c49b', label: 'HERO' },
+    }),
   },
   // Drawn under the targets: a sky that changes colour per scene, and the floor.
   background(ctx, { time }) {
@@ -115,16 +88,26 @@ export default {
   },
   // Drawn over the targets: the caption of the line being spoken.
   draw(ctx, { time }) {
-    const cue = plan.cues.find((c) => time >= c.start && time < c.end)
-    if (cue) {
-      ctx.font = '600 40px sans-serif'
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      const width = ctx.measureText(cue.text).width + 48
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
-      ctx.fillRect(W / 2 - width / 2, H - 90, width, 64)
-      ctx.fillStyle = '#ffffff'
-      ctx.fillText(cue.text, W / 2, H - 58)
-    }
+    const line = plan.cues.find((c) => time >= c.start && time < c.end)
+    if (!line) return
+    ctx.font = '600 38px sans-serif'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    const width = ctx.measureText(line.text).width + 48
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
+    ctx.fillRect(W / 2 - width / 2, H - 76, width, 60)
+    ctx.fillStyle = '#ffffff'
+    ctx.fillText(line.text, W / 2, H - 46)
   },
 }
+
+/*
+ * With recorded lines, time everything from the clips instead:
+ *
+ *   import { voiceNarration } from '@algorisys/tinyfly/headless'
+ *   const { plan, audio } = await voiceNarration(
+ *     [{ id: 'enter', lines: [{ text: 'Meet the figure.', audio: 'voice/01.wav' }] }, …],
+ *     { output: 'build/narration.wav', baseDir: new URL('.', import.meta.url).pathname }
+ *   )
+ *   // …build the timeline from `plan` exactly as above, and add `audio` to the scene.
+ */

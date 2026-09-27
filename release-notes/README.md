@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.72.0](v0.72.0.md) | 2026-09-27 | A poseable stick figure (`tinyfly/characters`), narration timed from recorded clips, stills taken mid-line |
 | [v0.71.0](v0.71.0.md) | 2026-09-27 | Video from code: render a scene to MP4 without a browser, code-drawn canvas targets, narration timing, captions |
 | [v0.70.2](v0.70.2.md) | 2026-09-19 | The previous and next step buttons now look like a pair |
 | [v0.70.1](v0.70.1.md) | 2026-09-15 | Full screen on short landscape screens puts the controls beside the drawing |
