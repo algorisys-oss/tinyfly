@@ -135,8 +135,8 @@ are the pure steps underneath, for audio you generate yourself.
 ## Characters
 
 `@algorisys/tinyfly/characters` has a poseable stick figure. A pose is a set of
-numbers (joint angles in degrees, plus `mouth`, `smile` and `blink`), so poses
-blend and every joint can be a timeline track. It is also on the script-tag
+numbers (joint angles in degrees, plus the face: eyes, brows, mouth and gaze), so
+poses blend and every joint can be a timeline track. It is also on the script-tag
 bundle's `tinyfly` global (`tinyfly.drawStickFigure`, `tinyfly.POSES`, …):
 
 ```js
@@ -156,6 +156,8 @@ timeline: {
       { time: 0, pose: 'rest' },
       { time: 400, pose: 'wave', easing: 'ease-out' },
       { time: 2000, pose: { rightShoulder: 90, rightElbow: 0 } }, // changes from the last key
+      { time: 2600, expression: 'surprised' },                   // only the face changes
+      { time: 3200, pose: 'shrug', expression: 'confused' },     // body and face
     ]),
     // Walking and talking are props too
     { id: 'walk', target: 'hero', property: 'walk', keyframes: [{ time: 0, value: 0 }, { time: 2000, value: 3 }] },
@@ -168,18 +170,38 @@ timeline: {
 | | |
 |---|---|
 | `POSES` | `rest`, `wave`, `cheer`, `shrug`, `point`, `think`, `handsOnHips`, `sad`, `surprised` |
+| `EXPRESSIONS` | `neutral`, `happy`, `joyful`, `sad`, `crying`, `surprised`, `shocked`, `angry`, `furious`, `worried`, `scared`, `confused`, `skeptical`, `thinking`, `sleepy`, `disgusted`, `smug`, `wink` |
+| `withExpression(pose, face)` | The pose with its face replaced: a name, or face fields to change |
 | `pose(changes)` | A full pose from the joints that differ from rest |
 | `blendPose(a, b, t)` | Linear blend of two poses |
 | `walkPose(phase, base?, stride?)` | A stride at `phase` (0 → 1 is one cycle), keeping `base`'s upper body |
 | `talkingMouth(time)` | A deterministic 0..1 chatter |
 | `drawStickFigure(ctx, pose, style)` | Draw with the feet at (0, 0), for `draw` functions |
 | `stickFigureTarget({ x, y, pose, style })` | A `custom` target whose props are the pose plus `walk`, `walking`, `talk` |
-| `poseTracks(target, keys)` | Tracks for a sequence of named or partial poses; only joints that leave rest get a track |
+| `poseTracks(target, keys)` | Tracks for a sequence of named or partial poses, each optionally with an `expression`; only fields that leave rest get a track |
 
 Angles are degrees from hanging straight down; positive raises a limb outward.
 Elbows add to the upper arm's angle (past 180° the forearm folds back in), and
 knees swing the shin back toward the centre. The module is browser-safe, so the
 same figure draws on a web page's canvas.
+
+### Faces
+
+Every face feature is a number too, so expressions blend and animate like joints:
+
+| Field | Range |
+|---|---|
+| `leftEye`, `rightEye` | 0 shut, 1 normal, up to 1.6 wide (the whites show above about 1.2) |
+| `blink` | 0..1, closes both eyes on top of their openness |
+| `leftBrow`, `rightBrow` | -1 lowered, 0 rest, 1 raised |
+| `browTilt` | -1 angry (inner ends down) to 1 worried (inner ends up) |
+| `lookX`, `lookY` | -1..1: where the pupils point (+x is the way the figure faces, +y is down) |
+| `mouth` | 0 closed to 1 wide open |
+| `smile` | -1..1: a frown or smile when closed; open, a wail (-) or a grin (+) |
+| `mouthWidth` | 1 normal, 0.5 pursed, 1.5 wide |
+
+Shut eyes arch upward when the figure smiles (a laugh) and curve down otherwise.
+`talk` sets only `mouth`, so a figure keeps its expression while it speaks.
 
 ## Captions
 

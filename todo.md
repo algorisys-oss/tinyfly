@@ -1921,6 +1921,12 @@ without a browser. Guide: `docs/video-rendering.md`; example:
 - [x] **Characters on the website** — the browser bundle (`tinyfly` global) now carries
       `characters`; a new gallery card **Stick Figure** (pose picker, blend, walk, talk)
       and **Narrated Scene** now poses its figure with `poseTracks` + `drawStickFigure`
+- [x] **Facial expressions** — per-eye openness (wide eyes show whites), blink, brows
+      (height per side + slant), gaze (`lookX`/`lookY`), mouth width and shapes (grin,
+      wail, O); 18 `EXPRESSIONS` (happy, joyful, sad, crying, surprised, shocked, angry,
+      furious, worried, scared, confused, skeptical, thinking, sleepy, disgusted, smug,
+      wink, neutral), `withExpression`, `expression` keys in `poseTracks`; gallery card
+      gets an expression picker and a face close-up
 - [ ] Next: drawing helpers (speech bubbles, wrapped text, tags, quote cards) and a
       label-overlap check for stills
 - [ ] Next: named draw functions, so scenes with custom targets stay pure JSON

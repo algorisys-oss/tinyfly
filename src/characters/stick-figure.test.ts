@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import { createCanvas, Path2D } from '@napi-rs/canvas'
 import {
+  EXPRESSIONS,
+  withExpression,
   POSES,
   REST_POSE,
   blendPose,
@@ -71,6 +73,35 @@ describe('drawStickFigure', () => {
   })
 })
 
+describe('expressions', () => {
+  it('replace the whole face and keep the body', () => {
+    const angry = withExpression(POSES.wave, 'angry')
+    expect(angry.rightShoulder).toBe(POSES.wave.rightShoulder)
+    expect(angry.browTilt).toBe(-1)
+    expect(angry.mouth).toBe(0)
+    expect(withExpression(REST_POSE, { leftEye: 0 }).rightEye).toBe(1)
+  })
+
+  it('all set the same face fields, so any two blend', () => {
+    const fields = Object.keys(EXPRESSIONS.neutral).sort()
+    for (const face of Object.values(EXPRESSIONS)) expect(Object.keys(face).sort()).toEqual(fields)
+    const half = blendPose(withExpression(REST_POSE, 'happy'), withExpression(REST_POSE, 'sad'), 0.5)
+    expect(half.smile).toBeCloseTo((EXPRESSIONS.happy.smile + EXPRESSIONS.sad.smile) / 2)
+  })
+
+  it('show on the face: wide eyes, shut eyes and raised brows draw differently', () => {
+    const faceBox = (figure = REST_POSE) => {
+      const ctx = drawOnWhite(figure)
+      return Array.from(ctx.getImageData(110, 20, 80, 72).data).join()
+    }
+    const rest = faceBox()
+    expect(faceBox(withExpression(REST_POSE, 'surprised'))).not.toBe(rest)
+    expect(faceBox(withExpression(REST_POSE, 'sleepy'))).not.toBe(rest)
+    expect(faceBox(withExpression(REST_POSE, { leftBrow: 1, rightBrow: 1 }))).not.toBe(rest)
+    expect(faceBox(withExpression(REST_POSE, 'wink'))).not.toBe(faceBox(withExpression(REST_POSE, 'happy')))
+  })
+})
+
 describe('stickFigureTarget', () => {
   beforeAll(() => {
     ;(globalThis as { Path2D?: unknown }).Path2D ??= Path2D
@@ -107,6 +138,18 @@ describe('stickFigureTarget', () => {
 })
 
 describe('poseTracks', () => {
+  it('changes only the face when a key gives just an expression', () => {
+    const tracks = poseTracks('hero', [
+      { time: 0, pose: 'rest' },
+      { time: 400, expression: 'surprised' },
+    ])
+    const props = tracks.map((t) => t.property)
+    expect(props).toContain('leftEye')
+    expect(props).toContain('leftBrow')
+    expect(props).not.toContain('rightShoulder')
+    expect(tracks.find((t) => t.property === 'leftEye')!.keyframes.map((k) => k.value)).toEqual([1, EXPRESSIONS.surprised.leftEye])
+  })
+
   it('applies a pose that holds still, even from a single key', () => {
     const tracks = poseTracks('hero', [{ time: 0, pose: 'wave' }])
     const shoulder = tracks.find((t) => t.property === 'rightShoulder')!

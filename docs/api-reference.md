@@ -1511,7 +1511,7 @@ encodeWav(samples, sampleRate): Uint8Array                                // pur
 ### Characters
 
 `@algorisys/tinyfly/characters` (browser-safe): `StickPose`, `REST_POSE`, `POSES`,
-`pose()`, `blendPose()`, `walkPose()`, `talkingMouth()`, `drawStickFigure()`,
+`EXPRESSIONS`, `Expression`, `withExpression()`, `pose()`, `blendPose()`, `walkPose()`, `talkingMouth()`, `drawStickFigure()`,
 `stickFigureTarget()`, `poseTracks()`. See
 [Rendering Video from Code](video-rendering.md#characters).
 
