@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.74.1](v0.74.1.md) | 2026-09-27 | The stick figure walks properly: legs scissor, feet stay planted |
 | [v0.74.0](v0.74.0.md) | 2026-09-27 | Facial expressions: eyes, brows, gaze and mouth shapes, 18 named expressions |
 | [v0.73.0](v0.73.0.md) | 2026-09-27 | The stick figure in the browser bundle, a Stick Figure gallery card, Narrated Scene uses the rig |
 | [v0.72.0](v0.72.0.md) | 2026-09-27 | A poseable stick figure (`tinyfly/characters`), narration timed from recorded clips, stills taken mid-line |

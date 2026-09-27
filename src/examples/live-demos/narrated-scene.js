@@ -1,9 +1,9 @@
 import { planNarration, narrationSceneAt, deserializeTimeline } from '../../engine'
-import { poseTracks, pose, walkPose, talkingMouth, drawStickFigure } from '../../characters'
+import { poseTracks, pose, walkPose, blendPose, strideLength, talkingMouth, drawStickFigure } from '../../characters'
 
 // On a standalone page these come from the browser bundle's `tinyfly` global;
 // here they come from the source modules, so the code below runs unchanged in both.
-const tinyfly = { planNarration, narrationSceneAt, deserializeTimeline, poseTracks, pose, walkPose, talkingMouth, drawStickFigure }
+const tinyfly = { planNarration, narrationSceneAt, deserializeTimeline, poseTracks, pose, walkPose, blendPose, strideLength, talkingMouth, drawStickFigure }
 
 export const html = `<style>
   .ns-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
@@ -68,13 +68,17 @@ export function run(live, root) {
     ctx.fillRect(0, 230, 512, 58)
 
     // The tracks hold the joints; walking and talking are layered on top.
+    // The walk phase comes from the distance covered, so the feet stay planted.
+    const x = values?.get('x') ?? 0
     let figure = tinyfly.pose(Object.fromEntries(values ?? []))
-    const walking = time < enter.end || time > leave.start
-    if (walking) figure = tinyfly.walkPose(time / 600, figure)
+    // Fade the walk in and out over a quarter second either side of standing still.
+    const fade = (ms) => Math.min(1, Math.max(0, ms / 250))
+    const walking = time < enter.end ? fade(enter.end - time) : fade(time - leave.start)
+    figure = tinyfly.blendPose(figure, tinyfly.walkPose(x / tinyfly.strideLength(150), figure), walking)
     if (cue) figure = { ...figure, mouth: tinyfly.talkingMouth(time) }
 
     ctx.save()
-    ctx.translate(values?.get('x') ?? 0, 232)
+    ctx.translate(x, 232)
     tinyfly.drawStickFigure(ctx, figure, { height: 150, color: '#1e3a8a', headFill: '#f2c49b' })
     ctx.restore()
   }

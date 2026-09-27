@@ -9,12 +9,13 @@
  *   measures each clip and writes the narration WAV (see the note at the end).
  * - The figure comes from '@algorisys/tinyfly/characters': poseTracks() turns
  *   named poses into keyframe tracks, and `walk`, `walking` and `talk` tracks
- *   make it walk and chatter.
+ *   make it walk and chatter. strideLength() turns distance into strides, so
+ *   the feet stay planted.
  * - background() and draw() paint the backdrop and the caption each frame,
  *   Cairo-style, under and over the figure.
  */
 import { planNarration, narrationMarkers, narrationSceneAt } from '@algorisys/tinyfly'
-import { stickFigureTarget, poseTracks } from '@algorisys/tinyfly/characters'
+import { stickFigureTarget, poseTracks, strideLength } from '@algorisys/tinyfly/characters'
 
 const W = 1280
 const H = 720
@@ -37,6 +38,10 @@ const track = (property, frames) => ({
   keyframes: frames.map(([time, value, easing]) => ({ time, value, ...(easing ? { easing } : {}) })),
 })
 
+const HEIGHT = 340
+// Strides for a distance, so the feet stay planted: the walk track uses the
+// same easing as x, so steps keep pace with the ground.
+const strides = (distance) => distance / strideLength(HEIGHT)
 const arrive = cue('s0-l0').end
 const leave = scene('leave').start + 200
 const end = plan.duration
@@ -48,7 +53,7 @@ const timeline = {
   tracks: [
     // Walk in from the left, stop, and walk off to the right (x is an offset).
     track('x', [[0, -720], [arrive, 0, 'ease-out'], [leave, 0], [end, 820, 'ease-in']]),
-    track('walk', [[0, 0], [arrive, 3], [leave, 3], [end, 6]]),
+    track('walk', [[0, 0], [arrive, strides(720), 'ease-out'], [leave, strides(720)], [end, strides(720 + 820), 'ease-in']]),
     track('walking', [[0, 1], [arrive - 200, 1], [arrive, 0], [leave, 0], [leave + 200, 1]]),
     track('talk', [[talking.start, 0], [talking.start + 100, 1], [talking.end, 1], [talking.end + 100, 0]]),
     // Poses, by name, timed from the narration.
@@ -76,7 +81,7 @@ export default {
     hero: stickFigureTarget({
       x: W / 2,
       y: FLOOR + 10,
-      style: { height: 340, color: '#1e3a8a', headFill: '#f2c49b', label: 'HERO' },
+      style: { height: HEIGHT, color: '#1e3a8a', headFill: '#f2c49b', label: 'HERO' },
     }),
   },
   // Drawn under the targets: a sky that changes colour per scene, and the floor.

@@ -1927,6 +1927,13 @@ without a browser. Guide: `docs/video-rendering.md`; example:
       furious, worried, scared, confused, skeptical, thinking, sleepy, disgusted, smug,
       wink, neutral), `withExpression`, `expression` keys in `poseTracks`; gallery card
       gets an expression picker and a face close-up
+- [x] **Walk cycle fix** — `walkPose` moved both legs (and both arms) the same way on
+      screen, since limb angles mirror per side; now the legs scissor evenly about the
+      vertical, the lifted shin trails backward, hanging arms swing against the legs and
+      raised arms keep their pose
+- [x] **Planted feet** — `strideLength(height)`; the video example's `walk` track and the
+      Narrated Scene card take the walk phase from distance covered (same easing as `x`),
+      so feet no longer slide; the card fades the walk in and out
 - [ ] Next: drawing helpers (speech bubbles, wrapped text, tags, quote cards) and a
       label-overlap check for stills
 - [ ] Next: named draw functions, so scenes with custom targets stay pure JSON

@@ -157,24 +157,49 @@ export function blendPose(from: StickPose, to: StickPose, t: number): StickPose 
   return out
 }
 
+/** Thigh swing either side of vertical while walking, degrees. */
+const WALK_HIP_SWING = 24
+
+/** Arms raised further than this (degrees) keep their pose while walking. */
+const SWINGING_ARM_LIMIT = 40
+
 /**
  * A walking stride at `phase` (in strides: 0 → 1 is one full cycle), built on
- * `base` so the upper body can keep another pose. `stride` scales the swing.
+ * `base`: the legs walk, hanging arms swing, and raised arms (a wave, a point)
+ * and the face keep `base`'s pose. `stride` scales the swing.
+ *
+ * Limb angles are measured outward from each side, so the same angle moves the
+ * left limb one way on screen and the right limb the other. Giving both hips the
+ * same angle therefore puts one foot forward (+x, the way the figure faces) and
+ * the other back, evenly about the vertical, which is what a stride looks like.
  */
 export function walkPose(phase: number, base: StickPose = REST_POSE, stride = 1): StickPose {
-  const swing = Math.sin(phase * Math.PI * 2)
-  const lift = Math.cos(phase * Math.PI * 2)
+  const swing = Math.sin(phase * Math.PI * 2) * stride
+  const lift = Math.cos(phase * Math.PI * 2) * stride
+  const armSwing = (shoulder: number) => (shoulder <= SWINGING_ARM_LIMIT ? 22 * swing : shoulder)
   return {
     ...base,
-    // Legs scissor: one thigh swings the way the other swings back.
-    leftHip: base.leftHip + 22 * swing * stride,
-    rightHip: base.rightHip - 22 * swing * stride,
-    leftKnee: base.leftKnee + 14 * Math.max(0, lift) * stride,
-    rightKnee: base.rightKnee + 14 * Math.max(0, -lift) * stride,
-    // Arms swing against the legs.
-    leftShoulder: base.leftShoulder - 14 * swing * stride,
-    rightShoulder: base.rightShoulder + 14 * swing * stride,
+    // Left foot forward while swing > 0, right foot back; then the other way.
+    leftHip: -WALK_HIP_SWING * swing,
+    rightHip: -WALK_HIP_SWING * swing,
+    // The leg swinging forward lifts, its shin trailing backward (-x). A positive
+    // knee folds toward the centre, which is backward only for the right leg.
+    leftKnee: -30 * Math.max(0, lift),
+    rightKnee: 30 * Math.max(0, -lift),
+    // Arms swing against the legs: left arm back while the left foot is forward.
+    leftShoulder: armSwing(base.leftShoulder),
+    rightShoulder: armSwing(base.rightShoulder),
   }
+}
+
+/**
+ * Ground covered by one full walk cycle (two steps) for a figure `height` px
+ * tall: each step the foot sweeps from one side of the hip to the other.
+ * Set the walk phase to distance / strideLength so the feet stay planted.
+ */
+export function strideLength(height: number, stride = 1): number {
+  const leg = (THIGH + SHIN) * height
+  return 4 * leg * Math.sin((WALK_HIP_SWING * stride * Math.PI) / 180)
 }
 
 /** How open a talking mouth is at `time` ms: a deterministic chatter, 0..1. */

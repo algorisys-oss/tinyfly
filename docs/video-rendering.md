@@ -174,7 +174,8 @@ timeline: {
 | `withExpression(pose, face)` | The pose with its face replaced: a name, or face fields to change |
 | `pose(changes)` | A full pose from the joints that differ from rest |
 | `blendPose(a, b, t)` | Linear blend of two poses |
-| `walkPose(phase, base?, stride?)` | A stride at `phase` (0 → 1 is one cycle), keeping `base`'s upper body |
+| `walkPose(phase, base?, stride?)` | A stride at `phase` (0 → 1 is one cycle): legs scissor, hanging arms swing against them; raised arms and the face keep `base` |
+| `strideLength(height)` | Ground one walk cycle covers; set `walk` to distance / stride length (with the same easing as `x`) so the feet stay planted |
 | `talkingMouth(time)` | A deterministic 0..1 chatter |
 | `drawStickFigure(ctx, pose, style)` | Draw with the feet at (0, 0), for `draw` functions |
 | `stickFigureTarget({ x, y, pose, style })` | A `custom` target whose props are the pose plus `walk`, `walking`, `talk` |

@@ -7,11 +7,13 @@ import {
   REST_POSE,
   blendPose,
   walkPose,
+  strideLength,
   talkingMouth,
   drawStickFigure,
   stickFigureTarget,
   poseTracks,
   pose,
+  type StickPose,
 } from './stick-figure'
 import { FrameRenderer } from '../headless/frame-renderer'
 
@@ -42,14 +44,33 @@ describe('poses', () => {
     expect(blendPose(REST_POSE, POSES.wave, 1)).toEqual(POSES.wave)
   })
 
-  it('walks in a repeating scissor stride', () => {
+  it('walks in a scissor stride: one foot forward while the other is back', () => {
+    // Screen x of a foot direction: the left limb spreads to -x, the right to +x.
+    const leftFoot = (p: StickPose) => -Math.sin((p.leftHip * Math.PI) / 180)
+    const rightFoot = (p: StickPose) => Math.sin((p.rightHip * Math.PI) / 180)
     const quarter = walkPose(0.25)
-    expect(quarter.leftHip - REST_POSE.leftHip).toBeCloseTo(22)
-    expect(quarter.rightHip - REST_POSE.rightHip).toBeCloseTo(-22)
+    expect(leftFoot(quarter)).toBeGreaterThan(0.3) // forward, the way it faces
+    expect(rightFoot(quarter)).toBeLessThan(-0.3) // back
+    expect(leftFoot(quarter)).toBeCloseTo(-rightFoot(quarter)) // evenly about the vertical
+    expect(leftFoot(walkPose(0.75))).toBeLessThan(-0.3) // then the other way round
     expect(walkPose(1.25).leftHip).toBeCloseTo(quarter.leftHip)
-    expect(walkPose(0).leftHip).toBeCloseTo(REST_POSE.leftHip)
-    // The upper body keeps the base pose's other joints.
-    expect(walkPose(0.3, POSES.wave).rightElbow).toBe(POSES.wave.rightElbow)
+    // The arm on the side of the forward foot swings back.
+    expect(-Math.sin((quarter.leftShoulder * Math.PI) / 180)).toBeLessThan(0)
+  })
+
+  it('covers one stride length per cycle, in proportion to height', () => {
+    // Foot sweep per cycle: forward and back twice across the hip.
+    const foot = (p: StickPose) => -Math.sin((p.leftHip * Math.PI) / 180) * (0.24 + 0.22) * 300
+    expect(strideLength(300)).toBeCloseTo(4 * (foot(walkPose(0.25)) - 0))
+    expect(strideLength(600)).toBeCloseTo(2 * strideLength(300))
+  })
+
+  it('keeps raised arms and the face while walking', () => {
+    const waving = walkPose(0.3, POSES.wave)
+    expect(waving.rightShoulder).toBe(POSES.wave.rightShoulder)
+    expect(waving.rightElbow).toBe(POSES.wave.rightElbow)
+    expect(waving.smile).toBe(POSES.wave.smile)
+    expect(waving.leftShoulder).not.toBe(POSES.wave.leftShoulder) // the hanging arm swings
   })
 
   it('talks deterministically within 0..1', () => {
