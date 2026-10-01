@@ -1141,6 +1141,29 @@ function animate() {
 | `render(ctx)` | Draw all targets to a canvas context |
 | `static loadImage(src)` | Load an image for use as ImageTarget |
 
+### Sketched and drawn-on shapes
+
+Rect, circle, line and path targets take two more properties:
+
+| Property | |
+|---|---|
+| `sketch` | A `SketchStyle` (`roughness`, `passes`, `boil`, `seed`): the outline is drawn in hand-drawn pencil strokes that boil; the fill stays clean |
+| `drawOn` | 0..1, how much of the outline is drawn (default 1). Animate it to draw a shape on; the fill appears once the outline is complete. Circles start at the top and go clockwise |
+
+```typescript
+adapter.registerTarget('box', {
+  type: 'rect', x: 50, y: 50, width: 100, height: 100,
+  fillStyle: '#fde68a', strokeStyle: '#2f2f33', lineWidth: 4,
+  sketch: { roughness: 3, boil: 8 },
+})
+// …and a track: { target: 'box', property: 'drawOn', keyframes: [{ time: 0, value: 0 }, { time: 800, value: 1 }] }
+```
+
+Without `sketch`, and with `drawOn` at 1, shapes draw exactly as before. The
+pen and the outline helpers are exported too: `sketchPen()`, `boilFrame()`,
+`pathOutline()`, `rectOutline()`, `drawOutline()`, `partialPath()`,
+`pointAlong()`, `pathLength()`.
+
 ### Target Types
 
 #### RectTarget
@@ -1511,8 +1534,8 @@ encodeWav(samples, sampleRate): Uint8Array                                // pur
 ### Characters
 
 `@algorisys/tinyfly/characters` (browser-safe): `StickPose`, `REST_POSE`, `POSES`,
-`EXPRESSIONS`, `Expression`, `withExpression()`, `pose()`, `blendPose()`, `walkPose()`, `strideLength()`, `talkingMouth()`, `drawStickFigure()`,
-`stickFigureTarget()`, `poseTracks()`. See
+`EXPRESSIONS`, `Expression`, `withExpression()`, `pose()`, `blendPose()`, `walkPose()`, `strideLength()`, `talkingMouth()`, `drawStickFigure()`, `rubberLimb()`,
+`stickFigureTarget()`, `poseTracks()`, and the pencil sketch style: `SketchStyle`, `sketchPen()`, `boilFrame()`, erasing: `erasable()`, `withErased()`, `clipErased()`, `scrubPath()`, `drawEraser()`, `partialPath()`, `pointAlong()`, `pathLength()`, and the drawing hand: `drawnPathTarget()`, `drawHand()`, `drawPencil()`, `circlePath()`. See
 [Rendering Video from Code](video-rendering.md#characters).
 
 ### Narration timing

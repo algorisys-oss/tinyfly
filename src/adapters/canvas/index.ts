@@ -1,1 +1,4 @@
 export * from './canvas-adapter'
+export * from './sketch'
+export * from './polyline'
+export * from './outline'

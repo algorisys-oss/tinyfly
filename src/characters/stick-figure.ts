@@ -1,5 +1,6 @@
 import type { CustomTarget } from '../adapters/canvas'
 import type { EasingType, Track } from '../engine/types'
+import { sketchPen, type Point, type SketchPen, type SketchStyle } from '../adapters/canvas/sketch'
 
 /**
  * A stick-figure rig: a pose is a handful of numbers, so poses blend, walk
@@ -48,6 +49,12 @@ export interface StickPose {
   /** Where the eyes look: -1..1 across (+ is the way the figure faces) and down (+) */
   lookX: number
   lookY: number
+  /**
+   * Squash and stretch: 1 normal, above 1 taller (a jump), below 1 squashed (a landing).
+   * The body and legs scale by it, the arms by its square root, and the head
+   * becomes an ellipse of the same area.
+   */
+  stretch: number
 }
 
 export const REST_POSE: StickPose = {
@@ -72,6 +79,7 @@ export const REST_POSE: StickPose = {
   browTilt: 0,
   lookX: 0,
   lookY: 0,
+  stretch: 1,
 }
 
 /** A full pose from the fields that differ from rest. */
@@ -144,6 +152,9 @@ export const POSES = {
   handsOnHips: pose({ leftShoulder: 45, leftElbow: -100, rightShoulder: 45, rightElbow: -100, leftHip: 14, rightHip: 14, smile: 0.8 }),
   sad: pose({ leftShoulder: 14, rightShoulder: 14, leftElbow: -4, rightElbow: -4, headTilt: -14, lean: -3, ...EXPRESSIONS.sad }),
   surprised: pose({ leftShoulder: 70, leftElbow: 60, rightShoulder: 70, rightElbow: 60, ...EXPRESSIONS.surprised }),
+  // Squash and stretch: the wind-up before a jump (or the landing), and the jump itself.
+  crouch: pose({ stretch: 0.72, leftShoulder: 35, rightShoulder: 35, leftElbow: -50, rightElbow: -50, leftHip: 22, rightHip: 22, headTilt: -4 }),
+  jump: pose({ stretch: 1.22, leftShoulder: 140, rightShoulder: 140, leftElbow: 20, rightElbow: 20, leftHip: 4, rightHip: 4, ...EXPRESSIONS.joyful }),
 } satisfies Record<string, StickPose>
 
 export type PoseName = keyof typeof POSES
@@ -225,6 +236,10 @@ export interface StickStyle {
   label?: string
   /** Name tag font (default bold, 11% of the height, sans-serif) */
   labelFont?: string
+  /** Draw in hand-drawn pencil strokes that boil (see `sketchPen`); omit for clean lines */
+  sketch?: SketchStyle
+  /** Limbs: 0 straight segments jointed at elbows and knees (default), 1 smooth rubber-hose curves */
+  rubber?: number
 }
 
 /** Proportions as fractions of the height. */
@@ -331,14 +346,53 @@ function drawFace(
   ctx.fill()
 }
 
-/** Draw a figure with its feet at (0, 0). */
-export function drawStickFigure(ctx: CanvasRenderingContext2D, figure: StickPose, style: StickStyle = {}): void {
+/**
+ * Points along a limb, blending the jointed shape (two straight segments) into
+ * a rubber-hose curve by `rubber` 0..1. The curve is the quadratic that passes
+ * through the joint halfway along, so a bent limb keeps its bend, rounded.
+ */
+export function rubberLimb(root: Point, joint: Point, end: Point, rubber: number, samples = 16): Point[] {
+  // Control point that makes the quadratic pass through the joint at t = 0.5.
+  const control = { x: 2 * joint.x - (root.x + end.x) / 2, y: 2 * joint.y - (root.y + end.y) / 2 }
+  const points: Point[] = []
+  for (let i = 0; i <= samples; i++) {
+    const t = i / samples
+    const jointed =
+      t < 0.5
+        ? { x: root.x + (joint.x - root.x) * 2 * t, y: root.y + (joint.y - root.y) * 2 * t }
+        : { x: joint.x + (end.x - joint.x) * (2 * t - 1), y: joint.y + (end.y - joint.y) * (2 * t - 1) }
+    const u = 1 - t
+    const hose = {
+      x: u * u * root.x + 2 * u * t * control.x + t * t * end.x,
+      y: u * u * root.y + 2 * u * t * control.y + t * t * end.y,
+    }
+    points.push({ x: jointed.x + (hose.x - jointed.x) * rubber, y: jointed.y + (hose.y - jointed.y) * rubber })
+  }
+  return points
+}
+
+/**
+ * Draw a figure with its feet at (0, 0). `time` (ms) only matters for a
+ * sketched style: it picks which boil frame of the wobble shows.
+ */
+export function drawStickFigure(
+  ctx: CanvasRenderingContext2D,
+  figure: StickPose,
+  style: StickStyle = {},
+  time = 0
+): void {
   const h = style.height ?? 300
   const color = style.color ?? '#1e293b'
   const facing = (style.facing ?? 1) < 0 ? -1 : 1
+  // Poses written before `stretch` existed leave it undefined.
+  const stretch = Math.min(3, Math.max(0.3, figure.stretch ?? 1))
+  const armStretch = Math.sqrt(stretch)
   const r = HEAD * h
-  const hipY = -HIP * h
-  const neckY = -NECK * h
+  // The head keeps its area: taller and narrower when stretched.
+  const headRx = r / Math.sqrt(stretch)
+  const headRy = r * Math.sqrt(stretch)
+  const hipY = -HIP * h * stretch
+  const neckY = -NECK * h * stretch
 
   ctx.save()
   ctx.scale(facing, 1)
@@ -351,7 +405,20 @@ export function drawStickFigure(ctx: CanvasRenderingContext2D, figure: StickPose
     const d = limb(angle, side)
     return { x: x + d.x * length * h, y: y + d.y * length * h }
   }
+  const pen: SketchPen | undefined = style.sketch ? sketchPen(ctx, style.sketch, time) : undefined
   const polyline = (...points: { x: number; y: number }[]) => {
+    if (pen) return pen.line(points)
+    ctx.beginPath()
+    ctx.moveTo(points[0].x, points[0].y)
+    for (const point of points.slice(1)) ctx.lineTo(point.x, point.y)
+    ctx.stroke()
+  }
+  /** A limb from root through its joint to its end: jointed, rubber hose, or a blend. */
+  const limbLine = (root: Point, joint: Point, end: Point) => {
+    const rubber = Math.min(1, Math.max(0, style.rubber ?? 0))
+    if (rubber === 0) return polyline(root, joint, end)
+    const points = rubberLimb(root, joint, end, rubber)
+    if (pen) return pen.curve(points)
     ctx.beginPath()
     ctx.moveTo(points[0].x, points[0].y)
     for (const point of points.slice(1)) ctx.lineTo(point.x, point.y)
@@ -363,8 +430,8 @@ export function drawStickFigure(ctx: CanvasRenderingContext2D, figure: StickPose
     [-1, figure.leftHip, figure.leftKnee],
     [1, figure.rightHip, figure.rightKnee],
   ] as const) {
-    const kneePoint = segment(0, hipY, hipAngle, side, THIGH)
-    polyline({ x: 0, y: hipY }, kneePoint, segment(kneePoint.x, kneePoint.y, hipAngle - knee, side, SHIN))
+    const kneePoint = segment(0, hipY, hipAngle, side, THIGH * stretch)
+    limbLine({ x: 0, y: hipY }, kneePoint, segment(kneePoint.x, kneePoint.y, hipAngle - knee, side, SHIN * stretch))
   }
 
   // The upper body tilts about the hips.
@@ -373,29 +440,43 @@ export function drawStickFigure(ctx: CanvasRenderingContext2D, figure: StickPose
   ctx.translate(0, -hipY)
   polyline({ x: 0, y: hipY }, { x: 0, y: neckY })
 
-  const shoulderY = neckY + SHOULDER_DROP * h
+  const shoulderY = neckY + SHOULDER_DROP * h * stretch
   for (const [side, shoulder, elbow] of [
     [-1, figure.leftShoulder, figure.leftElbow],
     [1, figure.rightShoulder, figure.rightElbow],
   ] as const) {
-    const elbowPoint = segment(0, shoulderY, shoulder, side, UPPER_ARM)
-    polyline({ x: 0, y: shoulderY }, elbowPoint, segment(elbowPoint.x, elbowPoint.y, shoulder + elbow, side, FOREARM))
+    const elbowPoint = segment(0, shoulderY, shoulder, side, UPPER_ARM * armStretch)
+    limbLine(
+      { x: 0, y: shoulderY },
+      elbowPoint,
+      segment(elbowPoint.x, elbowPoint.y, shoulder + elbow, side, FOREARM * armStretch)
+    )
   }
 
   // Head and face, tilted about the neck.
   ctx.translate(0, neckY)
   ctx.rotate(rad(figure.headTilt))
-  const cy = -r
+  const cy = -headRy
   ctx.beginPath()
-  ctx.arc(0, cy, r, 0, Math.PI * 2)
+  ctx.ellipse(0, cy, headRx, headRy, 0, 0, Math.PI * 2)
   const headFill = style.headFill ?? '#ffffff'
   if (headFill !== 'none') {
     ctx.fillStyle = headFill
     ctx.fill()
   }
-  ctx.stroke()
+  if (pen) {
+    pen.ellipse(0, cy, headRx, headRy)
+    // The face keeps its clean curves but shifts with the boil, so it lives with the lines.
+    const nudge = pen.nudge()
+    ctx.translate(nudge.x, nudge.y)
+  } else {
+    ctx.stroke()
+  }
 
-  drawFace(ctx, figure, r, cy, color, style.lineWidth ?? h * 0.025)
+  // The face squashes and stretches with the head.
+  ctx.translate(0, cy)
+  ctx.scale(headRx / r, headRy / r)
+  drawFace(ctx, figure, r, 0, color, style.lineWidth ?? h * 0.025)
   ctx.restore()
 
   if (style.label) {
@@ -404,7 +485,7 @@ export function drawStickFigure(ctx: CanvasRenderingContext2D, figure: StickPose
     ctx.font = style.labelFont ?? `700 ${Math.round(h * 0.11)}px sans-serif`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'bottom'
-    ctx.fillText(style.label, 0, -h - 0.04 * h)
+    ctx.fillText(style.label, 0, -h * stretch - 0.04 * h)
     ctx.restore()
   }
 }
@@ -417,6 +498,8 @@ export interface StickFigureProps extends StickPose {
   walking: number
   /** How much the mouth chatters, 0..1 */
   talk: number
+  /** Limbs from jointed (0) to rubber hose (1); starts at the style's `rubber` */
+  rubber: number
 }
 
 export interface StickFigureTargetOptions {
@@ -430,14 +513,15 @@ export interface StickFigureTargetOptions {
 
 /**
  * A `custom` canvas target that draws a stick figure. Its props are the pose
- * plus `walk`, `walking` and `talk`, so the timeline can pose, walk and voice
- * it. `x`/`y` here are the feet; the target's own box sits above them.
+ * plus `walk`, `walking`, `talk` and `rubber`, so the timeline can pose, walk,
+ * voice and loosen it. `x`/`y` here are the feet; the target's own box sits
+ * above them (a stretched figure reaches above its box).
  */
 export function stickFigureTarget(options: StickFigureTargetOptions): CustomTarget {
   const style = options.style ?? {}
   const height = style.height ?? 300
   const width = height * 0.8
-  const props: StickFigureProps = { ...pose(options.pose ?? {}), walk: 0, walking: 0, talk: 0 }
+  const props: StickFigureProps = { ...pose(options.pose ?? {}), walk: 0, walking: 0, talk: 0, rubber: style.rubber ?? 0 }
   return {
     type: 'custom',
     x: options.x - width / 2,
@@ -451,7 +535,7 @@ export function stickFigureTarget(options: StickFigureTargetOptions): CustomTarg
       let figure = values.walking > 0 ? blendPose(standing, walkPose(values.walk, standing), values.walking) : standing
       if (values.talk > 0) figure = { ...figure, mouth: Math.max(figure.mouth, values.talk * talkingMouth(time)) }
       ctx.translate(width / 2, height)
-      drawStickFigure(ctx, figure, style)
+      drawStickFigure(ctx, figure, { ...style, rubber: values.rubber }, time)
     },
   }
 }

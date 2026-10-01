@@ -1934,6 +1934,47 @@ without a browser. Guide: `docs/video-rendering.md`; example:
 - [x] **Planted feet** — `strideLength(height)`; the video example's `walk` track and the
       Narrated Scene card take the walk phase from distance covered (same easing as `x`),
       so feet no longer slide; the card fades the walk in and out
+- [x] **Pencil sketch style (Pencilmation-style look)** — `sketchPen(ctx, style, time)`
+      draws hand-drawn strokes (several passes, bowed segments, circles that overshoot)
+      with line boil: the wobble is seeded by `seed` + `boilFrame(time, boil)`, so it is
+      deterministic; `StickStyle.sketch` draws the figure that way (`drawStickFigure`
+      takes `time`); demo scene `examples/headless-video/pencil-sketch.mjs` (a pencil
+      draws the ground, the figure finds the gap and glares at the animator)
+- [x] **Erasing** — `erasable(target, { path, width })` adds an `erase` prop (0..1) that
+      rubs the target out along a path (in its own box, so the gap moves with it) and
+      draws a block eraser while rubbing; `withErased()` / `clipErased()` for immediate
+      drawing; `scrubPath()`, `drawEraser()`, `partialPath()`, `pointAlong()`; clip-based
+      (one clip-out per segment and joint), so no offscreen canvas; demo scene
+      `examples/headless-video/eraser-gag.mjs`
+- [x] **Squash, stretch and rubber limbs** — `stretch` pose field (body and legs scale by
+      it, arms by its square root, head becomes an equal-area ellipse, feet stay put);
+      `crouch` / `jump` poses; `style.rubber` (0 jointed → 1 rubber-hose curves through
+      the joint, `rubberLimb()`), also a `rubber` prop so a track blends it; kept off the
+      pose so named poses never reset it; poses without `stretch` draw unstretched;
+      `sketchPen` gains `curve()` and `ellipse()`; demo `examples/headless-video/rubber-hose.mjs`
+- [x] **The drawing hand** — `drawnPathTarget({ path, smooth, sketch, hand })` with a `draw`
+      prop (0..1) draws a stroke on while a cartoon hand (`drawHand`, `drawPencil`) holds
+      the pencil at its end; `erasable(…, { hand: true })` for the eraser; `circlePath()`;
+      every `sketchPen` stroke takes `progress` (the partial stroke lies exactly on the
+      finished one: bowed cubics are split, not redrawn) and is seeded per stroke, so a
+      growing stroke never shifts later strokes' wobble; path helpers moved to
+      `polyline.ts`; demo `examples/headless-video/drawing-hand.mjs`; `pencil-sketch.mjs`
+      now uses the library hand
+- [x] **Sketched canvas shapes** — rect / circle / line / path canvas targets take
+      `sketch` (pencil outline, clean fill) and `drawOn` (0..1, outline drawn on, fill
+      once complete); outlines via `pathOutline()` / `rectOutline()` (straight runs and
+      sampled curves, from the engine's path parser) and `drawOutline()`; the sketch
+      pen and polyline helpers moved to `src/adapters/canvas/` (re-exported from
+      `characters`); editor: **Pencil Sketch** section in Properties (Canvas preview
+      and raster export), `sketch` stored on shape elements
+- [x] **Write On for every shape** — the editor's Write On preset now covers rects,
+      circles and lines as well as paths: a `drawOn` track (Canvas preview and raster
+      export) plus, for paths, the dash tracks (DOM / SVG); `buildWriteOn()` in
+      `src/editor/utils/build-write-on.ts`; the DOM and SVG adapters skip `drawOn`
+- [x] **Pencil Sketch gallery card** (`src/examples/live-demos/pencil-sketch.js`, Video
+      category): the drawing-hand gag live in the browser (hand draws the ground and a
+      sun, eraser rubs the sun out), with pencil, boil-rate and rubber-limb toggles
+- [ ] Next (Pencilmation): erasing that follows a limb rather than the target's box
 - [ ] Next: drawing helpers (speech bubbles, wrapped text, tags, quote cards) and a
       label-overlap check for stills
 - [ ] Next: named draw functions, so scenes with custom targets stay pure JSON

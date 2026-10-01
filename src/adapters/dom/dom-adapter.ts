@@ -65,6 +65,12 @@ const ORIGIN_PROPERTIES = new Set(['originX', 'originY'])
  */
 const CLIP_PROPERTIES = new Set(['clipTop', 'clipRight', 'clipBottom', 'clipLeft'])
 
+/**
+ * Properties only the Canvas renderer draws (`drawOn` draws a shape's outline
+ * on), so a project animating them still plays here, without them.
+ */
+const CANVAS_ONLY_PROPERTIES = new Set(['drawOn'])
+
 /** Map animation property names to CSS property names */
 const PROPERTY_MAP: Record<string, string> = {
   fill: 'backgroundColor',
@@ -167,6 +173,7 @@ export class DOMAdapter {
       if (property === 'x' && hasMotionPathX) continue
       if (property === 'y' && hasMotionPathY) continue
       if ((property === 'rotate' || property === 'rotateZ') && hasMotionPathRotate) continue
+      if (CANVAS_ONLY_PROPERTIES.has(property)) continue
 
       if (TRANSFORM_PROPERTIES.has(property)) {
         const transformValue = this.buildTransformPart(property, value)

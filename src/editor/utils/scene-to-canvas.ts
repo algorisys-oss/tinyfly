@@ -35,6 +35,7 @@ export function sceneElementToCanvasTarget(element: SceneElement): CanvasTarget 
         strokeStyle: rect.stroke,
         lineWidth: rect.strokeWidth,
         borderRadius: rect.borderRadius,
+        sketch: rect.sketch,
       }
     }
     case 'circle': {
@@ -48,6 +49,7 @@ export function sceneElementToCanvasTarget(element: SceneElement): CanvasTarget 
         fillStyle: typeof circle.fill === 'string' ? circle.fill : undefined,
         strokeStyle: circle.stroke,
         lineWidth: circle.strokeWidth,
+        sketch: circle.sketch,
       }
     }
     case 'text': {
@@ -72,6 +74,7 @@ export function sceneElementToCanvasTarget(element: SceneElement): CanvasTarget 
         strokeStyle: line.stroke,
         lineWidth: line.strokeWidth,
         lineCap: line.lineCap as CanvasLineCap,
+        sketch: line.sketch,
       }
     }
     case 'path': {
@@ -83,6 +86,7 @@ export function sceneElementToCanvasTarget(element: SceneElement): CanvasTarget 
         fillStyle: typeof path.fill === 'string' ? path.fill : undefined,
         strokeStyle: path.stroke,
         lineWidth: path.strokeWidth,
+        sketch: path.sketch,
       }
     }
     default:

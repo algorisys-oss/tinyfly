@@ -2,6 +2,7 @@ import { createSignal } from 'solid-js'
 import { createStore } from 'solid-js/store'
 import { measureTextLetters } from '../utils/split-text'
 import { polyStarPath, type PolyStarSpec } from '../utils/poly-star'
+import type { SketchStyle } from '../../adapters/canvas'
 
 export type { PolyStarSpec }
 
@@ -105,7 +106,15 @@ export interface BaseElement {
   locked: boolean
 }
 
-export interface RectElement extends BaseElement {
+/**
+ * Shapes that can be drawn in pencil strokes (the Canvas renderer and raster
+ * export draw them sketched; DOM and SVG draw them clean).
+ */
+export interface Sketchable {
+  sketch?: SketchStyle
+}
+
+export interface RectElement extends BaseElement, Sketchable {
   type: 'rect'
   fill: FillValue
   stroke: string
@@ -113,7 +122,7 @@ export interface RectElement extends BaseElement {
   borderRadius: number
 }
 
-export interface CircleElement extends BaseElement {
+export interface CircleElement extends BaseElement, Sketchable {
   type: 'circle'
   fill: FillValue
   stroke: string
@@ -168,7 +177,7 @@ export interface VideoElement extends BaseElement {
   startTime: number
 }
 
-export interface LineElement extends BaseElement {
+export interface LineElement extends BaseElement, Sketchable {
   type: 'line'
   x2: number
   y2: number
@@ -188,7 +197,7 @@ export interface ArrowElement extends BaseElement {
   endHead: boolean
 }
 
-export interface PathElement extends BaseElement {
+export interface PathElement extends BaseElement, Sketchable {
   type: 'path'
   /** SVG path data (d attribute) */
   d: string

@@ -1,6 +1,8 @@
 import type { AnimationState, AnimatableValue } from '../../engine/types'
 import { composeFilter } from '../filter-utils'
 import { shineStops } from '../shine-utils'
+import { drawOutline, pathOutline, rectOutline } from './outline'
+import { sketchPen, type SketchPen, type SketchStyle } from './sketch'
 
 /** Gradient stop definition */
 export interface GradientStop {
@@ -74,6 +76,16 @@ export interface CanvasTargetBase {
   shadowColor?: string
   // Shine sweep progress (0..1); rendered as a moving highlight in the fill.
   shine?: number
+  /**
+   * Draw the outline in hand-drawn pencil strokes that boil (rect, circle, line
+   * and path targets). The fill stays clean underneath.
+   */
+  sketch?: SketchStyle
+  /**
+   * How much of the outline is drawn, 0..1 (default 1), for drawing a shape on
+   * (rect, circle, line and path targets). The fill appears once it is complete.
+   */
+  drawOn?: number
 }
 
 /** Rectangle target */
@@ -543,10 +555,51 @@ export class CanvasAdapter {
     }
   }
 
+  /** Whether a shape is drawn stroke by stroke: sketched, or only partly drawn on. */
+  private drawsOutline(target: CanvasTargetBase): boolean {
+    return target.sketch !== undefined || (target.drawOn !== undefined && target.drawOn < 1)
+  }
+
+  /**
+   * Draw a shape outline-first: the fill (clean) once the outline is complete,
+   * then the outline up to `drawOn`, in pencil strokes when sketched.
+   */
+  private renderOutlined(
+    ctx: CanvasRenderingContext2D,
+    target: CanvasTargetBase,
+    fill: (() => void) | undefined,
+    outline: (progress: number, pen: SketchPen | undefined) => void
+  ): void {
+    const progress = Math.min(1, Math.max(0, target.drawOn ?? 1))
+    if (fill && target.fillStyle && progress >= 1) fill()
+    if (!target.strokeStyle || progress <= 0) return
+    // Pencil lines have round ends unless the target says otherwise.
+    const pen = target.sketch ? sketchPen(ctx, target.sketch, this.time) : undefined
+    if (pen) {
+      ctx.lineCap = (target as { lineCap?: CanvasLineCap }).lineCap ?? 'round'
+      ctx.lineJoin = (target as { lineJoin?: CanvasLineJoin }).lineJoin ?? 'round'
+    }
+    outline(progress, pen)
+  }
+
   /**
    * Render a rectangle.
    */
   private renderRect(ctx: CanvasRenderingContext2D, target: RectTarget): void {
+    if (this.drawsOutline(target)) {
+      const { x, y, width, height } = target
+      return this.renderOutlined(
+        ctx,
+        target,
+        () => {
+          ctx.beginPath()
+          if (target.borderRadius && target.borderRadius > 0) this.roundRect(ctx, x, y, width, height, target.borderRadius)
+          else ctx.rect(x, y, width, height)
+          ctx.fill()
+        },
+        (progress, pen) => drawOutline(ctx, rectOutline(x, y, width, height, target.borderRadius), progress, pen)
+      )
+    }
     ctx.beginPath()
     if (target.borderRadius && target.borderRadius > 0) {
       this.roundRect(ctx, target.x, target.y, target.width, target.height, target.borderRadius)
@@ -590,6 +643,25 @@ export class CanvasAdapter {
    * Render a circle.
    */
   private renderCircle(ctx: CanvasRenderingContext2D, target: CircleTarget): void {
+    if (this.drawsOutline(target)) {
+      const { x, y, radius } = target
+      return this.renderOutlined(
+        ctx,
+        target,
+        () => {
+          ctx.beginPath()
+          ctx.arc(x, y, radius, 0, Math.PI * 2)
+          ctx.fill()
+        },
+        (progress, pen) => {
+          if (pen) return pen.circle(x, y, radius, progress)
+          // Clean: an arc from the top, clockwise.
+          ctx.beginPath()
+          ctx.arc(x, y, radius, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * progress)
+          ctx.stroke()
+        }
+      )
+    }
     ctx.beginPath()
     ctx.arc(target.x, target.y, target.radius, 0, Math.PI * 2)
 
@@ -641,6 +713,17 @@ export class CanvasAdapter {
       ctx.lineCap = target.lineCap
     }
 
+    if (this.drawsOutline(target)) {
+      const points = [
+        { x: target.x, y: target.y },
+        { x: target.x2, y: target.y2 },
+      ]
+      const length = Math.hypot(target.x2 - target.x, target.y2 - target.y)
+      return this.renderOutlined(ctx, target, undefined, (progress, pen) =>
+        drawOutline(ctx, [{ kind: 'line', points, length }], progress, pen)
+      )
+    }
+
     ctx.beginPath()
     ctx.moveTo(target.x, target.y)
     ctx.lineTo(target.x2, target.y2)
@@ -667,6 +750,15 @@ export class CanvasAdapter {
 
     // Apply translation for target position
     ctx.translate(target.x, target.y)
+
+    if (this.drawsOutline(target)) {
+      return this.renderOutlined(
+        ctx,
+        target,
+        () => ctx.fill(path),
+        (progress, pen) => drawOutline(ctx, pathOutline(target.d), progress, pen)
+      )
+    }
 
     if (target.fillStyle) {
       ctx.fill(path)

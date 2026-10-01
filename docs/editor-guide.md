@@ -337,6 +337,13 @@ For text elements:
 | Line Cap | End cap style |
 | Line Join | Corner join style: miter, round, bevel |
 
+**✏️ Pencil Sketch.** Rectangles, circles, lines and paths have a Pencil Sketch
+section: tick **Sketched** to draw the outline in hand-drawn pencil strokes that
+boil, and set **Roughness**, **Boil / sec**, **Passes** and **Seed**. It shows in
+the **Canvas** preview and in GIF / WebP / MP4 export; the DOM and SVG previews
+draw the shape clean. Give the shape a visible stroke, since the sketch is
+drawn on the outline.
+
 For a **⬡ Polygon / ★ Star**, the panel also shows a **Shape** section (Sides /
 Points / Inner %) that regenerates the path as you change it.
 
@@ -745,6 +752,21 @@ cursor**, and click **Apply Typewriter**. This:
 Like everything else, the result is plain keyframe tracks — it exports to JSON
 and plays anywhere the engine runs.
 
+### Write On (shapes)
+
+Select a **path, rectangle, circle or line** and the Preset Panel shows a
+**Write On** section. Set the **Duration** and click **Apply Write-On** to draw
+the shape's outline on, as if by hand:
+
+- Every shape gets a `drawOn` track (0 → 1). The **Canvas** preview and GIF /
+  WebP / MP4 export draw the outline on along it, and fill the shape once the
+  outline is complete. Circles start at the top and go clockwise.
+- A path also gets `stroke-dasharray` / `stroke-dashoffset` tracks, so the DOM
+  and SVG previews draw it on too. Rectangles, circles and lines draw on in the
+  Canvas preview only.
+
+Turn on **Pencil Sketch** for the same shape to draw it on in pencil.
+
 ### Reveal / mask wipe
 
 The **Entrance** category includes **Reveal Right / Left / Up / Down** presets.
@@ -881,7 +903,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.74.1/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.75.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed

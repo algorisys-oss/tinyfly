@@ -16,6 +16,7 @@ import { svgLineDraw } from './svg-line-draw'
 import { canvasObjectTween } from './canvas-object-tween'
 import { narratedScene } from './narrated-scene'
 import { stickFigure } from './stick-figure'
+import { pencilSketch } from './pencil-sketch'
 import { lineMaskReveal } from './line-mask-reveal'
 import { pinnedHorizontal } from './pinned-horizontal'
 import { imageSequenceScrub } from './image-sequence-scrub'
@@ -59,6 +60,7 @@ import svgLineDrawSource from './svg-line-draw.js?raw'
 import canvasObjectTweenSource from './canvas-object-tween.js?raw'
 import narratedSceneSource from './narrated-scene.js?raw'
 import stickFigureSource from './stick-figure.js?raw'
+import pencilSketchSource from './pencil-sketch.js?raw'
 import lineMaskRevealSource from './line-mask-reveal.js?raw'
 import pinnedHorizontalSource from './pinned-horizontal.js?raw'
 import imageSequenceScrubSource from './image-sequence-scrub.js?raw'
@@ -154,4 +156,5 @@ export const liveDemos: LiveDemoWithCode[] = [
   withCode(canvasObjectTween, canvasObjectTweenSource),
   withCode(narratedScene, narratedSceneSource),
   withCode(stickFigure, stickFigureSource),
+  withCode(pencilSketch, pencilSketchSource),
 ]

@@ -127,6 +127,8 @@ export class SVGAdapter {
     let hasFilter = false
 
     for (const [property, value] of properties) {
+      // `drawOn` is drawn by the Canvas renderer only; SVG draws strokes on with dashes.
+      if (property === 'drawOn') continue
       if (TRANSFORM_PROPERTIES.has(property)) {
         transforms[property] = value as number
       } else if (property === 'originX' || property === 'originY') {

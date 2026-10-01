@@ -23,6 +23,7 @@ import { polyStarPath, type PolyStarKind } from '../utils/poly-star'
 import { TextAnimationCreator, TextTrackInspector } from './text-animation-panel'
 import { InertiaInspector } from './inertia-inspector'
 import { MarkerInspector } from './marker-inspector'
+import type { SketchStyle } from '../../adapters/canvas'
 import './property-panel.css'
 
 interface PropertyPanelProps {
@@ -428,6 +429,18 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
 
     // Reset input so the same file can be selected again
     input.value = ''
+  }
+
+  /** Turn the pencil sketch style on (with defaults) or off. */
+  const handleSketchToggle = (e: Event) => {
+    const on = (e.target as HTMLInputElement).checked
+    updateElement({ sketch: on ? { roughness: 2, boil: 8, passes: 2, seed: 1 } : undefined })
+  }
+
+  const handleSketchChange = (field: keyof SketchStyle) => (e: Event) => {
+    const value = parseFloat((e.target as HTMLInputElement).value)
+    const sketch = (selectedElement() as { sketch?: SketchStyle } | undefined)?.sketch
+    if (!isNaN(value) && sketch) updateElement({ sketch: { ...sketch, [field]: value } })
   }
 
   const handleCheckboxChange = (field: string) => (e: Event) => {
@@ -1386,15 +1399,45 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
     )
   }
 
+  /** Pencil sketch style for shapes: on/off, then roughness, boil, passes and seed. */
+  const renderSketchProperties = (element: RectElement | CircleElement | LineElement | PathElement) => (
+    <div class="property-section">
+      <h4>Pencil Sketch</h4>
+      <div class="property-row checkbox-row">
+        <label>Sketched</label>
+        <input type="checkbox" checked={element.sketch !== undefined} onChange={handleSketchToggle} />
+      </div>
+      <Show when={element.sketch !== undefined}>
+        <div class="property-row">
+          <label>Roughness</label>
+          <input type="number" value={element.sketch?.roughness ?? 2} onInput={handleSketchChange('roughness')} min="0" step="0.5" />
+        </div>
+        <div class="property-row">
+          <label>Boil / sec</label>
+          <input type="number" value={element.sketch?.boil ?? 8} onInput={handleSketchChange('boil')} min="0" step="1" />
+        </div>
+        <div class="property-row">
+          <label>Passes</label>
+          <input type="number" value={element.sketch?.passes ?? 2} onInput={handleSketchChange('passes')} min="1" max="4" step="1" />
+        </div>
+        <div class="property-row">
+          <label>Seed</label>
+          <input type="number" value={element.sketch?.seed ?? 1} onInput={handleSketchChange('seed')} step="1" />
+        </div>
+      </Show>
+      <p class="property-hint">Hand-drawn outline that boils. Shows in the Canvas preview and in GIF / MP4 export.</p>
+    </div>
+  )
+
   /** Properties for the selected element's type, bound to the live element view. */
   const renderTypeSpecificProperties = () => {
     switch (liveElement.type) {
-      case 'rect': return renderRectProperties(liveElement as RectElement)
-      case 'circle': return renderCircleProperties(liveElement as CircleElement)
+      case 'rect': return [renderRectProperties(liveElement as RectElement), renderSketchProperties(liveElement as RectElement)]
+      case 'circle': return [renderCircleProperties(liveElement as CircleElement), renderSketchProperties(liveElement as CircleElement)]
       case 'text': return renderTextProperties(liveElement as TextElement)
-      case 'line': return renderLineProperties(liveElement as LineElement)
+      case 'line': return [renderLineProperties(liveElement as LineElement), renderSketchProperties(liveElement as LineElement)]
       case 'arrow': return renderArrowProperties(liveElement as ArrowElement)
-      case 'path': return renderPathProperties(liveElement as PathElement)
+      case 'path': return [renderPathProperties(liveElement as PathElement), renderSketchProperties(liveElement as PathElement)]
       case 'image': return renderImageProperties(liveElement as ImageElement)
       case 'audio': return renderAudioProperties(liveElement as AudioElement)
       case 'video': return renderVideoProperties(liveElement as VideoElement)

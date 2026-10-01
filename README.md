@@ -49,7 +49,10 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Code-drawn targets** - A `custom` canvas target draws with code (characters, charts, props) while the timeline animates its position, opacity and its own `props`, so drawing stays code and timing stays JSON
 - **Immediate mode too** - A scene's `background` and `draw(ctx, { time })` functions paint each frame directly, Cairo/Processing-style, and mix freely with timeline targets
 - **Timing from narration** - `planNarration()` lays spoken lines out from their clip lengths (lead, gap, tail) into cues, scene spans and markers; `voiceNarration()` measures recorded clips with ffmpeg and writes the sample-aligned narration WAV
-- **Characters** - A poseable stick figure (`@algorisys/tinyfly/characters`): named poses, facial expressions (brows, eyes that widen, close and look around, mouth shapes), blending, walk cycles and talking, all driven by timeline tracks
+- **Characters** - A poseable stick figure (`@algorisys/tinyfly/characters`): named poses, facial expressions (brows, eyes that widen, close and look around, mouth shapes), squash and stretch, rubber-hose limbs, blending, walk cycles and talking, all driven by timeline tracks
+- **Pencil sketch style** - Hand-drawn strokes with line boil (`sketch` style, `sketchPen`) for a pencil-test, Pencilmation-like look, on the stick figure and on canvas rect / circle / line / path shapes (also from the editor's Properties panel); a `drawOn` track draws any of those shapes on; the wobble is seeded by time, so renders stay deterministic
+- **The drawing hand** - `drawnPathTarget()` draws a sketched stroke on from a `draw` track while a cartoon hand holds the pencil at its end; the same hand can hold the eraser
+- **Erasing** - An eraser rubs out part of a target (`erasable()`, animated by an `erase` track) or of anything drawn in code (`withErased()`); clip-based, so it works in the browser and headless alike
 - **Captions** - `toSRT()` / `toWebVTT()` from narration cues or from a timeline's markers
 
 ### Render Adapters
@@ -113,7 +116,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Sprite-sheet export** - Every frame packed into one PNG grid plus a JSON metadata file (frame size, columns/rows, count, fps) — ready for game engines or a custom `<canvas>` player; alpha kept when transparent
 - **Rich raster export options** - Resolution multiplier (2x by default, so text and edges stay crisp), FPS, background colour or transparency, progress and cancel. Image and video layers are composited too — a device screen's recording is captured with `object-fit` cover/contain and rounded corners, seeked in sync
 - **Resizable preview** - Drag the splitter between the preview and the timeline to resize (double-click to reset)
-- **Stroke write-on** - Animate a path's stroke drawing itself on (DOM + SVG renderers); one-click "Write On" preset
+- **Stroke write-on** - Draw a shape's outline on: paths in every renderer, and rectangles, circles and lines on Canvas (a `drawOn` track); one-click "Write On" preset, which pairs with Pencil Sketch
 - **Embed code** - Generate copy-paste code for websites (single scene or full sequence)
 - **Landing page** - `/` introduces tinyfly with tinyfly itself: a masked headline, a pointer-led canvas, a live code playground that shows the JSON its code compiles to, a pinned feature story, a gallery and a copyable script tag, with a reduced-motion mode. It loads without the editor, which lives at `/studio` (lazy-loaded, as are Examples, Showcase and Docs)
 - **Learn** - An interactive course at `/learn`: short steps with live code, a preview you can scrub, and checks that read what your code compiled to. Nine modules, 28 lessons, 67 steps: Foundations (animation as JSON), the GSAP-style API, the Editor (build in the studio, Copy JSON, compare with code), Motion craft (timing, anticipation, springs), Text and SVG, Interaction (hover, quickTo, drag and throw, Flip, canvas), Scroll (reveals, scrub, pinning, velocity, smooth scrolling with parallax), Accessibility and performance (a real reduced-motion mode, keyboard parity, transforms, pausing off-screen work), and a Capstone that rebuilds the Agency Landing Page section by section, from the pointer-lit hero canvas to the magnetic button. Mistakes that would fail silently (a selector that matches nothing, `drawSVG` on a non-shape, a spring on a colour) show as plain-language warnings beside the code, and the last step of each module offers **Copy as page** and, for JSON lessons, **Open in editor**. The course is also in `llms-full.txt`
@@ -217,7 +220,7 @@ GSAP-shaped functions at the top level. Teaching embeds are included: add
 itself.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.74.1/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.75.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -253,7 +256,7 @@ A teaching figure needs no code at all:
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON with markers… }</script>
   <figcaption>Appending to a full slice</figcaption>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.74.1/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.75.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
 ```
 
 See [Teaching Animations](docs/teaching.md).
@@ -352,7 +355,7 @@ Without a build step, the player bundle puts the same functions on a `tinyfly` g
   <div data-tinyfly="box" style="width: 60px; height: 60px; background: #4a9eff;"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.74.1/cdn/tinyfly-player.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.75.0/cdn/tinyfly-player.iife.js"></script>
 <script>
   tinyfly.play('#animation', './animation.json', { loop: -1 })
 </script>
@@ -461,7 +464,7 @@ Or skip the code entirely with declarative embeds (see [Teaching Animations](doc
   <svg viewBox="0 0 720 200">…</svg>
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON… }</script>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.74.1/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.75.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 ### Audio / Video Sync

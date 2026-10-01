@@ -13,7 +13,9 @@ import {
   stickFigureTarget,
   poseTracks,
   pose,
+  rubberLimb,
   type StickPose,
+  type StickStyle,
 } from './stick-figure'
 import { FrameRenderer } from '../headless/frame-renderer'
 
@@ -94,6 +96,75 @@ describe('drawStickFigure', () => {
   })
 })
 
+describe('squash and stretch', () => {
+  /** A 200 px figure, feet at (150, 320): at rest its head spans y 120..168. */
+  const draw = (figure: StickPose, style: StickStyle = {}) => {
+    const ctx = context(300, 340)
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, 300, 340)
+    ctx.translate(150, 320)
+    drawStickFigure(ctx, figure, { height: 200, color: '#000000', ...style })
+    return ctx
+  }
+
+  it('stretches taller and squashes shorter, feet staying on the ground', () => {
+    expect(inked(draw(REST_POSE), 120, 70, 60, 40)).toBe(false)
+    expect(inked(draw(pose({ stretch: 1.3 })), 120, 70, 60, 40)).toBe(true)
+    expect(inked(draw(REST_POSE), 120, 125, 60, 20)).toBe(true)
+    expect(inked(draw(pose({ stretch: 0.7 })), 120, 125, 60, 20)).toBe(false)
+    // The feet are where they were.
+    expect(inked(draw(pose({ stretch: 0.7 })), 120, 310, 60, 10)).toBe(true)
+  })
+
+  it('treats a pose without stretch (written before it existed) as unstretched', () => {
+    const { stretch: _omitted, ...old } = REST_POSE
+    const pixels = (ctx: CanvasRenderingContext2D) => Array.from(ctx.getImageData(0, 0, 300, 340).data).join()
+    expect(pixels(draw(old as StickPose))).toBe(pixels(draw(REST_POSE)))
+  })
+
+  it('has crouch (squashed) and jump (stretched) poses', () => {
+    expect(POSES.crouch.stretch).toBeLessThan(1)
+    expect(POSES.jump.stretch).toBeGreaterThan(1)
+    expect(blendPose(POSES.crouch, POSES.jump, 0.5).stretch).toBeCloseTo((POSES.crouch.stretch + POSES.jump.stretch) / 2)
+  })
+})
+
+describe('rubber limbs', () => {
+  const root = { x: 0, y: 0 }
+  const joint = { x: 10, y: 50 }
+  const end = { x: 0, y: 100 }
+
+  it('starts at the root, ends at the end, and passes through the joint', () => {
+    for (const rubber of [0, 0.5, 1]) {
+      const points = rubberLimb(root, joint, end, rubber, 16)
+      expect(points[0]).toEqual(root)
+      expect(points[16].x).toBeCloseTo(end.x)
+      expect(points[16].y).toBeCloseTo(end.y)
+      expect(points[8].x).toBeCloseTo(joint.x)
+      expect(points[8].y).toBeCloseTo(joint.y)
+    }
+  })
+
+  it('is two straight segments at 0 and a smooth curve at 1', () => {
+    const jointed = rubberLimb(root, joint, end, 0, 16)
+    expect(jointed[4].x).toBeCloseTo(5) // half way along the upper segment
+    const hose = rubberLimb(root, joint, end, 1, 16)
+    expect(hose[4].x).toBeGreaterThan(6) // the curve bulges past the straight segment
+  })
+
+  it('draws differently from jointed limbs, and blends with style.rubber', () => {
+    const draw = (rubber?: number) => {
+      const ctx = context(300, 340)
+      ctx.translate(150, 320)
+      drawStickFigure(ctx, POSES.cheer, { height: 300, rubber })
+      return Array.from(ctx.getImageData(0, 0, 300, 340).data).join()
+    }
+    expect(draw(0)).toBe(draw())
+    expect(draw(1)).not.toBe(draw(0))
+    expect(draw(0.5)).not.toBe(draw(1))
+  })
+})
+
 describe('expressions', () => {
   it('replace the whole face and keep the body', () => {
     const angry = withExpression(POSES.wave, 'angry')
@@ -132,6 +203,11 @@ describe('stickFigureTarget', () => {
     const target = stickFigureTarget({ x: 400, y: 600, pose: { smile: 1 }, style: { height: 200 } })
     expect([target.x, target.y, target.width, target.height]).toEqual([320, 400, 160, 200])
     expect(target.props).toMatchObject({ smile: 1, walk: 0, walking: 0, talk: 0, rightShoulder: REST_POSE.rightShoulder })
+  })
+
+  it('exposes rubber as a prop, starting at the style', () => {
+    expect(stickFigureTarget({ x: 0, y: 0 }).props).toMatchObject({ rubber: 0, stretch: 1 })
+    expect(stickFigureTarget({ x: 0, y: 0, style: { rubber: 1 } }).props).toMatchObject({ rubber: 1 })
   })
 
   it('is posed by timeline tracks', () => {
