@@ -1,4 +1,4 @@
-# tinyfly CDN bundles (v0.75.0)
+# tinyfly CDN bundles (v0.76.0)
 
 Built from this commit by the release process — do not edit by hand.
 
@@ -15,7 +15,7 @@ player and embed bundles are smaller subsets. Loading more than one is safe — 
 add to the same `tinyfly` global.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.75.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.76.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -25,12 +25,12 @@ As an ES module:
 
 ```html
 <script type="module">
-  import { live } from 'https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.75.0/cdn/tinyfly.esm.js'
+  import { live } from 'https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.76.0/cdn/tinyfly.esm.js'
   live.to('.box', { x: 200, duration: 1 })
 </script>
 ```
 
-Pin a version tag (`@v0.75.0`) in production. `@main` follows the latest publish
+Pin a version tag (`@v0.76.0`) in production. `@main` follows the latest publish
 and is cached by jsDelivr for up to a day.
 
 ## Subresource Integrity
@@ -38,14 +38,14 @@ and is cached by jsDelivr for up to a day.
 Lock a pinned URL to its exact bytes with `integrity`:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.75.0/cdn/tinyfly-embed.iife.js" integrity="<hash below>" crossorigin="anonymous" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.76.0/cdn/tinyfly-embed.iife.js" integrity="<hash below>" crossorigin="anonymous" data-tinyfly-auto></script>
 ```
 
 | File | integrity |
 |---|---|
-| `tinyfly.iife.js` | `sha384-LMU53aXUU1rnT2yJF5VPLSQ0uKUB7IkpRzzXEP/nWyOhD6KpWp43LfDHF/LGmlZy` |
-| `tinyfly.umd.js` | `sha384-WLR3PkobIi1KqfcTJztJSndrNWWsP5UvqZd1fdx1PEdOwcMtc7Ek51oqdkyUnNlp` |
-| `tinyfly.esm.js` | `sha384-EEK5NM0+BZDdURwPShmMDfuDlDT2/a8HfpR1IHtQiwxNHirRJ5pi28LhFh+Q+P3W` |
+| `tinyfly.iife.js` | `sha384-BN+BpQpdlWQ6uxSaDKaGQs+F+sTZ7isZkCG1DZCDD975hRwSvF/EiuFS5nM6Tbi3` |
+| `tinyfly.umd.js` | `sha384-hc6fIrHehkp1LzRqA01Um332LhCK88pyZG+K3Gvqi6x7PT85EgexU/l9dX6Q3I+a` |
+| `tinyfly.esm.js` | `sha384-CUNiKTGMV4bf7+HtnUk3pyYsCmpnFCX3sKUB0Z2PY0SQUQ5MvvESE0Vhp162GhON` |
 | `tinyfly-player.iife.js` | `sha384-uT530d8IemDDsf4Ekg7+6qDhVB1bXMHI9FchEj/y91iexRiXlbfwNPjhgJOH/VIZ` |
 | `tinyfly-embed.iife.js` | `sha384-gZzJRnzwJFA1sD7MGQ15JCpC5qD9z21GLZ0IZ1Wlg93bwap152Fa5/1KlnVriyp0` |
 

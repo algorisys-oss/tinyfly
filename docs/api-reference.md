@@ -1535,7 +1535,7 @@ encodeWav(samples, sampleRate): Uint8Array                                // pur
 
 `@algorisys/tinyfly/characters` (browser-safe): `StickPose`, `REST_POSE`, `POSES`,
 `EXPRESSIONS`, `Expression`, `withExpression()`, `pose()`, `blendPose()`, `walkPose()`, `strideLength()`, `talkingMouth()`, `drawStickFigure()`, `rubberLimb()`,
-`stickFigureTarget()`, `poseTracks()`, and the pencil sketch style: `SketchStyle`, `sketchPen()`, `boilFrame()`, erasing: `erasable()`, `withErased()`, `clipErased()`, `scrubPath()`, `drawEraser()`, `partialPath()`, `pointAlong()`, `pathLength()`, and the drawing hand: `drawnPathTarget()`, `drawHand()`, `drawPencil()`, `circlePath()`. See
+`stickFigureTarget()`, `poseTracks()`, joints and costume layers: `stickFigureJoints()`, `resolveStickPose()`, `stickFigureAt()`, `jointsToScene()`, `headPoint()`, `StickStyle.layers`, `StickStyle.shoulderWidth`, the `turn` and `sit` pose fields, `seatHeight()`, `taperedLine()`, `StickStyle.classic` and `StickStyle.headSize`, and the pencil sketch style: `SketchStyle`, `sketchPen()`, `boilFrame()`, erasing: `erasable()`, `withErased()`, `clipErased()`, `scrubPath()`, `drawEraser()`, `partialPath()`, `pointAlong()`, `pathLength()`, and the drawing hand: `drawnPathTarget()`, `drawHand()`, `drawPencil()`, `circlePath()`. See
 [Rendering Video from Code](video-rendering.md#characters).
 
 ### Narration timing

@@ -1974,6 +1974,43 @@ without a browser. Guide: `docs/video-rendering.md`; example:
 - [x] **Pencil Sketch gallery card** (`src/examples/live-demos/pencil-sketch.js`, Video
       category): the drawing-hand gag live in the browser (hand draws the ground and a
       sun, eraser rubs the sun out), with pencil, boil-rate and rubber-limb toggles
+- [x] **Stick-figure joints and costume layers** (feedback from a story channel dressing
+      figures) — `stickFigureJoints(pose, style)` returns the geometry the figure is drawn
+      with (hip, neck, shoulders, elbows, hands, knees, feet, `handAngle`, stroked limb
+      polylines, head ellipse + face lines in head units), already mirrored for facing;
+      drawing and joints share one rig (`rigFigure`), so they cannot disagree;
+      `style.layers` hooks (`behind`, `body`, `sleeve`, `behindHead`, `overHead`, `front`)
+      draw costumes / hair / props inside the figure's z-order, in figure space, with a
+      sketch pen when sketched; the left arm is always the back arm;
+      `style.shoulderWidth` (default 0); `resolveStickPose()`, `stickFigureAt(target,
+      frame, id)` for immediate-mode `draw`, `jointsToScene()`, `headPoint()`; golden
+      PNGs (`src/characters/golden/`) pin the 0.75.0 look pixel for pixel
+- [x] **Fix: headless custom targets drew at time 0** — `FrameRenderer` now stamps the
+      state with the frame time, so `talk` chatters and sketched figures boil in
+      `tinyfly video` (the timeline is never played there, so its own clock stayed at 0)
+- [x] **¾ turn** — `turn` pose field (0 front → 1 profile): the face slides toward the
+      facing side and narrows (back eye more than front), the mouth narrows, shoulders
+      close up by cos(turn·90°); `head.faceX` follows
+- [x] **Ground contact** — `feetY` (lower foot) and `grounded.{left,right}` in the joints
+- [x] **Sitting** — `sit` pose field (0..1): thighs swing level and forward, shins hang
+      down, hips drop to `seatHeight(height)` at 1; the lower foot stays on the ground from
+      sit 0.25; `POSES.sit` (hands on knees); label drops with the body
+- [x] **Organic stick-figure look (default)** — feedback: figures looked boxy. Tapered
+      limbs (`taperedLine()`), joints always a little rounded (rubber ≥ 0.3), small hands
+      and feet (feet point the way it faces and tip with the shin by half its angle), the
+      lower foot (ankle or toe) always on the ground so walks bob, a forward lean into
+      sitting/standing, the back bowing slightly when turned or seated, rounded shoulders;
+      `walkPose` leans into the stride and forearms follow through; `style.classic: true`
+      keeps the 0.75 drawing (golden PNGs now run in classic); joints gain `toes` and
+      `limbs.spine`; joints tests check both looks
+- [x] **Brush and head size** — `style.headSize` (head diameter / height, default 0.24;
+      the neck moves, hips and feet stay); face line width capped at 14% of the head
+      radius so thick brushes (4–5%, the viral look) keep readable faces; defaults
+      unchanged (a 2.5–5.5% × 24/30% head comparison sheet informed this)
+- [x] **Dressed Stick Figures gallery card** (`src/examples/live-demos/dressed-figures.js`,
+      Video category): rounded shirt, tapered trousers and sleeves, pleated sari and pallu, spiky hair and a bun via `layers`, a
+      lota held at `handAngle`, a walk turned toward travel, sitting on a charpai at
+      `seatHeight`, shadows at `feetY`, a speech bubble at the head, joints overlay toggle
 - [ ] Next (Pencilmation): erasing that follows a limb rather than the target's box
 - [ ] Next: drawing helpers (speech bubbles, wrapped text, tags, quote cards) and a
       label-overlap check for stills

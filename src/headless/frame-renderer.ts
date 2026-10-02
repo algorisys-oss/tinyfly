@@ -77,7 +77,10 @@ export class FrameRenderer {
 
   /** Clear the context and draw the scene at `time` ms. */
   render(ctx: CanvasRenderingContext2D, time: number, index = 0): void {
-    const state = this.timeline?.getStateAtTime(time)
+    // The timeline is never played here, so its own clock stays at 0: stamp
+    // the state with the frame's time, which custom targets draw at.
+    const timelineState = this.timeline?.getStateAtTime(time)
+    const state = timelineState && { ...timelineState, currentTime: time }
     ctx.setTransform(1, 0, 0, 1, 0, 0)
     ctx.clearRect(0, 0, this.width, this.height)
     ctx.save()

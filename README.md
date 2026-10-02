@@ -172,7 +172,7 @@ for what you import:
 | `@algorisys/tinyfly/embed` | Teaching embeds: the player with step controls, captions, scenarios and one-script `[data-tinyfly-embed]` mounting; `validateEmbed`, `validateScenarios`, `renderFrame` | Browser (tools anywhere) |
 | `@algorisys/tinyfly/teach` | `lesson()` step builder and diagram primitives (cells, pointer, stack, queue, table, pipeline) | Anywhere |
 | `@algorisys/tinyfly/react`, `@algorisys/tinyfly/vue`, `@algorisys/tinyfly/svelte`, `@algorisys/tinyfly/solid` | `useTinyfly` hooks, a Svelte action and a Solid primitive: `live` animations scoped to a component and reverted on unmount | Browser (frameworks are optional peer dependencies) |
-| `@algorisys/tinyfly/characters` | Poseable stick figure: `stickFigureTarget`, `poseTracks`, `POSES`, `blendPose`, `walkPose`, `drawStickFigure` | Anywhere with a Canvas 2D context |
+| `@algorisys/tinyfly/characters` | Poseable stick figure: `stickFigureTarget`, `poseTracks`, `POSES`, `blendPose`, `walkPose`, `drawStickFigure`; `stickFigureJoints` and `layers` for costumes, hair and props; `turn`, `sit` and ground contact; an organic look by default (`classic` keeps the old one) | Anywhere with a Canvas 2D context |
 | `@algorisys/tinyfly/headless` | `renderVideo`, `renderStills`, `FrameRenderer`: render a scene to MP4 or PNGs (see [Rendering Video from Code](docs/video-rendering.md)) | Node (`@napi-rs/canvas` optional peer, ffmpeg) |
 | `@algorisys/tinyfly/browser` | One script-tag bundle (`tinyfly.iife.js`): the engine, player, drivers, interaction, the GSAP-style `live` / `tf` facades, teaching-embed controls and mounting, and the `characters` stick figure. Not included: `export`, `adapters`, `teach`, the framework hooks, `headless` | Browser |
 
@@ -220,7 +220,7 @@ GSAP-shaped functions at the top level. Teaching embeds are included: add
 itself.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.75.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.76.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -256,7 +256,7 @@ A teaching figure needs no code at all:
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON with markers… }</script>
   <figcaption>Appending to a full slice</figcaption>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.75.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.76.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
 ```
 
 See [Teaching Animations](docs/teaching.md).
@@ -355,7 +355,7 @@ Without a build step, the player bundle puts the same functions on a `tinyfly` g
   <div data-tinyfly="box" style="width: 60px; height: 60px; background: #4a9eff;"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.75.0/cdn/tinyfly-player.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.76.0/cdn/tinyfly-player.iife.js"></script>
 <script>
   tinyfly.play('#animation', './animation.json', { loop: -1 })
 </script>
@@ -464,7 +464,7 @@ Or skip the code entirely with declarative embeds (see [Teaching Animations](doc
   <svg viewBox="0 0 720 200">…</svg>
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON… }</script>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.75.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.76.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 ### Audio / Video Sync

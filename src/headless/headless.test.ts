@@ -101,6 +101,18 @@ describe('FrameRenderer', () => {
     expect(Array.from(ctx.getImageData(0, 0, 80, 40).data)).toEqual(first)
   })
 
+  it('passes custom targets the frame time (so talk chatters and sketches boil)', () => {
+    const times: number[] = []
+    const watched = scene()
+    watched.targets!.clock = { type: 'custom', x: 0, y: 0, width: 1, height: 1, draw: (_ctx, _target, time) => times.push(time) }
+    const renderer = new FrameRenderer(watched)
+    const ctx = createCanvas(80, 40).getContext('2d') as unknown as CanvasRenderingContext2D
+    renderer.render(ctx, 0)
+    renderer.render(ctx, 500)
+    renderer.render(ctx, 900)
+    expect(times).toEqual([0, 500, 900])
+  })
+
   it('scales the output', () => {
     const renderer = new FrameRenderer(scene(), { scale: 0.5 })
     expect([renderer.width, renderer.height]).toEqual([40, 20])

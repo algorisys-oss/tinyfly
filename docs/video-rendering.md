@@ -23,8 +23,10 @@ squash, stretch and rubber-hose limbs in a jump and a noodle-arm wave (`rubber-h
 the animator's hand drawing the ground and a sun, then erasing the sun (`drawing-hand.mjs`).
 The Examples gallery's **Video** category has a **Narrated Scene** card that
 plays the same idea live in the browser, a **Stick Figure** card for trying
-the poses, and a **Pencil Sketch** card that plays the drawing-hand gag live with
-toggles for the pencil, the boil rate and rubber limbs.
+the poses, a **Pencil Sketch** card that plays the drawing-hand gag live with
+toggles for the pencil, the boil rate and rubber limbs, and a **Dressed Stick
+Figures** card: costumes, hair and props drawn with `layers`, a figure that walks
+in turned, sits on a charpai, and a speech bubble that follows a head.
 
 ## The scene
 
@@ -174,7 +176,7 @@ timeline: {
 
 | | |
 |---|---|
-| `POSES` | `rest`, `wave`, `cheer`, `shrug`, `point`, `think`, `handsOnHips`, `sad`, `surprised`, `crouch` (squashed), `jump` (stretched) |
+| `POSES` | `rest`, `wave`, `cheer`, `shrug`, `point`, `think`, `handsOnHips`, `sad`, `surprised`, `crouch` (squashed), `jump` (stretched), `sit` (seated, hands on the knees) |
 | `EXPRESSIONS` | `neutral`, `happy`, `joyful`, `sad`, `crying`, `surprised`, `shocked`, `angry`, `furious`, `worried`, `scared`, `confused`, `skeptical`, `thinking`, `sleepy`, `disgusted`, `smug`, `wink` |
 | `withExpression(pose, face)` | The pose with its face replaced: a name, or face fields to change |
 | `pose(changes)` | A full pose from the joints that differ from rest |
@@ -186,7 +188,42 @@ timeline: {
 | `sketchPen(ctx, sketch, time)` | Hand-drawn `line(points)`, `curve(points)`, `circle(cx, cy, r)` and `ellipse(cx, cy, rx, ry)` strokes with line boil; each takes a last `progress` (0..1) to draw it on |
 | `stickFigureTarget({ x, y, pose, style })` | A `custom` target whose props are the pose plus `walk`, `walking`, `talk`, `rubber` |
 | `rubberLimb(root, joint, end, rubber)` | Points along a limb, from jointed (0) to a rubber-hose curve through the joint (1) |
+| `stickFigureJoints(pose, style?)` | Where every joint, limb and the head are, as drawn, without drawing (see [Costumes, hair and props](#costumes-hair-and-props)) |
+| `resolveStickPose(props, time)` | The pose a `stickFigureTarget` draws at `time`, with `walk`/`walking` and `talk` folded in |
+| `stickFigureAt(target, frame, id)` | A target's pose and scene-space joints in a frame, for `draw(ctx, frame)` |
+| `jointsToScene(joints, x, y)`, `headPoint(head, x, y)` | Move joints to where the feet stand; a point on the head in head units |
+| `seatHeight(height, stretch?)` | Height of the hips above the feet when fully seated: where a bench top goes |
+| `taperedLine(ctx, points, from, to)` | Fill a line whose width tapers along a polyline (limbs, sleeves, trouser legs) |
 | `poseTracks(target, keys)` | Tracks for a sequence of named or partial poses, each optionally with an `expression`; only fields that leave rest get a track |
+
+### The look
+
+By default the figure is drawn **organic**: limbs taper from root to tip,
+elbows and knees are always a little rounded (as `rubber` 0.3, more if you set
+more), it has small hands and feet, the lower foot always rests on the ground (so
+a walk bobs as the stride opens and closes), and the body leans forward as it
+sits down or stands up. Feet point the way the figure faces and tip with the
+shin, so a trailing foot rolls onto its toe.
+
+`style: { classic: true }` draws the 0.75 look instead: even strokes, sharp
+joints, no hands or feet, and the hips at a fixed height (feet can float off the
+ground mid-stride). It draws exactly what 0.75 drew for the same pose, so
+existing videos can keep their look. A `sketch` style uses pencil strokes in
+either look.
+
+`walkPose` also leans into the walk and lets each forearm follow through as its
+arm swings forward.
+
+**Brush and head size.** `lineWidth` (px, default 2.5% of the height) sets the
+brush; the bold look of viral stick-figure videos is around 4–5%.
+`headSize` is the head's diameter as a fraction of the height (default 0.24);
+a bigger head (0.3) leaves more room for the face and takes its height from the
+torso, so the feet and hips stay put. Face lines are lighter than the body's and
+capped by the head size, so a thick brush never blots out the eyes and brows.
+
+```js
+style: { height: 400, lineWidth: 400 * 0.045, headSize: 0.3 }
+```
 
 Angles are degrees from hanging straight down; positive raises a limb outward.
 Elbows add to the upper arm's angle (past 180° the forearm folds back in), and
@@ -241,6 +278,34 @@ Two more numbers give the figure cartoon acting:
 
 A pose written before `stretch` existed draws unstretched.
 
+### Turning, sitting and ground contact
+
+- **`turn`** (pose field, 0..1) turns the figure toward the way it faces: 0 is
+  front-on, 1 is profile. The face slides toward the facing side and narrows,
+  and shoulders set with `shoulderWidth` close up. A walker reads better turned
+  toward where it goes (`turn: 0.7`).
+- **`sit`** (pose field, 0..1) folds the figure down onto a seat: the thighs swing
+  forward to level, the shins hang straight down, and the hips drop to
+  `seatHeight(height)` above the feet at 1. From 0.25 on, the lower foot stays on
+  the ground, so sitting down and standing up never sink the feet. Put the top of
+  a bench, log or charpai at `seatHeight`. `POSES.sit` is seated with the hands on
+  the knees.
+- **Ground contact:** `stickFigureJoints()` reports `feetY` (the lower foot's y)
+  and `grounded.left` / `grounded.right` (a foot within 1% of the height of the
+  lower one), so a shadow or a dust puff can sit under the planted foot. In the
+  organic look `feetY` is 0: the figure always stands on the ground.
+
+```js
+...poseTracks('tum', [
+  { time: 0, pose: { turn: 0.7 } },                     // walks in, turned
+  { time: 3000, pose: { turn: 0.3 } },
+  { time: 3800, pose: 'sit', easing: 'ease-in-out' },   // sits down
+]),
+```
+
+Both are pose fields, so they blend and get tracks like any joint. Poses
+written before they existed draw standing and front-on.
+
 ### Pencil sketch style
 
 For a hand-drawn, pencil-test look, give the figure a `sketch` style. Each line
@@ -292,6 +357,78 @@ Every stroke takes a last `progress` argument (0..1) to draw it on:
 lies exactly on the finished stroke, so it grows without jumping, and a stroke
 drawn partway does not change the wobble of the strokes after it. `drawStickFigure(ctx, pose, style, time)` takes
 the time for the same reason.
+
+### Costumes, hair and props
+
+The figure can tell you where its parts are, and lets you draw inside its z-order,
+so a costume, a hair style or a held prop moves with every pose, walk and squash.
+
+`stickFigureJoints(pose, style)` returns the same geometry `drawStickFigure`
+draws with: `hip`, `neck`, `shoulders`, `elbows`, `hands`, `knees`, `feet` and
+`toes` (each `{ left, right }`), `handAngle` (the forearm's direction in radians, for
+holding a prop at the right angle), `limbs` (each limb's centre line as drawn,
+rounded joints and rubber-hose curves included, for sleeves and trousers to
+follow, plus `spine` from hip to neck) and `head`
+(`center`, `rx`, `ry`, `angle`, and the face's `eyeY`, `browTopY`, `mouthY` and
+`faceX` in head units). Points are in the figure's space, feet at (0, 0), and
+already mirrored for `facing`, so you never need `ctx.scale(-1, 1)` (which
+would mirror your text too).
+
+`style.layers` draws your code at fixed depths inside the figure:
+
+```
+behind → legs → torso → body → back arm → sleeve(back) → front arm →
+sleeve(front) → behindHead → head and face → overHead → front → label
+```
+
+Each hook is called once per frame as `(ctx, joints, time, pen?)` (`sleeve` gets
+`(ctx, joints, side, time, pen?)`), with the context saved and restored around
+it and in the figure's space, unmirrored. The left arm is always the back arm:
+the figure faces the viewer and mirrors as a whole, so its left side is always
+the one away from the way it looks. When the figure is sketched, `pen` is a
+sketch pen that boils with it. `style.shoulderWidth` (half the shoulder width,
+as a fraction of the height; default 0) starts the arms from two shoulders
+square to the spine, joined by a line, instead of one point.
+
+```js
+import { stickFigureTarget, stickFigureAt, headPoint } from '@algorisys/tinyfly/characters'
+
+const tum = stickFigureTarget({
+  x: 250, y: 900,
+  style: {
+    height: 400, color: '#3A1010', headFill: '#F2C49B', rubber: 0.6, shoulderWidth: 0.075,
+    layers: {
+      body: (ctx, j) => drawShirt(ctx, j, '#EF4444'),
+      sleeve: (ctx, j, side) => drawSleeve(ctx, j.limbs[side + 'Arm'], '#EF4444'),
+      overHead: (ctx, j) => {
+        const fringe = headPoint(j.head, j.head.faceX, j.head.browTopY - 0.1)
+        drawHair(ctx, j.head, fringe)
+      },
+      front: (ctx, j) => drawPot(ctx, j.hands.left, j.handAngle.left),
+    },
+  },
+})
+
+export default {
+  width: 1920, height: 1080,
+  targets: { tum },
+  timeline,
+  // Immediate-mode drawing that follows the figure: a speech-bubble tail at its head.
+  draw(ctx, frame) {
+    const { joints } = stickFigureAt(tum, frame, 'tum')
+    drawBubble(ctx, 'भैया, UPI चलेगा?', joints.head.center)
+  },
+}
+```
+
+`stickFigureAt(target, frame, id)` applies the frame's tracks for `id` (the
+target's key in `targets`) the way the canvas adapter does, including `x`/`y`,
+walking and talking, and returns `{ pose, joints }` with the joints in scene
+coordinates. A `rotate` or `scale` on the target itself is not applied.
+
+With `classic: true`, no `layers` and `shoulderWidth` 0, the figure draws
+exactly as 0.75 did. `taperedLine(ctx, points, from, to)` is the tapered fill the
+organic limbs use, handy for sleeves and trouser legs that follow `limbs`.
 
 ### The drawing hand
 
