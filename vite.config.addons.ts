@@ -22,6 +22,7 @@ export default defineConfig({
         'gsap-compat': resolve(__dirname, 'src/compat/gsap/index.ts'),
         teach: resolve(__dirname, 'src/teach/index.ts'),
         characters: resolve(__dirname, 'src/characters/index.ts'),
+        maps: resolve(__dirname, 'src/maps/index.ts'),
       },
       formats: ['es'],
     },

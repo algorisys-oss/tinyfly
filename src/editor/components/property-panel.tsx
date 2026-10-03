@@ -2,7 +2,7 @@ import { createMemo, createSignal, createEffect, on, untrack, Show, For } from '
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
 import type { ProjectStore } from '../stores/project-store'
-import { isGradient, createLinearGradient, createRadialGradient, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type SymbolInstanceElement, type CharacterElement, type FillValue, type LinearGradient, type RadialGradient } from '../stores/scene-store'
+import { isGradient, createLinearGradient, createRadialGradient, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type SymbolInstanceElement, type CharacterElement, type MapElement, type FillValue, type LinearGradient, type RadialGradient } from '../stores/scene-store'
 import type { EasingType, BuiltInEasingType, CubicBezierPoints, ParametricEasing, EaseMode } from '../../engine'
 import {
   isCubicBezierEasing,
@@ -26,6 +26,8 @@ import { MarkerInspector } from './marker-inspector'
 import type { SketchStyle } from '../../adapters/canvas'
 import { HUMAN_POSES, HUMAN_EXPRESSIONS, HUMAN_REST } from '../../characters/species/human'
 import { isCharacterField } from '../utils/character-element'
+import { fitPlaces, mapElementProps, placeId, tripTracks } from '../utils/map-element'
+import { WORLD_CITIES } from '../../maps'
 import './property-panel.css'
 
 interface PropertyPanelProps {
@@ -1606,6 +1608,192 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
     </div>
   )
 
+  const [mapCity, setMapCity] = createSignal('')
+  const [mapCustom, setMapCustom] = createSignal({ name: '', lat: '', lon: '' })
+  const [tripSeconds, setTripSeconds] = createSignal(6)
+
+  const addMapPlace = (element: MapElement, name: string, lon: number, lat: number) => {
+    if (!name.trim() || !Number.isFinite(lon) || !Number.isFinite(lat)) return
+    const id = placeId(name, element.places.map((p) => p.id))
+    updateElement({ places: [...element.places, { id, name: name.trim(), lon, lat }] })
+  }
+
+  const moveMapPlace = (element: MapElement, index: number, by: number) => {
+    const places = [...element.places]
+    const [place] = places.splice(index, 1)
+    places.splice(Math.max(0, Math.min(places.length, index + by)), 0, place)
+    updateElement({ places })
+  }
+
+  const mapViewAnimated = (element: MapElement) =>
+    (props.store.state.timeline?.tracks ?? []).some(
+      (track) => (track.target === element.name || track.target === element.id) && track.property.startsWith('view.')
+    )
+
+  /**
+   * Change the map's view. Once the view is animated, the change is keyed at
+   * the playhead (as the camera is), so the preview always shows what is set.
+   */
+  const setMapView = (element: MapElement, view: { lon: number; lat: number; zoom: number }) => {
+    updateElement({ view })
+    if (mapViewAnimated(element)) props.store.keyValuesAtPlayhead(element.name, { 'view.lon': view.lon, 'view.lat': view.lat, 'view.zoom': view.zoom })
+  }
+
+  /** Key the map's view at the playhead: how a camera move starts. */
+  const keyMapView = (element: MapElement) => {
+    // The view on show now: animated values if any, else the element's own.
+    const state = props.store.state.timeline?.getStateAtTime(props.store.currentTime()) ?? null
+    const shown = mapElementProps(element, state)
+    props.store.keyValuesAtPlayhead(element.name, { 'view.lon': shown['view.lon'], 'view.lat': shown['view.lat'], 'view.zoom': shown['view.zoom'] })
+  }
+
+  const animateTrip = (element: MapElement) => {
+    const start = Math.round(props.store.currentTime())
+    const duration = Math.max(500, tripSeconds() * 1000)
+    updateElement({ view: fitPlaces(element) })
+    props.store.replaceTracks(element.name, tripTracks(element, start, duration))
+  }
+
+  const renderMapProperties = (element: MapElement) => (
+    <div class="property-section">
+      <h4>Map</h4>
+      <div class="property-row">
+        <label>Map</label>
+        <select value={element.base} onChange={(e) => updateElement({ base: (e.target as HTMLSelectElement).value })}>
+          <option value="tiles">Street map (OpenStreetMap)</option>
+          <option value="outline">World outline (offline)</option>
+          <option value="pencil">Pencil outline</option>
+        </select>
+      </div>
+
+      <h4>Places</h4>
+      <For each={element.places}>
+        {(place, index) => (
+          <div class="property-row map-place">
+            <label>{index() + 1}.</label>
+            <span class="map-place-name" title={`${place.lat.toFixed(2)}, ${place.lon.toFixed(2)}`}>{place.name}</span>
+            <button title="Earlier" disabled={index() === 0} onClick={() => moveMapPlace(element, index(), -1)}>↑</button>
+            <button title="Later" disabled={index() === element.places.length - 1} onClick={() => moveMapPlace(element, index(), 1)}>↓</button>
+            <button title="Remove" onClick={() => updateElement({ places: element.places.filter((p) => p.id !== place.id) })}>✕</button>
+          </div>
+        )}
+      </For>
+      <div class="property-row">
+        <label>City</label>
+        <select value={mapCity()} onChange={(e) => setMapCity((e.target as HTMLSelectElement).value)}>
+          <option value="">Pick a city…</option>
+          <For each={WORLD_CITIES}>{(city) => <option value={city.name}>{city.name}, {city.country}</option>}</For>
+        </select>
+        <button
+          disabled={!mapCity()}
+          onClick={() => {
+            const city = WORLD_CITIES.find((c) => c.name === mapCity())
+            if (city) addMapPlace(element, city.name, city.lon, city.lat)
+            setMapCity('')
+          }}
+        >
+          Add
+        </button>
+      </div>
+      <div class="property-row map-custom">
+        <label>Other</label>
+        <input type="text" placeholder="Name" value={mapCustom().name} onInput={(e) => setMapCustom({ ...mapCustom(), name: (e.target as HTMLInputElement).value })} />
+        <input type="number" placeholder="Lat" step="0.01" value={mapCustom().lat} onInput={(e) => setMapCustom({ ...mapCustom(), lat: (e.target as HTMLInputElement).value })} />
+        <input type="number" placeholder="Lon" step="0.01" value={mapCustom().lon} onInput={(e) => setMapCustom({ ...mapCustom(), lon: (e.target as HTMLInputElement).value })} />
+        <button
+          onClick={() => {
+            const { name, lat, lon } = mapCustom()
+            addMapPlace(element, name, parseFloat(lon), parseFloat(lat))
+            setMapCustom({ name: '', lat: '', lon: '' })
+          }}
+        >
+          Add
+        </button>
+      </div>
+      <div class="property-row">
+        <label>Pins</label>
+        <input type="color" value={element.pinColor} onInput={handleColorChange('pinColor')} />
+      </div>
+
+      <h4>Route</h4>
+      <div class="property-row checkbox-row">
+        <label>Connect places</label>
+        <input type="checkbox" checked={element.route.show} onChange={(e) => updateElement({ route: { ...element.route, show: (e.target as HTMLInputElement).checked } })} />
+      </div>
+      <Show when={element.route.show}>
+        <div class="property-row">
+          <label>Shape</label>
+          <select value={element.route.shape} onChange={(e) => updateElement({ route: { ...element.route, shape: (e.target as HTMLSelectElement).value } })}>
+            <option value="arc">Flight arc</option>
+            <option value="great-circle">Great circle</option>
+            <option value="straight">Straight</option>
+          </select>
+        </div>
+        <div class="property-row">
+          <label>Colour</label>
+          <input type="color" value={element.route.color} onInput={(e) => updateElement({ route: { ...element.route, color: (e.target as HTMLInputElement).value } })} />
+        </div>
+        <div class="property-row checkbox-row">
+          <label>Dashed</label>
+          <input type="checkbox" checked={element.route.dashed} onChange={(e) => updateElement({ route: { ...element.route, dashed: (e.target as HTMLInputElement).checked } })} />
+        </div>
+        <div class="property-row">
+          <label>Marker</label>
+          <select value={element.route.marker} onChange={(e) => updateElement({ route: { ...element.route, marker: (e.target as HTMLSelectElement).value } })}>
+            <option value="arrow">Arrow</option>
+            <option value="dot">Dot</option>
+          </select>
+        </div>
+      </Show>
+
+      <h4>View</h4>
+      <div class="property-row">
+        <label></label>
+        <div class="character-views">
+          <button onClick={() => setMapView(element, fitPlaces(element))} disabled={element.places.length === 0}>Fit to places</button>
+          <button onClick={() => setMapView(element, fitPlaces({ ...element, places: [] }))}>Whole world</button>
+        </div>
+      </div>
+      <div class="property-row">
+        <label>Zoom</label>
+        <input
+          type="range"
+          min="0"
+          max="14"
+          step="0.1"
+          value={element.view.zoom}
+          onInput={(e) => setMapView(element, { ...element.view, zoom: parseFloat((e.target as HTMLInputElement).value) })}
+        />
+      </div>
+      <div class="property-row">
+        <label></label>
+        <button class="character-key-btn" onClick={() => keyMapView(element)}>◆ Keyframe view at playhead</button>
+      </div>
+
+      <h4>Animate</h4>
+      <div class="property-row">
+        <label>Trip (s)</label>
+        <input type="number" min="0.5" step="0.5" value={tripSeconds()} onInput={(e) => setTripSeconds(parseFloat((e.target as HTMLInputElement).value) || 6)} />
+      </div>
+      <div class="property-row">
+        <label></label>
+        <button class="character-key-btn" disabled={element.places.length === 0} onClick={() => animateTrip(element)}>
+          ✨ Animate trip from playhead
+        </button>
+      </div>
+      <p class="property-hint">
+        Add places in the order of the trip, then animate it: from the playhead, the first pin drops, the route draws
+        itself with a marker travelling it, and each pin drops as the line arrives. To move the camera, keyframe the
+        view, move the playhead and change it: once the view is animated, changes are keyed at the playhead.
+      </p>
+      <Show when={element.base === 'tiles'}>
+        <p class="property-hint">
+          Street map © OpenStreetMap contributors. Its tile servers are for light use; the world outline needs no network.
+        </p>
+      </Show>
+    </div>
+  )
+
   /** Properties for the selected element's type, bound to the live element view. */
   const renderTypeSpecificProperties = () => {
     switch (liveElement.type) {
@@ -1620,6 +1808,7 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
       case 'video': return renderVideoProperties(liveElement as VideoElement)
       case 'symbol': return renderSymbolProperties(liveElement as SymbolInstanceElement)
       case 'character': return renderCharacterProperties(liveElement as CharacterElement)
+      case 'map': return renderMapProperties(liveElement as MapElement)
       default: return null
     }
   }

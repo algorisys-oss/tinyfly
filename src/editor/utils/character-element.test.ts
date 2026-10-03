@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { createSceneStore, type CharacterElement } from '../stores/scene-store'
-import { characterElementPose, characterElementTarget, characterOf, trackPropertyLabel } from './character-element'
+import { characterElementPose, characterElementTarget, characterOf } from './character-element'
+import { trackPropertyLabel } from './track-labels'
 import { sceneElementToCanvasTarget } from './scene-to-canvas'
 import { HUMAN_REST } from '../../characters'
 import type { AnimationState } from '../../engine/types'

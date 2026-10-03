@@ -1,5 +1,5 @@
 import { createSignal, createMemo, For, Show } from 'solid-js'
-import { trackPropertyLabel } from '../utils/character-element'
+import { trackPropertyLabel } from '../utils/track-labels'
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
 import { hasKeyframes, isTextTrack, isInertiaTrack } from '../../engine'

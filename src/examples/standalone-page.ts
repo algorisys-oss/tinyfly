@@ -19,6 +19,8 @@ import { buildSamplePreview } from './sample-preview'
  */
 export const CDN_BASE = `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v${__APP_VERSION__}/cdn`
 export const BROWSER_BUNDLE_URL = `${CDN_BASE}/tinyfly.iife.js`
+/** The maps add-on: load after the browser bundle; it adds to the same `tinyfly` global. */
+export const MAPS_BUNDLE_URL = `${CDN_BASE}/tinyfly-maps.iife.js`
 
 const BUNDLE_NOTE = `tinyfly v${__APP_VERSION__}, served from GitHub by jsDelivr. For offline use, save the file and point this at your copy.`
 
@@ -27,6 +29,8 @@ interface PageParts {
   style: string
   body: string
   script: string
+  /** Add-on bundles to load after the browser bundle */
+  addons?: Array<'maps'>
 }
 
 function indent(text: string, spaces: number): string {
@@ -38,7 +42,9 @@ function indent(text: string, spaces: number): string {
     .join('\n')
 }
 
-function page({ title, style, body, script }: PageParts): string {
+const ADDON_URLS = { maps: MAPS_BUNDLE_URL }
+
+function page({ title, style, body, script, addons = [] }: PageParts): string {
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -53,7 +59,7 @@ ${indent(style, 4)}
 ${indent(body, 2)}
 
   <!-- ${BUNDLE_NOTE} -->
-  <script src="${BROWSER_BUNDLE_URL}"></script>
+  <script src="${BROWSER_BUNDLE_URL}"></script>${addons.map((addon) => `\n  <script src="${ADDON_URLS[addon]}"></script>`).join('')}
   <script>
 ${indent(script, 4)}
   </script>
@@ -76,6 +82,7 @@ const BASE_STYLE = `body {
 export function liveDemoPage(demo: LiveDemoWithCode): string {
   return page({
     title: demo.name,
+    addons: demo.addons,
     style: BASE_STYLE,
     body: `<div id="demo">\n${indent(demo.html, 2)}\n</div>`,
     script: `// \`live\` plays GSAP-style animations on real elements.

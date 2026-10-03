@@ -219,7 +219,7 @@ export const ExportDialog: Component<ExportDialogProps> = (props) => {
 
     const draw = async (ctx: CanvasRenderingContext2D, timeMs: number) => {
       const sceneState = timeline.getStateAtTime(timeMs)
-      await composite.prepareFrame(timeMs)
+      await composite.prepareFrame(timeMs, sceneState)
       composite.adapter.applyState(sceneState)
       ctx.save()
       ctx.imageSmoothingEnabled = true

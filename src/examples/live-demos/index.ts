@@ -18,6 +18,7 @@ import { narratedScene } from './narrated-scene'
 import { stickFigure } from './stick-figure'
 import { pencilSketch } from './pencil-sketch'
 import { dressedFigures } from './dressed-figures'
+import { mapRoute } from './map-route'
 import { lineMaskReveal } from './line-mask-reveal'
 import { pinnedHorizontal } from './pinned-horizontal'
 import { imageSequenceScrub } from './image-sequence-scrub'
@@ -63,6 +64,7 @@ import narratedSceneSource from './narrated-scene.js?raw'
 import stickFigureSource from './stick-figure.js?raw'
 import pencilSketchSource from './pencil-sketch.js?raw'
 import dressedFiguresSource from './dressed-figures.js?raw'
+import mapRouteSource from './map-route.js?raw'
 import lineMaskRevealSource from './line-mask-reveal.js?raw'
 import pinnedHorizontalSource from './pinned-horizontal.js?raw'
 import imageSequenceScrubSource from './image-sequence-scrub.js?raw'
@@ -160,4 +162,5 @@ export const liveDemos: LiveDemoWithCode[] = [
   withCode(stickFigure, stickFigureSource),
   withCode(pencilSketch, pencilSketchSource),
   withCode(dressedFigures, dressedFiguresSource),
+  withCode(mapRoute, mapRouteSource),
 ]

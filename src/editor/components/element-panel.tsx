@@ -22,10 +22,23 @@ const ELEMENT_TYPES: { type: ElementType; icon: string; label: string }[] = [
   { type: 'audio', icon: '🔊', label: 'Audio' },
   { type: 'video', icon: '🎬', label: 'Video' },
   { type: 'character', icon: '🧍', label: 'Character' },
+  { type: 'map', icon: '🗺', label: 'Map' },
 ]
 
 export const ElementPanel: Component<ElementPanelProps> = (props) => {
   const handleAddElement = (type: ElementType) => {
+    if (type === 'map') {
+      // A map usually fills the frame: cover the canvas, showing the whole world.
+      const canvas = props.projectStore.currentProject().canvas
+      props.sceneStore.addElement('map', {
+        x: 0,
+        y: 0,
+        width: canvas.width,
+        height: canvas.height,
+        view: { lon: 20, lat: 20, zoom: Math.max(0, Math.log2(canvas.width / 256)) },
+      })
+      return
+    }
     if (type === 'character') {
       // Stand a figure in the middle of the canvas, sized to it.
       const canvas = props.projectStore.currentProject().canvas
@@ -268,6 +281,7 @@ export const ElementPanel: Component<ElementPanelProps> = (props) => {
                       {element.type === 'path' && '⌇'}
                       {element.type === 'group' && '⊞'}
                       {element.type === 'character' && '🧍'}
+                      {element.type === 'map' && '🗺'}
                     </span>
                     <span class="element-name">
                       {element.name}

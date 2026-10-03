@@ -1,7 +1,7 @@
 import type { CustomTarget } from '../../adapters/canvas'
 import type { AnimationState } from '../../engine/types'
 import { hashSeed } from '../../engine/authoring/random'
-import { basicOutfit, character, drawCharacter, humanFieldLabel, HUMAN_REST, type Character, type CharacterPose } from '../../characters'
+import { basicOutfit, character, drawCharacter, HUMAN_REST, type Character, type CharacterPose } from '../../characters'
 import type { CharacterElement } from '../stores/scene-store'
 
 /**
@@ -26,9 +26,6 @@ export function characterOf(element: CharacterElement): Character {
 
 /** Is `property` one of the character's pose fields (so a track on it animates the pose)? */
 export const isCharacterField = (property: string) => property in HUMAN_REST
-
-/** How a track's property reads in the timeline: character pose fields in plain language. */
-export const trackPropertyLabel = (property: string) => (isCharacterField(property) ? humanFieldLabel(property) : property)
 
 /**
  * The full pose at a moment: rest, then the element's own pose, then any

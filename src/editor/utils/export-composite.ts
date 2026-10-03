@@ -1,6 +1,8 @@
 import { CanvasAdapter, type CanvasTarget } from '../../adapters/canvas'
-import type { SceneElement, ImageElement, VideoElement } from '../stores/scene-store'
+import type { AnimationState } from '../../engine/types'
+import type { SceneElement, ImageElement, VideoElement, MapElement } from '../stores/scene-store'
 import { sceneElementToCanvasTarget } from './scene-to-canvas'
+import { preloadMapTiles } from './map-element'
 
 /**
  * Builds a Canvas renderer for video export that also composites the DOM-only
@@ -13,8 +15,11 @@ import { sceneElementToCanvasTarget } from './scene-to-canvas'
 export interface ExportComposite {
   /** A CanvasAdapter with every drawable element registered in z-order. */
   adapter: CanvasAdapter
-  /** Seek all video layers to the given timeline time before rendering a frame. */
-  prepareFrame: (timeMs: number) => Promise<void>
+  /**
+   * Seek all video layers to the given timeline time before rendering a
+   * frame, and load the map tiles its views need (given the frame's state).
+   */
+  prepareFrame: (timeMs: number, state?: AnimationState | null) => Promise<void>
   /** Release media elements. */
   dispose: () => void
 }
@@ -72,6 +77,7 @@ function seekVideo(video: HTMLVideoElement, seconds: number): Promise<void> {
 export async function buildExportComposite(elements: SceneElement[]): Promise<ExportComposite> {
   const adapter = new CanvasAdapter()
   const videos: { el: VideoElement; node: HTMLVideoElement }[] = []
+  const maps = elements.filter((el): el is MapElement => el.type === 'map')
   const mediaNodes: HTMLVideoElement[] = []
 
   for (const el of elements) {
@@ -96,15 +102,17 @@ export async function buildExportComposite(elements: SceneElement[]): Promise<Ex
     }
   }
 
-  const prepareFrame = async (timeMs: number) => {
-    await Promise.all(
-      videos.map(({ el, node }) => {
+  const prepareFrame = async (timeMs: number, state?: AnimationState | null) => {
+    await Promise.all([
+      // Street maps: the tiles this frame's view needs, so the frame is complete.
+      ...maps.map((map) => preloadMapTiles(map, [state ?? null])),
+      ...videos.map(({ el, node }) => {
         if (timeMs < el.startTime) return seekVideo(node, 0)
         let t = (timeMs - el.startTime) / 1000
         if (el.loop && node.duration) t %= node.duration
         return seekVideo(node, t)
-      })
-    )
+      }),
+    ])
   }
 
   const dispose = () => {

@@ -50,6 +50,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Immediate mode too** - A scene's `background` and `draw(ctx, { time })` functions paint each frame directly, Cairo/Processing-style, and mix freely with timeline targets
 - **Timing from narration** - `planNarration()` lays spoken lines out from their clip lengths (lead, gap, tail) into cues, scene spans and markers; `voiceNarration()` measures recorded clips with ffmpeg and writes the sample-aligned narration WAV
 - **Characters** - A poseable stick figure (`@algorisys/tinyfly/characters`): named poses, facial expressions (brows, eyes that widen, close and look around, mouth shapes), squash and stretch, rubber-hose limbs, blending, walk cycles and talking, all driven by timeline tracks. **Characters v2**: one skeleton in 3D drawn flat, turning front to side to back, resting on whatever touches the ground, reaching for points, in clean, pencil or silhouette looks, and a 🧍 Character element in the editor you pose and keyframe
+- **Maps** - Animated maps on OpenStreetMap tiles or an offline world outline (also in pencil): the camera flies in, pins drop, routes draw themselves while a marker travels them; a 🗺 Map element in the editor with a one-click trip
 - **Pencil sketch style** - Hand-drawn strokes with line boil (`sketch` style, `sketchPen`) for a pencil-test, Pencilmation-like look, on the stick figure and on canvas rect / circle / line / path shapes (also from the editor's Properties panel); a `drawOn` track draws any of those shapes on; the wobble is seeded by time, so renders stay deterministic
 - **The drawing hand** - `drawnPathTarget()` draws a sketched stroke on from a `draw` track while a cartoon hand holds the pencil at its end; the same hand can hold the eraser
 - **Erasing** - An eraser rubs out part of a target (`erasable()`, animated by an `erase` track) or of anything drawn in code (`withErased()`); clip-based, so it works in the browser and headless alike
@@ -172,6 +173,7 @@ for what you import:
 | `@algorisys/tinyfly/embed` | Teaching embeds: the player with step controls, captions, scenarios and one-script `[data-tinyfly-embed]` mounting; `validateEmbed`, `validateScenarios`, `renderFrame` | Browser (tools anywhere) |
 | `@algorisys/tinyfly/teach` | `lesson()` step builder and diagram primitives (cells, pointer, stack, queue, table, pipeline) | Anywhere |
 | `@algorisys/tinyfly/react`, `@algorisys/tinyfly/vue`, `@algorisys/tinyfly/svelte`, `@algorisys/tinyfly/solid` | `useTinyfly` hooks, a Svelte action and a Solid primitive: `live` animations scoped to a component and reverted on unmount | Browser (frameworks are optional peer dependencies) |
+| `@algorisys/tinyfly/maps` | Animated maps: OpenStreetMap tiles or an offline world outline, places, routes that draw on, a camera that flies (`mapTarget`, `mapFlyTracks`, `fitView`, `WORLD_CITIES`) | Anywhere with a Canvas 2D context (tiles need a network) |
 | `@algorisys/tinyfly/characters` | Poseable stick figure: `stickFigureTarget`, `poseTracks`, `POSES`, `blendPose`, `walkPose`, `drawStickFigure`; `stickFigureJoints` and `layers` for costumes, hair and props; `turn`, `sit` and ground contact; an organic look by default (`classic` keeps the old one); **characters v2**: `character()` / `characterTarget()`, turnarounds front to back, contact, reaching, clean / pencil / silhouette looks | Anywhere with a Canvas 2D context |
 | `@algorisys/tinyfly/headless` | `renderVideo`, `renderStills`, `FrameRenderer`: render a scene to MP4 or PNGs (see [Rendering Video from Code](docs/video-rendering.md)) | Node (`@napi-rs/canvas` optional peer, ffmpeg) |
 | `@algorisys/tinyfly/browser` | One script-tag bundle (`tinyfly.iife.js`): the engine, player, drivers, interaction, the GSAP-style `live` / `tf` facades, teaching-embed controls and mounting, and the `characters` stick figure. Not included: `export`, `adapters`, `teach`, the framework hooks, `headless` | Browser |
@@ -220,7 +222,7 @@ GSAP-shaped functions at the top level. Teaching embeds are included: add
 itself.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.77.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.78.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -256,7 +258,7 @@ A teaching figure needs no code at all:
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON with markers… }</script>
   <figcaption>Appending to a full slice</figcaption>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.77.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.78.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
 ```
 
 See [Teaching Animations](docs/teaching.md).
@@ -355,7 +357,7 @@ Without a build step, the player bundle puts the same functions on a `tinyfly` g
   <div data-tinyfly="box" style="width: 60px; height: 60px; background: #4a9eff;"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.77.0/cdn/tinyfly-player.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.78.0/cdn/tinyfly-player.iife.js"></script>
 <script>
   tinyfly.play('#animation', './animation.json', { loop: -1 })
 </script>
@@ -464,7 +466,7 @@ Or skip the code entirely with declarative embeds (see [Teaching Animations](doc
   <svg viewBox="0 0 720 200">…</svg>
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON… }</script>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.77.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.78.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 ### Audio / Video Sync

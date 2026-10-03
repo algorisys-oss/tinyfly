@@ -112,6 +112,12 @@ export const DOCS: DocEntry[] = [
     section: 'Guides',
   },
   {
+    id: 'maps',
+    title: 'Animated Maps',
+    summary: 'Maps that animate: a camera that flies in to a city, pins that drop in, routes that draw themselves while a marker travels them, on OpenStreetMap tiles or an offline world outline (also in pencil), in the browser and in headless video.',
+    section: 'Guides',
+  },
+  {
     id: 'extending',
     title: 'Extending tinyfly',
     summary: 'Writing a render adapter, animating any object with live and the ticker, custom and parametric eases, stagger offsets, adding a track kind, and contributing gallery examples.',

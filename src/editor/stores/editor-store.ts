@@ -603,6 +603,25 @@ export function createEditorStore() {
     commitKeyframeEdit()
   }
 
+  /**
+   * Replace a target's tracks for some properties with new keyframes, in one
+   * undo step: any existing keyframe track for the same target and property
+   * is removed first. Used by builders that author a whole animation at once
+   * (a map's trip).
+   */
+  function replaceTracks(target: string, tracks: Array<{ property: string; keyframes: Keyframe[] }>): void {
+    if (!state.timeline || tracks.length === 0) return
+    pushHistory()
+    const stamp = Date.now()
+    tracks.forEach(({ property, keyframes }, i) => {
+      for (const existing of state.timeline!.tracks.filter((tr) => tr.target === target && tr.property === property)) {
+        state.timeline!.removeTrack(existing.id)
+      }
+      state.timeline!.addTrack(createTrack({ id: `${target}-${property}-${stamp}-${i}`, target, property, keyframes }))
+    })
+    commitKeyframeEdit()
+  }
+
   // Remove a track
   function removeTrack(trackId: string) {
     if (!state.timeline) return
@@ -1386,6 +1405,7 @@ export function createEditorStore() {
     getCameraValue,
     setCameraValue,
     keyValuesAtPlayhead,
+    replaceTracks,
     addShapeMorph,
     selectTrack,
     applyPreset,

@@ -77,6 +77,7 @@ Shapes, text, images, video, lines, arrows and paths are added from the
 | **★ Star** | Star; edit the number of **points** and the **inner %** in Properties |
 | **Group** | Container that groups multiple elements |
 | **🧍 Character** | A posable figure: pick a view, a pose and a face, and keyframe them to animate (see [Characters](#characters)) |
+| **🗺 Map** | An animated map: places, a route between them, and a camera (see [Maps](#maps)) |
 
 Polygon and star are **parametric** paths: change the sides/points/inner ratio in
 the Property Panel and the shape regenerates, and they rescale cleanly when you
@@ -85,7 +86,7 @@ resize the box. See [polygon-star.md](polygon-star.md).
 ### Adding Elements
 
 Click an element type in the **Elements** panel on the left (Rectangle, Circle,
-Text, Line, Arrow, Path, Image, Audio, Video, 🧍 Character, or ⬡ Polygon / ★ Star). The element appears at the center of the canvas with default dimensions. You can then:
+Text, Line, Arrow, Path, Image, Audio, Video, 🧍 Character, 🗺 Map, or ⬡ Polygon / ★ Star). The element appears at the center of the canvas with default dimensions. You can then:
 
 - **Drag** to reposition it on the canvas
 - **Resize** using the 8 handles around the element (corners and midpoints)
@@ -140,6 +141,33 @@ and each one can be edited, eased and retimed like any other track.
 Characters show in the DOM and Canvas previews and in GIF / WebP / MP4
 export. They are not part of exported HTML or embeds yet, and the SVG preview
 does not draw them.
+
+### Maps
+
+A **🗺 Map** fills the canvas with a map of the world. In the property panel:
+
+- **Map**: *Street map* (OpenStreetMap tiles; needs a network), *World
+  outline* (bundled, offline) or *Pencil outline*.
+- **Places**: pick a city from the list and click **Add**, or type a name with
+  its latitude and longitude. Add them in the order of the trip; ↑ ↓ reorder
+  them and ✕ removes one.
+- **Route**: connect the places with a *Flight arc*, a *Great circle* or a
+  *Straight* line, in a colour, optionally dashed, with an arrow or a dot
+  travelling it.
+- **View**: *Fit to places* or *Whole world*, and a **Zoom** slider.
+
+To animate a trip, put the playhead where it should start, set **Trip (s)**,
+and click **✨ Animate trip from playhead**: the first pin drops, the route
+draws itself while its marker travels it, and each pin drops as the line
+arrives. To move the camera, click **◆ Keyframe view at playhead**, move the
+playhead and change the view: once the view is animated, changes to it are
+keyed at the playhead. The timeline names the tracks plainly ("View · zoom",
+"Delhi · pin", "Route · draw").
+
+Maps show in the DOM and Canvas previews and in GIF / WebP / MP4 export
+(export waits for the street map's tiles). The street map is © OpenStreetMap
+contributors, credited on the map; its servers are for light use. See
+[Animated Maps](maps.md) for the same from code.
 
 ### Selecting Elements
 
@@ -934,7 +962,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.77.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.78.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed

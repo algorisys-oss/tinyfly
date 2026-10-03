@@ -14,6 +14,6 @@ export type {
   ImageElement,
 } from './scene-store'
 export type { SceneDefinition, SymbolDefinition } from './scene-types'
-export type { SymbolInstanceElement, CharacterElement } from './scene-store'
+export type { SymbolInstanceElement, CharacterElement, MapElement, MapElementPlace } from './scene-store'
 export { createOnboardingStore, onboardingSteps } from './onboarding-store'
 export type { OnboardingStore, OnboardingStep, OnboardingState } from './onboarding-store'

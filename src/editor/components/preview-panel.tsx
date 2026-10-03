@@ -14,11 +14,12 @@ import { elementsBounds } from '../utils/element-bounds'
 import { buildPenPath, localizePenPath, mirrorHandle, type PenNode } from '../utils/pen-path'
 import type { EditorStore } from '../stores/editor-store'
 import type { ProjectStore } from '../stores/project-store'
-import { fillToCss, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type GroupElement, type SymbolInstanceElement, type CharacterElement } from '../stores/scene-store'
+import { fillToCss, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type GroupElement, type SymbolInstanceElement, type CharacterElement, type MapElement } from '../stores/scene-store'
 import { generateElementHtml } from '../utils/element-html'
 import { parsePathForEditing, buildPathString, updatePathPoint, getControlLines, type EditablePoint, type EditableCommand } from '../utils/path-editor'
 import { sceneElementToCanvasTarget } from '../utils/scene-to-canvas'
 import { characterElementPose, paintCharacterCanvas, CHARACTER_OVERFLOW } from '../utils/character-element'
+import { mapElementProps, onMapTile, paintMapCanvas } from '../utils/map-element'
 import { MediaSync, syncMediaElement } from '../../player/media-sync'
 import './preview-panel.css'
 
@@ -667,35 +668,52 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
   }
 
   /**
-   * Characters are drawn by code: in the DOM preview each one has a canvas in
-   * its box, painted with its pose at the current time (its own pose plus any
-   * animated values).
+   * Characters and maps are drawn by code: in the DOM preview each one has a
+   * canvas in its box, painted for the current time (its own values plus any
+   * animated ones).
    */
-  const paintCharacters = () => {
+  const paintDrawnElements = () => {
     if (rendererType() !== 'dom' || !canvasRef) return
     const time = props.store.currentTime()
     const state = props.store.state.timeline?.getStateAtTime(time) ?? null
+    const ratio = window.devicePixelRatio || 1
     for (const element of props.sceneStore.elements()) {
-      if (element.type !== 'character') continue
-      const canvas = canvasRef.querySelector<HTMLCanvasElement>(`canvas[data-character-id="${element.id}"]`)
+      if (element.type !== 'character' && element.type !== 'map') continue
+      const canvas = canvasRef.querySelector<HTMLCanvasElement>(`canvas[data-drawn-id="${element.id}"]`)
       if (!canvas) continue
-      const character = element as CharacterElement
-      paintCharacterCanvas(canvas, character, characterElementPose(character, state), time, window.devicePixelRatio || 1)
+      if (element.type === 'character') {
+        const character = element as CharacterElement
+        paintCharacterCanvas(canvas, character, characterElementPose(character, state), time, ratio)
+      } else {
+        const map = element as MapElement
+        paintMapCanvas(canvas, map, mapElementProps(map, state), time, ratio)
+      }
     }
   }
 
-  // Repaint characters when one of them is edited (colour, figure, pose…).
+  // Repaint characters and maps when one of them is edited (colour, pose, places…).
   createEffect(() => {
-    const characters = props.sceneStore.elements().filter((element) => element.type === 'character')
-    JSON.stringify(characters)
+    const drawn = props.sceneStore.elements().filter((element) => element.type === 'character' || element.type === 'map')
+    JSON.stringify(drawn)
     rendererType()
-    requestAnimationFrame(paintCharacters)
+    requestAnimationFrame(paintDrawnElements)
   })
+
+  // Map tiles arrive in the background: repaint as each one lands.
+  let tileFrame: number | undefined
+  const stopTileRepaints = onMapTile(() => {
+    if (tileFrame !== undefined) return
+    tileFrame = requestAnimationFrame(() => {
+      tileFrame = undefined
+      applyStateToRenderer()
+    })
+  })
+  onCleanup(stopTileRepaints)
 
   // Apply state based on current renderer
   const applyStateToRenderer = () => {
     const renderer = rendererType()
-    if (renderer === 'dom') paintCharacters()
+    if (renderer === 'dom') paintDrawnElements()
 
     if (props.store.state.timeline) {
       const state = props.store.state.timeline.getStateAtTime(props.store.currentTime())
@@ -2010,11 +2028,19 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
                 <Show when={element.type === 'text'}>
                   {(element as TextElement).text}
                 </Show>
+                <Show when={element.type === 'map'}>
+                  {/* Drawn by code, clipped to its box. */}
+                  <canvas
+                    class="map-canvas"
+                    data-drawn-id={element.id}
+                    style={{ position: 'absolute', left: '0', top: '0', width: '100%', height: '100%', 'pointer-events': 'none' }}
+                  />
+                </Show>
                 <Show when={element.type === 'character'}>
                   {/* Drawn by code; the canvas reaches past the box for raised arms and lying down. */}
                   <canvas
                     class="character-canvas"
-                    data-character-id={element.id}
+                    data-drawn-id={element.id}
                     style={{
                       position: 'absolute',
                       left: `${-element.height * CHARACTER_OVERFLOW.side}px`,

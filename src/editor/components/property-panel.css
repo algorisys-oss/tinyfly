@@ -570,3 +570,26 @@
   font-weight: 600;
   cursor: pointer;
 }
+
+/* Map: a place per row (number, name, reorder and remove), and the custom-place inputs. */
+.map-place .map-place-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.map-place button {
+  padding: 0 6px;
+  cursor: pointer;
+}
+
+.map-custom input[type='text'] {
+  flex: 2;
+  min-width: 0;
+}
+
+.map-custom input[type='number'] {
+  flex: 1;
+  min-width: 0;
+}

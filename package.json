@@ -1,6 +1,6 @@
 {
   "name": "@algorisys/tinyfly",
-  "version": "0.77.0",
+  "version": "0.78.0",
   "type": "module",
   "description": "Lightweight, API-driven animation engine and editor. The engine is framework-agnostic and runs in browsers, Web Workers, and Node.",
   "license": "MIT",
@@ -101,6 +101,10 @@
       "types": "./lib/types/characters/index.d.ts",
       "import": "./lib/addons/characters.js"
     },
+    "./maps": {
+      "types": "./lib/types/maps/index.d.ts",
+      "import": "./lib/addons/maps.js"
+    },
     "./headless": {
       "types": "./lib/types/headless/index.d.ts",
       "import": "./lib/headless/headless.js"
@@ -128,7 +132,7 @@
     "build:engine": "vite build --config vite.config.engine.ts",
     "build:player": "vite build --config vite.config.player.ts",
     "build:addons": "vite build --config vite.config.addons.ts",
-    "build:browser": "vite build --config vite.config.browser.ts",
+    "build:browser": "vite build --config vite.config.browser.ts && vite build --config vite.config.browser-maps.ts",
     "build:frameworks": "vite build --config vite.config.frameworks.ts",
     "build:embed": "vite build --config vite.config.embed.ts",
     "build:cli": "vite build --config vite.config.cli.ts",

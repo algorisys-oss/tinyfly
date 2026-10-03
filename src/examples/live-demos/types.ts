@@ -29,5 +29,11 @@ export interface LiveDemo {
    * its motion is verified in a browser instead.
    */
   requiresLayout?: boolean
+  /**
+   * Add-on scripts a standalone copy of the demo loads after the browser
+   * bundle (for example `maps`: tinyfly-maps.iife.js, which carries the
+   * offline world map)
+   */
+  addons?: Array<'maps'>
   run(live: LiveApi, root: HTMLElement): void | (() => void)
 }

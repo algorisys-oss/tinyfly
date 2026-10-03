@@ -2034,6 +2034,17 @@ without a browser. Guide: `docs/video-rendering.md`; example:
       step, new tracks back-filled with rest at earlier keys, plain-language track names);
       DOM preview via an in-box canvas, Canvas preview and GIF/MP4 export via a custom
       target. Not yet: HTML export / embeds, SVG preview
+- [x] **Animated maps** (`@algorisys/tinyfly/maps`, on `feat/maps`) — Web Mercator (`project`,
+      `fitView`, `flyView` that pulls out between far places, `greatCircle`); offline world
+      outline from Natural Earth 1:110m (public domain, `scripts/build-world-map.mjs`, 33 KB
+      gzipped, highlights, pencil borders); OpenStreetMap / `{z}/{x}/{y}` tiles (cache that
+      fetches once, parent tiles stand in, `preloadTiles`, attribution drawn); `mapTarget`
+      with places (pins drop), routes (arc / great circle / straight, draw on, travelling
+      marker), `view.*` props (dotted, so no CSS `zoom` clash), `mapAt`, `routeStops`,
+      `mapFlyTracks`, `WORLD_CITIES`; separate CDN add-on `tinyfly-maps.iife.js` (main bundle
+      unchanged); Map Route gallery card; `examples/headless-video/map-route.mjs`; editor 🗺 Map
+      element (base map, city picker / custom places, route options, fit / world / zoom,
+      ◆ keyframe view, ✨ animate trip from playhead; export preloads tiles); docs/maps.md
 - [ ] **Character system v2** (planning: [docs/character-system-plan.md](docs/character-system-plan.md)) —
       from six reference model sheets (people, hair, animals, birds, aquatic) in clean
       and Pencilmation looks: 2.5D body plans, gaits as data, contact with any surface,

@@ -6,7 +6,7 @@ import type { SketchStyle } from '../../adapters/canvas'
 
 export type { PolyStarSpec }
 
-export type ElementType = 'rect' | 'circle' | 'text' | 'image' | 'audio' | 'video' | 'line' | 'arrow' | 'path' | 'group' | 'symbol' | 'character'
+export type ElementType = 'rect' | 'circle' | 'text' | 'image' | 'audio' | 'video' | 'line' | 'arrow' | 'path' | 'group' | 'symbol' | 'character' | 'map'
 
 /** Device-frame preset silhouettes. */
 export type DeviceVariant = 'phone' | 'landscape' | 'tablet'
@@ -270,7 +270,38 @@ export interface CharacterElement extends BaseElement {
   faceName?: string
 }
 
-export type SceneElement = RectElement | CircleElement | TextElement | ImageElement | AudioElement | VideoElement | LineElement | ArrowElement | PathElement | GroupElement | SymbolInstanceElement | CharacterElement
+/** A place on a map element: a pin with a label. Its id names its tracks (`<id>.show`). */
+export interface MapElementPlace {
+  id: string
+  name: string
+  lon: number
+  lat: number
+}
+
+/**
+ * An animated map: a base map with places (pins) and a route through them.
+ * The view (`lon`, `lat`, `zoom`), each place's `<id>.show` and the route's
+ * `route.draw` and `route.marker` are its animatable properties.
+ */
+export interface MapElement extends BaseElement {
+  type: 'map'
+  /** `tiles`: OpenStreetMap street map. `outline`: the offline world map. `pencil`: the outline in pencil */
+  base: 'tiles' | 'outline' | 'pencil'
+  /** The view when nothing animates it */
+  view: { lon: number; lat: number; zoom: number }
+  places: MapElementPlace[]
+  /** A route through the places, in order */
+  route: {
+    show: boolean
+    shape: 'arc' | 'great-circle' | 'straight'
+    color: string
+    dashed: boolean
+    marker: 'arrow' | 'dot'
+  }
+  pinColor: string
+}
+
+export type SceneElement = RectElement | CircleElement | TextElement | ImageElement | AudioElement | VideoElement | LineElement | ArrowElement | PathElement | GroupElement | SymbolInstanceElement | CharacterElement | MapElement
 
 export interface SceneState {
   elements: SceneElement[]
@@ -439,6 +470,23 @@ const DEFAULT_CHARACTER: Omit<CharacterElement, 'id' | 'name'> = {
   pose: {},
 }
 
+const DEFAULT_MAP: Omit<MapElement, 'id' | 'name'> = {
+  type: 'map',
+  x: 0,
+  y: 0,
+  width: 300,
+  height: 200,
+  rotation: 0,
+  opacity: 1,
+  visible: true,
+  locked: false,
+  base: 'tiles',
+  view: { lon: 20, lat: 20, zoom: 0.6 },
+  places: [],
+  route: { show: true, shape: 'arc', color: '#b91c1c', dashed: false, marker: 'arrow' },
+  pinColor: '#dc2626',
+}
+
 function generateId(): string {
   return `el-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 }
@@ -458,6 +506,7 @@ function generateName(type: ElementType, elements: SceneElement[]): string {
     group: 'Group',
     symbol: 'Symbol',
     character: 'Character',
+    map: 'Map',
   }
   return `${names[type]} ${count}`
 }
@@ -570,6 +619,17 @@ export function createSceneStore() {
         break
       case 'character':
         element = { ...DEFAULT_CHARACTER, pose: {}, ...overrides, id, name } as CharacterElement
+        break
+      case 'map':
+        element = {
+          ...DEFAULT_MAP,
+          view: { ...DEFAULT_MAP.view },
+          places: [],
+          route: { ...DEFAULT_MAP.route },
+          ...overrides,
+          id,
+          name,
+        } as MapElement
         break
       case 'group':
         // Groups are created via groupElements(), not addElement()

@@ -5,6 +5,7 @@ import { liveDemos } from './live-demos'
 import { createLive, Stage, type FrameScheduler } from '../compat/gsap'
 import * as engine from '../engine'
 import * as characters from '../characters'
+import * as maps from '../maps'
 import { exercise, snapshot as markup, stubSvgGeometry } from './live-demos/test-support'
 
 stubSvgGeometry()
@@ -39,7 +40,9 @@ describe('copied live demo pages run', () => {
       }
 
       // The browser bundle's global carries the engine and characters as well as `live`.
-      expect(() => new Function('tinyfly', inline)({ ...engine, ...characters, live: createLive(stage) })).not.toThrow()
+      // A demo that loads the maps add-on gets its functions on the same global.
+      const addons = demo.addons?.includes('maps') ? maps : {}
+      expect(() => new Function('tinyfly', inline)({ ...engine, ...characters, ...addons, live: createLive(stage) })).not.toThrow()
       await Promise.resolve()
       const styles = () => markup(document.body)
       const beforeInput = styles()
