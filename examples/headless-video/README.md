@@ -20,6 +20,8 @@ resolves to the built package.
 | `pencil-sketch.mjs` | A Pencilmation-style gag: the `sketch` style (pencil strokes with line boil) on the figure, `sketchPen` for the ground and the pencil |
 | `eraser-gag.mjs` | Erasing: `erasable()` rubs out the figure's forearm on an `erase` track, `withErased()` takes the ground from under it |
 | `rubber-hose.mjs` | Squash and stretch (`stretch` in poses, `crouch` / `jump`) and rubber-hose limbs (`style.rubber`, a `rubber` track blending to jointed and back) |
+| `human-turnaround.mjs` | Characters v2 (milestone 1): one skeleton in 3D drawn flat, turned front to back in stick, fluid, clothed, pencil and silhouette rows; contact poses (sit, kneel, crouch, crawl, lie down, jump); reaching; one pose in every look. Kept in [`docs/model-sheet/`](../../docs/model-sheet/) |
+| `model-sheet.mjs` | A character model sheet (a still): two dressed figures in five turnaround views via `turn` and `facing`, clothes and hair as `style.layers`, height guides from `stickFigureJoints()`, colour swatches and expression close-ups. Kept in [`docs/model-sheet/`](../../docs/model-sheet/) |
 | `drawing-hand.mjs` | The animator's hand: `drawnPathTarget()` draws the ground and a sun on (`draw` tracks), `erasable(…, { hand: true })` rubs the sun out |
 
 The guide is [docs/video-rendering.md](../../docs/video-rendering.md). The unit

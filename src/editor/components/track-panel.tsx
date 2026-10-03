@@ -1,4 +1,5 @@
 import { createSignal, createMemo, For, Show } from 'solid-js'
+import { trackPropertyLabel } from '../utils/character-element'
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
 import { hasKeyframes, isTextTrack, isInertiaTrack } from '../../engine'
@@ -184,7 +185,7 @@ export const TrackPanel: Component<TrackPanelProps> = (props) => {
               >
                 <div class="track-info">
                   <span class="track-target">{track.target}</span>
-                  <span class="track-property">{track.property}</span>
+                  <span class="track-property" title={track.property}>{trackPropertyLabel(track.property)}</span>
                 </div>
                 <div class="track-meta">
                   <Show when={props.store.overriddenTrackIds().has(track.id)}>

@@ -1,4 +1,5 @@
 import { For, Show, createMemo, createSignal, createEffect, onCleanup } from 'solid-js'
+import { trackPropertyLabel } from '../utils/character-element'
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
 import type { Track, AnyTrack } from '../../engine'
@@ -299,7 +300,10 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
                 <span class="track-target">
                   {track.target === 'Camera' ? '🎥 Camera' : track.target}
                 </span>
-                <span class="track-property">{track.property}</span>
+                {/* Character pose fields read in plain language ("Right arm · out / in"). */}
+                <span class="track-property" title={track.property}>
+                  {trackPropertyLabel(track.property)}
+                </span>
               </div>
               <div
                 class="track-keyframes"

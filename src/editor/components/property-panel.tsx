@@ -2,7 +2,7 @@ import { createMemo, createSignal, createEffect, on, untrack, Show, For } from '
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
 import type { ProjectStore } from '../stores/project-store'
-import { isGradient, createLinearGradient, createRadialGradient, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type SymbolInstanceElement, type FillValue, type LinearGradient, type RadialGradient } from '../stores/scene-store'
+import { isGradient, createLinearGradient, createRadialGradient, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type SymbolInstanceElement, type CharacterElement, type FillValue, type LinearGradient, type RadialGradient } from '../stores/scene-store'
 import type { EasingType, BuiltInEasingType, CubicBezierPoints, ParametricEasing, EaseMode } from '../../engine'
 import {
   isCubicBezierEasing,
@@ -24,6 +24,8 @@ import { TextAnimationCreator, TextTrackInspector } from './text-animation-panel
 import { InertiaInspector } from './inertia-inspector'
 import { MarkerInspector } from './marker-inspector'
 import type { SketchStyle } from '../../adapters/canvas'
+import { HUMAN_POSES, HUMAN_EXPRESSIONS, HUMAN_REST } from '../../characters/species/human'
+import { isCharacterField } from '../utils/character-element'
 import './property-panel.css'
 
 interface PropertyPanelProps {
@@ -1429,6 +1431,181 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
     </div>
   )
 
+  /** Named poses, in the order a newcomer reaches for them. */
+  const CHARACTER_POSES: Array<[keyof typeof HUMAN_POSES, string]> = [
+    ['rest', 'Standing'],
+    ['wave', 'Waving'],
+    ['point', 'Pointing'],
+    ['cheer', 'Cheering'],
+    ['handsOnHips', 'Hands on hips'],
+    ['think', 'Thinking'],
+    ['shrug', 'Shrugging'],
+    ['sit', 'Sitting'],
+    ['kneel', 'Kneeling'],
+    ['crouch', 'Crouching'],
+    ['crawl', 'Crawling'],
+    ['lieDown', 'Lying down'],
+  ]
+  /** Views along the turn: 0 front, 1 side (facing right), 2 back, 3 other side. */
+  const CHARACTER_VIEWS: Array<[number, string]> = [
+    [0, 'Front'],
+    [0.5, '¾'],
+    [1, 'Side'],
+    [1.5, '¾ back'],
+    [2, 'Back'],
+    [3, 'Side (left)'],
+  ]
+  const FACE_FIELDS = Object.keys(HUMAN_EXPRESSIONS.neutral)
+
+  /** Only the fields that differ from rest are stored, so the element stays small. */
+  const changedFromRest = (pose: Record<string, number>) =>
+    Object.fromEntries(Object.entries(pose).filter(([field, value]) => HUMAN_REST[field] !== value))
+
+  const characterPose = (element: CharacterElement) => ({ ...HUMAN_REST, ...element.pose })
+
+  const setCharacterPose = (element: CharacterElement, name: keyof typeof HUMAN_POSES) => {
+    const current = characterPose(element)
+    // A new body pose keeps the view and the face.
+    const face = Object.fromEntries(FACE_FIELDS.map((field) => [field, current[field]]))
+    const next = { ...HUMAN_POSES[name], turn: current.turn, ...(element.faceName ? face : {}) }
+    updateElement({ pose: changedFromRest(next), poseName: name })
+  }
+
+  const setCharacterFace = (element: CharacterElement, name: string) => {
+    const face = name ? HUMAN_EXPRESSIONS[name as keyof typeof HUMAN_EXPRESSIONS] : HUMAN_POSES[(element.poseName as keyof typeof HUMAN_POSES) ?? 'rest']
+    const keep = Object.fromEntries(FACE_FIELDS.map((field) => [field, face[field] ?? HUMAN_REST[field]]))
+    updateElement({ pose: changedFromRest({ ...characterPose(element), ...keep }), faceName: name || undefined })
+  }
+
+  const setCharacterView = (element: CharacterElement, turn: number) => {
+    updateElement({ pose: changedFromRest({ ...characterPose(element), turn }) })
+  }
+
+  /**
+   * Key the character's pose at the playhead: every field that differs from
+   * rest, and every field already animated (so moving back to rest is keyed too).
+   */
+  const keyCharacterPose = (element: CharacterElement) => {
+    const pose = characterPose(element)
+    const animated = (props.store.state.timeline?.tracks ?? [])
+      .filter((track) => (track.target === element.name || track.target === element.id) && isCharacterField(track.property))
+      .map((track) => track.property)
+    const fields = new Set([...Object.keys(changedFromRest(pose)), ...animated])
+    if (fields.size === 0) fields.add('turn')
+    // The times this character's pose was keyed before. A field animated for
+    // the first time was at rest at those keys (every key records each field
+    // that leaves rest), so its new track starts with rest there.
+    const keyedTimes = [
+      ...new Set(
+        (props.store.state.timeline?.tracks ?? [])
+          .filter((track) => (track.target === element.name || track.target === element.id) && isCharacterField(track.property))
+          .flatMap((track) => ('keyframes' in track ? track.keyframes.map((k) => k.time) : []))
+      ),
+    ].sort((a, b) => a - b)
+    props.store.keyValuesAtPlayhead(
+      element.name,
+      Object.fromEntries([...fields].map((field) => [field, pose[field]])),
+      (field, time) => keyedTimes.filter((t) => t < time).map((t) => ({ time: t, value: HUMAN_REST[field] }))
+    )
+  }
+
+  const renderCharacterProperties = (element: CharacterElement) => (
+    <div class="property-section">
+      <h4>Character</h4>
+      <div class="property-row">
+        <label>Figure</label>
+        <select value={element.figure} onChange={(e) => updateElement({ figure: (e.target as HTMLSelectElement).value })}>
+          <option value="fluid">Fluid</option>
+          <option value="stick">Stick</option>
+        </select>
+      </div>
+      <div class="property-row">
+        <label>Look</label>
+        <select value={element.look} onChange={(e) => updateElement({ look: (e.target as HTMLSelectElement).value })}>
+          <option value="clean">Clean</option>
+          <option value="pencil">Pencil</option>
+          <option value="silhouette">Silhouette</option>
+        </select>
+      </div>
+      <div class="property-row">
+        <label>Line</label>
+        <input type="color" value={element.ink} onInput={handleColorChange('ink')} />
+      </div>
+      <div class="property-row">
+        <label>Skin</label>
+        <input type="color" value={element.skin === 'none' ? '#ffffff' : element.skin} onInput={handleColorChange('skin')} />
+      </div>
+      <div class="property-row">
+        <label>Clothes</label>
+        <select value={element.outfit} onChange={(e) => updateElement({ outfit: (e.target as HTMLSelectElement).value })}>
+          <option value="basic">T-shirt and trousers</option>
+          <option value="none">None</option>
+        </select>
+      </div>
+      <Show when={element.outfit === 'basic'}>
+        <div class="property-row">
+          <label>Shirt</label>
+          <input type="color" value={element.shirt} onInput={handleColorChange('shirt')} />
+        </div>
+        <div class="property-row">
+          <label>Trousers</label>
+          <input type="color" value={element.trousers} onInput={handleColorChange('trousers')} />
+        </div>
+      </Show>
+
+      <h4>Pose</h4>
+      <div class="property-row">
+        <label>View</label>
+        <div class="character-views">
+          <For each={CHARACTER_VIEWS}>
+            {([turn, label]) => (
+              <button
+                classList={{ active: Math.abs((characterPose(element).turn ?? 0) - turn) < 0.01 }}
+                onClick={() => setCharacterView(element, turn)}
+              >
+                {label}
+              </button>
+            )}
+          </For>
+        </div>
+      </div>
+      <div class="property-row">
+        <label>Turn</label>
+        <input
+          type="range"
+          min="0"
+          max="4"
+          step="0.05"
+          value={characterPose(element).turn ?? 0}
+          onInput={(e) => setCharacterView(element, parseFloat((e.target as HTMLInputElement).value))}
+        />
+      </div>
+      <div class="property-row">
+        <label>Body</label>
+        <select value={element.poseName ?? 'rest'} onChange={(e) => setCharacterPose(element, (e.target as HTMLSelectElement).value as keyof typeof HUMAN_POSES)}>
+          <For each={CHARACTER_POSES}>{([name, label]) => <option value={name}>{label}</option>}</For>
+        </select>
+      </div>
+      <div class="property-row">
+        <label>Face</label>
+        <select value={element.faceName ?? ''} onChange={(e) => setCharacterFace(element, (e.target as HTMLSelectElement).value)}>
+          <option value="">From the pose</option>
+          <For each={Object.keys(HUMAN_EXPRESSIONS)}>{(name) => <option value={name}>{name}</option>}</For>
+        </select>
+      </div>
+      <div class="property-row">
+        <label></label>
+        <button class="character-key-btn" onClick={() => keyCharacterPose(element)}>
+          ◆ Keyframe pose at playhead
+        </button>
+      </div>
+      <p class="property-hint">
+        To animate: pick a view, a pose and a face, then keyframe it. Move the playhead, pick the next pose, and keyframe
+        again. The character moves between them.
+      </p>
+    </div>
+  )
+
   /** Properties for the selected element's type, bound to the live element view. */
   const renderTypeSpecificProperties = () => {
     switch (liveElement.type) {
@@ -1442,6 +1619,7 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
       case 'audio': return renderAudioProperties(liveElement as AudioElement)
       case 'video': return renderVideoProperties(liveElement as VideoElement)
       case 'symbol': return renderSymbolProperties(liveElement as SymbolInstanceElement)
+      case 'character': return renderCharacterProperties(liveElement as CharacterElement)
       default: return null
     }
   }

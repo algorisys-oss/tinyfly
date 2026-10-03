@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.77.0](v0.77.0.md) | 2026-10-03 | Characters v2 (milestone 1): one skeleton in 3D drawn flat, turnarounds front to back, contact with any body part, reaching, clean / pencil / silhouette looks, stick and fluid figures, the editor's Character element; model sheets |
 | [v0.76.0](v0.76.0.md) | 2026-10-02 | Dressed, more natural stick figures: an organic default look (tapered limbs, hands and feet, planted feet, `classic` keeps 0.75), joints without drawing, costume and prop layers, shoulders, ¾ turn, sitting, ground contact; headless custom targets get the frame time |
 | [v0.75.0](v0.75.0.md) | 2026-10-02 | Pencilmation-style animation: pencil sketch with line boil, erasing, squash and stretch, rubber-hose limbs, the animator's hand, Write On for every shape |
 | [v0.74.1](v0.74.1.md) | 2026-09-27 | The stick figure walks properly: legs scissor, feet stay planted |

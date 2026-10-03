@@ -110,20 +110,30 @@ const centreLine = (outline: Point[]) => {
 /**
  * The figure's parts as drawn, as polylines: strokes in the classic look,
  * the centre lines of tapered shapes otherwise (where each leg is followed by
- * its foot; hands are circles, which record no points).
+ * its foot; hands are circles, which record no points). A figure turned past
+ * a quarter draws its back (left) arm before the torso.
  */
-function drawnParts(strokes: Stroke[], classic: boolean, shoulders: boolean) {
+function drawnParts(strokes: Stroke[], classic: boolean, shoulders: boolean, turned = false) {
   const head = strokes.find((s) => s.kind === 'stroke' && s.ellipses.length > 0)!.ellipses[0]
-  if (classic) {
-    const lines = strokes.filter((s) => s.kind === 'stroke').map((s) => s.points)
-    const [leftLeg, rightLeg, torso] = lines
-    const [leftArm, rightArm] = lines.slice(shoulders ? 4 : 3)
-    return { leftLeg, rightLeg, torso, leftArm, rightArm, head, shoulderLine: shoulders ? lines[3] : undefined }
+  const parts = classic
+    ? strokes.filter((s) => s.kind === 'stroke').map((s) => s.points)
+    : strokes.filter((s) => s.kind === 'fill' && s.points.length >= 4).map((s) => centreLine(s.points))
+  const [leftLeg, leftFoot, rightLeg, rightFoot] = classic ? [parts[0], undefined, parts[1], undefined] : parts
+  // After the legs: the upper body, in drawing order.
+  const upper = parts.slice(classic ? 2 : 4)
+  const order = [...(turned ? ['leftArm'] : []), 'torso', ...(shoulders ? ['shoulderLine'] : []), ...(turned ? [] : ['leftArm']), 'rightArm']
+  const named = Object.fromEntries(order.map((name, i) => [name, upper[i]]))
+  return {
+    leftLeg,
+    rightLeg,
+    leftFoot,
+    rightFoot,
+    head,
+    torso: named.torso,
+    leftArm: named.leftArm,
+    rightArm: named.rightArm,
+    shoulderLine: named.shoulderLine as Point[] | undefined,
   }
-  const shapes = strokes.filter((s) => s.kind === 'fill' && s.points.length >= 4).map((s) => centreLine(s.points))
-  const [leftLeg, leftFoot, rightLeg, rightFoot, torso] = shapes
-  const [leftArm, rightArm] = shapes.slice(shoulders ? 6 : 5)
-  return { leftLeg, rightLeg, torso, leftArm, rightArm, head, leftFoot, rightFoot, shoulderLine: shoulders ? shapes[5] : undefined }
 }
 
 const CASES: Array<{ name: string; figure: StickPose; style: StickStyle }> = [
@@ -147,7 +157,7 @@ describe('stickFigureJoints', () => {
         ctx.translate(200, 400)
         drawStickFigure(ctx, figure, style)
         const joints = jointsToScene(stickFigureJoints(figure, style), 200, 400)
-        const drawn = drawnParts(strokes, classic, Boolean(style.shoulderWidth))
+        const drawn = drawnParts(strokes, classic, Boolean(style.shoulderWidth), (figure.turn ?? 0) > 0.25)
 
         expectPoints(drawn.leftLeg, joints.limbs.leftLeg)
         expectPoints(drawn.rightLeg, joints.limbs.rightLeg)
@@ -274,6 +284,18 @@ describe('sitting, turning and ground contact', () => {
     expect(half.shoulders.right.x - half.shoulders.left.x).toBeCloseTo(20 * Math.cos(Math.PI / 4))
   })
 
+  it('turns the feet out from the front, and round to the facing side in profile', () => {
+    for (const facing of [1, -1]) {
+      const front = stickFigureJoints(REST_POSE, { facing })
+      // Each foot points out to its own side of the body.
+      expect(Math.sign(front.toes.left.x - front.feet.left.x)).toBe(Math.sign(front.feet.left.x))
+      expect(Math.sign(front.toes.right.x - front.feet.right.x)).toBe(Math.sign(front.feet.right.x))
+      const profile = stickFigureJoints(pose({ turn: 1 }), { facing })
+      expect(Math.sign(profile.toes.left.x - profile.feet.left.x)).toBe(facing)
+      expect(Math.sign(profile.toes.right.x - profile.feet.right.x)).toBe(facing)
+    }
+  })
+
   it('reports which feet are planted', () => {
     const rest = stickFigureJoints(REST_POSE)
     expect(rest.grounded).toEqual({ left: true, right: true })
@@ -364,6 +386,17 @@ describe('layers', () => {
     }
   })
 
+  it('moves the back arm and its sleeve behind the body once the figure turns', () => {
+    const order = (turn: number) => {
+      const { ctx, log } = recordingContext()
+      drawStickFigure(ctx, pose({ turn }), { layers: allLayers(log) })
+      return log.filter((entry) => entry !== 'stroke' && entry !== 'fill')
+    }
+    expect(order(0)).toEqual(['behind', 'body', 'sleeve:left', 'sleeve:right', 'behindHead', 'overHead', 'front'])
+    expect(order(0.25)).toEqual(order(0))
+    expect(order(0.6)).toEqual(['behind', 'sleeve:left', 'body', 'sleeve:right', 'behindHead', 'overHead', 'front'])
+  })
+
   it('draws in the figure space, unmirrored, with the joints as drawn', () => {
     const { ctx, matrix } = recordingContext()
     ctx.translate(100, 200)
@@ -428,7 +461,7 @@ describe('resolveStickPose and stickFigureAt', () => {
 
     const { pose: resolved, joints } = stickFigureAt(target, { time: 1300, state }, 'hero')
     expect(resolved.mouth).toBeGreaterThan(0)
-    const drawn = drawnParts(strokes, false, true)
+    const drawn = drawnParts(strokes, false, true, false)
     expectPoints(drawn.leftLeg, joints.limbs.leftLeg)
     expectPoints(drawn.rightLeg, joints.limbs.rightLeg)
     expectPoints(drawn.leftArm, joints.limbs.leftArm)

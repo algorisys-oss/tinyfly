@@ -6,7 +6,7 @@ import type { SketchStyle } from '../../adapters/canvas'
 
 export type { PolyStarSpec }
 
-export type ElementType = 'rect' | 'circle' | 'text' | 'image' | 'audio' | 'video' | 'line' | 'arrow' | 'path' | 'group' | 'symbol'
+export type ElementType = 'rect' | 'circle' | 'text' | 'image' | 'audio' | 'video' | 'line' | 'arrow' | 'path' | 'group' | 'symbol' | 'character'
 
 /** Device-frame preset silhouettes. */
 export type DeviceVariant = 'phone' | 'landscape' | 'tablet'
@@ -240,7 +240,37 @@ export interface SymbolInstanceElement extends BaseElement {
   overrides?: Record<string, unknown>
 }
 
-export type SceneElement = RectElement | CircleElement | TextElement | ImageElement | AudioElement | VideoElement | LineElement | ArrowElement | PathElement | GroupElement | SymbolInstanceElement
+/**
+ * A posable character (the v2 character system): drawn by code, so it shows in
+ * the DOM preview through a small canvas, and in the Canvas preview and GIF /
+ * MP4 export as a canvas target. Its feet stand at the bottom centre of its
+ * box and its height is the box's height.
+ */
+export interface CharacterElement extends BaseElement {
+  type: 'character'
+  /** `stick`: the traditional stick figure. `fluid`: tapered limbs, hands, feet */
+  figure: 'fluid' | 'stick'
+  look: 'clean' | 'pencil' | 'silhouette'
+  /** Line colour */
+  ink: string
+  /** Head fill; `none` leaves it see-through */
+  skin: string
+  /** Clothes: none, or a T-shirt and trousers */
+  outfit: 'none' | 'basic'
+  shirt: string
+  trousers: string
+  /**
+   * The pose when nothing animates it: only the fields that differ from rest
+   * (`turn` is the view: 0 front, 1 side, 2 back, 3 other side). Keyframes on
+   * these field names animate it.
+   */
+  pose: Record<string, number>
+  /** The named pose and face last picked (for the property panel) */
+  poseName?: string
+  faceName?: string
+}
+
+export type SceneElement = RectElement | CircleElement | TextElement | ImageElement | AudioElement | VideoElement | LineElement | ArrowElement | PathElement | GroupElement | SymbolInstanceElement | CharacterElement
 
 export interface SceneState {
   elements: SceneElement[]
@@ -389,6 +419,26 @@ const DEFAULT_VIDEO: Omit<VideoElement, 'id' | 'name'> = {
   startTime: 0,
 }
 
+const DEFAULT_CHARACTER: Omit<CharacterElement, 'id' | 'name'> = {
+  type: 'character',
+  x: 110,
+  y: 30,
+  width: 112,
+  height: 140,
+  rotation: 0,
+  opacity: 1,
+  visible: true,
+  locked: false,
+  figure: 'fluid',
+  look: 'clean',
+  ink: '#1e293b',
+  skin: '#f2c49b',
+  outfit: 'basic',
+  shirt: '#e2493b',
+  trousers: '#24476b',
+  pose: {},
+}
+
 function generateId(): string {
   return `el-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 }
@@ -407,6 +457,7 @@ function generateName(type: ElementType, elements: SceneElement[]): string {
     path: 'Path',
     group: 'Group',
     symbol: 'Symbol',
+    character: 'Character',
   }
   return `${names[type]} ${count}`
 }
@@ -516,6 +567,9 @@ export function createSceneStore() {
         break
       case 'video':
         element = { ...DEFAULT_VIDEO, ...overrides, id, name } as VideoElement
+        break
+      case 'character':
+        element = { ...DEFAULT_CHARACTER, pose: {}, ...overrides, id, name } as CharacterElement
         break
       case 'group':
         // Groups are created via groupElements(), not addElement()

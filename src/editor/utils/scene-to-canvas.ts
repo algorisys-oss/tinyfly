@@ -6,7 +6,9 @@ import type {
   TextElement,
   LineElement,
   PathElement,
+  CharacterElement,
 } from '../stores/scene-store'
+import { characterElementTarget } from './character-element'
 
 /**
  * Map a scene element to a Canvas adapter target.
@@ -89,6 +91,9 @@ export function sceneElementToCanvasTarget(element: SceneElement): CanvasTarget 
         sketch: path.sketch,
       }
     }
+    case 'character':
+      // A custom target whose props are the pose fields, so tracks pose it.
+      return characterElementTarget(element as CharacterElement)
     default:
       return null
   }

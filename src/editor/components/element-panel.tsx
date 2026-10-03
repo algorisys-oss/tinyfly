@@ -21,10 +21,24 @@ const ELEMENT_TYPES: { type: ElementType; icon: string; label: string }[] = [
   { type: 'image', icon: '🖼', label: 'Image' },
   { type: 'audio', icon: '🔊', label: 'Audio' },
   { type: 'video', icon: '🎬', label: 'Video' },
+  { type: 'character', icon: '🧍', label: 'Character' },
 ]
 
 export const ElementPanel: Component<ElementPanelProps> = (props) => {
   const handleAddElement = (type: ElementType) => {
+    if (type === 'character') {
+      // Stand a figure in the middle of the canvas, sized to it.
+      const canvas = props.projectStore.currentProject().canvas
+      const height = Math.round(Math.min(canvas.height * 0.6, 220))
+      const width = Math.round(height * 0.8)
+      props.sceneStore.addElement('character', {
+        x: Math.round(canvas.width / 2 - width / 2),
+        y: Math.round(canvas.height / 2 - height / 2),
+        width,
+        height,
+      })
+      return
+    }
     // Center the element in the canvas (assuming 300x200 default canvas)
     const overrides: Record<string, number | string> = {
       x: type === 'audio' ? 12 : type === 'text' ? 100 : (type === 'line' || type === 'arrow') ? 50 : type === 'image' ? 100 : type === 'path' ? 100 : 120,
@@ -253,6 +267,7 @@ export const ElementPanel: Component<ElementPanelProps> = (props) => {
                       {element.type === 'arrow' && '➔'}
                       {element.type === 'path' && '⌇'}
                       {element.type === 'group' && '⊞'}
+                      {element.type === 'character' && '🧍'}
                     </span>
                     <span class="element-name">
                       {element.name}

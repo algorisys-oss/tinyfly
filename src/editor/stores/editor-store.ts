@@ -561,6 +561,48 @@ export function createEditorStore() {
     commitKeyframeEdit()
   }
 
+  /**
+   * Key several values on one target at the playhead, in one undo step: each
+   * property's keyframe track gets a keyframe at the current time (replacing
+   * one already there), and a property with no track yet gets one. Used to key
+   * a character's whole pose with one click. Spring tracks are left alone.
+   *
+   * `before` gives a new track its keyframes before this one (the value it
+   * held at earlier keys), so starting to animate a property at a later time
+   * does not change how it looked earlier.
+   */
+  function keyValuesAtPlayhead(
+    target: string,
+    values: Record<string, number>,
+    before?: (property: string, time: number) => Keyframe[]
+  ): void {
+    if (!state.timeline) return
+    const entries = Object.entries(values)
+    if (entries.length === 0) return
+    pushHistory()
+    const t = Math.round(currentTime())
+    const stamp = Date.now()
+    entries.forEach(([property, value], i) => {
+      const track = state.timeline!.tracks.find((tr) => tr.target === target && tr.property === property)
+      if (!track) {
+        const earlier = (before?.(property, t) ?? []).filter((k) => k.time < t)
+        state.timeline!.addTrack(
+          createTrack({ id: `${target}-${property}-${stamp}-${i}`, target, property, keyframes: [...earlier, { time: t, value }] })
+        )
+        return
+      }
+      if (!hasKeyframes(track)) return
+      const keyframes = [...track.keyframes]
+      const index = keyframes.findIndex((k) => Math.abs(k.time - t) < 1)
+      if (index >= 0) keyframes[index] = { ...keyframes[index], value }
+      else keyframes.push({ time: t, value })
+      keyframes.sort((a, b) => a.time - b.time)
+      state.timeline!.removeTrack(track.id)
+      state.timeline!.addTrack(createTrack({ ...track, keyframes }))
+    })
+    commitKeyframeEdit()
+  }
+
   // Remove a track
   function removeTrack(trackId: string) {
     if (!state.timeline) return
@@ -1343,6 +1385,7 @@ export function createEditorStore() {
     hasCamera,
     getCameraValue,
     setCameraValue,
+    keyValuesAtPlayhead,
     addShapeMorph,
     selectTrack,
     applyPreset,

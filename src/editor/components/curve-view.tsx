@@ -1,4 +1,5 @@
 import { For, Show, createMemo, createSignal, createEffect, onCleanup } from 'solid-js'
+import { trackPropertyLabel } from '../utils/character-element'
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
 import type { Track } from '../../engine'
@@ -514,7 +515,7 @@ export const CurveView: Component<CurveViewProps> = (props) => {
                 <div class="curve-lane" classList={{ selected: selected() }}>
                   <div class="curve-lane-label" onClick={() => props.store.selectTrack(track.id)}>
                     <span class="curve-target">{track.target}</span>
-                    <span class="curve-property">{track.property}</span>
+                    <span class="curve-property" title={track.property}>{trackPropertyLabel(track.property)}</span>
                     <span class="curve-range">
                       {fmt(range().vmax)}
                       <br />
@@ -627,7 +628,7 @@ export const CurveView: Component<CurveViewProps> = (props) => {
                   <div class="curve-lane-label" onClick={() => props.store.selectTrack(track.id)}>
                     <span class="curve-target">{track.target}</span>
                     <span class="curve-property">
-                      {track.property} <span class="curve-spring-badge">spring</span>
+                      {trackPropertyLabel(track.property)} <span class="curve-spring-badge">spring</span>
                     </span>
                     <span class="curve-range">
                       {fmt(range().vmax)}

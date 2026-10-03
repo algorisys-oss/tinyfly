@@ -10,7 +10,7 @@ const contents = new Map(Object.entries(files).map(([path, text]) => [path.repla
 const readDoc = (id: string) => contents.get(id) ?? ''
 
 /** Files in docs/ that are design notes, not user docs. */
-const INTERNAL_DOCS = ['2d-animation-roadmap', 'camera', 'symbols-and-library']
+const INTERNAL_DOCS = ['2d-animation-roadmap', 'camera', 'symbols-and-library', 'character-system-plan', 'character-system-m1']
 
 describe('doc manifest', () => {
   it('points at files that exist', () => {

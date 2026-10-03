@@ -202,8 +202,9 @@ By default the figure is drawn **organic**: limbs taper from root to tip,
 elbows and knees are always a little rounded (as `rubber` 0.3, more if you set
 more), it has small hands and feet, the lower foot always rests on the ground (so
 a walk bobs as the stride opens and closes), and the body leans forward as it
-sits down or stands up. Feet point the way the figure faces and tip with the
-shin, so a trailing foot rolls onto its toe.
+sits down or stands up. Seen from the front the feet turn out, each to its own
+side; as the figure turns (`turn`) they swing round to the way it faces. They tip
+with the shin, so a trailing foot rolls onto its toe.
 
 `style: { classic: true }` draws the 0.75 look instead: even strokes, sharp
 joints, no hands or feet, and the hips at a fixed height (feet can float off the
@@ -385,7 +386,11 @@ Each hook is called once per frame as `(ctx, joints, time, pen?)` (`sleeve` gets
 `(ctx, joints, side, time, pen?)`), with the context saved and restored around
 it and in the figure's space, unmirrored. The left arm is always the back arm:
 the figure faces the viewer and mirrors as a whole, so its left side is always
-the one away from the way it looks. When the figure is sketched, `pen` is a
+the one away from the way it looks. Turned more than a quarter of the way
+(`turn` above 0.25), the back arm and its `sleeve` are drawn before the torso
+and `body`, so the body and its clothes hide it:
+`behind → legs → back arm → sleeve(back) → torso → body → front arm → …`.
+When the figure is sketched, `pen` is a
 sketch pen that boils with it. `style.shoulderWidth` (half the shoulder width,
 as a fraction of the height; default 0) starts the arms from two shoulders
 square to the spine, joined by a line, instead of one point.
@@ -425,6 +430,10 @@ export default {
 target's key in `targets`) the way the canvas adapter does, including `x`/`y`,
 walking and talking, and returns `{ pose, joints }` with the joints in scene
 coordinates. A `rotate` or `scale` on the target itself is not applied.
+
+The [model sheet](model-sheet/README.md) is a worked example: a man and a woman,
+dressed with layers, in five turnaround views with height guides, colour swatches
+and expressions.
 
 With `classic: true`, no `layers` and `shoulderWidth` 0, the figure draws
 exactly as 0.75 did. `taperedLine(ctx, points, from, to)` is the tapered fill the

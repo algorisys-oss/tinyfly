@@ -2,6 +2,8 @@ import type { CustomTarget } from '../adapters/canvas'
 import type { FrameInfo } from '../headless/video-scene'
 import type { EasingType, Track } from '../engine/types'
 import { sketchPen, type Point, type SketchPen, type SketchStyle } from '../adapters/canvas/sketch'
+import { taperedLine } from './look/tapered-line'
+import { rubberLimb } from './look/curves'
 
 /**
  * A stick-figure rig: a pose is a handful of numbers, so poses blend, walk
@@ -328,7 +330,10 @@ export type SleeveLayer = (
  *
  * The left arm is always the back arm, drawn first. The figure faces the
  * viewer and is mirrored as a whole for `facing`, so its left side is always
- * the one away from the way it looks.
+ * the one away from the way it looks. Turned more than a quarter of the way
+ * (`turn` above 0.25), the back arm and its sleeve move behind the body:
+ *
+ * behind → legs → back arm → sleeve(back) → torso → body → front arm → …
  */
 export interface FigureLayers {
   /** Before anything: long hair at the back, a cape, a shadow */
@@ -429,6 +434,8 @@ const ARM_WIDTH = [1.3, 0.75]
 const LEG_WIDTH = [1.45, 0.85]
 const FOOT_WIDTH = [1.15, 0.75]
 const FOOT = 0.06
+/** Seen from the front, how far each foot turns out to its own side (it points partly at the viewer, so it looks shorter) */
+const FOOT_SPLAY = 0.7
 const HAND_RADIUS = 0.65
 /** Organic look: elbows and knees are always rounded at least this much (as `rubber`) */
 const SOFT_JOINTS = 0.3
@@ -437,6 +444,9 @@ const SPINE_BOW_TURNED = 0.02
 const SPINE_BOW_SEATED = 0.012
 /** Forward lean (degrees) half way through sitting down or standing up */
 const SIT_LEAN = 12
+
+/** Turned further than this (`turn`), the back arm is drawn behind the body and its clothes */
+const BACK_ARM_BEHIND_TURN = 0.25
 
 /** Seated leg angles (degrees): thighs level and forward, shins straight down. */
 const SIT_THIGH = 90
@@ -563,30 +573,7 @@ function drawFace(
   ctx.fill()
 }
 
-/**
- * Points along a limb, blending the jointed shape (two straight segments) into
- * a rubber-hose curve by `rubber` 0..1. The curve is the quadratic that passes
- * through the joint halfway along, so a bent limb keeps its bend, rounded.
- */
-export function rubberLimb(root: Point, joint: Point, end: Point, rubber: number, samples = 16): Point[] {
-  // Control point that makes the quadratic pass through the joint at t = 0.5.
-  const control = { x: 2 * joint.x - (root.x + end.x) / 2, y: 2 * joint.y - (root.y + end.y) / 2 }
-  const points: Point[] = []
-  for (let i = 0; i <= samples; i++) {
-    const t = i / samples
-    const jointed =
-      t < 0.5
-        ? { x: root.x + (joint.x - root.x) * 2 * t, y: root.y + (joint.y - root.y) * 2 * t }
-        : { x: joint.x + (end.x - joint.x) * (2 * t - 1), y: joint.y + (end.y - joint.y) * (2 * t - 1) }
-    const u = 1 - t
-    const hose = {
-      x: u * u * root.x + 2 * u * t * control.x + t * t * end.x,
-      y: u * u * root.y + 2 * u * t * control.y + t * t * end.y,
-    }
-    points.push({ x: jointed.x + (hose.x - jointed.x) * rubber, y: jointed.y + (hose.y - jointed.y) * rubber })
-  }
-  return points
-}
+export { rubberLimb } from './look/curves'
 
 
 /** A two-part limb: from its root through the elbow or knee to the hand or foot. */
@@ -643,19 +630,23 @@ function rigFigure(figure: StickPose, style: StickStyle): Rig {
   const rightHip = figure.rightHip + (SIT_THIGH - figure.rightHip) * sit
   const rightKnee = figure.rightKnee + (SIT_THIGH - figure.rightKnee) * sit
   const classic = style.classic === true
-  // The feet point forward and tip with the shin (by half its angle), so a
-  // trailing foot rolls onto its toe and a swinging one clears the ground.
-  const footOffset = (hipAngle: number, knee: number) => {
+  // Seen from the front the feet turn out, each to its own side (and look
+  // shorter, pointing partly at the viewer); turning toward profile swings both
+  // round to the way the figure faces. They tip with the shin (by half its
+  // angle), so a trailing foot rolls onto its toe and a swinging one clears the ground.
+  const turn = unit(figure.turn)
+  const footOffset = (side: number, hipAngle: number, knee: number) => {
     const pitch = rad(hipAngle - knee) / 2
-    return classic ? { x: 0, y: 0 } : { x: Math.cos(pitch) * FOOT, y: Math.abs(Math.sin(pitch)) * FOOT }
+    const across = turn + (1 - turn) * side * FOOT_SPLAY
+    return classic ? { x: 0, y: 0 } : { x: Math.cos(pitch) * FOOT * across, y: Math.abs(Math.sin(pitch)) * FOOT }
   }
   // …and lowers the hips until the lower foot rests on the ground: while
   // sitting, or always outside the classic look (so a walk bobs).
   let drop = 0
   if (sit > 0 || !classic) {
-    const reach = (hipAngle: number, knee: number) =>
-      THIGH * Math.cos(rad(hipAngle)) + SHIN * Math.cos(rad(hipAngle - knee)) + footOffset(hipAngle, knee).y
-    const legHeight = Math.max(reach(leftHip, leftKnee), reach(rightHip, rightKnee))
+    const reach = (side: number, hipAngle: number, knee: number) =>
+      THIGH * Math.cos(rad(hipAngle)) + SHIN * Math.cos(rad(hipAngle - knee)) + footOffset(side, hipAngle, knee).y
+    const legHeight = Math.max(reach(-1, leftHip, leftKnee), reach(1, rightHip, rightKnee))
     const plant = classic ? Math.min(1, sit / SIT_PLANTED) : 1
     drop = (HIP - legHeight) * plant * h * stretch
   }
@@ -668,7 +659,7 @@ function rigFigure(figure: StickPose, style: StickStyle): Rig {
       : rubberLimb({ x: 0, y: hipY }, { x: -bow, y: (hipY + neckY) / 2 }, { x: 0, y: neckY }, 1, 8)
   const shoulderY = neckY + SHOULDER_DROP * h * stretch
   // Turning toward profile brings the shoulders together.
-  const shoulderX = (style.shoulderWidth ?? 0) * h * Math.cos((unit(figure.turn) * Math.PI) / 2)
+  const shoulderX = (style.shoulderWidth ?? 0) * h * Math.cos((turn * Math.PI) / 2)
 
   const segment = (x: number, y: number, angle: number, side: number, length: number) => {
     const d = limb(angle, side)
@@ -686,8 +677,8 @@ function rigFigure(figure: StickPose, style: StickStyle): Rig {
   }
 
   const legs = { left: leg(-1, leftHip, leftKnee), right: leg(1, rightHip, rightKnee) }
-  const toe = (bones: Bones, hipAngle: number, knee: number): Point => {
-    const offset = footOffset(hipAngle, knee)
+  const toe = (side: number, bones: Bones, hipAngle: number, knee: number): Point => {
+    const offset = footOffset(side, hipAngle, knee)
     return { x: bones.end.x + offset.x * h * stretch, y: bones.end.y + offset.y * h * stretch }
   }
 
@@ -707,7 +698,7 @@ function rigFigure(figure: StickPose, style: StickStyle): Rig {
     lean: classic ? figure.lean : figure.lean + SIT_LEAN * Math.sin(Math.PI * sit),
     classic,
     legs,
-    toes: { left: toe(legs.left, leftHip, leftKnee), right: toe(legs.right, rightHip, rightKnee) },
+    toes: { left: toe(-1, legs.left, leftHip, leftKnee), right: toe(1, legs.right, rightHip, rightKnee) },
     spine,
     arms: {
       left: arm(-1, figure.leftShoulder, figure.leftElbow),
@@ -846,42 +837,7 @@ export function jointsToScene(joints: StickJoints, x: number, y: number): StickJ
   }
 }
 
-/**
- * Fill a line through `points` whose width runs from `startWidth` to
- * `endWidth`, with round ends: a limb that tapers, or a sleeve or trouser leg
- * along a joint polyline. Uses the context's fill style.
- */
-export function taperedLine(ctx: CanvasRenderingContext2D, points: Point[], startWidth: number, endWidth: number): void {
-  const n = points.length
-  if (n < 2) return
-  const left: Point[] = []
-  const right: Point[] = []
-  const widthAt = (i: number) => startWidth + ((endWidth - startWidth) * i) / (n - 1)
-  points.forEach((p, i) => {
-    // Offset square to the line here: along the neighbours' direction.
-    const a = points[Math.max(0, i - 1)]
-    const b = points[Math.min(n - 1, i + 1)]
-    const length = Math.hypot(b.x - a.x, b.y - a.y) || 1
-    const half = widthAt(i) / 2
-    const nx = (-(b.y - a.y) / length) * half
-    const ny = ((b.x - a.x) / length) * half
-    left.push({ x: p.x + nx, y: p.y + ny })
-    right.push({ x: p.x - nx, y: p.y - ny })
-  })
-  ctx.beginPath()
-  ctx.moveTo(left[0].x, left[0].y)
-  for (const p of left.slice(1)) ctx.lineTo(p.x, p.y)
-  for (const p of right.reverse()) ctx.lineTo(p.x, p.y)
-  ctx.closePath()
-  ctx.fill()
-  // Round the ends, and a sharp joint (a straight-jointed elbow or knee).
-  points.forEach((p, i) => {
-    if (i !== 0 && i !== n - 1 && n > 3) return
-    ctx.beginPath()
-    ctx.arc(p.x, p.y, widthAt(i) / 2, 0, Math.PI * 2)
-    ctx.fill()
-  })
-}
+export { taperedLine, taperedOutline } from './look/tapered-line'
 
 /**
  * Draw a figure with its feet at (0, 0). `time` (ms) matters for a sketched
@@ -956,6 +912,19 @@ export function drawStickFigure(
   ctx.lineCap = 'round'
   ctx.lineJoin = 'round'
 
+  /** An arm, its hand, then its sleeve hook. */
+  const drawArm = (side: StickSide) => {
+    isolated(() => {
+      lean()
+      drawLimb(rig.arms[side], ARM_WIDTH)
+      drawHand(side)
+    })
+    const sleeve = layers.sleeve
+    if (sleeve && joints) isolated(() => sleeve(ctx, joints, side, time, layerPen))
+  }
+  // Turned away from the viewer, the far (left) arm goes behind the body and its clothes.
+  const backArmBehind = unit(figure.turn) > BACK_ARM_BEHIND_TURN
+
   layer(layers.behind)
   isolated(() => {
     mirror()
@@ -964,6 +933,7 @@ export function drawStickFigure(
     drawLimb(rig.legs.right, LEG_WIDTH)
     drawFoot('right')
   })
+  if (backArmBehind) drawArm('left')
   isolated(() => {
     lean()
     line(rig.spine, rig.spine.length > 2, TORSO_WIDTH)
@@ -978,15 +948,8 @@ export function drawStickFigure(
     }
   })
   layer(layers.body)
-  for (const side of ['left', 'right'] as const) {
-    isolated(() => {
-      lean()
-      drawLimb(rig.arms[side], ARM_WIDTH)
-      drawHand(side)
-    })
-    const sleeve = layers.sleeve
-    if (sleeve && joints) isolated(() => sleeve(ctx, joints, side, time, layerPen))
-  }
+  if (!backArmBehind) drawArm('left')
+  drawArm('right')
   layer(layers.behindHead)
 
   // Head and face, tilted about the neck.

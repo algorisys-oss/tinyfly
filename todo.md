@@ -2007,11 +2007,38 @@ without a browser. Guide: `docs/video-rendering.md`; example:
       the neck moves, hips and feet stay); face line width capped at 14% of the head
       radius so thick brushes (4–5%, the viral look) keep readable faces; defaults
       unchanged (a 2.5–5.5% × 24/30% head comparison sheet informed this)
+- [x] **Turned figures: feet and the far arm** (after 0.76.0, from model-sheet review) —
+      from the front the feet turn out to their own sides (`FOOT_SPLAY`, foreshortened),
+      swinging round to the facing side with `turn`; past `turn` 0.25 the back arm and
+      its sleeve hook draw before the torso and `body` layer, so the body hides it
+- [x] **Model sheet** — `examples/headless-video/model-sheet.mjs` (a still): Tum and
+      Didi, dressed via layers, in five turnaround views (front, 3/4, profile, 3/4 back,
+      back; back views are hair over the whole head), height guides from the joints,
+      colour swatches, expression close-ups; rendered sheet kept in `docs/model-sheet/`
+      for reference
 - [x] **Dressed Stick Figures gallery card** (`src/examples/live-demos/dressed-figures.js`,
       Video category): rounded shirt, tapered trousers and sleeves, pleated sari and pallu, spiky hair and a bun via `layers`, a
       lota held at `handAngle`, a walk turned toward travel, sitting on a charpai at
       `seatHeight`, shadows at `feetY`, a speech bubble at the head, joints overlay toggle
 - [ ] Next (Pencilmation): erasing that follows a limb rather than the target's box
+- [~] **Character system v2, milestone 1 (rig core)** — on `feat/character-v2`, for review
+      ([docs/character-system-m1.md](docs/character-system-m1.md)): body plans; bones in 3D
+      turned by `turn` (0 front → 1 side → 2 back → 3 other side) and drawn flat; parts drawn
+      far to near; contact (lowest of feet/knees/hands/hips/head rests on the ground), `lift`,
+      `rotate`; two-bone reaching; human plan + 10 poses (sit, kneel, crouch, crawl, lie down…);
+      pen with clean / pencil (boil, pressure, construction lines, rubbed-out attempts) /
+      silhouette looks; stick and fluid figures; face that slides round and hides from behind;
+      `characterTarget` / `characterAt`; sheet `docs/model-sheet/human-turnaround.png`.
+      Editor: 🧍 Character element (figure, look, colours, T-shirt/trousers, view buttons +
+      turn slider, body pose and face dropdowns, ◆ Keyframe pose at playhead in one undo
+      step, new tracks back-filled with rest at earlier keys, plain-language track names);
+      DOM preview via an in-box canvas, Canvas preview and GIF/MP4 export via a custom
+      target. Not yet: HTML export / embeds, SVG preview
+- [ ] **Character system v2** (planning: [docs/character-system-plan.md](docs/character-system-plan.md)) —
+      from six reference model sheets (people, hair, animals, birds, aquatic) in clean
+      and Pencilmation looks: 2.5D body plans, gaits as data, contact with any surface,
+      IK, heads/faces/visemes/hair, hands, bodies, wardrobe, quadrupeds, birds;
+      milestones 1–8, each ending in a model sheet
 - [ ] Next: drawing helpers (speech bubbles, wrapped text, tags, quote cards) and a
       label-overlap check for stills
 - [ ] Next: named draw functions, so scenes with custom targets stay pure JSON

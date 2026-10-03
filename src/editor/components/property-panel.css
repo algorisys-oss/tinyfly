@@ -540,3 +540,33 @@
   flex: 1;
   min-width: 0;
 }
+
+/* Character: view buttons in a wrapping row, and the keyframe button. */
+.character-views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.character-views button {
+  padding: 2px 8px;
+  font-size: 11px;
+  border-radius: 4px;
+  border: 1px solid var(--border, #475569);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.character-views button.active {
+  background: var(--accent, #3b82f6);
+  border-color: var(--accent, #3b82f6);
+  color: #fff;
+}
+
+.character-key-btn {
+  width: 100%;
+  padding: 6px 8px;
+  font-weight: 600;
+  cursor: pointer;
+}

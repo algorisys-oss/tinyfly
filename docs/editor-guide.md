@@ -76,6 +76,7 @@ Shapes, text, images, video, lines, arrows and paths are added from the
 | **⬡ Polygon** | Regular polygon; edit the number of **sides** in Properties |
 | **★ Star** | Star; edit the number of **points** and the **inner %** in Properties |
 | **Group** | Container that groups multiple elements |
+| **🧍 Character** | A posable figure: pick a view, a pose and a face, and keyframe them to animate (see [Characters](#characters)) |
 
 Polygon and star are **parametric** paths: change the sides/points/inner ratio in
 the Property Panel and the shape regenerates, and they rescale cleanly when you
@@ -84,7 +85,7 @@ resize the box. See [polygon-star.md](polygon-star.md).
 ### Adding Elements
 
 Click an element type in the **Elements** panel on the left (Rectangle, Circle,
-Text, Line, Arrow, Path, Image, Audio, Video, or ⬡ Polygon / ★ Star). The element appears at the center of the canvas with default dimensions. You can then:
+Text, Line, Arrow, Path, Image, Audio, Video, 🧍 Character, or ⬡ Polygon / ★ Star). The element appears at the center of the canvas with default dimensions. You can then:
 
 - **Drag** to reposition it on the canvas
 - **Resize** using the 8 handles around the element (corners and midpoints)
@@ -109,6 +110,36 @@ A **Video** element works the same way but also renders its frames on the canvas
 (with a **Fit** option). Both audio and video are carried into exported/embedded
 HTML, where the player discovers them (`[data-tinyfly-media]`) and keeps them in
 sync during playback.
+
+### Characters
+
+A **🧍 Character** is a posable figure. It stands with its feet at the bottom of
+its box; resize the box to change its height. In the property panel:
+
+- **Figure**: *Fluid* (tapered limbs, hands and feet) or *Stick* (the
+  traditional stick figure).
+- **Look**: *Clean*, *Pencil* (hand-drawn strokes that boil, with faint
+  construction lines) or *Silhouette*.
+- **Line**, **Skin**, and **Clothes** (a T-shirt and trousers, with their
+  colours, or none).
+- **View**: *Front*, *¾*, *Side*, *¾ back*, *Back* or *Side (left)*, or any
+  angle in between with the **Turn** slider. The figure turns as a whole: its
+  far arm goes behind its body and its face slides round, and is gone from
+  behind.
+- **Body**: a pose (standing, waving, pointing, cheering, hands on hips,
+  thinking, shrugging, sitting, kneeling, crouching, crawling, lying down).
+  Poses that rest on a knee, the hands or the back are set down on the ground.
+- **Face**: an expression (happy, sad, surprised, angry…), or the pose's own.
+
+To animate a character, pick a view, a pose and a face, and click
+**◆ Keyframe pose at playhead**. Move the playhead, pick the next pose, and
+keyframe again: the character moves between them. The timeline shows only
+the parts that move, in plain words ("Right arm · out / in", "Head · tilt"),
+and each one can be edited, eased and retimed like any other track.
+
+Characters show in the DOM and Canvas previews and in GIF / WebP / MP4
+export. They are not part of exported HTML or embeds yet, and the SVG preview
+does not draw them.
 
 ### Selecting Elements
 
@@ -903,7 +934,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.76.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.77.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed

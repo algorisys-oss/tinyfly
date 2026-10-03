@@ -235,6 +235,23 @@ describe('camera', () => {
     expect(store.getCameraValue('rotate')).toBe(0)
   })
 
+  it('keyValuesAtPlayhead keys several values in one undo step, adding tracks as needed', () => {
+    const store = createEditorStore()
+    store.createNewTimeline('tl', 'Pose', { duration: 2000 })
+    store.keyValuesAtPlayhead('Hero', { turn: 1, 'arm.right.spread': 115 })
+    store.seek(1000)
+    // A field animated for the first time later starts from its earlier value.
+    store.keyValuesAtPlayhead('Hero', { turn: 0, 'arm.left.spread': 140 }, (_property, time) => [{ time: 0, value: 12 }, { time, value: 99 }])
+    const track = (property: string) => rawTracks(store).find((t) => t.target === 'Hero' && t.property === property)!
+    expect(kfs(track('turn')).map((k) => [k.time, k.value])).toEqual([[0, 1], [1000, 0]])
+    expect(kfs(track('arm.right.spread'))).toHaveLength(1)
+    // Only the earlier keyframes are taken from `before`; the playhead's value wins at its time.
+    expect(kfs(track('arm.left.spread')).map((k) => [k.time, k.value])).toEqual([[0, 12], [1000, 140]])
+    store.undo()
+    expect(rawTracks(store).some((t) => t.property === 'arm.left.spread')).toBe(false)
+    expect(kfs(track('turn'))).toHaveLength(1)
+  })
+
   it('setCameraValue keyframes a camera prop at the playhead', () => {
     const store = createEditorStore()
     store.createNewTimeline('tl', 'Cam', { duration: 2000 })

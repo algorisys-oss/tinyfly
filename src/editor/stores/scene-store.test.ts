@@ -746,3 +746,14 @@ describe('gradient utilities', () => {
     })
   })
 })
+
+describe('character elements', () => {
+  it('adds a character with its defaults and a name', () => {
+    const store = createSceneStore()
+    store.addElement('character', { x: 10, y: 20, width: 80, height: 100 })
+    const element = store.elements()[0]
+    expect(element).toMatchObject({ type: 'character', name: 'Character 1', figure: 'fluid', look: 'clean', outfit: 'basic', pose: {} })
+    expect([element.x, element.y, element.width, element.height]).toEqual([10, 20, 80, 100])
+  })
+})
+
