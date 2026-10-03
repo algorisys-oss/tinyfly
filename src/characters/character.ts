@@ -9,6 +9,8 @@ import { createPen, type Look, type Pen, type PencilOptions } from './look/pen'
 import { rubberLimb } from './look/curves'
 import { drawFace, faceToScreen } from './head/face'
 import { HUMAN_POSES, HUMAN_REST, humanPlan, type HumanPoseName } from './species/human'
+import { HAND_REST, type HandPose } from './hands/hand-rig'
+import { drawCartoonHand } from './hands/draw-cartoon-hand'
 
 /**
  * Characters (v2): any body plan, posed by numbers, turned in 3D, drawn flat
@@ -64,6 +66,15 @@ export interface CharacterOptions {
   layers?: CharacterLayers
   /** 'ground' (default) rests the lowest contact point on the ground; 'none' leaves the figure where its pose puts it */
   contact?: 'ground' | 'none'
+  /**
+   * Hands on the fluid figure: `dot` (default) a round end to each arm,
+   * `cartoon` posed cartoon hands (gloved in `skin`), shaped by the pose's
+   * `hand.left.*` / `hand.right.*` fields (any field of a hand pose, e.g.
+   * `hand.right.index.curl`; see {@link characterHandPose})
+   */
+  hands?: 'dot' | 'cartoon'
+  /** Cartoon hand length, wrist to fingertip, fraction of the height (default 0.17: a cartoon glove) */
+  handSize?: number
 }
 
 /** A character, with every option resolved. Plain data plus its plan. */
@@ -79,6 +90,8 @@ export interface Character {
   pencil: PencilOptions
   layers: CharacterLayers
   contact: 'ground' | 'none'
+  hands: 'dot' | 'cartoon'
+  handSize: number
 }
 
 export function character(options: CharacterOptions = {}): Character {
@@ -105,6 +118,8 @@ export function character(options: CharacterOptions = {}): Character {
     pencil: options.pencil ?? {},
     layers: options.layers ?? {},
     contact: options.contact ?? 'ground',
+    hands: options.hands ?? 'dot',
+    handSize: options.handSize ?? 0.17,
   }
 }
 
@@ -220,7 +235,7 @@ function drawConstruction(pen: Pen, character: Character, joints: CharacterJoint
   }
 }
 
-function drawPart(pen: Pen, character: Character, joints: CharacterJoints, id: string, pose: Pose) {
+function drawPart(ctx: CanvasRenderingContext2D, pen: Pen, character: Character, joints: CharacterJoints, id: string, pose: Pose) {
   const lw = character.lineWidth
   if (id === 'head') {
     const { head } = joints
@@ -246,6 +261,8 @@ function drawPart(pen: Pen, character: Character, joints: CharacterJoints, id: s
     if (chain.bones.length >= 3) {
       // A foot: from the ankle to the toes.
       pen.limb([points[2], points[3]], chain.bones[2].width[0] * lw, chain.bones[2].width[1] * lw)
+    } else if (character.hands === 'cartoon' && id.startsWith('arm.')) {
+      drawArmHand(ctx, pen, character, points, id.endsWith('.left') ? 'left' : 'right', pose)
     } else {
       const hand = points[points.length - 1]
       pen.dot(hand.x, hand.y, lw * 0.62)
@@ -268,6 +285,40 @@ function drawPart(pen: Pen, character: Character, joints: CharacterJoints, id: s
   }
   const [from, to] = widths(0, chain.bones.length - 1)
   pen.limb(line, from, to)
+}
+
+/**
+ * The hand pose a character's pose gives one of its hands: its `hand.<side>.*`
+ * fields over a relaxed hand. The wrist turn starts from how a hand hangs at
+ * the side (thumb forward), seen from the character's view, so `hand.right.turn`
+ * 0 is a natural hand and 1 turns it a quarter further.
+ */
+export function characterHandPose(pose: Pose, side: 'left' | 'right'): HandPose {
+  const prefix = `hand.${side}.`
+  const own: HandPose = {}
+  for (const [key, value] of Object.entries(pose)) if (key.startsWith(prefix)) own[key.slice(prefix.length)] = value
+  const view = pose.turn ?? 0
+  // Hanging at the side the thumb points forward: seen from the front that is the thumb side (turn 1).
+  const hanging = side === 'right' ? 1 - view : 1 + view
+  return { ...HAND_REST, ...own, turn: hanging + (own.turn ?? 0) }
+}
+
+/** A cartoon hand on the end of an arm, pointing along the forearm. */
+function drawArmHand(ctx: CanvasRenderingContext2D, pen: Pen, character: Character, points: Point[], side: 'left' | 'right', pose: Pose) {
+  const wrist = points[points.length - 1]
+  const elbow = points[points.length - 2]
+  const angle = (Math.atan2(wrist.x - elbow.x, -(wrist.y - elbow.y)) * 180) / Math.PI
+  drawCartoonHand(ctx, wrist, characterHandPose(pose, side), {
+    size: character.handSize * character.height,
+    side,
+    angle,
+    pen,
+    skin: character.skin === 'none' ? '#ffffff' : character.skin,
+    // A cartoon glove: three fingers and a thumb, plump enough to match the limbs.
+    fingers: 4,
+    plump: 1.6,
+    lineWidth: character.lineWidth * 0.3,
+  })
 }
 
 /**
@@ -299,7 +350,7 @@ export function drawCharacter(ctx: CanvasRenderingContext2D, character: Characte
   for (const id of order) {
     const layers = character.layers.parts?.[id]
     hook(layers?.under)
-    drawPart(pen, character, joints, id, full)
+    drawPart(ctx, pen, character, joints, id, full)
     hook(layers?.over)
   }
   hook(character.layers.front)

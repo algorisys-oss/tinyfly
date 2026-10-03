@@ -1974,6 +1974,34 @@ without a browser. Guide: `docs/video-rendering.md`; example:
 - [x] **Pencil Sketch gallery card** (`src/examples/live-demos/pencil-sketch.js`, Video
       category): the drawing-hand gag live in the browser (hand draws the ground and a
       sun, eraser rubs the sun out), with pencil, boil-rate and rubber-limb toggles
+- [x] **Hindi pencil story example** (`examples/pencil-story-hindi/index.html`): a 30 s
+      Pencilmation-style retelling of "the thirsty crow" (प्यासा राहगीर) as a standalone
+      page on the browser bundle: the hand draws the scene and writes Devanagari
+      narration (Kalam font), a JSON timeline moves the traveller and the pot's water,
+      pebbles raise the water, and the eraser rubs out the pot; play / pause / scrub
+- [x] **A more natural drawing hand** — `drawHand` redrawn as a writing grip (thumb and
+      middle finger pinch the tool, index finger along its top, ring and little fingers
+      curled under the palm, nails and knuckle creases), a 190 px pencil, and a short
+      forearm whose sleeve fades out (`arm`, default 300) instead of a 2000 px arm across
+      the frame; `lift` (0..1) raises the hand off the page with a shadow at the tip.
+      New `handAt(strokes, time, options)`: one hand for a whole scene, which follows the
+      stroke being drawn, lifts and glides between strokes of a run (`linger`), and comes
+      in from / goes back to `offstage` (`enter`, `exit`); pure, so scenes scrub
+- [x] **Cartoon hands** (`src/characters/hands/`, docs/cartoon-hands.md) — a hand rig: palm
+      and five finger chains in the hand's own 3D space, posed by a flat record
+      (`<finger>.curl`, `thumb.curl`, `thumb.across`, `spread`, `turn`, `bend`, `tilt`,
+      `roll`), blended with `mixHandPoses`; `HAND_SHAPES` (relaxed, open, spread, flat,
+      fist, point, thumbsUp, peace, ok, pinch, cupped, wave, pencilGrip, hold);
+      `handJoints()` (joints, depths, widths, palm outline, axes) and
+      `drawCartoonHand()` through a look's Pen (clean / pencil / silhouette), parts
+      sorted far to near, nails where they face the viewer, knuckles on a curled
+      back of hand, `fingers: 4`, `plump`, `side: 'left'`, a held `prop` at a depth.
+      `drawHand` (the animator's hand) now uses it (pencilGrip, tool as a prop,
+      fading forearm). Characters v2: `character({ hands: 'cartoon' })` draws gloves
+      posed by `hand.left.*` / `hand.right.*` pose fields (`characterHandPose`).
+      Model sheet: `examples/headless-video/hand-shapes.mjs` → docs/model-sheet/hand-shapes.png
+- [ ] Hand-shape picker on the editor's Character element; foreshortened hands when
+      the forearm points at the viewer; cartoon hands on the v1 stick figure
 - [x] **Stick-figure joints and costume layers** (feedback from a story channel dressing
       figures) — `stickFigureJoints(pose, style)` returns the geometry the figure is drawn
       with (hip, neck, shoulders, elbows, hands, knees, feet, `handAngle`, stroked limb

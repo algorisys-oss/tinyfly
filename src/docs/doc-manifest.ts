@@ -118,6 +118,12 @@ export const DOCS: DocEntry[] = [
     section: 'Guides',
   },
   {
+    id: 'cartoon-hands',
+    title: 'Cartoon Hands',
+    summary: 'A hand you can pose: a palm and five fingers in 3D, posed by numbers (curls, thumb, spread, wrist turn), ready-made shapes from a fist to a pencil grip, left and right, four or five fingers, in clean, pencil and silhouette looks; the animator\'s hand and character gloves are built on it.',
+    section: 'Guides',
+  },
+  {
     id: 'extending',
     title: 'Extending tinyfly',
     summary: 'Writing a render adapter, animating any object with live and the ticker, custom and parametric eases, stagger offsets, adding a track kind, and contributing gallery examples.',

@@ -53,3 +53,10 @@ cp stills/0-middle.png docs/model-sheet/model-sheet.png
 
 See [Costumes, hair and props](../video-rendering.md#costumes-hair-and-props) for
 `layers` and `stickFigureJoints()`.
+
+## Hands
+
+Every cartoon hand shape, turned and in every look: see
+[cartoon-hands.md](../cartoon-hands.md).
+
+![Cartoon hands](hand-shapes.png)

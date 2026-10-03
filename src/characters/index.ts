@@ -15,3 +15,5 @@ export { humanPlan, humanPose, humanFieldLabel, HUMAN_REST, HUMAN_POSES, HUMAN_E
 export type { BodyPlan, ChainSpec, BoneSpec, BoneAngles, ContactSpec, HeadSpec, Pose as CharacterPose, Vec3 } from './rig/body-plan'
 export { createPen, ellipsePoints, type Pen, type Look, type PencilOptions, type PenOptions } from './look/pen'
 export { basicOutfit, type BasicOutfitOptions } from './wardrobe/basic-outfit'
+// Cartoon hands: posed in 3D, drawn in a look.
+export * from './hands'

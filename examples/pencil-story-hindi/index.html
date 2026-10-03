@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>प्यासा राहगीर · tinyfly pencil story</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root { --paper: #fbf8ef; --ink: #2f2f33; --bg: #1c1f26; --muted: #9aa4b2; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: var(--bg); color: #e5e7eb;
+      font: 14px system-ui, sans-serif; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 12px; padding: 16px; }
+    canvas { width: min(960px, 100%); aspect-ratio: 16 / 9; border-radius: 10px; background: var(--paper);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45); }
+    .bar { width: min(960px, 100%); display: flex; align-items: center; gap: 10px; }
+    .bar button { font: 14px system-ui, sans-serif; width: 38px; height: 32px; border-radius: 8px;
+      border: 1px solid #3b4252; background: #262b35; color: #e5e7eb; cursor: pointer; }
+    .bar input[type=range] { flex: 1; }
+    .bar .time { font: 12px ui-monospace, monospace; color: var(--muted); min-width: 64px; text-align: right; }
+    .gloss { width: min(960px, 100%); color: var(--muted); min-height: 1.4em; text-align: center; font-style: italic; }
+  </style>
+</head>
+<body>
+  <canvas width="960" height="540" aria-label="A pencil-drawn story: the thirsty traveller"></canvas>
+  <div class="bar">
+    <button class="play" aria-label="Pause">❚❚</button>
+    <button class="restart" aria-label="Restart">↺</button>
+    <input class="scrub" type="range" min="0" max="30000" step="10" value="0" aria-label="Scrub" />
+    <span class="time">0.0s</span>
+  </div>
+  <div class="gloss" aria-live="polite"></div>
+
+  <!-- tinyfly v0.79.0 from jsDelivr; falls back to the repo's local build (npm run build:browser) when offline. -->
+  <script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.79.0/cdn/tinyfly.iife.js"
+    onerror="document.write('<script src=\'../../lib/browser/tinyfly.iife.js\'><\/script>')"></script>
+  <script>
+  /**
+   * प्यासा राहगीर (The Thirsty Traveller): a Pencilmation-style retelling of
+   * "the thirsty crow" with a stick-figure traveller.
+   *
+   * Everything on the canvas is drawn from one number, the time in ms, so any
+   * frame can be scrubbed to and the same time always draws the same picture.
+   * - Movement (walking across, the water level) is a JSON timeline.
+   * - Acting is a list of poses at times, blended in between.
+   * - Each drawn-on stroke is a "beat": how far it has got, 0..1.
+   * - The pencil, the hand, the eraser and the figure all come from tinyfly.
+   */
+  const W = 960
+  const H = 540
+  const GROUND = 430
+  const INK = '#2f2f33'
+  const PAPER = '#fbf8ef'
+  const LOOP = 30000
+  const FIGURE_HEIGHT = 170
+
+  const canvas = document.querySelector('canvas')
+  const ctx = canvas.getContext('2d')
+
+  // ── The script: lines of narration, each with when it appears ───────────
+  const lines = [
+    { at: 3200, hi: 'गर्मी की एक दोपहर थी।', en: 'It was a hot afternoon.' },
+    { at: 4300, hi: 'एक राहगीर को बहुत प्यास लगी थी।', en: 'A traveller was very thirsty.' },
+    { at: 8050, hi: 'तभी उसे एक घड़ा दिखाई दिया!', en: 'Then he saw a clay pot!' },
+    { at: 10600, hi: 'पर पानी बहुत नीचे था…', en: 'But the water was far too low…' },
+    { at: 12600, hi: 'उसने सोचा… और एक तरकीब निकाली!', en: 'He thought… and found a way!' },
+    { at: 14500, hi: 'एक-एक करके उसने कंकड़ डाले।', en: 'One by one, he dropped in pebbles.' },
+    { at: 21000, hi: 'पानी ऊपर आ गया, और उसने जी भर के पिया!', en: 'The water rose, and he drank his fill!' },
+    { at: 24500, hi: 'अरे! मेरा घड़ा कहाँ गया?!', en: 'Hey! Where did my pot go?!' },
+    { at: 26600, hi: 'सीख: जहाँ चाह, वहाँ राह।', en: 'Moral: where there is a will, there is a way.' },
+  ]
+  const lineAt = (t) => [...lines].reverse().find((l) => t >= l.at)
+
+  // ── Movement as plain JSON keyframes ────────────────────────────────────
+  const POUR = { start: 15800, each: 1300, count: 4 }
+  const pourAt = (i) => POUR.start + i * POUR.each
+  const timeline = tinyfly.deserializeTimeline({
+    id: 'pyasa-rahgir',
+    config: { duration: LOOP },
+    tracks: [
+      { id: 'walker-x', target: 'walker', property: 'x', keyframes: [
+        { time: 0, value: -90 },
+        { time: 2900, value: -90 },
+        { time: 6500, value: 290, easing: 'ease-out' },
+        { time: 8600, value: 290 },
+        { time: 10600, value: 500, easing: 'ease-in-out' },
+        { time: LOOP, value: 500 },
+      ] },
+      // 0 empty, 1 full; each pebble lifts it a step as it lands.
+      { id: 'pot-water', target: 'pot', property: 'water', keyframes: [
+        { time: 0, value: 0.18 },
+        ...[0, 1, 2, 3].flatMap((i) => [
+          { time: pourAt(i) + POUR.each * 0.8, value: 0.18 + i * 0.17 },
+          { time: pourAt(i) + POUR.each * 0.95, value: 0.18 + (i + 1) * 0.17, easing: 'ease-out' },
+        ]),
+        { time: 21200, value: 0.86 },
+        { time: 23000, value: 0.66, easing: 'ease-in-out' },
+        { time: LOOP, value: 0.66 },
+      ] },
+    ],
+  })
+  const valueAt = (t, target, property) => timeline.getStateAtTime(t).values.get(target)?.get(property) ?? 0
+
+  // ── Beats: how far each drawn-on (or rubbed-out) stroke has got ─────────
+  // One stroke at a time, so a single hand can draw them all.
+  const TIMES = {
+    ground: [200, 1300],
+    title: [1350, 2000],
+    sun: [2100, 2700],
+    rays: [2700, 3100],
+    pot: [6500, 7700],
+    rim: [7700, 8000],
+    bulb: [13500, 14300],
+    pebbles: [14600, 280],
+    erase: [24400, 26200],
+  }
+  const pebbleTimes = (i) => [TIMES.pebbles[0] + i * TIMES.pebbles[1], TIMES.pebbles[0] + (i + 1) * TIMES.pebbles[1]]
+  const WRITE_MS = 900
+  const span = (t, start, end) => Math.min(1, Math.max(0, (t - start) / (end - start)))
+  const smooth = (k) => k * k * (3 - 2 * k)
+  const beats = (t) => ({
+    ground: span(t, TIMES.ground[0], TIMES.ground[1]),
+    title: span(t, TIMES.title[0], TIMES.title[1]),
+    sun: span(t, TIMES.sun[0], TIMES.sun[1]),
+    rays: span(t, TIMES.rays[0], TIMES.rays[1]),
+    pot: span(t, TIMES.pot[0], TIMES.pot[1]),
+    rim: span(t, TIMES.rim[0], TIMES.rim[1]),
+    bulb: span(t, TIMES.bulb[0], TIMES.bulb[1]),
+    pebbles: [0, 1, 2, 3].map((i) => span(t, ...pebbleTimes(i))),
+    erase: span(t, TIMES.erase[0], TIMES.erase[1]),
+  })
+
+  // ── Scenery, as points ──────────────────────────────────────────────────
+  const ground = []
+  for (let x = 20; x <= W - 20; x += 40) ground.push({ x, y: GROUND + Math.sin(x * 0.04) * 2.5 })
+  const SUN = { x: 120, y: 100, r: 38 }
+  const sunPath = tinyfly.circlePath(SUN.x, SUN.y, SUN.r)
+  const rays = Array.from({ length: 8 }, (_, i) => {
+    const a = (i / 8) * Math.PI * 2
+    return [
+      { x: SUN.x + Math.cos(a) * (SUN.r + 10), y: SUN.y + Math.sin(a) * (SUN.r + 10) },
+      { x: SUN.x + Math.cos(a) * (SUN.r + 28), y: SUN.y + Math.sin(a) * (SUN.r + 28) },
+    ]
+  })
+
+  // The matka: a round body resting on the ground, a short neck and a rim.
+  const POT = { x: 640, r: 62 }
+  POT.y = GROUND - POT.r
+  POT.neck = 20
+  POT.rimY = POT.y - Math.sqrt(POT.r ** 2 - POT.neck ** 2) - 10
+  const potOutline = (() => {
+    const a0 = Math.atan2(-Math.sqrt(POT.r ** 2 - POT.neck ** 2), -POT.neck)
+    const a1 = Math.atan2(-Math.sqrt(POT.r ** 2 - POT.neck ** 2), POT.neck) - Math.PI * 2
+    const pts = [{ x: POT.x - POT.neck - 6, y: POT.rimY }]
+    for (let i = 0; i <= 28; i++) {
+      const a = a0 + ((a1 - a0) * i) / 28
+      pts.push({ x: POT.x + Math.cos(a) * POT.r, y: POT.y + Math.sin(a) * POT.r })
+    }
+    pts.push({ x: POT.x + POT.neck + 6, y: POT.rimY })
+    return pts
+  })()
+  const potRub = tinyfly.scrubPath(POT.x - 80, POT.rimY - 16, 160, GROUND - POT.rimY + 22, 10)
+
+  const pebbleSpots = [400, 422, 446, 468].map((x, i) => ({ x, y: GROUND - 7, r: 6 + (i % 2) }))
+
+  // ── Acting: poses at times, blended in between ──────────────────────────
+  const P = (changes, face) => tinyfly.withExpression(tinyfly.pose(changes), face ?? {})
+  const E = tinyfly.EXPRESSIONS
+  const tired = P({ turn: 0.5, headTilt: -6 }, { ...E.sad, lookY: 0.2 })
+  const peek = P({ turn: 0.6, lean: 16, rightShoulder: 40, rightElbow: 30 }, { ...E.sad, lookX: 1, lookY: 1 })
+  const think = P({ ...tinyfly.POSES.think, turn: 0.2 }, E.thinking)
+  const idea = P({ turn: 0.2, rightShoulder: 150, rightElbow: 10, leftShoulder: 20 }, { ...E.joyful, leftEye: 1.3, rightEye: 1.3 })
+  const reach = P({ turn: 0.6, stretch: 0.8, lean: -14, leftShoulder: -10, rightShoulder: -40, rightElbow: -20, leftHip: 20, rightHip: 20 }, { ...E.happy, lookX: -1, lookY: 1 })
+  const toss = P({ turn: 0.6, lean: 6, rightShoulder: 125, rightElbow: 15 }, { ...E.happy, lookX: 1, lookY: 0.3 })
+  const drink = P({ turn: 0.7, lean: 24, headTilt: 10, rightShoulder: 70, rightElbow: 50, leftShoulder: 60, leftElbow: -60 }, { ...E.happy, leftEye: 0, rightEye: 0, smile: 1 })
+  const shocked = P({ ...tinyfly.POSES.surprised, turn: 0.3 }, { ...E.shocked, lookX: 1, lookY: 0.4 })
+  const toViewer = P({ ...tinyfly.POSES.shrug, turn: 0 }, { ...E.confused, lookX: 0, lookY: 0 })
+  const content = P({ ...tinyfly.POSES.handsOnHips, turn: 0 }, E.happy)
+
+  const acting = [
+    [0, tired], [6500, tired],
+    [6900, P({ ...tinyfly.POSES.surprised, turn: 0.4 }, { ...E.surprised, lookX: 1 })],
+    [8300, P({ ...tinyfly.POSES.surprised, turn: 0.4 }, { ...E.joyful })],
+    [8700, P({ turn: 0.5 }, E.happy)], [10600, P({ turn: 0.5 }, E.happy)],
+    [11000, peek], [12400, peek],
+    [12900, think], [13500, think], [13800, idea], [14500, idea],
+    [14900, P({ turn: 0.4 }, { ...E.happy, lookX: -1, lookY: 0.6 })], [15800, P({ turn: 0.4 }, { ...E.happy, lookX: -1, lookY: 0.6 })],
+    // The four throws are acted separately (see throwPose).
+    [21000, P({ turn: 0.6 }, E.happy)], [21500, drink], [23000, drink],
+    [23400, P({ ...tinyfly.POSES.cheer, turn: 0.2 })], [24400, P({ ...tinyfly.POSES.cheer, turn: 0.2 })],
+    [24800, shocked], [26200, shocked],
+    [26700, toViewer], [28000, toViewer], [28500, content], [LOOP, content],
+  ]
+  const actingAt = (t) => {
+    const next = acting.findIndex(([time]) => time > t)
+    if (next <= 0) return acting[acting.length - 1][1]
+    const [t0, a] = acting[next - 1]
+    const [t1, b] = acting[next]
+    return tinyfly.blendPose(a, b, smooth((t - t0) / (t1 - t0)))
+  }
+
+  /** Which throw is happening at t, and how far through it (0..1), or null. */
+  const throwAt = (t) => {
+    const i = Math.floor((t - POUR.start) / POUR.each)
+    return i >= 0 && i < POUR.count ? { i, k: (t - pourAt(i)) / POUR.each } : null
+  }
+  // Pick up, wind up, toss, settle.
+  const throwPose = (k) =>
+    k < 0.3 ? tinyfly.blendPose(P({ turn: 0.4 }, E.happy), reach, smooth(k / 0.3))
+    : k < 0.5 ? tinyfly.blendPose(reach, toss, smooth((k - 0.3) / 0.2))
+    : tinyfly.blendPose(toss, P({ turn: 0.5 }, { ...E.happy, lookX: 1, lookY: 0.5 }), smooth((k - 0.5) / 0.5))
+
+  // Walking happens while x moves; fade the stride in and out at either end.
+  const walking = (t) => {
+    const fade = (ms) => Math.min(1, Math.max(0, ms / 250))
+    const inWalk = (a, b) => (t >= a && t <= b ? Math.min(fade(t - a), fade(b - t)) : 0)
+    return Math.max(inWalk(2900, 6500), inWalk(8600, 10600))
+  }
+
+  const figureAt = (t) => {
+    const x = valueAt(t, 'walker', 'x')
+    const throwing = throwAt(t)
+    let figure = throwing ? throwPose(throwing.k) : actingAt(t)
+    const w = walking(t)
+    if (w > 0) figure = tinyfly.blendPose(figure, tinyfly.walkPose(x / tinyfly.strideLength(FIGURE_HEIGHT), figure), w)
+    return { x, figure }
+  }
+
+  // ── The hand's strokes, in the order it draws them ──────────────────────
+  const TITLE = 'प्यासा राहगीर'
+  const TITLE_FONT = '700 46px Kalam, sans-serif'
+  const NARRATION_FONT = '400 34px Kalam, sans-serif'
+  const textWidth = (text, font) => {
+    ctx.save()
+    ctx.font = font
+    const width = ctx.measureText(text).width
+    ctx.restore()
+    return width
+  }
+  const ellipsePath = (cx, cy, rx, ry) =>
+    Array.from({ length: 25 }, (_, i) => ({ x: cx + Math.cos(-Math.PI / 2 + (i / 24) * Math.PI * 2) * rx, y: cy + Math.sin(-Math.PI / 2 + (i / 24) * Math.PI * 2) * ry }))
+  let strokes = null
+  /** Every stroke the hand makes, timed. Built once the font is in, since writing follows the text's width. */
+  function handStrokes() {
+    if (strokes) return strokes
+    const titleWidth = textWidth(TITLE, TITLE_FONT)
+    strokes = [
+      { start: TIMES.ground[0], end: TIMES.ground[1], path: ground },
+      { start: TIMES.title[0], end: TIMES.title[1], path: [{ x: W - 60 - titleWidth, y: 84 }, { x: W - 60, y: 84 }] },
+      { start: TIMES.sun[0], end: TIMES.sun[1], path: sunPath },
+      ...rays.map((ray, i) => {
+        const step = (TIMES.rays[1] - TIMES.rays[0]) / rays.length
+        return { start: TIMES.rays[0] + i * step, end: TIMES.rays[0] + (i + 1) * step, path: ray }
+      }),
+      { start: TIMES.pot[0], end: TIMES.pot[1], path: potOutline },
+      { start: TIMES.rim[0], end: TIMES.rim[1], path: ellipsePath(POT.x, POT.rimY, POT.neck + 6, 6) },
+      { start: TIMES.bulb[0], end: TIMES.bulb[0] + (TIMES.bulb[1] - TIMES.bulb[0]) * 0.6, path: bulbPath() },
+      ...pebbleSpots.map((spot, i) => {
+        const [start, end] = pebbleTimes(i)
+        return { start, end, path: tinyfly.circlePath(spot.x, spot.y, spot.r) }
+      }),
+      { start: TIMES.erase[0], end: TIMES.erase[1], path: potRub, tool: 'eraser' },
+    ]
+    // The hand writes the narration too, whenever it is not busy drawing.
+    for (const line of lines) {
+      const end = line.at + WRITE_MS
+      if (strokes.some((s) => s.start < end && s.end > line.at)) continue
+      const width = textWidth(line.hi, NARRATION_FONT)
+      strokes.push({ start: line.at, end, path: [{ x: W / 2 - width / 2, y: 502 }, { x: W / 2 + width / 2, y: 502 }] })
+    }
+    return strokes
+  }
+
+  // ── Drawing helpers ─────────────────────────────────────────────────────
+  function drawPaper() {
+    ctx.fillStyle = PAPER
+    ctx.fillRect(0, 0, W, H)
+    ctx.strokeStyle = '#d6e4f2'
+    ctx.lineWidth = 1.5
+    for (let y = 48; y < H; y += 36) {
+      ctx.beginPath()
+      ctx.moveTo(0, y)
+      ctx.lineTo(W, y)
+      ctx.stroke()
+    }
+    ctx.strokeStyle = '#f2b8b8'
+    ctx.beginPath()
+    ctx.moveTo(70, 0)
+    ctx.lineTo(70, H)
+    ctx.stroke()
+  }
+
+  /** Text written on from left to right, as the reveal grows. */
+  function writeOn(text, x, y, font, progress, align = 'center') {
+    if (progress <= 0) return
+    ctx.save()
+    ctx.font = font
+    ctx.textAlign = align
+    ctx.textBaseline = 'middle'
+    const width = ctx.measureText(text).width
+    const left = align === 'center' ? x - width / 2 : align === 'right' ? x - width : x
+    ctx.beginPath()
+    ctx.rect(left - 10, y - 60, (width + 20) * progress, 120)
+    ctx.clip()
+    ctx.fillStyle = INK
+    ctx.fillText(text, x, y)
+    ctx.restore()
+    return { x: left + width * progress, y: y + 10 }
+  }
+
+  function drawPot(pen, water, flying) {
+    // Terracotta body, the water seen through it (a cartoon cut-away), then the outline.
+    ctx.save()
+    ctx.beginPath()
+    ctx.arc(POT.x, POT.y, POT.r - 3, 0, Math.PI * 2)
+    ctx.fillStyle = 'rgba(214, 120, 70, 0.28)'
+    ctx.fill()
+    ctx.clip()
+    const top = GROUND - 8 - water * (POT.r * 2 - 18)
+    ctx.fillStyle = 'rgba(96, 165, 230, 0.55)'
+    ctx.fillRect(POT.x - POT.r, top, POT.r * 2, GROUND - top)
+    if (flying && flying.inside) {
+      ctx.fillStyle = '#7b7b80'
+      ctx.beginPath()
+      ctx.arc(flying.x, flying.y, 6, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    ctx.restore()
+    ctx.strokeStyle = '#3c6fa8'
+    ctx.lineWidth = 2.5
+    const wave = []
+    for (let x = POT.x - POT.r + 6; x <= POT.x + POT.r - 6; x += 12) wave.push({ x, y: top + Math.sin(x * 0.3) * 1.5 })
+    pen.line(wave, 1)
+    ctx.strokeStyle = INK
+    ctx.lineWidth = 4
+  }
+
+  /** A little pagdi and a moustache, placed on the figure's head. */
+  function dressHead(pen, joints) {
+    const head = joints.head
+    const at = (x, y) => tinyfly.headPoint(head, x, y)
+    const cap = []
+    for (let i = 0; i <= 12; i++) {
+      const a = Math.PI + (Math.PI * i) / 12
+      cap.push(at(Math.cos(a) * 1.08, -0.28 + Math.sin(a) * 1.05))
+    }
+    ctx.save()
+    ctx.fillStyle = '#e4572e'
+    ctx.beginPath()
+    cap.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)))
+    ctx.closePath()
+    ctx.fill()
+    ctx.restore()
+    ctx.lineWidth = 3
+    pen.curve(cap, 1)
+    pen.line([cap[0], at(0, -0.12), cap[cap.length - 1]], 1)
+    const my = head.mouthY - 0.2
+    const fx = head.faceX
+    ctx.lineWidth = 3.5
+    pen.curve([at(fx - 0.38, my + 0.08), at(fx - 0.18, my - 0.04), at(fx, my)], 1)
+    pen.curve([at(fx, my), at(fx + 0.18, my - 0.04), at(fx + 0.38, my + 0.08)], 1)
+  }
+
+  /** Where the idea's bulb hangs: above his head as he has the idea (fixed, so the hand can find it). */
+  const BULB = () => {
+    const { x, figure } = figureAt(TIMES.bulb[0])
+    const style = { height: FIGURE_HEIGHT, facing: 1 }
+    const head = tinyfly.jointsToScene(tinyfly.stickFigureJoints(figure, style), x, GROUND).head
+    return { x: head.center.x, y: head.center.y - head.ry - 50 }
+  }
+  const bulbPath = () => tinyfly.circlePath(BULB().x, BULB().y, 18)
+
+  /** Where a thrown pebble is: up to the hand, an arc to the pot's mouth, then down into it. */
+  function pebbleFlight(k, spot, hand, water) {
+    const mouth = { x: POT.x, y: POT.rimY - 4 }
+    if (k < 0.3) return null // still on the ground
+    if (k < 0.5) return hand // in the hand
+    if (k < 0.75) {
+      const u = (k - 0.5) / 0.25
+      return { x: hand.x + (mouth.x - hand.x) * u, y: hand.y + (mouth.y - hand.y) * u - Math.sin(u * Math.PI) * 70 }
+    }
+    const u = Math.min(1, (k - 0.75) / 0.15)
+    const floor = GROUND - 8 - water * (POT.r * 2 - 18) + 4
+    return { x: mouth.x, y: mouth.y + (floor - mouth.y) * u * u, inside: true, gone: k >= 0.9 }
+  }
+
+  // ── One frame, from the time alone ──────────────────────────────────────
+  function draw(t) {
+    const b = beats(t)
+    const pen = tinyfly.sketchPen(ctx, { roughness: 2.3, boil: 8, seed: 11 }, t)
+    const sketch = { roughness: 2.3, boil: 8, seed: 5 }
+
+    drawPaper()
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
+    ctx.strokeStyle = INK
+    ctx.lineWidth = 4
+
+    // Title, top right, while the scene sets up.
+    const titleFade = 1 - span(t, 5200, 6000)
+    ctx.globalAlpha = titleFade
+    writeOn(TITLE, W - 60, 74, TITLE_FONT, b.title, 'right')
+    ctx.globalAlpha = 1
+
+    // Sun and rays.
+    pen.curve(sunPath, b.sun)
+    rays.forEach((ray, i) => {
+      const p = span(b.rays, i / 8, (i + 1) / 8)
+      pen.line(ray, p)
+    })
+
+    // The pot, which the eraser later rubs out (water, pebbles and all).
+    const water = valueAt(t, 'pot', 'water')
+    const { x, figure } = figureAt(t)
+    const style = { height: FIGURE_HEIGHT, color: INK, lineWidth: 4.5, headFill: PAPER, sketch, facing: 1 }
+    const joints = tinyfly.jointsToScene(tinyfly.stickFigureJoints(figure, style), x, GROUND)
+    const throwing = throwAt(t)
+    const flying = throwing ? pebbleFlight(throwing.k, pebbleSpots[throwing.i], joints.hands.right, water) : null
+
+    tinyfly.withErased(ctx, potRub, 36, b.erase, () => {
+      if (b.rim > 0) drawPot(pen, water, flying && !flying.gone ? flying : null)
+      ctx.strokeStyle = INK
+      ctx.lineWidth = 4
+      pen.curve(potOutline, b.pot)
+      pen.ellipse(POT.x, POT.rimY, POT.neck + 6, 6, b.rim)
+    })
+
+    // Pebbles: drawn on the ground, then picked up one at a time.
+    pebbleSpots.forEach((spot, i) => {
+      const thrown = t >= pourAt(i) + POUR.each * 0.3
+      ctx.fillStyle = '#9a9a9f'
+      if (!thrown && b.pebbles[i] >= 1) {
+        ctx.beginPath()
+        ctx.arc(spot.x, spot.y, spot.r - 1, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      pen.circle(spot.x, spot.y, spot.r, thrown ? 0 : b.pebbles[i])
+    })
+    if (flying && !flying.inside) {
+      ctx.fillStyle = '#9a9a9f'
+      ctx.beginPath()
+      ctx.arc(flying.x, flying.y, 6, 0, Math.PI * 2)
+      ctx.fill()
+      pen.circle(flying.x, flying.y, 7, 1)
+    }
+    // A splash as each pebble lands.
+    if (throwing && throwing.k > 0.82 && throwing.k < 0.97) {
+      const s = (throwing.k - 0.82) / 0.15
+      const top = GROUND - 8 - water * (POT.r * 2 - 18)
+      ctx.strokeStyle = '#3c6fa8'
+      ctx.lineWidth = 2.5
+      ctx.globalAlpha = 1 - s
+      for (const dx of [-14, 0, 14]) pen.line([{ x: POT.x + dx * 0.4, y: top - 2 }, { x: POT.x + dx, y: top - 10 - 14 * s }], 1)
+      ctx.globalAlpha = 1
+      ctx.strokeStyle = INK
+      ctx.lineWidth = 4
+    }
+
+    // The traveller.
+    ctx.save()
+    ctx.translate(x, GROUND)
+    tinyfly.drawStickFigure(ctx, figure, style, t)
+    ctx.restore()
+    ctx.strokeStyle = INK
+    dressHead(pen, joints)
+
+    // Sweat drops while he trudges in the heat.
+    if (t > 2900 && t < 10600) {
+      const head = joints.head
+      const drop = (t / 600) % 1
+      const p = tinyfly.headPoint(head, -1.15, -0.3 + drop * 0.8)
+      ctx.fillStyle = '#60a5e6'
+      ctx.globalAlpha = 1 - drop
+      ctx.beginPath()
+      ctx.arc(p.x, p.y, 4, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.globalAlpha = 1
+    }
+
+    // The idea: a light bulb the hand draws above his head.
+    const bulbFade = 1 - span(t, 15000, 15600)
+    if (b.bulb > 0 && bulbFade > 0) {
+      const { x: bx, y: top } = BULB()
+      const bulb = bulbPath()
+      ctx.globalAlpha = bulbFade
+      ctx.save()
+      ctx.fillStyle = `rgba(250, 204, 21, ${0.5 * span(b.bulb, 0.6, 1)})`
+      ctx.beginPath()
+      ctx.arc(bx, top, 17, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.restore()
+      ctx.lineWidth = 3.5
+      pen.curve(bulb, span(b.bulb, 0, 0.6))
+      pen.line([{ x: bx - 8, y: top + 22 }, { x: bx + 8, y: top + 22 }], span(b.bulb, 0.6, 0.75))
+      pen.line([{ x: bx - 6, y: top + 28 }, { x: bx + 6, y: top + 28 }], span(b.bulb, 0.75, 0.85))
+      for (const a of [-2.4, -1.57, -0.74]) {
+        pen.line([
+          { x: bx + Math.cos(a) * 26, y: top + Math.sin(a) * 26 },
+          { x: bx + Math.cos(a) * 38, y: top + Math.sin(a) * 38 },
+        ], span(b.bulb, 0.85, 1))
+      }
+      ctx.globalAlpha = 1
+      ctx.lineWidth = 4
+    }
+
+    // The ground last, so the feet stand on it.
+    ctx.strokeStyle = INK
+    ctx.lineWidth = 4
+    pen.line(ground, b.ground)
+
+    // Narration, written on along the bottom of the page.
+    const line = lineAt(t)
+    if (line) {
+      writeOn(line.hi, W / 2, 492, NARRATION_FONT, span(t, line.at, line.at + WRITE_MS))
+    }
+
+    // The animator's hand: drawing, writing, rubbing out, or gliding between strokes.
+    const hand = tinyfly.handAt(handStrokes(), t, { offstage: { x: W + 260, y: H + 220 } })
+    if (hand) {
+      // A little wrist sway while it works.
+      const sway = hand.drawing ? Math.sin(t / 180) * 4 : 0
+      tinyfly.drawHand(ctx, hand.at, { scale: 0.8, tool: hand.tool, lift: hand.lift, angle: -30 + sway }, pen)
+    }
+
+    // Fade to a blank page before the loop starts over.
+    const out = span(t, LOOP - 900, LOOP - 100)
+    if (out > 0) {
+      ctx.fillStyle = PAPER
+      ctx.globalAlpha = out
+      ctx.fillRect(0, 0, W, H)
+      ctx.globalAlpha = 1
+    }
+    return line
+  }
+
+  // ── Playback: one clock, driven by a tinyfly timeline ───────────────────
+  const clock = { time: 0 }
+  const player = tinyfly.timeline({ repeat: -1 }).to(clock, { time: LOOP, duration: LOOP / 1000, ease: 'none' })
+
+  const playBtn = document.querySelector('.play')
+  const scrub = document.querySelector('.scrub')
+  const timeLabel = document.querySelector('.time')
+  const gloss = document.querySelector('.gloss')
+  let playing = true
+  let dragging = false
+
+  playBtn.addEventListener('click', () => {
+    playing = !playing
+    playing ? player.play() : player.pause()
+    playBtn.textContent = playing ? '❚❚' : '▶'
+    playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play')
+  })
+  document.querySelector('.restart').addEventListener('click', () => {
+    player.restart()
+    if (!playing) player.pause()
+  })
+  scrub.addEventListener('input', () => {
+    dragging = true
+    player.pause().seek(Number(scrub.value) / 1000)
+  })
+  scrub.addEventListener('change', () => {
+    dragging = false
+    if (playing) player.play()
+  })
+
+  let lastGloss = ''
+  const frame = () => {
+    const t = clock.time
+    const line = draw(t)
+    if (!dragging) scrub.value = String(Math.round(t))
+    timeLabel.textContent = `${(t / 1000).toFixed(1)}s`
+    const text = line ? line.en : ''
+    if (text !== lastGloss) gloss.textContent = lastGloss = text
+  }
+
+  // Wait for the Devanagari handwriting font so the first lines are not drawn in a fallback.
+  Promise.race([document.fonts.load('34px Kalam', 'प्यासा'), new Promise((r) => setTimeout(r, 2500))])
+    .finally(() => tinyfly.ticker.add(frame))
+  </script>
+</body>
+</html>
