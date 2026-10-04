@@ -35,6 +35,7 @@ describe('examples/headless-video', () => {
         for (let i = 4; i < pixels.length && !varied; i += 4) varied = pixels.slice(i, i + 4).join() !== first
         expect(varied, `${file} at ${time}ms`).toBe(true)
       }
-    })
+      // Model sheets draw hundreds of posed figures and hands per frame.
+    }, 20000)
   }
 })

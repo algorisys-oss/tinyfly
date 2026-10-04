@@ -5,6 +5,8 @@
  * here.
  */
 export * from './stick-figure'
+export * from './dance'
+export * from './acrobatics'
 export * from '../adapters/canvas/sketch'
 export * from './erase'
 export * from '../adapters/canvas/polyline'

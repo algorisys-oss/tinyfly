@@ -124,6 +124,12 @@ export const DOCS: DocEntry[] = [
     section: 'Guides',
   },
   {
+    id: 'dance',
+    title: 'Dance and Flips',
+    summary: 'The stick figure dances disco, hip hop, breaking, jazz, K-pop, Bollywood, Bhangra, Bharatanatyam (with mudras), the Charleston and tap (with tap sounds), and does front, back, layout and scissor flips, cartwheels, handsprings, split leaps and full splits: wrists, ankles, turn-out, spin and rise as pose fields; moves keyed in beats; styles, grooves and routines as plain data.',
+    section: 'Guides',
+  },
+  {
     id: 'extending',
     title: 'Extending tinyfly',
     summary: 'Writing a render adapter, animating any object with live and the ticker, custom and parametric eases, stagger offsets, adding a track kind, and contributing gallery examples.',

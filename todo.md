@@ -2086,6 +2086,83 @@ without a browser. Guide: `docs/video-rendering.md`; example:
 
 ---
 
+## Phase 32: Dance and flips for the stick figure (`feat/dance`)
+
+Guide: [docs/dance.md](docs/dance.md). Everything is plain data played by pure
+functions (beats in, pose out), so dances scrub, sync to music and render to video
+deterministically.
+
+### 32A — Joints for dancing ✓
+- [x] `leftWrist` / `rightWrist`: wrist bend added to the forearm; `handAngle` includes it;
+      joints gain `fingertips`
+- [x] `leftAnkle` / `rightAnkle`: point the toe (tiptoe lifts the body) or flex onto the heel
+- [x] `leftFootOut` / `rightFootOut`: turn-out (Bharatanatyam aramandi) and turn-in
+- [x] `style.hands`: cartoon hands at the wrists (any `HandPose` per side), turned by the wrist;
+      dot hands and the classic look draw exactly as before (golden frames unchanged)
+- [x] `spin` (whole body about the hips, mirrored with facing) and `rise` (lift; feet let go of
+      the ground once airborne, so a tuck keeps the hips' height); joints follow; layer hooks draw
+      in the body's frame
+
+### 32B — Dance as data ✓
+- [x] `DanceMove` (keys in beats, cumulative or `reset`, hand shapes, easing), `Groove` (bounce on /
+      off the beat, sway), `DanceStyle` (stance, face, moves, routine), mirrored steps, half-beat
+      blends between steps
+- [x] 9 styles in `DANCE_STYLES`: disco, hip hop, breaking toprock, jazz, K-pop, Bollywood, Bhangra,
+      Bharatanatyam, Charleston (heel–toe swivels with `footOut`), tap (shuffle ball change, time step,
+      heel toe, cramp roll); `MUDRAS` (pataka, tripataka, alapadma, mushti, shikhara, hamsasya, katakamukha)
+- [x] `danceFrame()`, `dancePose()`, `routineBeats()`, `beatAt()`, `mirrorPose()`, `applyGroove()`
+- [x] Foot strikes as data: `DanceKey.taps` (toe / heel per foot), `danceTaps(style, from, to)` for sounds;
+      tap and Bharatanatyam stamps carry them; the Dance Floor flashes the foot and clicks (Web Audio)
+- [x] Timeline: `stickFigureTarget({ dance: dancer(style) })` with `beat` / `dancing` props,
+      `danceTracks()` (two tiny tracks), `bakeDanceTracks()` (pose keyframes for pure-JSON timelines)
+
+### 32C — Flips ✓
+- [x] `Flip` as data: wind up → take off → air → land; parabolic rise, turn quickest at the top;
+      lands on a whole turn so it blends into anything
+- [x] `FLIPS`: front flip, back flip, layout, scissor flip, side flip, cartwheel (hands reach the
+      ground), back handspring, split leap (grand jeté), toe touch (straddle jump); `flipPose()`, `flipTravel()`, `flipTracks()` (with an `x` travel track)
+
+- [x] Full splits: `POSES.sideSplit`, `POSES.frontSplit` (hips settle on the floor); jazz `splitDrop`
+
+### 32D — Showcase and docs ✓
+- [x] **Dance Floor** gallery card (`src/examples/live-demos/dance-floor.js`, Video category): style,
+      move and tempo pickers, a 1–8 count light, a spotlight, flips on demand blended in and out of
+      the dance
+- [x] `docs/dance.md`, API reference, README, docs manifest
+- [x] Model sheet `examples/headless-video/dance-sheet.mjs` → `docs/model-sheet/dance-and-flips.png`
+- [x] Tests: `dance.test.ts` (every style: finite, JSON, smooth, feet on the ground; loops, keys,
+      mirroring, mudras, groove, routines, tracks, the target), `acrobatics.test.ts` (start/end
+      standing, full turn, peak height, fluid at 60 fps, travel, baking),
+      `stick-figure-extremities.test.ts`
+
+### 32E — Next (planned)
+- [ ] Music sync: `beatAt()` from an audio track's BPM and offset in the editor; beat markers
+- [ ] Editor: a 🕺 Dance picker on the stick figure / character (style, move, tempo) that writes
+      `danceTracks()`; a flip button that writes `flipTracks()` at the playhead
+- [ ] Hand shapes as numeric props (curl/spread per hand) so baked timelines carry them too
+- [ ] More styles: salsa, tap with wings and pullbacks, garba / dandiya,
+      Kathak (chakkar spins with `turn`), popping and locking, shuffle
+- [ ] More acrobatics: aerial, butterfly kick, 540, round-off, kip-up, flips in a sequence
+- [ ] Floor work and body rolls (windmill, headspin, freezes on the hands, body wave) need
+      Characters v2's bendable spine, hand contact and IK — port dance and flips to v2 body plans
+- [ ] A headless music-video example (dance + flips to a beat, rendered to MP4)
+
+## Phase 33: 3D support (planned)
+
+Plan: [docs/3d-support-plan.md](docs/3d-support-plan.md). 3D values are just tracks (vec3 / quat with
+an explicit `slerp` interpolation); an optional `@algorisys/tinyfly/scene-3d` add-on resolves JSON
+scenes (camera, lights, meshes, glTF, characters) to plain draw data; renderers in order: our own
+Canvas 2D (headless video, Workers, zero dependencies), our own WebGL2, then optional three.js;
+WebGPU deferred.
+
+- [ ] M0 rotation math (vec3, quat, mat4) and `Track.interpolation: 'slerp'`
+- [ ] M1 finish CSS-style 3D on the Canvas adapter (real perspective, not cos scaling)
+- [ ] M2 3D scenes drawn by Canvas 2D; M3 WebGL2 renderer
+- [ ] M4 editor `scene3d` element; M5 rigid glTF import; M6 3D characters (v2 bones in the world)
+- [ ] M7 skinned glTF; M8 optional three.js adapter
+
+---
+
 ## Backlog / For Review
 
 - [x] **Export Animation Document** — More → Export Animation Document downloads

@@ -60,3 +60,11 @@ Every cartoon hand shape, turned and in every look: see
 [cartoon-hands.md](../cartoon-hands.md).
 
 ![Cartoon hands](hand-shapes.png)
+
+## Dance and flips
+
+Every dance style's moves at their keys, and every flip from wind-up to landing
+(orange while airborne): see [dance.md](../dance.md). Drawn by
+[`examples/headless-video/dance-sheet.mjs`](../../examples/headless-video/dance-sheet.mjs).
+
+![Dance and flips](dance-and-flips.png)

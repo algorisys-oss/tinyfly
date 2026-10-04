@@ -50,6 +50,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Immediate mode too** - A scene's `background` and `draw(ctx, { time })` functions paint each frame directly, Cairo/Processing-style, and mix freely with timeline targets
 - **Timing from narration** - `planNarration()` lays spoken lines out from their clip lengths (lead, gap, tail) into cues, scene spans and markers; `voiceNarration()` measures recorded clips with ffmpeg and writes the sample-aligned narration WAV
 - **Characters** - A poseable stick figure (`@algorisys/tinyfly/characters`): named poses, facial expressions (brows, eyes that widen, close and look around, mouth shapes), squash and stretch, rubber-hose limbs, blending, walk cycles and talking, all driven by timeline tracks. **Characters v2**: one skeleton in 3D drawn flat, turning front to side to back, resting on whatever touches the ground, reaching for points, in clean, pencil or silhouette looks, and a 🧍 Character element in the editor you pose and keyframe
+- **Dance and flips** - The stick figure dances disco, hip hop, breaking toprock, jazz, K-pop, Bollywood, Bhangra, Bharatanatyam (with mudras), the Charleston and tap (foot strikes as data, for tap sounds), and does front, back, layout, scissor and side flips, cartwheels, back handsprings, split leaps, toe touches and full splits. Wrists, ankles, foot turn-out, whole-body `spin` and `rise` are pose fields; moves are keyed in beats, so any tempo plays them; styles, grooves and routines are plain JSON (`danceFrame()`, `danceTracks()`, `flipPose()`, `flipTracks()`). See [docs/dance.md](docs/dance.md)
 - **Maps** - Animated maps on OpenStreetMap tiles or an offline world outline (also in pencil): the camera flies in, pins drop, routes draw themselves while a marker travels them; a 🗺 Map element in the editor with a one-click trip
 - **Pencil sketch style** - Hand-drawn strokes with line boil (`sketch` style, `sketchPen`) for a pencil-test, Pencilmation-like look, on the stick figure and on canvas rect / circle / line / path shapes (also from the editor's Properties panel); a `drawOn` track draws any of those shapes on; the wobble is seeded by time, so renders stay deterministic
 - **The drawing hand** - `drawnPathTarget()` draws a sketched stroke on from a `draw` track while a cartoon hand holds the pencil at its end in a writing grip; the same hand can hold the eraser. `handAt()` gives one hand for a whole scene: it follows each stroke, lifts and glides to the next, and enters and leaves the page
@@ -224,7 +225,7 @@ GSAP-shaped functions at the top level. Teaching embeds are included: add
 itself.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.79.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.80.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -260,7 +261,7 @@ A teaching figure needs no code at all:
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON with markers… }</script>
   <figcaption>Appending to a full slice</figcaption>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.79.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.80.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
 ```
 
 See [Teaching Animations](docs/teaching.md).
@@ -359,7 +360,7 @@ Without a build step, the player bundle puts the same functions on a `tinyfly` g
   <div data-tinyfly="box" style="width: 60px; height: 60px; background: #4a9eff;"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.79.0/cdn/tinyfly-player.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.80.0/cdn/tinyfly-player.iife.js"></script>
 <script>
   tinyfly.play('#animation', './animation.json', { loop: -1 })
 </script>
@@ -468,7 +469,7 @@ Or skip the code entirely with declarative embeds (see [Teaching Animations](doc
   <svg viewBox="0 0 720 200">…</svg>
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON… }</script>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.79.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.80.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 ### Audio / Video Sync

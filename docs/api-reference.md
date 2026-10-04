@@ -1538,6 +1538,10 @@ encodeWav(samples, sampleRate): Uint8Array                                // pur
 `stickFigureTarget()`, `poseTracks()`, joints and costume layers: `stickFigureJoints()`, `resolveStickPose()`, `stickFigureAt()`, `jointsToScene()`, `headPoint()`, `StickStyle.layers`, `StickStyle.shoulderWidth`, the `turn` and `sit` pose fields, `seatHeight()`, `taperedLine()`, `StickStyle.classic` and `StickStyle.headSize`, and the pencil sketch style: `SketchStyle`, `sketchPen()`, `boilFrame()`, erasing: `erasable()`, `withErased()`, `clipErased()`, `scrubPath()`, `drawEraser()`, `partialPath()`, `pointAlong()`, `pathLength()`, and the drawing hand: `drawnPathTarget()`, `drawHand()`, `drawPencil()`, `circlePath()`. See
 [Rendering Video from Code](video-rendering.md#characters).
 
+Dance and flips (see [Dance and Flips](dance.md)): the pose fields `leftWrist`/`rightWrist`, `leftAnkle`/`rightAnkle`, `leftFootOut`/`rightFootOut`, `spin`, `rise`; `StickStyle.hands` (cartoon hands), `StickJoints.fingertips`;
+`DANCE_STYLES`, `DanceStyle`, `DanceMove`, `DanceKey`, `Groove`, `RoutineStep`, `MUDRAS`, `danceFrame()`, `dancePose()`, `danceTaps()`, `DanceTap`, `TapName`, `routineBeats()`, `beatAt()`, `mirrorPose()`, `applyGroove()`, `danceStance()`, `dancer()`, `danceTracks()`, `bakeDanceTracks()`, `stickFigureTarget({ dance })` with the `beat` and `dancing` props, `resolveStickFrame()`;
+`FLIPS`, `Flip`, `FlipKey`, `flipPose()`, `flipTravel()`, `flipTracks()`; `POSES.sideSplit` and `POSES.frontSplit`.
+
 ### Narration timing
 
 In the engine (`@algorisys/tinyfly`):
