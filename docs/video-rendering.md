@@ -62,7 +62,7 @@ There are three ways to draw, and they mix freely:
 |---|---|---|
 | **Targets** | `rect`, `circle`, `text`, `line`, `path`, `image` animated by timeline tracks | Anything the editor can make; stays pure data |
 | **Custom targets** | A target whose `draw` function is code; the timeline animates its values | Characters, charts, props: drawn by code, driven by keyframes |
-| **`background` / `draw`** | Functions of `(ctx, { time, index, state, width, height })` | Backdrops, captions, one-off effects, porting Cairo scripts |
+| **`background` / `draw`** | Functions of `(ctx, { time, index, state, stateAt, width, height })` (`stateAt(t)`: the timeline's state at any other time, for trails) | Backdrops, captions, one-off effects, porting Cairo scripts |
 
 ## Custom targets
 
@@ -585,6 +585,53 @@ after drawing a live canvas.
 
 [`examples/headless-video/neon-bloom.mjs`](../examples/headless-video/neon-bloom.mjs)
 is a looping neon scene: emissive 3D shapes plus bloom.
+
+## Light trails
+
+A trail is where something has been: a band along its positions over the
+last moments, narrowing and fading toward the tail. Ask for the positions
+with `trailSamples` (a pure function of time, so every frame and every seek
+draws the same trail) and draw them with `drawTrail`:
+
+```js
+import { trailSamples } from '@algorisys/tinyfly'
+import { drawTrail } from '@algorisys/tinyfly/adapters'
+
+const LOOP = 8000
+// Whole cycles per loop (2 across, 3 up and down), so the video loops.
+const turn = (t) => (t / LOOP) * Math.PI * 2
+const comet = (t) => ({ x: 640 + 500 * Math.sin(2 * turn(t)), y: 360 + 250 * Math.sin(3 * turn(t)) })
+
+export default {
+  width: 1280, height: 720, duration: LOOP, background: '#05030c',
+  bloom: true,
+  draw(ctx, frame) {
+    const trail = trailSamples(comet, frame.time, { length: 1200, samples: 64, period: LOOP })
+    drawTrail(ctx, trail, { color: '#00e5ff', width: 10, blend: 'add', head: { radius: 14, color: '#ffffff' } })
+  },
+}
+```
+
+| `trailSamples(positionAt, time, options)` | |
+|---|---|
+| `length` | How far back, ms |
+| `samples` | Points along it (default 32): more for fast, curvy motion |
+| `period` | Motion that repeats every `period` ms: earlier times wrap, so a loop starts with the last lap's tail |
+| `since` | Nothing before this time: the trail grows from here |
+
+| `drawTrail(ctx, samples, style)` | |
+|---|---|
+| `color`, `width` (px, default 6), `opacity` | |
+| `taper`, `fade` | 0..1 (default 1): narrow to a point, fade to nothing |
+| `blend` | `normal` (default) paints; `add` adds light (`'lighter'`), brighter where trails cross |
+| `head` | `{ radius, color? }`: a glowing comet head |
+
+The band is one strip of segments that share their corners, with a round
+head, built additively: it reads as one smooth stroke at any speed, with no
+beads where segments overlap and no seams between them. `ribbon(points)` and
+`ribbonHeadCap(points)` give its geometry for other renderers. 3D scenes have
+`line` and `trail` objects, sorted by depth among the meshes (see
+[3D Scenes](scene-3d.md#lines-and-trails)).
 
 ## Captions
 

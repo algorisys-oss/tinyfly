@@ -110,6 +110,8 @@ live in the same timeline as everything else.
 | `color` | meshes, lights | a colour, over the material's or light's |
 | `intensity`, `target` | lights | |
 | `fov` / `height`, `lookAt` | cameras | |
+| `color`, `width`, `opacity` | lines, trails | |
+| `length` | trails | ms |
 | `activeCamera` | the scene, target `<sceneId>` | a camera's id: **a cut is one keyframe** |
 
 Animate either the components (`x`, `rotateY`) or the vector (`position`,
@@ -120,14 +122,53 @@ so instead of picking a winner.
 the group. `orbitPosition(target, yaw, pitch, distance)` and
 `dollyPosition(eye, target, amount)` place cameras for keyframes.
 
+## Lines and trails
+
+Two more kinds of object draw a band that faces the camera, as wide as
+`width` metres (so it narrows with distance):
+
+```js
+// A polyline through points in its own space (it moves with its transform and parent)
+{ id: 'ring', kind: 'line', points: [[0, 0, 0], [1, 0, 0], [1, 1, 0]], closed: true, width: 0.04, color: '#b6ff3b' }
+// Where another object has been over the last `length` ms
+{ id: 'tail', kind: 'trail', follow: 'comet', length: 1200, samples: 64, width: 0.1, color: '#00e5ff', blend: 'add' }
+```
+
+| Field | Meaning |
+|---|---|
+| `color`, `width` (default 0.05), `opacity` | |
+| `taper`, `fade` | 0..1: how much it narrows and fades toward its start (a line's first point, a trail's tail). Trails default to 1, lines to 0 |
+| `blend` | `normal` paints over what is behind; `add` adds its light: glowing beams, best on dark scenes and with [bloom](video-rendering.md#bloom) |
+| `follow`, `length`, `samples` (trail) | The object it follows, how far back it reaches (ms), points along it (default 32) |
+| `period` (trail) | For motion that repeats every `period` ms: earlier times wrap, so a loop's first frame already has the last lap's tail |
+
+Each segment of the band is placed in the draw order by its own depth, so a
+trail passes behind one shape and in front of another. Fog turns a normal
+band toward the fog colour and dims an added one. The head ends round.
+
+A trail is not a history of frames: it asks where the object was at earlier
+times, so the same time always draws the same trail (scrubbing, seeking,
+frames in any order, loops). The renderer needs a way to ask:
+
+- in a video, nothing to do: the frame carries `stateAt`, and
+  `drawScene3D(ctx, scene, frame.state?.values, frame)` passes it on;
+- elsewhere, `valuesAt`: `drawScene3D(ctx, scene, values, { width, height, time, valuesAt: (t) => timeline.getStateAtTime(t).values })`,
+  `resolveScene3D(…, { time, valuesAt })`, or `new Scene3DAdapter(renderer, { width, height, valuesAt })`.
+
+Without it a trail draws nothing. `examples/headless-video/comet-trails.mjs`
+is a looping comet video; the **3D Scene: Comet Trails** demo is the live
+version. With the WebGL2 renderer, lines and trails go on the overlay, in
+front of the meshes. For trails on a plain 2D canvas, see `drawTrail` in
+[Rendering Video from Code](video-rendering.md#light-trails).
+
 ## Drawing
 
 ```ts
 loadScene3D(json): LoadedScene3D            // validates and builds meshes once (throws with every problem)
 validateScene3D(json, tracks?): string[]    // problems as sentences, empty when fine
-resolveScene3D(loaded, values, { width, height }): ResolvedScene3D   // pure: matrices, camera, lights, sorted triangles
-drawScene3D(ctx, loaded, values, { width, height })                // resolve and draw, in one call
-new Scene3DAdapter(new Canvas2DRenderer(ctx), { width, height })   // registerScene, applyState(state), render()
+resolveScene3D(loaded, values, { width, height, time?, valuesAt? }): ResolvedScene3D   // pure: matrices, camera, lights, sorted triangles
+drawScene3D(ctx, loaded, values, { width, height, time?, valuesAt? | stateAt? })      // resolve and draw, in one call
+new Scene3DAdapter(new Canvas2DRenderer(ctx), { width, height, valuesAt? })           // registerScene, applyState(state), render()
 ```
 
 `resolveScene3D` is the whole 3D pipeline as data: world matrices, the
@@ -233,8 +274,8 @@ renderer.render(resolveScene3D(scene, values, { width: canvas.width, height: can
   width. (Creases inside a silhouette are inked only by the Canvas 2D
   renderer.)
 - **See-through meshes** are drawn after the opaque ones, far to near.
-- Objects drawn whole, such as characters in their pen look, go on
-  `overlay`, a 2D canvas laid over the GL one (in front of the meshes);
+- Objects drawn whole, such as characters in their pen look, lines and
+  trails, go on `overlay`, a 2D canvas laid over the GL one (in front of the meshes);
   solid characters are meshes and sort properly.
 
 It runs on a page or in a Worker (OffscreenCanvas). Node has no WebGL2, so

@@ -60,4 +60,4 @@ export function loadScene3D(scene: Scene3D, options: LoadOptions = {}): LoadedSc
   return { scene, meshes, kinds, prepared }
 }
 
-const BUILT_IN = new Set(['group', 'mesh', 'camera', 'light'])
+const BUILT_IN = new Set(['group', 'mesh', 'camera', 'light', 'line', 'trail'])

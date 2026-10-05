@@ -134,7 +134,49 @@ export interface CharacterObject3D extends ObjectBase {
   solid?: { color?: string; skin?: string; shading?: 'unlit' | 'flat' | 'lambert' | 'toon'; outline?: { width: number; color: string } | false }
 }
 
-export type Object3D = GroupObject | MeshObject | CameraObject | LightObject | CharacterObject3D
+/** How a line or trail looks: a flat band facing the camera, drawn among the meshes by depth. */
+export interface StrokeStyle3D {
+  color: string
+  /** Width, metres (default 0.05): it narrows with distance, like everything else */
+  width?: number
+  /** How much it narrows toward its start (a line's first point, a trail's tail), 0..1 */
+  taper?: number
+  /** How much it fades toward its start, 0..1 */
+  fade?: number
+  /** 0..1, default 1 */
+  opacity?: number
+  /** `normal` (default) paints over what is behind; `add` adds its light: glowing beams that feed bloom */
+  blend?: 'normal' | 'add'
+}
+
+/** A polyline through `points` (in its own space, so it moves with its transform and parent). */
+export interface LineObject3D extends ObjectBase, StrokeStyle3D {
+  kind: 'line'
+  points: Vec3Tuple[]
+  /** Join the last point back to the first */
+  closed?: boolean
+}
+
+/**
+ * Where another object has been: a band through its positions over the last
+ * `length` ms, narrowing and fading toward the tail (taper and fade default
+ * to 1). It needs the earlier moments, so the renderer is given a way to ask
+ * for them (`valuesAt` / `stateAt`); without one it draws nothing. Its own
+ * transform is not used.
+ */
+export interface TrailObject3D extends ObjectBase, StrokeStyle3D {
+  kind: 'trail'
+  /** Id of the object it follows */
+  follow: string
+  /** How far back it reaches, ms */
+  length: number
+  /** Points along it (default 32) */
+  samples?: number
+  /** Motion that repeats every `period` ms: the trail wraps, so a loop's first frame shows the last lap */
+  period?: number
+}
+
+export type Object3D = GroupObject | MeshObject | CameraObject | LightObject | CharacterObject3D | LineObject3D | TrailObject3D
 
 export type Geometry3D =
   | { type: 'box'; size: Vec3Tuple }

@@ -34,6 +34,22 @@ export function validateScene3D(scene: Scene3D, tracks: ReadonlyArray<{ target: 
       if (g.type === 'extrude' && !(typeof g.path === 'string' && /^\s*[Mm]/.test(g.path))) errors.push(`"${object.id}": an extrude needs a path that starts with M`)
       if (!sizes.every((size) => Number.isFinite(size) && size > 0)) errors.push(`"${object.id}": a ${g.type}'s sizes must be positive`)
     }
+    if (object.kind === 'line' || object.kind === 'trail') {
+      if (object.width !== undefined && !(object.width > 0)) errors.push(`"${object.id}": width must be positive`)
+      for (const key of ['taper', 'fade', 'opacity'] as const) {
+        const value = object[key]
+        if (value !== undefined && !(value >= 0 && value <= 1)) errors.push(`"${object.id}": ${key} is between 0 and 1`)
+      }
+    }
+    if (object.kind === 'line') {
+      const ok = Array.isArray(object.points) && object.points.length >= 2 && object.points.every((p) => Array.isArray(p) && p.length === 3 && p.every(Number.isFinite))
+      if (!ok) errors.push(`"${object.id}": a line needs two or more points of three numbers`)
+    }
+    if (object.kind === 'trail') {
+      if (!(object.length > 0)) errors.push(`"${object.id}": a trail's length (ms) must be positive`)
+      if (object.follow === object.id || !scene.objects.some((o) => o.id === object.follow)) errors.push(`"${object.id}" follows "${object.follow}", which is not another object in the scene`)
+      if (object.samples !== undefined && !(object.samples >= 2)) errors.push(`"${object.id}": a trail needs at least 2 samples`)
+    }
     if (object.kind === 'camera') {
       if (!(object.near > 0 && object.far > object.near)) errors.push(`camera "${object.id}": near must be above 0 and far beyond it`)
       if (object.projection === 'perspective' && !(object.fov > 0 && object.fov < 180)) errors.push(`camera "${object.id}": fov is between 0 and 180 degrees`)

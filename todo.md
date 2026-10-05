@@ -2367,8 +2367,11 @@ triangles) and "Droste Head" (a cartoon head whose pupil holds the same head, fo
       for any 2D canvas (bright pass by max channel, 3-pass box blur, tight glow + wide halo,
       `'lighter'` composite at 1/4 size, deterministic); `emissive` in the Canvas 2D and WebGL2
       renderers; `examples/headless-video/neon-bloom.mjs`
-- [ ] Light trails and comets: a polyline trail helper with tapering width and fade, along paths
-      and 3D beams (no dotted look at speed)
+- [x] Light trails and comets: a polyline trail helper with tapering width and fade, along paths
+      and 3D beams (no dotted look at speed). `trailSamples` (pure, from a function of time;
+      `period` for loops), `ribbon` / `ribbonHeadCap`, `drawTrail` (seamless additive strip, round
+      head, comet glow, `normal` / `add` blend); `FrameInfo.stateAt`; demos Light Trails and
+      3D Scene: Comet Trails; `examples/headless-video/comet-trails.mjs` (loops)
 - [ ] A radial / zoom blur and speed lines for dives
 - [ ] Impossible-object helpers: Penrose triangle and staircase geometry (2D isometric and the
       3D "aligns from one viewpoint" construction)
@@ -2383,8 +2386,9 @@ triangles) and "Droste Head" (a cartoon head whose pupil holds the same head, fo
       per-vertex colours, so custom shapes (warped beams) need no ObjectKind code
 - [ ] Per-object, animatable outline colour and width, and fog on outlines (distant levels fade
       their edges)
-- [ ] Lines, polylines and trails in 3D, depth-sorted with meshes (grids, comet trails, dust
-      streaks), near-clipped
+- [x] Lines, polylines and trails in 3D, depth-sorted with meshes (grids, comet trails, dust
+      streaks), near-clipped: `line` and `trail` scene objects, one drawable per segment, fog,
+      animatable `color` / `width` / `opacity` / `length`, `valuesAt` for trails (WebGL2: on the overlay)
 - [ ] A depth buffer for headless video: a software z-buffer in the Canvas 2D path, or WebGL2 through
       a headless GL
 - [ ] Camera `up` / roll alongside `lookAt`; a near-camera fade so geometry turns to glass at the lens

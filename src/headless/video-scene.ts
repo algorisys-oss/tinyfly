@@ -59,6 +59,8 @@ export interface FrameInfo {
   time: number
   /** Timeline state at `time`, when the scene has a timeline */
   state?: AnimationState
+  /** Timeline state at any other time (trails ask where things were), when the scene has a timeline */
+  stateAt?: (time: number) => AnimationState
   /** Scene size in pixels (the logical size, before `scale`) */
   width: number
   height: number

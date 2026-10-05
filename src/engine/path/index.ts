@@ -9,3 +9,5 @@ export { morphPath, isPathData, clearMorphCache, MORPH_SAMPLES } from './path-mo
 export type { MorphOptions } from './path-morph';
 export { pointsToPath, shapeToPathData } from './path-builders';
 export type { PathPoint, PointsToPathOptions, SvgShape } from './path-builders';
+export { trailSamples, ribbon, ribbonHeadCap } from './trail';
+export type { TrailOptions, TrailSample, RibbonPoint, Ribbon } from './trail';

@@ -98,6 +98,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Pen tool** - ✒️ Draw custom bezier paths: click for corners, click-drag for curves (Alt for a cusp), drag existing anchors/handles to adjust, snap points to grid/guides, click the first point or Enter to finish
 - **Loop check** - `tinyfly video scene.mjs --loop-check` renders five frames and says whether a video loops: whether the frame at the duration matches the first, and whether the last → first seam looks like any other step (exit 1 when it does not). `--frames 0,79,88` renders stills at chosen frames. See [docs/video-rendering.md](docs/video-rendering.md#loops)
 - **Bloom** - `bloom: true` on a video scene adds a deterministic glow around bright things (bright pass, blur, add; no `ctx.filter`), and 3D materials take `emissive` light that shines in the dark and feeds it. `applyBloom(ctx)` works on any 2D canvas. See [docs/video-rendering.md](docs/video-rendering.md#bloom)
+- **Light trails** - `trailSamples` + `drawTrail` draw comets and light streaks on any 2D canvas: a tapering, fading band with a round head, smooth at any speed, and deterministic (the trail is where the thing was, asked of the timeline, not a frame history). 3D scenes get `line` and `trail` objects whose segments sort by depth among the meshes. See [docs/video-rendering.md](docs/video-rendering.md#light-trails) and [docs/scene-3d.md](docs/scene-3d.md#lines-and-trails)
 - **3D scenes** - `@algorisys/tinyfly/scene-3d`: cameras, lights and meshes (box, sphere, cylinder, cone, torus, floor, any SVG path extruded) as JSON in metres, animated by ordinary tracks (`stage/box`), cut between cameras with one keyframe, drawn on a plain canvas with flat, smooth or toon shading, ink outlines and fog: in the browser, in Workers, and to MP4 in Node. Characters stand in scenes and dance, seen by any camera, in their pen looks (clean, pencil) or as solid figures (`characterObjects`). In the editor, a 🧊 3D Scene element builds them without code: add shapes, characters and lights, key them, dance from the playhead, cut between cameras. No WebGL needed (about 7 KB gzipped, its own entry and CDN script); for big or tangled scenes the optional WebGL2 renderer (`@algorisys/tinyfly/scene-3d/webgl`) adds a depth buffer and light per pixel. See [docs/scene-3d.md](docs/scene-3d.md)
 - **3D transforms** - Cards, images, text and shapes turn in 3D (`rotateX`, `rotateY`, `z`, `perspective`, `backfaceVisibility`) and land on the same pixels in DOM, SVG, Canvas (true perspective, also headless) and WebGL, checked against each browser's own CSS. One documented transform order everywhere; Tilt / Turn / Depth / Perspective fields in the editor; 3D Card Flip and Cover Flow samples. Quaternion tracks with `interpolation: "slerp"` turn without gimbal lock; the engine's `vec3`, `quat` and `mat4` helpers are plain arrays. The first steps of [3D support](docs/3d-support-plan.md). See [docs/3d-rotations.md](docs/3d-rotations.md)
 - **Shape morph** - 🌀 Tween one path into another over the timeline (engine-level path interpolation); plays in every renderer, export, and embed
@@ -234,7 +235,7 @@ GSAP-shaped functions at the top level. Teaching embeds are included: add
 itself.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.87.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.88.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -270,7 +271,7 @@ A teaching figure needs no code at all:
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON with markers… }</script>
   <figcaption>Appending to a full slice</figcaption>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.87.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.88.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
 ```
 
 See [Teaching Animations](docs/teaching.md).
@@ -369,7 +370,7 @@ Without a build step, the player bundle puts the same functions on a `tinyfly` g
   <div data-tinyfly="box" style="width: 60px; height: 60px; background: #4a9eff;"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.87.0/cdn/tinyfly-player.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.88.0/cdn/tinyfly-player.iife.js"></script>
 <script>
   tinyfly.play('#animation', './animation.json', { loop: -1 })
 </script>
@@ -478,7 +479,7 @@ Or skip the code entirely with declarative embeds (see [Teaching Animations](doc
   <svg viewBox="0 0 720 200">…</svg>
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON… }</script>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.87.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.88.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 ### Audio / Video Sync

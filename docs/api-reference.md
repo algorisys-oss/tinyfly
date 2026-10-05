@@ -632,15 +632,21 @@ See [3D rotations](3d-rotations.md).
 ```typescript
 loadScene3D(scene: Scene3D): LoadedScene3D
 validateScene3D(scene: Scene3D, tracks?: { target, property }[]): string[]
-resolveScene3D(loaded, values: SceneValues, { width, height }): ResolvedScene3D
-drawScene3D(ctx, loaded, values | undefined, { width, height }): void
-new Scene3DAdapter(renderer: Renderer3D, { width, height })  // registerScene, unregisterScene, resize, applyState, render
+resolveScene3D(loaded, values: SceneValues, { width, height, time?, valuesAt? }): ResolvedScene3D
+drawScene3D(ctx, loaded, values | undefined, { width, height, time?, valuesAt? | stateAt? }): void
+new Scene3DAdapter(renderer: Renderer3D, { width, height, valuesAt? })  // registerScene, unregisterScene, resize, applyState, render
 new Canvas2DRenderer(ctx)                                    // render(frame); drawResolvedScene(ctx, frame)
 orbitPosition(target, yaw, pitch, distance) / dollyPosition(eye, target, amount) / lookAtView(eye, target) / projectionMatrix(camera, aspect)
 shadeTriangle(triangle, lights, camera, fog?) / lightAt(point, normal, lights) / fogAmount(fog, distance) / parseColor(color)
 boxMesh / planeMesh / sphereMesh / cylinderMesh / coneMesh / torusMesh / extrudeMesh(path, { depth, width?, curveSegments? }) / geometryMesh / meshEdges / MeshBuilder
 triangulate(outline, holes?) / signedArea / pointInPolygon
 ```
+
+Objects: `group`, `mesh`, `camera`, `light`, and `line` (`points`, `closed?`)
+and `trail` (`follow`, `length` ms, `samples?`, `period?`), both with
+`color`, `width` (metres), `taper`, `fade`, `opacity`, `blend: 'normal' | 'add'`.
+A trail needs `valuesAt` (a video frame's `stateAt` does it). See
+[3D Scenes](scene-3d.md#lines-and-trails).
 
 new WebGL2Renderer(gl, { overlay? })                         // @algorisys/tinyfly/scene-3d/webgl: render(frame), destroy()
 loadScene3D(scene, { kinds: [characterObjects] })            // object kinds beyond the built-ins: ObjectKind { kind, validate?, prepare?, resolve }
@@ -728,6 +734,13 @@ getPathLength('M0 0 L30 40')                          // 50
 getPointAtProgress('M0 0 Q50 100 100 0', 0.5)         // { x: 50, y: 50, angle: 0 }
 pointsToPath([{ x: 0, y: 0 }, { x: 50, y: 50 }, { x: 100, y: 0 }], { curviness: 1, closed: false })
 shapeToPathData({ tag: 'circle', attributes: { cx: '50', cy: '50', r: '40' } })  // 'M90 50 A40 40 …'
+
+// Trails: where something was, as a pure function of time
+trailSamples(positionAt: (t) => P, time, { length, samples = 32, period?, since? }): { at: P; time; age }[]  // oldest first, age 1 → 0
+ribbon(points: { x, y, width }[]): { left, right }   // a band's mitred edges
+ribbonHeadCap(points): { x, y, radius, start } | null // its round end
+// @algorisys/tinyfly/adapters (and the browser bundle): draw one
+drawTrail(ctx, samples, { color, width = 6, taper = 1, fade = 1, opacity = 1, blend: 'normal' | 'add', head?: { radius, color? } })
 ```
 
 `morphPath(from, to, progress, { shapeIndex? })` blends two paths: subpaths are

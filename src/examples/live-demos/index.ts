@@ -44,6 +44,8 @@ import { cardFlip3d } from './card-flip-3d'
 import { quaternionCube } from './quaternion-cube'
 import { scene3dOrbit } from './scene-3d-orbit'
 import { characters3d } from './characters-3d'
+import { lightTrails } from './light-trails'
+import { cometTrails3d } from './comet-trails-3d'
 import { statsDecode } from './stats-decode'
 import { flipShuffle } from './flip-shuffle'
 import { flipFilter } from './flip-filter'
@@ -94,6 +96,8 @@ import cardFlip3dSource from './card-flip-3d.js?raw'
 import quaternionCubeSource from './quaternion-cube.js?raw'
 import scene3dOrbitSource from './scene-3d-orbit.js?raw'
 import characters3dSource from './characters-3d.js?raw'
+import lightTrailsSource from './light-trails.js?raw'
+import cometTrails3dSource from './comet-trails-3d.js?raw'
 import statsDecodeSource from './stats-decode.js?raw'
 import flipShuffleSource from './flip-shuffle.js?raw'
 import flipFilterSource from './flip-filter.js?raw'
@@ -149,6 +153,8 @@ export const liveDemos: LiveDemoWithCode[] = [
   withCode(quaternionCube, quaternionCubeSource),
   withCode(scene3dOrbit, scene3dOrbitSource),
   withCode(characters3d, characters3dSource),
+  withCode(cometTrails3d, cometTrails3dSource),
+  withCode(lightTrails, lightTrailsSource),
   withCode(statsDecode, statsDecodeSource),
   withCode(staggerGrid, staggerGridSource),
   withCode(labelSequence, labelSequenceSource),

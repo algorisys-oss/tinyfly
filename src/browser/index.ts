@@ -68,6 +68,9 @@ export {
 // Glow post-effect for a 2D canvas (bright pass, blur, add).
 export { applyBloom } from '../adapters/canvas/bloom'
 export type { BloomOptions } from '../adapters/canvas/bloom'
+// Light trails and comets on a 2D canvas (trailSamples comes with the engine).
+export { drawTrail } from '../adapters/canvas/trail'
+export type { TrailStyle } from '../adapters/canvas/trail'
 export { createControls, DEFAULT_LABELS } from '../embed/controls'
 export type { Controls, ControlsOptions, ControlLabels, FullscreenControl } from '../embed/controls'
 export { mount, mountAll, unmount } from '../embed/mount'

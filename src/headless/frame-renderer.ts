@@ -85,7 +85,9 @@ export class FrameRenderer {
     ctx.clearRect(0, 0, this.width, this.height)
     ctx.save()
     ctx.scale(this.scale, this.scale)
-    const frame: FrameInfo = { index, time, state, width: this.scene.width, height: this.scene.height }
+    const timeline = this.timeline
+    const stateAt = timeline && ((at: number) => timeline.getStateAtTime(at))
+    const frame: FrameInfo = { index, time, state, stateAt, width: this.scene.width, height: this.scene.height }
     const background = this.scene.background ?? '#ffffff'
     if (typeof background === 'function') {
       this.drawIsolated(ctx, background, frame)

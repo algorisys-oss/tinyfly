@@ -1,9 +1,11 @@
 import { mat4, quat, vec3, type Mat4, type Quat, type Vec3 } from '../engine/math'
 import type { AnimatableValue } from '../engine/types'
 import type { LoadedScene3D, PreparedMesh } from './load-scene'
-import type { CameraObject, LightObject, Material3D, Object3D, Scene3D } from './scene-types'
+import type { CameraObject, LightObject, LineObject3D, Material3D, Object3D, Scene3D, TrailObject3D } from './scene-types'
 import { lookAtView, projectionMatrix } from './camera'
 import type { Drawable } from './object-kind'
+import { strokeDrawables, type StrokeLook } from './strokes'
+import { trailSamples } from '../engine/path/trail'
 
 /**
  * From a loaded scene and the animation's values at one moment to plain data
@@ -16,6 +18,7 @@ import type { Drawable } from './object-kind'
  *   `rotateZ` (degrees, YXZ) or `quaternion` (a slerp track); `scale` or
  *   `scaleX` / `scaleY` / `scaleZ`; `visible` (0 or 1); `opacity`;
  * - meshes and lights: `color`; lights: `intensity`, `target`;
+ * - lines and trails: `color`, `width`, `opacity`; trails: `length`;
  * - cameras: `fov` (perspective), `height` (orthographic), `lookAt`;
  * - the scene itself, `<sceneId>`: `activeCamera` (a camera's id: a cut is one keyframe).
  */
@@ -211,6 +214,11 @@ export interface ResolveOptions {
   height: number
   /** ms: the moment drawn, for looks that move with time (default 0) */
   time?: number
+  /**
+   * The animated values at another moment (an `AnimationState`'s `values`):
+   * trails ask where what they follow was. Without it, trails draw nothing.
+   */
+  valuesAt?: (time: number) => SceneValues
 }
 
 /** The frame at these animated values (an `AnimationState`'s `values`, or none for the scene as authored). */
@@ -310,6 +318,18 @@ export function resolveScene3D(loaded: LoadedScene3D, values: SceneValues = new 
       }))
     }
   })
+  // Lines and trails: a band of segments, each placed among the triangles by its depth.
+  const strokeView = { camera, height: options.height, fog: scene.fog, toScreen }
+  scene.objects.forEach((object, objectIndex) => {
+    if ((object.kind !== 'line' && object.kind !== 'trail') || !visible.get(object.id)) return
+    const own = valuesOf(object.id)
+    const stroke = object.kind === 'line' ? linePoints(object, worlds.get(object.id)!) : trailPoints(object, scene, values, options)
+    if (!stroke) return
+    const look = strokeLook(object, own)
+    if (look.opacity <= 0 || look.width <= 0) return
+    const layer = object.layer ?? 0
+    for (const drawable of strokeDrawables(stroke.points, stroke.ages, look, strokeView)) drawables.push({ ...drawable, objectId: object.id, objectIndex, layer })
+  })
   drawables.sort((p, q) => p.layer - q.layer || q.depth - p.depth || p.objectIndex - q.objectIndex)
 
   // By layer, then far to near; ties broken by object, face and part, so the order is total and never flickers.
@@ -329,6 +349,47 @@ export function resolveScene3D(loaded: LoadedScene3D, values: SceneValues = new 
     meshes,
     time: options.time ?? 0,
   }
+}
+
+function strokeLook(object: LineObject3D | TrailObject3D, values: ReadonlyMap<string, AnimatableValue>): StrokeLook {
+  const color = values.get('color')
+  const trail = object.kind === 'trail'
+  return {
+    color: typeof color === 'string' ? color : object.color,
+    width: num(values.get('width')) ?? object.width ?? 0.05,
+    taper: object.taper ?? (trail ? 1 : 0),
+    fade: object.fade ?? (trail ? 1 : 0),
+    opacity: (num(values.get('opacity')) ?? 1) * (object.opacity ?? 1),
+    additive: object.blend === 'add',
+  }
+}
+
+/** A line's points in the world; ages run from 1 at its first point to 0 at its last. */
+function linePoints(line: LineObject3D, world: Mat4): { points: Vec3[]; ages: number[] } {
+  const local = line.closed ? [...line.points, line.points[0]] : line.points
+  const points = local.map((p) => mat4.transformPoint(world, p as Vec3))
+  return { points, ages: points.map((_, i) => 1 - i / (points.length - 1)) }
+}
+
+/** Where a trail's object was over the last `length` ms, tail first. */
+function trailPoints(trail: TrailObject3D, scene: Scene3D, values: SceneValues, options: ResolveOptions): { points: Vec3[]; ages: number[] } | null {
+  if (!options.valuesAt) return null
+  const time = options.time ?? 0
+  const length = num(values.get(`${scene.id}/${trail.id}`)?.get('length')) ?? trail.length
+  const samples = trailSamples(
+    (at) => translationOf(worldOf(scene, trail.follow, at === time ? values : options.valuesAt!(at))),
+    time,
+    { length, samples: trail.samples ?? 32, period: trail.period }
+  )
+  return samples.length >= 2 ? { points: samples.map((s) => s.at), ages: samples.map((s) => s.age) } : null
+}
+
+/** One object's world matrix at these values: its own transform under its parents'. */
+function worldOf(scene: Scene3D, id: string, values: SceneValues): Mat4 {
+  const object = scene.objects.find((o) => o.id === id)
+  if (!object) return mat4.identity()
+  const local = localMatrix(object, values.get(`${scene.id}/${id}`) ?? EMPTY)
+  return object.parent ? mat4.multiply(worldOf(scene, object.parent, values), local) : local
 }
 
 function meshTriangles(

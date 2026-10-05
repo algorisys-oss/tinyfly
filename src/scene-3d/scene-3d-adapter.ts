@@ -21,11 +21,14 @@ export class Scene3DAdapter {
   private height: number
   private readonly scenes = new Map<string, LoadedScene3D>()
   private values: SceneValues = new Map()
+  private readonly valuesAt?: (time: number) => SceneValues
 
-  constructor(renderer: Renderer3D, options: { width: number; height: number }) {
+  /** `valuesAt`: the values at another time (`(t) => timeline.getStateAtTime(t).values`), for trails */
+  constructor(renderer: Renderer3D, options: { width: number; height: number; valuesAt?: (time: number) => SceneValues }) {
     this.renderer = renderer
     this.width = options.width
     this.height = options.height
+    this.valuesAt = options.valuesAt
   }
 
   /** Add a scene; its tracks address `<scene.id>/<objectId>`. */
@@ -51,7 +54,7 @@ export class Scene3DAdapter {
 
   render(): void {
     for (const scene of this.scenes.values()) {
-      this.renderer.render(resolveScene3D(scene, this.values, { width: this.width, height: this.height, time: this.time }))
+      this.renderer.render(resolveScene3D(scene, this.values, { width: this.width, height: this.height, time: this.time, valuesAt: this.valuesAt }))
     }
   }
 }
@@ -59,13 +62,22 @@ export class Scene3DAdapter {
 /**
  * Draw a scene at these animated values in one call: for a headless video
  * scene's `draw(ctx, frame)` (`drawScene3D(ctx, scene, frame.state?.values, frame)`)
- * or a canvas target's custom draw.
+ * or a canvas target's custom draw. A video frame carries `stateAt`, so
+ * trails find where things were; elsewhere pass `valuesAt`.
  */
 export function drawScene3D(
   ctx: CanvasRenderingContext2D,
   scene: LoadedScene3D,
   values: SceneValues | undefined,
-  size: { width: number; height: number; time?: number }
+  size: {
+    width: number
+    height: number
+    time?: number
+    valuesAt?: (time: number) => SceneValues
+    stateAt?: (time: number) => { values: SceneValues }
+  }
 ): void {
-  drawResolvedScene(ctx, resolveScene3D(scene, values ?? new Map(), { width: size.width, height: size.height, time: size.time }))
+  const stateAt = size.stateAt
+  const valuesAt = size.valuesAt ?? (stateAt && ((time: number) => stateAt(time).values))
+  drawResolvedScene(ctx, resolveScene3D(scene, values ?? new Map(), { width: size.width, height: size.height, time: size.time, valuesAt }))
 }
