@@ -1,33 +1,33 @@
-import { DANCE_STYLES, FLIPS, danceFrame, danceTaps, flipPose, flipTravel, blendPose, drawStickFigure, stickFigureJoints } from '../../characters'
+import { DANCE_STYLES, FLIPS, danceFrame, danceTaps, danceTravel, flipPose, flipTravel, blendPose, drawStickFigure, stickFigureJoints } from '../../characters'
 
 // On a standalone page these come from the browser bundle's `tinyfly` global;
 // here they come from the source modules, so the code below runs unchanged in both.
-const tinyfly = { DANCE_STYLES, FLIPS, danceFrame, danceTaps, flipPose, flipTravel, blendPose, drawStickFigure, stickFigureJoints }
+const tinyfly = { DANCE_STYLES, FLIPS, danceFrame, danceTaps, danceTravel, flipPose, flipTravel, blendPose, drawStickFigure, stickFigureJoints }
 
 export const html = `<style>
-  .df-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-  .df-canvas { width: 100%; max-width: 408px; aspect-ratio: 2 / 1; height: auto; border-radius: 8px; background: #1b1035; }
-  .df-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px;
+  .dfl-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .dfl-canvas { width: 100%; max-width: 408px; aspect-ratio: 2 / 1; height: auto; border-radius: 8px; background: #1b1035; }
+  .dfl-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px;
     font: 12px system-ui, sans-serif; color: #cbd5e1; }
-  .df-row select, .df-row button { font: 12px system-ui, sans-serif; padding: 2px 6px; border-radius: 6px;
+  .dfl-row select, .dfl-row button { font: 12px system-ui, sans-serif; padding: 2px 6px; border-radius: 6px;
     border: 1px solid #475569; background: #1e293b; color: #e2e8f0; }
-  .df-row button { cursor: pointer; }
-  .df-row input[type=range] { width: 80px; }
-  .df-readout { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; color: #9bb4c7; }
+  .dfl-row button { cursor: pointer; }
+  .dfl-row input[type=range] { width: 80px; }
+  .dfl-readout { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; color: #9bb4c7; }
 </style>
-<div class="df-wrap">
-  <canvas class="df-canvas" width="680" height="340"></canvas>
-  <div class="df-row">
-    <select class="df-style" aria-label="Dance style"></select>
-    <select class="df-move" aria-label="Move"></select>
-    <label>tempo <input class="df-tempo" type="range" min="60" max="160" step="1" /></label>
+<div class="dfl-wrap">
+  <canvas class="dfl-canvas" width="680" height="340"></canvas>
+  <div class="dfl-row">
+    <select class="dfl-style" aria-label="Dance style"></select>
+    <select class="dfl-move" aria-label="Move"></select>
+    <label>tempo <input class="dfl-tempo" type="range" min="60" max="160" step="1" /></label>
   </div>
-  <div class="df-row">
-    <select class="df-flip" aria-label="Flip"></select>
-    <button class="df-go" type="button">Flip!</button>
-    <label><input type="checkbox" class="df-sound" /> tap sounds</label>
+  <div class="dfl-row">
+    <select class="dfl-flip" aria-label="Flip"></select>
+    <button class="dfl-go" type="button">Flip!</button>
+    <label><input type="checkbox" class="dfl-sound" /> tap sounds</label>
   </div>
-  <div class="df-readout">disco</div>
+  <div class="dfl-readout">disco</div>
 </div>`
 
 /**
@@ -36,14 +36,14 @@ export const html = `<style>
  */
 export function run(live, root) {
   // #region code
-  const canvas = root.querySelector('.df-canvas')
-  const styleSelect = root.querySelector('.df-style')
-  const moveSelect = root.querySelector('.df-move')
-  const tempo = root.querySelector('.df-tempo')
-  const flipSelect = root.querySelector('.df-flip')
-  const go = root.querySelector('.df-go')
-  const sound = root.querySelector('.df-sound')
-  const readout = root.querySelector('.df-readout')
+  const canvas = root.querySelector('.dfl-canvas')
+  const styleSelect = root.querySelector('.dfl-style')
+  const moveSelect = root.querySelector('.dfl-move')
+  const tempo = root.querySelector('.dfl-tempo')
+  const flipSelect = root.querySelector('.dfl-flip')
+  const go = root.querySelector('.dfl-go')
+  const sound = root.querySelector('.dfl-sound')
+  const readout = root.querySelector('.dfl-readout')
   const ctx = canvas.getContext('2d')
   const W = 680
   const H = 340
@@ -77,6 +77,7 @@ export function run(live, root) {
   let beat = 0
   let flip = null // { name, start }
   let shift = 0 // how far a flip carried the dancer; it walks back to centre
+  let glide = 0 // how far the dance's glides (a moonwalk) carried it; off one side, it comes in at the other
 
   // Tap sounds: a short click of filtered noise per strike (toes brighter, heels lower).
   let audio = null
@@ -128,7 +129,11 @@ export function run(live, root) {
     // The dance: a pose and hand shapes for this beat (a move on a loop, or the routine).
     const frame = tinyfly.danceFrame(style(), beat, options)
     let figure = frame.pose
-    let x = W / 2 + shift
+    // Glides travel: add the ground covered since the last frame (so changing move never jumps).
+    glide += (tinyfly.danceTravel(style(), beat, options) - tinyfly.danceTravel(style(), previousBeat, options)) * HEIGHT
+    const edge = W / 2 + 60
+    glide = ((((glide + edge) % (2 * edge)) + 2 * edge) % (2 * edge)) - edge
+    let x = W / 2 + glide + shift
 
     if (flip) {
       const move = tinyfly.FLIPS[flip.name]
@@ -204,9 +209,9 @@ export const danceFloor = {
   id: 'live-dance-floor',
   name: 'Dance Floor (Characters)',
   description:
-    'The stick figure dances disco, hip hop, breaking toprock, jazz, K-pop, Bollywood, Bhangra, Bharatanatyam (with mudras), the Charleston and tap (with tap sounds), and does front, back and scissor flips, cartwheels, handsprings, split leaps and full splits. Every move is plain data keyed in beats, so any tempo plays it; wrists, ankles and turned-out feet carry the style.',
+    'The stick figure dances disco, hip hop, breaking toprock, jazz, K-pop, Bollywood, Bhangra, Bharatanatyam (with mudras), the Charleston, tap (with tap sounds) and popping (side glide, moonwalk), and does front, back and scissor flips, cartwheels, handsprings, split leaps and full splits. Every move is plain data keyed in beats, so any tempo plays it; wrists, ankles and turned-out feet carry the style.',
   category: 'video',
-  tags: ['canvas', 'character', 'stick figure', 'dance', 'tap', 'flips', 'beats', 'audio', 'video'],
+  tags: ['canvas', 'character', 'stick figure', 'dance', 'tap', 'moonwalk', 'flips', 'beats', 'audio', 'video'],
   html,
   run,
 }

@@ -1,15 +1,15 @@
 const words = ['Timelines', 'Tracks', 'Keyframes', 'Easing', 'Springs', 'Stagger', 'JSON']
-const pills = words.map((word) => `<span class="im-pill">${word}</span>`).join('')
+const pills = words.map((word) => `<span class="mq-pill">${word}</span>`).join('')
 
 export const html = `<style>
-  .im-viewport { width: 260px; overflow: hidden; padding: 8px 0; -webkit-mask-image: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent); mask-image: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent); }
-  .im-row { display: flex; gap: 10px; width: max-content; }
-  .im-pill { padding: 8px 14px; border-radius: 999px; background: #262626; border: 1px solid #333; color: #ddd; font: 13px system-ui, sans-serif; white-space: nowrap; }
-  .im-hint { margin-top: 14px; color: #555; font: 11px system-ui, sans-serif; text-align: center; }
+  .mq-viewport { width: 260px; overflow: hidden; padding: 8px 0; -webkit-mask-image: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent); mask-image: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent); }
+  .mq-row { display: flex; gap: 10px; width: max-content; }
+  .mq-pill { padding: 8px 14px; border-radius: 999px; background: #262626; border: 1px solid #333; color: #ddd; font: 13px system-ui, sans-serif; white-space: nowrap; }
+  .mq-hint { margin-top: 14px; color: #555; font: 11px system-ui, sans-serif; text-align: center; }
 </style>
 <div>
-  <div class="im-viewport"><div class="im-row">${pills}${pills}</div></div>
-  <div class="im-hint">hover the strip to slow it down</div>
+  <div class="mq-viewport"><div class="mq-row">${pills}${pills}</div></div>
+  <div class="mq-hint">hover the strip to slow it down</div>
 </div>`
 
 /**
@@ -18,8 +18,8 @@ export const html = `<style>
  */
 export function run(live, root) {
   // #region code
-  const viewport = root.querySelector('.im-viewport')
-  const row = viewport.querySelector('.im-row')
+  const viewport = root.querySelector('.mq-viewport')
+  const row = viewport.querySelector('.mq-row')
 
   // The row holds the items twice. Moving it left by exactly one copy (half its
   // width, plus the gap between the copies) and repeating makes a seamless loop.

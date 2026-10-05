@@ -2158,9 +2158,17 @@ deterministically.
       Audio element Beat (🎵 Detect tempo in the browser, tempo / first beat / beats per bar, 👆 tap
       tempo); timeline beat lines and numbered bars; keyframes snap to beats (Alt to place freely);
       dances and flips follow the beat (music's tempo, start on the nearest beat)
+- [x] Travelling dances: `DanceMove.travel` (ground per loop, in heights; mirrored front-on it turns
+      round), `danceTravel()`, `danceTravelTrack()` (linear `x` keys where the speed changes),
+      `bakeDanceTracks({ height })`; a `popping` style with side glide, moonwalk, forward glide and toe
+      stand whose planted foot stays put (tested on the joints); the editor's dances write an `x` track
+      from the character's position; the Dance Floor carries the dancer and wraps it round the stage
+- [x] Travel eases in and out with `danceTracks()`' `fade` (`danceTravelTrack({ fade })`); editor dances
+      for a character facing left are the mirror image (`mirrorHumanPose()`, pixel-checked against a
+      flipped drawing) and glide the other way, turned between 3 and 4 like flips
 - [ ] Beats: a beat grid in the curve view; snapping step markers; detecting changing tempos
 - [ ] More styles: salsa, tap with wings and pullbacks, garba / dandiya,
-      Kathak (chakkar spins with `turn`), popping and locking, shuffle
+      Kathak (chakkar spins with `turn`), locking, shuffle, popping hits and the robot
 - [ ] More acrobatics: aerial, butterfly kick, 540, round-off, kip-up, flips in a sequence
 - [ ] Floor work and body rolls (windmill, headspin, freezes on the hands, body wave) need
       Characters v2's bendable spine, hand contact and IK — port dance and flips to v2 body plans
@@ -2183,6 +2191,12 @@ WebGPU deferred.
 ---
 
 ## Backlog / For Review
+
+- [x] **Live demo controls no longer cut off** — a gallery card's live preview grows to fit its
+  pickers, sliders and buttons (180px is now the minimum, not the size). Demos had also shared CSS class
+  names (Dance Floor and Dressed Stick Figures both used `df-*`, so one restyled the other's canvas;
+  likewise `df-wrap`, `im-hint`, `sg-grid`): renamed, and a test fails when two demos style the
+  same class.
 
 - [x] **Export Animation Document** — More → Export Animation Document downloads
   the scene's elements, tracks and canvas as one `*.animation.json`

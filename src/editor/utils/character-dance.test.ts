@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { characterDanceTracks, characterFlipTracks, danceLength, mergeKeyframes } from './character-dance'
-import { FLIPS, HUMAN_REST, routineBeats } from '../../characters'
+import { characterDanceTracks, characterFlipTracks, danceLength, facingOf, mergeKeyframes } from './character-dance'
+import { DANCE_STYLES, FLIPS, HUMAN_REST, routineBeats } from '../../characters'
 import { isCharacterField } from './character-element'
 
 describe('character dances in the editor', () => {
@@ -83,5 +83,41 @@ describe('hands and travel in the editor', () => {
 
     // On the spot without a height.
     expect(characterFlipTracks('frontFlip', { start: 0 }).some((t) => t.property === 'x')).toBe(false)
+  })
+
+  it('moonwalks from the current x as an x track; on-the-spot dances add none', () => {
+    const tracks = characterDanceTracks({ style: 'popping', move: 'moonwalk', bpm: 100, start: 0, height: 200, x: 30 })
+    const x = tracks.find((t) => t.property === 'x')!
+    expect(x.keyframes[0].value).toBe(30)
+    expect(x.keyframes[x.keyframes.length - 1].value).toBeCloseTo(30 + 200 * DANCE_STYLES.popping.moves.moonwalk.travel!)
+    expect(x.keyframes.every((k) => k.easing === 'linear')).toBe(true)
+    expect(characterDanceTracks({ style: 'disco', bpm: 120, start: 0, height: 200 }).some((t) => t.property === 'x')).toBe(false)
+  })
+
+  it('facing left, dances the mirror image and glides the other way', () => {
+    const options = { style: 'popping' as const, bpm: 100, start: 0, height: 200 }
+    const right = characterDanceTracks(options)
+    const left = characterDanceTracks({ ...options, facing: -1 })
+    const field = (tracks: typeof left, property: string) => tracks.find((t) => t.property === property)!.keyframes
+    // Side glide right becomes side glide left: the x track is mirrored about the start.
+    const xRight = field(right, 'x')
+    const xLeft = field(left, 'x')
+    for (let i = 0; i < xRight.length; i++) expect(xLeft[i].value).toBeCloseTo(-(xRight[i].value as number))
+    // Turned between Side (left), 3, and the front, 4: never round the back.
+    const turns = field(left, 'turn').map((k) => k.value as number)
+    expect(Math.min(...turns)).toBeGreaterThanOrEqual(3)
+    expect(Math.max(...turns)).toBeLessThanOrEqual(4)
+    expect(turns.some((turn) => turn < 3.5)).toBe(true)
+    // Limbs swap sides.
+    expect(field(left, 'arm.right.spread')[0].value).toBeCloseTo(field(right, 'arm.left.spread')[0].value as number)
+  })
+
+  it('reads which way a character faces from its turn, going round either way', () => {
+    expect(facingOf(0)).toBe(1)
+    expect(facingOf(1)).toBe(1)
+    expect(facingOf(3)).toBe(-1)
+    expect(facingOf(3.1)).toBe(-1)
+    expect(facingOf(-0.9)).toBe(-1)
+    expect(facingOf(4)).toBe(1)
   })
 })

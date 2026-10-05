@@ -593,6 +593,20 @@
   justify-content: center;
 }
 
+/* A live demo keeps all its controls (pickers, sliders, buttons) in view: its
+   preview grows to fit them instead of cutting them off at the fixed height. */
+.example-preview-live {
+  height: auto;
+  min-height: 180px;
+}
+
+.example-preview-live .live-demo-stage {
+  height: auto;
+  min-height: 180px;
+  padding: 8px 0;
+  box-sizing: border-box;
+}
+
 .example-code-note {
   margin: 8px 0;
   color: #777;

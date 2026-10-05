@@ -26,7 +26,7 @@ import { MarkerInspector } from './marker-inspector'
 import type { SketchStyle } from '../../adapters/canvas'
 import { HUMAN_POSES, HUMAN_EXPRESSIONS, HUMAN_REST } from '../../characters/species/human'
 import { isCharacterField } from '../utils/character-element'
-import { characterDanceTracks, characterFlipTracks, danceLength, mergeKeyframes } from '../utils/character-dance'
+import { characterDanceTracks, characterFlipTracks, danceLength, facingOf, mergeKeyframes } from '../utils/character-dance'
 import { beatGridOf, detectAudioTempo, tapTempo } from '../utils/beat-grid'
 import { nearestBeat, nextBeat } from '../../engine'
 import { DANCE_STYLES, FLIPS, type DanceStyleName, type FlipName } from '../../characters'
@@ -1633,21 +1633,44 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
     props.store.replaceTracks(element.name, mergeKeyframes(existing, element.name, tracks))
   }
 
+  /** The character's `x` offset at a time: where a dance or flip travels from. */
+  const xAt = (element: CharacterElement, time: number) => {
+    const x = props.store.state.timeline?.getStateAtTime(time)?.values.get(element.name)?.get('x')
+    return typeof x === 'number' ? x : 0
+  }
+
+  /** The way the character faces at a time (-1 screen-left, as the Side (left) view): dances and flips go that way. */
+  const facingAt = (element: CharacterElement, time: number) => {
+    const turn = props.store.state.timeline?.getStateAtTime(time)?.values.get(element.name)?.get('turn')
+    return facingOf(typeof turn === 'number' ? turn : (characterPose(element).turn ?? 0))
+  }
+
   const danceFromPlayhead = (element: CharacterElement) => {
     const start = startTime()
     const hands = (element.hands ?? 'dot') !== 'dot'
-    writeCharacterTracks(element, characterDanceTracks({ style: danceStyle(), move: danceMove() || undefined, bpm: danceTempo(), start, hands }))
+    // Glides and the moonwalk travel from where the character is; facing left, it dances the mirror image.
+    writeCharacterTracks(
+      element,
+      characterDanceTracks({
+        style: danceStyle(),
+        move: danceMove() || undefined,
+        bpm: danceTempo(),
+        start,
+        hands,
+        height: element.height,
+        x: xAt(element, start),
+        facing: facingAt(element, start),
+      })
+    )
   }
 
   const flipAtPlayhead = (element: CharacterElement) => {
     const start = startTime()
     // Travel from wherever the character is at the playhead, the way it faces (side left is turn 3).
-    const state = props.store.state.timeline?.getStateAtTime(start)
-    const x = state?.values.get(element.name)?.get('x')
-    const turn = characterPose(element).turn ?? 0
+    const x = xAt(element, start)
     writeCharacterTracks(
       element,
-      characterFlipTracks(flipName(), { start, height: element.height, x: typeof x === 'number' ? x : 0, facing: turn > 2 && turn < 4 ? -1 : 1 })
+      characterFlipTracks(flipName(), { start, height: element.height, x, facing: facingAt(element, start) })
     )
   }
 

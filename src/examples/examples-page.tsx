@@ -339,7 +339,7 @@ const LiveExampleCard: Component<{ example: LiveCatalogExample } & CardProps> = 
     <div class="example-card" onMouseEnter={start} onMouseLeave={() => !props.single && stop()}>
       <CardHeader example={props.example} />
 
-      <div class="example-preview">
+      <div class="example-preview example-preview-live">
         <div ref={stageRef} class="live-demo-stage" innerHTML={demo.html} />
         <Show when={!isRunning()}>
           <span class="preview-hint">hover to run</span>

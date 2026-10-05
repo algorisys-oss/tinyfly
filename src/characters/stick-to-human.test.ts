@@ -3,7 +3,7 @@ import { stickToHuman } from './stick-to-human'
 import { POSES, pose } from './stick-figure'
 import { DANCE_STYLES, dancePose, routineBeats, type DanceStyleName } from './dance'
 import { FLIPS, flipPose, type FlipName } from './acrobatics'
-import { HUMAN_REST, humanFieldLabel } from './species/human'
+import { HUMAN_REST, humanFieldLabel, mirrorHumanPose } from './species/human'
 import { HAND_SHAPES } from './hands/hand-rig'
 import { MUDRAS, danceFrame } from './dance'
 import { character, characterJoints, drawCharacter } from './character'
@@ -125,4 +125,51 @@ describe('natural hands', () => {
     expect(glove.every((v, i) => v === natural[i])).toBe(false)
     expect(character({ handStyle: 'natural' }).handSize).toBeLessThan(character({}).handSize)
   }, 30000)
+})
+
+describe('mirrorHumanPose', () => {
+  it('draws the mirror image of a pose, hands and all (front-on, side-on, in between)', () => {
+    const W = 300
+    const H = 360
+    const draw = (pose: Record<string, number>, flip: boolean) => {
+      const ctx = createCanvas(W, H).getContext('2d') as unknown as CanvasRenderingContext2D
+      ctx.fillStyle = '#fff'
+      ctx.fillRect(0, 0, W, H)
+      if (flip) {
+        ctx.translate(W, 0)
+        ctx.scale(-1, 1)
+      }
+      ctx.translate(W / 2, H - 20)
+      drawCharacter(ctx, character({ figure: 'fluid', height: 300, hands: 'cartoon' }), pose, 0)
+      return ctx.getImageData(0, 0, W, H).data
+    }
+    const frames = [
+      danceFrame('popping', 0.3, { move: 'moonwalk' }),
+      danceFrame('popping', 0.3, { move: 'sideGlide' }),
+      danceFrame('disco', 0.2, { move: 'point' }),
+      danceFrame('hipHop', 0.3, { move: 'runningMan' }),
+    ]
+    for (const frame of frames) {
+      const human = stickToHuman(frame.pose, frame.hands)
+      const mirrored = draw(mirrorHumanPose(human), false)
+      const flipped = draw(human, true)
+      let ink = 0
+      let differ = 0
+      for (let i = 0; i < mirrored.length; i += 4) {
+        if (flipped[i] < 128) ink++
+        if (mirrored[i] < 128 !== flipped[i] < 128) differ++
+      }
+      expect(ink).toBeGreaterThan(5000)
+      expect(differ / ink).toBeLessThan(0.005)
+    }
+  }, 30000)
+
+  it('swaps sides and turns the other way; mirrored twice it is the same pose', () => {
+    const human = stickToHuman(pose({ turn: 0.9, rightShoulder: 40, lean: 5 }))
+    const mirrored = mirrorHumanPose(human)
+    expect(mirrored.turn).toBeCloseTo(-0.9)
+    expect(mirrored['arm.right.swing']).toBe(human['arm.left.swing'])
+    expect(mirrored.lean).toBe(human.lean)
+    expect(mirrorHumanPose(mirrored)).toEqual(human)
+  })
 })

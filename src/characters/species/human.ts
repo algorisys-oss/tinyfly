@@ -93,6 +93,25 @@ export function humanPose(changes: Pose = {}): Pose {
   return { ...HUMAN_REST, ...changes }
 }
 
+/** Fields that turn or tip the body one way across the picture: a mirror image reverses them. */
+const MIRROR_NEGATED = new Set(['turn', 'side', 'head.turn', 'head.tilt', 'roll', 'lookX'])
+
+/**
+ * The mirror image of a pose, as if seen in a mirror beside the picture: the
+ * left limbs, eye, brow and hand take the right's values and the other way
+ * round, and the body turns, tips and rolls the other way (`turn` 1, facing
+ * screen-right, becomes -1, facing screen-left). Fields of other body plans
+ * pass through.
+ */
+export function mirrorHumanPose(pose: Pose): Pose {
+  const out: Pose = {}
+  for (const [field, value] of Object.entries(pose)) {
+    const other = field.replace(/(^|\.)(left|right)(\.|$)/, (_, before, side, after) => `${before}${side === 'left' ? 'right' : 'left'}${after}`)
+    out[other] = MIRROR_NEGATED.has(field) ? -value : value
+  }
+  return out
+}
+
 /** Both arms or both legs at once: `both('arm', { spread: 40 })`. */
 function both(limb: 'arm' | 'leg', fields: Record<string, number>): Pose {
   const out: Pose = {}

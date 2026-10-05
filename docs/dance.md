@@ -2,7 +2,7 @@
 
 The stick figure from `@algorisys/tinyfly/characters` can dance (disco, hip
 hop, breaking toprock, jazz, K-pop, Bollywood, Bhangra, Bharatanatyam,
-Charleston, tap) and do
+Charleston, tap, popping with its glides and the moonwalk) and do
 flips (front, back, layout, scissor, side flip, cartwheel, back handspring),
 leaps (split leap, toe touch) and full splits.
 Like everything else in tinyfly, it is plain data played by pure functions:
@@ -95,7 +95,7 @@ const twoStep = {
 }
 ```
 
-`DANCE_STYLES` has ten ready-made styles. Each is plain data, so copy one and
+`DANCE_STYLES` has eleven ready-made styles. Each is plain data, so copy one and
 change it:
 
 | Style | Moves |
@@ -110,6 +110,44 @@ change it:
 | `bharatanatyam` | tatta adavu (stamps in aramandi), natta adavu, alapadma to the sky |
 | `charleston` | kick forward and back, swivel (heels in, heels out with `footOut`), crossing knees |
 | `tap` | side-on: shuffle ball change, single time step (stamp, shuffle, hop, step, flap, step), heel toe, cramp roll; every strike is in `taps` |
+| `popping` | side glide (front-on), moonwalk and forward glide (side-on), toe stand; the glides travel (see below) |
+
+### Travelling moves: glides and the moonwalk
+
+Most moves dance on the spot. A move with `travel` carries the figure across
+the floor at a steady speed: `travel` is the ground one loop covers, as a
+fraction of the figure's height, positive toward +x (the way a side-on figure
+faces). The moonwalk's is negative, so it slides backward while its feet look
+like they step forward. A mirrored step travels the other way front-on (left
+and right swap) and keeps its direction side-on (the figure still faces the
+same way).
+
+Popping's glides follow one rule. On each beat one foot is planted on its toe
+and drops its heel while the other slides flat along the floor; then they
+swap. Their keys are linear and their `travel` matches the planted foot, so
+that foot stays put on the floor while the body glides over it. The tests
+check this with `stickFigureJoints()`. The popping routine glides right, back
+left, moonwalks away and glides forward home, so it loops on the spot.
+
+```js
+import { danceFrame, danceTravel, danceTravelTrack, drawStickFigure } from '@algorisys/tinyfly/characters'
+
+const { pose } = danceFrame('popping', beat, { move: 'moonwalk' })
+const x = startX + danceTravel('popping', beat, { move: 'moonwalk' }) * 220 // heights → px
+drawStickFigure(ctx, pose, { height: 220 })
+
+// On a timeline: an x track with linear keys where the speed changes.
+const xTrack = danceTravelTrack('tum', 'popping', { bpm: 100, height: 220, x: 340 })
+```
+
+`bakeDanceTracks()` and the editor's **🕺 Dance from playhead** add that `x`
+track themselves when given the figure's height (the editor uses the
+character's, from where it is at the playhead). With `danceTracks()` add
+`danceTravelTrack()` beside the two tracks. It eases in and out over the same
+`fade` (default 1 beat), so the figure does not glide before it has danced in.
+Pass `fade: 0` for full speed from the first beat to the last. A routine that does not come back
+keeps going the same way each time it loops. The Dance Floor carries its
+dancer off one side of the stage and brings it back in at the other.
 
 ### Dancing to music
 
@@ -145,6 +183,9 @@ The Dance Floor example flashes the foot at `joints.toes[side]` and, with
 danceFrame(style, beat, { move?, mirror? }): { pose, hands }  // the routine, or one move on a loop
 stickToHuman(pose): CharacterPose                             // a stick pose on a v2 character
 danceTaps(style, fromBeat, toBeat, options?): { beat, tap }[]  // foot strikes, for sounds
+danceTravel(style, beat, options?): number                    // ground covered, in heights
+danceTravelTrack(target, style, { height, x?, bpm?, beats?, start?, fade?, move?, mirror? }): Track | undefined
+mirrorHumanPose(pose): CharacterPose                            // a v2 pose's mirror image
 dancePose(style, beat, options?): StickPose
 routineBeats(style): number
 beatAt(timeMs, bpm, startMs = 0): number
@@ -203,7 +244,12 @@ drawCharacter(ctx, character({ figure: 'fluid', hands: 'cartoon', handStyle: 'na
 In the editor, a **🧍 Character** has a **Dance** section: pick a style, a
 move (or the whole routine) and a tempo, then **🕺 Dance from playhead**. Or
 pick a flip and **🤸 Flip at playhead**. Both write ordinary keyframes, a few
-a beat, and keep the character's keys before and after. With **Hands:
+a beat, and keep the character's keys before and after. Glides and the
+moonwalk also write an `x` track from where the character stands. A character
+facing left (the *Side (left)* view) dances the mirror image (`mirrorHumanPose()`:
+sides swap, it turns, tips and rolls the other way) and glides the other way;
+it turns between 3 (side-on, facing left) and 4 (front-on), never round the
+back. With **Hands:
 Cartoon gloves** or **Natural**, dances key the hand shapes and mudras too. Flips travel from where
 the character is, the way it faces: pick the *Side* or *Side (left)* view
 first.

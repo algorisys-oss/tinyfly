@@ -1539,7 +1539,7 @@ encodeWav(samples, sampleRate): Uint8Array                                // pur
 [Rendering Video from Code](video-rendering.md#characters).
 
 Dance and flips (see [Dance and Flips](dance.md)): the pose fields `leftWrist`/`rightWrist`, `leftAnkle`/`rightAnkle`, `leftFootOut`/`rightFootOut`, `spin`, `rise`; `StickStyle.hands` (cartoon hands), `StickJoints.fingertips`;
-`DANCE_STYLES`, `DanceStyle`, `DanceMove`, `DanceKey`, `Groove`, `RoutineStep`, `MUDRAS`, `danceFrame()`, `dancePose()`, `danceTaps()`, `stickToHuman()`, `handProp()`, `DanceTap`, `TapName`, `routineBeats()`, `beatAt()`, `mirrorPose()`, `applyGroove()`, `danceStance()`, `dancer()`, `danceTracks()`, `bakeDanceTracks()`, `stickFigureTarget({ dance })` with the `beat` and `dancing` props, `resolveStickFrame()`;
+`DANCE_STYLES`, `DanceStyle`, `DanceMove`, `DanceKey`, `Groove`, `RoutineStep`, `MUDRAS`, `danceFrame()`, `dancePose()`, `danceTaps()`, `danceTravel()`, `danceTravelTrack()`, `stickToHuman()`, `mirrorHumanPose()`, `handProp()`, `DanceTap`, `TapName`, `routineBeats()`, `beatAt()`, `mirrorPose()`, `applyGroove()`, `danceStance()`, `dancer()`, `danceTracks()`, `bakeDanceTracks()`, `stickFigureTarget({ dance })` with the `beat` and `dancing` props, `resolveStickFrame()`;
 `FLIPS`, `Flip`, `FlipKey`, `flipPose()`, `flipTravel()`, `flipTracks()`; `POSES.sideSplit` and `POSES.frontSplit`.
 
 ### Beats

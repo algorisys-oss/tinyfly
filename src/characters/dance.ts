@@ -64,6 +64,13 @@ export interface DanceMove {
   keys: DanceKey[]
   /** Easing between keys that do not name their own */
   easing?: EasingType
+  /**
+   * Ground covered in one loop, as a fraction of the figure's height, at a
+   * steady speed: positive toward +x (the way a side-on figure faces), negative
+   * the other way. A glide or a moonwalk travels; most moves stay on the spot.
+   * Mirrored front-on it travels the other way; side-on it keeps its direction.
+   */
+  travel?: number
 }
 
 /**
@@ -366,6 +373,125 @@ export function danceTaps(style: DanceStyle | DanceStyleName, from: number, to: 
   return out.sort((a, b) => a.beat - b.beat)
 }
 
+/** Ground a routine step covers per beat, in heights (signed, see {@link DanceMove.travel}). */
+function stepSpeed(style: DanceStyle, step: RoutineStep): number {
+  const move = style.moves[step.move]
+  if (!move?.travel) return 0
+  const speed = move.travel / move.beats
+  if (!step.mirror) return speed
+  // Mirrored front-on, left and right swap, so it travels the other way; side-on it still faces the same way.
+  const first = resolveKeys(move, danceStance(style), styleHands(style))[0]
+  const sideOn = (first?.pose.turn ?? danceStance(style).turn ?? 0) >= 0.5
+  return sideOn ? speed : -speed
+}
+
+/** The steps a dance plays, with the beat each starts on: the routine, or one move on a loop. */
+function travelSteps(dance: DanceStyle, options: DanceOptions): RoutineStep[] {
+  return options.move ? [{ move: options.move, beats: dance.moves[options.move].beats, mirror: options.mirror }] : dance.routine
+}
+
+/**
+ * How far the dance has carried the figure at `beat`, as a fraction of its
+ * height (multiply by the height in px for an `x` offset). Travelling moves go
+ * at a steady speed, so it is a straight line between step changes; the
+ * other moves hold it still. A routine that does not come back to where it
+ * started keeps going that way each time it loops.
+ */
+export function danceTravel(style: DanceStyle | DanceStyleName, beat: number, options: DanceOptions = {}): number {
+  const dance = typeof style === 'string' ? DANCE_STYLES[style] : style
+  const steps = travelSteps(dance, options)
+  const total = steps.reduce((sum, step) => sum + step.beats, 0)
+  const perLoop = steps.reduce((sum, step) => sum + stepSpeed(dance, step) * step.beats, 0)
+  const loops = Math.floor(beat / total)
+  let travel = loops * perLoop
+  let left = beat - loops * total
+  for (const step of steps) {
+    const beats = Math.min(step.beats, left)
+    travel += stepSpeed(dance, step) * beats
+    left -= beats
+    if (left <= 0) break
+  }
+  return travel
+}
+
+/** The beats where the travel changes speed in `0..beats` (0 and `beats` included): an `x` track needs keys only there. */
+function travelBeats(dance: DanceStyle, beats: number, options: DanceOptions): number[] {
+  const steps = travelSteps(dance, options)
+  const out = [0]
+  let at = 0
+  for (let i = 0; at < beats; i = (i + 1) % steps.length) {
+    at += steps[i].beats
+    out.push(Math.min(at, beats))
+  }
+  return out
+}
+
+export interface DanceTravelOptions extends DanceOptions {
+  /** Tempo (default the style's) */
+  bpm?: number
+  /** How many beats (default the routine, or one loop of the move) */
+  beats?: number
+  /** When the dance starts, ms (default 0) */
+  start?: number
+  /** The figure's height, px: travel is measured in heights */
+  height: number
+  /** The `x` offset the figure starts from (default 0) */
+  x?: number
+  /**
+   * Beats the dance blends in from standing and back out over, as
+   * {@link danceTracks}' `fade` (default 1, the same): the glide eases in and
+   * out with the pose. 0 travels at full speed from the first beat to the last.
+   */
+  fade?: number
+}
+
+/** Keys per beat while a glide eases in or out. */
+const FADE_KEYS_PER_BEAT = 8
+
+/**
+ * The ground a dance covers as an `x` track, to play beside
+ * {@link danceTracks} (or {@link bakeDanceTracks}, which adds it itself).
+ * Travel goes at a steady speed, so the keys are linear and only where the
+ * speed changes, plus a few while it eases in and out with the `fade`.
+ * Undefined when the dance stays on the spot.
+ */
+export function danceTravelTrack(target: string, style: DanceStyle | DanceStyleName, options: DanceTravelOptions): Track | undefined {
+  const dance = typeof style === 'string' ? DANCE_STYLES[style] : style
+  const bpm = options.bpm ?? dance.bpm
+  const beats = options.beats ?? (options.move ? dance.moves[options.move].beats : routineBeats(dance))
+  const steps = travelBeats(dance, beats, options)
+  if (steps.every((beat) => danceTravel(dance, beat, options) === 0)) return undefined
+  // How much of the dance is applied at a beat: `danceTracks`' `dancing`, eased in and out.
+  const fade = Math.min(options.fade ?? 1, beats / 2)
+  const ease = getEasingFunction('ease-in-out')
+  const weight = (beat: number) => (fade <= 0 ? 1 : Math.min(ease(Math.min(1, beat / fade)), ease(Math.min(1, (beats - beat) / fade))))
+  const fadeKeys = Math.ceil(fade * FADE_KEYS_PER_BEAT)
+  const eased = fade <= 0 ? [] : Array.from({ length: fadeKeys + 1 }, (_, i) => [(i / fadeKeys) * fade, beats - (i / fadeKeys) * fade]).flat()
+  const keys = [...new Set([...steps, ...eased])].sort((a, b) => a - b)
+  // Ground covered is the travel weighted by how much it dances: summed in small slices.
+  let travel = 0
+  const covered = keys.map((beat, i) => {
+    if (i > 0) {
+      const from = keys[i - 1]
+      const slices = Math.max(1, Math.ceil((beat - from) * 16))
+      for (let s = 0; s < slices; s++) {
+        const a = from + ((beat - from) * s) / slices
+        const b = from + ((beat - from) * (s + 1)) / slices
+        travel += (danceTravel(dance, b, options) - danceTravel(dance, a, options)) * weight((a + b) / 2)
+      }
+    }
+    return { beat, travel }
+  })
+  const start = options.start ?? 0
+  const x = options.x ?? 0
+  return {
+    id: `${target}-x`,
+    target,
+    property: 'x',
+    keyframes: covered.map((key) => ({ time: start + (key.beat * 60000) / bpm, value: x + options.height * key.travel, easing: 'linear' as const })),
+  }
+}
+
 /** Beats since `start` at `time` (both ms), at `bpm`. */
 export function beatAt(time: number, bpm: number, start = 0): number {
   return ((time - start) * bpm) / 60000
@@ -434,6 +560,10 @@ export interface DanceBakeOptions extends DanceOptions {
   start?: number
   /** Keyframes per beat (default 4) */
   samplesPerBeat?: number
+  /** The figure's height, px: with it a travelling dance (a glide, a moonwalk) moves it, as an `x` track */
+  height?: number
+  /** The `x` offset it starts from (default 0) */
+  x?: number
 }
 
 /**
@@ -441,6 +571,7 @@ export interface DanceBakeOptions extends DanceOptions {
  * timelines that must stand alone as JSON (no `dance` option needed). Only
  * joints that move get a track. Hand shapes are baked as `hand.left.*` /
  * `hand.right.*` tracks, which a target drawn with `style.hands` plays.
+ * With `height`, a dance that travels gets an `x` track too.
  */
 export function bakeDanceTracks(target: string, style: DanceStyle | DanceStyleName, options: DanceBakeOptions = {}): Track[] {
   const dance = typeof style === 'string' ? DANCE_STYLES[style] : style
@@ -463,6 +594,8 @@ export function bakeDanceTracks(target: string, style: DanceStyle | DanceStyleNa
   const poseTracks = fields
     .filter((field) => samples.some((s) => s.frame.pose[field] !== samples[0].frame.pose[field]) || samples[0].frame.pose[field] !== REST_POSE[field])
     .map((field) => track(field, (frame) => frame.pose[field]))
+  const travel = options.height === undefined ? undefined : danceTravelTrack(target, dance, { ...options, bpm, beats, start, height: options.height, fade: 0 })
+  if (travel) poseTracks.push(travel)
   if (options.hands === false) return poseTracks
   // Hand fields that leave rest or move; a target with `style.hands` has a prop for each.
   const handTracks: Track[] = []
@@ -1034,6 +1167,89 @@ const TAP: DanceStyle = {
   ],
 }
 
+/**
+ * Popping's floor glides, which travel. Each half beat-pair one foot is
+ * planted on its toe and drops its heel while the other slides flat along the
+ * floor; then they swap. The keys are linear and the travel matches the
+ * planted foot, so it stays put on the floor while the body glides.
+ * Side-on the figure faces +x: forward is a negative angle for the left leg
+ * and a positive one for the right.
+ */
+const POPPING: DanceStyle = {
+  label: 'Popping (glides, moonwalk)',
+  bpm: 100,
+  stance: { leftHip: 9, rightHip: 9, leftShoulder: 16, rightShoulder: 16, leftElbow: -24, rightElbow: -24 },
+  expression: { smile: 0.35, leftEye: 0.85, rightEye: 0.85, leftBrow: -0.2, rightBrow: -0.2 },
+  hands: { left: 'relaxed', right: 'relaxed' },
+  groove: { bounce: 0 },
+  moves: {
+    sideGlide: {
+      label: 'Side glide',
+      beats: 2,
+      easing: 'linear',
+      travel: 0.2,
+      keys: [
+        {
+          beat: 0,
+          reset: true,
+          pose: { leftHip: 11, leftKnee: 0, leftAnkle: 0, rightHip: 36, rightKnee: 45, rightAnkle: 45, rightShoulder: 80, rightElbow: -10, rightWrist: 10, leftShoulder: 28, leftElbow: 18, lean: -2, headTilt: 4, lookX: 0.7 },
+          hands: { right: 'flat', left: 'relaxed' },
+        },
+        { beat: 1, pose: { leftHip: 27, leftKnee: 54, leftAnkle: 45, rightHip: -1, rightKnee: 0, rightAnkle: 0, rightShoulder: 74, rightWrist: -10, lean: 2 } },
+      ],
+    },
+    moonwalk: {
+      label: 'Moonwalk',
+      beats: 2,
+      easing: 'linear',
+      travel: -0.29,
+      keys: [
+        {
+          beat: 0,
+          reset: true,
+          pose: { turn: 0.9, lean: 4, headTilt: -4, leftHip: -12, leftKnee: 0, leftAnkle: 0, rightHip: 23, rightKnee: 57, rightAnkle: 45, leftShoulder: -10, leftElbow: -45, rightShoulder: 14, rightElbow: 50 },
+        },
+        { beat: 1, pose: { leftHip: -23, leftKnee: -57, leftAnkle: 45, rightHip: 12, rightKnee: 0, rightAnkle: 0, leftShoulder: -14, leftElbow: -50, rightShoulder: 10, rightElbow: 45 } },
+      ],
+    },
+    forwardGlide: {
+      label: 'Forward glide',
+      beats: 2,
+      easing: 'linear',
+      travel: 0.29,
+      keys: [
+        {
+          beat: 0,
+          reset: true,
+          pose: { turn: 0.9, lean: 2, leftHip: 16, leftKnee: 0, leftAnkle: 0, rightHip: 33, rightKnee: 59, rightAnkle: 45, leftShoulder: 12, leftElbow: -40, rightShoulder: -12, rightElbow: 40 },
+        },
+        { beat: 1, pose: { leftHip: -33, leftKnee: -59, leftAnkle: 45, rightHip: -16, rightKnee: 0, rightAnkle: 0, leftShoulder: -12, leftElbow: -40, rightShoulder: 12, rightElbow: 40 } },
+      ],
+    },
+    toeStand: {
+      label: 'Toe stand',
+      beats: 4,
+      keys: [
+        {
+          beat: 0,
+          reset: true,
+          pose: { leftHip: 6, rightHip: 6, leftKnee: 0, rightKnee: 0, leftAnkle: 65, rightAnkle: 65, rightShoulder: 150, rightElbow: 75, leftShoulder: 30, leftElbow: 20, headTilt: -10, lookY: 0.4 },
+          hands: { right: 'fist', left: 'fist' },
+          easing: HIT,
+        },
+        { beat: 2, pose: { headTilt: -14, lean: -2 } },
+      ],
+    },
+  },
+  routine: [
+    { move: 'sideGlide', beats: 4 },
+    { move: 'sideGlide', beats: 4, mirror: true },
+    { move: 'moonwalk', beats: 8 },
+    { move: 'forwardGlide', beats: 8 },
+    { move: 'toeStand', beats: 4 },
+  ],
+}
+
 /** Ready-made dance styles. Each is plain data: copy one and change it to make your own. */
 export const DANCE_STYLES = {
   disco: DISCO,
@@ -1046,6 +1262,7 @@ export const DANCE_STYLES = {
   bharatanatyam: BHARATANATYAM,
   charleston: CHARLESTON,
   tap: TAP,
+  popping: POPPING,
 } satisfies Record<string, DanceStyle>
 
 export type DanceStyleName = keyof typeof DANCE_STYLES

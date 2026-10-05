@@ -1,5 +1,5 @@
 import type { Keyframe } from '../../engine/types'
-import { DANCE_STYLES, FLIPS, danceFrame, flipPose, flipTravel, routineBeats, stickToHuman, HUMAN_REST, type DanceStyleName, type FlipName } from '../../characters'
+import { DANCE_STYLES, FLIPS, danceFrame, danceTravel, flipPose, flipTravel, mirrorHumanPose, routineBeats, stickToHuman, HUMAN_REST, type DanceStyleName, type FlipName } from '../../characters'
 import type { CharacterPose, DanceFrame } from '../../characters'
 
 /**
@@ -39,21 +39,54 @@ export interface CharacterDanceOptions {
   samplesPerBeat?: number
   /** Key the hand shapes too (for a character with cartoon hands) */
   hands?: boolean
+  /** The character's height, px: with it a travelling dance (a glide, a moonwalk) moves it, as an `x` track */
+  height?: number
+  /** The `x` offset the character is at when the dance starts (default 0) */
+  x?: number
+  /** -1 for a character facing left: it dances the mirror image, and glides travel the other way */
+  facing?: number
 }
 
-/** A dance as character keyframe tracks from `start`. */
+/** -1 when a character's `turn` faces it screen-left (between the back and the front, going round), else 1. */
+export function facingOf(turn: number): number {
+  const quarter = ((turn % 4) + 4) % 4
+  return quarter > 2 && quarter < 4 ? -1 : 1
+}
+
+/**
+ * A dance as character keyframe tracks from `start`, travelling (glides,
+ * moonwalks) with `height`. Facing left, it is the mirror image, turned
+ * between 3 (side-on, facing left, as the Side (left) view) and 4 (front-on),
+ * the way flips face left too, and the travel goes the other way.
+ */
 export function characterDanceTracks(options: CharacterDanceOptions): PropertyKeyframes[] {
   const style = DANCE_STYLES[options.style]
   const beats = options.beats ?? (options.move ? style.moves[options.move].beats : routineBeats(style))
   const perBeat = options.samplesPerBeat ?? 4
   const msPerBeat = 60000 / options.bpm
   const count = Math.round(beats * perBeat)
-  return tracksFromPoses(
+  const beatAt = (i: number) => i / perBeat
+  const timeAt = (i: number) => options.start + beatAt(i) * msPerBeat
+  const facing = (options.facing ?? 1) < 0 ? -1 : 1
+  const tracks = tracksFromPoses(
     Array.from({ length: count + 1 }, (_, i) => {
-      const beat = i / perBeat
-      return { time: options.start + beat * msPerBeat, pose: onCharacter(danceFrame(style, beat, { move: options.move }), options.hands ?? false) }
+      const pose = onCharacter(danceFrame(style, beatAt(i), { move: options.move }), options.hands ?? false)
+      if (facing > 0) return { time: timeAt(i), pose }
+      // The mirror turns the other way (-0.9 for side-on); a whole turn on keeps it next to the Side (left) view.
+      const mirrored = mirrorHumanPose(pose)
+      return { time: timeAt(i), pose: { ...mirrored, turn: 4 + mirrored.turn } }
     })
   )
+  const travel = (i: number) => facing * danceTravel(style, beatAt(i), { move: options.move })
+  if (options.height !== undefined && Array.from({ length: count + 1 }, (_, i) => i).some((i) => travel(i) !== 0)) {
+    const x0 = options.x ?? 0
+    // Linear between samples: glides go at a steady speed, so the planted foot stays put.
+    tracks.push({
+      property: 'x',
+      keyframes: Array.from({ length: count + 1 }, (_, i) => ({ time: Math.round(timeAt(i)), value: x0 + options.height! * travel(i), easing: 'linear' as const })),
+    })
+  }
+  return tracks
 }
 
 export interface CharacterFlipOptions {

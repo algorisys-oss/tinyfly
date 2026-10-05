@@ -11,6 +11,8 @@ import {
   dancePose,
   danceStance,
   danceTracks,
+  danceTravel,
+  danceTravelTrack,
   dancer,
   mirrorPose,
   routineBeats,
@@ -26,7 +28,7 @@ const finite = (p: StickPose) => Object.values(p).every(Number.isFinite)
 
 describe('dance styles', () => {
   it('cover disco, hip hop, breaking, jazz, K-pop and Indian styles', () => {
-    expect(STYLES).toEqual(expect.arrayContaining(['disco', 'hipHop', 'breaking', 'jazz', 'kpop', 'bollywood', 'bhangra', 'bharatanatyam', 'charleston', 'tap']))
+    expect(STYLES).toEqual(expect.arrayContaining(['disco', 'hipHop', 'breaking', 'jazz', 'kpop', 'bollywood', 'bhangra', 'bharatanatyam', 'charleston', 'tap', 'popping']))
   })
 
   for (const name of STYLES) {
@@ -320,4 +322,100 @@ describe('baked hands', () => {
     const fist = draw(Object.fromEntries(Object.entries(HAND_SHAPES.fist).map(([field, value]) => [`hand.right.${field}`, value])))
     expect(relaxed.every((v, i) => v === fist[i])).toBe(false)
   }, 30000)
+})
+
+describe('travelling moves: glides and the moonwalk', () => {
+  const H = 300
+  /** Where each toe is on the floor at `beat`: the figure's joints, carried by the dance's travel. */
+  const toes = (move: string, beat: number) => {
+    const style = DANCE_STYLES.popping
+    const joints = stickFigureJoints(danceFrame(style, beat, { move }).pose, { height: H })
+    const x = danceTravel(style, beat, { move }) * H
+    return { left: { x: joints.toes.left.x + x, y: joints.toes.left.y }, right: { x: joints.toes.right.x + x, y: joints.toes.right.y } }
+  }
+
+  it('moves on the spot do not travel', () => {
+    for (const name of STYLES.filter((name) => name !== 'popping')) {
+      expect(danceTravel(name, 7.5), name).toBe(0)
+      expect(danceTravelTrack('tum', name, { height: H }), name).toBeUndefined()
+    }
+  })
+
+  it('the moonwalk slides backward at a steady speed; the glides go forward and sideways', () => {
+    const moon = (beat: number) => danceTravel('popping', beat, { move: 'moonwalk' })
+    expect(moon(2)).toBeCloseTo(DANCE_STYLES.popping.moves.moonwalk.travel!)
+    expect(moon(2)).toBeLessThan(0)
+    expect(moon(0.5) - moon(0)).toBeCloseTo(moon(1.5) - moon(1))
+    // It keeps going, loop after loop.
+    expect(moon(6)).toBeCloseTo(3 * moon(2))
+    expect(danceTravel('popping', 2, { move: 'forwardGlide' })).toBeGreaterThan(0)
+    expect(danceTravel('popping', 2, { move: 'sideGlide' })).toBeGreaterThan(0)
+  })
+
+  it('mirrored front-on, a glide goes the other way; side-on it keeps its direction', () => {
+    expect(danceTravel('popping', 2, { move: 'sideGlide', mirror: true })).toBeCloseTo(-danceTravel('popping', 2, { move: 'sideGlide' }))
+    expect(danceTravel('popping', 2, { move: 'moonwalk', mirror: true })).toBeCloseTo(danceTravel('popping', 2, { move: 'moonwalk' }))
+  })
+
+  it('the popping routine comes back to where it started, so it loops on the spot', () => {
+    const total = routineBeats('popping')
+    expect(danceTravel('popping', total)).toBeCloseTo(0, 2)
+    // Away from the start in the middle, and continuous across step changes.
+    expect(Math.abs(danceTravel('popping', 16))).toBeGreaterThan(0.5)
+    for (let beat = 0; beat < total; beat += 0.25) {
+      expect(Math.abs(danceTravel('popping', beat + 0.01) - danceTravel('popping', beat)), `@ ${beat}`).toBeLessThan(0.01)
+    }
+  })
+
+  for (const move of ['sideGlide', 'moonwalk', 'forwardGlide']) {
+    it(`${move}: the planted foot stays put while the other slides, both on the floor`, () => {
+      // First beat the right foot is planted (its heel drops), the second the left.
+      for (const [from, planted, sliding] of [[0, 'right', 'left'], [1, 'left', 'right']] as const) {
+        const start = toes(move, from)
+        const end = toes(move, from + 1)
+        expect(Math.abs(end[planted].x - start[planted].x), `${planted} planted`).toBeLessThan(0.02 * H)
+        expect(Math.abs(end[sliding].x - start[sliding].x), `${sliding} slides`).toBeGreaterThan(0.1 * H)
+        for (let beat = from; beat <= from + 1; beat += 0.25) {
+          const at = toes(move, beat)
+          expect(Math.min(at.left.y, at.right.y), `@ ${beat}`).toBeGreaterThan(-0.01 * H)
+        }
+      }
+    })
+  }
+
+  it('as an x track: linear keys where the speed changes, from the x it starts at', () => {
+    const track = danceTravelTrack('tum', 'popping', { height: 200, x: 50, bpm: 120, fade: 0 })!
+    expect(track.property).toBe('x')
+    expect(track.keyframes.map((k) => k.time)).toEqual([0, 4, 8, 16, 24, 28].map((beat) => beat * 500))
+    expect(track.keyframes.every((k) => k.easing === 'linear')).toBe(true)
+    expect(track.keyframes[0].value).toBe(50)
+    expect(track.keyframes[3].value).toBeCloseTo(50 + 200 * danceTravel('popping', 16))
+    // Baked with a height, the dance carries its x track.
+    const baked = bakeDanceTracks('tum', 'popping', { move: 'moonwalk', beats: 4, height: 200 })
+    const x = baked.find((t) => t.property === 'x')!
+    expect(x.keyframes[x.keyframes.length - 1].value).toBeCloseTo(400 * DANCE_STYLES.popping.moves.moonwalk.travel!)
+    expect(bakeDanceTracks('tum', 'popping', { move: 'moonwalk' }).some((t) => t.property === 'x')).toBe(false)
+  })
+
+  it('eases the glide in and out with danceTracks\' fade, so it does not slide before it dances', () => {
+    const options = { move: 'moonwalk', beats: 8, bpm: 120, height: 200 }
+    const value = (track: ReturnType<typeof danceTravelTrack>, time: number) => {
+      const keys = track!.keyframes
+      const i = keys.findIndex((k) => k.time >= time)
+      if (keys[i].time === time) return keys[i].value as number
+      const t = (time - keys[i - 1].time) / (keys[i].time - keys[i - 1].time)
+      return (keys[i - 1].value as number) + t * ((keys[i].value as number) - (keys[i - 1].value as number))
+    }
+    const eased = danceTravelTrack('tum', 'popping', options)!
+    const steady = danceTravelTrack('tum', 'popping', { ...options, fade: 0 })!
+    const speed = DANCE_STYLES.popping.moves.moonwalk.travel! / 2 * 200 // px per beat
+    // Barely moving at the start, full speed once danced in, the same speed in the middle.
+    expect(Math.abs(value(eased, 50))).toBeLessThan(Math.abs(speed) * 0.02)
+    expect(value(eased, 1000) - value(eased, 750)).toBeCloseTo(value(steady, 1000) - value(steady, 750), 1)
+    // Half a beat lost easing in and half easing out: ease-in-out is symmetric.
+    const end = eased.keyframes[eased.keyframes.length - 1].value as number
+    expect(end).toBeCloseTo(speed * 7, 0)
+    // Never backtracks.
+    for (let i = 1; i < eased.keyframes.length; i++) expect(eased.keyframes[i].value as number).toBeLessThanOrEqual(eased.keyframes[i - 1].value as number)
+  })
 })

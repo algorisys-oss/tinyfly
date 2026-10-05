@@ -159,14 +159,16 @@ the parts that move, in plain words ("Right arm · out / in", "Head · tilt"),
 and each one can be edited, eased and retimed like any other track.
 
 **Dance**: pick a style (disco, hip hop, breaking, jazz, K-pop, Bollywood,
-Bhangra, Bharatanatyam, Charleston, tap), a move or the whole routine, and a
+Bhangra, Bharatanatyam, Charleston, tap, popping), a move or the whole routine, and a
 tempo, then click **🕺 Dance from playhead**. Or pick a flip (front, back,
 layout, scissor, side flip, cartwheel, back handspring, split leap, toe touch)
 and click **🤸 Flip at playhead**. Both write ordinary keyframes from the
 playhead, a few a beat, keeping the character's keys before and after, so
 every step can be edited afterwards. With cartoon gloves, dances key the hand
 shapes too. When an audio element has a tempo, **Follow beat** (on by default)
-dances at the music's tempo and starts on the beat nearest the playhead. Flips travel from where the character is (an x track), the way it
+dances at the music's tempo and starts on the beat nearest the playhead. Popping's glides
+and moonwalk travel from where the character stands (an x track, the planted foot staying put); facing
+left, a character dances the mirror image and glides the other way. Flips travel from where the character is (an x track), the way it
 faces: pick the *Side* or *Side (left)* view first. See [Dance and
 Flips](dance.md).
 
@@ -994,7 +996,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.81.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.82.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed

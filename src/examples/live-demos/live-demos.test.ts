@@ -33,6 +33,18 @@ describe('live demos', () => {
     for (const demo of liveDemos) expect(demo.code.trim(), demo.id).not.toBe('')
   })
 
+  it('style only their own classes: every card shares the gallery page, so a shared name restyles another demo', () => {
+    const owner = new Map<string, string>()
+    for (const demo of liveDemos) {
+      const style = demo.html.match(/<style>([\s\S]*?)<\/style>/)?.[1] ?? ''
+      for (const [, name] of style.matchAll(/\.([a-zA-Z][\w-]*)/g)) {
+        const first = owner.get(name)
+        expect(first === undefined || first === demo.id, `.${name} in ${demo.id} and ${first}`).toBe(true)
+        owner.set(name, demo.id)
+      }
+    }
+  })
+
   it('show code that does not include the demo wrapper', () => {
     for (const demo of liveDemos) {
       expect(demo.code, demo.id).not.toContain('export function run')
