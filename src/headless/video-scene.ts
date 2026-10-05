@@ -1,6 +1,6 @@
 import type { AnimationState, TimelineDefinition } from '../engine/types'
 import type { CaptionCue } from '../engine/export/captions'
-import type { CanvasTarget } from '../adapters/canvas'
+import type { BloomOptions, CanvasTarget } from '../adapters/canvas'
 
 /**
  * A video scene: everything needed to render an animation to frames without a
@@ -34,6 +34,12 @@ export interface VideoScene {
   background?: string | DrawFunction
   /** Immediate-mode drawing, called every frame after the targets */
   draw?: DrawFunction
+  /**
+   * Glow around what is bright, added over each finished frame: `true` for
+   * the defaults, or options (threshold, strength, radius in scene px…).
+   * See `applyBloom`.
+   */
+  bloom?: boolean | BloomOptions
   /** Soundtrack to mux into the video, relative to the scene file */
   audio?: string
   /** Font files to register before drawing, by family, relative to the scene file */

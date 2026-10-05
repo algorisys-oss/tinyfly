@@ -1,6 +1,6 @@
 import type { Timeline } from '../engine/core/timeline'
 import { deserializeTimeline } from '../engine/serialization'
-import { CanvasAdapter } from '../adapters/canvas'
+import { CanvasAdapter, applyBloom } from '../adapters/canvas'
 import type { DrawFunction, FrameInfo, VideoScene } from './video-scene'
 import { DEFAULT_FPS } from './video-scene'
 
@@ -67,7 +67,7 @@ export class FrameRenderer {
     if (captions.length > 0) {
       return captions.map((cue, index) => ({ id: cue.id ?? `line-${index}`, time: (cue.start + cue.end) / 2 }))
     }
-    const markers = [...(this.scene.timeline?.config.markers ?? [])].sort((a, b) => a.time - b.time)
+    const markers = [...(this.scene.timeline?.config?.markers ?? [])].sort((a, b) => a.time - b.time)
     if (markers.length === 0) return [{ id: 'middle', time: this.duration / 2 }]
     return markers.map((marker, index) => {
       const end = index + 1 < markers.length ? markers[index + 1].time : this.duration
@@ -97,6 +97,11 @@ export class FrameRenderer {
     this.adapter.render(ctx)
     if (this.scene.draw) this.drawIsolated(ctx, this.scene.draw, frame)
     ctx.restore()
+    if (this.scene.bloom) {
+      // Over the finished frame, in output pixels: a radius in scene px grows with the scale.
+      const options = this.scene.bloom === true ? {} : this.scene.bloom
+      applyBloom(ctx, options.radius !== undefined ? { ...options, radius: options.radius * this.scale } : options)
+    }
   }
 
   /** Run scene code without letting its context changes leak into the rest. */

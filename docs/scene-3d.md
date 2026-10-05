@@ -84,9 +84,12 @@ holes (an "o", a ring); outlines inside holes are solid again. The path's y
 | `toon` | lit in `bands` steps (default 3) |
 
 `outline: { width, color }` inks silhouettes, creases (edges sharper than 30°)
-and open rims. `roughness`, `metalness` and `emissive` are for the realistic
-look (three.js, a later milestone); the stylized renderer ignores them, so one
-material serves both.
+and open rims. `emissive` is light the surface gives off itself: it is added
+after lighting, so the surface shows in the dark, in both renderers. Pair it
+with a video's `bloom` (see [Rendering Video from Code](video-rendering.md#bloom))
+for a neon glow: `{ color: '#000000', emissive: '#ff2bd6', shading: 'unlit' }`.
+`roughness` and `metalness` are for the realistic look (three.js, a later
+milestone); the stylized renderers ignore them, so one material serves both.
 
 The scene can have `background` and `fog: { color, near, far }` (metres from
 the camera). A scene with no lights gets a soft default (ambient plus a key

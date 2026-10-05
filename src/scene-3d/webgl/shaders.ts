@@ -41,6 +41,7 @@ uniform vec3 u_lightDirection[MAX_LIGHTS];
 uniform float u_lightRange[MAX_LIGHTS];
 uniform vec2 u_lightCone[MAX_LIGHTS];
 uniform vec3 u_color;
+uniform vec3 u_emissive;
 uniform float u_opacity;
 uniform int u_shading;
 uniform float u_bands;
@@ -94,6 +95,7 @@ void main() {
     }
     rgb *= light;
   }
+  rgb += u_emissive;
   if (u_fog) {
     float amount = clamp((distance(v_world, u_eye) - u_fogRange.x) / (u_fogRange.y - u_fogRange.x), 0.0, 1.0);
     rgb = mix(rgb, u_fogColor, amount);

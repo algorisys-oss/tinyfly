@@ -160,8 +160,9 @@ export interface Material3D {
   bands?: number
   /** Ink outline along silhouettes and creases, px */
   outline?: { width: number; color: string }
+  /** Light the surface gives off itself, added after lighting (both modes): neon, screens, lamps; feeds bloom */
+  emissive?: string
   // Realistic mode (glTF's metallic-roughness); stylized mode ignores these
   roughness?: number
   metalness?: number
-  emissive?: string
 }

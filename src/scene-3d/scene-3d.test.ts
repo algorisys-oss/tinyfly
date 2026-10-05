@@ -213,6 +213,12 @@ describe('shading', () => {
     const fogged = shadeTriangle(frame.triangles[0], frame.lights, frame.camera, { color: '#0000ff', near: 0, far: 1 })
     expect(fogged.color).toBe('rgb(0, 0, 255)')
   })
+
+  it('emissive light shines in the dark, added after lighting', () => {
+    const dark = frameWith({ objects: [...scene().objects, { id: 'lamp', kind: 'light', light: 'directional', color: '#ffffff', intensity: 1, position: [0, 0, -10] }] })
+    const glowing = { ...dark.triangles[0], material: { color: '#ff0000', emissive: '#00ffff' } }
+    expect(shadeTriangle(glowing, dark.lights, dark.camera).color).toBe('rgb(0, 255, 255)')
+  })
 })
 
 describe('rendering', () => {

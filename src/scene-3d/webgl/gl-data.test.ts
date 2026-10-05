@@ -25,7 +25,8 @@ describe('WebGL2 packing', () => {
 
   it('numbers materials for the shader, an object colour over the material', () => {
     const toon = surfaceUniforms({ color: '#0000ff', shading: 'toon', bands: 4 }, undefined, 0.5)
-    expect(toon).toEqual({ color: [0, 0, 1], opacity: 0.5, shading: SHADING_CODE.toon, bands: 4 })
+    expect(toon).toEqual({ color: [0, 0, 1], emissive: [0, 0, 0], opacity: 0.5, shading: SHADING_CODE.toon, bands: 4 })
+    expect(surfaceUniforms({ color: '#000000', emissive: '#ff00ff' }, undefined, 1).emissive).toEqual([1, 0, 1])
     expect(surfaceUniforms({ color: '#0000ff' }, '#00ff00', 1).color).toEqual([0, 1, 0])
     expect(surfaceUniforms({ color: '#0000ff' }, undefined, 1).shading).toBe(SHADING_CODE.lambert)
   })

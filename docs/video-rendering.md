@@ -11,6 +11,8 @@ npm install @algorisys/tinyfly @napi-rs/canvas   # @napi-rs/canvas: the 2D canva
 
 npx tinyfly video scene.mjs -o scene.mp4 --srt scene.srt
 npx tinyfly video scene.mjs --stills stills/     # one PNG per caption line (else per marker step)
+npx tinyfly video scene.mjs --stills stills/ --frames 0,79,88   # stills at chosen frames (or --times 0,2640 in ms)
+npx tinyfly video scene.mjs --loop-check         # does it loop? (exit 1 when not)
 npx tinyfly video scene.mjs --scale 0.5 --fps 12 # quick preview
 ```
 
@@ -46,6 +48,7 @@ export default {
   audio: 'narration.wav',       // muxed in; relative to the scene file
   fonts: { Poppins: 'fonts/Poppins-Bold.ttf' },
   captions: [ { start, end, text } ],  // default: from the timeline's markers
+  bloom: true,                  // a glow around bright things (see Bloom)
 }
 ```
 
@@ -522,6 +525,66 @@ draw(ctx, { time }) {
 Erasing cuts the swath out with clipping, not an offscreen layer, so it needs
 only a Canvas 2D context. Only what is drawn inside it is erased: whatever was
 drawn earlier (the paper, the background) shows through.
+
+## Loops
+
+For a video that should loop forever (Shorts, Reels, GIF-style), make every
+motion repeat over the scene's `duration`: periodic functions of
+`time / duration`, a whole number of turns, a self-similar zoom that steps
+one level per loop. Then the frame at time = duration *is* the first frame,
+and a looping player's jump from the last frame back to the first is a step
+like any other.
+
+`--loop-check` checks it by rendering five frames (no video, no ffmpeg):
+
+```
+$ npx tinyfly video droste-head.mjs --loop-check
+frame at the duration vs the first: identical
+last → first (the seam):           17.41 dB
+ordinary steps:                    17.61 dB, 19.06 dB
+✓ closes: the frame at the duration matches the first (identical), so the seam is an ordinary step
+```
+
+- **Closes**: the frame at the duration matches the first (40 dB or more):
+  every motion repeats.
+- **Seamless**: it does not close exactly, but the last → first step differs
+  no more than an ordinary step (within 3 dB of the worse of the first and
+  last steps).
+- **Does not loop**: the seam stands out; the command exits 1, so a build can
+  check it.
+
+The numbers are PSNR (higher is more alike; fast or trembling motion makes
+every step lower). From code: `checkLoop(scene)` returns the same report, and
+`psnr(a, b)` / `loopReport(frames)` work on any RGBA frames.
+
+## Bloom
+
+`bloom: true` (or options) adds a glow around everything bright, after each
+frame is drawn: neon signs, emissive 3D materials, light trails.
+
+```js
+export default {
+  // …
+  bloom: { threshold: 0.5, strength: 1 },
+}
+```
+
+| Option | Default | Meaning |
+|---|---|---|
+| `threshold` | `0.55` | How bright (0..1, by the brightest channel) a pixel must be to glow; saturated neon counts as bright |
+| `strength` | `0.9` | How much glow is added back |
+| `radius` | 2% of the larger side | Blur radius of the tight glow, in scene pixels (scaled with `--scale`) |
+| `halo` | `0.6` | Strength of a second, three times wider halo |
+| `downsample` | `4` | The glow is computed at 1/4 size: faster, and it is blurry anyway |
+
+It is a bright pass (keeping each pixel's hue), a separable box blur and an
+additive composite, all in plain arithmetic: no `ctx.filter`, so every frame
+is the same on every machine. The same `applyBloom(ctx, options)` works on any
+2D canvas (from `@algorisys/tinyfly/adapters`, or the browser bundle), e.g.
+after drawing a live canvas.
+
+[`examples/headless-video/neon-bloom.mjs`](../examples/headless-video/neon-bloom.mjs)
+is a looping neon scene: emissive 3D shapes plus bloom.
 
 ## Captions
 

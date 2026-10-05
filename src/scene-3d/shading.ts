@@ -118,6 +118,11 @@ export function shadeTriangle(
     }
     rgb = [base[0] * light[0], base[1] * light[1], base[2] * light[2]]
   }
+  // Emissive light is the surface's own: added after lighting, so it shines in the dark (and blooms).
+  if (material.emissive) {
+    const e = parseColor(material.emissive)
+    rgb = [rgb[0] + e[0], rgb[1] + e[1], rgb[2] + e[2]]
+  }
   const amount = fogAmount(fog, vec3.distance(triangle.centroid, camera.position))
   if (fog && amount > 0) {
     const f = parseColor(fog.color)

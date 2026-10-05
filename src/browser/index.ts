@@ -65,6 +65,9 @@ export {
   CustomBounce,
   CustomWiggle,
 } from '../compat/gsap'
+// Glow post-effect for a 2D canvas (bright pass, blur, add).
+export { applyBloom } from '../adapters/canvas/bloom'
+export type { BloomOptions } from '../adapters/canvas/bloom'
 export { createControls, DEFAULT_LABELS } from '../embed/controls'
 export type { Controls, ControlsOptions, ControlLabels, FullscreenControl } from '../embed/controls'
 export { mount, mountAll, unmount } from '../embed/mount'

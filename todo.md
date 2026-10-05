@@ -2337,10 +2337,11 @@ triangles) and "Droste Head" (a cartoon head whose pupil holds the same head, fo
 `tinyfly video` (2026-10-05). Everything stays deterministic and frame-addressable.
 
 ### 35A — Loops that close exactly
-- [ ] `tinyfly video --loop-check`: render the last frame and the first, report how much the
-      last → first step differs (PSNR) against an ordinary neighbouring step, and fail when the seam
-      stands out
-- [ ] `--frames 0,79,88` (and `--times`) for stills at chosen frames, not only at markers / captions
+- [x] `tinyfly video --loop-check`: renders five frames (first two, last two, the one at the duration);
+      reports closure (frame at the duration vs the first), the seam (last → first) and ordinary steps as
+      PSNR; closes / seamless / does not loop (exit 1); `checkLoop(scene)`, `psnr`, `loopReport` in
+      `@algorisys/tinyfly/headless`
+- [x] `--frames 0,79,88` and `--times 0,2640` for stills at chosen frames or times
 - [ ] A `loop: true` scene flag: the duration is the period; helpers below default to it
 - [ ] Periodic motion helpers guaranteed to repeat over a duration: `wobble(t, { period, cycles })`,
       seeded looping noise (noise on a circle / torus), periodic easing
@@ -2361,8 +2362,11 @@ triangles) and "Droste Head" (a cartoon head whose pupil holds the same head, fo
       easings (a face driven by its size on screen, a colour by depth)
 
 ### 35D — Neon and glow
-- [ ] A bloom / glow post-effect for headless video (and the Canvas renderer): threshold, blur,
-      add; emissive materials in 3D scenes that feed it
+- [x] A bloom / glow post-effect for headless video (and the Canvas renderer): threshold, blur,
+      add; emissive materials in 3D scenes that feed it. `bloom` on a VideoScene, `applyBloom(ctx)`
+      for any 2D canvas (bright pass by max channel, 3-pass box blur, tight glow + wide halo,
+      `'lighter'` composite at 1/4 size, deterministic); `emissive` in the Canvas 2D and WebGL2
+      renderers; `examples/headless-video/neon-bloom.mjs`
 - [ ] Light trails and comets: a polyline trail helper with tapering width and fade, along paths
       and 3D beams (no dotted look at speed)
 - [ ] A radial / zoom blur and speed lines for dives

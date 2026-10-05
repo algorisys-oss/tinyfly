@@ -57,6 +57,7 @@ export function packLights(lights: ResolvedLight[]): LightUniforms {
 export function surfaceUniforms(material: Material3D, color: string | undefined, opacity: number) {
   return {
     color: parseColor(color ?? material.color),
+    emissive: material.emissive ? parseColor(material.emissive) : ([0, 0, 0] as [number, number, number]),
     opacity,
     shading: SHADING_CODE[material.shading ?? 'lambert'],
     bands: material.bands ?? 3,

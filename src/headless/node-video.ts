@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path'
 import { FrameRenderer } from './frame-renderer'
 import { ffmpegArgs, ffmpegExitError, ffmpegStartError } from './ffmpeg-args'
 import type { VideoScene } from './video-scene'
+import { loopReport, type LoopReport } from './loop-check'
 
 /**
  * Node rendering: a {@link VideoScene} to an MP4 (through ffmpeg) or to PNG
@@ -154,6 +155,26 @@ export async function renderStills(scene: VideoScene, options: RenderStillsOptio
     files.push(file)
   }
   return files
+}
+
+/**
+ * Check that a scene loops, rendering only five frames: the first two, the
+ * last two, and the one at time = duration. See {@link loopReport}.
+ */
+export async function checkLoop(scene: VideoScene, options: HeadlessOptions & { fps?: number } = {}): Promise<LoopReport> {
+  const { renderer, ctx } = await prepare(scene, options)
+  const at = (time: number, index: number) => {
+    renderer.render(ctx, time, index)
+    return ctx.getImageData(0, 0, renderer.width, renderer.height).data.slice()
+  }
+  const last = renderer.frameCount - 1
+  return loopReport({
+    first: at(0, 0),
+    second: at(renderer.frameTime(1), 1),
+    beforeLast: at(renderer.frameTime(Math.max(0, last - 1)), Math.max(0, last - 1)),
+    last: at(renderer.frameTime(last), last),
+    wrapped: at(renderer.duration, last + 1),
+  })
 }
 
 /** Keep ids usable as file names. */

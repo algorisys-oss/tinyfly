@@ -14,13 +14,16 @@
  *       Print the markup with that frame written in, for places that run no
  *       JavaScript (RSS, email, print, previews).
  *
- *   tinyfly video <scene.mjs> [-o <out.mp4>] [--stills <dir>] [--scale <n>] [--fps <n>]
- *                 [--crf <n>] [--no-audio] [--srt <file>] [--vtt <file>]
+ *   tinyfly video <scene.mjs> [-o <out.mp4>] [--stills <dir>] [--frames <i,j,…> | --times <ms,ms,…>]
+ *                 [--loop-check] [--scale <n>] [--fps <n>] [--crf <n>] [--no-audio] [--srt <file>] [--vtt <file>]
  *       Render a scene module to an MP4 without a browser. The module's default
  *       export is a VideoScene (or a function returning one): a timeline and
  *       canvas targets, a draw(ctx, frame) function, or both. --stills writes
- *       one PNG per marker step instead of a video. Needs ffmpeg on the PATH
- *       and the optional package @napi-rs/canvas.
+ *       one PNG per marker step instead of a video, or one per frame / time
+ *       given with --frames or --times. --loop-check renders five frames and
+ *       says whether the video loops (exit 1 when it does not). Needs ffmpeg on
+ *       the PATH (not for stills or --loop-check) and the optional package
+ *       @napi-rs/canvas.
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { basename, dirname, extname, join, resolve } from 'node:path'
@@ -51,12 +54,25 @@ const numberFlag = (name) => {
   return number
 }
 
+/** A comma-separated list of numbers (frames or ms), or undefined when the flag is absent. */
+function listFlag(name) {
+  const value = flag(name)
+  if (value === undefined) return undefined
+  const numbers = value.split(',').map((part) => Number(part.trim()))
+  if (numbers.length === 0 || numbers.some((n) => !Number.isFinite(n) || n < 0)) {
+    console.error(`tinyfly: ${name} needs numbers separated by commas (got ${value})`)
+    process.exit(2)
+  }
+  return numbers
+}
+
 const usage = () => {
   console.error(
     'Usage:\n' +
       '  tinyfly validate <timeline.json> [<timeline.json> …] [--markup <file>]\n' +
       '  tinyfly render <timeline.json> <markup file> [--at start|end|<ms>|<marker id>]\n' +
-      '  tinyfly video <scene.mjs> [-o <out.mp4>] [--stills <dir>] [--scale <n>] [--fps <n>] [--crf <n>] [--no-audio] [--srt <file>] [--vtt <file>]'
+      '  tinyfly video <scene.mjs> [-o <out.mp4>] [--stills <dir>] [--frames <i,j,…> | --times <ms,…>] [--loop-check]\n' +
+      '                [--scale <n>] [--fps <n>] [--crf <n>] [--no-audio] [--srt <file>] [--vtt <file>]'
   )
   process.exit(2)
 }
@@ -114,8 +130,15 @@ async function video() {
   const fps = numberFlag('--fps')
   const crf = numberFlag('--crf')
   const silent = has('--no-audio')
+  const loopCheck = has('--loop-check')
+  const framesList = listFlag('--frames')
+  const timesList = listFlag('--times')
   const [sceneFile] = rest
   if (!sceneFile || rest.length > 1) usage()
+  if ((framesList || timesList) && !stillsDir) {
+    console.error('tinyfly: --frames and --times choose stills: add --stills <dir>')
+    process.exit(2)
+  }
 
   const headless = await import('../lib/headless/headless.js')
   const scenePath = resolve(sceneFile)
@@ -134,8 +157,23 @@ async function video() {
       if (vttFile) writeFileSync(vttFile, headless.toWebVTT(cues))
       console.error(`captions: ${cues.length} cue(s)`)
     }
+    if (loopCheck) {
+      const report = await headless.checkLoop(scene, { baseDir, scale, fps })
+      const db = (value) => (Number.isFinite(value) ? `${value.toFixed(2)} dB` : 'identical')
+      console.error(`frame at the duration vs the first: ${db(report.closure)}`)
+      console.error(`last → first (the seam):           ${db(report.seam)}`)
+      console.error(`ordinary steps:                    ${db(report.steps[0])}, ${db(report.steps[1])}`)
+      console.error(`${report.loops ? '✓' : '✗'} ${report.verdict}`)
+      if (!report.loops) process.exit(1)
+      return
+    }
     if (stillsDir) {
-      const files = await headless.renderStills(scene, { dir: stillsDir, baseDir, scale })
+      // Stills at chosen frames or times, else one per marker step.
+      const sceneFps = fps ?? scene.fps ?? 30
+      const times = framesList
+        ? framesList.map((frame) => ({ id: `frame-${frame}`, time: (frame * 1000) / sceneFps }))
+        : timesList?.map((time) => ({ id: `t-${time}ms`, time }))
+      const files = await headless.renderStills(scene, { dir: stillsDir, baseDir, scale, times })
       console.error(`stills: ${files.length} PNG(s) in ${stillsDir}`)
       return
     }

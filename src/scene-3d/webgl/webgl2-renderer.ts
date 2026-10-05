@@ -107,6 +107,7 @@ export class WebGL2Renderer {
     gl.uniform2fv(u('u_lightCone'), lights.cone)
     const surface = surfaceUniforms(mesh.material, mesh.color, mesh.opacity)
     gl.uniform3fv(u('u_color'), surface.color)
+    gl.uniform3fv(u('u_emissive'), surface.emissive)
     gl.uniform1f(u('u_opacity'), surface.opacity)
     gl.uniform1i(u('u_shading'), surface.shading)
     gl.uniform1f(u('u_bands'), surface.bands)

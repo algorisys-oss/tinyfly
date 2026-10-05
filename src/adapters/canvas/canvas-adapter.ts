@@ -3,6 +3,7 @@ import { composeFilter } from '../filter-utils'
 import { shineStops } from '../shine-utils'
 import { drawOutline, pathOutline, rectOutline } from './outline'
 import { sketchPen, type SketchPen, type SketchStyle } from './sketch'
+import { canvasLike } from './offscreen'
 import { parsePath } from '../../engine/path/path-utils'
 import {
   affinePart,
@@ -46,23 +47,6 @@ export type FillValue = string | Gradient
 /** Check if a fill value is a gradient */
 export function isGradient(fill: FillValue | undefined): fill is Gradient {
   return typeof fill === 'object' && fill !== null && 'type' in fill
-}
-
-/** An offscreen canvas like `ctx`'s: OffscreenCanvas, a DOM canvas, or the same canvas class (Node). */
-function createLayerCanvas(ctx: CanvasRenderingContext2D, width: number, height: number): { getContext(kind: '2d'): unknown } | null {
-  if (typeof OffscreenCanvas !== 'undefined') return new OffscreenCanvas(width, height)
-  const source = ctx.canvas as unknown as { ownerDocument?: Document; constructor?: new (w: number, h: number) => { getContext(kind: '2d'): unknown } }
-  if (source?.ownerDocument) {
-    const canvas = source.ownerDocument.createElement('canvas')
-    canvas.width = width
-    canvas.height = height
-    return canvas
-  }
-  try {
-    return source?.constructor ? new source.constructor(width, height) : null
-  } catch {
-    return null
-  }
 }
 
 /** Base properties for all canvas targets */
@@ -506,7 +490,7 @@ export class CanvasAdapter {
     const height = ctx.canvas?.height ?? 0
     if (!(width > 0 && height > 0)) return null
     if (!this.layer || this.layer.width !== width || this.layer.height !== height) {
-      const canvas = createLayerCanvas(ctx, width, height)
+      const canvas = canvasLike(ctx, width, height)
       const layerCtx = canvas?.getContext('2d') as CanvasRenderingContext2D | null | undefined
       this.layer = canvas && layerCtx ? { canvas, ctx: layerCtx, width, height } : null
       if (!this.layer) return null

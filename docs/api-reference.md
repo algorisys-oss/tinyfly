@@ -1598,6 +1598,18 @@ renderer.frameCount; renderer.frameTime(i); renderer.stillTimes()
 | `draw` | `(ctx, frame) => void` drawn over the targets |
 | `audio`, `fonts` | Soundtrack and font files, relative to `baseDir` |
 | `captions` | Cues for `--srt` / `--vtt`; default from the timeline's markers |
+| `bloom` | `true` or `{ threshold, strength, radius, halo, downsample }`: a glow around bright things |
+
+Loops and glow:
+
+```typescript
+checkLoop(scene, { scale?, fps?, baseDir? }): Promise<LoopReport>  // { closure, seam, steps, loops, verdict }
+psnr(a, b): number; loopReport(frames): LoopReport                // pure, on RGBA frames
+
+// @algorisys/tinyfly/adapters (and the browser bundle): any 2D canvas
+applyBloom(ctx, { threshold = 0.55, strength = 0.9, radius, halo = 0.6, downsample = 4 })
+brightPass(rgba, threshold): Float32Array; boxBlur(rgb, width, height, radius): Float32Array
+```
 
 ### Narration audio
 
