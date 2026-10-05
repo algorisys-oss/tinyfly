@@ -184,6 +184,26 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
     setCam('rotate', 0)
   }
 
+  // 3D: tilt, turn, depth and perspective at the playhead. They have no static
+  // value on the element; typing one keys it at the playhead (a track per
+  // property), so a card flip is two keys on Turn Y.
+  const THREE_D_FIELDS = [
+    { property: 'rotateX', label: 'Tilt X°', step: 1, hint: 'Turn about the horizontal axis (top away, bottom toward you)' },
+    { property: 'rotateY', label: 'Turn Y°', step: 1, hint: 'Turn about the vertical axis (a card flip is 0 → 180)' },
+    { property: 'z', label: 'Depth', step: 1, hint: 'Toward the viewer, px; shows with perspective' },
+    { property: 'perspective', label: 'Perspective', step: 10, hint: 'Distance from the viewer, px: smaller is stronger. Empty: none (flat)' },
+  ] as const
+  const value3d = (element: SceneElement, property: string): number | undefined => {
+    props.store.timelineVersion()
+    const value = props.store.state.timeline?.getStateAtTime(props.store.currentTime())?.values.get(element.name)?.get(property)
+    return typeof value === 'number' ? value : undefined
+  }
+  const key3d = (element: SceneElement, property: string, raw: string) => {
+    const value = Number(raw)
+    if (raw.trim() === '' || !Number.isFinite(value)) return
+    props.store.keyValuesAtPlayhead(element.name, { [property]: value })
+  }
+
   // Shape-morph target (the end shape a path tweens into).
   const [morphKind, setMorphKind] = createSignal<PolyStarKind>('star')
   const [morphPoints, setMorphPoints] = createSignal(5)
@@ -2701,6 +2721,24 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
                       step="0.1"
                     />
                   </div>
+                </div>
+                <div class="property-section">
+                  <h4>3D</h4>
+                  <For each={THREE_D_FIELDS}>
+                    {(field) => (
+                      <div class="property-row" title={field.hint}>
+                        <label>{field.label}</label>
+                        <input
+                          type="number"
+                          step={field.step}
+                          placeholder={field.property === 'perspective' ? 'none' : '0'}
+                          value={value3d(element(), field.property) ?? ''}
+                          onChange={(e) => key3d(element(), field.property, e.currentTarget.value)}
+                        />
+                      </div>
+                    )}
+                  </For>
+                  <p class="property-hint">Typing a value keys it at the playhead. Move the playhead and type another to animate it.</p>
                 </div>
               </Show>
 

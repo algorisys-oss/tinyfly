@@ -1,4 +1,5 @@
 import type { AnimationState, AnimatableValue } from '../../engine/types'
+import { quaternionCss } from '../transform-3d'
 import { FILTER_PROPERTIES, composeFilter, type FilterValues } from '../filter-utils'
 import { setTextContent } from '../text-content'
 import { ensureSvgTransformBox } from '../svg-transform-box'
@@ -47,11 +48,47 @@ const TRANSFORM_PROPERTIES = new Set([
   'scaleZ',
   'skewX',
   'skewY',
+  // A rotation as an [x, y, z, w] quaternion (a track with `interpolation: 'slerp'`)
+  'quaternion',
   // Motion path properties
   'motionPathX',
   'motionPathY',
   'motionPathRotate',
 ])
+
+/**
+ * The order transform functions are written in, whatever order the tracks
+ * were added in: translate, then rotate (z, then x, then y, then a
+ * quaternion), then scale, then skew, as the SVG and Canvas adapters compose
+ * them. `perspective()` goes before all of them. Motion-path values stand in
+ * for x, y and rotate when present.
+ */
+const TRANSFORM_ORDER = [
+  'x',
+  'motionPathX',
+  'y',
+  'motionPathY',
+  'z',
+  'rotate',
+  'rotateZ',
+  'motionPathRotate',
+  'rotateX',
+  'rotateY',
+  'quaternion',
+  'scale',
+  'scaleX',
+  'scaleY',
+  'scaleZ',
+  'skewX',
+  'skewY',
+] as const
+
+/**
+ * Perspective for an element's children (CSS `perspective` and
+ * `perspective-origin` on a parent), so a group of cards shares one vanishing
+ * point. `perspective` itself is the element's own `perspective()` function.
+ */
+const CHILD_PERSPECTIVE_PROPERTIES = new Set(['childPerspective', 'perspectiveOriginX', 'perspectiveOriginY'])
 
 /**
  * Transform-origin components, as percentages of the element's own box.
@@ -152,7 +189,9 @@ export class DOMAdapter {
     element: HTMLElement,
     properties: Map<string, AnimatableValue>
   ): void {
-    const transformParts: string[] = []
+    // Collected by name and written in TRANSFORM_ORDER after the loop.
+    let transforms: Record<string, AnimatableValue> | null = null
+    let childPerspective: Record<string, number> | null = null
 
     // Lazily allocated. These three were previously created for every element on
     // every frame, whether or not the element used origins, clipping or filters
@@ -176,10 +215,9 @@ export class DOMAdapter {
       if (CANVAS_ONLY_PROPERTIES.has(property)) continue
 
       if (TRANSFORM_PROPERTIES.has(property)) {
-        const transformValue = this.buildTransformPart(property, value)
-        if (transformValue) {
-          transformParts.push(transformValue)
-        }
+        ;(transforms ??= {})[property] = value
+      } else if (CHILD_PERSPECTIVE_PROPERTIES.has(property)) {
+        if (typeof value === 'number') (childPerspective ??= {})[property] = value
       } else if (ORIGIN_PROPERTIES.has(property)) {
         if (typeof value === 'number') (origin ??= {})[property] = value
       } else if (CLIP_PROPERTIES.has(property)) {
@@ -215,11 +253,21 @@ export class DOMAdapter {
       this.applyShine(element, shine)
     }
 
-    // Apply composed transform. `perspective` must come first in the function
-    // list to affect the 3D transforms that follow it.
+    // Apply composed transform, in TRANSFORM_ORDER. `perspective` must come
+    // first in the function list to affect the 3D transforms that follow it.
+    const transformParts: string[] = []
+    // 0 (or less) is no perspective, as on Canvas and WebGL; CSS would clamp it to 1px.
     const perspective = properties.get('perspective')
-    if (typeof perspective === 'number') {
-      transformParts.unshift(`perspective(${perspective}px)`)
+    if (typeof perspective === 'number' && perspective > 0) {
+      transformParts.push(`perspective(${perspective}px)`)
+    }
+    if (transforms) {
+      for (const property of TRANSFORM_ORDER) {
+        const value = transforms[property]
+        if (value === undefined) continue
+        const part = this.buildTransformPart(property, value)
+        if (part) transformParts.push(part)
+      }
     }
 
     if (transformParts.length > 0) {
@@ -233,6 +281,14 @@ export class DOMAdapter {
       // which is not the case worth optimising for.
       element.style.transform = transformParts.join(' ')
       ensureSvgTransformBox(element)
+    }
+
+    // Perspective for the children: the parent's distance and vanishing point.
+    if (childPerspective) {
+      if (childPerspective.childPerspective !== undefined) element.style.perspective = `${childPerspective.childPerspective}px`
+      if (childPerspective.perspectiveOriginX !== undefined || childPerspective.perspectiveOriginY !== undefined) {
+        element.style.perspectiveOrigin = `${childPerspective.perspectiveOriginX ?? 50}% ${childPerspective.perspectiveOriginY ?? 50}%`
+      }
     }
 
     // Apply transform-origin. A missing axis defaults to 50% (the CSS default),
@@ -266,6 +322,7 @@ export class DOMAdapter {
     property: string,
     value: AnimatableValue
   ): string | null {
+    if (property === 'quaternion') return quaternionCss(value)
     if (typeof value !== 'number') return null
 
     switch (property) {

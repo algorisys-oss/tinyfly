@@ -33,6 +33,7 @@ export const splitTextReveal = {
   id: 'live-split-text-reveal',
   name: 'Split Text Reveal',
   description: 'Characters flip up in 3D one after another, ripple in a wave, then leave from the end.',
+  alsoIn: ['3d'],
   tags: ['text', 'splitText', 'stagger', 'rotateX', 'back.out'],
   html,
   run,

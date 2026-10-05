@@ -85,6 +85,22 @@ export interface GsapStagger {
   ease?: string
 }
 
+/**
+ * GSAP's names for transform properties, as tinyfly's. GSAP writes
+ * `rotation` / `rotationX` / `rotationY`; its `transformPerspective` is an
+ * element's own perspective (tinyfly's `perspective`), and its `perspective`
+ * is the CSS property on a parent, for its children (`childPerspective`).
+ * tinyfly's own names pass through unchanged.
+ */
+export const PROPERTY_ALIASES: Record<string, string> = {
+  rotation: 'rotate',
+  rotationZ: 'rotate',
+  rotationX: 'rotateX',
+  rotationY: 'rotateY',
+  transformPerspective: 'perspective',
+  perspective: 'childPerspective',
+}
+
 export interface SplitVars {
   /** Scheduling and lifecycle options */
   config: TweenVars
@@ -101,7 +117,7 @@ export function splitVars(vars: TweenVars): SplitVars {
     if (RESERVED_KEYS.has(key)) {
       config[key] = value
     } else {
-      properties[key] = value
+      properties[PROPERTY_ALIASES[key] ?? key] = value
     }
   }
 

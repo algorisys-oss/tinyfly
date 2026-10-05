@@ -3,6 +3,7 @@ import { FILTER_PROPERTIES, composeFilter, type FilterValues } from '../filter-u
 import { shineStops } from '../shine-utils'
 import { setTextContent } from '../text-content'
 import { ensureSvgTransformBox } from '../svg-transform-box'
+import { quaternionCss } from '../transform-3d'
 
 const SVG_NS = 'http://www.w3.org/2000/svg'
 
@@ -49,8 +50,10 @@ const TRANSFORM_PROPERTIES = new Set([
   'translateX',
   'translateY',
   'rotate',
+  'rotateZ',
   'rotateX',
   'rotateY',
+  'z',
   'scale',
   'scaleX',
   'scaleY',
@@ -121,6 +124,7 @@ export class SVGAdapter {
     properties: Map<string, AnimatableValue>
   ): void {
     const transforms: Record<string, number> = {}
+    let quaternion: string | null = null
     const origin: Record<string, number> = {}
     const clip: Record<string, number> = {}
     const filter: FilterValues = {}
@@ -131,6 +135,8 @@ export class SVGAdapter {
       if (property === 'drawOn') continue
       if (TRANSFORM_PROPERTIES.has(property)) {
         transforms[property] = value as number
+      } else if (property === 'quaternion') {
+        quaternion = quaternionCss(value)
       } else if (property === 'originX' || property === 'originY') {
         if (typeof value === 'number') origin[property] = value
       } else if (property === 'perspective') {
@@ -154,8 +160,8 @@ export class SVGAdapter {
     }
 
     // Apply composed transform via CSS style (works with transform-origin)
-    if (Object.keys(transforms).length > 0) {
-      const transformString = this.buildCssTransformString(transforms)
+    if (Object.keys(transforms).length > 0 || quaternion) {
+      const transformString = this.buildCssTransformString(transforms, quaternion)
       ;(element as SVGElement & { style: CSSStyleDeclaration }).style.transform = transformString
       ensureSvgTransformBox(element)
     }
@@ -190,24 +196,27 @@ export class SVGAdapter {
   /**
    * Build a CSS transform string (for use with transform-origin).
    */
-  private buildCssTransformString(transforms: Record<string, number>): string {
+  private buildCssTransformString(transforms: Record<string, number>, quaternion: string | null = null): string {
     // `perspective()` only affects the 3D functions that follow it, so it is
     // emitted first (see the push order below).
     const parts: string[] = []
 
-    if (transforms.perspective !== undefined) {
+    // 0 (or less) is no perspective, as on Canvas and WebGL; CSS would clamp it to 1px.
+    if (transforms.perspective !== undefined && transforms.perspective > 0) {
       parts.push(`perspective(${transforms.perspective}px)`)
     }
 
     // Translation - motion path takes precedence over regular x/y
     const tx = transforms.motionPathX ?? transforms.x ?? transforms.translateX
     const ty = transforms.motionPathY ?? transforms.y ?? transforms.translateY
-    if (tx !== undefined || ty !== undefined) {
+    if (transforms.z !== undefined) {
+      parts.push(`translate3d(${tx ?? 0}px, ${ty ?? 0}px, ${transforms.z}px)`)
+    } else if (tx !== undefined || ty !== undefined) {
       parts.push(`translate(${tx ?? 0}px, ${ty ?? 0}px)`)
     }
 
     // Rotation - motion path takes precedence
-    const rotation = transforms.motionPathRotate ?? transforms.rotate
+    const rotation = transforms.motionPathRotate ?? transforms.rotate ?? transforms.rotateZ
     if (rotation !== undefined) {
       parts.push(`rotate(${rotation}deg)`)
     }
@@ -219,6 +228,8 @@ export class SVGAdapter {
     if (transforms.rotateY !== undefined) {
       parts.push(`rotateY(${transforms.rotateY}deg)`)
     }
+    // A quaternion (a slerp track) turns after the Euler angles, as in the DOM adapter.
+    if (quaternion) parts.push(quaternion)
 
     // Scale
     if (transforms.scale !== undefined) {

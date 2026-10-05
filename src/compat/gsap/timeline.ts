@@ -421,6 +421,8 @@ export class CompatTimeline {
           property,
           delay: start + delay,
           keyframes,
+          // A quaternion is a rotation: it turns the short way round (see Track.interpolation).
+          ...(property === 'quaternion' && { interpolation: 'slerp' as const }),
         })
       )
 
@@ -559,6 +561,8 @@ export class CompatTimeline {
 
     // Text starts empty unless something says otherwise: typing onto nothing is normal.
     if (property === 'text') return ''
+    // A rotation starts unrotated, as an untransformed element is.
+    if (property === 'quaternion') return [0, 0, 0, 1]
 
     // A shape has no sensible default: morphing from nothing is always a mistake.
     if (property === 'd') {

@@ -41,6 +41,8 @@ import { drawAndFollow } from './draw-and-follow'
 import { orbits } from './orbits'
 import { swipeCards } from './swipe-cards'
 import { cardFlip3d } from './card-flip-3d'
+import { quaternionCube } from './quaternion-cube'
+import { scene3dOrbit } from './scene-3d-orbit'
 import { statsDecode } from './stats-decode'
 import { flipShuffle } from './flip-shuffle'
 import { flipFilter } from './flip-filter'
@@ -88,6 +90,8 @@ import drawAndFollowSource from './draw-and-follow.js?raw'
 import orbitsSource from './orbits.js?raw'
 import swipeCardsSource from './swipe-cards.js?raw'
 import cardFlip3dSource from './card-flip-3d.js?raw'
+import quaternionCubeSource from './quaternion-cube.js?raw'
+import scene3dOrbitSource from './scene-3d-orbit.js?raw'
 import statsDecodeSource from './stats-decode.js?raw'
 import flipShuffleSource from './flip-shuffle.js?raw'
 import flipFilterSource from './flip-filter.js?raw'
@@ -140,6 +144,8 @@ export const liveDemos: LiveDemoWithCode[] = [
   withCode(orbits, orbitsSource),
   withCode(swipeCards, swipeCardsSource),
   withCode(cardFlip3d, cardFlip3dSource),
+  withCode(quaternionCube, quaternionCubeSource),
+  withCode(scene3dOrbit, scene3dOrbitSource),
   withCode(statsDecode, statsDecodeSource),
   withCode(staggerGrid, staggerGridSource),
   withCode(labelSequence, labelSequenceSource),

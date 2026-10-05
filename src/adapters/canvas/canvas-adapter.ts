@@ -3,6 +3,17 @@ import { composeFilter } from '../filter-utils'
 import { shineStops } from '../shine-utils'
 import { drawOutline, pathOutline, rectOutline } from './outline'
 import { sketchPen, type SketchPen, type SketchStyle } from './sketch'
+import { parsePath } from '../../engine/path/path-utils'
+import {
+  affinePart,
+  elementMatrix,
+  growTriangle,
+  has3dTransform,
+  isAffine,
+  isBackFacing,
+  perspectiveMesh,
+  triangleTransform,
+} from '../transform-3d'
 
 /** Gradient stop definition */
 export interface GradientStop {
@@ -37,6 +48,23 @@ export function isGradient(fill: FillValue | undefined): fill is Gradient {
   return typeof fill === 'object' && fill !== null && 'type' in fill
 }
 
+/** An offscreen canvas like `ctx`'s: OffscreenCanvas, a DOM canvas, or the same canvas class (Node). */
+function createLayerCanvas(ctx: CanvasRenderingContext2D, width: number, height: number): { getContext(kind: '2d'): unknown } | null {
+  if (typeof OffscreenCanvas !== 'undefined') return new OffscreenCanvas(width, height)
+  const source = ctx.canvas as unknown as { ownerDocument?: Document; constructor?: new (w: number, h: number) => { getContext(kind: '2d'): unknown } }
+  if (source?.ownerDocument) {
+    const canvas = source.ownerDocument.createElement('canvas')
+    canvas.width = width
+    canvas.height = height
+    return canvas
+  }
+  try {
+    return source?.constructor ? new source.constructor(width, height) : null
+  } catch {
+    return null
+  }
+}
+
 /** Base properties for all canvas targets */
 export interface CanvasTargetBase {
   x: number
@@ -45,6 +73,14 @@ export interface CanvasTargetBase {
   rotate?: number
   rotateX?: number
   rotateY?: number
+  /** Depth toward the viewer, px (CSS `translateZ`); shows with `perspective` */
+  z?: number
+  /** A rotation as an `[x, y, z, w]` quaternion (a track with `interpolation: 'slerp'`) */
+  quaternion?: number[]
+  /** Distance from the viewer, px (CSS `perspective()`): nearer parts grow, further ones shrink */
+  perspective?: number
+  /** `'hidden'`: not drawn while its back faces the viewer (a card's face, past 90°) */
+  backfaceVisibility?: 'visible' | 'hidden'
   scale?: number
   scaleX?: number
   scaleY?: number
@@ -197,6 +233,8 @@ export class CanvasAdapter {
   private aliases = new Map<string, string>()
   // Time of the last applied state, passed to custom draw functions
   private time = 0
+  /** Offscreen layer for see-through targets in perspective (see `drawInPerspective`) */
+  private layer: { canvas: unknown; ctx: CanvasRenderingContext2D; width: number; height: number } | null = null
 
   /**
    * Register a canvas drawing target.
@@ -255,6 +293,7 @@ export class CanvasAdapter {
     stroke: 'strokeStyle',
     strokeWidth: 'lineWidth',
     motionPathRotate: 'rotate',
+    rotateZ: 'rotate',
   }
 
   // Properties that are position offsets (applied via ctx.translate)
@@ -328,15 +367,33 @@ export class CanvasAdapter {
   ): void {
     ctx.save()
 
+    // Apply opacity
+    if (target.opacity !== undefined) {
+      ctx.globalAlpha = target.opacity
+    }
+
+    // 3D: the CSS matrix, exact as a 2D transform without perspective, through
+    // a mesh of triangles with it (see transform-3d.ts).
+    if (has3dTransform(target)) {
+      const matrix = elementMatrix(target, offset, { x: this.getPivotX(target), y: this.getPivotY(target) })
+      if (target.backfaceVisibility === 'hidden' && isBackFacing(matrix)) {
+        ctx.restore()
+        return
+      }
+      if (isAffine(matrix)) {
+        ctx.transform(...affinePart(matrix))
+        this.drawContent(ctx, target)
+      } else {
+        this.drawInPerspective(ctx, target, matrix)
+      }
+      ctx.restore()
+      return
+    }
+
     // Apply animation position offset first (like CSS transform translate)
     // This moves the entire element including line endpoints
     if (offset.x !== 0 || offset.y !== 0) {
       ctx.translate(offset.x, offset.y)
-    }
-
-    // Apply opacity
-    if (target.opacity !== undefined) {
-      ctx.globalAlpha = target.opacity
     }
 
     // Apply transforms (rotation/scale/skew around element center)
@@ -392,6 +449,112 @@ export class CanvasAdapter {
       ctx.translate(-centerX, -centerY)
     }
 
+    this.drawContent(ctx, target)
+    ctx.restore()
+  }
+
+  /**
+   * Draw a target in perspective: each triangle of a mesh over its bounds is
+   * clipped on the canvas and drawn with the 2D transform that carries it
+   * there. The triangles overlap by a pixel so no anti-aliased seam shows.
+   */
+  private drawInPerspective(ctx: CanvasRenderingContext2D, target: CanvasTarget, matrix: number[]): void {
+    // See-through targets go through a layer at full opacity, composited once:
+    // drawn directly, the overlaps between triangles would show twice as dark.
+    const alpha = ctx.globalAlpha
+    const layer = alpha < 1 ? this.perspectiveLayer(ctx) : null
+    if (layer) {
+      layer.ctx.setTransform(ctx.getTransform())
+      this.drawMesh(layer.ctx, target, matrix)
+      ctx.save()
+      ctx.setTransform(1, 0, 0, 1, 0, 0)
+      ctx.drawImage(layer.canvas as CanvasImageSource, 0, 0)
+      ctx.restore()
+      return
+    }
+    this.drawMesh(ctx, target, matrix)
+  }
+
+  private drawMesh(ctx: CanvasRenderingContext2D, target: CanvasTarget, matrix: number[]): void {
+    const bounds = this.contentBounds(ctx, target)
+    for (const triangle of perspectiveMesh(matrix, bounds)) {
+      const transform = triangleTransform(triangle.source, triangle.target)
+      if (!transform) continue
+      const [p, q, r] = growTriangle(triangle.target, 1)
+      ctx.save()
+      ctx.beginPath()
+      ctx.moveTo(p.x, p.y)
+      ctx.lineTo(q.x, q.y)
+      ctx.lineTo(r.x, r.y)
+      ctx.closePath()
+      ctx.clip()
+      ctx.transform(...transform)
+      this.drawContent(ctx, target)
+      ctx.restore()
+    }
+  }
+
+  /** A cleared offscreen canvas the size of `ctx`'s, reused frame to frame; null where none can be made. */
+  private perspectiveLayer(ctx: CanvasRenderingContext2D): { canvas: unknown; ctx: CanvasRenderingContext2D } | null {
+    const width = ctx.canvas?.width ?? 0
+    const height = ctx.canvas?.height ?? 0
+    if (!(width > 0 && height > 0)) return null
+    if (!this.layer || this.layer.width !== width || this.layer.height !== height) {
+      const canvas = createLayerCanvas(ctx, width, height)
+      const layerCtx = canvas?.getContext('2d') as CanvasRenderingContext2D | null | undefined
+      this.layer = canvas && layerCtx ? { canvas, ctx: layerCtx, width, height } : null
+      if (!this.layer) return null
+    }
+    const layerCtx = this.layer.ctx
+    layerCtx.setTransform(1, 0, 0, 1, 0, 0)
+    layerCtx.globalAlpha = 1
+    layerCtx.clearRect(0, 0, width, height)
+    return this.layer
+  }
+
+  /**
+   * Everything a target paints, generously: its box, measured text, a path's
+   * control points, plus room for its stroke, blur and glow. The perspective
+   * mesh covers this, so nothing it draws falls outside.
+   */
+  private contentBounds(ctx: CanvasRenderingContext2D, target: CanvasTarget): { x: number; y: number; width: number; height: number } {
+    let box = this.getTargetBounds(target)
+    if (target.type === 'text') {
+      const fontSize = target.fontSize ?? 16
+      ctx.save()
+      ctx.font = `${target.fontWeight ?? 400} ${fontSize}px ${target.fontFamily ?? 'sans-serif'}`
+      const width = ctx.measureText(target.text).width
+      ctx.restore()
+      const align = target.textAlign ?? 'left'
+      const left = align === 'center' ? target.x - width / 2 : align === 'right' ? target.x - width : target.x
+      const top = (target.textBaseline ?? 'top') === 'top' ? target.y : target.y - fontSize
+      box = { x: left, y: top, width, height: fontSize * 1.4 }
+    } else if (target.type === 'path') {
+      const xs: number[] = []
+      const ys: number[] = []
+      for (const segment of parsePath(target.d).segments) {
+        xs.push(segment.startX, segment.endX)
+        ys.push(segment.startY, segment.endY)
+        for (let i = 0; i + 1 < segment.points.length; i += 2) {
+          xs.push(segment.points[i])
+          ys.push(segment.points[i + 1])
+        }
+      }
+      if (xs.length > 0) {
+        const minX = Math.min(...xs)
+        const minY = Math.min(...ys)
+        box = { x: target.x + minX, y: target.y + minY, width: Math.max(...xs) - minX, height: Math.max(...ys) - minY }
+      }
+    }
+    const pad = (target.lineWidth ?? 1) + 2 + 3 * Math.max(target.blur ?? 0, target.glow ?? 0, target.shadowBlur ?? 0) + Math.max(Math.abs(target.shadowX ?? 0), Math.abs(target.shadowY ?? 0))
+    return { x: box.x - pad, y: box.y - pad, width: box.width + 2 * pad, height: box.height + 2 * pad }
+  }
+
+  /**
+   * Paint a target in the current transform: its fill and stroke styles,
+   * filter and clip, then its shape.
+   */
+  private drawContent(ctx: CanvasRenderingContext2D, target: CanvasTarget): void {
     // Set fill style (handle gradients)
     if (target.fillStyle) {
       ctx.fillStyle = this.resolveFillStyle(ctx, target)
@@ -453,8 +616,6 @@ export class CanvasAdapter {
         this.renderCustom(ctx, target)
         break
     }
-
-    ctx.restore()
   }
 
   /**

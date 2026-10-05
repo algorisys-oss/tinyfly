@@ -1,4 +1,4 @@
-import type { AnyTrack, Track, Keyframe, EasingType, KeyframedTrack, SpringTrack, InertiaTrack } from '../types'
+import type { AnyTrack, Track, Keyframe, EasingType, KeyframedTrack, SpringTrack, InertiaTrack, TrackInterpolation } from '../types'
 import { isSpringTrack, isInertiaTrack, hasKeyframes, isParametricEasing } from '../types'
 import { getEasingFunction } from '../interpolation/easing'
 import { getInterpolator } from '../interpolation/interpolators'
@@ -29,6 +29,8 @@ export interface BakeOptions {
    * Set to 0 to keep every sample.
    */
   tolerance?: number
+  /** The track's `interpolation`, so baked rotations turn the same way (`'slerp'`) */
+  interpolation?: TrackInterpolation
 }
 
 /**
@@ -120,7 +122,7 @@ export function bakeEasing<T extends Keyframe['value']>(
 ): Keyframe<T>[] {
   const interval = options.intervalMs ?? DEFAULT_BAKE_INTERVAL_MS
   const easingFn = typeof easing === 'function' ? easing : getEasingFunction(easing)
-  const interpolator = getInterpolator(from.value)
+  const interpolator = getInterpolator(from.value, options.interpolation)
   const span = to.time - from.time
 
   if (span <= 0) return [to]
@@ -162,9 +164,11 @@ export function expandParametricEasings<T extends KeyframedTrack>(track: T, opti
   const keyframes = track.keyframes as Keyframe[]
   if (!keyframes.some((kf) => isParametricEasing(kf.easing))) return track
   const expanded: Keyframe[] = keyframes.length > 0 ? [keyframes[0]] : []
+  // Samples between rotations turn the way the track does.
+  const sampling = { ...options, interpolation: (track as Track).interpolation ?? options.interpolation }
   for (let i = 1; i < keyframes.length; i++) {
     const keyframe = keyframes[i]
-    if (isParametricEasing(keyframe.easing)) expanded.push(...bakeEasing(keyframes[i - 1], keyframe, keyframe.easing, options))
+    if (isParametricEasing(keyframe.easing)) expanded.push(...bakeEasing(keyframes[i - 1], keyframe, keyframe.easing, sampling))
     else expanded.push(keyframe)
   }
   return { ...track, keyframes: expanded }

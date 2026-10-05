@@ -10,7 +10,10 @@
  * hips sit on the y axis; the ground under them is y = 0.
  */
 
-export type Vec3 = [number, number, number]
+import type { Vec3 } from '../../engine/math'
+
+/** A point or direction, `[x, y, z]` (the engine's 3D math type). */
+export type { Vec3 }
 
 export interface BoneSpec {
   /** Length, fraction of the height */

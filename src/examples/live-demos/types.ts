@@ -21,6 +21,8 @@ export interface LiveDemo {
   tags: string[]
   /** Gallery category (default `gsap`, the GSAP-style demos) */
   category?: ExampleCategory
+  /** Further gallery pills it is listed under (a GSAP-style 3D demo is also 3D) */
+  alsoIn?: ExampleCategory[]
   /** Markup the demo animates, including a scoped `<style>` block */
   html: string
   /**
@@ -34,6 +36,6 @@ export interface LiveDemo {
    * bundle (for example `maps`: tinyfly-maps.iife.js, which carries the
    * offline world map)
    */
-  addons?: Array<'maps'>
+  addons?: Array<'maps' | 'scene-3d'>
   run(live: LiveApi, root: HTMLElement): void | (() => void)
 }

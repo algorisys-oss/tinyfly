@@ -35,6 +35,7 @@ export const cardFlip3d = {
   id: 'live-card-flip-3d',
   name: 'Card Flip',
   description: 'A grid of tiles flips over in 3D, rippling out from the centre and back.',
+  alsoIn: ['3d'],
   tags: ['rotateY', '3D', 'stagger', 'from: center'],
   html,
   run,

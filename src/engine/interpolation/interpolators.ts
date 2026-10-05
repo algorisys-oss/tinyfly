@@ -1,5 +1,6 @@
-import type { AnimatableValue, Interpolator } from '../types'
+import type { AnimatableValue, Interpolator, TrackInterpolation } from '../types'
 import { morphPath, isPathData } from '../path/path-morph'
+import { slerp, type Quat } from '../math/quat'
 
 /**
  * Interpolate between two numbers.
@@ -130,6 +131,15 @@ export const interpolateArray: Interpolator<number[]> = (from, to, progress) => 
 }
 
 /**
+ * Turn between two rotations given as `[x, y, z, w]` quaternions, the short
+ * way round at a steady speed (spherical interpolation). The result is always
+ * a unit quaternion, so a rotation never shrinks part way.
+ */
+export const interpolateQuaternion: Interpolator<number[]> = (from, to, progress) => {
+  return slerp(from as Quat, to as Quat, progress)
+}
+
+/**
  * Interpolate strings with no interpolation (discrete jump).
  */
 export const interpolateString: Interpolator<string> = (from, to, progress) => {
@@ -144,11 +154,17 @@ export const interpolatePathString: Interpolator<string> = (from, to, progress) 
 }
 
 /**
- * Detect value type and return appropriate interpolator.
+ * The interpolator for a track: the one it asks for (`interpolation`), else
+ * one chosen from the type of its values.
  */
 export function getInterpolator<T extends AnimatableValue>(
-  sampleValue: T
+  sampleValue: T,
+  interpolation?: TrackInterpolation
 ): Interpolator<T> {
+  if (interpolation === 'slerp') {
+    return interpolateQuaternion as unknown as Interpolator<T>
+  }
+
   if (typeof sampleValue === 'number') {
     return interpolateNumber as unknown as Interpolator<T>
   }

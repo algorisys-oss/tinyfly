@@ -328,3 +328,68 @@ function createMockState(
     loopIteration: 0,
   }
 }
+
+describe('DOMAdapter quaternion', () => {
+  it('writes a rotation quaternion as a CSS matrix3d, column-major', () => {
+    const adapter = new DOMAdapter()
+    const element = createMockElement()
+    adapter.registerTarget('card', element)
+    const turn = [0, 0, Math.sin(Math.PI / 4), Math.cos(Math.PI / 4)] // 90° about z, as rotate(90deg)
+    adapter.applyState(createMockState({ card: { quaternion: turn, x: 10 } }))
+    expect(element.style.transform).toContain('matrix3d(0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)')
+    expect(element.style.transform).toContain('translateX(10px)')
+  })
+
+  it('normalises the quaternion and ignores values that are not one', () => {
+    const adapter = new DOMAdapter()
+    const element = createMockElement()
+    adapter.registerTarget('card', element)
+    adapter.applyState(createMockState({ card: { quaternion: [0, 0, 0, 2] } }))
+    expect(element.style.transform).toBe('matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)')
+    const other = createMockElement()
+    adapter.registerTarget('other', other)
+    adapter.applyState(createMockState({ other: { quaternion: [1, 2, 3] } }))
+    expect(other.style.transform).toBe('')
+  })
+})
+
+describe('DOMAdapter transform order', () => {
+  it('writes transforms in one order, whatever order the tracks came in: perspective, translate, rotate, scale, skew', () => {
+    const adapter = new DOMAdapter()
+    const element = createMockElement()
+    adapter.registerTarget('card', element)
+    adapter.applyState(createMockState({ card: { skewX: 5, scale: 2, rotateY: 30, rotate: 10, x: 40, perspective: 600, z: 20, rotateX: 15 } }))
+    expect(element.style.transform).toBe(
+      'perspective(600px) translateX(40px) translateZ(20px) rotate(10deg) rotateX(15deg) rotateY(30deg) scale(2) skewX(5deg)'
+    )
+  })
+
+  it('gives a parent perspective for its children, with a vanishing point', () => {
+    const adapter = new DOMAdapter()
+    const element = createMockElement()
+    adapter.registerTarget('deck', element)
+    adapter.applyState(createMockState({ deck: { childPerspective: 800, perspectiveOriginX: 30 } }))
+    expect(element.style.perspective).toBe('800px')
+    expect(element.style.perspectiveOrigin).toBe('30% 50%')
+    expect(element.style.transform).toBe('')
+  })
+
+  it('passes transformStyle and backfaceVisibility through as CSS', () => {
+    const adapter = new DOMAdapter()
+    const element = createMockElement()
+    adapter.registerTarget('card', element)
+    adapter.applyState(createMockState({ card: { transformStyle: 'preserve-3d', backfaceVisibility: 'hidden' } }))
+    expect(element.style.transformStyle).toBe('preserve-3d')
+    expect(element.style.backfaceVisibility).toBe('hidden')
+  })
+})
+
+describe('DOMAdapter perspective 0', () => {
+  it('is no perspective, as on Canvas and WebGL (CSS would clamp it to 1px)', () => {
+    const adapter = new DOMAdapter()
+    const element = createMockElement()
+    adapter.registerTarget('card', element)
+    adapter.applyState(createMockState({ card: { perspective: 0, rotateY: 30 } }))
+    expect(element.style.transform).toBe('rotateY(30deg)')
+  })
+})

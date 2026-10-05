@@ -2182,11 +2182,128 @@ scenes (camera, lights, meshes, glTF, characters) to plain draw data; renderers 
 Canvas 2D (headless video, Workers, zero dependencies), our own WebGL2, then optional three.js;
 WebGPU deferred.
 
-- [ ] M0 rotation math (vec3, quat, mat4) and `Track.interpolation: 'slerp'`
-- [ ] M1 finish CSS-style 3D on the Canvas adapter (real perspective, not cos scaling)
-- [ ] M2 3D scenes drawn by Canvas 2D; M3 WebGL2 renderer
+- [x] M0 rotation math (vec3, quat, mat4) and `Track.interpolation: 'slerp'` (`feat/3d`): `src/engine/math/`
+      (`vec3`, `quat` with YXZ `fromEuler` / `toEuler` and `slerp`, column-major `mat4` with `compose`,
+      `invert`, `perspective`, `orthographic`, `lookAt`); `interpolateQuaternion`; format version 2 only
+      when a track uses `interpolation` (writers use the lowest version a file needs); slerp samples in
+      baked eases; DOM adapter draws `quaternion` as `matrix3d()`; Quaternion vs Euler gallery demo;
+      `docs/3d-rotations.md`
+- [x] M1 CSS-style 3D finished (`feat/3d`): one documented transform order in DOM (was track order), SVG,
+      Canvas and WebGL; DOM `childPerspective` / `perspectiveOriginX/Y`, `transformStyle` and
+      `backfaceVisibility` pass-through; Canvas: the CSS matrix, exact without perspective, through a
+      seamless triangle mesh with it (one layer for see-through targets), `backfaceVisibility`, works
+      headless; WebGL: a mat4 per quad (perspective-correct textures); SVG: `z`, `quaternion`,
+      `rotateZ`; shared `src/adapters/transform-3d.ts`; e2e `transforms-3d` (maths = CSS exactly,
+      Canvas / WebGL within a pixel, Chromium / Firefox / WebKit); editor 3D fields (Tilt X, Turn Y,
+      Depth, Perspective keyed at the playhead); 3D Card Flip and Cover Flow samples
+- [x] e2e demos check counts canvas pixels, not only markup (Dressed Stick Figures was reported static)
+- [x] gsap-compat speaks GSAP's 3D names: `rotation` / `rotationZ` → `rotate`, `rotationX` / `rotationY`,
+      `transformPerspective` → `perspective`, GSAP's parent `perspective` → `childPerspective`; `quaternion`
+      tweens are slerp tracks starting unrotated; `perspective` 0 is none in every adapter
+- [x] Examples: a **3D** pill groups every 3D example (Quaternion vs Euler, 3D Card Flip, Cover Flow, and
+      the GSAP-style Card Flip and Split Text Reveal, which stay under GSAP-style too: `alsoIn`)
+- [x] M2 3D scenes drawn by Canvas 2D (`feat/3d`): `@algorisys/tinyfly/scene-3d` entry and
+      `tinyfly-scene-3d.iife.js` (about 7 KB gzipped, sharing the engine): Scene3D JSON (groups, meshes:
+      box / sphere / cylinder / cone / plane / torus, perspective and orthographic cameras with `lookAt`,
+      ambient / directional / point / spot lights, materials with stylized and realistic fields, fog,
+      layers), `validateScene3D`, `loadScene3D`, a pure `resolveScene3D` (tracks at `<scene>/<object>`,
+      `activeCamera` cuts, culling, near clipping, total draw order, silhouette / crease / rim outlines),
+      unlit / flat / lambert / toon shading, `Canvas2DRenderer`, `Scene3DAdapter`, `drawScene3D` for video
+      draw hooks, camera helpers; entry-boundaries test; gallery demo (3D Scene: Orbiting Camera) and
+      `examples/headless-video/scene-3d-orbit.mjs` (MP4 in Node); `docs/scene-3d.md`
+- [x] M2 `extrude` geometry: any SVG path made solid (curves sampled, holes by nesting, ear-clipping
+      triangulation with hole bridges), scaled to a width in metres; golden PNG frames for scene-3d
+- [ ] M3 WebGL2 renderer
 - [ ] M4 editor `scene3d` element; M5 rigid glTF import; M6 3D characters (v2 bones in the world)
 - [ ] M7 skinned glTF; M8 optional three.js adapter
+- [ ] Goal: 3D is also for **movies** (Phase 34). Decisions to revisit in the plan before M2, since its
+      non-goals work against films: ground / contact shadows for characters (open question 8 → yes, by
+      M6), a minimal deterministic post step (anti-aliasing, fog, vignette; not a full stack), and
+      headless WebGL2 export (open question 6) for scenes too heavy for Canvas 2D
+- [ ] M2 scene JSON leaves room for several cameras and an active-camera track (cuts), so Phase 34
+      needs no format change
+- [ ] Two render modes from the same scene and timeline JSON (Phase 34H): **stylized** (our renderers:
+      flat / toon / pencil, deterministic to the pixel) and **realistic** (the three.js adapter: PBR,
+      shadows, environment light). So M2's materials and lights carry both kinds of fields (colour,
+      toon steps, outline; roughness, metalness, emissive; light intensity in physical units, which
+      settles open question 4 as metres), each renderer reading what it understands; and M8 is no
+      longer optional for films
+- [ ] Pay only for what you import: 3D ships as separate entries, never inside `.` or `/player`:
+      `/scene-3d` (types, resolver, Canvas 2D renderer), `/scene-3d/webgl` (WebGL2 renderer),
+      `/scene-3d/gltf` (glTF loader), `/three` (realistic mode). The engine gains only the math
+      helpers and slerp. `three` is an optional peer dependency (like React / Vue today), so it is
+      installed only by those who use realistic mode; Playwright / Chromium for headless realistic
+      renders is never a dependency (the CLI asks for it when needed)
+- [ ] A bundle-size check in tests: each entry's built size has a budget, and importing `.`,
+      `/player` or `/scene-3d` must not pull in WebGL, glTF or three code (checked on the built
+      `lib/` files); the release notes report the sizes
+- [ ] Watch the npm tarball (812 kB at v0.82.0): if 3D assets or renderers make it large, move them
+      to a separate package (`@algorisys/tinyfly-3d`) rather than grow every install
+
+## Phase 34: 3D movies (planned, after Phase 33 M0–M2 and M6)
+
+A short film is a timeline like any other: shots are time ranges, cuts are a camera switch, and every
+frame is rendered from data. Builds on Phase 31 (narration, voice audio, captions, `renderVideo()`,
+`tinyfly video`) and Phase 32 (dances, flips, beats); nothing here may break determinism, so a
+film re-renders identically, frames in any order.
+
+### 34A — Shots and cameras
+- [ ] Several cameras per scene; `activeCamera` as a stepped track, so a cut is one keyframe
+- [ ] Shots as data: `{ id, start, end, camera, label }`, a shot list the editor and CLI read
+- [ ] Transitions between shots: cut, crossfade, dip to black, wipe (pure, frame-addressable)
+- [ ] Camera moves as presets that write tracks: orbit, dolly, crane, pan / tilt, follow, `lookAt`
+      a target, focal-length zoom, a deterministic (seeded) handheld shake
+- [ ] Aspect ratios and safe areas: 16:9, 2.39:1 letterbox, 9:16 vertical, 1:1
+
+### 34B — Sets, props and light for mood
+- [ ] Ground, sky / gradient backdrop, simple set pieces and props as reusable scene objects
+- [ ] Ground and contact shadows (blob first, then projected); fog for depth
+- [ ] Lighting presets (day, dusk, night, stage spotlight) that write light tracks
+
+### 34C — Characters acting in 3D
+- [ ] Walk along a 3D path with feet planted on the ground (stride from speed, as `strideLength`)
+- [ ] Head and eyes `lookAt` another character or the camera
+- [ ] Lip sync from narration: mouth shapes timed from each line (phoneme-ish from text first,
+      from audio energy later), on v2 characters
+- [ ] Dances, glides, flips and the moonwalk from Phase 32 placed in the world (travel along the
+      character's facing), several characters in one scene, staging so they do not overlap
+
+### 34D — Sound
+- [ ] A mix: music bed, narration, sound effects at times or on events (taps, landings)
+- [ ] Ducking the music under narration; fades; the mix rendered with the video by ffmpeg
+- [ ] Beat grid from the music drives dances and cut timing (reuse `detectTempo`, `BeatGrid`)
+
+### 34E — Rendering a film
+- [ ] Motion blur by deterministic sub-frame sampling; anti-aliasing (supersampling)
+- [ ] Parallel rendering across worker threads (Phase 31's "next"), chunked and resumable, with a
+      frame cache so changing one shot re-renders only that shot
+- [ ] Output: 1080p and 4K H.264, ProRes / PNG sequence for editing elsewhere, SRT / VTT (exists)
+- [ ] Headless WebGL2 (Chromium) for heavy scenes, Canvas 2D stays the reference renderer
+
+### 34F — Editor
+- [ ] Storyboard view: shots as cards with a thumbnail and caption, reorderable, each opening its
+      time range on the timeline
+- [ ] Look through any camera; a shot strip on the timeline; cut at playhead
+- [ ] Render dialog for films (shot range, resolution, quality, audio mix, captions)
+
+### 34H — Two render modes: stylized and realistic
+- [ ] `renderMode: 'stylized' | 'realistic'` per film, overridable per shot (decided); the scene,
+      timeline, shots and sound do not change between them
+- [ ] Stylized: Canvas 2D (reference, goldens, Workers, Node) and WebGL2; flat, toon and pencil
+      looks, outlines, blob shadows
+- [ ] Realistic: three.js (optional peer dependency, only in the `three` entry): PBR materials,
+      shadow maps, an environment map (HDRI) and tone mapping
+- [ ] Characters in both: the pen / toon look for stylized; for realistic, the `solid` look with
+      PBR shading first (decided: no wait on M7), then a skinned glTF mapped to v2 pose fields (M7)
+- [ ] Headless realistic renders through Chromium (Playwright) with WebGL2; deterministic in input,
+      checked against stylized renders of the same frame by tolerance, not pixels
+- [ ] Editor: a mode switch on the preview and in the render dialog, so a film can be blocked out
+      fast in stylized and rendered in realistic
+
+### 34G — Showcase
+- [ ] A 1–2 minute short made only from data: two characters, three sets, cuts, narration,
+      music, a dance number, captions, rendered by `tinyfly video` and in the editor, once in each
+      render mode from the same JSON
 
 ---
 

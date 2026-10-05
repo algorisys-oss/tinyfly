@@ -26,7 +26,6 @@ export const PROPERTY_DEFAULTS: Record<string, number> = {
   rotateX: 0,
   rotateY: 0,
   rotateZ: 0,
-  rotation: 0,
 
   scale: 1,
   scaleX: 1,

@@ -12,7 +12,7 @@ import type {
   SpringTrack,
   TextTrack,
 } from '../types'
-import { isMotionPathTrack, isSpringTrack, isTextTrack, isInertiaTrack, FORMAT_VERSION } from '../types'
+import { isMotionPathTrack, isSpringTrack, isTextTrack, isInertiaTrack, formatVersionFor } from '../types'
 import { TrackPlayer, SpringTrackPlayer, InertiaTrackPlayer, trackTargets } from './track'
 import { getMotionPathPoint } from '../path/motion-path'
 import { textAt } from '../text/text-value'
@@ -603,7 +603,7 @@ export class Timeline {
    */
   toDefinition(): TimelineDefinition {
     return {
-      formatVersion: FORMAT_VERSION,
+      formatVersion: formatVersionFor(this._tracks as Track[]),
       id: this.id,
       name: this.name,
       config: { ...this._config },

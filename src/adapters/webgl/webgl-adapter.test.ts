@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { quadMatrix, parseColor, type WebGLTarget } from './webgl-adapter'
+import { quadMatrix, quadMatrix3d, parseColor, type WebGLTarget } from './webgl-adapter'
 
 /**
  * The GL calls themselves need a real context, so these tests cover the pure
@@ -123,5 +123,35 @@ describe('parseColor', () => {
 
   it('falls back to white for unparseable input', () => {
     expect(parseColor('rebeccapurple')).toEqual([1, 1, 1])
+  })
+})
+
+describe('quadMatrix3d', () => {
+  /** Where a corner of the unit quad lands on the canvas, in px. */
+  const corner = (m: Float32Array, u: number, v: number, w = 400, h = 200) => {
+    const x = m[0] * u + m[4] * v + m[12]
+    const y = m[1] * u + m[5] * v + m[13]
+    const q = m[3] * u + m[7] * v + m[15]
+    return { x: ((x / q + 1) / 2) * w, y: ((1 - y / q) / 2) * h }
+  }
+
+  it('matches the 2D quadMatrix for flat targets', () => {
+    const t = target({ x: 200, y: 100, width: 80, height: 40, rotate: 30, scaleX: 1.5, originX: 20 })
+    const flat = quadMatrix(t, 400, 200)
+    const deep = quadMatrix3d(t, 400, 200)
+    for (const [u, v] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
+      const x = flat[0] * u + flat[3] * v + flat[6]
+      const y = flat[1] * u + flat[4] * v + flat[7]
+      const p = corner(deep, u, v)
+      expect(p.x).toBeCloseTo(((x + 1) / 2) * 400, 3)
+      expect(p.y).toBeCloseTo(((1 - y) / 2) * 200, 3)
+    }
+  })
+
+  it('puts a card in perspective where the Canvas adapter and CSS do', () => {
+    // 200 px wide, centred at x = 200, turned 60° about y, seen from 500 px.
+    const m = quadMatrix3d(target({ x: 200, y: 100, width: 200, height: 100, rotateY: 60, perspective: 500 }), 400, 200)
+    expect(corner(m, 0, 0.5).x).toBeCloseTo(200 - 50 / (1 - 86.60254 / 500), 2)
+    expect(corner(m, 1, 0.5).x).toBeCloseTo(200 + 50 / (1 + 86.60254 / 500), 2)
   })
 })

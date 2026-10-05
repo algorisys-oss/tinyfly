@@ -509,3 +509,30 @@ describe('chained tweens on one property play in sequence', () => {
     expect([0, 500, 1000, 1500, 2000].map(xAt)).toEqual([0, 50, 100, 50, 0])
   })
 })
+
+describe("GSAP's 3D names", () => {
+  const properties = (tl: CompatTimeline) => tl.timeline.tracks.map((t) => t.property).sort()
+
+  it('takes rotation, rotationX/Y/Z and transformPerspective as tinyfly names', () => {
+    const tl = timeline()
+    tl.to('card', { rotation: 10, rotationX: 20, rotationY: 30, transformPerspective: 600, duration: 1 })
+    tl.to('chip', { rotationZ: 45, duration: 1 })
+    expect(properties(tl)).toEqual(['perspective', 'rotate', 'rotate', 'rotateX', 'rotateY'])
+  })
+
+  it("maps GSAP's perspective to the parent's perspective for its children", () => {
+    const tl = timeline()
+    tl.fromTo('stage', { perspective: 400 }, { perspective: 800, duration: 1 })
+    expect(properties(tl)).toEqual(['childPerspective'])
+  })
+
+  it('turns a quaternion the short way (slerp), starting unrotated', () => {
+    const tl = timeline()
+    tl.to('cube', { quaternion: [0, 1, 0, 0], duration: 1 })
+    const track = tl.timeline.tracks[0] as Track<number[]>
+    expect(track.interpolation).toBe('slerp')
+    expect(track.keyframes[0].value).toEqual([0, 0, 0, 1])
+    const mid = tl.timeline.getStateAtTime(500).values.get('cube')!.get('quaternion') as number[]
+    expect(Math.hypot(...mid)).toBeCloseTo(1, 9)
+  })
+})

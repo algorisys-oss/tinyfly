@@ -27,6 +27,7 @@ export type ExampleCategory =
   | 'effects'
   | 'data'
   | 'camera'
+  | '3d'
   | 'scroll'
   | 'video'
   | 'products'
@@ -38,6 +39,8 @@ interface ExampleBase {
   name: string
   description: string
   category: ExampleCategory
+  /** Further pills it is listed under (a GSAP-style card flip is also 3D); its badge shows `category` */
+  alsoIn?: ExampleCategory[]
   /** Extra search terms */
   tags: string[]
 }
@@ -73,6 +76,7 @@ export const exampleCategories: { id: ExampleCategory; label: string }[] = [
   { id: 'effects', label: 'Effects' },
   { id: 'data', label: 'Data' },
   { id: 'camera', label: 'Camera' },
+  { id: '3d', label: '3D' },
   { id: 'scroll', label: 'Scroll' },
   { id: 'video', label: 'Video' },
   { id: 'products', label: 'Algorisys' },
@@ -92,6 +96,7 @@ const SAMPLE_CATEGORY: Record<SampleDefinition['category'], ExampleCategory> = {
   showcase: 'showcase',
   products: 'products',
   camera: 'camera',
+  '3d': '3d',
 }
 
 const CODE_CATEGORY: Record<CodeCategory, ExampleCategory> = {
@@ -137,6 +142,7 @@ function fromLiveDemo(demo: LiveDemoWithCode): LiveCatalogExample {
     name: demo.name,
     description: demo.description,
     category: demo.category ?? 'gsap',
+    ...(demo.alsoIn && { alsoIn: demo.alsoIn }),
     tags: demo.tags,
     demo,
   }
@@ -160,10 +166,15 @@ export interface ExampleFilter {
 }
 
 /** Filter the catalog. Pure, so the page and tests share it. */
+/** Whether an example is listed under a category pill: its own, or one it is also in. */
+export function inCategory(example: Example, category: ExampleCategory): boolean {
+  return example.category === category || (example.alsoIn?.includes(category) ?? false)
+}
+
 export function filterExamples(list: Example[], filter: ExampleFilter): Example[] {
   const query = filter.query?.trim().toLowerCase() ?? ''
   return list.filter((example) => {
-    if (filter.category && filter.category !== 'all' && example.category !== filter.category) return false
+    if (filter.category && filter.category !== 'all' && !inCategory(example, filter.category)) return false
     if (filter.kind && filter.kind !== 'all' && example.kind !== filter.kind) return false
     if (!query) return true
     return (

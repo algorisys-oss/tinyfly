@@ -372,6 +372,32 @@ a closed-form function of time.
 by default it scales with the distance travelled. Like a spring, an inertia
 track decides its own duration.
 
+### Rotation tracks (`interpolation: "slerp"`)
+
+A keyframe track may say how its values blend. Its one mode today, `"slerp"`,
+marks the values as rotations: `[x, y, z, w]` quaternions, turned the short way
+round at a steady speed (spherical interpolation). Easing shapes the turn as it
+shapes any other value.
+
+```json
+{
+  "id": "turn",
+  "target": "cube",
+  "property": "quaternion",
+  "interpolation": "slerp",
+  "keyframes": [
+    { "time": 0, "value": [0, 0, 0, 1] },
+    { "time": 2000, "value": [0, 1, 0, 0], "easing": "ease-in-out" }
+  ]
+}
+```
+
+It is data, not guessed: a 4-number array without it blends element-wise, as
+arrays always have. A file that uses it is written as `formatVersion: 2`, so
+older readers refuse it instead of playing the rotation wrongly; files that do
+not stay at version 1. The DOM adapter draws a `quaternion` value as a CSS
+`matrix3d()`. See [3D rotations](3d-rotations.md).
+
 ### Track scheduling
 
 Every track kind accepts these optional fields. They are omitted from the JSON
@@ -453,7 +479,7 @@ objects. Use `serializeTimeline` when you need a detached copy.
 
 ```jsonc
 {
-  "formatVersion": 1,              // optional; absent means 1
+  "formatVersion": 1,              // optional; absent means 1 (2 when a track uses slerp)
   "id": "scene-1",
   "name": "My Animation",          // optional
   "config": {
@@ -502,7 +528,12 @@ See [Teaching animations](teaching.md).
 
 **`formatVersion`** is the format a file was written for. Readers refuse a newer
 version with a clear error. Optional additions keep the version; a change an older
-reader would misread bumps it.
+reader would misread bumps it. Writers use the lowest version a file needs:
+
+| Version | Adds |
+|---|---|
+| 1 | the original format |
+| 2 | [`interpolation: "slerp"`](#rotation-tracks-interpolation-slerp) on keyframe tracks |
 
 `repeatDelay` applies when the timeline loops (`loop` is not `0`). Going
 forward, the playhead **holds the last frame** for the delay, then wraps to the

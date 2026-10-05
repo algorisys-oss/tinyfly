@@ -21,6 +21,8 @@ export const CDN_BASE = `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v${__
 export const BROWSER_BUNDLE_URL = `${CDN_BASE}/tinyfly.iife.js`
 /** The maps add-on: load after the browser bundle; it adds to the same `tinyfly` global. */
 export const MAPS_BUNDLE_URL = `${CDN_BASE}/tinyfly-maps.iife.js`
+/** The 3D scenes add-on: load after the browser bundle; it adds to the same `tinyfly` global. */
+export const SCENE_3D_BUNDLE_URL = `${CDN_BASE}/tinyfly-scene-3d.iife.js`
 
 const BUNDLE_NOTE = `tinyfly v${__APP_VERSION__}, served from GitHub by jsDelivr. For offline use, save the file and point this at your copy.`
 
@@ -30,7 +32,7 @@ interface PageParts {
   body: string
   script: string
   /** Add-on bundles to load after the browser bundle */
-  addons?: Array<'maps'>
+  addons?: Array<'maps' | 'scene-3d'>
 }
 
 function indent(text: string, spaces: number): string {
@@ -42,7 +44,7 @@ function indent(text: string, spaces: number): string {
     .join('\n')
 }
 
-const ADDON_URLS = { maps: MAPS_BUNDLE_URL }
+const ADDON_URLS = { maps: MAPS_BUNDLE_URL, 'scene-3d': SCENE_3D_BUNDLE_URL }
 
 function page({ title, style, body, script, addons = [] }: PageParts): string {
   return `<!doctype html>

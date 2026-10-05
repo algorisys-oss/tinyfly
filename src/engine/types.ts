@@ -123,7 +123,18 @@ export interface Track<T extends AnimatableValue = AnimatableValue> {
   targets?: string[];
   /** Per-target time offsets for `targets`. Ignored when `targets` is absent. */
   stagger?: StaggerConfig;
+  /**
+   * How keyframe values blend. Absent: chosen from the value, as always
+   * (numbers, colours, arrays element-wise, path morphs). `'slerp'`: the
+   * values are rotations as `[x, y, z, w]` quaternions, turned the short way
+   * round at a steady speed. It is data, not guessed from a 4-number array,
+   * so a file says what it means. A file that uses it is format version 2.
+   */
+  interpolation?: TrackInterpolation;
 }
+
+/** Explicit interpolation modes a track can ask for (see `Track.interpolation`). */
+export type TrackInterpolation = 'slerp';
 
 /** Where a stagger starts fanning out from */
 export type StaggerFrom = 'start' | 'end' | 'center' | 'edges' | number;
@@ -185,8 +196,20 @@ export interface TimelineMarker {
   question?: string;
 }
 
-/** The JSON format version this engine writes and reads. */
-export const FORMAT_VERSION = 1;
+/**
+ * The newest JSON format version this engine reads. It writes the lowest
+ * version a file needs (see `formatVersionFor`), so files that use nothing new
+ * still open in older players.
+ *
+ * - 1: the original format.
+ * - 2: tracks may set `interpolation: 'slerp'` (quaternion rotations).
+ */
+export const FORMAT_VERSION = 2;
+
+/** The format version a timeline's tracks need: 2 when any track sets `interpolation`, else 1. */
+export function formatVersionFor(tracks: ReadonlyArray<{ interpolation?: TrackInterpolation }>): number {
+  return tracks.some((track) => track.interpolation !== undefined) ? 2 : 1;
+}
 
 /** Serializable timeline definition */
 export interface TimelineDefinition {

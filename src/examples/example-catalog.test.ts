@@ -89,3 +89,13 @@ describe('buildSamplePreview', () => {
     expect(preview.height).toBe(vertical.canvas!.height)
   })
 })
+
+describe('3D pill', () => {
+  it('lists every 3D example, and a GSAP-style one stays in GSAP-style too', () => {
+    const ids = filterExamples(examples, { category: '3d' }).map((e) => e.id)
+    expect(ids).toEqual(expect.arrayContaining(['live-quaternion-cube', 'live-card-flip-3d', 'live-split-text-reveal', '3d-card-flip', 'cover-flow']))
+    expect(filterExamples(examples, { category: 'gsap' }).map((e) => e.id)).toContain('live-card-flip-3d')
+    expect(filterExamples(examples, { category: 'motion' }).map((e) => e.id)).not.toContain('cover-flow')
+  })
+})
+

@@ -16,7 +16,7 @@ export interface SampleDefinition {
   /** Short description */
   description: string
   /** Category for organization */
-  category: 'basic' | 'motion' | 'text' | 'ui' | 'effects' | 'showcase' | 'products' | 'camera'
+  category: 'basic' | 'motion' | 'text' | 'ui' | 'effects' | 'showcase' | 'products' | 'camera' | '3d'
   /** Preview thumbnail (emoji for now, could be image URL) */
   thumbnail: string
   /** Animation duration in ms */
@@ -335,6 +335,60 @@ function makeDrawGuessPromo(): SampleDefinition {
 /**
  * All available sample animations
  */
+/**
+ * Cover flow: five cards in a row, turned toward the one in focus, which sits
+ * flat and nearer. The focus slides along the row and back, each card's x,
+ * turn and depth keyed per step, in perspective.
+ */
+function coverFlow(): SampleDefinition {
+  const colors = ['#e74c3c', '#e67e22', '#f1c40f', '#2ecc71', '#4a9eff']
+  const STEP = 700
+  const focusAt = [0, 1, 2, 3, 4, 3, 2, 1, 0]
+  const slotOf = (card: number, focus: number) => card - focus
+  const pose = (slot: number) => ({
+    x: slot === 0 ? 0 : Math.sign(slot) * (75 + 55 * (Math.abs(slot) - 1)),
+    rotateY: slot === 0 ? 0 : slot < 0 ? 55 : -55,
+    z: slot === 0 ? 50 : -20 * Math.abs(slot),
+  })
+  const tracks = colors.flatMap((_, card) => {
+    const name = `Cover ${card + 1}`
+    const keys = (property: 'x' | 'rotateY' | 'z') =>
+      focusAt.map((focus, step) => ({
+        time: step * STEP,
+        value: pose(slotOf(card, focus))[property],
+        ...(step > 0 && { easing: 'ease-in-out' as const }),
+      }))
+    return [
+      { target: name, property: 'perspective', keyframes: [{ time: 0, value: 500 }] },
+      { target: name, property: 'x', keyframes: keys('x') },
+      { target: name, property: 'rotateY', keyframes: keys('rotateY') },
+      { target: name, property: 'z', keyframes: keys('z') },
+    ]
+  })
+  return {
+    id: 'cover-flow',
+    name: 'Cover Flow',
+    description: 'Five cards turned in perspective toward the one in focus, which slides along the row: x, Turn Y and Depth keyed per step',
+    category: '3d',
+    thumbnail: '🎴',
+    duration: STEP * (focusAt.length - 1),
+    canvas: { width: 400, height: 300 },
+    elements: colors.map((fill, card) => ({
+      type: 'rect' as const,
+      name: `Cover ${card + 1}`,
+      x: 155,
+      y: 95,
+      width: 90,
+      height: 110,
+      fill,
+      borderRadius: 10,
+      stroke: '#ffffff',
+      strokeWidth: 2,
+    })),
+    tracks,
+  }
+}
+
 export const sampleDefinitions: SampleDefinition[] = [
   makeDrawGuessPromo(),
   makeLetterDropBounce('WORLD', {
@@ -566,6 +620,55 @@ export const sampleDefinitions: SampleDefinition[] = [
       },
     ],
   },
+
+  {
+    id: '3d-card-flip',
+    name: '3D Card Flip',
+    description: 'A two-sided card turns over in perspective: each face hides once its back turns toward you (backfaceVisibility), so two cards make one',
+    category: '3d',
+    thumbnail: '🃏',
+    duration: 3600,
+    canvas: { width: 400, height: 300 },
+    elements: [
+      { type: 'rect', name: 'Back', x: 140, y: 70, width: 120, height: 160, fill: '#9b59b6', borderRadius: 14, stroke: '#ffffff', strokeWidth: 3 },
+      { type: 'rect', name: 'Front', x: 140, y: 70, width: 120, height: 160, fill: '#4a9eff', borderRadius: 14, stroke: '#ffffff', strokeWidth: 3 },
+    ],
+    tracks: [
+      // The front turns 0 → 180 → 360; the back starts half a turn behind, so it faces you when the front does not.
+      ...(['Front', 'Back'] as const).flatMap((card) => {
+        const from = card === 'Front' ? 0 : -180
+        return [
+          { target: card, property: 'perspective', keyframes: [{ time: 0, value: 600 }] },
+          { target: card, property: 'backfaceVisibility', keyframes: [{ time: 0, value: 'hidden' }] },
+          {
+            target: card,
+            property: 'rotateY',
+            keyframes: [
+              { time: 0, value: from },
+              { time: 400, value: from },
+              { time: 1400, value: from + 180, easing: 'ease-in-out' as const },
+              { time: 2200, value: from + 180 },
+              { time: 3200, value: from + 360, easing: 'ease-in-out' as const },
+              { time: 3600, value: from + 360 },
+            ],
+          },
+          {
+            target: card,
+            property: 'rotateX',
+            keyframes: [
+              { time: 0, value: 0 },
+              { time: 900, value: 12, easing: 'ease-in-out' as const },
+              { time: 1400, value: 0, easing: 'ease-in-out' as const },
+              { time: 2700, value: -12, easing: 'ease-in-out' as const },
+              { time: 3200, value: 0, easing: 'ease-in-out' as const },
+            ],
+          },
+        ]
+      }),
+    ],
+  },
+
+  coverFlow(),
 
   {
     id: 'slide-in',

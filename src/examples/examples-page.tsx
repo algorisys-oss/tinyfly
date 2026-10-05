@@ -17,6 +17,7 @@ import {
   type LiveCatalogExample,
   type ExampleCategory,
   type ExampleKind,
+  inCategory,
 } from './example-catalog'
 import { buildSamplePreview } from './sample-preview'
 import { CopyCodeButton } from './copy-code-button'
@@ -398,7 +399,7 @@ export const ExamplesPage: Component = () => {
 
   /** Only categories with something in them for the current kind and search. */
   const categories = createMemo(() =>
-    exampleCategories.filter((c) => byKind().some((example) => example.category === c.id))
+    exampleCategories.filter((c) => byKind().some((example) => inCategory(example, c.id)))
   )
 
   const countFor = (value: ExampleKind | 'all') => filterExamples(examples, { kind: value, query: query() }).length

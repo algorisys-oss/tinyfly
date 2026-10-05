@@ -1,0 +1,165 @@
+# 3D Scenes
+
+`@algorisys/tinyfly/scene-3d` draws real 3D scenes: cameras, lights and
+meshes, in world space, seen through a perspective or orthographic camera. The
+scene is plain JSON; its motion is ordinary timeline tracks. It draws on a 2D
+canvas in the **stylized** look (flat, smooth or toon shading, ink outlines,
+fog), in browsers, Web Workers and Node, so the same scene plays on a page and
+renders to MP4 with `tinyfly video`. No WebGL, no GPU, no dependencies.
+
+Try it on the Examples page: **3D Scene: Orbiting Camera** (under **3D**).
+The plan for what comes next (a WebGL renderer, glTF models, 3D characters,
+the realistic look, films) is [3D support](3d-support-plan.md).
+
+```js
+import { Timeline } from '@algorisys/tinyfly'
+import { loadScene3D, drawScene3D } from '@algorisys/tinyfly/scene-3d'
+
+const scene = loadScene3D({
+  id: 'stage',
+  camera: 'cam',
+  background: '#1e293b',
+  materials: { red: { color: '#ef4444', shading: 'toon', outline: { width: 2, color: '#0f172a' } } },
+  objects: [
+    { id: 'cam', kind: 'camera', projection: 'perspective', fov: 45, near: 0.1, far: 50, position: [0, 2, 6], lookAt: [0, 0, 0] },
+    { id: 'sun', kind: 'light', light: 'directional', color: '#ffffff', intensity: 0.9, position: [3, 5, 4] },
+    { id: 'box', kind: 'mesh', geometry: { type: 'box', size: [1, 1, 1] }, material: 'red' },
+  ],
+})
+
+const timeline = new Timeline({
+  id: 'spin',
+  tracks: [{ id: 'turn', target: 'stage/box', property: 'rotateY', keyframes: [{ time: 0, value: 0 }, { time: 2000, value: 360 }] }],
+})
+
+// Each frame:
+drawScene3D(ctx, scene, timeline.getStateAtTime(time).values, { width: 800, height: 450 })
+```
+
+On a page with no build step, load `tinyfly-scene-3d.iife.js` after
+`tinyfly.iife.js`; it adds these functions to the same `tinyfly` global.
+
+## The scene
+
+| | |
+|---|---|
+| Units | metres |
+| Axes | right-handed: +x right, +y up, +z toward the default camera (a camera looks down its own -z) |
+| Angles | degrees; Euler `rotation` in YXZ order (yaw, pitch, roll), or a `quaternion` `[x, y, z, w]` |
+| Order | `objects` is an array: parents before children; ties in depth are broken by array order |
+
+**Objects** share `id`, `position`, `rotation` or `quaternion`, `scale` (one
+number or three), `parent` (an earlier object it moves with), `visible`, and
+`layer` (below).
+
+| `kind` | Fields |
+|---|---|
+| `group` | (just a transform: move several objects together, or carry a camera) |
+| `mesh` | `geometry`, `material` (a key of `materials`) |
+| `camera` | `projection: 'perspective'` with `fov` (vertical, degrees), or `'orthographic'` with `height` (metres); `near`, `far`; optional `lookAt: [x, y, z]` |
+| `light` | `light: 'ambient' \| 'directional' \| 'point' \| 'spot'`, `color`, `intensity` (1 is full light); directional and spot shine from their position toward `target` (default the origin); point and spot fade to nothing at `range`; spot's cone is `angle` (half-angle, default 30°) |
+
+**Geometry**: `box` (`size: [w, h, d]`), `sphere` (`radius`, `segments`),
+`cylinder` and `cone` (`radius`, `height`, `segments`), `torus` (`radius` to
+the tube's middle, `tube`, `segments`), `plane` (a floor: `size: [w, d]`
+facing up, `segments` per side), and `extrude`: any SVG `path` made solid,
+`depth` metres thick and scaled to `width` metres wide (default 1), with
+`curveSegments` points per curve (default 12). Subpaths inside others are
+holes (an "o", a ring); outlines inside holes are solid again. The path's y
+(down) is flipped to 3D's y (up). All centred on the origin.
+
+```js
+{ id: 'star', kind: 'mesh', material: 'gold',
+  geometry: { type: 'extrude', path: 'M 50 0 L 61 35 L 98 35 L 68 57 L 79 91 L 50 70 L 21 91 L 32 57 L 2 35 L 39 35 Z', depth: 0.3, width: 1.4 } }
+```
+
+**Materials**: `color`, `opacity`, `doubleSided`, and for the stylized look:
+
+| `shading` | Looks |
+|---|---|
+| `unlit` | the colour as it is |
+| `flat` | lit per face: faceted |
+| `lambert` (default) | lit with smoothed normals: curved shapes read as round |
+| `toon` | lit in `bands` steps (default 3) |
+
+`outline: { width, color }` inks silhouettes, creases (edges sharper than 30°)
+and open rims. `roughness`, `metalness` and `emissive` are for the realistic
+look (three.js, a later milestone); the stylized renderer ignores them, so one
+material serves both.
+
+The scene can have `background` and `fog: { color, near, far }` (metres from
+the camera). A scene with no lights gets a soft default (ambient plus a key
+light from upper right).
+
+## Animating it
+
+Tracks address objects as **`<sceneId>/<objectId>`**, so a 3D scene's tracks
+live in the same timeline as everything else.
+
+| Property | On | Value |
+|---|---|---|
+| `x`, `y`, `z` or `position` | any object | metres |
+| `rotateX`, `rotateY`, `rotateZ` or `quaternion` | any object | degrees (YXZ), or `[x, y, z, w]` on a track with `interpolation: "slerp"` |
+| `scale`, `scaleX`, `scaleY`, `scaleZ` | any object | |
+| `visible` | any object | 0 or 1 (children hide with their parent) |
+| `opacity` | meshes | 0..1, times the material's |
+| `color` | meshes, lights | a colour, over the material's or light's |
+| `intensity`, `target` | lights | |
+| `fov` / `height`, `lookAt` | cameras | |
+| `activeCamera` | the scene, target `<sceneId>` | a camera's id: **a cut is one keyframe** |
+
+Animate either the components (`x`, `rotateY`) or the vector (`position`,
+`quaternion`) of one object, not both: `validateScene3D(scene, tracks)` says
+so instead of picking a winner.
+
+**Orbiting** is a rotation, not a path: put the camera on a `group` and turn
+the group. `orbitPosition(target, yaw, pitch, distance)` and
+`dollyPosition(eye, target, amount)` place cameras for keyframes.
+
+## Drawing
+
+```ts
+loadScene3D(json): LoadedScene3D            // validates and builds meshes once (throws with every problem)
+validateScene3D(json, tracks?): string[]    // problems as sentences, empty when fine
+resolveScene3D(loaded, values, { width, height }): ResolvedScene3D   // pure: matrices, camera, lights, sorted triangles
+drawScene3D(ctx, loaded, values, { width, height })                // resolve and draw, in one call
+new Scene3DAdapter(new Canvas2DRenderer(ctx), { width, height })   // registerScene, applyState(state), render()
+```
+
+`resolveScene3D` is the whole 3D pipeline as data: world matrices, the
+camera's view and projection, lights in world space, and every visible
+triangle on screen with its depth, normals and outline edges, sorted. A
+renderer only paints it. The same values always give the same frame, and
+frames can be drawn in any order.
+
+**In a video**, draw the scene from the frame's timeline state:
+
+```js
+export default {
+  width: 1280, height: 720, duration: 9000,
+  timeline: { id: 'orbit', tracks: [ /* stage/... tracks */ ] },
+  draw(ctx, frame) {
+    drawScene3D(ctx, scene, frame.state?.values, frame)
+  },
+}
+```
+
+`examples/headless-video/scene-3d-orbit.mjs` orbits a camera around lit
+shapes and cuts to a wide shot.
+
+Golden frames (`src/scene-3d/golden/`) pin the look: the same scenes must draw
+exactly the same pixels on every run.
+
+## Draw order and its limits
+
+The Canvas 2D renderer paints back to front (painter's algorithm), culling
+back faces and clipping at the camera's near plane. Within a `layer`
+(default 0) triangles sort far to near; lower layers draw first, so a floor at
+`layer: -1` never covers what stands on it. Triangles that cross each other,
+or very long ones, can sort wrongly: give big planes `segments`, keep meshes
+modest, or use a layer. Each triangle has one colour, so smooth shading is
+smoothed per triangle, not per pixel; more segments look rounder. The WebGL2
+renderer (next) has a depth buffer and per-pixel light.
+
+Rendering speed in Node: a 1280×720 scene of a few thousand triangles renders
+at a few frames a second; parallel rendering for long films is planned.

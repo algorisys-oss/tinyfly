@@ -1,4 +1,6 @@
 import type { AnimationState, AnimatableValue } from '../../engine'
+import { mat4 } from '../../engine/math'
+import { elementMatrix, isBackFacing } from '../transform-3d'
 
 /**
  * Minimal WebGL render target.
@@ -26,6 +28,16 @@ export interface WebGLTarget {
   opacity?: number
   /** Degrees, clockwise */
   rotate?: number
+  /** 3D turns, degrees (CSS `rotateX` / `rotateY`), and depth toward the viewer, px */
+  rotateX?: number
+  rotateY?: number
+  z?: number
+  /** A rotation as an `[x, y, z, w]` quaternion (a track with `interpolation: 'slerp'`) */
+  quaternion?: number[]
+  /** Distance from the viewer, px (CSS `perspective()`) */
+  perspective?: number
+  /** `'hidden'`: not drawn while its back faces the viewer */
+  backfaceVisibility?: 'visible' | 'hidden'
   scale?: number
   scaleX?: number
   scaleY?: number
@@ -41,11 +53,11 @@ export interface WebGLTarget {
 const VERTEX_SHADER = `
 attribute vec2 a_position;
 attribute vec2 a_texCoord;
-uniform mat3 u_matrix;
+uniform mat4 u_matrix;
 varying vec2 v_texCoord;
 void main() {
-  vec3 position = u_matrix * vec3(a_position, 1.0);
-  gl_Position = vec4(position.xy, 0.0, 1.0);
+  // w carries the perspective, so textures are interpolated perspective-correct.
+  gl_Position = u_matrix * vec4(a_position, 0.0, 1.0);
   v_texCoord = a_texCoord;
 }
 `
@@ -72,6 +84,10 @@ const NUMERIC_PROPERTIES = new Set([
   'opacity',
   'rotate',
   'rotateZ',
+  'rotateX',
+  'rotateY',
+  'z',
+  'perspective',
   'scale',
   'scaleX',
   'scaleY',
@@ -187,6 +203,9 @@ export class WebGLAdapter {
     if (typeof value === 'string' && property === 'fill') {
       target.fill = value
     }
+    if (property === 'quaternion' && Array.isArray(value)) {
+      target.quaternion = value
+    }
   }
 
   /** Draw every registered target. */
@@ -212,9 +231,10 @@ export class WebGLAdapter {
 
   private drawTarget(id: string, target: WebGLTarget, canvasWidth: number, canvasHeight: number): void {
     const gl = this.gl
-    const matrix = quadMatrix(target, canvasWidth, canvasHeight)
+    if (target.backfaceVisibility === 'hidden' && isBackFacing(quadPixelMatrix(target))) return
+    const matrix = quadMatrix3d(target, canvasWidth, canvasHeight)
 
-    gl.uniformMatrix3fv(this.locations.matrix, false, matrix)
+    gl.uniformMatrix4fv(this.locations.matrix, false, matrix)
     gl.uniform1f(this.locations.opacity, target.opacity ?? 1)
 
     if (target.texture) {
@@ -296,6 +316,35 @@ export function quadMatrix(
     c * sx, d * sy, 0,
     tx * sx - 1, ty * sy + 1, 1,
   ])
+}
+
+/**
+ * The quad's transform in canvas pixels: the unit quad scaled to the target's
+ * size about its origin, then the same CSS matrix the Canvas adapter uses
+ * (translate, rotate, rotateX, rotateY, quaternion, scale, perspective about
+ * the pivot at `x`, `y`).
+ */
+function quadPixelMatrix(target: WebGLTarget): number[] {
+  const originX = (target.originX ?? 50) / 100
+  const originY = (target.originY ?? 50) / 100
+  const pivot = { x: target.x, y: target.y }
+  const size = mat4.multiply(
+    mat4.translation([target.x, target.y, 0]),
+    mat4.multiply(mat4.scaling([target.width, target.height, 1]), mat4.translation([-originX, -originY, 0]))
+  )
+  return mat4.multiply(elementMatrix(target, { x: 0, y: 0 }, pivot), size)
+}
+
+/**
+ * Build the 4x4 matrix that maps the unit quad to the target's place on the
+ * canvas in clip space, with perspective in w. Column-major, as WebGL
+ * expects. Depth is flattened (targets draw in order), so nothing is clipped
+ * for being near or far.
+ */
+export function quadMatrix3d(target: WebGLTarget, canvasWidth: number, canvasHeight: number): Float32Array {
+  // Pixels to clip space: x 0..width → -1..1, y flipped, z dropped, w kept.
+  const toClip = [2 / canvasWidth, 0, 0, 0, 0, -2 / canvasHeight, 0, 0, 0, 0, 0, 0, -1, 1, 0, 1]
+  return new Float32Array(mat4.multiply(toClip, quadPixelMatrix(target)))
 }
 
 /** Parse #rgb / #rrggbb into 0..1 components. Unknown input renders white. */

@@ -34,7 +34,19 @@ export default {
     for (const id of ids) {
       await mount(page, id)
       await page.waitForTimeout(100)
-      const snap = () => page.evaluate(() => document.getElementById('demo').innerHTML)
+      // The markup, and what each canvas shows: canvas demos change pixels, not HTML.
+      const snap = () =>
+        page.evaluate(() => {
+          const demo = document.getElementById('demo')
+          const pixels = [...demo.querySelectorAll('canvas')].map((canvas) => {
+            try {
+              return canvas.toDataURL()
+            } catch {
+              return ''
+            }
+          })
+          return demo.innerHTML + pixels.join('')
+        })
       const seen = new Set([await snap()])
 
       // Interact the way a person would: press buttons and clickable parts, then drag and scroll.

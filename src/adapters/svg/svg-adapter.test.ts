@@ -251,3 +251,23 @@ function createMockState(
     loopIteration: 0,
   }
 }
+
+describe('SVGAdapter in 3D', () => {
+  it('adds depth with translate3d and a quaternion as matrix3d after the Euler turns', () => {
+    const adapter = new SVGAdapter()
+    const element = createMockSVGElement()
+    adapter.registerTarget('card', element)
+    adapter.applyState(createMockState({ card: { x: 10, z: 40, rotateY: 30, quaternion: [0, 0, 0, 1], perspective: 500 } }))
+    expect(element.style.transform).toBe(
+      'perspective(500px) translate3d(10px, 0px, 40px) rotateY(30deg) matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)'
+    )
+  })
+
+  it('takes rotateZ as rotate', () => {
+    const adapter = new SVGAdapter()
+    const element = createMockSVGElement()
+    adapter.registerTarget('bar', element)
+    adapter.applyState(createMockState({ bar: { rotateZ: 45 } }))
+    expect(element.style.transform).toBe('rotate(45deg)')
+  })
+})

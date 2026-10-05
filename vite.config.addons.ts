@@ -23,6 +23,7 @@ export default defineConfig({
         teach: resolve(__dirname, 'src/teach/index.ts'),
         characters: resolve(__dirname, 'src/characters/index.ts'),
         maps: resolve(__dirname, 'src/maps/index.ts'),
+        'scene-3d': resolve(__dirname, 'src/scene-3d/index.ts'),
       },
       formats: ['es'],
     },

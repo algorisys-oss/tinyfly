@@ -1,5 +1,5 @@
 import type { Keyframe, AnimatableValue, Track, TimelineDefinition, AnyTrack, MotionPathTrack, SpringTrack, TextTrack, InertiaTrack } from '../types'
-import { isMotionPathTrack, isSpringTrack, isTextTrack, isInertiaTrack, FORMAT_VERSION } from '../types'
+import { isMotionPathTrack, isSpringTrack, isTextTrack, isInertiaTrack, FORMAT_VERSION, formatVersionFor } from '../types'
 import { Timeline } from '../core/timeline'
 import { createTrack } from '../core/track'
 
@@ -57,6 +57,7 @@ export function serializeTrack(track: AnyTrack): AnyTrack {
     target: track.target,
     property: track.property,
     keyframes: track.keyframes.map(serializeKeyframe),
+    ...(track.interpolation !== undefined && { interpolation: track.interpolation }),
     ...scheduling(track),
   }
 }
@@ -149,6 +150,7 @@ export function deserializeTrack(data: AnyTrack): AnyTrack {
     target: data.target,
     property: data.property,
     keyframes: (data as Track).keyframes,
+    ...((data as Track).interpolation !== undefined && { interpolation: (data as Track).interpolation }),
     ...scheduling(data),
   } as Track)
 }
@@ -159,7 +161,7 @@ export function deserializeTrack(data: AnyTrack): AnyTrack {
 export function serializeTimeline(timeline: Timeline): TimelineDefinition {
   const markers = timeline['_config'].markers
   return {
-    formatVersion: FORMAT_VERSION,
+    formatVersion: formatVersionFor(timeline.tracks as Track[]),
     id: timeline.id,
     name: timeline.name,
     config: {

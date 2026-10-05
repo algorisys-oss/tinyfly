@@ -155,7 +155,7 @@ export class TrackPlayer<T extends AnimatableValue = AnimatableValue> {
     const easedProgress = easingFn(segmentProgress)
 
     // Interpolate value
-    const interpolator = getInterpolator(from.value)
+    const interpolator = getInterpolator(from.value, this.track.interpolation)
     return interpolator(from.value, to.value, easedProgress)
   }
 

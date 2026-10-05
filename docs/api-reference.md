@@ -10,6 +10,8 @@ Complete reference for the tinyfly animation engine, player, and adapters.
 - [Clock](#clock)
 - [Easing](#easing)
 - [Interpolators](#interpolators)
+- [3D Math](#3d-math)
+- [3D Scenes](#3d-scenes)
 - [Motion Path](#motion-path)
 - [Text Tracks](#text-tracks)
 - [Serialization](#serialization)
@@ -35,7 +37,7 @@ Complete reference for the tinyfly animation engine, player, and adapters.
 Entry points: `tinyfly` (engine), `@algorisys/tinyfly/export` (CSS, Lottie, GIF, WebP,
 video and sprite-sheet exporters), `@algorisys/tinyfly/player`, `@algorisys/tinyfly/adapters` (DOM,
 Canvas, SVG and WebGL adapters, Flip helpers), `@algorisys/tinyfly/drivers`,
-`@algorisys/tinyfly/interaction`, `@algorisys/tinyfly/gsap-compat`, `@algorisys/tinyfly/browser` (the live
+`@algorisys/tinyfly/interaction`, `@algorisys/tinyfly/gsap-compat`, `@algorisys/tinyfly/scene-3d` (3D scenes), `@algorisys/tinyfly/browser` (the live
 runtime and everything except the exporters, for `<script>` tags), and `@algorisys/tinyfly/headless`
 (video and stills rendering in Node).
 
@@ -102,6 +104,7 @@ interface Track<T extends AnimatableValue = AnimatableValue> {
   endDelay?: number     // Extra ms held after the last keyframe (extends duration)
   targets?: string[]    // Drive several targets; `target` is then ignored
   stagger?: StaggerConfig  // Per-target time offsets for `targets`
+  interpolation?: 'slerp'  // Values are [x, y, z, w] quaternions: turn the short way (format version 2)
 }
 
 interface StaggerConfig {
@@ -168,6 +171,7 @@ and `seek()` or `stop()` cancels a pending one.
 
 ```typescript
 interface TimelineDefinition {
+  formatVersion?: number  // 1, or 2 when a track uses `interpolation`; readers refuse newer
   id: string
   name?: string
   config: TimelineConfig
@@ -544,6 +548,16 @@ function interpolateArray(from: number[], to: number[], progress: number): numbe
 
 Element-wise interpolation of number arrays.
 
+### interpolateQuaternion
+
+```typescript
+function interpolateQuaternion(from: number[], to: number[], progress: number): number[]
+```
+
+Spherical interpolation of `[x, y, z, w]` rotations: the short way round, at a
+steady angular speed, always a unit quaternion. Used by tracks with
+`interpolation: 'slerp'`.
+
 ### interpolateString
 
 ```typescript
@@ -572,15 +586,65 @@ string that starts with a moveto. A `d` track animates a path's shape — see
 ### getInterpolator
 
 ```typescript
-function getInterpolator<T extends AnimatableValue>(sampleValue: T): Interpolator<T>
+function getInterpolator<T extends AnimatableValue>(sampleValue: T, interpolation?: 'slerp'): Interpolator<T>
 ```
 
-Auto-detect and return the appropriate interpolator based on a sample value:
+With `interpolation: 'slerp'`, `interpolateQuaternion`. Otherwise auto-detect
+from a sample value:
 - Numbers → `interpolateNumber`
 - Strings starting with `#` or `rgb` → `interpolateColor`
 - **SVG path data** (a moveto) → `morphPath` (shape morph)
 - Other strings → `interpolateString`
 - Arrays → `interpolateArray`
+
+---
+
+## 3D Math
+
+Small, pure helpers for rotations and transforms, exported from the engine as
+three namespaces. Values are plain arrays (JSON as they are): `Vec3` is
+`[x, y, z]`, `Quat` is `[x, y, z, w]`, `Mat4` is 16 numbers, **column-major**
+(as WebGL, glTF and CSS `matrix3d()`). Euler angles are degrees in **YXZ**
+order: `quat.fromEuler(x, y, z)` turns as CSS `rotateY(y) rotateX(x) rotateZ(z)`.
+
+```typescript
+import { vec3, quat, mat4 } from '@algorisys/tinyfly'
+
+vec3.add / subtract / scale / dot / cross / length / distance / normalize / lerp
+quat.identity() / fromAxisAngle(axis, degrees) / fromEuler(x, y, z) / toEuler(q)
+quat.multiply(a, b)   // b first, then a
+quat.slerp(a, b, t) / dot / length / normalize / conjugate / rotateVec3(q, v)
+mat4.identity() / multiply(a, b) / translation(v) / scaling(v) / fromQuat(q)
+mat4.compose(position, rotation, scale)   // scale, then rotate, then move
+mat4.invert(m) /* null when singular */ / transpose(m)
+mat4.perspective(fovY, aspect, near, far) / orthographic(l, r, b, t, near, far)
+mat4.lookAt(eye, target, up?) / transformPoint(m, p)
+```
+
+See [3D rotations](3d-rotations.md).
+
+---
+
+## 3D Scenes
+
+`@algorisys/tinyfly/scene-3d` (and `tinyfly-scene-3d.iife.js` for script tags):
+
+```typescript
+loadScene3D(scene: Scene3D): LoadedScene3D
+validateScene3D(scene: Scene3D, tracks?: { target, property }[]): string[]
+resolveScene3D(loaded, values: SceneValues, { width, height }): ResolvedScene3D
+drawScene3D(ctx, loaded, values | undefined, { width, height }): void
+new Scene3DAdapter(renderer: Renderer3D, { width, height })  // registerScene, unregisterScene, resize, applyState, render
+new Canvas2DRenderer(ctx)                                    // render(frame); drawResolvedScene(ctx, frame)
+orbitPosition(target, yaw, pitch, distance) / dollyPosition(eye, target, amount) / lookAtView(eye, target) / projectionMatrix(camera, aspect)
+shadeTriangle(triangle, lights, camera, fog?) / lightAt(point, normal, lights) / fogAmount(fog, distance) / parseColor(color)
+boxMesh / planeMesh / sphereMesh / cylinderMesh / coneMesh / torusMesh / extrudeMesh(path, { depth, width?, curveSegments? }) / geometryMesh / meshEdges / MeshBuilder
+triangulate(outline, holes?) / signedArea / pointInPolygon
+```
+
+Types: `Scene3D`, `Object3D` (`group`, `mesh`, `camera`, `light`), `Geometry3D`,
+`Material3D`, `ResolvedScene3D`, `DrawTriangle`. Tracks address objects as
+`<sceneId>/<objectId>`; see [3D Scenes](scene-3d.md) for the properties.
 
 ---
 
@@ -1080,6 +1144,12 @@ The DOM adapter maps animation properties to CSS:
 - `scaleY` → `scaleY`
 - `skewX` → `skewX`
 - `skewY` → `skewY`
+- `z`, `rotateX`, `rotateY`, `rotateZ`, `scaleZ` → `translateZ`, `rotateX`, … (3D)
+- `perspective` → `perspective()`, first in the list
+- `quaternion` (`[x, y, z, w]`, a track with `interpolation: 'slerp'`) → `matrix3d()`
+- Written in one order whatever the track order: perspective, translate, rotate, rotateX, rotateY, quaternion, scale, skew (as the SVG, Canvas and WebGL adapters compose them)
+
+**3D layout:** `childPerspective` (px) and `perspectiveOriginX` / `perspectiveOriginY` (%) set CSS `perspective` / `perspective-origin` on a parent for its children; `transformStyle` and `backfaceVisibility` pass through as CSS. The Canvas and WebGL adapters take `z`, `rotateX`, `rotateY`, `quaternion`, `perspective` and `backfaceVisibility` too, in true perspective (see [3D transforms](3d-rotations.md)).
 
 **Style properties:**
 - `opacity` → `style.opacity`

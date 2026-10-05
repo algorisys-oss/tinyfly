@@ -74,7 +74,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.82.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.83.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -226,10 +226,33 @@ releases its elements, and ignores any autoplay still queued.
 | `Draggable.create(el, { inertia: true, bounds, snap })` | `live.draggable(el, { inertia, bounds, snap })` | Throw uses the release velocity |
 | `Flip.getState(t)` / `Flip.from(state, vars)` | `live.getFlipState(t)` / `live.flipFrom(state, vars)` | See [Flip](#flip) |
 | `Flip.fit`, `absolute`, `nested` | — | Not yet; see Flip limits |
+| `rotation`, `rotationZ` / `rotationX` / `rotationY` | same | Become tinyfly's `rotate` / `rotateX` / `rotateY` — see [3D](#3d) |
+| `transformPerspective` | same | The element's own perspective (tinyfly's `perspective`) |
+| `perspective` (on a parent) | same | CSS `perspective` for its children (tinyfly's `childPerspective`) |
+| `z`, `rotateX`, `rotateY`, `rotateZ` | same | tinyfly's names pass through unchanged |
+| — | `quaternion: [x, y, z, w]` | A whole rotation, turned the short way (slerp); starts unrotated |
 
 Units: the facade speaks **seconds**, like GSAP. Everything it stores is in
 **milliseconds**, like the engine. The conversion happens at the boundary and
 nowhere else.
+
+## 3D
+
+GSAP's transform names work, and so do tinyfly's. They compile to the same
+tracks, so a 3D tween draws the same in the DOM, SVG, Canvas and WebGL (see
+[3D transforms](3d-rotations.md)).
+
+```js
+live.set('.stage', { perspective: 800 })                  // the parent's: children share a vanishing point
+live.to('.card', { rotationY: 180, z: 40, duration: 1 })  // = rotateY, z
+live.to('.chip', { rotationX: 60, transformPerspective: 500, duration: 0.6 }) // its own perspective
+live.to('.cube', { quaternion: [0, 0.7071, 0, 0.7071], duration: 1 })       // a whole rotation, slerped
+```
+
+As in GSAP, `perspective` belongs on a parent (CSS `perspective`, DOM only),
+and `transformPerspective` on the element itself. `quaternion` has no GSAP
+equivalent: it turns from any orientation to any other the short way, without
+gimbal lock, and starts unrotated unless `fromTo` says otherwise.
 
 ## Easing
 
