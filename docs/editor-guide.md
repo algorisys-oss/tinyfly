@@ -203,6 +203,33 @@ Maps show in the DOM and Canvas previews and in GIF / WebP / MP4 export
 contributors, credited on the map; its servers are for light use. See
 [Animated Maps](maps.md) for the same from code.
 
+### 3D Scenes
+
+A **🧊 3D Scene** fills the canvas with a real 3D scene, seen through its
+camera: it starts with a camera at three-quarters, a key light, a floor and a
+red box. In the property panel:
+
+- **Objects**: pick one to edit. **Add** puts a box, sphere, cylinder, cone,
+  ring, star (an extruded path), character or light on the next free spot;
+  ✕ removes the picked one (not the scene's camera).
+- **Transform**: X, Y, Z (metres, +y up), Tilt X, Turn Y, Roll Z and Scale.
+  **◆ Key transform at playhead** keys all of them; once a value is animated
+  (◆ by its name), changing it keys it at the playhead.
+- **Meshes**: colour, shading (*Toon*, *Smooth*, *Flat*, *Unlit*) and an ink
+  outline. **Lights**: colour and intensity.
+- **Characters**: a look (*Clean*, *Pencil*, *Silhouette* drawn by their pens
+  in perspective, or *Solid*) and **🕺 Dance from playhead** with any dance
+  style.
+- **Cameras**: field of view, **Look through this camera**, and **✂ Cut to
+  this camera at playhead**, which keys the shot change.
+- **Camera** view presets (*Front*, *¾*, *Side*, *Top*) and the scene's
+  **Background** and **Fog**.
+
+Its tracks are on the element, named `object.property` (`box.rotateY`,
+`character.arm.right.spread`, `activeCamera` for cuts). 3D scenes show in the
+DOM and Canvas previews and in GIF / WebP / MP4 export. See [3D
+Scenes](scene-3d.md) for the same from code.
+
 ### Selecting Elements
 
 - **Click** an element to select it
@@ -996,7 +1023,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.84.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.85.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed

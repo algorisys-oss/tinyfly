@@ -593,3 +593,22 @@
   flex: 1;
   min-width: 0;
 }
+
+/* 3D Scene element */
+.scene3d-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex: 1;
+}
+
+.scene3d-buttons button {
+  padding: 2px 8px;
+  font-size: 11px;
+}
+
+.scene3d-remove {
+  margin-left: 8px;
+  padding: 0 6px;
+  font-size: 11px;
+}

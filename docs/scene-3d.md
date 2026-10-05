@@ -152,6 +152,14 @@ dance while the camera cranes up, then cuts to a close shot.
 Golden frames (`src/scene-3d/golden/`) pin the look: the same scenes must draw
 exactly the same pixels on every run.
 
+## In the editor
+
+The editor's **🧊 3D Scene** element holds a scene like these: add shapes,
+characters and lights, move and key them, dance characters from the playhead,
+pick camera views and cut between cameras. Its tracks are on the element,
+named `object.property` (`box.rotateY`); see the
+[Editor Guide](editor-guide.md#3d-scenes).
+
 ## Characters
 
 tinyfly's v2 characters stand in 3D scenes, seen by the scene's camera from

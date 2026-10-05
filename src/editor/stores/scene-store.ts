@@ -3,10 +3,11 @@ import { createStore } from 'solid-js/store'
 import { measureTextLetters } from '../utils/split-text'
 import { polyStarPath, type PolyStarSpec } from '../utils/poly-star'
 import type { SketchStyle } from '../../adapters/canvas'
+import type { Scene3D } from '../../scene-3d'
 
 export type { PolyStarSpec }
 
-export type ElementType = 'rect' | 'circle' | 'text' | 'image' | 'audio' | 'video' | 'line' | 'arrow' | 'path' | 'group' | 'symbol' | 'character' | 'map'
+export type ElementType = 'rect' | 'circle' | 'text' | 'image' | 'audio' | 'video' | 'line' | 'arrow' | 'path' | 'group' | 'symbol' | 'character' | 'map' | 'scene3d'
 
 /** Device-frame preset silhouettes. */
 export type DeviceVariant = 'phone' | 'landscape' | 'tablet'
@@ -312,7 +313,18 @@ export interface MapElement extends BaseElement {
   pinColor: string
 }
 
-export type SceneElement = RectElement | CircleElement | TextElement | ImageElement | AudioElement | VideoElement | LineElement | ArrowElement | PathElement | GroupElement | SymbolInstanceElement | CharacterElement | MapElement
+/**
+ * A 3D scene in a box on the stage: cameras, lights, meshes and characters
+ * as `@algorisys/tinyfly/scene-3d` JSON, drawn through the scene's camera.
+ * Its objects animate by tracks on the element named `<objectId>.<property>`
+ * (`cube.rotateY`), and `activeCamera` cuts between cameras.
+ */
+export interface Scene3DElement extends BaseElement {
+  type: 'scene3d'
+  scene: Scene3D
+}
+
+export type SceneElement = RectElement | CircleElement | TextElement | ImageElement | AudioElement | VideoElement | LineElement | ArrowElement | PathElement | GroupElement | SymbolInstanceElement | CharacterElement | MapElement | Scene3DElement
 
 export interface SceneState {
   elements: SceneElement[]
@@ -498,6 +510,38 @@ const DEFAULT_MAP: Omit<MapElement, 'id' | 'name'> = {
   pinColor: '#dc2626',
 }
 
+/** A new 3D scene: a camera at three-quarters, a key light and ambient light, a floor and a box. */
+export function defaultScene3D(): Scene3D {
+  return {
+    id: 'scene',
+    camera: 'camera',
+    background: '#1e293b',
+    materials: {
+      floor: { color: '#334155', shading: 'flat' },
+      red: { color: '#ef4444', shading: 'toon', outline: { width: 2, color: '#0f172a' } },
+    },
+    objects: [
+      { id: 'camera', kind: 'camera', projection: 'perspective', fov: 40, near: 0.1, far: 60, position: [3.5, 2.8, 5.5], lookAt: [0, 0.5, 0] },
+      { id: 'sun', kind: 'light', light: 'directional', color: '#ffffff', intensity: 0.9, position: [4, 6, 3] },
+      { id: 'ambient', kind: 'light', light: 'ambient', color: '#9bb4c7', intensity: 0.4 },
+      { id: 'floor', kind: 'mesh', layer: -1, geometry: { type: 'plane', size: [12, 12], segments: 8 }, material: 'floor' },
+      { id: 'box', kind: 'mesh', geometry: { type: 'box', size: [1, 1, 1] }, material: 'red', position: [0, 0.5, 0] },
+    ],
+  }
+}
+
+const DEFAULT_SCENE3D: Omit<Scene3DElement, 'id' | 'name' | 'scene'> = {
+  type: 'scene3d',
+  x: 0,
+  y: 0,
+  width: 320,
+  height: 180,
+  rotation: 0,
+  opacity: 1,
+  visible: true,
+  locked: false,
+}
+
 function generateId(): string {
   return `el-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 }
@@ -518,6 +562,7 @@ function generateName(type: ElementType, elements: SceneElement[]): string {
     symbol: 'Symbol',
     character: 'Character',
     map: 'Map',
+    scene3d: '3D Scene',
   }
   return `${names[type]} ${count}`
 }
@@ -630,6 +675,9 @@ export function createSceneStore() {
         break
       case 'character':
         element = { ...DEFAULT_CHARACTER, pose: {}, ...overrides, id, name } as CharacterElement
+        break
+      case 'scene3d':
+        element = { ...DEFAULT_SCENE3D, scene: defaultScene3D(), ...overrides, id, name } as Scene3DElement
         break
       case 'map':
         element = {

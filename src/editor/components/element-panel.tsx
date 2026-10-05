@@ -23,6 +23,7 @@ const ELEMENT_TYPES: { type: ElementType; icon: string; label: string }[] = [
   { type: 'video', icon: '🎬', label: 'Video' },
   { type: 'character', icon: '🧍', label: 'Character' },
   { type: 'map', icon: '🗺', label: 'Map' },
+  { type: 'scene3d', icon: '🧊', label: '3D Scene' },
 ]
 
 export const ElementPanel: Component<ElementPanelProps> = (props) => {
@@ -37,6 +38,12 @@ export const ElementPanel: Component<ElementPanelProps> = (props) => {
         height: canvas.height,
         view: { lon: 20, lat: 20, zoom: Math.max(0, Math.log2(canvas.width / 256)) },
       })
+      return
+    }
+    if (type === 'scene3d') {
+      // A 3D scene usually fills the frame, like a map.
+      const canvas = props.projectStore.currentProject().canvas
+      props.sceneStore.addElement('scene3d', { x: 0, y: 0, width: canvas.width, height: canvas.height })
       return
     }
     if (type === 'character') {
@@ -282,6 +289,7 @@ export const ElementPanel: Component<ElementPanelProps> = (props) => {
                       {element.type === 'group' && '⊞'}
                       {element.type === 'character' && '🧍'}
                       {element.type === 'map' && '🗺'}
+                      {element.type === 'scene3d' && '🧊'}
                     </span>
                     <span class="element-name">
                       {element.name}

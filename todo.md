@@ -2222,7 +2222,15 @@ WebGPU deferred.
       `character` object and `characterObjects` (pen look in perspective with face and hands, or a solid
       look of toon-shaded capsules with eyes), soft ground shadows; gallery demo (3D Scene: Dancing
       Characters) and `examples/headless-video/characters-3d-dance.mjs`
-- [ ] M4 editor `scene3d` element; M5 rigid glTF import
+- [x] M4 editor 3D Scene element (`feat/3d-editor`): `scene3d` element holding Scene3D JSON, tracks named
+      `object.property` on the element (and `activeCamera` for cuts), drawn in the DOM and Canvas previews
+      and every raster export (`CustomTarget.acceptsProp` routes tracks it cannot list up front); property
+      panel: objects (add box / sphere / cylinder / cone / ring / star / character / light, remove),
+      transform keyed at the playhead once animated, material (colour, shading, outline), light, camera
+      (fov, look through, cut at playhead), character look and dance from playhead, camera presets,
+      background and fog
+- [ ] M4 next: an orbit / pan authoring view and on-canvas gizmos; a 3D element in embeds and the player
+- [ ] M5 rigid glTF import
 - [ ] M7 skinned glTF; M8 optional three.js adapter
 - [ ] Goal: 3D is also for **movies** (Phase 34). Decisions to revisit in the plan before M2, since its
       non-goals work against films: ground / contact shadows for characters (open question 8 → yes, by

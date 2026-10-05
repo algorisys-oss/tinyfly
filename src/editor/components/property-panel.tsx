@@ -2,7 +2,7 @@ import { createMemo, createSignal, createEffect, on, untrack, Show, For } from '
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
 import type { ProjectStore } from '../stores/project-store'
-import { isGradient, createLinearGradient, createRadialGradient, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type SymbolInstanceElement, type CharacterElement, type MapElement, type FillValue, type LinearGradient, type RadialGradient } from '../stores/scene-store'
+import { isGradient, createLinearGradient, createRadialGradient, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type SymbolInstanceElement, type CharacterElement, type MapElement, type Scene3DElement, type FillValue, type LinearGradient, type RadialGradient } from '../stores/scene-store'
 import type { EasingType, BuiltInEasingType, CubicBezierPoints, ParametricEasing, EaseMode } from '../../engine'
 import {
   isCubicBezierEasing,
@@ -32,6 +32,7 @@ import { nearestBeat, nextBeat } from '../../engine'
 import { DANCE_STYLES, FLIPS, type DanceStyleName, type FlipName } from '../../characters'
 import { fitPlaces, mapElementProps, placeId, tripTracks } from '../utils/map-element'
 import { WORLD_CITIES } from '../../maps'
+import { Scene3DProperties } from './scene3d-properties'
 import './property-panel.css'
 
 interface PropertyPanelProps {
@@ -2057,6 +2058,7 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
       case 'symbol': return renderSymbolProperties(liveElement as SymbolInstanceElement)
       case 'character': return renderCharacterProperties(liveElement as CharacterElement)
       case 'map': return renderMapProperties(liveElement as MapElement)
+      case 'scene3d': return <Scene3DProperties element={liveElement as Scene3DElement} store={props.store} update={(changes) => updateElement(changes)} />
       default: return null
     }
   }

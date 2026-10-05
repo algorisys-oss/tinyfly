@@ -7,10 +7,10 @@ import type {
   LineElement,
   PathElement,
   CharacterElement,
-  MapElement,
-} from '../stores/scene-store'
+  MapElement, Scene3DElement } from '../stores/scene-store'
 import { characterElementTarget } from './character-element'
 import { mapElementTarget } from './map-element'
+import { scene3dElementTarget } from './scene3d-element'
 
 /**
  * Map a scene element to a Canvas adapter target.
@@ -99,6 +99,9 @@ export function sceneElementToCanvasTarget(element: SceneElement): CanvasTarget 
     case 'map':
       // A custom target whose props are the view, pins and route.
       return mapElementTarget(element as MapElement)
+    case 'scene3d':
+      // A custom target drawing the scene; tracks named `<object>.<property>` reach its objects.
+      return scene3dElementTarget(element as Scene3DElement)
     default:
       return null
   }

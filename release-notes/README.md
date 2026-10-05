@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.85.0](v0.85.0.md) | 2026-10-05 | A 🧊 3D Scene element in the editor: add shapes, characters and lights, key their transforms, dance characters from the playhead, pick camera views and cut between cameras, without code; drawn in previews and every export |
 | [v0.84.0](v0.84.0.md) | 2026-10-05 | Characters in 3D scenes: v2 characters stand, dance and flip in scenes, seen by any camera, in their pen looks in perspective or as solid figures, with ground shadows (`characterObjects`, `drawCharacterInView`, `skeletonInView`); scene-3d object kinds |
 | [v0.83.0](v0.83.0.md) | 2026-10-05 | 3D, first steps: 3D scenes (`@algorisys/tinyfly/scene-3d`: cameras, lights, meshes and extruded SVG paths as JSON, toon / smooth / flat shading, ink outlines, fog, camera cuts, on a plain canvas and in Node video); CSS-style 3D in every renderer with true perspective on Canvas and WebGL; quaternion slerp tracks and `vec3` / `quat` / `mat4`; editor 3D fields; a 3D examples pill; GSAP's 3D names in gsap-compat |
 | [v0.82.0](v0.82.0.md) | 2026-10-05 | Glides and the moonwalk: dances travel (`DanceMove.travel`, `danceTravel()`, `danceTravelTrack()`) with the planted foot staying put; a Popping style (side glide, moonwalk, forward glide, toe stand); characters facing left dance the mirror image (`mirrorHumanPose()`); gallery live demos show all their controls |

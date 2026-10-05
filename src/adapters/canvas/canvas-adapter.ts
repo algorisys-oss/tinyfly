@@ -206,6 +206,12 @@ export interface CustomTarget extends CanvasTargetBase {
   draw: CustomDrawFunction
   /** Values the draw function reads, with their initial values */
   props?: Record<string, AnimatableValue>
+  /**
+   * Also route properties not declared in `props` when this says yes: for a
+   * target whose animated values cannot all be listed up front (a 3D scene,
+   * whose tracks name its objects: `cube.rotateY`). They land in `props`.
+   */
+  acceptsProp?: (property: string) => boolean
 }
 
 /** Union of all canvas target types */
@@ -322,7 +328,7 @@ export class CanvasAdapter {
           } else if (property === 'y' || property === 'motionPathY') {
             offsets.y = value
           }
-        } else if (target.type === 'custom' && target.props && property in target.props) {
+        } else if (target.type === 'custom' && target.props && (property in target.props || target.acceptsProp?.(property))) {
           target.props[property] = value
         } else {
           // Map property name if needed

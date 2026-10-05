@@ -573,7 +573,7 @@ export function createEditorStore() {
    */
   function keyValuesAtPlayhead(
     target: string,
-    values: Record<string, number>,
+    values: Record<string, AnimatableValue>,
     before?: (property: string, time: number) => Keyframe[]
   ): void {
     if (!state.timeline) return

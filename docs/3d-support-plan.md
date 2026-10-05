@@ -1,6 +1,6 @@
 # 3D Support Plan
 
-**Status:** Milestones 0 (rotation math, slerp tracks), 1 (CSS-style 3D in every adapter), 2 (scenes on Canvas 2D) and 6 (3D characters) implemented; the rest planned
+**Status:** Milestones 0 (rotation math, slerp tracks), 1 (CSS-style 3D in every adapter), 2 (scenes on Canvas 2D), 4 (the editor's 3D Scene element, first version) and 6 (3D characters) implemented; the rest planned
 **Date:** 2026-10-04 (revised 2026-10-05: movies, two render modes, entries)
 **Related:** [character-system-plan.md](character-system-plan.md),
 [character-system-m1.md](character-system-m1.md), [camera.md](camera.md),
