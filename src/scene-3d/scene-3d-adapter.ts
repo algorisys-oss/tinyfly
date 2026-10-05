@@ -42,13 +42,16 @@ export class Scene3DAdapter {
     this.height = height
   }
 
-  applyState(state: Pick<AnimationState, 'values'>): void {
+  applyState(state: Pick<AnimationState, 'values'> & { currentTime?: number }): void {
     this.values = state.values
+    this.time = state.currentTime ?? this.time
   }
+
+  private time = 0
 
   render(): void {
     for (const scene of this.scenes.values()) {
-      this.renderer.render(resolveScene3D(scene, this.values, { width: this.width, height: this.height }))
+      this.renderer.render(resolveScene3D(scene, this.values, { width: this.width, height: this.height, time: this.time }))
     }
   }
 }
@@ -62,7 +65,7 @@ export function drawScene3D(
   ctx: CanvasRenderingContext2D,
   scene: LoadedScene3D,
   values: SceneValues | undefined,
-  size: { width: number; height: number }
+  size: { width: number; height: number; time?: number }
 ): void {
-  drawResolvedScene(ctx, resolveScene3D(scene, values ?? new Map(), { width: size.width, height: size.height }))
+  drawResolvedScene(ctx, resolveScene3D(scene, values ?? new Map(), { width: size.width, height: size.height, time: size.time }))
 }

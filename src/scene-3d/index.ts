@@ -7,8 +7,9 @@
  */
 export type * from './scene-types'
 export { validateScene3D } from './validate-scene'
-export { loadScene3D, prepareMesh, type LoadedScene3D, type PreparedMesh } from './load-scene'
-export { resolveScene3D, type ResolvedScene3D, type ResolvedCamera, type ResolvedLight, type DrawTriangle, type SceneValues, type ScreenPoint, type ResolveOptions } from './resolve-scene'
+export { loadScene3D, prepareMesh, type LoadedScene3D, type PreparedMesh, type LoadOptions } from './load-scene'
+export type { ObjectKind, ObjectContext, ObjectView, PlacedMesh, Drawable } from './object-kind'
+export { resolveScene3D, type ResolvedScene3D, type ResolvedDrawable, type ResolvedCamera, type ResolvedLight, type DrawTriangle, type SceneValues, type ScreenPoint, type ResolveOptions } from './resolve-scene'
 export { lookAtView, orbitPosition, dollyPosition, projectionMatrix } from './camera'
 export { shadeTriangle, lightAt, fogAmount, parseColor } from './shading'
 export { Canvas2DRenderer, drawResolvedScene, type Renderer3D } from './canvas-2d-renderer'

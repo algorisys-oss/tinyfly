@@ -36,7 +36,20 @@ export function drawResolvedScene(ctx: CanvasRenderingContext2D, frame: Resolved
   }
   ctx.lineJoin = 'round'
   ctx.lineCap = 'round'
+  // Triangles and added objects (characters) merge into one order: by layer, then far to near.
+  let next = 0
+  const drawablesUpTo = (layer: number, depth: number) => {
+    while (next < frame.drawables.length) {
+      const d = frame.drawables[next]
+      if (d.layer > layer || (d.layer === layer && d.depth <= depth)) break
+      ctx.save()
+      d.draw(ctx, frame)
+      ctx.restore()
+      next++
+    }
+  }
   for (const triangle of frame.triangles) {
+    drawablesUpTo(triangle.layer, triangle.depth)
     const { color, alpha } = shadeTriangle(triangle, frame.lights, frame.camera, frame.fog)
     const [a, b, c] = triangle.screen
     ctx.globalAlpha = alpha
@@ -66,5 +79,6 @@ export function drawResolvedScene(ctx: CanvasRenderingContext2D, frame: Resolved
       ctx.stroke()
     }
   }
+  drawablesUpTo(Infinity, -Infinity)
   ctx.restore()
 }

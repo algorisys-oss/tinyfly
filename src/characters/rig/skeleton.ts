@@ -98,9 +98,18 @@ function project(v: Vec3, view: number): { point: Point; depth: number } {
   return { point: { x: turned[0], y: -turned[1] }, depth: turned[2] }
 }
 
-export function solveSkeleton(plan: BodyPlan, pose: Pose, options: SolveOptions): Skeleton {
-  const H = options.height
-  const view = rad(90 * (pose.turn ?? 0))
+/** A pose solved in the character's own 3D space (+x its left, +y up, +z forward), before any view. */
+export interface PlanSpace {
+  height: number
+  /** The hips, where the chains hang from */
+  root: Vec3
+  chains: Record<string, { joints3: Vec3[]; frames: BoneFrame[] }>
+  head: { center: Vec3; rx: number; ry: number; toBody: (v: Vec3) => Vec3 }
+}
+
+/** Forward kinematics: every chain's joints and the head, in the character's own space. */
+export function solvePlanSpace(plan: BodyPlan, pose: Pose, height: number): PlanSpace {
+  const H = height
   const hipHeight = plan.hipHeight * H * (plan.boneScale?.(pose, null) ?? 1)
   const root: Vec3 = [0, hipHeight, 0]
 
@@ -139,9 +148,21 @@ export function solveSkeleton(plan: BodyPlan, pose: Pose, options: SolveOptions)
   const rx = radius * headPose.sx
   const ry = radius * headPose.sy
   /** A vector in the head's own frame, to character space. */
-  const headToBody = (v: Vec3): Vec3 =>
+  const toBody = (v: Vec3): Vec3 =>
     orient(rotY(rotX(rotZ(v, -rad(headPose.tilt)), -rad(headPose.nod)), rad(headPose.yaw)), neckFrame)
-  const headCenter3 = add(neck.joints3[neck.joints3.length - 1], headToBody([0, ry, 0]))
+  const center = add(neck.joints3[neck.joints3.length - 1], toBody([0, ry, 0]))
+  return { height: H, root, chains: solved, head: { center, rx, ry, toBody } }
+}
+
+export function solveSkeleton(plan: BodyPlan, pose: Pose, options: SolveOptions): Skeleton {
+  const H = options.height
+  const view = rad(90 * (pose.turn ?? 0))
+  const space = solvePlanSpace(plan, pose, H)
+  const { root } = space
+  const solved = space.chains
+  const { rx, ry } = space.head
+  const headToBody = space.head.toBody
+  const headCenter3 = space.head.center
 
   // Turn to the view and project.
   const chains: Record<string, SolvedChain> = {}
@@ -203,6 +224,140 @@ export function solveSkeleton(plan: BodyPlan, pose: Pose, options: SolveOptions)
     chains,
     head,
     hip: place(rollPoint(hipScreen)),
+    contacts,
+    groundY: Math.max(...contacts.map((c) => c.point.y)),
+  }
+}
+
+/**
+ * Seeing a character through a camera: `toView` takes a point of the
+ * character's staged space (turned by its `turn`, rolled, set down: px or
+ * metres, +y up, the ground at y = 0) to view space (x right, y up, z toward
+ * the viewer); `toScreen` takes a view-space point to the canvas.
+ */
+export interface ViewProjection {
+  toView(v: Vec3): Vec3
+  toScreen(v: Vec3): Point
+}
+
+const sub = (a: Vec3, b: Vec3): Vec3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
+const unit = (v: Vec3): Vec3 => {
+  const length = Math.hypot(v[0], v[1], v[2]) || 1
+  return [v[0] / length, v[1] / length, v[2] / length]
+}
+
+/**
+ * A pose solved in 3D and seen through a camera (a 3D scene's), instead of
+ * flattened front-on: the same bones, turn, roll, lift and ground contact as
+ * {@link solveSkeleton}, then projected through `projection`. Screen points
+ * are canvas px; depths, radii and `height` are px at the hips, so the pens
+ * draw it as they draw any figure. Under an orthographic camera looking down
+ * -z it gives what `solveSkeleton` gives.
+ */
+/** A pose in 3D, turned, rolled and set down on its ground (y = 0): what a 3D renderer places in its world. */
+export interface StagedSpace {
+  height: number
+  /** The hips */
+  hip: Vec3
+  /** Every chain's joints */
+  chains: Record<string, Vec3[]>
+  head: { center: Vec3; rx: number; ry: number; axes: [Vec3, Vec3, Vec3] }
+}
+
+/**
+ * The pose's joints in its own 3D space with its turn, roll, lift and ground
+ * contact applied, as front-on drawing applies them, but kept 3D: +x right of
+ * the authored view, +y up from the ground, +z toward that view.
+ */
+export function stagePlanSpace(plan: BodyPlan, pose: Pose, options: SolveOptions): StagedSpace {
+  const H = options.height
+  const view = rad(90 * (pose.turn ?? 0))
+  const roll = rad(pose.roll ?? 0)
+  const space = solvePlanSpace(plan, pose, H)
+  const hip3 = rotY(space.root, view)
+  // Turned to the authored view, then rolled about the hips in that view's picture plane.
+  const stage = (v: Vec3): Vec3 => add(rotZ(sub(rotY(v, view), hip3), -roll), hip3)
+  const staged: Record<string, Vec3[]> = {}
+  for (const chain of plan.chains) staged[chain.id] = space.chains[chain.id].joints3.map(stage)
+  const headCenter = stage(space.head.center)
+  const axis = (v: Vec3) => unit(sub(stage(add(space.head.center, space.head.toBody(v))), headCenter))
+  const axes = [axis([1, 0, 0]), axis([0, 1, 0]), axis([0, 0, 1])] as [Vec3, Vec3, Vec3]
+
+  // Set down: the lowest contact point on the ground (y = 0), then lifted.
+  const contactPoint3 = (spec: ContactSpec): Vec3 => {
+    if ('head' in spec) return add(headCenter, scale(axes[1], space.head.ry))
+    const joints = staged[spec.chain]
+    return joints[Math.min(spec.joint, joints.length - 1)]
+  }
+  let shiftY = 0
+  if ((options.contact ?? 'ground') === 'ground') shiftY = -Math.min(...plan.contacts.map((spec) => contactPoint3(spec)[1]))
+  shiftY += (pose.lift ?? 0) * H
+  const place = (v: Vec3): Vec3 => [v[0], v[1] + shiftY, v[2]]
+  return {
+    height: H,
+    hip: place(hip3),
+    chains: Object.fromEntries(Object.entries(staged).map(([id, joints]) => [id, joints.map(place)])),
+    head: { center: place(headCenter), rx: space.head.rx, ry: space.head.ry, axes },
+  }
+}
+
+export function skeletonInView(plan: BodyPlan, pose: Pose, options: SolveOptions, projection: ViewProjection): Skeleton {
+  const H = options.height
+  const view = rad(90 * (pose.turn ?? 0))
+  const space = solvePlanSpace(plan, pose, H)
+  const set = stagePlanSpace(plan, pose, options)
+  const hip3 = set.hip
+  const staged = set.chains
+  const headCenter = set.head.center
+  const contactPoint3 = (spec: ContactSpec): Vec3 => {
+    if ('head' in spec) return add(headCenter, scale(set.head.axes[1], set.head.ry))
+    const joints = staged[spec.chain]
+    return joints[Math.min(spec.joint, joints.length - 1)]
+  }
+
+  // px per unit at the hips: how big the figure looks there.
+  const hipView = projection.toView(hip3)
+  const hipScreen = projection.toScreen(hipView)
+  const across = projection.toScreen([hipView[0] + 1, hipView[1], hipView[2]])
+  const pxPerUnit = Math.hypot(across.x - hipScreen.x, across.y - hipScreen.y)
+  const see = (v: Vec3) => {
+    const inView = projection.toView(v)
+    return { point: projection.toScreen(inView), depth: inView[2] * pxPerUnit }
+  }
+
+  const chains: Record<string, SolvedChain> = {}
+  for (const chain of plan.chains) {
+    const seen = staged[chain.id].map(see)
+    chains[chain.id] = {
+      id: chain.id,
+      joints3: space.chains[chain.id].joints3,
+      frames: space.chains[chain.id].frames,
+      points: seen.map((p) => p.point),
+      depths: seen.map((p) => p.depth),
+    }
+  }
+
+  // The head: its centre and its own axes in view space; its radii at its depth.
+  const centerView = projection.toView(headCenter)
+  const centerScreen = projection.toScreen(centerView)
+  const side = projection.toScreen([centerView[0] + 1, centerView[1], centerView[2]])
+  const headPx = Math.hypot(side.x - centerScreen.x, side.y - centerScreen.y)
+  const axes = set.head.axes.map((axis) => unit(sub(projection.toView(add(headCenter, axis)), centerView))) as [Vec3, Vec3, Vec3]
+  const head: SolvedHead = {
+    center: centerScreen,
+    depth: centerView[2] * pxPerUnit,
+    rx: space.head.rx * headPx,
+    ry: space.head.ry * headPx,
+    angle: Math.atan2(axes[1][0], axes[1][1]),
+    axes,
+  }
+  const contacts = plan.contacts.map((spec) => ({ spec, point: see(contactPoint3(spec)).point }))
+  return {
+    height: H * pxPerUnit,
+    view,
+    chains,
+    head,
+    hip: hipScreen,
     contacts,
     groundY: Math.max(...contacts.map((c) => c.point.y)),
   }

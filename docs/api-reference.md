@@ -642,7 +642,14 @@ boxMesh / planeMesh / sphereMesh / cylinderMesh / coneMesh / torusMesh / extrude
 triangulate(outline, holes?) / signedArea / pointInPolygon
 ```
 
-Types: `Scene3D`, `Object3D` (`group`, `mesh`, `camera`, `light`), `Geometry3D`,
+loadScene3D(scene, { kinds: [characterObjects] })            // object kinds beyond the built-ins: ObjectKind { kind, validate?, prepare?, resolve }
+// from @algorisys/tinyfly/characters:
+characterObjects                                             // the `character` object kind (pen or solid look)
+drawCharacterInView(ctx, character, pose, projection, { height, time? }) / characterJointsInView(…)
+skeletonInView(plan, pose, { height }, projection) / stagePlanSpace(plan, pose, { height }) / solvePlanSpace(plan, pose, height)
+```
+
+Types: `Scene3D`, `Object3D` (`group`, `mesh`, `camera`, `light`, `character`), `Geometry3D`,
 `Material3D`, `ResolvedScene3D`, `DrawTriangle`. Tracks address objects as
 `<sceneId>/<objectId>`; see [3D Scenes](scene-3d.md) for the properties.
 

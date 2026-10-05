@@ -7,7 +7,8 @@ canvas in the **stylized** look (flat, smooth or toon shading, ink outlines,
 fog), in browsers, Web Workers and Node, so the same scene plays on a page and
 renders to MP4 with `tinyfly video`. No WebGL, no GPU, no dependencies.
 
-Try it on the Examples page: **3D Scene: Orbiting Camera** (under **3D**).
+Try it on the Examples page: **3D Scene: Orbiting Camera** and **3D Scene:
+Dancing Characters** (under **3D**).
 The plan for what comes next (a WebGL renderer, glTF models, 3D characters,
 the realistic look, films) is [3D support](3d-support-plan.md).
 
@@ -145,10 +146,58 @@ export default {
 ```
 
 `examples/headless-video/scene-3d-orbit.mjs` orbits a camera around lit
-shapes and cuts to a wide shot.
+shapes and cuts to a wide shot; `characters-3d-dance.mjs` has two characters
+dance while the camera cranes up, then cuts to a close shot.
 
 Golden frames (`src/scene-3d/golden/`) pin the look: the same scenes must draw
 exactly the same pixels on every run.
+
+## Characters
+
+tinyfly's v2 characters stand in 3D scenes, seen by the scene's camera from
+anywhere: in front, behind, from above. A character is an object like any
+other; drawing it comes from the characters add-on, so this entry stays small:
+
+```js
+import { loadScene3D, drawScene3D } from '@algorisys/tinyfly/scene-3d'
+import { characterObjects, danceFrame, stickToHuman } from '@algorisys/tinyfly/characters'
+
+const scene = loadScene3D({
+  id: 'stage', camera: 'cam', /* … */
+  objects: [
+    /* camera, lights, a floor … */
+    { id: 'tum', kind: 'character', position: [-0.9, 0, 0], character: { look: 'clean', skin: '#f2c49b', hands: 'cartoon' } },
+    { id: 'didi', kind: 'character', look: 'solid', position: [0.9, 0, 0], solid: { color: '#7c3aed' } },
+  ],
+}, { kinds: [characterObjects] })
+```
+
+| Field | |
+|---|---|
+| `character` | `character()` options: `figure`, `look` (`clean`, `pencil`, `silhouette`), `ink`, `skin`, `hands`, `handStyle`, … |
+| `height` | metres (default 1.7) |
+| `pose` | its pose: character pose fields (`arm.right.spread`, `turn`, `lean`, …) |
+| `look` | `pen` (default): drawn by its pens, in perspective, with its face and hands. `solid`: shaded capsules along its bones, an ellipsoid head with eyes, lit, outlined and depth-sorted like the scene's meshes |
+| `solid` | the solid look's `color`, `skin`, `shading` (default toon) and `outline` (or `false`) |
+| `shadow` | a soft shadow on the ground under it (default true) |
+
+A character faces +z before any turn and stands on its object's ground: its
+lowest point at the object's y, so at y 0 it stands on a floor at y 0. Its
+pose fields are tracks on its object, next to `x`, `rotateY` and the rest:
+`stage/tum` `arm.right.spread`, `stage/tum` `turn`. Every dance and flip
+plays in 3D: `stickToHuman(danceFrame(style, beat))` gives the pose, and
+`mirrorHumanPose()` its mirror image for a partner. Its `turn`, `roll`,
+`lift` and ground contact behave as they do front-on; seen front-on through a
+flat camera, a character is exactly the 2D figure.
+
+Outside scenes, `drawCharacterInView(ctx, character, pose, projection, { height })`
+draws a character through any camera (`projection.toView` / `toScreen`), and
+`skeletonInView` / `stagePlanSpace` give its joints.
+
+**Other object kinds** come the same way: an `ObjectKind` validates its
+objects, prepares them once, and each frame returns meshes (shaded and sorted
+with the scene's) and drawables (drawn whole at their depth). Pass it in
+`loadScene3D(scene, { kinds })`.
 
 ## Draw order and its limits
 

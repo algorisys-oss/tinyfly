@@ -3,7 +3,7 @@ import type { EasingType, Track } from '../engine/types'
 import type { Point } from '../adapters/canvas/sketch'
 import type { FrameInfo } from '../headless/video-scene'
 import type { BodyPlan, ChainSpec, Pose, Vec3 } from './rig/body-plan'
-import { headPoint, solveSkeleton, type Skeleton, type SolvedHead } from './rig/skeleton'
+import { headPoint, skeletonInView, solveSkeleton, type Skeleton, type SolvedHead, type ViewProjection } from './rig/skeleton'
 import { reachPose as reachPlanPose } from './rig/reach'
 import { createPen, type Look, type Pen, type PencilOptions } from './look/pen'
 import { rubberLimb } from './look/curves'
@@ -177,7 +177,11 @@ interface Solved {
 
 function solve(character: Character, pose: Pose): Solved {
   const full = character.plan.id === 'human' ? { ...HUMAN_REST, ...pose } : pose
-  const skeleton = solveSkeleton(character.plan, full, { height: character.height, contact: character.contact })
+  return solveFrom(character, full, solveSkeleton(character.plan, full, { height: character.height, contact: character.contact }))
+}
+
+/** Joints and drawing order from a solved skeleton (front-on, or seen through a camera). */
+function solveFrom(character: Character, full: Pose, skeleton: Skeleton): Solved {
   const chains: Record<string, Point[]> = {}
   const parts: CharacterJoints['parts'] = {}
   const keys: Record<string, number> = {}
@@ -336,7 +340,51 @@ function drawArmHand(ctx: CanvasRenderingContext2D, pen: Pen, character: Charact
  */
 export function drawCharacter(ctx: CanvasRenderingContext2D, character: Character, pose: Pose, time = 0): void {
   const full = character.plan.id === 'human' ? { ...HUMAN_REST, ...pose } : pose
-  const { joints, order } = solve(character, full)
+  drawSolved(ctx, character, full, solve(character, full), time)
+}
+
+/**
+ * A character at the size it is seen: its own proportions (line width, hand
+ * size) kept, its height the skeleton's on-screen height.
+ */
+function seenAt(character: Character, height: number): Character {
+  const k = height / character.height
+  return { ...character, height, lineWidth: character.lineWidth * k }
+}
+
+export interface InViewOptions {
+  /** The character's height in the projection's units (metres in a 3D scene) */
+  height: number
+  /** ms: the pencil's boil frame, and layer hooks */
+  time?: number
+}
+
+/**
+ * Where every part of a character is when seen through a camera (see
+ * {@link skeletonInView}): canvas px, sized by the perspective at its hips.
+ */
+export function characterJointsInView(character: Character, pose: Pose, projection: ViewProjection, options: InViewOptions): CharacterJoints {
+  const full = character.plan.id === 'human' ? { ...HUMAN_REST, ...pose } : pose
+  const skeleton = skeletonInView(character.plan, full, { height: options.height, contact: character.contact }, projection)
+  return solveFrom(seenAt(character, skeleton.height), full, skeleton).joints
+}
+
+/**
+ * Draw a character seen through a camera: a 3D scene's, or any
+ * `projection`. Its turn, roll, lift and ground contact work as front-on;
+ * the camera can look from anywhere, so it is drawn in perspective, in its
+ * look (clean, pencil, silhouette) and with its face, hands and layers. The
+ * canvas is drawn on as it is (no translation to the feet).
+ */
+export function drawCharacterInView(ctx: CanvasRenderingContext2D, character: Character, pose: Pose, projection: ViewProjection, options: InViewOptions): void {
+  const full = character.plan.id === 'human' ? { ...HUMAN_REST, ...pose } : pose
+  const skeleton = skeletonInView(character.plan, full, { height: options.height, contact: character.contact }, projection)
+  const seen = seenAt(character, skeleton.height)
+  drawSolved(ctx, seen, full, solveFrom(seen, full, skeleton), options.time ?? 0)
+}
+
+function drawSolved(ctx: CanvasRenderingContext2D, character: Character, full: Pose, solved: Solved, time: number): void {
+  const { joints, order } = solved
   const pen = createPen(ctx, {
     look: character.look,
     ink: character.ink,

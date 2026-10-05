@@ -3,6 +3,7 @@ import type { AnimatableValue } from '../engine/types'
 import type { LoadedScene3D, PreparedMesh } from './load-scene'
 import type { CameraObject, LightObject, Material3D, Object3D, Scene3D } from './scene-types'
 import { lookAtView, projectionMatrix } from './camera'
+import type { Drawable } from './object-kind'
 
 /**
  * From a loaded scene and the animation's values at one moment to plain data
@@ -78,10 +79,19 @@ export interface DrawTriangle {
   outline: Array<[ScreenPoint, ScreenPoint]>
 }
 
+/** A drawable from an added object kind, in the draw order. */
+export interface ResolvedDrawable extends Drawable {
+  objectId: string
+  objectIndex: number
+  layer: number
+}
+
 export interface ResolvedScene3D {
   id: string
   width: number
   height: number
+  /** ms: the moment drawn (for looks that move with time, such as a boiling pencil line) */
+  time: number
   background?: string
   fog?: Scene3D['fog']
   camera: ResolvedCamera
@@ -90,6 +100,8 @@ export interface ResolvedScene3D {
   worlds: Map<string, Mat4>
   /** By layer, then far to near: draw in this order */
   triangles: DrawTriangle[]
+  /** Objects of added kinds (characters), each placed among the triangles by layer and depth */
+  drawables: ResolvedDrawable[]
 }
 
 /** Edges sharper than this (between face normals) are inked as creases. */
@@ -179,6 +191,8 @@ export interface ResolveOptions {
   /** Canvas size, px */
   width: number
   height: number
+  /** ms: the moment drawn, for looks that move with time (default 0) */
+  time?: number
 }
 
 /** The frame at these animated values (an `AnimationState`'s `values`, or none for the scene as authored). */
@@ -248,6 +262,35 @@ export function resolveScene3D(loaded: LoadedScene3D, values: SceneValues = new 
     }))
   })
 
+  // Objects of added kinds: their meshes join the triangles; their drawables are drawn whole, at their depth.
+  const drawables: ResolvedDrawable[] = []
+  scene.objects.forEach((object, objectIndex) => {
+    const kind = loaded.kinds.get(object.kind)
+    if (!kind || !visible.get(object.id)) return
+    const view = kind.resolve({
+      object,
+      prepared: loaded.prepared.get(object.id),
+      values: valuesOf(object.id),
+      world: worlds.get(object.id)!,
+      camera,
+      width: options.width,
+      height: options.height,
+      toScreen,
+    })
+    if (!view) return
+    const layer = object.layer ?? 0
+    for (const drawable of view.drawables ?? []) drawables.push({ ...drawable, objectId: object.id, objectIndex, layer })
+    for (const placed of view.meshes ?? []) {
+      triangles.push(...meshTriangles(placed.mesh, placed.world, normalMatrix(placed.world), camera, toScreen, placed.material, {
+        objectId: object.id,
+        objectIndex,
+        layer,
+        opacity: placed.material.opacity ?? 1,
+      }))
+    }
+  })
+  drawables.sort((p, q) => p.layer - q.layer || q.depth - p.depth || p.objectIndex - q.objectIndex)
+
   // By layer, then far to near; ties broken by object, face and part, so the order is total and never flickers.
   triangles.sort((p, q) => p.layer - q.layer || q.depth - p.depth || p.objectIndex - q.objectIndex || p.face - q.face || p.part - q.part)
 
@@ -261,6 +304,8 @@ export function resolveScene3D(loaded: LoadedScene3D, values: SceneValues = new 
     lights,
     worlds,
     triangles,
+    drawables,
+    time: options.time ?? 0,
   }
 }
 

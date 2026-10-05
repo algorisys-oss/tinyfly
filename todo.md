@@ -2214,7 +2214,15 @@ WebGPU deferred.
 - [x] M2 `extrude` geometry: any SVG path made solid (curves sampled, holes by nesting, ear-clipping
       triangulation with hole bridges), scaled to a width in metres; golden PNG frames for scene-3d
 - [ ] M3 WebGL2 renderer
-- [ ] M4 editor `scene3d` element; M5 rigid glTF import; M6 3D characters (v2 bones in the world)
+- [x] M6 3D characters (`feat/3d-characters`): `solvePlanSpace` (forward kinematics split out of
+      `solveSkeleton`, which draws as before), `stagePlanSpace` and `skeletonInView` (turn, roll, lift and
+      ground contact as front-on, seen through any camera; front-on through a flat camera it is the 2D
+      figure exactly, from the side it is turn 3 exactly), `drawCharacterInView`; scene-3d object kinds
+      (`loadScene3D(scene, { kinds })`: validate, prepare, resolve to meshes and drawables); the
+      `character` object and `characterObjects` (pen look in perspective with face and hands, or a solid
+      look of toon-shaded capsules with eyes), soft ground shadows; gallery demo (3D Scene: Dancing
+      Characters) and `examples/headless-video/characters-3d-dance.mjs`
+- [ ] M4 editor `scene3d` element; M5 rigid glTF import
 - [ ] M7 skinned glTF; M8 optional three.js adapter
 - [ ] Goal: 3D is also for **movies** (Phase 34). Decisions to revisit in the plan before M2, since its
       non-goals work against films: ground / contact shadows for characters (open question 8 → yes, by

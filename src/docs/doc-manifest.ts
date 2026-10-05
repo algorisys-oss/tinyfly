@@ -132,7 +132,7 @@ export const DOCS: DocEntry[] = [
   {
     id: 'scene-3d',
     title: '3D Scenes',
-    summary: '@algorisys/tinyfly/scene-3d: cameras, lights and meshes as JSON, in metres, animated by tracks at <scene>/<object> (cuts with activeCamera), drawn on a 2D canvas with flat, smooth or toon shading, ink outlines and fog, in browsers, Workers and Node (MP4 with tinyfly video).',
+    summary: '@algorisys/tinyfly/scene-3d: cameras, lights and meshes as JSON, in metres, animated by tracks at <scene>/<object> (cuts with activeCamera), drawn on a 2D canvas with flat, smooth or toon shading, ink outlines and fog, in browsers, Workers and Node (MP4 with tinyfly video); v2 characters in scenes, dancing, in their pen looks or as solid figures, seen by any camera.',
     section: 'Guides',
   },
   {

@@ -109,7 +109,32 @@ export interface LightObject extends ObjectBase {
   castShadow?: boolean
 }
 
-export type Object3D = GroupObject | MeshObject | CameraObject | LightObject
+/**
+ * A character (tinyfly's v2 human) standing in the scene. Drawing it needs the
+ * characters add-on: `loadScene3D(scene, { kinds: [characterObjects] })` with
+ * `characterObjects` from `@algorisys/tinyfly/characters`.
+ */
+export interface CharacterObject3D extends ObjectBase {
+  kind: 'character'
+  /** How it looks: `character()` options (figure, look, ink, skin, hands, …) */
+  character?: Record<string, unknown>
+  /** Height, metres (default 1.7) */
+  height?: number
+  /** Its pose: character pose fields (`arm.right.spread`, `turn`, …); tracks animate them */
+  pose?: Record<string, number>
+  /** A soft shadow on the ground under it (default true) */
+  shadow?: boolean
+  /**
+   * `pen` (default): drawn by its pens, in its 2D look (clean, pencil,
+   * silhouette) seen in perspective. `solid`: built of shaded capsules and an
+   * ellipsoid head, lit and outlined like the scene's meshes.
+   */
+  look?: 'pen' | 'solid'
+  /** The solid look's colours and shading (default: a slate body, skin, toon with ink) */
+  solid?: { color?: string; skin?: string; shading?: 'unlit' | 'flat' | 'lambert' | 'toon'; outline?: { width: number; color: string } | false }
+}
+
+export type Object3D = GroupObject | MeshObject | CameraObject | LightObject | CharacterObject3D
 
 export type Geometry3D =
   | { type: 'box'; size: Vec3Tuple }

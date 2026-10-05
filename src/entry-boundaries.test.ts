@@ -54,7 +54,7 @@ describe('entry boundaries', () => {
   it('scene-3d reaches the engine, but not WebGL, glTF, three.js or the DOM adapters', () => {
     const files = reachable('scene-3d/index.ts')
     expect(files.some((f) => f.startsWith('engine/'))).toBe(true)
-    expect(files.filter((f) => /webgl|gltf|three|adapters\/dom|adapters\/svg/.test(f))).toEqual([])
+    expect(files.filter((f) => /webgl|gltf|three|adapters\/dom|adapters\/svg|^characters\//.test(f))).toEqual([])
     const source = files.map((f) => readFileSync(resolve(SRC, f), 'utf8')).join('\n')
     expect(source).not.toMatch(/from ['"]three['"]/)
   })
