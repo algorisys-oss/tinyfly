@@ -2230,6 +2230,13 @@ WebGPU deferred.
       (fov, look through, cut at playhead), character look and dance from playhead, camera presets,
       background and fog
 - [ ] M4 next: an orbit / pan authoring view and on-canvas gizmos; a 3D element in embeds and the player
+- [x] M3 WebGL2 renderer (`feat/3d-webgl`): `@algorisys/tinyfly/scene-3d/webgl` and
+      `tinyfly-scene-3d-webgl.iife.js`; draws the resolved frame's new `meshes` (world-space meshes,
+      including solid characters) with a depth buffer, the same light model per pixel (unlit / flat via
+      derivatives / smooth / toon, spot cones, ranges, fog), inverted-hull outlines, see-through meshes far to
+      near, and drawables on a 2D overlay; e2e `scene-3d-webgl` (compiles, silhouettes match Canvas 2D
+      ~97%, depth buffer correct) in Chromium, Firefox and WebKit; Canvas 2D / WebGL2 switch in the orbit demo
+- [ ] M3 next: crease outlines and shadows in WebGL2; the editor's 3D element drawn with WebGL2
 - [ ] M5 rigid glTF import
 - [ ] M7 skinned glTF; M8 optional three.js adapter
 - [ ] Goal: 3D is also for **movies** (Phase 34). Decisions to revisit in the plan before M2, since its

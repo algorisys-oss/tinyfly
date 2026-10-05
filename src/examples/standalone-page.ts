@@ -23,6 +23,8 @@ export const BROWSER_BUNDLE_URL = `${CDN_BASE}/tinyfly.iife.js`
 export const MAPS_BUNDLE_URL = `${CDN_BASE}/tinyfly-maps.iife.js`
 /** The 3D scenes add-on: load after the browser bundle; it adds to the same `tinyfly` global. */
 export const SCENE_3D_BUNDLE_URL = `${CDN_BASE}/tinyfly-scene-3d.iife.js`
+/** The WebGL2 renderer for 3D scenes: load after the scene-3d add-on. */
+export const SCENE_3D_WEBGL_BUNDLE_URL = `${CDN_BASE}/tinyfly-scene-3d-webgl.iife.js`
 
 const BUNDLE_NOTE = `tinyfly v${__APP_VERSION__}, served from GitHub by jsDelivr. For offline use, save the file and point this at your copy.`
 
@@ -32,7 +34,7 @@ interface PageParts {
   body: string
   script: string
   /** Add-on bundles to load after the browser bundle */
-  addons?: Array<'maps' | 'scene-3d'>
+  addons?: Array<'maps' | 'scene-3d' | 'scene-3d-webgl'>
 }
 
 function indent(text: string, spaces: number): string {
@@ -44,7 +46,7 @@ function indent(text: string, spaces: number): string {
     .join('\n')
 }
 
-const ADDON_URLS = { maps: MAPS_BUNDLE_URL, 'scene-3d': SCENE_3D_BUNDLE_URL }
+const ADDON_URLS = { maps: MAPS_BUNDLE_URL, 'scene-3d': SCENE_3D_BUNDLE_URL, 'scene-3d-webgl': SCENE_3D_WEBGL_BUNDLE_URL }
 
 function page({ title, style, body, script, addons = [] }: PageParts): string {
   return `<!doctype html>

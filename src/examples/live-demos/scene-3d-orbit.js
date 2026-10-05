@@ -1,21 +1,28 @@
 import { Timeline } from '../../engine'
-import { loadScene3D, drawScene3D } from '../../scene-3d'
+import { loadScene3D, resolveScene3D, drawResolvedScene } from '../../scene-3d'
+import { WebGL2Renderer } from '../../scene-3d/webgl'
 
 // On a standalone page these come from the browser bundle's `tinyfly` global
 // (with tinyfly-scene-3d.iife.js loaded after it); here they come from the
 // source modules, so the code below runs unchanged in both.
-const tinyfly = { Timeline, loadScene3D, drawScene3D }
+const tinyfly = { Timeline, loadScene3D, resolveScene3D, drawResolvedScene, WebGL2Renderer }
 
 export const html = `<style>
   .s3-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
   .s3-canvas { width: 100%; max-width: 420px; aspect-ratio: 16 / 9; height: auto; border-radius: 8px; background: #1e293b; }
+  .s3-canvas[hidden] { display: none; }
   .s3-row { display: flex; gap: 10px; align-items: center; font: 12px system-ui, sans-serif; color: #cbd5e1; }
   .s3-readout { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; color: #9bb4c7; }
   .s3-row select { font: 12px system-ui, sans-serif; padding: 2px 6px; border-radius: 6px; border: 1px solid #475569; background: #1e293b; color: #e2e8f0; }
 </style>
 <div class="s3-wrap">
-  <canvas class="s3-canvas" width="640" height="360"></canvas>
+  <canvas class="s3-canvas s3-2d" width="640" height="360"></canvas>
+  <canvas class="s3-canvas s3-gl" width="640" height="360" hidden></canvas>
   <div class="s3-row">
+    <select class="s3-renderer" aria-label="Renderer">
+      <option value="2d">Canvas 2D</option>
+      <option value="webgl">WebGL2</option>
+    </select>
     <select class="s3-look" aria-label="Shading">
       <option value="toon">toon + ink</option>
       <option value="lambert">smooth</option>
@@ -33,7 +40,9 @@ export const html = `<style>
  */
 export function run(live, root) {
   // #region code
-  const canvas = root.querySelector('.s3-canvas')
+  const canvas = root.querySelector('.s3-2d')
+  const glCanvas = root.querySelector('.s3-gl')
+  const rendererSelect = root.querySelector('.s3-renderer')
   const look = root.querySelector('.s3-look')
   const fog = root.querySelector('.s3-fog')
   const readout = root.querySelector('.s3-readout')
@@ -106,6 +115,19 @@ export function run(live, root) {
 
   const clock = { time: 0 }
   live.to(clock, { time: 600000, duration: 600, ease: 'none', repeat: -1 })
+  // Canvas 2D paints back to front; WebGL2 has a depth buffer and light per pixel. Same frame, either way.
+  let gl = null
+  rendererSelect.addEventListener('change', () => {
+    const webgl = rendererSelect.value === 'webgl'
+    if (webgl && !gl) {
+      const context = glCanvas.getContext('webgl2', { antialias: true })
+      gl = context ? new tinyfly.WebGL2Renderer(context) : null
+      if (!gl) rendererSelect.value = '2d'
+    }
+    canvas.hidden = rendererSelect.value === 'webgl'
+    glCanvas.hidden = rendererSelect.value !== 'webgl'
+  })
+
   const draw = () => {
     // The bounce loops every second, the orbit every 12: each track at its own time.
     const t = clock.time
@@ -113,8 +135,9 @@ export function run(live, root) {
     const ball = timeline.getStateAtTime(t % 1000).values.get('stage/ball')
     state.values.set('stage/ball', ball)
     readout.textContent = `orbit ${Math.round(state.values.get('stage/rig').get('rotateY'))}° · ${scene.scene.objects.length} objects`
-    if (!ctx) return
-    tinyfly.drawScene3D(ctx, scene, state.values, { width: canvas.width, height: canvas.height })
+    const frame = tinyfly.resolveScene3D(scene, state.values, { width: canvas.width, height: canvas.height })
+    if (rendererSelect.value === 'webgl' && gl) gl.render(frame)
+    else if (ctx) tinyfly.drawResolvedScene(ctx, frame)
   }
   live.ticker.add(draw)
   // #endregion code
@@ -127,10 +150,10 @@ export const scene3dOrbit = {
   id: 'live-scene-3d-orbit',
   name: '3D Scene: Orbiting Camera',
   description:
-    'A real 3D scene as JSON (camera, lights, a floor, four shapes and a star extruded from an SVG path, in metres) drawn on a plain canvas by tinyfly/scene-3d: toon bands with ink outlines, smooth or flat shading, and fog. The camera orbits because its parent group turns on a rotateY track; a ball bounces and shapes spin, all ordinary keyframes addressed stage/<object>. No WebGL, and the same scene renders to video in Node.',
+    'A real 3D scene as JSON (camera, lights, a floor, four shapes and a star extruded from an SVG path, in metres) drawn on a plain canvas by tinyfly/scene-3d: toon bands with ink outlines, smooth or flat shading, and fog, drawn by the Canvas 2D renderer or by WebGL2 (a depth buffer, light per pixel). The camera orbits because its parent group turns on a rotateY track; a ball bounces and shapes spin, all ordinary keyframes addressed stage/<object>. No WebGL, and the same scene renders to video in Node.',
   category: '3d',
   tags: ['3d', 'scene', 'camera', 'orbit', 'lights', 'toon', 'outline', 'fog', 'canvas'],
-  addons: ['scene-3d'],
+  addons: ['scene-3d', 'scene-3d-webgl'],
   html,
   run,
 }

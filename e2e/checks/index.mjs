@@ -1,6 +1,7 @@
 import engine from './engine.mjs'
 import adapters from './adapters.mjs'
 import transforms3d from './transforms-3d.mjs'
+import scene3dWebgl from './scene-3d-webgl.mjs'
 import exportsCheck from './exports.mjs'
 import demos from './demos.mjs'
 import editor from './editor.mjs'
@@ -13,4 +14,4 @@ import learn from './learn.mjs'
 import examplePages from './example-pages.mjs'
 import learnEditor from './learn-editor.mjs'
 
-export const checks = [engine, adapters, transforms3d, exportsCheck, demos, editor, docs, showcase, landing, learn, examplePages, learnEditor, embed, editorSteps]
+export const checks = [engine, adapters, transforms3d, scene3dWebgl, exportsCheck, demos, editor, docs, showcase, landing, learn, examplePages, learnEditor, embed, editorSteps]

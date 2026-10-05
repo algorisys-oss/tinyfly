@@ -1,6 +1,6 @@
 {
   "name": "@algorisys/tinyfly",
-  "version": "0.85.0",
+  "version": "0.86.0",
   "type": "module",
   "description": "Lightweight, API-driven animation engine and editor. The engine is framework-agnostic and runs in browsers, Web Workers, and Node.",
   "license": "MIT",
@@ -109,6 +109,10 @@
       "types": "./lib/types/scene-3d/index.d.ts",
       "import": "./lib/addons/scene-3d.js"
     },
+    "./scene-3d/webgl": {
+      "types": "./lib/types/scene-3d/webgl/index.d.ts",
+      "import": "./lib/addons/scene-3d-webgl.js"
+    },
     "./headless": {
       "types": "./lib/types/headless/index.d.ts",
       "import": "./lib/headless/headless.js"
@@ -136,7 +140,7 @@
     "build:engine": "vite build --config vite.config.engine.ts",
     "build:player": "vite build --config vite.config.player.ts",
     "build:addons": "vite build --config vite.config.addons.ts",
-    "build:browser": "vite build --config vite.config.browser.ts && vite build --config vite.config.browser-maps.ts && vite build --config vite.config.browser-scene-3d.ts",
+    "build:browser": "vite build --config vite.config.browser.ts && vite build --config vite.config.browser-maps.ts && vite build --config vite.config.browser-scene-3d.ts && vite build --config vite.config.browser-scene-3d-webgl.ts",
     "build:frameworks": "vite build --config vite.config.frameworks.ts",
     "build:embed": "vite build --config vite.config.embed.ts",
     "build:cli": "vite build --config vite.config.cli.ts",

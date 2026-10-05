@@ -79,6 +79,22 @@ export interface DrawTriangle {
   outline: Array<[ScreenPoint, ScreenPoint]>
 }
 
+/**
+ * A visible mesh in world space, for renderers that keep geometry 3D (the
+ * WebGL2 renderer): the scene's meshes and those added kinds place.
+ */
+export interface ResolvedMesh {
+  objectId: string
+  objectIndex: number
+  mesh: PreparedMesh
+  world: Mat4
+  material: Material3D
+  /** An animated colour over the material's */
+  color?: string
+  /** The object's opacity times the material's */
+  opacity: number
+}
+
 /** A drawable from an added object kind, in the draw order. */
 export interface ResolvedDrawable extends Drawable {
   objectId: string
@@ -102,6 +118,8 @@ export interface ResolvedScene3D {
   triangles: DrawTriangle[]
   /** Objects of added kinds (characters), each placed among the triangles by layer and depth */
   drawables: ResolvedDrawable[]
+  /** Every visible mesh in world space (renderers with a depth buffer draw these instead of `triangles`) */
+  meshes: ResolvedMesh[]
 }
 
 /** Edges sharper than this (between face normals) are inked as creases. */
@@ -242,6 +260,7 @@ export function resolveScene3D(loaded: LoadedScene3D, values: SceneValues = new 
   }
 
   const triangles: Array<DrawTriangle & { part: number }> = []
+  const meshes: ResolvedMesh[] = []
   scene.objects.forEach((object, objectIndex) => {
     if (object.kind !== 'mesh' || !visible.get(object.id)) return
     const mesh = loaded.meshes.get(object.id)
@@ -253,6 +272,7 @@ export function resolveScene3D(loaded: LoadedScene3D, values: SceneValues = new 
     const color = own.get('color')
     const opacity = (num(own.get('opacity')) ?? 1) * (material.opacity ?? 1)
     if (opacity <= 0) return
+    meshes.push({ objectId: object.id, objectIndex, mesh, world, material, color: typeof color === 'string' ? color : undefined, opacity })
     triangles.push(...meshTriangles(mesh, world, normals, camera, toScreen, material, {
       objectId: object.id,
       objectIndex,
@@ -281,6 +301,7 @@ export function resolveScene3D(loaded: LoadedScene3D, values: SceneValues = new 
     const layer = object.layer ?? 0
     for (const drawable of view.drawables ?? []) drawables.push({ ...drawable, objectId: object.id, objectIndex, layer })
     for (const placed of view.meshes ?? []) {
+      meshes.push({ objectId: object.id, objectIndex, mesh: placed.mesh, world: placed.world, material: placed.material, opacity: placed.material.opacity ?? 1 })
       triangles.push(...meshTriangles(placed.mesh, placed.world, normalMatrix(placed.world), camera, toScreen, placed.material, {
         objectId: object.id,
         objectIndex,
@@ -305,6 +326,7 @@ export function resolveScene3D(loaded: LoadedScene3D, values: SceneValues = new 
     worlds,
     triangles,
     drawables,
+    meshes,
     time: options.time ?? 0,
   }
 }

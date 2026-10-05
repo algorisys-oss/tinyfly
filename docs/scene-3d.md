@@ -207,6 +207,39 @@ objects, prepares them once, and each frame returns meshes (shaded and sorted
 with the scene's) and drawables (drawn whole at their depth). Pass it in
 `loadScene3D(scene, { kinds })`.
 
+## The WebGL2 renderer
+
+`@algorisys/tinyfly/scene-3d/webgl` (`tinyfly-scene-3d-webgl.iife.js` for
+script tags) draws the same resolved frame with WebGL2:
+
+```js
+import { loadScene3D, resolveScene3D } from '@algorisys/tinyfly/scene-3d'
+import { WebGL2Renderer } from '@algorisys/tinyfly/scene-3d/webgl'
+
+const renderer = new WebGL2Renderer(canvas.getContext('webgl2'), { overlay })
+renderer.render(resolveScene3D(scene, values, { width: canvas.width, height: canvas.height }))
+// or drive it from a timeline: new Scene3DAdapter(renderer, { width, height })
+```
+
+- **A depth buffer**: shapes that cut through each other, huge floors and
+  long meshes draw right, with no `layer` needed.
+- **Light per pixel**: smooth shading is smooth, toon bands and spot pools
+  have clean edges, fog fades per pixel. The same light model as the Canvas
+  2D renderer (up to 8 lights).
+- **Outlines** by the inverted hull: silhouettes in the ink colour and
+  width. (Creases inside a silhouette are inked only by the Canvas 2D
+  renderer.)
+- **See-through meshes** are drawn after the opaque ones, far to near.
+- Objects drawn whole, such as characters in their pen look, go on
+  `overlay`, a 2D canvas laid over the GL one (in front of the meshes);
+  solid characters are meshes and sort properly.
+
+It runs on a page or in a Worker (OffscreenCanvas). Node has no WebGL2, so
+headless video uses the Canvas 2D renderer. The cross-browser checks
+(`npm run e2e -- --check scene-3d-webgl`) compile it in Chromium, Firefox and
+WebKit, compare its silhouettes with the Canvas 2D renderer's and check the
+depth buffer.
+
 ## Draw order and its limits
 
 The Canvas 2D renderer paints back to front (painter's algorithm), culling
@@ -216,7 +249,7 @@ back faces and clipping at the camera's near plane. Within a `layer`
 or very long ones, can sort wrongly: give big planes `segments`, keep meshes
 modest, or use a layer. Each triangle has one colour, so smooth shading is
 smoothed per triangle, not per pixel; more segments look rounder. The WebGL2
-renderer (next) has a depth buffer and per-pixel light.
+renderer (above) has a depth buffer and per-pixel light.
 
 Rendering speed in Node: a 1280×720 scene of a few thousand triangles renders
 at a few frames a second; parallel rendering for long films is planned.

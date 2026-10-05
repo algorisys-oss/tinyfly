@@ -24,6 +24,7 @@ export default defineConfig({
         characters: resolve(__dirname, 'src/characters/index.ts'),
         maps: resolve(__dirname, 'src/maps/index.ts'),
         'scene-3d': resolve(__dirname, 'src/scene-3d/index.ts'),
+        'scene-3d-webgl': resolve(__dirname, 'src/scene-3d/webgl/index.ts'),
       },
       formats: ['es'],
     },

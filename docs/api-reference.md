@@ -642,6 +642,7 @@ boxMesh / planeMesh / sphereMesh / cylinderMesh / coneMesh / torusMesh / extrude
 triangulate(outline, holes?) / signedArea / pointInPolygon
 ```
 
+new WebGL2Renderer(gl, { overlay? })                         // @algorisys/tinyfly/scene-3d/webgl: render(frame), destroy()
 loadScene3D(scene, { kinds: [characterObjects] })            // object kinds beyond the built-ins: ObjectKind { kind, validate?, prepare?, resolve }
 // from @algorisys/tinyfly/characters:
 characterObjects                                             // the `character` object kind (pen or solid look)
