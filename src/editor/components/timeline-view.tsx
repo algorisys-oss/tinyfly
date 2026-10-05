@@ -2,15 +2,20 @@ import { For, Show, createMemo, createSignal, createEffect, onCleanup } from 'so
 import { trackPropertyLabel } from '../utils/track-labels'
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
-import type { Track, AnyTrack } from '../../engine'
-import { hasKeyframes, isSpringTrack, isInertiaTrack } from '../../engine'
+import type { Track, AnyTrack, BeatGrid } from '../../engine'
+import { hasKeyframes, isSpringTrack, isInertiaTrack, beatLength, beatsBetween, nearestBeat } from '../../engine'
 import { trackLabelWidth } from '../utils/track-label-width'
 import { TimelineSteps } from './timeline-steps'
 import './timeline-view.css'
 
 interface TimelineViewProps {
   store: EditorStore
+  /** The music's beats (from an audio element's tempo): drawn behind the tracks, and keyframes snap to them */
+  beatGrid?: BeatGrid | null
 }
+
+/** A dragged keyframe this close to a beat (px) lands on it; hold Alt to place it freely. */
+const BEAT_SNAP_PX = 6
 
 interface DragState {
   trackId: string
@@ -124,7 +129,13 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
 
     const deltaX = e.clientX - state.startX
     const deltaTime = xToTime(deltaX)
-    const newTime = Math.max(0, state.startTime + deltaTime)
+    let newTime = Math.max(0, state.startTime + deltaTime)
+    // Close to a beat of the music, land on it.
+    const grid = props.beatGrid
+    if (grid && !e.altKey) {
+      const beat = nearestBeat(grid, newTime)
+      if (beat >= 0 && Math.abs(beat - newTime) * pixelsPerMs() <= BEAT_SNAP_PX) newTime = beat
+    }
 
     setDragState({ ...state, currentTime: newTime })
   }
@@ -142,6 +153,39 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
 
     setDragState(null)
   }
+
+  /**
+   * The beat grid as a background: a faint line every beat and a stronger one
+   * every bar, as repeating gradients (no element per beat). Hidden when the
+   * beats would be too close together to read.
+   */
+  const beatBackground = createMemo(() => {
+    const grid = props.beatGrid
+    if (!grid) return undefined
+    const beatPx = beatLength(grid) * pixelsPerMs()
+    if (beatPx < 4) return undefined
+    const barPx = beatPx * Math.max(1, Math.round(grid.beatsPerBar ?? 4))
+    const shift = grid.offset * pixelsPerMs() - props.store.state.scrollPosition
+    const wrap = (x: number, period: number) => ((x % period) + period) % period
+    return {
+      'background-image': [
+        `repeating-linear-gradient(90deg, var(--beat-bar) 0 1px, transparent 1px ${barPx}px)`,
+        `repeating-linear-gradient(90deg, var(--beat-line) 0 1px, transparent 1px ${beatPx}px)`,
+      ].join(', '),
+      'background-position': `${wrap(shift, barPx)}px 0, ${wrap(shift, beatPx)}px 0`,
+    }
+  })
+
+  /** Bar numbers for the ruler (bar 1 is the bar the music starts its beat on). */
+  const barLabels = createMemo(() => {
+    const grid = props.beatGrid
+    if (!grid || beatLength(grid) * pixelsPerMs() * (grid.beatsPerBar ?? 4) < 18) return []
+    const perBar = Math.max(1, Math.round(grid.beatsPerBar ?? 4))
+    return beatsBetween(grid, 0, Math.max(duration(), 5000))
+      .filter((beat) => beat.bar)
+      .slice(0, 500)
+      .map((beat) => ({ time: beat.time, label: String(Math.floor(beat.n / perBar) + 1) }))
+  })
 
   // Get the display time for a keyframe (use drag position if dragging)
   const getKeyframeDisplayTime = (track: Track, index: number, originalTime: number): number => {
@@ -251,6 +295,16 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
       <div class="timeline-ruler">
         <div class="ruler-gutter" />
         <div class="ruler-lane" onClick={handleRulerClick}>
+          {/* The music's bars, numbered, under the time ticks. */}
+          <div class="ruler-beats" style={beatBackground()}>
+            <For each={barLabels()}>
+              {(bar) => (
+                <span class="ruler-bar-label" style={{ left: `${timeToX(bar.time) - props.store.state.scrollPosition}px` }}>
+                  {bar.label}
+                </span>
+              )}
+            </For>
+          </div>
           <TimeRuler
             duration={duration()}
             pixelsPerMs={pixelsPerMs()}
@@ -307,6 +361,7 @@ export const TimelineView: Component<TimelineViewProps> = (props) => {
               </div>
               <div
                 class="track-keyframes"
+                style={beatBackground()}
                 onDblClick={(e) => handleTrackDoubleClick(track, e)}
               >
                 {/* Dim the region past the end of the scene — keyframes there

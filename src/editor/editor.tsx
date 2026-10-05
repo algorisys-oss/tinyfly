@@ -31,6 +31,7 @@ import { serializeTimeline, deserializeTimeline } from '../engine'
 import { StatusBar } from '../components'
 import { useNavigate, useSearchParams } from '@solidjs/router'
 import { applySample, getSampleById, HANDOFF_PARAM, takeStashedSample } from './samples'
+import { beatGridOf } from './utils/beat-grid'
 import './editor.css'
 
 interface EditorInnerProps {
@@ -779,7 +780,12 @@ const EditorInner: Component<EditorInnerProps> = (props) => {
             class="editor-timeline"
             style={{ height: timelineExpanded() ? undefined : `${timelineHeight()}px` }}
           >
-            <TimelinePanel store={store} expanded={timelineExpanded()} onToggleExpand={toggleTimelineExpand} />
+            <TimelinePanel
+              store={store}
+              beatGrid={beatGridOf(sceneStore.state.elements)}
+              expanded={timelineExpanded()}
+              onToggleExpand={toggleTimelineExpand}
+            />
           </section>
         </div>
 

@@ -84,10 +84,13 @@ prop, or the depths to slot it between fingers.
   pose (`'hand.right.index.curl': 0`), so hands are tracks like everything
   else. `hand.<side>.turn` is relative to how a hand hangs at the side (thumb
   forward); `characterHandPose(pose, side)` shows what a hand will get.
+  `handStyle: 'natural'` draws five slimmer fingers instead of the glove
+  (`handSize` 0.14), so shapes like mudras read finger by finger.
 
 ## Not yet
 
-- The editor's Character element still draws round hands; a hand-shape picker
-  comes with it.
+- The editor's Character element takes hand shapes from dances (Hands: Cartoon
+  gloves or Natural); there is no hand-shape picker for single poses yet.
 - A forearm pointing straight at the viewer does not foreshorten the hand.
-- The v1 stick figure keeps its round hands.
+- The v1 stick figure draws these hands with `style.hands`; see
+  [Dance and Flips](dance.md).

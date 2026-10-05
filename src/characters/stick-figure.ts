@@ -1217,14 +1217,15 @@ export type Dancer = (beat: number) => DanceFrame
 export function resolveStickFrame(props: StickFigureProps, time: number, dance?: Dancer): DanceFrame {
   const standing: StickPose = { ...props }
   let figure = props.walking > 0 ? blendPose(standing, walkPose(props.walk, standing), props.walking) : standing
-  let hands: DanceFrame['hands']
+  // The target's own hands (its `hand.*` props), which a dance blends away from.
+  let hands = handsFromProps(props as unknown as Record<string, unknown>)
   const dancing = props.dancing ?? 0
   if (dance && dancing > 0) {
     const frame = dance(props.beat ?? 0)
     figure = blendPose(figure, frame.pose, dancing)
     if (frame.hands) {
-      const mix = (hand?: HandPose) => (hand ? mixHandPoses(HAND_REST, hand, dancing) : undefined)
-      hands = { left: mix(frame.hands.left), right: mix(frame.hands.right) }
+      const mix = (own: HandPose | undefined, hand?: HandPose) => (hand ? mixHandPoses(own ?? HAND_REST, hand, dancing) : own)
+      hands = { left: mix(hands?.left, frame.hands.left), right: mix(hands?.right, frame.hands.right) }
     }
   }
   if (props.talk > 0) figure = { ...figure, mouth: Math.max(figure.mouth, props.talk * talkingMouth(time)) }
@@ -1234,6 +1235,20 @@ export function resolveStickFrame(props: StickFigureProps, time: number, dance?:
 /** The pose of {@link resolveStickFrame}. */
 export function resolveStickPose(props: StickFigureProps, time: number, dance?: Dancer): StickPose {
   return resolveStickFrame(props, time, dance).pose
+}
+
+/** Prop names for a hand's pose fields on a stick-figure target: `hand.left.index.curl`, … */
+export const handProp = (side: StickSide, field: string) => `hand.${side}.${field}`
+
+/** A target's hands from its `hand.left.*` / `hand.right.*` props, if it has them. */
+function handsFromProps(props: Record<string, unknown>): DanceFrame['hands'] {
+  const read = (side: StickSide): HandPose | undefined => {
+    if (typeof props[handProp(side, 'spread')] !== 'number') return undefined
+    return Object.fromEntries(Object.keys(HAND_REST).map((field) => [field, props[handProp(side, field)] as number]))
+  }
+  const left = read('left')
+  const right = read('right')
+  return left || right ? { left, right } : undefined
 }
 
 /** A style with a dance frame's hands, when the style draws hands at all. */
@@ -1275,13 +1290,21 @@ export function stickFigureTarget(options: StickFigureTargetOptions): StickFigur
   const height = style.height ?? 300
   const width = height * 0.8
   const props: StickFigureProps = { ...pose(options.pose ?? {}), walk: 0, walking: 0, talk: 0, rubber: style.rubber ?? 0, beat: 0, dancing: 0 }
+  // With cartoon hands, every hand pose field is a prop too (`hand.left.index.curl`…), so tracks pose the fingers.
+  const handProps: Record<string, number> = {}
+  if (style.hands) {
+    for (const side of ['left', 'right'] as const) {
+      const hand = style.hands[side] ?? HAND_REST
+      for (const field of Object.keys(HAND_REST)) handProps[handProp(side, field)] = hand[field] ?? HAND_REST[field]
+    }
+  }
   return {
     type: 'custom',
     x: options.x - width / 2,
     y: options.y - height,
     width,
     height,
-    props: { ...props },
+    props: { ...props, ...handProps },
     figureStyle: style,
     figureDance: options.dance,
     draw(ctx, target, time) {

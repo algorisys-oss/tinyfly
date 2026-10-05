@@ -52,3 +52,20 @@ describe('character elements', () => {
     expect(trackPropertyLabel('opacity')).toBe('opacity')
   })
 })
+
+describe('character hands', () => {
+  it('maps the Hands option to the character: round, gloves or natural hands', () => {
+    expect(characterOf(aCharacter({})).hands).toBe('dot')
+    const gloves = characterOf(aCharacter({ hands: 'cartoon' }))
+    expect([gloves.hands, gloves.handStyle]).toEqual(['cartoon', 'glove'])
+    const natural = characterOf(aCharacter({ hands: 'natural' }))
+    expect([natural.hands, natural.handStyle]).toEqual(['cartoon', 'natural'])
+  })
+
+  it('applies animated hand fields to the pose', () => {
+    const element = aCharacter({ hands: 'natural' })
+    const state = { values: new Map([[element.name, new Map([['hand.right.index.curl', 0.9]])]]) } as unknown as AnimationState
+    expect(characterElementPose(element, state)['hand.right.index.curl']).toBe(0.9)
+    expect(trackPropertyLabel('hand.right.index.curl')).toBe('Right hand · index curl')
+  })
+})

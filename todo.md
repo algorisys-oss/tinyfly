@@ -2137,9 +2137,28 @@ deterministically.
 
 ### 32E — Next (planned)
 - [ ] Music sync: `beatAt()` from an audio track's BPM and offset in the editor; beat markers
-- [ ] Editor: a 🕺 Dance picker on the stick figure / character (style, move, tempo) that writes
-      `danceTracks()`; a flip button that writes `flipTracks()` at the playhead
-- [ ] Hand shapes as numeric props (curl/spread per hand) so baked timelines carry them too
+- [x] Editor: a Dance section on the 🧍 Character (style, move, tempo → 🕺 Dance from playhead; flip →
+      🤸 Flip at playhead), written as ordinary keyframes merged around existing keys; built on
+      `stickToHuman()` (stick poses on v2 characters: spread/swing split by the view, plié knees,
+      lift/roll)
+- [x] Hand shapes as numeric props: `hand.left.*` / `hand.right.*` on targets with `style.hands`;
+      `bakeDanceTracks()` bakes them (`hands: false` to skip)
+- [x] Tap danced side-on so brushes read forward and back; `mirrorPose()` and the groove understand
+      side-on poses (the other limbs, knees forward)
+- [x] Editor dances: flips travel (an `x` track from the playhead's offset, mirrored for a character
+      facing left); Hands: Cartoon gloves on the Character, with dances keying hand shapes and mudras
+      (`hand.*` fields are character fields, labelled "Right hand · index curl")
+- [x] v2 characters gain `leg.*.toeOut` (foot turn-out); `stickToHuman(pose, hands)` carries turn-out,
+      hand shapes and wrist bends (as hand `roll`)
+- [x] Turned-out knees on v2 characters: `leg.*.rotate` (hip rotation; the foot stays forward), so
+      front-on stick legs map exactly (Bharatanatyam's half-sit, pliés, bounces bend out over the toes)
+- [x] Natural five-fingered hands: `character({ handStyle: 'natural' })`, and Hands: Natural in the editor
+- [x] Music beat grid: engine `BeatGrid` helpers and a deterministic `detectTempo(samples, rate)`
+      (onset strength → autocorrelation with a ~120 bpm prior → tempo and phase fitted together);
+      Audio element Beat (🎵 Detect tempo in the browser, tempo / first beat / beats per bar, 👆 tap
+      tempo); timeline beat lines and numbered bars; keyframes snap to beats (Alt to place freely);
+      dances and flips follow the beat (music's tempo, start on the nearest beat)
+- [ ] Beats: a beat grid in the curve view; snapping step markers; detecting changing tempos
 - [ ] More styles: salsa, tap with wings and pullbacks, garba / dandiya,
       Kathak (chakkar spins with `turn`), popping and locking, shuffle
 - [ ] More acrobatics: aerial, butterfly kick, 540, round-off, kip-up, flips in a sequence

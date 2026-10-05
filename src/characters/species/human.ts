@@ -12,7 +12,10 @@ import { EXPRESSIONS, type ExpressionName } from '../stick-figure'
  * - `arm.left.swing` (forward +), `arm.left.spread` (out +), `arm.left.elbow`
  *   (forearm forward +), `arm.left.bend` (forearm out +), and the same for `.right`
  * - `leg.left.swing` (forward +), `leg.left.spread` (out +), `leg.left.knee`
- *   (shin back +), `leg.left.ankle` (toes up +), and the same for `.right`
+ *   (shin back +), `leg.left.ankle` (toes up +), `leg.left.toeOut` (the foot
+ *   turned out from its natural angle +, in −), `leg.left.rotate` (the whole
+ *   leg turned out at the hip +: at 90 a bent knee points sideways, as in a
+ *   turned-out plié), and the same for `.right`
  * - `stretch` (1 normal), `lift` (fraction of height above the ground), `roll` (whole-figure roll, degrees)
  * - the face: `mouth`, `smile`, `mouthWidth`, `blink`, `eye.left`, `eye.right`,
  *   `brow.left`, `brow.right`, `browTilt`, `lookX`, `lookY` (as the v1 stick figure)
@@ -40,6 +43,8 @@ const SHOULDER_DROP = 0.035
 /** Feet turn out from straight ahead, degrees */
 const TOE_OUT = 12
 
+const rad = (degrees: number) => (degrees * Math.PI) / 180
+
 export const HUMAN_REST: Pose = {
   turn: 0,
   lean: 0,
@@ -59,10 +64,14 @@ export const HUMAN_REST: Pose = {
   'leg.left.spread': 3,
   'leg.left.knee': 0,
   'leg.left.ankle': 0,
+  'leg.left.toeOut': 0,
+  'leg.left.rotate': 0,
   'leg.right.swing': 0,
   'leg.right.spread': 3,
   'leg.right.knee': 0,
   'leg.right.ankle': 0,
+  'leg.right.toeOut': 0,
+  'leg.right.rotate': 0,
   stretch: 1,
   lift: 0,
   roll: 0,
@@ -209,11 +218,16 @@ export function humanPlan(build: HumanBuild = {}): BodyPlan {
           { swing: f('elbow'), spread: f('bend') },
         ]
       }
+      // Turned out at the hip, the thigh and shin turn together about the vertical, so a
+      // bent knee points out. The foot keeps pointing forward: it takes back the part of
+      // the leg's swing that the turn moved out of the forward plane.
+      const outward = (chain.side ?? 1) * f('rotate')
+      const turnedAway = 1 - Math.cos(rad(f('rotate')))
       return [
-        { swing: f('swing'), spread: f('spread') },
-        { swing: -f('knee'), spread: 0 },
-        // The foot points forward, square to the shin, turned out a little.
-        { swing: 90 + f('ankle'), spread: 0, yaw: TOE_OUT * (chain.side ?? 1) },
+        { swing: f('swing'), spread: f('spread'), yaw: outward },
+        { swing: -f('knee'), spread: 0, yaw: outward },
+        // The foot points forward, square to the shin, turned out a little (more with `toeOut`).
+        { swing: 90 + f('ankle') - turnedAway * (f('swing') - f('knee')), spread: 0, yaw: (TOE_OUT + f('toeOut')) * (chain.side ?? 1) },
       ]
     },
     withAngles(pose: Pose, chain: ChainSpec, angles: BoneAngles[]): Pose {
@@ -271,6 +285,13 @@ export function humanPlan(build: HumanBuild = {}): BodyPlan {
 /** Plain-language names for the human pose fields, for timelines and property panels. */
 export function humanFieldLabel(field: string): string {
   const parts = field.split('.')
+  // Cartoon hands: `hand.left.index.curl`, `hand.right.turn`…
+  if (parts[0] === 'hand' && parts.length >= 3) {
+    const who = `${parts[1] === 'left' ? 'Left' : 'Right'} hand`
+    const what: Record<string, string> = { spread: 'finger spread', turn: 'wrist turn', bend: 'wrist bend', tilt: 'wrist tilt', roll: 'roll' }
+    const rest = parts.slice(2).join('.')
+    return `${who} · ${what[rest] ?? rest.replace('.curl', ' curl').replace('.across', ' across')}`
+  }
   if (parts.length === 3) {
     const [limb, side, motion] = parts
     const who = `${side === 'left' ? 'Left' : 'Right'} ${limb}`
@@ -281,6 +302,8 @@ export function humanFieldLabel(field: string): string {
       bend: 'forearm out / in',
       knee: 'knee bend',
       ankle: 'foot tilt',
+      toeOut: 'toes out / in',
+      rotate: 'turn out at the hip',
     }
     return `${who} · ${motions[motion] ?? motion}`
   }

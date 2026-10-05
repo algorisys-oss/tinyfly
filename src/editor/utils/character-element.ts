@@ -1,7 +1,7 @@
 import type { CustomTarget } from '../../adapters/canvas'
 import type { AnimationState } from '../../engine/types'
 import { hashSeed } from '../../engine/authoring/random'
-import { basicOutfit, character, drawCharacter, HUMAN_REST, type Character, type CharacterPose } from '../../characters'
+import { basicOutfit, character, drawCharacter, HAND_REST, HUMAN_REST, type Character, type CharacterPose } from '../../characters'
 import type { CharacterElement } from '../stores/scene-store'
 
 /**
@@ -21,11 +21,21 @@ export function characterOf(element: CharacterElement): Character {
     // Each character boils on its own: the seed comes from its id.
     seed: hashSeed(element.id) % 1000,
     layers: element.outfit === 'basic' ? basicOutfit({ shirt: element.shirt, trousers: element.trousers }) : undefined,
+    hands: (element.hands ?? 'dot') === 'dot' ? 'dot' : 'cartoon',
+    handStyle: element.hands === 'natural' ? 'natural' : 'glove',
   })
 }
 
-/** Is `property` one of the character's pose fields (so a track on it animates the pose)? */
-export const isCharacterField = (property: string) => property in HUMAN_REST
+/**
+ * Is `property` one of the character's pose fields (so a track on it animates
+ * the pose)? The body and face fields, and each cartoon hand's
+ * (`hand.left.index.curl`, `hand.right.turn`…).
+ */
+export const isCharacterField = (property: string) => {
+  if (property in HUMAN_REST) return true
+  const hand = /^hand\.(left|right)\.(.+)$/.exec(property)
+  return hand !== null && hand[2] in HAND_REST
+}
 
 /**
  * The full pose at a moment: rest, then the element's own pose, then any

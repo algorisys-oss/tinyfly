@@ -112,6 +112,8 @@ timeline track. The human's fields:
 | `head.turn`, `head.nod`, `head.tilt` | Head yaw on the body, pitch, roll |
 | `arm.left.swing`, `arm.left.spread`, `arm.left.elbow` | Upper arm, and the elbow (forearm swings forward) |
 | `leg.left.swing`, `leg.left.spread`, `leg.left.knee` | Thigh, and the knee (shin swings back) |
+| `leg.left.ankle`, `leg.left.toeOut` | Foot tilt (toes up +), and the foot turned out (+) or in (−) from its natural angle |
+| `leg.left.rotate` | The whole leg turned out at the hip, degrees: at 90 a bent knee points sideways (a turned-out plié) |
 | `stretch` | Squash and stretch, as v1 |
 | `lift` | Height above the surface, fraction of height (a jump) |
 | `roll` | Whole-figure roll in the picture plane, degrees (falling, lying). Not `rotate`, which turns an element's box |

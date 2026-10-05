@@ -18,7 +18,7 @@ import {
   type DanceStyleName,
 } from './dance'
 import { REST_POSE, stickFigureAt, stickFigureTarget, stickFigureJoints, type StickPose } from './stick-figure'
-import { HAND_SHAPES } from './hands/hand-rig'
+import { HAND_REST, HAND_SHAPES } from './hands/hand-rig'
 
 const STYLES = Object.keys(DANCE_STYLES) as DanceStyleName[]
 
@@ -268,4 +268,56 @@ describe('taps', () => {
       expect(lowest, `${tap.tap} @ ${tap.beat}`).toBeGreaterThan(joints.feetY - 0.05 * joints.height)
     }
   })
+})
+
+describe('side-on dancing', () => {
+  it('mirrors side-on by giving the move to the other limbs, still facing the same way', () => {
+    const p = { ...dancePose('tap', 0, { move: 'heelToe' }) }
+    const mirrored = mirrorPose(p)
+    expect(mirrored.leftHip).toBe(-p.rightHip)
+    expect(mirrored.rightHip).toBe(-p.leftHip)
+    expect(mirrored.lean).toBe(p.lean)
+    // Drawn, the forward foot is still in front: the heel dig reaches +x either way.
+    const forward = (pose: StickPose) => Math.max(stickFigureJoints(pose).feet.left.x, stickFigureJoints(pose).feet.right.x)
+    expect(forward(mirrored)).toBeCloseTo(forward(p), 5)
+  })
+
+  it('bounces both knees forward side-on', () => {
+    const sideOn = { ...REST_POSE, turn: 1, leftHip: 0, rightHip: 0 }
+    const bottom = applyGroove(sideOn, { bounce: 20 }, 0)
+    expect(bottom.rightKnee).toBeGreaterThan(0)
+    expect(bottom.leftKnee).toBeLessThan(0)
+    expect(stickFigureJoints(bottom).hip.y).toBeGreaterThan(stickFigureJoints(sideOn).hip.y)
+  })
+})
+
+describe('baked hands', () => {
+  it('bake hand shapes as hand.left.* / hand.right.* tracks', () => {
+    const tracks = bakeDanceTracks('tum', 'disco', { move: 'point', bpm: 120 })
+    const index = tracks.find((t) => t.property === 'hand.right.index.curl')!
+    expect(index).toBeDefined()
+    expect(index.keyframes[0].value).toBe(HAND_SHAPES.point['index.curl'])
+    expect(bakeDanceTracks('tum', 'disco', { move: 'point', hands: false }).some((t) => t.property.startsWith('hand.'))).toBe(false)
+  })
+
+  it('a target with hands has a prop for every hand field, which its tracks pose', () => {
+    const target = stickFigureTarget({ x: 0, y: 0, style: { hands: {} } })
+    expect(target.props?.['hand.left.spread']).toBe(HAND_REST.spread)
+    const plain = stickFigureTarget({ x: 0, y: 0 })
+    expect(plain.props?.['hand.left.spread']).toBeUndefined()
+    // Baked tracks set the props; the figure draws those hands.
+    const ctx = createCanvas(300, 340).getContext('2d') as unknown as CanvasRenderingContext2D
+    const draw = (props: Record<string, number>) => {
+      ctx.clearRect(0, 0, 300, 340)
+      ctx.save()
+      // The target's box sits above its feet at (0, 0); move it onto the canvas.
+      ctx.translate(150 + target.x, 330 + target.y)
+      target.draw(ctx, { ...target, props: { ...target.props, ...props } }, 0)
+      ctx.restore()
+      return ctx.getImageData(0, 0, 300, 340).data.slice()
+    }
+    const relaxed = draw({})
+    const fist = draw(Object.fromEntries(Object.entries(HAND_SHAPES.fist).map(([field, value]) => [`hand.right.${field}`, value])))
+    expect(relaxed.every((v, i) => v === fist[i])).toBe(false)
+  }, 30000)
 })

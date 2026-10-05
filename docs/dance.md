@@ -109,7 +109,16 @@ change it:
 | `bhangra` | the bhangra step (knee lifts, arms up), dhamaal jumps |
 | `bharatanatyam` | tatta adavu (stamps in aramandi), natta adavu, alapadma to the sky |
 | `charleston` | kick forward and back, swivel (heels in, heels out with `footOut`), crossing knees |
-| `tap` | shuffle ball change, single time step (stamp, shuffle, hop, step, flap, step), heel toe, cramp roll; every strike is in `taps` |
+| `tap` | side-on: shuffle ball change, single time step (stamp, shuffle, hop, step, flap, step), heel toe, cramp roll; every strike is in `taps` |
+
+### Dancing to music
+
+Beats are the tempo's: `beatAt(time, bpm, start)` turns time into beats, so
+`danceFrame(style, beatAt(time, music.bpm, music.firstBeat))` keeps a dancer
+on the music. To find a song's tempo and its first beat, use the engine's
+`detectTempo(samples, sampleRate)` (see the API reference); in the editor, an
+Audio element's **🎵 Detect tempo** does it, and a Character's dances then
+follow the beat.
 
 ### Taps: when the feet strike the floor
 
@@ -134,6 +143,7 @@ The Dance Floor example flashes the foot at `joints.toes[side]` and, with
 
 ```ts
 danceFrame(style, beat, { move?, mirror? }): { pose, hands }  // the routine, or one move on a loop
+stickToHuman(pose): CharacterPose                             // a stick pose on a v2 character
 danceTaps(style, fromBeat, toBeat, options?): { beat, tap }[]  // foot strikes, for sounds
 dancePose(style, beat, options?): StickPose
 routineBeats(style): number
@@ -163,7 +173,48 @@ dance into pose keyframes, a few per beat:
 bakeDanceTracks('tum', 'kpop', { bpm: 125, beats: 16, samplesPerBeat: 4 })
 ```
 
-Hand shapes are not target props, so baked tracks do not carry them.
+Hand shapes bake too, as `hand.left.*` / `hand.right.*` tracks (one per hand
+pose field that moves, such as `hand.right.index.curl`). A target drawn with
+`style.hands` has a prop for every hand field, so those tracks pose its
+fingers; pass `hands: false` to leave them out.
+
+### On a v2 character, and in the editor
+
+`stickToHuman(pose)` turns a stick-figure pose into a v2 character pose, so
+every dance and flip plays on `character()` figures too. Each stick limb angle
+is split by the view into a sideways `spread` and a forward `swing`, and the
+character turns the same way. Front-on, a stick leg lies in the picture: on
+the character that is a leg turned out 90° at the hip (`leg.*.rotate`), so
+knees bend out over the toes as they do on the stick figure (Bharatanatyam's
+half-sit, a plié). Foot turn-out becomes `leg.*.toeOut`, and `rise` and `spin`
+become `lift` and `roll`. Pass the frame's hands too, `stickToHuman(frame.pose,
+frame.hands)`, and it adds the `hand.left.*` / `hand.right.*` fields a
+character with `hands: 'cartoon'` draws: the shapes and mudras, with the wrist
+bends as each hand's `roll`. `handStyle: 'natural'` gives five-fingered hands,
+so mudras read finger by finger.
+
+```js
+import { character, drawCharacter, danceFrame, stickToHuman } from '@algorisys/tinyfly/characters'
+
+const frame = danceFrame('bharatanatyam', beat)
+drawCharacter(ctx, character({ figure: 'fluid', hands: 'cartoon', handStyle: 'natural' }), stickToHuman(frame.pose, frame.hands), time)
+```
+
+In the editor, a **🧍 Character** has a **Dance** section: pick a style, a
+move (or the whole routine) and a tempo, then **🕺 Dance from playhead**. Or
+pick a flip and **🤸 Flip at playhead**. Both write ordinary keyframes, a few
+a beat, and keep the character's keys before and after. With **Hands:
+Cartoon gloves** or **Natural**, dances key the hand shapes and mudras too. Flips travel from where
+the character is, the way it faces: pick the *Side* or *Side (left)* view
+first.
+
+### Side-on moves
+
+Moves can be danced side-on (tap, the running man). Side-on, a limb's angle
+swings it forward or back, and forward is a positive angle for the right limbs
+and a negative one for the left. The groove follows: both knees bend forward.
+Mirroring a side-on pose gives the move to the other arm and leg while the
+figure keeps facing the same way; front-on it is a mirror image.
 
 ## Flips
 

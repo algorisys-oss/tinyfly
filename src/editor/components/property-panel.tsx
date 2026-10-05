@@ -26,6 +26,10 @@ import { MarkerInspector } from './marker-inspector'
 import type { SketchStyle } from '../../adapters/canvas'
 import { HUMAN_POSES, HUMAN_EXPRESSIONS, HUMAN_REST } from '../../characters/species/human'
 import { isCharacterField } from '../utils/character-element'
+import { characterDanceTracks, characterFlipTracks, danceLength, mergeKeyframes } from '../utils/character-dance'
+import { beatGridOf, detectAudioTempo, tapTempo } from '../utils/beat-grid'
+import { nearestBeat, nextBeat } from '../../engine'
+import { DANCE_STYLES, FLIPS, type DanceStyleName, type FlipName } from '../../characters'
 import { fitPlaces, mapElementProps, placeId, tripTracks } from '../utils/map-element'
 import { WORLD_CITIES } from '../../maps'
 import './property-panel.css'
@@ -1157,6 +1161,36 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
     )
   }
 
+  // The beat: detected from the audio, typed, or tapped.
+  const [beatStatus, setBeatStatus] = createSignal('')
+  const [taps, setTaps] = createSignal<number[]>([])
+
+  const detectBeat = async (element: AudioElement) => {
+    if (!element.src) return
+    setBeatStatus('Listening…')
+    try {
+      const found = await detectAudioTempo(element.src)
+      updateElement({ bpm: found.bpm, beatOffset: found.offset })
+      const sure = found.confidence > 0.35 ? '' : ' (not sure: check it against the music, or tap it)'
+      setBeatStatus(`Found ${found.bpm} bpm, first beat at ${found.offset} ms${sure}`)
+    } catch (error) {
+      setBeatStatus(`Could not read the audio: ${(error as Error).message}`)
+    }
+  }
+
+  const tapBeat = () => {
+    const now = performance.now()
+    const recent = [...taps().filter((t) => now - t < 8000), now]
+    setTaps(recent)
+    const bpm = tapTempo(recent)
+    if (bpm) {
+      updateElement({ bpm })
+      setBeatStatus(`Tapped ${bpm} bpm`)
+    } else {
+      setBeatStatus('Keep tapping with the music…')
+    }
+  }
+
   const renderAudioProperties = (element: AudioElement) => {
     let fileInputRef: HTMLInputElement | undefined
 
@@ -1223,6 +1257,63 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
           <label>Loop</label>
           <input type="checkbox" checked={element.loop} onChange={handleCheckboxChange('loop')} />
         </div>
+
+        <h4>Beat</h4>
+        <div class="property-row">
+          <label></label>
+          <button class="character-key-btn" disabled={!element.src} onClick={() => detectBeat(element)}>
+            🎵 Detect tempo
+          </button>
+        </div>
+        <div class="property-row">
+          <label>Tempo (bpm)</label>
+          <input
+            type="number"
+            min="0"
+            max="300"
+            step="0.1"
+            value={element.bpm ?? ''}
+            placeholder="none"
+            onInput={(e) => {
+              const bpm = Number(e.currentTarget.value)
+              updateElement({ bpm: bpm > 0 ? bpm : undefined })
+            }}
+          />
+        </div>
+        <div class="property-row">
+          <label>First beat (ms)</label>
+          <input
+            type="number"
+            min="0"
+            step="5"
+            value={element.beatOffset ?? 0}
+            onInput={(e) => updateElement({ beatOffset: Math.max(0, Number(e.currentTarget.value) || 0) })}
+          />
+        </div>
+        <div class="property-row">
+          <label>Beats per bar</label>
+          <input
+            type="number"
+            min="1"
+            max="16"
+            step="1"
+            value={element.beatsPerBar ?? 4}
+            onInput={(e) => updateElement({ beatsPerBar: Math.max(1, Math.round(Number(e.currentTarget.value) || 4)) })}
+          />
+        </div>
+        <div class="property-row">
+          <label></label>
+          <button class="character-key-btn" onClick={tapBeat}>
+            👆 Tap the beat
+          </button>
+        </div>
+        <Show when={beatStatus()}>
+          <p class="property-hint">{beatStatus()}</p>
+        </Show>
+        <p class="property-hint">
+          With a tempo the timeline shows the beats (bars numbered), dragged keyframes snap to them, and a Character's
+          dances can follow the music. Detect reads the audio; or play it and tap along.
+        </p>
       </div>
     )
   }
@@ -1511,6 +1602,55 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
     )
   }
 
+  const [danceStyle, setDanceStyle] = createSignal<DanceStyleName>('disco')
+  const [danceMove, setDanceMove] = createSignal('')
+  const [danceBpm, setDanceBpm] = createSignal(DANCE_STYLES.disco.bpm)
+  const [flipName, setFlipName] = createSignal<FlipName>('backFlip')
+  const [followMusic, setFollowMusic] = createSignal(true)
+  /** The music's beat grid, when an audio element has a tempo. */
+  const beatGrid = createMemo(() => beatGridOf(props.sceneStore.state.elements))
+  /** Dancing to the music: its tempo, and starting on a beat. */
+  const onBeat = () => (followMusic() ? beatGrid() : null)
+  /** The playhead, moved to the nearest beat when following the music (never before 0). */
+  const startTime = () => {
+    const playhead = Math.round(props.store.currentTime())
+    const grid = onBeat()
+    if (!grid) return playhead
+    const near = nearestBeat(grid, playhead)
+    return Math.round(near >= 0 ? near : nextBeat(grid, 0))
+  }
+  const danceTempo = () => onBeat()?.bpm ?? danceBpm()
+
+  const pickDanceStyle = (name: DanceStyleName) => {
+    setDanceStyle(name)
+    setDanceMove('')
+    setDanceBpm(DANCE_STYLES[name].bpm)
+  }
+
+  /** Write tracks from the playhead on, keeping the character's keys before and after them. */
+  const writeCharacterTracks = (element: CharacterElement, tracks: ReturnType<typeof characterDanceTracks>) => {
+    const existing = props.store.state.timeline?.tracks ?? []
+    props.store.replaceTracks(element.name, mergeKeyframes(existing, element.name, tracks))
+  }
+
+  const danceFromPlayhead = (element: CharacterElement) => {
+    const start = startTime()
+    const hands = (element.hands ?? 'dot') !== 'dot'
+    writeCharacterTracks(element, characterDanceTracks({ style: danceStyle(), move: danceMove() || undefined, bpm: danceTempo(), start, hands }))
+  }
+
+  const flipAtPlayhead = (element: CharacterElement) => {
+    const start = startTime()
+    // Travel from wherever the character is at the playhead, the way it faces (side left is turn 3).
+    const state = props.store.state.timeline?.getStateAtTime(start)
+    const x = state?.values.get(element.name)?.get('x')
+    const turn = characterPose(element).turn ?? 0
+    writeCharacterTracks(
+      element,
+      characterFlipTracks(flipName(), { start, height: element.height, x: typeof x === 'number' ? x : 0, facing: turn > 2 && turn < 4 ? -1 : 1 })
+    )
+  }
+
   const renderCharacterProperties = (element: CharacterElement) => (
     <div class="property-section">
       <h4>Character</h4>
@@ -1542,6 +1682,14 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
         <select value={element.outfit} onChange={(e) => updateElement({ outfit: (e.target as HTMLSelectElement).value })}>
           <option value="basic">T-shirt and trousers</option>
           <option value="none">None</option>
+        </select>
+      </div>
+      <div class="property-row">
+        <label>Hands</label>
+        <select value={element.hands ?? 'dot'} onChange={(e) => updateElement({ hands: (e.target as HTMLSelectElement).value })}>
+          <option value="dot">Round</option>
+          <option value="cartoon">Cartoon gloves</option>
+          <option value="natural">Natural (five fingers, for mudras)</option>
         </select>
       </div>
       <Show when={element.outfit === 'basic'}>
@@ -1604,6 +1752,63 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
       <p class="property-hint">
         To animate: pick a view, a pose and a face, then keyframe it. Move the playhead, pick the next pose, and keyframe
         again. The character moves between them.
+      </p>
+
+      <h4>Dance</h4>
+      <div class="property-row">
+        <label>Style</label>
+        <select value={danceStyle()} onChange={(e) => pickDanceStyle((e.target as HTMLSelectElement).value as DanceStyleName)}>
+          <For each={Object.entries(DANCE_STYLES)}>{([name, style]) => <option value={name}>{style.label}</option>}</For>
+        </select>
+      </div>
+      <div class="property-row">
+        <label>Move</label>
+        <select value={danceMove()} onChange={(e) => setDanceMove((e.target as HTMLSelectElement).value)}>
+          <option value="">Whole routine</option>
+          <For each={Object.entries(DANCE_STYLES[danceStyle()].moves)}>{([name, move]) => <option value={name}>{move.label}</option>}</For>
+        </select>
+      </div>
+      <Show when={beatGrid()}>
+        <div class="property-row">
+          <label>Follow beat ({beatGrid()!.bpm} bpm)</label>
+          <input type="checkbox" checked={followMusic()} onChange={(e) => setFollowMusic(e.currentTarget.checked)} />
+        </div>
+      </Show>
+      <Show when={!onBeat()}>
+        <div class="property-row">
+          <label>Tempo (bpm)</label>
+          <input
+            type="number"
+            min="40"
+            max="220"
+            value={danceBpm()}
+            onInput={(e) => setDanceBpm(Math.min(220, Math.max(40, parseFloat((e.target as HTMLInputElement).value) || 120)))}
+          />
+        </div>
+      </Show>
+      <div class="property-row">
+        <label></label>
+        <button class="character-key-btn" onClick={() => danceFromPlayhead(element)}>
+          🕺 Dance from playhead ({(danceLength(danceStyle(), danceTempo(), danceMove() || undefined) / 1000).toFixed(1)} s)
+        </button>
+      </div>
+      <div class="property-row">
+        <label>Flip</label>
+        <select value={flipName()} onChange={(e) => setFlipName((e.target as HTMLSelectElement).value as FlipName)}>
+          <For each={Object.entries(FLIPS)}>{([name, flip]) => <option value={name}>{flip.label}</option>}</For>
+        </select>
+      </div>
+      <div class="property-row">
+        <label></label>
+        <button class="character-key-btn" onClick={() => flipAtPlayhead(element)}>
+          🤸 Flip at playhead ({(FLIPS[flipName()].duration / 1000).toFixed(1)} s)
+        </button>
+      </div>
+      <p class="property-hint">
+        Writes the dance or flip as keyframes from the playhead (a few a beat), keeping the character's keys before and
+        after it. Every key can then be edited like any other. Following the beat, it takes the music's tempo (an audio
+        element's Beat) and starts on the beat nearest the playhead. Flips travel the way the character faces (pick Side
+        or Side (left) first). With gloves or natural hands the dance keys the hand shapes and mudras too.
       </p>
     </div>
   )

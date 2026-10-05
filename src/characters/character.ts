@@ -73,7 +73,13 @@ export interface CharacterOptions {
    * `hand.right.index.curl`; see {@link characterHandPose})
    */
   hands?: 'dot' | 'cartoon'
-  /** Cartoon hand length, wrist to fingertip, fraction of the height (default 0.17: a cartoon glove) */
+  /**
+   * Cartoon hands as `glove` (default: a thumb and three plump fingers, the
+   * classic cartoon glove) or `natural` (five slimmer fingers, so shapes like
+   * mudras read finger by finger)
+   */
+  handStyle?: 'glove' | 'natural'
+  /** Cartoon hand length, wrist to fingertip, fraction of the height (default 0.17 for gloves, 0.14 natural) */
   handSize?: number
 }
 
@@ -91,6 +97,7 @@ export interface Character {
   layers: CharacterLayers
   contact: 'ground' | 'none'
   hands: 'dot' | 'cartoon'
+  handStyle: 'glove' | 'natural'
   handSize: number
 }
 
@@ -119,7 +126,8 @@ export function character(options: CharacterOptions = {}): Character {
     layers: options.layers ?? {},
     contact: options.contact ?? 'ground',
     hands: options.hands ?? 'dot',
-    handSize: options.handSize ?? 0.17,
+    handStyle: options.handStyle ?? 'glove',
+    handSize: options.handSize ?? (options.handStyle === 'natural' ? 0.14 : 0.17),
   }
 }
 
@@ -315,8 +323,9 @@ function drawArmHand(ctx: CanvasRenderingContext2D, pen: Pen, character: Charact
     pen,
     skin: character.skin === 'none' ? '#ffffff' : character.skin,
     // A cartoon glove: three fingers and a thumb, plump enough to match the limbs.
-    fingers: 4,
-    plump: 1.6,
+    // Natural: five fingers, a little fuller than a real hand so they hold up against the limbs.
+    fingers: character.handStyle === 'natural' ? 5 : 4,
+    plump: character.handStyle === 'natural' ? 1.15 : 1.6,
     lineWidth: character.lineWidth * 0.3,
   })
 }

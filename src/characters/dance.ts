@@ -4,6 +4,7 @@ import { HAND_REST, HAND_SHAPES, handPose, mixHandPoses, type HandPose, type Han
 import {
   REST_POSE,
   blendPose,
+  handProp,
   withExpression,
   type DanceFrame,
   type Dancer,
@@ -199,19 +200,37 @@ const SIDED: Array<[keyof StickPose, keyof StickPose]> = [
   ['leftBrow', 'rightBrow'],
 ]
 
-/** Fields that turn the figure one way or the other: mirrored, they change sign. */
+/** Fields that turn the figure one way or the other: mirrored front-on, they change sign. */
 const SIGNED: Array<keyof StickPose> = ['lean', 'headTilt', 'lookX', 'spin']
 
-/** A pose danced on the other side: left and right swap, leans and spins reverse. */
+/** Limb angles: side-on, forward is a negative angle on the left and a positive one on the right. */
+const LIMB_ANGLES = new Set<keyof StickPose>(['leftShoulder', 'rightShoulder', 'leftElbow', 'rightElbow', 'leftWrist', 'rightWrist', 'leftHip', 'rightHip', 'leftKnee', 'rightKnee'])
+
+/**
+ * A pose danced on the other side. Front-on (`turn` below 0.5) left and right
+ * swap and leans and spins reverse, a mirror image. Side-on the figure still
+ * faces the same way: the other arm and leg do the same thing (swapped, and
+ * their angles negated, since forward is negative on the left), and leans and
+ * spins stay as they are.
+ */
 export function mirrorPose(pose: StickPose): StickPose {
   const out = { ...pose }
+  const sideOn = (pose.turn ?? 0) >= 0.5
   for (const [left, right] of SIDED) {
-    out[left] = pose[right]
-    out[right] = pose[left]
+    const flip = sideOn && LIMB_ANGLES.has(left) ? -1 : 1
+    out[left] = flip * pose[right]
+    out[right] = flip * pose[left]
   }
-  for (const field of SIGNED) out[field] = -pose[field]
+  if (!sideOn) for (const field of SIGNED) out[field] = -pose[field]
   return out
 }
+
+/**
+ * How the left leg bends to match the right: the same way front-on (both
+ * spread out), the opposite way side-on (forward is negative on the left),
+ * passing smoothly through the three-quarter views.
+ */
+const leftSign = (turn: number) => Math.min(1, Math.max(-1, (0.5 - turn) * 4))
 
 /** Bounce and sway at `beat`, on top of a pose. */
 export function applyGroove(pose: StickPose, groove: Groove, beat: number): StickPose {
@@ -219,14 +238,17 @@ export function applyGroove(pose: StickPose, groove: Groove, beat: number): Stic
   // 1 at the bottom of the bounce: on the beat for `down`, half way between for `up`.
   const wave = (1 + Math.cos(2 * Math.PI * phase)) / 2
   const depth = groove.bounce * (groove.accent === 'up' ? 1 - wave : wave)
-  // Bending at the knees with the feet planted: thighs out, shins back in, so the hips drop.
+  // Bending at the knees with the feet planted: thighs out (or forward, side-on), shins
+  // back, so the hips drop. Side-on, a sway would rock forward and back, so it fades out.
+  const turn = Math.min(1, Math.max(0, pose.turn ?? 0))
+  const left = leftSign(turn)
   return {
     ...pose,
-    leftHip: pose.leftHip + depth / 2,
+    leftHip: pose.leftHip + (left * depth) / 2,
     rightHip: pose.rightHip + depth / 2,
-    leftKnee: pose.leftKnee + depth,
+    leftKnee: pose.leftKnee + left * depth,
     rightKnee: pose.rightKnee + depth,
-    lean: pose.lean + (groove.sway ?? 0) * Math.sin(Math.PI * beat),
+    lean: pose.lean + (groove.sway ?? 0) * (1 - turn) * Math.sin(Math.PI * beat),
   }
 }
 
@@ -403,6 +425,8 @@ export function danceTracks(target: string, options: DanceTrackOptions): Track[]
 }
 
 export interface DanceBakeOptions extends DanceOptions {
+  /** Bake the hand shapes too, as `hand.left.*` / `hand.right.*` tracks (default true) */
+  hands?: boolean
   bpm?: number
   /** How many beats to bake (default the routine, or the move's length) */
   beats?: number
@@ -415,8 +439,8 @@ export interface DanceBakeOptions extends DanceOptions {
 /**
  * The dance as plain pose keyframes, for any stick-figure target and for
  * timelines that must stand alone as JSON (no `dance` option needed). Only
- * joints that move get a track. Hand shapes are not target props, so they
- * are not baked.
+ * joints that move get a track. Hand shapes are baked as `hand.left.*` /
+ * `hand.right.*` tracks, which a target drawn with `style.hands` plays.
  */
 export function bakeDanceTracks(target: string, style: DanceStyle | DanceStyleName, options: DanceBakeOptions = {}): Track[] {
   const dance = typeof style === 'string' ? DANCE_STYLES[style] : style
@@ -427,17 +451,28 @@ export function bakeDanceTracks(target: string, style: DanceStyle | DanceStyleNa
   const count = Math.round(beats * perBeat)
   const samples = Array.from({ length: count + 1 }, (_, i) => {
     const beat = i / perBeat
-    return { time: start + (beat * 60000) / bpm, pose: dancePose(dance, beat, options) }
+    return { time: start + (beat * 60000) / bpm, frame: danceFrame(dance, beat, options) }
+  })
+  const track = (property: string, value: (frame: DanceFrame) => number): Track => ({
+    id: `${target}-${property}`,
+    target,
+    property,
+    keyframes: samples.map((s) => ({ time: s.time, value: value(s.frame) })),
   })
   const fields = Object.keys(REST_POSE) as (keyof StickPose)[]
-  return fields
-    .filter((field) => samples.some((s) => s.pose[field] !== samples[0].pose[field]) || samples[0].pose[field] !== REST_POSE[field])
-    .map((field) => ({
-      id: `${target}-${field}`,
-      target,
-      property: field,
-      keyframes: samples.map((s) => ({ time: s.time, value: s.pose[field] })),
-    }))
+  const poseTracks = fields
+    .filter((field) => samples.some((s) => s.frame.pose[field] !== samples[0].frame.pose[field]) || samples[0].frame.pose[field] !== REST_POSE[field])
+    .map((field) => track(field, (frame) => frame.pose[field]))
+  if (options.hands === false) return poseTracks
+  // Hand fields that leave rest or move; a target with `style.hands` has a prop for each.
+  const handTracks: Track[] = []
+  for (const side of ['left', 'right'] as const) {
+    for (const field of Object.keys(HAND_REST)) {
+      const value = (frame: DanceFrame) => frame.hands?.[side]?.[field] ?? HAND_REST[field]
+      if (samples.some((s) => value(s.frame) !== HAND_REST[field])) handTracks.push(track(handProp(side, field), value))
+    }
+  }
+  return [...poseTracks, ...handTracks]
 }
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -910,25 +945,34 @@ const CHARLESTON: DanceStyle = {
 const TAP: DanceStyle = {
   label: 'Tap',
   bpm: 120,
-  stance: { leftHip: 8, rightHip: 8, leftKnee: 12, rightKnee: 12, leftShoulder: 24, rightShoulder: 24, leftElbow: 34, rightElbow: 34, leftWrist: 20, rightWrist: 20, lean: 2 },
-  expression: { smile: 0.9, mouth: 0.2, leftBrow: 0.3, rightBrow: 0.3, lookY: 0.4 },
-  hands: { left: { ...HAND_SHAPES.open, turn: 2 }, right: { ...HAND_SHAPES.open, turn: 2 } },
-  groove: { bounce: 5, accent: 'down' },
+  // Three-quarters to side-on, so shuffles read as brushes forward and back. Side-on,
+  // forward is a positive angle for the right limbs and a negative one for the left.
+  stance: {
+    turn: 0.8,
+    leftHip: -3, rightHip: 3, leftKnee: -10, rightKnee: 10,
+    leftShoulder: 12, rightShoulder: 12, leftElbow: -40, rightElbow: 40, leftWrist: -15, rightWrist: 15,
+    lean: 4,
+  },
+  expression: { smile: 0.9, mouth: 0.2, leftBrow: 0.3, rightBrow: 0.3, lookY: 0.3 },
+  hands: { left: 'relaxed', right: 'relaxed' },
+  groove: { bounce: 6, accent: 'down' },
   moves: {
     shuffleBallChange: {
       label: 'Shuffle ball change',
       beats: 2,
       easing: 'ease-out-quad',
       keys: [
-        // Brush out, brush back in (the shuffle), step on the ball, change weight.
-        { beat: 0, reset: true, pose: { rightHip: 36, rightKnee: 4, rightAnkle: 48 }, taps: ['rightToe'] },
-        { beat: 0.25, pose: { rightHip: -4, rightKnee: 26, rightAnkle: 30 }, taps: ['rightToe'] },
-        { beat: 0.5, pose: { rightHip: 8, rightKnee: 14, rightAnkle: 45, leftAnkle: 12 }, taps: ['rightToe'] },
-        { beat: 0.75, pose: { rightAnkle: 0, leftAnkle: 0 }, taps: ['leftHeel'] },
-        { beat: 1, reset: true, pose: { leftHip: 36, leftKnee: 4, leftAnkle: 48 }, taps: ['leftToe'] },
-        { beat: 1.25, pose: { leftHip: -4, leftKnee: 26, leftAnkle: 30 }, taps: ['leftToe'] },
-        { beat: 1.5, pose: { leftHip: 8, leftKnee: 14, leftAnkle: 45, rightAnkle: 12 }, taps: ['leftToe'] },
-        { beat: 1.75, pose: { leftAnkle: 0, rightAnkle: 0 }, taps: ['rightHeel'] },
+        // Knee up, the foot brushes forward (toe strikes)…
+        { beat: 0, reset: true, pose: { rightHip: 34, rightKnee: 8, rightAnkle: 30, leftShoulder: 30, rightShoulder: -10 }, taps: ['rightToe'] },
+        // …and back from the knee (toe strikes again)…
+        { beat: 0.25, pose: { rightHip: 24, rightKnee: 62, rightAnkle: 40 }, taps: ['rightToe'] },
+        // …step on the ball behind, then change weight to the other foot.
+        { beat: 0.5, pose: { rightHip: -8, rightKnee: 14, rightAnkle: 50, leftAnkle: 15, leftShoulder: 12, rightShoulder: 12 }, taps: ['rightToe'] },
+        { beat: 0.75, pose: { rightHip: 3, rightKnee: 10, rightAnkle: 0, leftAnkle: 0 }, taps: ['leftHeel'] },
+        { beat: 1, reset: true, pose: { leftHip: -34, leftKnee: -8, leftAnkle: 30, rightShoulder: -30, leftShoulder: 10 }, taps: ['leftToe'] },
+        { beat: 1.25, pose: { leftHip: -24, leftKnee: -62, leftAnkle: 40 }, taps: ['leftToe'] },
+        { beat: 1.5, pose: { leftHip: 8, leftKnee: -14, leftAnkle: 50, rightAnkle: 15, leftShoulder: 12, rightShoulder: 12 }, taps: ['leftToe'] },
+        { beat: 1.75, pose: { leftHip: -3, leftKnee: -10, leftAnkle: 0, rightAnkle: 0 }, taps: ['rightHeel'] },
       ],
     },
     timeStep: {
@@ -936,20 +980,20 @@ const TAP: DanceStyle = {
       beats: 4,
       easing: 'ease-out-quad',
       keys: [
-        // Stamp…
-        { beat: 0, reset: true, pose: { rightHip: 10, rightKnee: 2, rightAnkle: 0, leftShoulder: 40, rightShoulder: 14, lean: -3 }, taps: ['rightToe', 'rightHeel'] },
-        // …shuffle…
-        { beat: 0.5, pose: { rightHip: 36, rightKnee: 4, rightAnkle: 48 }, taps: ['rightToe'] },
-        { beat: 0.75, pose: { rightHip: -2, rightKnee: 30, rightAnkle: 30 }, taps: ['rightToe'] },
+        // Stamp the right foot flat…
+        { beat: 0, reset: true, pose: { rightHip: 8, rightKnee: 4, rightAnkle: 0, leftShoulder: 25, rightShoulder: -20 }, taps: ['rightToe', 'rightHeel'] },
+        // …shuffle (brush forward, brush back)…
+        { beat: 0.5, pose: { rightHip: 34, rightKnee: 8, rightAnkle: 30 }, taps: ['rightToe'] },
+        { beat: 0.75, pose: { rightHip: 22, rightKnee: 62, rightAnkle: 40 }, taps: ['rightToe'] },
         // …hop on the left (up, then land)…
-        { beat: 1, pose: { rise: 0.05, leftAnkle: 45, leftKnee: 4, leftHip: 6, rightHip: 10, rightKnee: 46, stretch: 1.03 } },
-        { beat: 1.25, pose: { rise: 0, leftAnkle: 0, leftKnee: 14, stretch: 1 }, taps: ['leftToe'] },
-        // …step right, flap left, step right.
-        { beat: 1.5, pose: { rightHip: 8, rightKnee: 12, rightAnkle: 0, leftShoulder: 14, rightShoulder: 40, lean: 3 }, taps: ['rightToe'] },
-        { beat: 2, pose: { leftHip: 26, leftKnee: 4, leftAnkle: 35 }, taps: ['leftToe'] },
-        { beat: 2.25, pose: { leftHip: 8, leftKnee: 12, leftAnkle: 0 }, taps: ['leftToe'] },
-        { beat: 3, pose: { rightHip: 12, rightAnkle: 30, leftShoulder: 30, rightShoulder: 30, lean: 0 }, taps: ['rightToe'] },
-        { beat: 3.5, pose: { rightHip: 8, rightAnkle: 0 } },
+        { beat: 1, pose: { rise: 0.05, leftAnkle: 45, leftKnee: -4, leftHip: -2, rightHip: 26, rightKnee: 70, stretch: 1.03 } },
+        { beat: 1.25, pose: { rise: 0, leftAnkle: 0, leftKnee: -14, stretch: 1 }, taps: ['leftToe'] },
+        // …step right, flap left (brush forward and step), step right.
+        { beat: 1.5, pose: { rightHip: 4, rightKnee: 12, rightAnkle: 0, rightShoulder: 25, leftShoulder: -20 }, taps: ['rightToe'] },
+        { beat: 2, pose: { leftHip: -30, leftKnee: -6, leftAnkle: 35 }, taps: ['leftToe'] },
+        { beat: 2.25, pose: { leftHip: -4, leftKnee: -12, leftAnkle: 0 }, taps: ['leftToe'] },
+        { beat: 3, pose: { rightHip: 10, rightAnkle: 35, rightKnee: 18, leftShoulder: 12, rightShoulder: 12 }, taps: ['rightToe'] },
+        { beat: 3.5, pose: { rightHip: 3, rightKnee: 10, rightAnkle: 0 } },
       ],
     },
     heelToe: {
@@ -957,11 +1001,11 @@ const TAP: DanceStyle = {
       beats: 2,
       easing: 'ease-out-quad',
       keys: [
-        // Dig the heel (toe up), then the toe (heel up); arms open as the feet travel out.
-        { beat: 0, reset: true, pose: { rightHip: 20, rightAnkle: -35, leftShoulder: 30, rightShoulder: 55, rightElbow: 10 }, taps: ['rightHeel'] },
-        { beat: 0.5, pose: { rightHip: 10, rightAnkle: 40, rightKnee: 20 }, taps: ['rightToe'] },
-        { beat: 1, reset: true, pose: { leftHip: 20, leftAnkle: -35, rightShoulder: 30, leftShoulder: 55, leftElbow: 10 }, taps: ['leftHeel'] },
-        { beat: 1.5, pose: { leftHip: 10, leftAnkle: 40, leftKnee: 20 }, taps: ['leftToe'] },
+        // Dig the heel in front (toe up), then the toe behind (heel up); the arms swing against the feet.
+        { beat: 0, reset: true, pose: { rightHip: 26, rightKnee: 0, rightAnkle: -35, leftShoulder: 30, rightShoulder: -20 }, taps: ['rightHeel'] },
+        { beat: 0.5, pose: { rightHip: -16, rightKnee: 24, rightAnkle: 55, leftShoulder: -15, rightShoulder: 25 }, taps: ['rightToe'] },
+        { beat: 1, reset: true, pose: { leftHip: -26, leftKnee: 0, leftAnkle: -35, rightShoulder: -30, leftShoulder: 20 }, taps: ['leftHeel'] },
+        { beat: 1.5, pose: { leftHip: 16, leftKnee: -24, leftAnkle: 55, rightShoulder: 15, leftShoulder: -25 }, taps: ['leftToe'] },
       ],
     },
     crampRoll: {
@@ -970,13 +1014,13 @@ const TAP: DanceStyle = {
       easing: 'ease-out-quad',
       keys: [
         // Up on both balls, right then left, then the heels drop, right then left: four quick sounds.
-        { beat: 0, reset: true, pose: { leftKnee: 18, rightKnee: 18, leftHip: 10, rightHip: 10 } },
+        { beat: 0, reset: true, pose: { rightHip: 12, rightKnee: 26, leftHip: -12, leftKnee: -26 } },
         { beat: 0.5, pose: { rightAnkle: 40, rise: 0.02 }, taps: ['rightToe'] },
         { beat: 0.625, pose: { leftAnkle: 40 }, taps: ['leftToe'] },
         { beat: 0.75, pose: { rightAnkle: 0, rise: 0 }, taps: ['rightHeel'] },
         { beat: 0.875, pose: { leftAnkle: 0 }, taps: ['leftHeel'] },
-        // Arms flare on the finish.
-        { beat: 1, pose: { leftShoulder: 120, rightShoulder: 120, leftElbow: 0, rightElbow: 0, leftWrist: 30, rightWrist: 30, leftKnee: 8, rightKnee: 8 }, hands: { left: { ...HAND_SHAPES.spread, turn: 2 }, right: { ...HAND_SHAPES.spread, turn: 2 } } },
+        // Arms flare on the finish: one up in front, one up behind.
+        { beat: 1, pose: { rightShoulder: 135, leftShoulder: 125, leftElbow: 0, rightElbow: 0, leftWrist: 0, rightWrist: 30, rightKnee: 8, leftKnee: -8, rightHip: 4, leftHip: -4 }, hands: { left: { ...HAND_SHAPES.spread, turn: 2 }, right: { ...HAND_SHAPES.spread, turn: 2 } } },
         { beat: 1.75, reset: true },
       ],
     },

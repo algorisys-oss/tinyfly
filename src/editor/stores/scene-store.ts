@@ -157,6 +157,12 @@ export interface AudioElement extends BaseElement {
   loop: boolean
   /** Timeline time (ms) at which the audio begins playing. */
   startTime: number
+  /** The music's tempo, beats per minute: with it the timeline shows a beat grid */
+  bpm?: number
+  /** Where the first beat falls, ms into the audio (default 0) */
+  beatOffset?: number
+  /** Beats in a bar (default 4) */
+  beatsPerBar?: number
 }
 
 export interface VideoElement extends BaseElement {
@@ -259,6 +265,11 @@ export interface CharacterElement extends BaseElement {
   outfit: 'none' | 'basic'
   shirt: string
   trousers: string
+  /**
+   * Hands: round (default), cartoon gloves, or natural five-fingered hands.
+   * Gloves and natural hands take hand shapes (`hand.left.*` fields).
+   */
+  hands?: 'dot' | 'cartoon' | 'natural'
   /**
    * The pose when nothing animates it: only the fields that differ from rest
    * (`turn` is the view: 0 front, 1 side, 2 back, 3 other side). Keyframes on

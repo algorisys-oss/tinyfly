@@ -1539,8 +1539,30 @@ encodeWav(samples, sampleRate): Uint8Array                                // pur
 [Rendering Video from Code](video-rendering.md#characters).
 
 Dance and flips (see [Dance and Flips](dance.md)): the pose fields `leftWrist`/`rightWrist`, `leftAnkle`/`rightAnkle`, `leftFootOut`/`rightFootOut`, `spin`, `rise`; `StickStyle.hands` (cartoon hands), `StickJoints.fingertips`;
-`DANCE_STYLES`, `DanceStyle`, `DanceMove`, `DanceKey`, `Groove`, `RoutineStep`, `MUDRAS`, `danceFrame()`, `dancePose()`, `danceTaps()`, `DanceTap`, `TapName`, `routineBeats()`, `beatAt()`, `mirrorPose()`, `applyGroove()`, `danceStance()`, `dancer()`, `danceTracks()`, `bakeDanceTracks()`, `stickFigureTarget({ dance })` with the `beat` and `dancing` props, `resolveStickFrame()`;
+`DANCE_STYLES`, `DanceStyle`, `DanceMove`, `DanceKey`, `Groove`, `RoutineStep`, `MUDRAS`, `danceFrame()`, `dancePose()`, `danceTaps()`, `stickToHuman()`, `handProp()`, `DanceTap`, `TapName`, `routineBeats()`, `beatAt()`, `mirrorPose()`, `applyGroove()`, `danceStance()`, `dancer()`, `danceTracks()`, `bakeDanceTracks()`, `stickFigureTarget({ dance })` with the `beat` and `dancing` props, `resolveStickFrame()`;
 `FLIPS`, `Flip`, `FlipKey`, `flipPose()`, `flipTravel()`, `flipTracks()`; `POSES.sideSplit` and `POSES.frontSplit`.
+
+### Beats
+
+In the engine (`@algorisys/tinyfly`), pure:
+
+```typescript
+interface BeatGrid { bpm: number; offset: number /* ms of a beat */; beatsPerBar?: number }
+beatLength(grid): number                         // ms between beats
+beatTime(grid, n): number                        // ms of beat n
+beatAtTime(grid, time): number                   // which beat (fractional)
+nearestBeat(grid, time): number
+nextBeat(grid, time): number
+beatsBetween(grid, from, to): { time, bar, n }[]
+detectTempo(samples: Float32Array, sampleRate, { minBpm = 70, maxBpm = 180, maxSeconds = 60 }):
+  { bpm, offset /* ms into the audio */, confidence /* 0..1 */ }
+```
+
+`detectTempo` is deterministic: onset strength from 10 ms loudness frames,
+autocorrelation for the tempo (gently preferring tempos near 120 to settle
+half- and double-time), then tempo and phase fitted together over the clip.
+In Node, feed it `decodeAudio()` samples; the editor decodes clips in the
+browser.
 
 ### Narration timing
 

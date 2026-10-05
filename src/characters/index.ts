@@ -7,6 +7,7 @@
 export * from './stick-figure'
 export * from './dance'
 export * from './acrobatics'
+export { stickToHuman } from './stick-to-human'
 export * from '../adapters/canvas/sketch'
 export * from './erase'
 export * from '../adapters/canvas/polyline'

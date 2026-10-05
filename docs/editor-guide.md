@@ -107,6 +107,22 @@ In the property panel you can set:
 The clip follows the timeline as you play, pause, and scrub — the timeline stays
 the clock, and the audio is kept in sync (drift is corrected as it plays).
 
+**Beat.** Give music a tempo and the timeline shows its beats: a faint line
+each beat behind every track, a stronger one each bar, and the bars numbered
+in the ruler. Dragged keyframes snap to a beat when they come within a few
+pixels of one (hold **Alt** to place them freely), and a Character's dances
+can follow the music (see [Characters](#characters)).
+
+- **🎵 Detect tempo** reads the audio and finds its tempo and where the first
+  beat falls. It works best on music with a clear pulse; when it is unsure it
+  says so.
+- **Tempo (bpm)**, **First beat (ms)** (into the audio), **Beats per bar** can
+  be typed or corrected.
+- **👆 Tap the beat**: play the music and tap along; the tempo is the median
+  of the gaps between taps.
+
+The first audio element with a tempo sets the beat, shifted to its **Start**.
+
 A **Video** element works the same way but also renders its frames on the canvas
 (with a **Fit** option). Both audio and video are carried into exported/embedded
 HTML, where the player discovers them (`[data-tinyfly-media]`) and keeps them in
@@ -123,6 +139,10 @@ its box; resize the box to change its height. In the property panel:
   construction lines) or *Silhouette*.
 - **Line**, **Skin**, and **Clothes** (a T-shirt and trousers, with their
   colours, or none).
+- **Hands**: *Round*, *Cartoon gloves* (a thumb and three plump fingers), or
+  *Natural* (five fingers, best for mudras). Gloves and natural hands take hand
+  shapes: dances key them (jazz hands, mudras), and each finger is a track
+  (`Right hand · index curl`).
 - **View**: *Front*, *¾*, *Side*, *¾ back*, *Back* or *Side (left)*, or any
   angle in between with the **Turn** slider. The figure turns as a whole: its
   far arm goes behind its body and its face slides round, and is gone from
@@ -137,6 +157,18 @@ To animate a character, pick a view, a pose and a face, and click
 keyframe again: the character moves between them. The timeline shows only
 the parts that move, in plain words ("Right arm · out / in", "Head · tilt"),
 and each one can be edited, eased and retimed like any other track.
+
+**Dance**: pick a style (disco, hip hop, breaking, jazz, K-pop, Bollywood,
+Bhangra, Bharatanatyam, Charleston, tap), a move or the whole routine, and a
+tempo, then click **🕺 Dance from playhead**. Or pick a flip (front, back,
+layout, scissor, side flip, cartwheel, back handspring, split leap, toe touch)
+and click **🤸 Flip at playhead**. Both write ordinary keyframes from the
+playhead, a few a beat, keeping the character's keys before and after, so
+every step can be edited afterwards. With cartoon gloves, dances key the hand
+shapes too. When an audio element has a tempo, **Follow beat** (on by default)
+dances at the music's tempo and starts on the beat nearest the playhead. Flips travel from where the character is (an x track), the way it
+faces: pick the *Side* or *Side (left)* view first. See [Dance and
+Flips](dance.md).
 
 Characters show in the DOM and Canvas previews and in GIF / WebP / MP4
 export. They are not part of exported HTML or embeds yet, and the SVG preview
@@ -962,7 +994,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.80.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.81.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed

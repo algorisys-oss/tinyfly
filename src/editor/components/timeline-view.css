@@ -37,6 +37,30 @@
   cursor: pointer;
 }
 
+/* The music's beat grid (from an audio element's tempo): a faint line each beat,
+   a stronger one each bar, behind the ruler and every track lane. */
+.timeline-view {
+  --beat-line: rgba(192, 132, 252, 0.16);
+  --beat-bar: rgba(192, 132, 252, 0.42);
+}
+
+.ruler-beats {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Bar numbers sit low in the ruler, under the time labels. */
+.ruler-bar-label {
+  position: absolute;
+  bottom: 1px;
+  padding-left: 3px;
+  color: #c084fc;
+  font-size: 9px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
 .ruler-markers {
   position: relative;
   height: 100%;

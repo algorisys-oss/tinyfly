@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.81.0](v0.81.0.md) | 2026-10-05 | Dancing in the editor, in time with the music: Character Dance and Flip at playhead; audio tempo detection (`detectTempo`), tap tempo, beat lines and numbered bars, keyframes snap to beats; turned-out knees, foot turn-out and natural / gloved hands with mudras on characters |
 | [v0.80.0](v0.80.0.md) | 2026-10-05 | The stick figure dances: ten styles as data in beats (disco, hip hop, breaking, jazz, K-pop, Bollywood, Bhangra, Bharatanatyam with mudras, Charleston, tap with tap sounds); flips, leaps and full splits; wrists, ankles, turned-out feet, finger hands, `spin` and `rise`; the Dance Floor gallery card |
 | [v0.79.0](v0.79.0.md) | 2026-10-04 | Cartoon hands: a poseable hand rig in 3D (14 shapes, left/right, four or five fingers, every look); a natural drawing hand with `handAt()` (glides between strokes, enters and leaves); opt-in gloves on characters; a Hindi Pencilmation story example |
 | [v0.78.0](v0.78.0.md) | 2026-10-03 | Animated maps: OpenStreetMap tiles or an offline world outline (also in pencil), a camera that flies in, pins that drop, routes that draw on; the editor's 🗺 Map element with a one-click trip; a separate maps CDN add-on |

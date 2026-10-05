@@ -1,6 +1,7 @@
 import { createSignal, createEffect, createMemo, onMount, onCleanup, Show } from 'solid-js'
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
+import type { BeatGrid } from '../../engine'
 import { TimelineView, TIME_SCALE } from './timeline-view'
 import { CurveView } from './curve-view'
 import { trackLabelWidth } from '../utils/track-label-width'
@@ -8,6 +9,8 @@ import './timeline-panel.css'
 
 interface TimelinePanelProps {
   store: EditorStore
+  /** The music's beats, when an audio element has a tempo */
+  beatGrid?: BeatGrid | null
   /** Whether the timeline is in the tall, expanded layout. */
   expanded?: boolean
   /** Toggle the expanded layout (grows the timeline, shrinks the preview). */
@@ -197,7 +200,7 @@ export const TimelinePanel: Component<TimelinePanelProps> = (props) => {
 
       <div class="timeline-panel-body" ref={bodyRef} onWheel={onWheel}>
         <Show when={mode() === 'dope'} fallback={<CurveView store={props.store} />}>
-          <TimelineView store={props.store} />
+          <TimelineView store={props.store} beatGrid={props.beatGrid} />
         </Show>
       </div>
 
