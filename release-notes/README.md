@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.86.1](v0.86.1.md) | 2026-10-05 | Fix: ink outlines in 3D scenes (Canvas 2D) no longer get nicked on subdivided meshes; the todo gains Phase 35, viral loops |
 | [v0.86.0](v0.86.0.md) | 2026-10-05 | A WebGL2 renderer for 3D scenes (`@algorisys/tinyfly/scene-3d/webgl`): a depth buffer, light per pixel, ink outlines and see-through meshes, checked in Chromium, Firefox and WebKit; a Canvas 2D / WebGL2 switch in the orbit demo |
 | [v0.85.0](v0.85.0.md) | 2026-10-05 | A 🧊 3D Scene element in the editor: add shapes, characters and lights, key their transforms, dance characters from the playhead, pick camera views and cut between cameras, without code; drawn in previews and every export |
 | [v0.84.0](v0.84.0.md) | 2026-10-05 | Characters in 3D scenes: v2 characters stand, dance and flip in scenes, seen by any camera, in their pen looks in perspective or as solid figures, with ground shadows (`characterObjects`, `drawCharacterInView`, `skeletonInView`); scene-3d object kinds |

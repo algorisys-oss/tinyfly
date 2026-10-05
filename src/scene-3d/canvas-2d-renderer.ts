@@ -48,7 +48,22 @@ export function drawResolvedScene(ctx: CanvasRenderingContext2D, frame: Resolved
       next++
     }
   }
+  // Ink waits: an edge's ink is drawn once the faces of the same object at about its depth are
+  // painted, so its neighbours' fills and seam strokes never nick it. It goes down before anything
+  // of another object or clearly nearer, which may cover it.
+  let pending: Array<{ objectId: string; layer: number; depth: number; triangle: (typeof frame.triangles)[number] }> = []
+  const inkPending = (before?: { objectId: string; layer: number; depth: number }) => {
+    if (pending.length === 0) return
+    const keep: typeof pending = []
+    for (const ink of pending) {
+      const near = before && before.objectId === ink.objectId && before.layer === ink.layer && ink.depth - before.depth <= INK_HOLD * ink.depth
+      if (near) keep.push(ink)
+      else drawInk(ctx, ink.triangle)
+    }
+    pending = keep
+  }
   for (const triangle of frame.triangles) {
+    inkPending(triangle)
     drawablesUpTo(triangle.layer, triangle.depth)
     const { color, alpha } = shadeTriangle(triangle, frame.lights, frame.camera, frame.fog)
     const [a, b, c] = triangle.screen
@@ -67,18 +82,27 @@ export function drawResolvedScene(ctx: CanvasRenderingContext2D, frame: Resolved
       ctx.lineWidth = 0.75
       ctx.stroke()
     }
-    const ink = triangle.material.outline
-    if (ink && triangle.outline.length > 0) {
-      ctx.strokeStyle = ink.color
-      ctx.lineWidth = ink.width
-      ctx.beginPath()
-      for (const [p, q] of triangle.outline) {
-        ctx.moveTo(p.x, p.y)
-        ctx.lineTo(q.x, q.y)
-      }
-      ctx.stroke()
+    if (triangle.material.outline && triangle.outline.length > 0) {
+      pending.push({ objectId: triangle.objectId, layer: triangle.layer, depth: triangle.depth, triangle })
     }
   }
+  inkPending()
   drawablesUpTo(Infinity, -Infinity)
   ctx.restore()
+}
+
+/** How far nearer (as a share of its own depth) a face of the same object may be and still be painted before an edge's ink. */
+const INK_HOLD = 0.04
+
+function drawInk(ctx: CanvasRenderingContext2D, triangle: ResolvedScene3D['triangles'][number]): void {
+  const ink = triangle.material.outline!
+  ctx.globalAlpha = triangle.opacity
+  ctx.strokeStyle = ink.color
+  ctx.lineWidth = ink.width
+  ctx.beginPath()
+  for (const [p, q] of triangle.outline) {
+    ctx.moveTo(p.x, p.y)
+    ctx.lineTo(q.x, q.y)
+  }
+  ctx.stroke()
 }

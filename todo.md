@@ -2330,6 +2330,71 @@ film re-renders identically, frames in any order.
 
 ---
 
+## Phase 35: Viral loops (planned)
+
+What made the first loop videos hard to build: "Impossible Descent" (an endless zoom into neon Penrose
+triangles) and "Droste Head" (a cartoon head whose pupil holds the same head, forever), both made with
+`tinyfly video` (2026-10-05). Everything stays deterministic and frame-addressable.
+
+### 35A — Loops that close exactly
+- [ ] `tinyfly video --loop-check`: render the last frame and the first, report how much the
+      last → first step differs (PSNR) against an ordinary neighbouring step, and fail when the seam
+      stands out
+- [ ] `--frames 0,79,88` (and `--times`) for stills at chosen frames, not only at markers / captions
+- [ ] A `loop: true` scene flag: the duration is the period; helpers below default to it
+- [ ] Periodic motion helpers guaranteed to repeat over a duration: `wobble(t, { period, cycles })`,
+      seeded looping noise (noise on a circle / torus), periodic easing
+
+### 35B — Nested zooms (Droste)
+- [ ] A similarity-transform helper (scale, turn, move as one value: `compose`, `pow` for a fraction
+      of a step, the fixed point, `apply` to a canvas context), so a self-similar zoom is a few lines
+      instead of hand-rolled complex-number maths
+- [ ] `nestedZoom({ factor, turn, levels, draw(ctx, level) })`: draws only the levels on screen
+      (sub-pixel ones and those hidden behind a full-screen child are skipped) and closes the loop
+      after one step per period
+
+### 35C — Faces and characters for close-ups
+- [ ] A cartoon head with a full face (bulging eyes, lids, brows, nose, mouth, teeth) driven by
+      the existing expression set (`HUMAN_EXPRESSIONS`, lid openness, pupil size), drawable big
+- [ ] A hook to draw anything inside the pupil (another scene, the same head), for Droste faces
+- [ ] Keyframe curves over any input, not just time: `curve(keys)(x)` reusing keyframes and
+      easings (a face driven by its size on screen, a colour by depth)
+
+### 35D — Neon and glow
+- [ ] A bloom / glow post-effect for headless video (and the Canvas renderer): threshold, blur,
+      add; emissive materials in 3D scenes that feed it
+- [ ] Light trails and comets: a polyline trail helper with tapering width and fade, along paths
+      and 3D beams (no dotted look at speed)
+- [ ] A radial / zoom blur and speed lines for dives
+- [ ] Impossible-object helpers: Penrose triangle and staircase geometry (2D isometric and the
+      3D "aligns from one viewpoint" construction)
+
+### 35G — 3D scenes for loops (from "Impossible Descent 3D", a real 3D Penrose flight)
+- [x] Fix: the Canvas 2D renderer inked each triangle right after its fill, so on subdivided meshes
+      the next neighbour's fill and seam stroke nicked the ink (tick marks every cell along edges); now
+      each edge's ink waits until the faces of the same object at about its depth are painted (before
+      anything of another object or clearly nearer, which may still cover it); test measures ink
+      coverage along every edge (90% → over 99.5%); scene-3d goldens updated
+- [ ] A raw mesh geometry in scene JSON (`{ type: 'mesh', positions, indices }`) with per-face or
+      per-vertex colours, so custom shapes (warped beams) need no ObjectKind code
+- [ ] Per-object, animatable outline colour and width, and fog on outlines (distant levels fade
+      their edges)
+- [ ] Lines, polylines and trails in 3D, depth-sorted with meshes (grids, comet trails, dust
+      streaks), near-clipped
+- [ ] A depth buffer for headless video: a software z-buffer in the Canvas 2D path, or WebGL2 through
+      a headless GL
+- [ ] Camera `up` / roll alongside `lookAt`; a near-camera fade so geometry turns to glass at the lens
+
+### 35E — Satisfying matter
+- [ ] Gooey shapes: drips, smooth metaball blobs, bubbles that grow, wobble and pop
+- [ ] Squash and stretch helpers for blobs (volume-keeping)
+
+### 35F — Sound
+- [ ] Audio-reactive and beat-synced timing for loops (reuse `detectTempo`, `BeatGrid`): a drone or
+      riser cut to the loop length
+
+---
+
 ## Backlog / For Review
 
 - [x] **Live demo controls no longer cut off** — a gallery card's live preview grows to fit its
