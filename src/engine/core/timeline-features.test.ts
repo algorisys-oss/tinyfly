@@ -469,3 +469,25 @@ describe('replaceTrack', () => {
     expect(tl.tracks.map((track) => track.id)).toEqual(['a'])
   })
 })
+
+describe('drawingRate', () => {
+  it('holds values on each drawing, and round-trips through JSON', async () => {
+    const { Timeline } = await import('./timeline')
+    const { serializeTimeline, deserializeTimeline } = await import('../serialization/json')
+    const timeline = new Timeline({
+      id: 't',
+      config: { drawingRate: 4 },
+      tracks: [{ id: 'a', target: 'box', property: 'x', keyframes: [{ time: 0, value: 0 }, { time: 1000, value: 100 }] }],
+    })
+    const x = (t: number) => timeline.getStateAtTime(t).values.get('box')?.get('x')
+    expect(x(100)).toBe(0)
+    expect(x(260)).toBe(25)
+    expect(x(749)).toBe(50)
+    const copy = deserializeTimeline(serializeTimeline(timeline))
+    expect(copy.drawingRate).toBe(4)
+    expect(copy.getStateAtTime(260).values.get('box')?.get('x')).toBe(25)
+    timeline.drawingRate = 0
+    expect(x(100)).toBe(10)
+    expect(serializeTimeline(timeline).config).not.toHaveProperty('drawingRate')
+  })
+})

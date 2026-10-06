@@ -76,6 +76,25 @@ describe('scriptTracks', () => {
     expect(at(result.duration + 300).values?.get('facing')).toBe(-1)
   })
 
+  it('zips off: winds up, wheels its legs in place, then shoots to the place, leaving dust', () => {
+    const { result, at } = run([{ do: 'zip', to: 900 }], { from: 100 })
+    const dust = result.effects.find((e) => e.kind === 'dust')!
+    expect(dust.x).toBe(100)
+    // Wheeling in place: running legs, but not moving yet.
+    const wheeling = at(dust.time - 100)
+    expect(wheeling.values?.get('gait')).toBe('run')
+    expect(wheeling.values?.get('walking')).toBe(1)
+    expect(wheeling.x).toBeCloseTo(0)
+    // Then it is off, and gets there fast.
+    expect(at(result.duration).x).toBeCloseTo(800)
+    expect(result.duration - dust.time).toBeLessThan(500)
+  })
+
+  it('asks for dust where a take lands', () => {
+    const { result } = run([{ do: 'walk', to: 300 }, { do: 'take' }], { from: 0 })
+    expect(result.effects).toEqual([{ kind: 'dust', time: result.beats[1].start + 900, x: 300, length: 500 }])
+  })
+
   it('starts beats at `at` when given, and every track stays in time order', () => {
     const { result } = run([
       { do: 'walk', to: 200, mood: 'happy' },

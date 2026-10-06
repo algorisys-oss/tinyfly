@@ -230,13 +230,15 @@ own length (or `for`).
 | a gag name (`take`, `doubleTake`…) | Splices the gag in, built on the current pose. |
 | `look`, with `toward` | Turns the head and eyes toward a scene x, `viewer`, `ahead` or `back`. |
 | `face`, with `toward` | Turns the whole figure, turning round if needed. |
+| `zip`, with `to` | The cartoon exit: winds up, wheels its legs in place, then shoots off to `to`. The script's `effects` say where to draw the dust it leaves hanging. |
 | `say`, with `say` | Lip-syncs the line, with small head nods and brow lifts, for as long as the line takes. |
 | `hold` | Holds (the acting pass drifts long holds). |
 
 Any beat can take `say` (a line said while it happens), `mood` (an
 expression) and `pose` (joints to change). The result carries the spoken lines
-with their times (for captions) and when each beat starts and ends (for
-camera shots and effects).
+with their times (for captions), when each beat starts and ends (for camera
+shots), and `effects`: dust cues for where a take lands and where a zip
+leaves, with a time, a scene x and a length, ready for `drawDustPuff`.
 
 ## Camera
 
@@ -265,8 +267,9 @@ renders repeat exactly. A `follow` keeps a subject's x (its x track's
 keyframes) centred, `lag` ms behind it, with an optional `lead`. Shots play in
 time order, and a later one takes over from an earlier one.
 
-In the browser, `applyCamera(ctx, cameraFromValues(values), stage)` applies a
-view to any canvas, and `cameraPoint(view, stage, point)` says where a scene
+In the browser or your own canvas code, `applyCamera(ctx, cameraFromValues(values), stage)`
+(from `@algorisys/tinyfly/characters`, `@algorisys/tinyfly/adapters` or the
+browser bundle) applies a view to any canvas, and `cameraPoint(view, stage, point)` says where a scene
 point lands on screen (the pencil story maps the drawing hand's strokes this
 way, so the hand stays on the page while the camera moves).
 
@@ -290,8 +293,21 @@ way, so the hand stays on the page while the camera moves).
 npx tinyfly video examples/headless-video/beat-script.mjs
 ```
 
+## In the editor
+
+The Character element has an **Acting** section: a style, **🎭 Act the keyed
+poses**, gags, gaits with a distance, lines to say, and the drawing rate (see
+the [editor guide](editor-guide.md#characters)). With acting on, the element
+keeps its plain key poses (`acting.keys`) and its tracks are generated from
+them, so keying a pose, adding a gag or a walk, or saying a line re-acts the
+whole performance. Gags and gaits come from the stick figure, turned into
+character fields with `stickToHuman`, in the character's current view.
+
+The timeline's `drawingRate` (`TimelineConfig.drawingRate`, set with
+`timeline.drawingRate = 12`) holds every value on its drawing, wherever the
+timeline plays: editor previews, players, embeds and exports.
+
 ## Not yet
 
-- Acting in the editor (an acting style on the Character element, gags from a picker)
-- Line of action, gaits and lip-sync for the v2 characters (they get `bend` through `stickToHuman` as lean and head tilt)
+- Native gaits, line of action and gags on the v2 body plan (today they come from the stick figure through `stickToHuman`)
 - Follow-through on hair, tails and ears (character-system milestones 3 and 5)

@@ -4,10 +4,12 @@
  *   npx tinyfly video examples/headless-video/beat-script.mjs
  *
  * scriptTracks() compiles what the figure does (walk somewhere, look, a take,
- * say a line, sneak, run) into acted tracks: wind-ups, overshoot, overlap,
- * gaits, turning round, lip-sync. cameraTracks() compiles the shots: a push
- * in on the take, a shake when it lands, a follow as it runs off. The scene
- * draws on twos, through the camera.
+ * say a line, sneak, zip off) into acted tracks: wind-ups, overshoot,
+ * overlap, gaits, turning round, lip-sync, and the cartoon zip (legs wheel in
+ * place, then it is gone, leaving its dust hanging). cameraTracks() compiles
+ * the shots: a push in on the take, a shake when it lands. The script's
+ * effect cues say where and when to draw dust. The scene draws on twos,
+ * through the camera.
  */
 import { cameraTracks } from '@algorisys/tinyfly'
 import { drawDustPuff, drawStickSmear, gagDuration, scriptTracks, sketchPen, stickFigureTarget } from '@algorisys/tinyfly/characters'
@@ -29,28 +31,24 @@ const script = scriptTracks(
     { do: 'sneak', to: 820, mood: 'scared' },
     { do: 'tremble' },
     { do: 'face', toward: 0, mood: 'scared' },
-    { do: 'run', to: 120, say: 'Nope!' },
-    { do: 'hold', for: 600 },
+    { do: 'zip', to: -300, say: 'Nope!' },
+    { do: 'hold', for: 1200 },
   ],
   { from: START_X, height: 220, style: 'snappy' }
 )
 
 const [, look, take] = script.beats
-const runBeat = script.beats[7]
+const zipBeat = script.beats[7]
 const LANDS = take.start + 900
-const xTrack = script.tracks.find((track) => track.property === 'x')
 const camera = cameraTracks(
   [
     { at: look.start, duration: 500, frame: { focus: { x: 760, y: 470 }, scale: 1.25 } },
     { at: take.start + 300, duration: 0, frame: { focus: { x: 640, y: 440 }, scale: 1.6 } },
     { at: LANDS, duration: 450, shake: { strength: 14 } },
     { at: take.start + gagDuration('take') + 200, duration: 700, frame: { focus: { x: 720, y: 470 }, scale: 1.2 } },
-    {
-      at: runBeat.start,
-      until: runBeat.end,
-      follow: { x: xTrack.keyframes.map((key) => ({ ...key, value: key.value + START_X })), y: 470, lag: 220, lead: -120, scale: 1.2 },
-    },
-    { at: runBeat.end + 100, duration: 500, frame: { scale: 1 } },
+    // Close on the wind-up, then hold wide on the dust it leaves.
+    { at: zipBeat.start, duration: 300, frame: { focus: { x: 780, y: 450 }, scale: 1.35 } },
+    { at: zipBeat.end - 100, duration: 0, frame: { focus: { x: 700, y: 400 }, scale: 1.05 } },
   ],
   { stage: { width: W, height: H } }
 )
@@ -92,7 +90,10 @@ export default {
     drawStickSmear(ctx, hero, frame, 'hero', { color: INK, lineWidth: 3 })
   },
   draw(ctx, frame) {
-    drawDustPuff(ctx, { x: 640, y: GROUND }, (frame.time - LANDS) / 500, { size: 120, color: INK })
+    // The script's cues: dust where the take lands and where the zip leaves.
+    for (const effect of script.effects) {
+      drawDustPuff(ctx, { x: effect.x, y: GROUND }, (frame.time - effect.time) / effect.length, { size: 150, color: INK, seed: effect.time })
+    }
   },
   // Speech, in screen space so the camera never moves it off the frame.
   overlay(ctx, frame) {

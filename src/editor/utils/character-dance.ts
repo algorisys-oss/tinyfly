@@ -110,12 +110,16 @@ export function characterFlipTracks(flip: FlipName, options: CharacterFlipOption
   const tracks = tracksFromPoses(
     Array.from({ length: samples + 1 }, (_, i) => {
       const pose = stickToHuman(flipPose(flip, i / samples))
-      // Facing left: seen from the other side (turn 3 for a side view), turning the other way.
-      if (facing < 0) {
-        if (pose.turn > 0) pose.turn = 4 - pose.turn
-        pose.roll = -pose.roll
+      if (facing > 0) return { time: at(i), pose }
+      // Facing left, a flip done side-on is seen from the other side (turn 3),
+      // turning the other way. One done front-on (a cartwheel, a side flip) is
+      // its mirror image: it steps off on the other foot and wheels the other
+      // way. (A whole turn on keeps it next to the Side (left) view.)
+      if (move.view === 0) {
+        const mirrored = mirrorHumanPose(pose)
+        return { time: at(i), pose: { ...mirrored, turn: 4 + mirrored.turn } }
       }
-      return { time: at(i), pose }
+      return { time: at(i), pose: { ...pose, turn: pose.turn > 0 ? 4 - pose.turn : pose.turn, roll: -pose.roll } }
     })
   )
   if (options.height !== undefined && move.travel !== 0) {

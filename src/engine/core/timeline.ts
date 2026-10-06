@@ -16,6 +16,7 @@ import { isMotionPathTrack, isSpringTrack, isTextTrack, isInertiaTrack, formatVe
 import { TrackPlayer, SpringTrackPlayer, InertiaTrackPlayer, trackTargets } from './track'
 import { getMotionPathPoint } from '../path/motion-path'
 import { textAt } from '../text/text-value'
+import { heldTime } from './clock'
 
 /** Anything that can produce per-target values at a time. */
 type AnyTrackPlayer = TrackPlayer | SpringTrackPlayer | InertiaTrackPlayer
@@ -154,6 +155,18 @@ export class Timeline {
 
   set speed(value: number) {
     this._config.speed = value
+  }
+
+  /** Drawings per second (0: every frame); see `TimelineConfig.drawingRate`. */
+  get drawingRate(): number {
+    return this._config.drawingRate ?? 0
+  }
+
+  set drawingRate(value: number) {
+    const config = { ...this._config }
+    if (value > 0) config.drawingRate = value
+    else delete config.drawingRate
+    this._config = config
   }
 
   /**
@@ -303,6 +316,8 @@ export class Timeline {
    */
   getStateAtTime(time: number): AnimationState {
     const values = new Map<string, Map<string, AnimatableValue>>()
+    // On twos (or threes), every value holds on the drawing showing at `time`.
+    time = heldTime(time, this._config.drawingRate ?? 0)
 
     if (this._hasSharedWrites()) {
       this._resolveShared(time, values)

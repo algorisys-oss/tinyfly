@@ -32,7 +32,7 @@ import type { ActingOptions } from './acting'
 /** The ways to get somewhere. */
 export type GaitAction = GaitName
 /** Everything a beat can do. */
-export type Action = GaitAction | PoseName | GagName | 'look' | 'say' | 'hold' | 'stand' | 'face'
+export type Action = GaitAction | PoseName | GagName | 'look' | 'say' | 'hold' | 'stand' | 'face' | 'zip'
 
 export interface Beat {
   /** What happens */
@@ -77,6 +77,18 @@ export interface ScriptResult {
   keys: PoseKey[]
   /** When each beat starts and ends, ms */
   beats: Array<{ start: number; end: number }>
+  /** Effects to draw, with when and where (scene x on the ground): dust where a zip leaves and where a take lands */
+  effects: ScriptEffect[]
+}
+
+/** A cartoon effect a script asks for: draw it with `drawDustPuff` (progress from `time`, over `length` ms). */
+export interface ScriptEffect {
+  kind: 'dust'
+  time: number
+  /** Scene x on the ground */
+  x: number
+  /** How long it shows, ms */
+  length: number
 }
 
 /** Time for one gait cycle (two steps), ms. */
@@ -89,6 +101,13 @@ export const GAIT_CYCLE_MS: Record<GaitName, number> = {
   tired: 1500,
   run: 560,
 }
+
+/** The zip: legs wheel in place this long, then it shoots off this fast (px/ms), taking at least ZIP_MIN ms. */
+const ZIP_WHEEL = 450
+const ZIP_SPEED = 2.4
+const ZIP_MIN = 160
+/** Wheeling legs: run cycles while it spins up in place. */
+const ZIP_WHEEL_CYCLES = 2.5
 
 /** Default lengths, ms. */
 const POSE_MOVE = 450
@@ -127,6 +146,7 @@ export function scriptTracks(target: string, beats: Beat[], options: ScriptOptio
   const facingKeys: Keyframe<number>[] = [{ time: 0, value: facing }]
   const lines: SpokenLine[] = []
   const spans: Array<{ start: number; end: number }> = []
+  const effects: ScriptEffect[] = []
 
   /** Key a pose (changes on the current one), with the beat's mood. */
   const keyPose = (at: number, changes: Partial<StickPose>, mood?: ExpressionName, act?: boolean) => {
@@ -172,11 +192,40 @@ export function scriptTracks(target: string, beats: Beat[], options: ScriptOptio
       x = goal
       keyPose(walkEnd, {})
       end = walkEnd
+    } else if (beat.do === 'zip') {
+      // Wind up, wheel the legs in place, then shoot off; a dust cloud hangs where it stood.
+      const goal = beat.to ?? x
+      const direction = goal === x ? facing : directionTo(goal)
+      let windStart = start
+      if (direction !== facing) windStart = turnAround(start, direction, beat.mood)
+      else if (pose.turn < 1) {
+        windStart = start + START_STOP
+        keyPose(windStart, { turn: 1 }, beat.mood)
+      }
+      const windUp = gag('windUp', { at: windStart, from: beat.mood ? withExpression(pose, beat.mood) : pose })
+      keys.push(...windUp)
+      pose = windUp[windUp.length - 1].pose as StickPose
+      const wheel = windStart + gagDuration('windUp')
+      const off = wheel + ZIP_WHEEL
+      const zipEnd = off + Math.max(ZIP_MIN, Math.abs(goal - x) / ZIP_SPEED)
+      gaitKeys.push({ time: wheel, value: 'run' })
+      walkingKeys.push({ time: wheel, value: 0 }, { time: wheel + 80, value: 1, easing: 'ease-out' }, { time: zipEnd, value: 1 }, { time: zipEnd + 120, value: 0 })
+      walkKeys.push({ time: wheel, value: walkPhase }, { time: off, value: walkPhase + ZIP_WHEEL_CYCLES, easing: 'ease-in' })
+      walkPhase += ZIP_WHEEL_CYCLES + (zipEnd - off) / GAIT_CYCLE_MS.run * 1.5
+      walkKeys.push({ time: zipEnd, value: walkPhase })
+      xKeys.push({ time: off, value: x - from }, { time: zipEnd, value: goal - from, easing: 'ease-in' })
+      effects.push({ kind: 'dust', time: off, x, length: 900 })
+      x = goal
+      keyPose(zipEnd, {})
+      end = zipEnd
     } else if (isGag(beat.do)) {
       const keysOfGag = gag(beat.do, { at: start, from: beat.mood ? withExpression(pose, beat.mood) : pose })
       keys.push(...keysOfGag)
       pose = keysOfGag[keysOfGag.length - 1].pose as StickPose
       end = start + gagDuration(beat.do)
+      // Landing raises dust: the take comes down 900 ms in, a landing 120 ms in.
+      if (beat.do === 'take') effects.push({ kind: 'dust', time: start + 900, x, length: 500 })
+      if (beat.do === 'land') effects.push({ kind: 'dust', time: start + 120, x, length: 500 })
     } else if (beat.do === 'look' || beat.do === 'face') {
       const toward = beat.toward ?? 'viewer'
       const length = beat.for ?? LOOK_BEAT
@@ -233,6 +282,7 @@ export function scriptTracks(target: string, beats: Beat[], options: ScriptOptio
     lines,
     keys,
     beats: spans,
+    effects,
   }
 }
 

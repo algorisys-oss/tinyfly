@@ -26,6 +26,7 @@ import { MarkerInspector } from './marker-inspector'
 import type { SketchStyle } from '../../adapters/canvas'
 import { HUMAN_POSES, HUMAN_EXPRESSIONS, HUMAN_REST } from '../../characters/species/human'
 import { isCharacterField } from '../utils/character-element'
+import { CharacterActingPanel, keyActedPose } from './character-acting-panel'
 import { characterDanceTracks, characterFlipTracks, danceLength, facingOf, mergeKeyframes } from '../utils/character-dance'
 import { beatGridOf, detectAudioTempo, tapTempo } from '../utils/beat-grid'
 import { nearestBeat, nextBeat } from '../../engine'
@@ -1601,6 +1602,8 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
    */
   const keyCharacterPose = (element: CharacterElement) => {
     const pose = characterPose(element)
+    // With acting on, the key goes into its key poses and the performance is re-acted.
+    if (element.acting) return keyActedPose(props.store, props.sceneStore, element, pose)
     const animated = (props.store.state.timeline?.tracks ?? [])
       .filter((track) => (track.target === element.name || track.target === element.id) && isCharacterField(track.property))
       .map((track) => track.property)
@@ -1650,8 +1653,12 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
 
   /** Write tracks from the playhead on, keeping the character's keys before and after them. */
   const writeCharacterTracks = (element: CharacterElement, tracks: ReturnType<typeof characterDanceTracks>) => {
+    // A dance or flip is written as it is: acting (generated from key poses) would wipe it, so it is turned off.
+    const acted = element.acting !== undefined
+    if (acted) props.sceneStore.updateElement(element.id, { acting: undefined })
     const existing = props.store.state.timeline?.tracks ?? []
-    props.store.replaceTracks(element.name, mergeKeyframes(existing, element.name, tracks))
+    // One undo step: when the element changed, it took the snapshot.
+    props.store.replaceTracks(element.name, mergeKeyframes(existing, element.name, tracks), !acted)
   }
 
   /** The character's `x` offset at a time: where a dance or flip travels from. */
@@ -1854,6 +1861,7 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
         element's Beat) and starts on the beat nearest the playhead. Flips travel the way the character faces (pick Side
         or Side (left) first). With gloves or natural hands the dance keys the hand shapes and mudras too.
       </p>
+      <CharacterActingPanel element={element} store={props.store} sceneStore={props.sceneStore} />
     </div>
   )
 

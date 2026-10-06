@@ -159,8 +159,14 @@ interface TimelineConfig {
   speed?: number         // Playback speed multiplier (default: 1)
   alternate?: boolean    // Ping-pong effect on each loop
   repeatDelay?: number   // ms to wait between loop iterations
+  drawingRate?: number   // drawings per second: 12 holds each for two frames of 24 fps ("on twos")
 }
 ```
+
+`drawingRate` steps every value: `getStateAtTime(t)` evaluates at the start of
+the drawing showing at `t` (`heldTime(t, rate)`), as hand-drawn animation is
+timed. The clock still runs smoothly; only the values hold. Set it with
+`timeline.drawingRate = 12` (0 turns it off).
 
 `repeatDelay` applies at each loop boundary. Going forward, the playhead holds
 the last frame for the delay, then wraps to the start; with `alternate` it holds

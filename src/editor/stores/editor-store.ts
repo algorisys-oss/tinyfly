@@ -606,18 +606,21 @@ export function createEditorStore() {
   /**
    * Replace a target's tracks for some properties with new keyframes, in one
    * undo step: any existing keyframe track for the same target and property
-   * is removed first. Used by builders that author a whole animation at once
-   * (a map's trip).
+   * is removed first, and a property given no keyframes is just removed.
+   * Used by builders that author a whole animation at once (a map's trip, a
+   * character's acting). `record: false` skips the undo snapshot, for a
+   * caller that has just taken one (so its scene change and these tracks
+   * undo together).
    */
-  function replaceTracks(target: string, tracks: Array<{ property: string; keyframes: Keyframe[] }>): void {
+  function replaceTracks(target: string, tracks: Array<{ property: string; keyframes: Keyframe[] }>, record = true): void {
     if (!state.timeline || tracks.length === 0) return
-    pushHistory()
+    if (record) pushHistory()
     const stamp = Date.now()
     tracks.forEach(({ property, keyframes }, i) => {
       for (const existing of state.timeline!.tracks.filter((tr) => tr.target === target && tr.property === property)) {
         state.timeline!.removeTrack(existing.id)
       }
-      state.timeline!.addTrack(createTrack({ id: `${target}-${property}-${stamp}-${i}`, target, property, keyframes }))
+      if (keyframes.length > 0) state.timeline!.addTrack(createTrack({ id: `${target}-${property}-${stamp}-${i}`, target, property, keyframes }))
     })
     commitKeyframeEdit()
   }
@@ -738,6 +741,18 @@ export function createEditorStore() {
       seek(state.timeline.duration)
     }
 
+    bumpVersion()
+  }
+
+  /**
+   * Drawings per second for the whole timeline (12: on twos, 8: on threes,
+   * 0: every frame). Saved with the animation, so players and exports hold
+   * each drawing the same way.
+   */
+  function setDrawingRate(rate: number) {
+    if (!state.timeline) return
+    pushHistory()
+    state.timeline.drawingRate = rate
     bumpVersion()
   }
 
@@ -1406,6 +1421,7 @@ export function createEditorStore() {
     setCameraValue,
     keyValuesAtPlayhead,
     replaceTracks,
+    setDrawingRate,
     addShapeMorph,
     selectTrack,
     applyPreset,

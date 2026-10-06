@@ -13,6 +13,8 @@ export { skeletonInView, solvePlanSpace, stagePlanSpace, type ViewProjection, ty
 // Characters in 3D scenes (@algorisys/tinyfly/scene-3d): loadScene3D(scene, { kinds: [characterObjects] }).
 export { characterObjects } from './scene-objects'
 export * from '../adapters/canvas/sketch'
+// The 2D camera, for scenes that film characters (applyCamera, cameraPoint, cameraFromValues).
+export * from '../adapters/canvas/camera'
 export * from './erase'
 export * from '../adapters/canvas/polyline'
 export * from './hand'

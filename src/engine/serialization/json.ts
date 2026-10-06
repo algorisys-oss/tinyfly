@@ -170,6 +170,7 @@ export function serializeTimeline(timeline: Timeline): TimelineDefinition {
       speed: timeline['_config'].speed,
       alternate: timeline['_config'].alternate,
       repeatDelay: timeline['_config'].repeatDelay,
+      ...(timeline['_config'].drawingRate ? { drawingRate: timeline['_config'].drawingRate } : {}),
       ...(markers && { markers: markers.map((marker) => ({ ...marker })) }),
     },
     tracks: timeline.tracks.map(serializeTrack),

@@ -176,6 +176,12 @@ export interface TimelineConfig {
   /** Milliseconds to hold at the end before starting the next loop iteration */
   repeatDelay?: number;
   /**
+   * Drawings per second: values hold on each drawing for several frames, as
+   * hand-drawn animation is timed (12 is "on twos" at 24 fps, 8 "on threes").
+   * Absent or 0: every frame is a new drawing.
+   */
+  drawingRate?: number;
+  /**
    * Named points in time, in order — the steps of a teaching animation. Players
    * can step between them, stop at them and show their captions.
    */

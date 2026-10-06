@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.91.0](v0.91.0.md) | 2026-10-06 | Acting in the editor (style, gags, walks, lines), `drawingRate` as a timeline setting, the cartoon zip, script effect cues, camera helpers from the characters entry; front-on flips mirror correctly facing left |
 | [v0.90.0](v0.90.0.md) | 2026-10-06 | Story tools: line of action (`bend`), gaits with personality, lip-sync from text (Latin and Devanagari), beat scripts (`scriptTracks`), camera shots (`cameraTracks`, `camera` and `overlay` in video scenes); the Hindi pencil story acted; Cartoon Acting gallery card |
 | [v0.89.0](v0.89.0.md) | 2026-10-06 | Cartoon acting: `actTracks()` adds wind-ups, overshoot, overlap, eyes that lead and blink, moving holds and jump squash to key poses; gags as data; speed lines, dust puffs and impact stars; drawing on twos (`drawingRate`) |
 | [v0.88.0](v0.88.0.md) | 2026-10-05 | Light trails: `trailSamples` and `drawTrail` for comets and light streaks on any 2D canvas; `line` and `trail` objects in 3D scenes, sorted by depth; `frame.stateAt` for video scenes |

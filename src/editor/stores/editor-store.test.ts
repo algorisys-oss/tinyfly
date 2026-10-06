@@ -252,6 +252,28 @@ describe('camera', () => {
     expect(kfs(track('turn'))).toHaveLength(1)
   })
 
+  it('replaceTracks removes a property given no keyframes, and can skip its own undo snapshot', () => {
+    const store = createEditorStore()
+    store.createNewTimeline('tl', 'Acting', { duration: 2000 })
+    store.replaceTracks('Hero', [{ property: 'blink', keyframes: [{ time: 0, value: 0 }, { time: 100, value: 1 }] }])
+    store.replaceTracks('Hero', [{ property: 'blink', keyframes: [] }, { property: 'lean', keyframes: [{ time: 0, value: 5 }] }])
+    expect(rawTracks(store).map((t) => t.property)).toEqual(['lean'])
+    // Without a snapshot, undo goes back past this write too (it joins the step before).
+    store.replaceTracks('Hero', [{ property: 'lean', keyframes: [{ time: 0, value: 9 }] }], false)
+    store.undo()
+    expect(rawTracks(store).map((t) => t.property)).toEqual(['blink'])
+  })
+
+  it('setDrawingRate sets the timeline’s drawings per second, undoably and in its JSON', () => {
+    const store = createEditorStore()
+    store.createNewTimeline('tl', 'Twos', { duration: 2000 })
+    store.setDrawingRate(12)
+    expect(store.state.timeline!.drawingRate).toBe(12)
+    expect(serializeTimeline(store.state.timeline!).config?.drawingRate).toBe(12)
+    store.undo()
+    expect(store.state.timeline!.drawingRate).toBe(0)
+  })
+
   it('setCameraValue keyframes a camera prop at the playhead', () => {
     const store = createEditorStore()
     store.createNewTimeline('tl', 'Cam', { duration: 2000 })

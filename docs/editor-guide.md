@@ -169,8 +169,38 @@ shapes too. When an audio element has a tempo, **Follow beat** (on by default)
 dances at the music's tempo and starts on the beat nearest the playhead. Popping's glides
 and moonwalk travel from where the character stands (an x track, the planted foot staying put); facing
 left, a character dances the mirror image and glides the other way. Flips travel from where the character is (an x track), the way it
-faces: pick the *Side* or *Side (left)* view first. See [Dance and
-Flips](dance.md).
+faces: pick the *Side* or *Side (left)* view first. Facing left, a front-on
+flip (a cartwheel, a side flip) is the mirror image: it steps off on the other
+foot and wheels left. See [Dance and Flips](dance.md).
+
+**Acting**: key two or more poses, pick a **Style** (*Full*, *Snappy*,
+*Limited*, or *None* as keyed), and click **🎭 Act the keyed poses**. The
+character winds up before each move, overshoots and settles, its limbs overlap
+(the hips lead and the wrists drag), and its eyes lead and blink as its head
+turns. With acting on, the character keeps its plain key poses, and its tracks
+are generated from them:
+- **◆ Keyframe pose at playhead** adds a key pose and re-acts the whole
+  performance.
+- Changing the style re-acts in the new style.
+- **Turn off** puts the plain poses back.
+
+Dances and flips are written as they are, and turn acting off.
+
+- **Gag**: a *take* (squash, shoot up, hang, land), a *double take*, a
+  *wind-up*, a *land*, a *tremble* or a *deflate* (sigh), from the pose at the
+  playhead and in the character's current view.
+- **Gait** and **Distance**: walk, bouncy, double bounce, sneak (tiptoe),
+  strut, tired or run. **← Walk left** / **Walk right →** walks that far from
+  the playhead. The character turns side-on, its feet stay planted, and an x
+  track moves it.
+- **Say**: type a line and click **💬 Say at playhead**: the mouth is
+  lip-synced to it (English or Hindi), for as long as the line takes.
+- **Drawing**: *On twos* or *On threes* holds each pose for two or three
+  frames, as hand-drawn animation does. It is a timeline setting
+  (`drawingRate` in the JSON), so previews, players and exports all hold the
+  same way.
+
+See [Cartoon Acting](acting.md).
 
 Characters show in the DOM and Canvas previews and in GIF / WebP / MP4
 export. They are not part of exported HTML or embeds yet, and the SVG preview
@@ -1023,7 +1053,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.90.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.91.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed

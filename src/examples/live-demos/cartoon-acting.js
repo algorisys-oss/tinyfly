@@ -99,25 +99,24 @@ export function run(live, root) {
         { do: 'say', say: 'Is that box ticking?', mood: 'worried' },
         { do: 'tremble' },
         { do: 'face', toward: 0, mood: 'scared' },
-        { do: 'run', to: -120, say: 'Nope!' },
-        { do: 'hold', for: 500 },
+        { do: 'zip', to: -200, say: 'Nope!' },
+        { do: 'hold', for: 1000 },
       ],
       { from: START, height: HEIGHT, style: styleSelect.value }
     )
     const [, look, take, say] = script.beats
-    const lands = take.start + 900
     const camera = tinyfly.cameraTracks(
       [
         { at: look.start, duration: 500, frame: { focus: { x: 400, y: 230 }, scale: 1.2 } },
         { at: take.start + 300, duration: 0, frame: { focus: { x: 340, y: 175 }, scale: 1.4 } },
-        { at: lands, duration: 420, shake: { strength: 8 } },
+        { at: take.start + 900, duration: 420, shake: { strength: 8 } },
         { at: take.start + tinyfly.gagDuration('take') + 150, duration: 600, frame: { focus: { x: 380, y: 230 }, scale: 1.2 } },
         { at: say.end + 400, duration: 700, frame: {} },
       ],
       { stage: { width: W, height: H } }
     )
     const timeline = tinyfly.deserializeTimeline({ id: 'cartoon-acting', tracks: [...script.tracks, ...camera] })
-    scene = { timeline, script, lands }
+    scene = { timeline, script }
     const length = script.duration + 300
     loop?.kill()
     clock.time = 0
@@ -168,7 +167,10 @@ export function run(live, root) {
     ctx.translate(START + (values.get('x') ?? 0), GROUND)
     tinyfly.drawStickFigure(ctx, tinyfly.resolveStickPose(props, at(t)), { ...figureStyle, facing: props.facing }, at(t))
     ctx.restore()
-    tinyfly.drawDustPuff(ctx, { x: 330, y: GROUND }, (t - scene.lands) / 500, { size: 70, color: INK })
+    // Dust where the take lands and where the zip leaves: the script says when and where.
+    for (const effect of scene.script.effects) {
+      tinyfly.drawDustPuff(ctx, { x: effect.x, y: GROUND }, (t - effect.time) / effect.length, { size: 90, color: INK, seed: effect.time })
+    }
     ctx.restore()
   }
   live.ticker.add(draw)
@@ -185,7 +187,7 @@ export const cartoonActing = {
   id: 'live-cartoon-acting',
   name: 'Cartoon Acting',
   description:
-    'A story written as beats (walk in, look, a take, say a line, tremble, turn and run) compiled by scriptTracks() into acted tracks: wind-ups, overshoot, overlapping limbs, eyes that lead, blinks, gaits, lip-sync, and camera shots (a push-in, a crash zoom, a shake on landing). Switch the acting style to compare it with plain pose-to-pose, try other walks, and toggle drawing on twos, speed lines and the camera.',
+    'A story written as beats (walk in, look, a take, say a line, tremble, then zip off) compiled by scriptTracks() into acted tracks: wind-ups, overshoot, overlapping limbs, eyes that lead, blinks, gaits, lip-sync, the cartoon zip (legs wheel in place, then gone, dust hanging), and camera shots (a push-in, a crash zoom, a shake on landing). Switch the acting style to compare it with plain pose-to-pose, try other walks, and toggle drawing on twos, speed lines and the camera.',
   category: 'video',
   tags: ['canvas', 'character', 'stick figure', 'acting', 'anticipation', 'overshoot', 'gait', 'lip-sync', 'camera', 'sketch', 'video'],
   html,

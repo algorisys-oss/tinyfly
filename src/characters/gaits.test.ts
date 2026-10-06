@@ -46,6 +46,25 @@ describe('gaits', () => {
     expect(gaitPose('doubleBounce', 0.125).rise).toBeLessThan(gaitPose('doubleBounce', 0).rise)
   })
 
+  it('face the way the figure faces, in every style', () => {
+    const styles = [{}, { classic: true }, { rubber: 1 }, { headSize: 0.36, shoulderWidth: 0.07 }]
+    for (const name of NAMES) {
+      for (const style of styles) {
+        for (const facing of [1, -1] as const) {
+          for (const phase of [0, 0.2, 0.45, 0.7]) {
+            const joints = stickFigureJoints(gaitPose(name, phase, pose({ turn: 1 })), { height: 200, facing, ...style })
+            // Toes point the way it faces (or straight down, on tiptoe), never back.
+            for (const side of ['left', 'right'] as const) {
+              const along = (joints.toes[side].x - joints.feet[side].x) * facing
+              if (!('classic' in style)) expect(along, `${name} ${facing} ${phase} ${side}`).toBeGreaterThan(-1)
+            }
+            expect(joints.head.center.y, `${name} head above hips`).toBeLessThan(joints.hip.y)
+          }
+        }
+      }
+    }
+  })
+
   it('keep raised arms raised', () => {
     const waving = pose({ rightShoulder: 135, rightElbow: 30 })
     for (const name of NAMES) expect(gaitPose(name, 0.3, waving).rightShoulder).toBe(135)

@@ -488,6 +488,7 @@ objects. Use `serializeTimeline` when you need a detached copy.
     "speed": 1,                    // playback multiplier
     "alternate": false,            // ping-pong direction each loop
     "repeatDelay": 500,            // ms to wait between loop iterations
+    "drawingRate": 12,             // optional: drawings per second (12 = on twos); values hold between drawings
     "markers": [                   // optional named steps, in time order
       { "id": "full", "time": 1400, "label": "cap is full", "pause": true, "question": "What happens next?" }
     ]

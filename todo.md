@@ -2438,11 +2438,26 @@ poses (docs/acting.md).
       lip-synced line, camera pushes with the hand mapped through the camera
 - [x] Example `examples/headless-video/beat-script.mjs`; gallery card **Cartoon Acting**
 
-### 36C — Next
-- [ ] Editor: an acting style on the Character element; gags from a picker; `drawingRate` in the player
-- [ ] Line of action, gaits and lip-sync on the v2 characters
+### 36C — Editor acting (done)
+- [x] Character element **Acting** section: style picker and **🎭 Act the keyed poses** (the element keeps
+      its plain key poses in `acting`; keying a pose, a gag, a walk or a line re-acts; turn off restores
+      the plain poses; dances/flips turn it off), all in one undo step each
+- [x] Gags from a picker, in the character's current view (`characterGagKeys`)
+- [x] Gaits: walk left/right a distance (`characterWalk`: side-on, planted feet, x track)
+- [x] Say a line: lip-sync over the acted mouth
+- [x] `TimelineConfig.drawingRate` (engine): every value holds on its drawing in every player; editor
+      **Drawing** select (every frame / on twos / on threes); `replaceTracks` can remove and join an undo step
+- [x] Script `zip` action (wind-up, legs wheel in place, gone; dust hangs) and `effects` cues (dust at a
+      take's landing and a zip's exit)
+- [x] Orientation matrix (`character-orientation.test.ts`): 5 builds × walks, gags, dances, flips and
+      acting in every view; every figure × look × hands × outfit draws them
+- [x] Fixed: a front-on flip (cartwheel, side flip) facing left now mirrors (it stepped one way and
+      wheeled the other)
+
+### 36D — Next
+- [ ] Native gaits, line of action and gags on the v2 body plan (today via `stickToHuman`)
+- [ ] Builds in the editor's Character element (proportions, head size, shoulders, hips)
 - [ ] Follow-through on hair, tails, ears (character-system milestones 3 and 5)
-- [ ] Wind-up run gag (legs wheel in place, then zip off with a dust cloud)
 - [ ] AI generator emits beat scripts
 
 ---

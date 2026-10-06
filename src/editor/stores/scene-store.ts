@@ -1,4 +1,5 @@
 import { createSignal } from 'solid-js'
+import type { CharacterActing } from '../utils/character-acting'
 import { createStore } from 'solid-js/store'
 import { measureTextLetters } from '../utils/split-text'
 import { polyStarPath, type PolyStarSpec } from '../utils/poly-star'
@@ -280,6 +281,12 @@ export interface CharacterElement extends BaseElement {
   /** The named pose and face last picked (for the property panel) */
   poseName?: string
   faceName?: string
+  /**
+   * Acting, when on: the plain key poses, the style, and spoken lines. The
+   * character's tracks are generated from these (see character-acting.ts),
+   * so keying a pose or adding a gag re-acts the whole performance.
+   */
+  acting?: CharacterActing
 }
 
 /** A place on a map element: a pin with a label. Its id names its tracks (`<id>.show`). */
