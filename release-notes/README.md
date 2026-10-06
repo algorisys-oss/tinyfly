@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.89.0](v0.89.0.md) | 2026-10-06 | Cartoon acting: `actTracks()` adds wind-ups, overshoot, overlap, eyes that lead and blink, moving holds and jump squash to key poses; gags as data; speed lines, dust puffs and impact stars; drawing on twos (`drawingRate`) |
 | [v0.88.0](v0.88.0.md) | 2026-10-05 | Light trails: `trailSamples` and `drawTrail` for comets and light streaks on any 2D canvas; `line` and `trail` objects in 3D scenes, sorted by depth; `frame.stateAt` for video scenes |
 | [v0.87.0](v0.87.0.md) | 2026-10-05 | `tinyfly video --loop-check` and stills at chosen frames; a deterministic bloom glow for video and any 2D canvas; emissive 3D materials |
 | [v0.86.2](v0.86.2.md) | 2026-10-05 | README: tinyfly is in beta; breaking changes are kept to a minimum and listed in the release notes |

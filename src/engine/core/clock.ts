@@ -121,3 +121,16 @@ export class Clock {
     this._scheduleFrame()
   }
 }
+
+/**
+ * Time held to the last drawing: animating "on twos" (12 drawings a second
+ * against a 24 fps film) means each pose shows for two frames. Given a
+ * time in ms and the drawings per second, the time of the drawing on screen.
+ * A rate of 0 (or less) leaves time continuous.
+ */
+export function heldTime(time: number, drawingsPerSecond: number): number {
+  if (!(drawingsPerSecond > 0)) return time
+  const step = 1000 / drawingsPerSecond
+  // The epsilon keeps a frame exactly on a drawing (float error) on that drawing.
+  return Math.floor(time / step + 1e-9) * step
+}

@@ -1355,6 +1355,22 @@ export interface PoseKey {
   expression?: ExpressionName | Partial<Expression>
   /** Easing into this key */
   easing?: EasingType
+  /** `false`: the acting pass (`actTracks`) takes the move into this key as written */
+  act?: boolean
+}
+
+/**
+ * The full pose at each key: a named pose, or the previous key's pose with
+ * the key's changes (the first builds on rest), with the key's face applied.
+ */
+export function resolvePoseKeys(keys: PoseKey[]): StickPose[] {
+  const resolved: StickPose[] = []
+  keys.forEach((key, index) => {
+    const previous = index === 0 ? REST_POSE : resolved[index - 1]
+    const body = typeof key.pose === 'string' ? POSES[key.pose] : { ...previous, ...key.pose }
+    resolved.push(key.expression ? withExpression(body, key.expression) : body)
+  })
+  return resolved
 }
 
 /**
@@ -1365,12 +1381,7 @@ export interface PoseKey {
  * small; the others keep the target's own pose.
  */
 export function poseTracks(target: string, keys: PoseKey[]): Track[] {
-  const resolved: StickPose[] = []
-  keys.forEach((key, index) => {
-    const previous = index === 0 ? REST_POSE : resolved[index - 1]
-    const body = typeof key.pose === 'string' ? POSES[key.pose] : { ...previous, ...key.pose }
-    resolved.push(key.expression ? withExpression(body, key.expression) : body)
-  })
+  const resolved = resolvePoseKeys(keys)
   return POSE_KEYS.filter((field) => resolved.some((p) => p[field] !== REST_POSE[field])).map((field) => ({
     id: `${target}-${field}`,
     target,

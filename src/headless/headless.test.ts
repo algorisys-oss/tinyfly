@@ -113,6 +113,25 @@ describe('FrameRenderer', () => {
     expect(times).toEqual([0, 500, 900])
   })
 
+  it('holds each drawing for several frames at a drawing rate (on twos)', () => {
+    const times: number[] = []
+    const sizes: number[] = []
+    const watched = { ...scene(), drawingRate: 4 }
+    watched.targets!.clock = { type: 'custom', x: 0, y: 0, width: 1, height: 1, draw: (_ctx, _target, time) => times.push(time) }
+    let earlier: number | undefined
+    watched.draw = (_ctx, frame) => {
+      sizes.push(frame.state?.values.get('dot')?.get('size') as number)
+      earlier = frame.stateAt?.(370).values.get('dot')?.get('size') as number
+    }
+    const renderer = new FrameRenderer(watched)
+    const ctx = createCanvas(80, 40).getContext('2d') as unknown as CanvasRenderingContext2D
+    for (const time of [0, 100, 200, 250, 600]) renderer.render(ctx, time)
+    // Four drawings a second: a new one every 250 ms.
+    expect(times).toEqual([0, 0, 0, 250, 500])
+    expect(sizes).toEqual([2, 2, 2, 4, 6])
+    expect(earlier).toBe(4)
+  })
+
   it('scales the output', () => {
     const renderer = new FrameRenderer(scene(), { scale: 0.5 })
     expect([renderer.width, renderer.height]).toEqual([40, 20])

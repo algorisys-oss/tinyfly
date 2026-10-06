@@ -18,6 +18,7 @@ resolves to the built package.
 | `bar-chart.mjs` | Timeline targets only: the whole animation is JSON |
 | `cairo-style.mjs` | Pure immediate mode: a duration and `draw(ctx, { time })` |
 | `pencil-sketch.mjs` | A Pencilmation-style gag: the `sketch` style (pencil strokes with line boil) on the figure, `sketchPen` for the ground and the pencil |
+| `cartoon-acting.mjs` | Before and after: the same keys through `poseTracks()` and `actTracks()` (`snappy`): wind-ups, overshoot, overlap, eyes leading; a `take` gag, speed lines (`drawStickSmear`) and a dust puff, drawn on twos (`drawingRate: 12`). See [docs/acting.md](../../docs/acting.md) |
 | `eraser-gag.mjs` | Erasing: `erasable()` rubs out the figure's forearm on an `erase` track, `withErased()` takes the ground from under it |
 | `rubber-hose.mjs` | Squash and stretch (`stretch` in poses, `crouch` / `jump`) and rubber-hose limbs (`style.rubber`, a `rubber` track blending to jointed and back) |
 | `human-turnaround.mjs` | Characters v2 (milestone 1): one skeleton in 3D drawn flat, turned front to back in stick, fluid, clothed, pencil and silhouette rows; contact poses (sit, kneel, crouch, crawl, lie down, jump); reaching; one pose in every look. Kept in [`docs/model-sheet/`](../../docs/model-sheet/) |

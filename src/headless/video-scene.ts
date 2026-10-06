@@ -21,6 +21,13 @@ export interface VideoScene {
   height: number
   /** Frames per second (default 30) */
   fps?: number
+  /**
+   * Drawings per second for the timeline's animation: 12 holds every pose for
+   * two frames of 24 fps ("on twos"), 8 for three ("on threes"), as hand-drawn
+   * animation is timed. The frame rate (and `draw`, `background`) stays as set,
+   * so camera moves drawn there can stay smooth. Default: every frame.
+   */
+  drawingRate?: number
   /** Length in ms (default: the timeline's duration) */
   duration?: number
   /** Animation data; its markers drive stills and captions */

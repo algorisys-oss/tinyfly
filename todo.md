@@ -2403,6 +2403,35 @@ triangles) and "Droste Head" (a cartoon head whose pupil holds the same head, fo
 
 ---
 
+## Phase 36: Cartoon acting (toward Tom & Jerry / feature-animation fluency)
+
+Story figures moved every joint at once, start to stop, at a smooth 60 fps: the look of procedural
+animation. This phase adds the timing habits of hand-drawn animation as pure functions over key
+poses (docs/acting.md).
+
+### 36A — Acting pass (done)
+- [x] `actTracks()` / `actCharacterTracks()` / `actKeyframes()`: anticipation, overshoot and settle,
+      overlap by chain depth, eyes lead and dart, blinks on head turns and idle blinks, moving holds
+      (never on the last key), jump squash from `rise`/`lift`; `ACTING_STYLES` full / snappy / limited /
+      none, tunable; `STICK_ACTING_RIG`, `HUMAN_ACTING_RIG`; keys with `act: false` pass as written
+- [x] Gags as data: `gag()` take, doubleTake, windUp, land, tremble, deflate (`GAGS`, `gagDuration`)
+- [x] Motion effects: `drawStickSmear()` (speed lines from `frame.stateAt`), `drawSpeedLines()`,
+      `drawDustPuff()`, `drawImpactStars()`
+- [x] Drawing on twos: `VideoScene.drawingRate`, `heldTime()`
+- [x] Example `examples/headless-video/cartoon-acting.mjs` (before/after)
+
+### 36B — Next
+- [ ] Line of action: a bendable spine from one value (v2 chains)
+- [ ] Gaits with personality: bouncy, sneak/tiptoe, double-bounce, wind-up run (legs wheel, then zip)
+- [ ] Follow-through on hair, tails, ears (character-system milestones 3 and 5)
+- [ ] Lip-sync: visemes from narration timing
+- [ ] Beat scripts: `{ who, do, at, mood }` beats compiled to acted keys (also for the AI generator)
+- [ ] Camera acting: shake on impact, push in on a take, follow with lag
+- [ ] Re-time the Hindi pencil story with `actTracks()`
+- [ ] Editor: an acting style on the Character element; gags from a picker; `drawingRate` in the player
+
+---
+
 ## Backlog / For Review
 
 - [x] **Live demo controls no longer cut off** — a gallery card's live preview grows to fit its

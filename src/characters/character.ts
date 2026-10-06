@@ -539,6 +539,23 @@ export interface CharacterPoseKey {
   pose?: HumanPoseName | Pose
   /** Easing into this key */
   easing?: EasingType
+  /** `false`: the acting pass (`actCharacterTracks`) takes the move into this key as written */
+  act?: boolean
+}
+
+/**
+ * The pose at each key: a named pose, or the previous key's pose with the
+ * key's changes (the first builds on `rest`).
+ */
+export function resolveCharacterPoseKeys(keys: CharacterPoseKey[], rest: Pose = HUMAN_REST): Pose[] {
+  const resolved: Pose[] = []
+  keys.forEach((key, index) => {
+    const previous = index === 0 ? rest : resolved[index - 1]
+    const named = typeof key.pose === 'string' ? HUMAN_POSES[key.pose] : undefined
+    // A named pose keeps the view (turn) of the key before it, unless it sets one.
+    resolved.push(named ? { ...named, turn: previous.turn ?? 0 } : { ...previous, ...(key.pose as Pose | undefined) })
+  })
+  return resolved
 }
 
 /**
@@ -548,13 +565,7 @@ export interface CharacterPoseKey {
  * stays small and the timeline shows only what moves.
  */
 export function characterPoseTracks(target: string, keys: CharacterPoseKey[], rest: Pose = HUMAN_REST): Track[] {
-  const resolved: Pose[] = []
-  keys.forEach((key, index) => {
-    const previous = index === 0 ? rest : resolved[index - 1]
-    const named = typeof key.pose === 'string' ? HUMAN_POSES[key.pose] : undefined
-    // A named pose keeps the view (turn) of the key before it, unless it sets one.
-    resolved.push(named ? { ...named, turn: previous.turn ?? 0 } : { ...previous, ...(key.pose as Pose | undefined) })
-  })
+  const resolved = resolveCharacterPoseKeys(keys, rest)
   const fields = Object.keys(rest).filter((field) => resolved.some((pose) => (pose[field] ?? rest[field]) !== rest[field]))
   return fields.map((field) => ({
     id: `${target}-${field}`,

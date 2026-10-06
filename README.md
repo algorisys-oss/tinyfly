@@ -61,6 +61,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **The drawing hand** - `drawnPathTarget()` draws a sketched stroke on from a `draw` track while a cartoon hand holds the pencil at its end in a writing grip; the same hand can hold the eraser. `handAt()` gives one hand for a whole scene: it follows each stroke, lifts and glides to the next, and enters and leaves the page
 - **Erasing** - An eraser rubs out part of a target (`erasable()`, animated by an `erase` track) or of anything drawn in code (`withErased()`); clip-based, so it works in the browser and headless alike
 - **Cartoon hands** - A hand rig in 3D, drawn flat: thumb and fingers posed by numbers (`index.curl`, `thumb.across`, `spread`, `turn`), ready-made shapes (fist, point, thumbs-up, peace, OK, pinch, wave, pencil grip…), left and right, four or five fingers, in every look; the animator's hand and (opt-in) character gloves are built on it. See [docs/cartoon-hands.md](docs/cartoon-hands.md)
+- **Cartoon acting** - `actTracks()` turns the same key poses into acted motion: wind-ups, overshoot that settles or wobbles, joints that overlap (hips lead, wrists drag), eyes that dart ahead and blink on head turns, moving holds and jump squash, in `full`, `snappy` or `limited` styles. Gags come as data (`gag('take')`, double take, wind-up, tremble). It also adds speed lines from earlier frames (`drawStickSmear()`), dust puffs, impact stars, and drawing on twos for video (`drawingRate`). Output is plain keyframes. See [docs/acting.md](docs/acting.md)
 - **Pencil story example** - `examples/pencil-story-hindi/index.html` tells a short Hindi story (प्यासा राहगीर, the thirsty traveller) Pencilmation-style with the browser bundle alone: the hand draws the scene and writes the narration, then rubs out the pot
 - **Captions** - `toSRT()` / `toWebVTT()` from narration cues or from a timeline's markers
 
@@ -235,7 +236,7 @@ GSAP-shaped functions at the top level. Teaching embeds are included: add
 itself.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.88.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.89.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -271,7 +272,7 @@ A teaching figure needs no code at all:
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON with markers… }</script>
   <figcaption>Appending to a full slice</figcaption>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.88.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.89.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
 ```
 
 See [Teaching Animations](docs/teaching.md).
@@ -370,7 +371,7 @@ Without a build step, the player bundle puts the same functions on a `tinyfly` g
   <div data-tinyfly="box" style="width: 60px; height: 60px; background: #4a9eff;"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.88.0/cdn/tinyfly-player.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.89.0/cdn/tinyfly-player.iife.js"></script>
 <script>
   tinyfly.play('#animation', './animation.json', { loop: -1 })
 </script>
@@ -479,7 +480,7 @@ Or skip the code entirely with declarative embeds (see [Teaching Animations](doc
   <svg viewBox="0 0 720 200">…</svg>
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON… }</script>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.88.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.89.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 ### Audio / Video Sync

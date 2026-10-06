@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { Clock, ManualClock } from './clock'
+import { Clock, ManualClock, heldTime } from './clock'
 
 describe('Clock', () => {
   beforeEach(() => {
@@ -183,5 +183,21 @@ describe('Clock', () => {
 
       expect(onTick).toHaveBeenLastCalledWith(50, 50)
     })
+  })
+})
+
+describe('heldTime', () => {
+  it('holds time to the last drawing', () => {
+    // 12 drawings a second: one every 83.3 ms.
+    expect(heldTime(0, 12)).toBe(0)
+    expect(heldTime(80, 12)).toBe(0)
+    expect(heldTime(1000 / 12, 12)).toBeCloseTo(1000 / 12)
+    expect(heldTime(170, 12)).toBeCloseTo(2000 / 12)
+    expect(heldTime(1000, 12)).toBeCloseTo(1000)
+  })
+
+  it('leaves time alone at a rate of 0', () => {
+    expect(heldTime(123.4, 0)).toBe(123.4)
+    expect(heldTime(123.4, -1)).toBe(123.4)
   })
 })

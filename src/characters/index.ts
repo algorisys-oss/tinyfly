@@ -23,3 +23,5 @@ export { createPen, ellipsePoints, type Pen, type Look, type PencilOptions, type
 export { basicOutfit, type BasicOutfitOptions } from './wardrobe/basic-outfit'
 // Cartoon hands: posed in 3D, drawn in a look.
 export * from './hands'
+// Acting: anticipation, overshoot, overlap, eyes leading, gags and speed lines (see docs/acting.md).
+export * from './acting'

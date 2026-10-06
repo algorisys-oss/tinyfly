@@ -3,6 +3,7 @@ import { deserializeTimeline } from '../engine/serialization'
 import { CanvasAdapter, applyBloom } from '../adapters/canvas'
 import type { DrawFunction, FrameInfo, VideoScene } from './video-scene'
 import { DEFAULT_FPS } from './video-scene'
+import { heldTime } from '../engine/core/clock'
 
 /**
  * Draws a {@link VideoScene} at any time onto a 2D context.
@@ -79,14 +80,17 @@ export class FrameRenderer {
   render(ctx: CanvasRenderingContext2D, time: number, index = 0): void {
     // The timeline is never played here, so its own clock stays at 0: stamp
     // the state with the frame's time, which custom targets draw at.
-    const timelineState = this.timeline?.getStateAtTime(time)
-    const state = timelineState && { ...timelineState, currentTime: time }
+    // On twos (or threes), the animation holds each drawing for several frames.
+    const drawingRate = this.scene.drawingRate ?? 0
+    const animated = heldTime(time, drawingRate)
+    const timelineState = this.timeline?.getStateAtTime(animated)
+    const state = timelineState && { ...timelineState, currentTime: animated }
     ctx.setTransform(1, 0, 0, 1, 0, 0)
     ctx.clearRect(0, 0, this.width, this.height)
     ctx.save()
     ctx.scale(this.scale, this.scale)
     const timeline = this.timeline
-    const stateAt = timeline && ((at: number) => timeline.getStateAtTime(at))
+    const stateAt = timeline && ((at: number) => timeline.getStateAtTime(heldTime(at, drawingRate)))
     const frame: FrameInfo = { index, time, state, stateAt, width: this.scene.width, height: this.scene.height }
     const background = this.scene.background ?? '#ffffff'
     if (typeof background === 'function') {

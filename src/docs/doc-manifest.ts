@@ -124,6 +124,12 @@ export const DOCS: DocEntry[] = [
     section: 'Guides',
   },
   {
+    id: 'acting',
+    title: 'Cartoon Acting',
+    summary: 'actTracks(): the same key poses, acted: anticipation, overshoot and settle, overlapping joints, eyes that lead and blink, moving holds and jump squash, in full, snappy or limited styles; gags as data (take, double take, wind-up); speed lines, dust puffs and impact stars; drawing on twos.',
+    section: 'Guides',
+  },
+  {
     id: 'dance',
     title: 'Dance and Flips',
     summary: 'The stick figure dances disco, hip hop, breaking, jazz, K-pop, Bollywood, Bhangra, Bharatanatyam (with mudras), the Charleston, tap (with tap sounds) and popping (side glide, moonwalk), and does front, back, layout and scissor flips, cartwheels, handsprings, split leaps and full splits: wrists, ankles, turn-out, spin and rise as pose fields; moves keyed in beats; styles, grooves and routines as plain data.',
