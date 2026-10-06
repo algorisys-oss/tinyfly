@@ -25,7 +25,7 @@ import { InertiaInspector } from './inertia-inspector'
 import { MarkerInspector } from './marker-inspector'
 import type { SketchStyle } from '../../adapters/canvas'
 import { HUMAN_POSES, HUMAN_EXPRESSIONS, HUMAN_REST } from '../../characters/species/human'
-import { isCharacterField } from '../utils/character-element'
+import { CHARACTER_BUILDS, buildName, buildValue, isCharacterField, type CharacterBuildName } from '../utils/character-element'
 import { CharacterActingPanel, keyActedPose } from './character-acting-panel'
 import { characterDanceTracks, characterFlipTracks, danceLength, facingOf, mergeKeyframes } from '../utils/character-dance'
 import { beatGridOf, detectAudioTempo, tapTempo } from '../utils/beat-grid'
@@ -1720,6 +1720,43 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
           <option value="silhouette">Silhouette</option>
         </select>
       </div>
+      <div class="property-row">
+        <label>Build</label>
+        <select
+          value={buildName(element.build) ?? ''}
+          onChange={(e) => {
+            const name = (e.target as HTMLSelectElement).value as CharacterBuildName
+            if (name) updateElement({ build: { ...CHARACTER_BUILDS[name].build } })
+          }}
+        >
+          <Show when={!buildName(element.build)}>
+            <option value="">Custom</option>
+          </Show>
+          <For each={Object.entries(CHARACTER_BUILDS)}>{([name, entry]) => <option value={name}>{entry.label}</option>}</For>
+        </select>
+      </div>
+      <For each={(element.figure === 'stick' ? ['headSize'] : ['headSize', 'shoulderWidth', 'hipWidth']) as Array<'headSize' | 'shoulderWidth' | 'hipWidth'>}>
+        {(field) => {
+          const range = { headSize: [0.18, 0.46], shoulderWidth: [0, 0.14], hipWidth: [0, 0.08] }[field]
+          return (
+            <div class="property-row">
+              <label>{{ headSize: 'Head', shoulderWidth: 'Shoulders', hipWidth: 'Hips' }[field]}</label>
+              <input
+                type="range"
+                min={range[0]}
+                max={range[1]}
+                step="0.005"
+                value={buildValue(element.build, field)}
+                // One undo step per drag, not one per tick.
+                onPointerDown={() => props.sceneStore.beginInteraction()}
+                onPointerUp={() => props.sceneStore.endInteraction()}
+                onChange={() => props.sceneStore.endInteraction()}
+                onInput={(e) => updateElement({ build: { ...element.build, [field]: parseFloat((e.target as HTMLInputElement).value) } })}
+              />
+            </div>
+          )
+        }}
+      </For>
       <div class="property-row">
         <label>Line</label>
         <input type="color" value={element.ink} onInput={handleColorChange('ink')} />

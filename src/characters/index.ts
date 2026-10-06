@@ -21,6 +21,8 @@ export * from './hand'
 // Characters v2: body plans, turned in 3D, drawn in a look (see docs/character-system-m1.md).
 export * from './character'
 export { humanPlan, humanPose, mirrorHumanPose, humanFieldLabel, HUMAN_REST, HUMAN_POSES, HUMAN_EXPRESSIONS, type HumanBuild, type HumanPoseName } from './species/human'
+// Native motion for the human plan: gaits from the shared GAITS data, and gags in the character's own frame.
+export * from './species/human-motion'
 export type { BodyPlan, ChainSpec, BoneSpec, BoneAngles, ContactSpec, HeadSpec, Pose as CharacterPose, Vec3 } from './rig/body-plan'
 export { createPen, ellipsePoints, type Pen, type Look, type PencilOptions, type PenOptions } from './look/pen'
 export { basicOutfit, type BasicOutfitOptions } from './wardrobe/basic-outfit'

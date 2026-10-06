@@ -4,7 +4,7 @@ import { ACTING_STYLES, GAGS, GAITS, HUMAN_REST, characterPoseTracks, gagDuratio
 import type { EditorStore } from '../stores/editor-store'
 import type { CharacterElement, SceneStore } from '../stores/scene-store'
 import { actingTracks, characterGagKeys, characterWalk, keyPosesOf, spliceKeys, upsertKey, withRemovals, type CharacterActing } from '../utils/character-acting'
-import { facingOf, mergeKeyframes, type PropertyKeyframes } from '../utils/character-dance'
+import { mergeKeyframes, type PropertyKeyframes } from '../utils/character-dance'
 import { isCharacterField } from '../utils/character-element'
 
 /**
@@ -126,7 +126,7 @@ export function CharacterActingPanel(props: ActingPanelProps) {
   const addGag = () => {
     const start = playhead()
     const pose = poseAt(start)
-    const keys = characterGagKeys(gagName(), { start, pose, facing: facingOf(pose.turn ?? 0) })
+    const keys = characterGagKeys(gagName(), { start, pose })
     const acting = props.element.acting
     if (acting) writeActing(props.store, props.sceneStore, props.element, { ...acting, keys: spliceKeys(acting.keys, keys) })
     else mergePlain(keys)

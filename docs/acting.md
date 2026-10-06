@@ -300,8 +300,31 @@ poses**, gags, gaits with a distance, lines to say, and the drawing rate (see
 the [editor guide](editor-guide.md#characters)). With acting on, the element
 keeps its plain key poses (`acting.keys`) and its tracks are generated from
 them, so keying a pose, adding a gag or a walk, or saying a line re-acts the
-whole performance. Gags and gaits come from the stick figure, turned into
-character fields with `stickToHuman`, in the character's current view.
+whole performance.
+
+## Characters (v2): native motion
+
+The v2 human has its own line of action, gaits and gags, posed in the
+character's frame (forward is the way it faces, in 3D), so they read from
+every view (front, side, back, the other side) with no mirroring:
+
+- **`bend`**: the back curved forward (+) or arched (−). It grows up the spine
+  and carries on into the neck, unlike `lean`, which tips a straight back.
+- **`humanGaitPose(gait, phase, base)`** and **`humanGaitStrideLength(gait, height)`**:
+  the same `GAITS` data as the stick figure's, driving the human's legs, arms,
+  back and bounce. One spec, two rigs.
+- **`humanGag(name, { at, from })`** and **`HUMAN_GAGS`**: take, double take,
+  wind-up, land, tremble and deflate, written for this body.
+
+```js
+import { humanGag, humanGaitPose, actCharacterTracks } from '@algorisys/tinyfly/characters'
+
+const keys = [{ time: 0, pose: { turn: 1 } }, ...humanGag('take', { at: 600, from: { turn: 1 } })]
+const tracks = actCharacterTracks('hero', keys, { style: 'snappy' })
+```
+
+The editor's gags and walks use these. Builds (`proportions`, `headSize`,
+`shoulderWidth`, `hipWidth`) change the body, and the same motion fits each.
 
 The timeline's `drawingRate` (`TimelineConfig.drawingRate`, set with
 `timeline.drawingRate = 12`) holds every value on its drawing, wherever the
@@ -309,5 +332,5 @@ timeline plays: editor previews, players, embeds and exports.
 
 ## Not yet
 
-- Native gaits, line of action and gags on the v2 body plan (today they come from the stick figure through `stickToHuman`)
+- Beat scripts for v2 characters (`scriptTracks` drives the stick figure)
 - Follow-through on hair, tails and ears (character-system milestones 3 and 5)

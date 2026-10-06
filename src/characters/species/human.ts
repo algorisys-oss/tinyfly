@@ -8,6 +8,8 @@ import { EXPRESSIONS, type ExpressionName } from '../stick-figure'
  * Pose fields (degrees unless noted):
  * - `turn`: 0 faces the viewer, 1 faces screen-right, 2 shows the back, 3 faces screen-left
  * - `lean` (forward +), `side` (toward the character's left +): the upper body
+ * - `bend` (forward +): the line of action, the back curved rather than tipped:
+ *   it grows up the spine and carries on into the neck
  * - `head.turn` (toward its left +), `head.nod` (down +), `head.tilt` (toward its left shoulder +)
  * - `arm.left.swing` (forward +), `arm.left.spread` (out +), `arm.left.elbow`
  *   (forearm forward +), `arm.left.bend` (forearm out +), and the same for `.right`
@@ -42,12 +44,17 @@ const FOREARM = 0.155
 const SHOULDER_DROP = 0.035
 /** Feet turn out from straight ahead, degrees */
 const TOE_OUT = 12
+/** How a `bend` spreads up the back: lower spine, upper spine, neck (the neck's share is on top of the whole) */
+const BEND_LOW = 0.3
+const BEND_HIGH = 0.7
+const BEND_NECK = 0.35
 
 const rad = (degrees: number) => (degrees * Math.PI) / 180
 
 export const HUMAN_REST: Pose = {
   turn: 0,
   lean: 0,
+  bend: 0,
   side: 0,
   'head.turn': 0,
   'head.nod': 0,
@@ -223,12 +230,14 @@ export function humanPlan(build: HumanBuild = {}): BodyPlan {
         // Leaning forward turns the top of an upright bone toward +z, which is a negative swing.
         const lean = -field(pose, 'lean') / 2
         const side = field(pose, 'side') / 2
+        // A bend curves the back: a little low down, more up top, the rest in the neck.
+        const bend = -field(pose, 'bend')
         return [
-          { swing: lean, spread: side },
-          { swing: lean, spread: side },
+          { swing: lean + bend * BEND_LOW, spread: side },
+          { swing: lean + bend * BEND_HIGH, spread: side },
         ]
       }
-      if (chain.id === 'neck') return [{ swing: 0, spread: 0 }]
+      if (chain.id === 'neck') return [{ swing: -field(pose, 'bend') * BEND_NECK, spread: 0 }]
       const [limb, side] = chain.id.split('.')
       const f = (name: string) => field(pose, `${limb}.${side}.${name}`)
       if (limb === 'arm') {
@@ -329,6 +338,7 @@ export function humanFieldLabel(field: string): string {
   const names: Record<string, string> = {
     turn: 'View (front → side → back)',
     lean: 'Lean forward / back',
+    bend: 'Back curve (line of action)',
     side: 'Lean sideways',
     'head.turn': 'Head · turn',
     'head.nod': 'Head · nod',

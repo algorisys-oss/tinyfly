@@ -137,6 +137,10 @@ its box; resize the box to change its height. In the property panel:
   traditional stick figure).
 - **Look**: *Clean*, *Pencil* (hand-drawn strokes that boil, with faint
   construction lines) or *Silhouette*.
+- **Build**: *Standard*, *Slim*, *Kid* (big head), *Broad*, *Curvy* or
+  *Stocky*, or set **Head**, **Shoulders** and **Hips** with the sliders (the
+  Stick figure has a head size only). Clothes, gags, walks and dances fit
+  every build.
 - **Line**, **Skin**, and **Clothes** (a T-shirt and trousers, with their
   colours, or none).
 - **Hands**: *Round*, *Cartoon gloves* (a thumb and three plump fingers), or
@@ -188,7 +192,8 @@ Dances and flips are written as they are, and turn acting off.
 
 - **Gag**: a *take* (squash, shoot up, hang, land), a *double take*, a
   *wind-up*, a *land*, a *tremble* or a *deflate* (sigh), from the pose at the
-  playhead and in the character's current view.
+  playhead. Gags are posed in the character's own frame, so they read from
+  any view.
 - **Gait** and **Distance**: walk, bouncy, double bounce, sneak (tiptoe),
   strut, tired or run. **← Walk left** / **Walk right →** walks that far from
   the playhead. The character turns side-on, its feet stay planted, and an x
@@ -1053,7 +1058,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.91.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.92.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed

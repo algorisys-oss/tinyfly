@@ -32,8 +32,8 @@ export const STICK_ACTING_RIG: ActingRig = {
 
 /** Depth and limit of a v2 human field, by its name. */
 function humanField(field: string): { depth: number; limit?: number } {
-  if (/^(turn|lean|side|lift|roll|stretch)$/.test(field)) {
-    const limits: Record<string, number> = { turn: 0.06, lean: 10, side: 8, lift: 0, roll: 25, stretch: 0.08 }
+  if (/^(turn|lean|bend|side|lift|roll|stretch)$/.test(field)) {
+    const limits: Record<string, number> = { turn: 0.06, lean: 10, bend: 10, side: 8, lift: 0, roll: 25, stretch: 0.08 }
     return { depth: 0, limit: limits[field] }
   }
   if (/^leg\.\w+\.(swing|spread|rotate)$/.test(field)) return { depth: 0, limit: 12 }
@@ -63,7 +63,7 @@ function humanActingRig(): ActingRig {
     eyes: ['lookX', 'lookY'],
     blink: 'blink',
     headTurns: { turn: 0.15, 'head.turn': 15, 'head.nod': 12, lookX: 0.5, roll: 45 },
-    drift: ['lean', 'head.tilt', 'head.nod', 'arm.left.spread', 'arm.right.spread', 'arm.left.elbow', 'arm.right.elbow'],
+    drift: ['lean', 'bend', 'head.tilt', 'head.nod', 'arm.left.spread', 'arm.right.spread', 'arm.left.elbow', 'arm.right.elbow'],
     lift: 'lift',
     stretch: 'stretch',
   }

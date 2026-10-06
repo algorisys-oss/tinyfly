@@ -281,12 +281,29 @@ export interface CharacterElement extends BaseElement {
   /** The named pose and face last picked (for the property panel) */
   poseName?: string
   faceName?: string
+  /** Body shape: proportions, head size, shoulder and hip width (default: the bold standard build) */
+  build?: CharacterBuild
   /**
    * Acting, when on: the plain key poses, the style, and spoken lines. The
    * character's tracks are generated from these (see character-acting.ts),
    * so keying a pose or adding a gag re-acts the whole performance.
    */
   acting?: CharacterActing
+}
+
+/**
+ * A character's body shape. Sizes are fractions of the height; anything left
+ * out takes the standard build's value.
+ */
+export interface CharacterBuild {
+  /** `bold` (default): head 30% of the height, heavy lines. `thin`: head 24%, fine lines */
+  proportions?: 'bold' | 'thin'
+  /** Head diameter (bold 0.3, thin 0.24) */
+  headSize?: number
+  /** Half the shoulder width (default 0.06; fluid figures) */
+  shoulderWidth?: number
+  /** Half the hip width (default 0.022; fluid figures) */
+  hipWidth?: number
 }
 
 /** A place on a map element: a pin with a label. Its id names its tracks (`<id>.show`). */

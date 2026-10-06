@@ -2454,9 +2454,17 @@ poses (docs/acting.md).
 - [x] Fixed: a front-on flip (cartwheel, side flip) facing left now mirrors (it stepped one way and
       wheeled the other)
 
-### 36D — Next
-- [ ] Native gaits, line of action and gags on the v2 body plan (today via `stickToHuman`)
-- [ ] Builds in the editor's Character element (proportions, head size, shoulders, hips)
+### 36D — Builds and native v2 motion (done)
+- [x] Builds in the editor's Character element: presets (standard, slim, kid, broad, curvy, stocky) and
+      Head / Shoulders / Hips sliders (one undo step per drag); `CharacterElement.build`, `characterOf`
+- [x] v2 line of action: `bend` on the human plan (spine 30/70 + neck); `stickToHuman` maps stick bend to it
+      in profile; acting rig leads with it
+- [x] Native v2 gaits: `humanGaitPose`, `humanGaitStrideLength` from the shared `GAITS` data
+- [x] Native v2 gags: `HUMAN_GAGS`, `humanGag` (take, double take, wind-up, land, tremble, deflate) in the
+      character's frame; the editor's gags and walks use them (no more stick-figure conversion)
+
+### 36E — Next
+- [ ] Beat scripts for v2 characters (`scriptTracks` on the human plan)
 - [ ] Follow-through on hair, tails, ears (character-system milestones 3 and 5)
 - [ ] AI generator emits beat scripts
 

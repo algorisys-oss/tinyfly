@@ -2,7 +2,7 @@ import type { CustomTarget } from '../../adapters/canvas'
 import type { AnimationState } from '../../engine/types'
 import { hashSeed } from '../../engine/authoring/random'
 import { basicOutfit, character, drawCharacter, HAND_REST, HUMAN_REST, type Character, type CharacterPose } from '../../characters'
-import type { CharacterElement } from '../stores/scene-store'
+import type { CharacterBuild, CharacterElement } from '../stores/scene-store'
 
 /**
  * Character elements: the editor's bridge to the v2 character system. The
@@ -23,7 +23,36 @@ export function characterOf(element: CharacterElement): Character {
     layers: element.outfit === 'basic' ? basicOutfit({ shirt: element.shirt, trousers: element.trousers }) : undefined,
     hands: (element.hands ?? 'dot') === 'dot' ? 'dot' : 'cartoon',
     handStyle: element.hands === 'natural' ? 'natural' : 'glove',
+    ...element.build,
   })
+}
+
+/** Named builds for the property panel; each sets every build field it changes from standard. */
+export const CHARACTER_BUILDS = {
+  standard: { label: 'Standard', build: {} },
+  slim: { label: 'Slim', build: { proportions: 'thin' } },
+  kid: { label: 'Kid (big head)', build: { headSize: 0.42 } },
+  broad: { label: 'Broad', build: { shoulderWidth: 0.11, hipWidth: 0.04 } },
+  curvy: { label: 'Curvy', build: { shoulderWidth: 0.055, hipWidth: 0.065 } },
+  stocky: { label: 'Stocky', build: { headSize: 0.34, shoulderWidth: 0.1, hipWidth: 0.06 } },
+} satisfies Record<string, { label: string; build: CharacterBuild }>
+
+export type CharacterBuildName = keyof typeof CHARACTER_BUILDS
+
+/** The build's value for a field, with the standard build's default when it leaves it out. */
+export function buildValue(build: CharacterBuild | undefined, field: 'headSize' | 'shoulderWidth' | 'hipWidth'): number {
+  const value = build?.[field]
+  if (value !== undefined) return value
+  if (field === 'headSize') return build?.proportions === 'thin' ? 0.24 : 0.3
+  return field === 'shoulderWidth' ? 0.06 : 0.022
+}
+
+/** Which named build matches, if any (for the picker). */
+export function buildName(build: CharacterBuild | undefined): CharacterBuildName | undefined {
+  const same = (a: CharacterBuild, b: CharacterBuild) =>
+    (a.proportions ?? 'bold') === (b.proportions ?? 'bold') &&
+    (['headSize', 'shoulderWidth', 'hipWidth'] as const).every((field) => Math.abs(buildValue(a, field) - buildValue(b, field)) < 1e-6)
+  return (Object.keys(CHARACTER_BUILDS) as CharacterBuildName[]).find((name) => same(build ?? {}, CHARACTER_BUILDS[name].build))
 }
 
 /**

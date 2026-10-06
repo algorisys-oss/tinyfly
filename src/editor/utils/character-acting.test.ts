@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import type { Track } from '../../engine/types'
 import { HUMAN_REST, gagDuration, humanPose, type CharacterPose } from '../../characters'
-import { actingTracks, characterGagKeys, characterWalk, keyPosesOf, spliceKeys, stickTurnOf, upsertKey, withRemovals, type KeyPose } from './character-acting'
+import { actingTracks, characterGagKeys, characterWalk, keyPosesOf, spliceKeys, upsertKey, withRemovals, type KeyPose } from './character-acting'
 
 const rest: CharacterPose = { ...HUMAN_REST }
 const key = (time: number, changes: CharacterPose): KeyPose => ({ time, pose: humanPose(changes) })
@@ -61,18 +61,6 @@ describe('key lists', () => {
     expect(spliceKeys(keys, [key(400, { lean: 1 }), key(1200, { lean: 2 })]).map((k) => k.time)).toEqual([0, 400, 1200, 2000])
     expect(upsertKey(keys, 1000.4, humanPose({ lean: 9 })).find((k) => k.time === 1000.4)!.pose.lean).toBe(9)
     expect(upsertKey(keys, 1500, humanPose()).map((k) => k.time)).toEqual([0, 500, 1000, 1500, 2000])
-  })
-})
-
-describe('stickTurnOf', () => {
-  it('maps the character’s views onto the stick figure’s front-to-side turn', () => {
-    expect(stickTurnOf(0)).toBe(0)
-    expect(stickTurnOf(0.5)).toBe(0.5)
-    expect(stickTurnOf(1)).toBe(1)
-    expect(stickTurnOf(2)).toBe(1)
-    expect(stickTurnOf(3)).toBe(1)
-    expect(stickTurnOf(3.5)).toBe(0.5)
-    expect(stickTurnOf(4)).toBe(0)
   })
 })
 

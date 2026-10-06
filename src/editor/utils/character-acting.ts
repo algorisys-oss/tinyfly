@@ -3,16 +3,12 @@ import { Timeline } from '../../engine/core/timeline'
 import {
   actCharacterTracks,
   characterPoseTracks,
-  gag,
-  gaitPose,
-  gaitStrideLength,
+  humanGag,
+  humanGaitPose,
+  humanGaitStrideLength,
   lipSyncOver,
-  mirrorHumanPose,
   mixPoses,
-  pose as stickPose,
-  stickToHuman,
   GAIT_CYCLE_MS,
-  REST_POSE,
   type ActingStyleName,
   type CharacterPose,
   type CharacterPoseKey,
@@ -33,8 +29,8 @@ import type { PropertyKeyframes } from './character-dance'
  * tracks. Turning acting off writes the plain poses back. Either way the
  * timeline holds ordinary keyframes, so it saves, exports and plays anywhere.
  *
- * Gags and gaits come from the stick figure, turned into character fields
- * with `stickToHuman` (as dances are).
+ * Gags and gaits are the human plan's own (`humanGag`, `humanGaitPose`),
+ * posed in the character's frame, so they read from any view.
  */
 
 /** A key pose with the whole pose resolved (every field). */
@@ -105,63 +101,20 @@ export function upsertKey(keys: KeyPose[], time: number, pose: CharacterPose): K
   return [...others, { time, pose }].sort((a, b) => a.time - b.time)
 }
 
-/**
- * The stick figure's change from `base`, laid over a character pose: the
- * fields a stick pose moves (as character fields) replace the character's,
- * the rest of the character (its view, outfit pose, hands) stays. Facing
- * left (`facing` -1), the change is mirrored.
- */
-function overlayStick(current: CharacterPose, stick: ReturnType<typeof stickPose>, facing: number, base = REST_POSE): CharacterPose {
-  let moved = stickToHuman(stick)
-  let rest = stickToHuman(base)
-  if (facing < 0) {
-    moved = mirrorHumanPose(moved)
-    rest = mirrorHumanPose(rest)
-  }
-  const out = { ...current }
-  for (const [field, value] of Object.entries(moved)) {
-    if (field === 'turn') continue
-    if (Math.abs(value - (rest[field] ?? 0)) > 1e-6) out[field] = value
-  }
-  return out
-}
-
 export interface GagOptions {
   /** Playhead, ms */
   start: number
-  /** The character's pose at the playhead */
+  /** The character's pose at the playhead (its view is kept) */
   pose: CharacterPose
-  /** -1 when it faces screen-left */
-  facing?: number
 }
 
 /**
- * A gag as character key poses from `start`, built on the character's pose:
- * the gag's moves replace the fields they move. Its keys after the first are
- * marked `act: false`: a gag's timing is already acted.
+ * A gag as character key poses from `start`, built on the character's pose
+ * in its own frame, so it reads the same from any view. Keys after the first
+ * are marked `act: false`: a gag's timing is already acted.
  */
 export function characterGagKeys(name: GagName, options: GagOptions): KeyPose[] {
-  const facing = (options.facing ?? 1) < 0 ? -1 : 1
-  // Act it in the character's view: side-on, a raised arm goes up, not toward the camera.
-  const base = stickPose({ turn: stickTurnOf(options.pose.turn ?? 0) })
-  return gag(name, { at: options.start, from: base }).map((key) => ({
-    time: Math.round(key.time),
-    pose: overlayStick(options.pose, key.pose as ReturnType<typeof stickPose>, facing, base),
-    ...(key.act === false ? { act: false } : {}),
-  }))
-}
-
-/**
- * How far a character view is from front-on, as the stick figure's `turn`
- * (0 front … 1 side): the character's 0–1 is front to side, 1–3 is side
- * through the back to the other side (the stick figure has no back view),
- * 3–4 the other side back to the front.
- */
-export function stickTurnOf(turn: number): number {
-  const quarter = ((turn % 4) + 4) % 4
-  if (quarter <= 1) return quarter
-  if (quarter >= 3) return 4 - quarter
-  return 1
+  return humanGag(name, { at: options.start, from: options.pose }).map((key) => ({ ...key, time: Math.round(key.time) }))
 }
 
 export interface WalkOptions {
@@ -181,19 +134,17 @@ export interface WalkOptions {
 
 /** Easing in and out of a walk, ms. */
 const WALK_RAMP = 250
-/** v2 legs are a little shorter than the stick figure's (thigh + shin as fractions of the height). */
-const LEG_RATIO = (0.215 + 0.205) / (0.24 + 0.22)
 
 /**
  * A walk in a gait as character keys (`act: false`: a cycle is already
  * timed) and an `x` track, from `start`. The character turns side-on to the
- * way it walks, eases into the stride and out of it, and its feet stay
- * planted. Its face and hands keep the pose it starts in.
+ * way it walks (the Side or Side (left) view) and walks forward in its own
+ * frame, easing into the stride and out of it, its feet planted. Its face and
+ * hands keep the pose it starts in.
  */
 export function characterWalk(gait: GaitName, options: WalkOptions): { keys: KeyPose[]; x: Keyframe[]; end: number } {
   const direction = options.distance < 0 ? -1 : 1
-  const stride = gaitStrideLength(gait, options.height) * LEG_RATIO
-  const cycles = Math.abs(options.distance) / stride
+  const cycles = Math.abs(options.distance) / humanGaitStrideLength(gait, options.height)
   const duration = Math.max(WALK_RAMP * 2, cycles * GAIT_CYCLE_MS[gait])
   const samples = Math.max(4, Math.ceil(cycles * (options.samplesPerCycle ?? 8)))
   const x0 = options.x ?? 0
@@ -204,9 +155,8 @@ export function characterWalk(gait: GaitName, options: WalkOptions): { keys: Key
     const along = i / samples
     const time = Math.round(options.start + along * duration)
     const elapsed = along * duration
-    const weight = Math.min(1, elapsed / WALK_RAMP, (duration - elapsed) / WALK_RAMP)
-    const walking = overlayStick(side, gaitPose(gait, along * cycles, stickPose({ turn: 1 })), direction, stickPose({ turn: 1 }))
-    keys.push({ time, pose: mixPoses(side, walking, Math.max(0, weight)), ...(i > 0 ? { act: false } : {}) })
+    const weight = Math.max(0, Math.min(1, elapsed / WALK_RAMP, (duration - elapsed) / WALK_RAMP))
+    keys.push({ time, pose: mixPoses(side, humanGaitPose(gait, along * cycles, side), weight), ...(i > 0 ? { act: false } : {}) })
     // Linear between samples: a steady pace keeps the planted foot still.
     x.push({ time, value: x0 + direction * Math.abs(options.distance) * along, easing: 'linear' })
   }

@@ -94,7 +94,7 @@ describe('gags keep the view, and a take’s arms go up in every view', () => {
       it(`${buildName}, ${viewName}: every gag`, () => {
         const facing = turn === 3 ? -1 : 1
         for (const name of Object.keys(GAGS) as GagName[]) {
-          const keys = characterGagKeys(name, { start: 0, pose: humanPose({ turn }), facing })
+          const keys = characterGagKeys(name, { start: 0, pose: humanPose({ turn }) })
           const expectedToes = turn === 0 ? 0 : facing
           for (const key of keys) {
             const joints = jointsOf(buildName, key.pose)
@@ -195,7 +195,7 @@ describe('every look, figure, outfit and hand style draws the action', () => {
     ;(globalThis as { Path2D?: unknown }).Path2D ??= Path2D
   })
 
-  const take = characterGagKeys('take', { start: 0, pose: humanPose({ turn: 1 }), facing: 1 })
+  const take = characterGagKeys('take', { start: 0, pose: humanPose({ turn: 1 }) })
   const apex = take.reduce((a, b) => ((b.pose.lift ?? 0) > (a.pose.lift ?? 0) ? b : a)).pose
   const stride = characterWalk('run', { start: 0, distance: -400, height: H, pose: humanPose() }).keys[6].pose
 
