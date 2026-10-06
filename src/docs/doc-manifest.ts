@@ -126,7 +126,7 @@ export const DOCS: DocEntry[] = [
   {
     id: 'acting',
     title: 'Cartoon Acting',
-    summary: 'actTracks(): the same key poses, acted: anticipation, overshoot and settle, overlapping joints, eyes that lead and blink, moving holds and jump squash, in full, snappy or limited styles; gags as data (take, double take, wind-up); speed lines, dust puffs and impact stars; drawing on twos.',
+    summary: 'actTracks(): the same key poses, acted: anticipation, overshoot and settle, overlapping joints, eyes that lead and blink, moving holds and jump squash, in full, snappy or limited styles; gags as data (take, double take, wind-up); a line of action (bend); gaits with personality; lip-sync from text (Latin and Devanagari); beat scripts compiled to acted tracks; camera shots (push in, cut, shake, follow); speed lines, dust puffs and impact stars; drawing on twos.',
     section: 'Guides',
   },
   {

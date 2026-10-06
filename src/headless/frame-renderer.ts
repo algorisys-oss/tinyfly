@@ -1,6 +1,6 @@
 import type { Timeline } from '../engine/core/timeline'
 import { deserializeTimeline } from '../engine/serialization'
-import { CanvasAdapter, applyBloom } from '../adapters/canvas'
+import { CanvasAdapter, applyBloom, applyCamera, cameraFromValues } from '../adapters/canvas'
 import type { DrawFunction, FrameInfo, VideoScene } from './video-scene'
 import { DEFAULT_FPS } from './video-scene'
 import { heldTime } from '../engine/core/clock'
@@ -93,16 +93,28 @@ export class FrameRenderer {
     const stateAt = timeline && ((at: number) => timeline.getStateAtTime(heldTime(at, drawingRate)))
     const frame: FrameInfo = { index, time, state, stateAt, width: this.scene.width, height: this.scene.height }
     const background = this.scene.background ?? '#ffffff'
-    if (typeof background === 'function') {
-      this.drawIsolated(ctx, background, frame)
-    } else if (background !== 'transparent') {
+    if (typeof background !== 'function' && background !== 'transparent') {
       ctx.fillStyle = background
       ctx.fillRect(0, 0, this.scene.width, this.scene.height)
     }
+    // Everything else is seen through the camera, when the scene has one.
+    const camera = this.scene.camera
+    if (camera) {
+      const id = camera === true ? 'Camera' : camera
+      applyCamera(ctx, cameraFromValues(state?.values.get(id)), this.scene)
+    }
+    if (typeof background === 'function') this.drawIsolated(ctx, background, frame)
     if (state) this.adapter.applyState(state)
     this.adapter.render(ctx)
     if (this.scene.draw) this.drawIsolated(ctx, this.scene.draw, frame)
     ctx.restore()
+    if (this.scene.overlay) {
+      // Screen space: the output scale, but not the camera.
+      ctx.save()
+      ctx.scale(this.scale, this.scale)
+      this.drawIsolated(ctx, this.scene.overlay, frame)
+      ctx.restore()
+    }
     if (this.scene.bloom) {
       // Over the finished frame, in output pixels: a radius in scene px grows with the scale.
       const options = this.scene.bloom === true ? {} : this.scene.bloom

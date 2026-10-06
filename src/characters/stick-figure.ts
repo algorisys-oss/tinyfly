@@ -6,6 +6,7 @@ import { taperedLine } from './look/tapered-line'
 import { rubberLimb } from './look/curves'
 import { drawCartoonHand } from './hands/draw-cartoon-hand'
 import { HAND_REST, mixHandPoses, type HandPose } from './hands/hand-rig'
+import { gaitPose } from './gaits'
 
 /**
  * A stick-figure rig: a pose is a handful of numbers, so poses blend, walk
@@ -21,6 +22,13 @@ import { HAND_REST, mixHandPoses, type HandPose } from './hands/hand-rig'
 export interface StickPose {
   /** Upper-body tilt about the hips, degrees (+ leans to the figure's right, +x) */
   lean: number
+  /**
+   * The line of action: the spine curved, degrees from hips to neck (+ curls
+   * forward the way `lean` tips, − arches back). Unlike `lean`, which tips a
+   * straight back, the curve spreads along the spine, and the chest, arms and
+   * head turn with its end: a slump, a recoil, a cheer arched back.
+   */
+  bend: number
   /** Head tilt, degrees */
   headTilt: number
   /** Upper arms: 0 hangs down, 90 is straight out, 180 straight up */
@@ -104,6 +112,7 @@ export interface StickPose {
 
 export const REST_POSE: StickPose = {
   lean: 0,
+  bend: 0,
   headTilt: 0,
   leftShoulder: 18,
   rightShoulder: 18,
@@ -685,8 +694,14 @@ interface Rig {
   toes: Record<StickSide, Point>
   /** Where each hand points to from its wrist: along the forearm, turned by the wrist */
   handTips: Record<StickSide, Point>
-  /** Hip to neck, as drawn: straight, or bowed when turned or seated */
+  /** Hip to neck, as drawn: straight, bowed when turned or seated, or curved by `bend` */
   spine: Point[]
+  /**
+   * Where the chest is carried by the line of action: the neck sits at the
+   * end of the curved spine and the upper body turns by `bend` (radians).
+   * Arms and head are placed in the unbent frame, then moved by {@link chestPoint}.
+   */
+  chest: { end: Point; bend: number }
 }
 
 function rigFigure(figure: StickPose, style: StickStyle): Rig {
@@ -743,10 +758,23 @@ function rigFigure(figure: StickPose, style: StickStyle): Rig {
   const hipY = -HIP * h * stretch + drop
   const neckY = -neck * h * stretch + drop
   const bow = classic ? 0 : (SPINE_BOW_TURNED * unit(figure.turn) + SPINE_BOW_SEATED * sit) * h * stretch
-  const spine =
-    bow === 0
-      ? [{ x: 0, y: hipY }, { x: 0, y: neckY }]
-      : rubberLimb({ x: 0, y: hipY }, { x: -bow, y: (hipY + neckY) / 2 }, { x: 0, y: neckY }, 1, 8)
+  const bend = rad(figure.bend ?? 0)
+  const chest = { end: spineArcPoint(hipY, neckY, bend, 1), bend }
+  let spine: Point[]
+  if (bend !== 0) {
+    // A circular arc from the hips, with any bow from turning or sitting on top of it.
+    spine = []
+    for (let i = 0; i <= SPINE_ARC_POINTS; i++) {
+      const along = i / SPINE_ARC_POINTS
+      const point = spineArcPoint(hipY, neckY, bend, along)
+      spine.push({ x: point.x - bow * Math.sin(Math.PI * along), y: point.y })
+    }
+  } else {
+    spine =
+      bow === 0
+        ? [{ x: 0, y: hipY }, { x: 0, y: neckY }]
+        : rubberLimb({ x: 0, y: hipY }, { x: -bow, y: (hipY + neckY) / 2 }, { x: 0, y: neckY }, 1, 8)
+  }
   const shoulderY = neckY + SHOULDER_DROP * h * stretch
   // Turning toward profile brings the shoulders together.
   const shoulderX = (style.shoulderWidth ?? 0) * h * Math.cos((turn * Math.PI) / 2)
@@ -800,12 +828,36 @@ function rigFigure(figure: StickPose, style: StickStyle): Rig {
       right: toe(1, legs.right, rightHip, rightKnee, ankles.right, outs.right),
     },
     spine,
+    chest,
     arms,
     handTips: {
       left: handTip(-1, arms.left, figure.leftShoulder, figure.leftElbow, figure.leftWrist ?? 0),
       right: handTip(1, arms.right, figure.rightShoulder, figure.rightElbow, figure.rightWrist ?? 0),
     },
   }
+}
+
+/** Points along a curved spine. */
+const SPINE_ARC_POINTS = 10
+
+/**
+ * A point `along` (0 hips … 1 neck) a spine from (0, hipY) to (0, neckY)
+ * curved by `bend` radians: a circular arc that leaves the hips straight up
+ * and turns toward +x as it rises, keeping its length.
+ */
+function spineArcPoint(hipY: number, neckY: number, bend: number, along: number): Point {
+  const length = hipY - neckY
+  const turned = bend * along
+  if (Math.abs(bend) < 1e-9) return { x: 0, y: hipY - length * along }
+  const radius = length / bend
+  return { x: radius * (1 - Math.cos(turned)), y: hipY - radius * Math.sin(turned) }
+}
+
+/** A point of the upper body (placed with a straight spine) carried to where the bent spine puts it. */
+function chestPoint(rig: Rig, p: Point): Point {
+  if (rig.chest.bend === 0) return p
+  const turned = rotateAbout(p, { x: 0, y: rig.neckY }, rig.chest.bend)
+  return { x: turned.x + rig.chest.end.x, y: turned.y + rig.chest.end.y - rig.neckY }
 }
 
 /** The points a limb is stroked through: its two bones, or a rubber-hose curve. */
@@ -880,17 +932,19 @@ function bodyJoints(rig: Rig, figure: StickPose): StickJoints {
   // The same transforms drawStickFigure applies to the context, done to points.
   const mirrored = (p: Point): Point => ({ x: rig.facing * p.x, y: p.y })
   const leaned = (p: Point): Point => mirrored(rotateAbout(p, hip, lean))
-  const inHead = (p: Point): Point => leaned(rotateAbout({ x: p.x, y: p.y + rig.neckY }, { x: 0, y: rig.neckY }, tilt))
+  // The chest, arms and head ride on the end of the (possibly bent) spine.
+  const upper = (p: Point): Point => leaned(chestPoint(rig, p))
+  const inHead = (p: Point): Point => upper(rotateAbout({ x: p.x, y: p.y + rig.neckY }, { x: 0, y: rig.neckY }, tilt))
 
-  const leftArm = limbPoints(rig.arms.left, rig.rubber).map(leaned)
-  const rightArm = limbPoints(rig.arms.right, rig.rubber).map(leaned)
+  const leftArm = limbPoints(rig.arms.left, rig.rubber).map(upper)
+  const rightArm = limbPoints(rig.arms.right, rig.rubber).map(upper)
   const angleOf = (from: Point, to: Point) => Math.atan2(to.y - from.y, to.x - from.x)
-  const fingertips = { left: leaned(rig.handTips.left), right: leaned(rig.handTips.right) }
+  const fingertips = { left: upper(rig.handTips.left), right: upper(rig.handTips.right) }
   // The forearm's direction where it meets the hand, turned as far as the wrist bends.
   const direction = (points: Point[], side: StickSide) => {
     const [from, to] = points.slice(-2)
     const wrist = rig.arms[side]
-    const bend = angleOf(leaned(wrist.end), fingertips[side]) - angleOf(leaned(wrist.joint), leaned(wrist.end))
+    const bend = angleOf(upper(wrist.end), fingertips[side]) - angleOf(upper(wrist.joint), upper(wrist.end))
     return angleOf(from, to) + bend
   }
 
@@ -917,10 +971,10 @@ function bodyJoints(rig: Rig, figure: StickPose): StickJoints {
     stretch: rig.stretch,
     lineWidth: rig.lineWidth,
     hip,
-    neck: leaned({ x: 0, y: rig.neckY }),
-    shoulders: { left: leaned(rig.arms.left.root), right: leaned(rig.arms.right.root) },
-    elbows: { left: leaned(rig.arms.left.joint), right: leaned(rig.arms.right.joint) },
-    hands: { left: leaned(rig.arms.left.end), right: leaned(rig.arms.right.end) },
+    neck: upper({ x: 0, y: rig.neckY }),
+    shoulders: { left: upper(rig.arms.left.root), right: upper(rig.arms.right.root) },
+    elbows: { left: upper(rig.arms.left.joint), right: upper(rig.arms.right.joint) },
+    hands: { left: upper(rig.arms.left.end), right: upper(rig.arms.right.end) },
     knees: { left: mirrored(rig.legs.left.joint), right: mirrored(rig.legs.right.joint) },
     feet,
     toes,
@@ -940,7 +994,7 @@ function bodyJoints(rig: Rig, figure: StickPose): StickJoints {
       rx: rig.headRx,
       ry: rig.headRy,
       // Mirroring a turn reverses it.
-      angle: rig.facing * (lean + tilt),
+      angle: rig.facing * (lean + rig.chest.bend + tilt),
       eyeY: EYE_Y,
       browTopY,
       mouthY: MOUTH_Y,
@@ -1036,6 +1090,14 @@ export function drawStickFigure(
     ctx.rotate(rad(rig.lean))
     ctx.translate(0, -rig.hipY)
   }
+  /** Lean, then carry the chest to the end of the bent spine (see chestPoint). */
+  const upper = () => {
+    lean()
+    if (rig.chest.bend === 0) return
+    ctx.translate(rig.chest.end.x, rig.chest.end.y)
+    ctx.rotate(rig.chest.bend)
+    ctx.translate(0, -rig.neckY)
+  }
   /**
    * A line through `points`: a pencil stroke when sketched, an even stroke in
    * the classic look, otherwise a filled shape tapering between `widths`
@@ -1105,7 +1167,7 @@ export function drawStickFigure(
   /** An arm, its hand, then its sleeve hook. */
   const drawArm = (side: StickSide) => {
     isolated(() => {
-      lean()
+      upper()
       drawLimb(rig.arms[side], ARM_WIDTH)
       drawHand(side)
     })
@@ -1127,6 +1189,9 @@ export function drawStickFigure(
   isolated(() => {
     lean()
     line(rig.spine, rig.spine.length > 2, TORSO_WIDTH)
+  })
+  isolated(() => {
+    upper()
     const { left, right } = { left: rig.arms.left.root, right: rig.arms.right.root }
     if (left.x !== right.x) {
       if (rig.classic) line([left, right], false, [1, 1])
@@ -1144,7 +1209,7 @@ export function drawStickFigure(
 
   // Head and face, tilted about the neck.
   isolated(() => {
-    lean()
+    upper()
     ctx.translate(0, rig.neckY)
     ctx.rotate(rad(figure.headTilt))
     const cy = -rig.headRy
@@ -1190,10 +1255,18 @@ export interface StickFigureProps extends StickPose {
   walk: number
   /** How much of the walk cycle is applied, 0..1 (0 standing) */
   walking: number
+  /** How it walks: a `GAITS` name (default `walk`); a string track switches it */
+  gait?: string
   /** How much the mouth chatters, 0..1 */
   talk: number
   /** Limbs from jointed (0) to rubber hose (1); starts at the style's `rubber` */
   rubber: number
+  /**
+   * Which way it faces: 1 screen-right, -1 screen-left (the sign counts);
+   * starts at the style's `facing`. Key it a step (two keys a millisecond
+   * apart) while `turn` is near 0, so the flip does not show.
+   */
+  facing?: number
   /** Beats into the target's dance (animate it 0 → n at the tempo); see `danceTracks` */
   beat?: number
   /** How much of the dance is applied, 0..1 (0 standing) */
@@ -1216,7 +1289,7 @@ export type Dancer = (beat: number) => DanceFrame
  */
 export function resolveStickFrame(props: StickFigureProps, time: number, dance?: Dancer): DanceFrame {
   const standing: StickPose = { ...props }
-  let figure = props.walking > 0 ? blendPose(standing, walkPose(props.walk, standing), props.walking) : standing
+  let figure = props.walking > 0 ? blendPose(standing, gaitPose(props.gait, props.walk, standing), props.walking) : standing
   // The target's own hands (its `hand.*` props), which a dance blends away from.
   let hands = handsFromProps(props as unknown as Record<string, unknown>)
   const dancing = props.dancing ?? 0
@@ -1236,6 +1309,9 @@ export function resolveStickFrame(props: StickFigureProps, time: number, dance?:
 export function resolveStickPose(props: StickFigureProps, time: number, dance?: Dancer): StickPose {
   return resolveStickFrame(props, time, dance).pose
 }
+
+/** A target's facing: its `facing` prop's sign, else its style's. */
+const facingOf = (props: StickFigureProps, style: StickStyle): 1 | -1 => ((props.facing ?? style.facing ?? 1) < 0 ? -1 : 1)
 
 /** Prop names for a hand's pose fields on a stick-figure target: `hand.left.index.curl`, … */
 export const handProp = (side: StickSide, field: string) => `hand.${side}.${field}`
@@ -1289,7 +1365,7 @@ export function stickFigureTarget(options: StickFigureTargetOptions): StickFigur
   const style = options.style ?? {}
   const height = style.height ?? 300
   const width = height * 0.8
-  const props: StickFigureProps = { ...pose(options.pose ?? {}), walk: 0, walking: 0, talk: 0, rubber: style.rubber ?? 0, beat: 0, dancing: 0 }
+  const props: StickFigureProps = { ...pose(options.pose ?? {}), walk: 0, walking: 0, gait: 'walk', facing: (style.facing ?? 1) < 0 ? -1 : 1, talk: 0, rubber: style.rubber ?? 0, beat: 0, dancing: 0 }
   // With cartoon hands, every hand pose field is a prop too (`hand.left.index.curl`…), so tracks pose the fingers.
   const handProps: Record<string, number> = {}
   if (style.hands) {
@@ -1311,7 +1387,7 @@ export function stickFigureTarget(options: StickFigureTargetOptions): StickFigur
       const values = target.props as unknown as StickFigureProps
       const frame = resolveStickFrame(values, time, options.dance)
       ctx.translate(width / 2, height)
-      drawStickFigure(ctx, frame.pose, withDanceHands({ ...style, rubber: values.rubber }, frame.hands), time)
+      drawStickFigure(ctx, frame.pose, withDanceHands({ ...style, rubber: values.rubber, facing: facingOf(values, style) }, frame.hands), time)
     },
   }
 }
@@ -1337,13 +1413,14 @@ export function stickFigureAt(
   let dx = 0
   let dy = 0
   for (const [property, value] of frame.state?.values.get(id) ?? []) {
+    if (property === 'gait' && typeof value === 'string') props.gait = value
     if (typeof value !== 'number') continue
     if (property === 'x' || property === 'motionPathX') dx = value
     else if (property === 'y' || property === 'motionPathY') dy = value
-    else if (property in props) props[property as keyof StickFigureProps] = value
+    else if (property in props) (props as unknown as Record<string, number>)[property] = value
   }
   const figure = resolveStickPose(props, frame.time, (target as Partial<StickFigureTarget>).figureDance)
-  const joints = stickFigureJoints(figure, { ...style, rubber: props.rubber })
+  const joints = stickFigureJoints(figure, { ...style, rubber: props.rubber, facing: facingOf(props, style) })
   return { pose: figure, joints: jointsToScene(joints, target.x + dx + target.width / 2, target.y + dy + target.height) }
 }
 

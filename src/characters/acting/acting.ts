@@ -214,8 +214,7 @@ export function actKeyframes(keys: ActingKey[], rig: ActingRig, options: ActingO
   const out: Record<string, Keyframe<number>[]> = {}
   if (keys.length === 0) return out
   const fields = Object.keys(keys[0].pose).filter((field) => keys.some((key) => Math.abs(key.pose[field] - keys[0].pose[field]) > VALUE_EPSILON))
-  const shortestGap = Math.min(Infinity, ...keys.slice(1).map((key, index) => key.time - keys[index].time))
-  for (const field of fields) out[field] = actField(field, keys, rig, style, seed, shortestGap)
+  for (const field of fields) out[field] = actField(field, keys, rig, style, seed)
 
   const blink = rig.blink
   const authoredBlink = blink !== undefined && fields.includes(blink)
@@ -233,14 +232,16 @@ export function actKeyframes(keys: ActingKey[], rig: ActingRig, options: ActingO
 }
 
 /** One field's keyframes. */
-function actField(field: string, keys: ActingKey[], rig: ActingRig, style: ActingStyle, seed: number, shortestGap: number): Keyframe<number>[] {
+function actField(field: string, keys: ActingKey[], rig: ActingRig, style: ActingStyle, seed: number): Keyframe<number>[] {
   const isEye = rig.eyes.includes(field)
   const limit = rig.limits[field]
   const physical = limit !== undefined
-  // A quarter of the shortest gap at most, so shifted keys never pass each other.
-  const maxShift = Number.isFinite(shortestGap) ? shortestGap / 4 : 0
   const wanted = isEye ? -style.eyeLead : (rig.depth[field] ?? 1) * style.overlap
-  const shift = Math.max(-maxShift, Math.min(maxShift, wanted))
+  // Each move's delay is at most half the time between its keys, so a quick move still lands near its key.
+  const shiftInto = (i: number) => {
+    const half = (keys[i].time - keys[i - 1].time) / 2
+    return Math.max(-half, Math.min(half, wanted))
+  }
 
   const frames: Keyframe<number>[] = [{ time: keys[0].time, value: keys[0].pose[field] }]
   const push = (time: number, value: number, easing?: EasingType) => {
@@ -266,7 +267,7 @@ function actField(field: string, keys: ActingKey[], rig: ActingRig, style: Actin
     if (Math.abs(change) <= VALUE_EPSILON) {
       // A hold: drift a little if it is long, then wait for the next move.
       // The last key is where the figure comes to rest, so it ends on its pose.
-      const holdEnd = key.time + (acted ? shift : 0)
+      const holdEnd = key.time + (acted ? shiftInto(i) : 0)
       if (i === keys.length - 1) {
         if (Math.abs(current - to) > VALUE_EPSILON) push(Math.max(holdEnd, lastTime + MIN_ANTICIPATED_MOVE), to, 'ease-in-out')
         current = to
@@ -286,6 +287,7 @@ function actField(field: string, keys: ActingKey[], rig: ActingRig, style: Actin
       continue
     }
 
+    const shift = shiftInto(i)
     const begin = Math.max(keys[i - 1].time + shift, lastTime)
     let end = key.time + shift
     if (isEye && style.eyeDart > 0) end = Math.min(end, begin + style.eyeDart)

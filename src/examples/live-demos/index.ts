@@ -17,6 +17,7 @@ import { canvasObjectTween } from './canvas-object-tween'
 import { narratedScene } from './narrated-scene'
 import { stickFigure } from './stick-figure'
 import { pencilSketch } from './pencil-sketch'
+import { cartoonActing } from './cartoon-acting'
 import { dressedFigures } from './dressed-figures'
 import { danceFloor } from './dance-floor'
 import { mapRoute } from './map-route'
@@ -69,6 +70,7 @@ import canvasObjectTweenSource from './canvas-object-tween.js?raw'
 import narratedSceneSource from './narrated-scene.js?raw'
 import stickFigureSource from './stick-figure.js?raw'
 import pencilSketchSource from './pencil-sketch.js?raw'
+import cartoonActingSource from './cartoon-acting.js?raw'
 import dressedFiguresSource from './dressed-figures.js?raw'
 import danceFloorSource from './dance-floor.js?raw'
 import mapRouteSource from './map-route.js?raw'
@@ -178,6 +180,7 @@ export const liveDemos: LiveDemoWithCode[] = [
   withCode(narratedScene, narratedSceneSource),
   withCode(stickFigure, stickFigureSource),
   withCode(pencilSketch, pencilSketchSource),
+  withCode(cartoonActing, cartoonActingSource),
   withCode(dressedFigures, dressedFiguresSource),
   withCode(danceFloor, danceFloorSource),
   withCode(mapRoute, mapRouteSource),

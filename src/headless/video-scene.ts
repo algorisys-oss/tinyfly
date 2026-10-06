@@ -28,6 +28,15 @@ export interface VideoScene {
    * so camera moves drawn there can stay smooth. Default: every frame.
    */
   drawingRate?: number
+  /**
+   * See the scene through a camera: `true` reads the tracks of the target
+   * named `Camera` (or name another): `x`, `y` pan, `scale` zooms and `rotate`
+   * rolls about the stage centre, and `shakeX`, `shakeY`, `shakeRotate` add a
+   * shake on top. `cameraTracks()` writes them from shots. The background,
+   * the targets and `draw` are all seen through it; a colour background fills
+   * the whole frame.
+   */
+  camera?: boolean | string
   /** Length in ms (default: the timeline's duration) */
   duration?: number
   /** Animation data; its markers drive stills and captions */
@@ -41,6 +50,11 @@ export interface VideoScene {
   background?: string | DrawFunction
   /** Immediate-mode drawing, called every frame after the targets */
   draw?: DrawFunction
+  /**
+   * Drawn last, in screen space: not seen through the `camera` (captions,
+   * titles, a frame border). Without a camera it is the same as `draw`.
+   */
+  overlay?: DrawFunction
   /**
    * Glow around what is bright, added over each finished frame: `true` for
    * the defaults, or options (threshold, strength, radius in scene px…).

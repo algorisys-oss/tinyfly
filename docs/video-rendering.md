@@ -633,6 +633,21 @@ beads where segments overlap and no seams between them. `ribbon(points)` and
 `line` and `trail` objects, sorted by depth among the meshes (see
 [3D Scenes](scene-3d.md#lines-and-trails)).
 
+## Camera, overlay and drawing on twos
+
+- `camera: true` sees the scene through the tracks of the `Camera` target:
+  `x`/`y` pan, `scale` zooms, `rotate` rolls, and `shakeX`/`shakeY`/`shakeRotate`
+  shake on top. `cameraTracks()` writes them from shots (push in, cut, shake,
+  follow). The background, targets and `draw` are filmed; a colour background
+  fills the frame.
+- `overlay(ctx, frame)` draws last, in screen space: captions and titles that
+  stay put while the camera moves.
+- `drawingRate: 12` holds the timeline's poses for two frames of 24 fps ("on
+  twos"), as hand-drawn animation is timed.
+
+See [acting.md](acting.md) for camera shots, beat scripts and the rest of the
+cartoon acting tools.
+
 ## Captions
 
 `toSRT(cues)` and `toWebVTT(cues)` (in `@algorisys/tinyfly/export` and

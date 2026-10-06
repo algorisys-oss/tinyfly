@@ -132,6 +132,44 @@ describe('FrameRenderer', () => {
     expect(earlier).toBe(4)
   })
 
+  it('sees the scene through a camera', () => {
+    const camera = { ...scene(), camera: true, background: '#000000', draw: undefined }
+    camera.timeline = {
+      ...timeline,
+      tracks: [...timeline.tracks, { id: 'pan', target: 'Camera', property: 'x', keyframes: [{ time: 0, value: 0 }, { time: 1000, value: 30 }] }],
+    }
+    const renderer = new FrameRenderer(camera)
+    const ctx = createCanvas(80, 40).getContext('2d') as unknown as CanvasRenderingContext2D
+    renderer.render(ctx, 0)
+    expect(pixel(ctx, 5, 5)).toEqual([255, 0, 0])
+    // Panned 30 px right: the box (0..10 wide, moving to x 60) is seen 30 px over.
+    renderer.render(ctx, 1000)
+    expect(pixel(ctx, 5, 5)).toEqual([0, 0, 0])
+    expect(pixel(ctx, 79, 5)).toEqual([0, 0, 0])
+    renderer.render(ctx, 500)
+    expect(pixel(ctx, 30 + 15 + 5, 5)).toEqual([255, 0, 0])
+  })
+
+  it('draws the overlay in screen space, not through the camera', () => {
+    const overlaid = {
+      ...scene(),
+      camera: true,
+      background: '#000000',
+      draw: undefined,
+      overlay: (ctx: CanvasRenderingContext2D) => {
+        ctx.fillStyle = '#ffffff'
+        ctx.fillRect(0, 0, 4, 4)
+      },
+    }
+    overlaid.timeline = { ...timeline, tracks: [{ id: 'pan', target: 'Camera', property: 'x', keyframes: [{ time: 0, value: 40 }] }] }
+    const renderer = new FrameRenderer(overlaid, { scale: 0.5 })
+    const ctx = createCanvas(40, 20).getContext('2d') as unknown as CanvasRenderingContext2D
+    renderer.render(ctx, 0)
+    // The overlay's corner square stays in the corner (scaled with the output); the box is panned away.
+    expect(pixel(ctx, 1, 1)).toEqual([255, 255, 255])
+    expect(pixel(ctx, 3, 3)).toEqual([0, 0, 0])
+  })
+
   it('scales the output', () => {
     const renderer = new FrameRenderer(scene(), { scale: 0.5 })
     expect([renderer.width, renderer.height]).toEqual([40, 20])

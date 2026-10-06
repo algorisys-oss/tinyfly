@@ -2420,15 +2420,30 @@ poses (docs/acting.md).
 - [x] Drawing on twos: `VideoScene.drawingRate`, `heldTime()`
 - [x] Example `examples/headless-video/cartoon-acting.mjs` (before/after)
 
-### 36B — Next
-- [ ] Line of action: a bendable spine from one value (v2 chains)
-- [ ] Gaits with personality: bouncy, sneak/tiptoe, double-bounce, wind-up run (legs wheel, then zip)
-- [ ] Follow-through on hair, tails, ears (character-system milestones 3 and 5)
-- [ ] Lip-sync: visemes from narration timing
-- [ ] Beat scripts: `{ who, do, at, mood }` beats compiled to acted keys (also for the AI generator)
-- [ ] Camera acting: shake on impact, push in on a take, follow with lag
-- [ ] Re-time the Hindi pencil story with `actTracks()`
+### 36B — Story tools (done)
+- [x] Line of action: `bend` pose field curves the stick figure's spine (circular arc), chest, arms
+      and head ride on its end; acted (depth 0), used by the gags; `stickToHuman` maps it to lean +
+      head tilt
+- [x] Gaits as data: `GAITS` walk, bouncy, doubleBounce, sneak, strut, tired, run; `gaitPose()`,
+      `gaitStrideLength()`; the figure target's `gait` prop (a string track switches it) and an
+      animatable `facing` prop
+- [x] Lip-sync from text: `soundsOf()`, `VISEMES`, `lipSyncKeyframes()`, `lipSyncTracks()`,
+      `lipSyncOver()` (over acted tracks); Latin and Devanagari
+- [x] Beat scripts: `scriptTracks(target, beats)`: gaits with `to` (turning round as needed), poses,
+      gags, look/face, say (lip-sync + talking head), hold; returns tracks, lines, beat spans
+- [x] Camera: `applyCamera`, `cameraFromValues`, `cameraPoint` (canvas); `VideoScene.camera` and
+      screen-space `overlay`; `cameraTracks()` shots: frame (push/cut), shake, follow with lag
+- [x] Acting pass: overlap capped per move (half its gap), not by the shortest gap in the scene
+- [x] The Hindi pencil story re-timed: acted keys, take and double take, tired and bouncy walks, a
+      lip-synced line, camera pushes with the hand mapped through the camera
+- [x] Example `examples/headless-video/beat-script.mjs`; gallery card **Cartoon Acting**
+
+### 36C — Next
 - [ ] Editor: an acting style on the Character element; gags from a picker; `drawingRate` in the player
+- [ ] Line of action, gaits and lip-sync on the v2 characters
+- [ ] Follow-through on hair, tails, ears (character-system milestones 3 and 5)
+- [ ] Wind-up run gag (legs wheel in place, then zip off with a dust cloud)
+- [ ] AI generator emits beat scripts
 
 ---
 

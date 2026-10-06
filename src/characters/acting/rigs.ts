@@ -9,7 +9,7 @@ import { HUMAN_REST } from '../species/human'
 /** The v1 stick figure (`StickPose`). */
 export const STICK_ACTING_RIG: ActingRig = {
   depth: {
-    lean: 0, rise: 0, sit: 0, spin: 0, stretch: 0, turn: 0, leftHip: 0, rightHip: 0,
+    lean: 0, bend: 0, rise: 0, sit: 0, spin: 0, stretch: 0, turn: 0, leftHip: 0, rightHip: 0,
     headTilt: 1, leftShoulder: 1, rightShoulder: 1, leftKnee: 1, rightKnee: 1,
     leftBrow: 1, rightBrow: 1, browTilt: 1, leftEye: 1, rightEye: 1,
     leftElbow: 2, rightElbow: 2, leftAnkle: 2, rightAnkle: 2, leftFootOut: 2, rightFootOut: 2,
@@ -17,7 +17,7 @@ export const STICK_ACTING_RIG: ActingRig = {
     leftWrist: 3, rightWrist: 3,
   },
   limits: {
-    lean: 10, headTilt: 12, spin: 25, turn: 0.06, sit: 0.06, stretch: 0.08, rise: 0,
+    lean: 10, bend: 10, headTilt: 12, spin: 25, turn: 0.06, sit: 0.06, stretch: 0.08, rise: 0,
     leftShoulder: 20, rightShoulder: 20, leftElbow: 18, rightElbow: 18, leftWrist: 15, rightWrist: 15,
     leftHip: 12, rightHip: 12, leftKnee: 15, rightKnee: 15, leftAnkle: 10, rightAnkle: 10,
     leftBrow: 0.25, rightBrow: 0.25, leftEye: 0.15, rightEye: 0.15,
@@ -25,7 +25,7 @@ export const STICK_ACTING_RIG: ActingRig = {
   eyes: ['lookX', 'lookY'],
   blink: 'blink',
   headTurns: { turn: 0.15, headTilt: 8, lookX: 0.5, spin: 45 },
-  drift: ['lean', 'headTilt', 'leftShoulder', 'rightShoulder', 'leftElbow', 'rightElbow'],
+  drift: ['lean', 'bend', 'headTilt', 'leftShoulder', 'rightShoulder', 'leftElbow', 'rightElbow'],
   lift: 'rise',
   stretch: 'stretch',
 }

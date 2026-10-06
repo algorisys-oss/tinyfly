@@ -6,6 +6,7 @@
  */
 export * from './stick-figure'
 export * from './dance'
+export * from './gaits'
 export * from './acrobatics'
 export { stickToHuman } from './stick-to-human'
 export { skeletonInView, solvePlanSpace, stagePlanSpace, type ViewProjection, type PlanSpace, type StagedSpace } from './rig/skeleton'

@@ -66,10 +66,13 @@ export function stickToHuman(stick: StickPose, hands?: DanceFrame['hands']): Pos
   }
 
   // The upper body: screen-right is the character's left front-on, forward in profile.
-  out.lean = stick.lean * t
-  out.side = stick.lean * front
-  out['head.tilt'] = stick.headTilt * front
-  out['head.nod'] = stick.headTilt * t
+  // The v2 spine is two straight bones, so a curved line of action (`bend`)
+  // becomes about half its angle of lean, the rest carried by the head.
+  const bend = stick.bend ?? 0
+  out.lean = (stick.lean + bend * 0.5) * t
+  out.side = (stick.lean + bend * 0.5) * front
+  out['head.tilt'] = (stick.headTilt + bend * 0.5) * front
+  out['head.nod'] = (stick.headTilt + bend * 0.5) * t
 
   for (const field of ['mouth', 'smile', 'mouthWidth', 'blink', 'browTilt', 'lookX', 'lookY', 'stretch'] as const) out[field] = stick[field]
   out.lift = stick.rise ?? 0

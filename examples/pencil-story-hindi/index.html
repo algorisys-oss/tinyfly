@@ -33,8 +33,8 @@
   </div>
   <div class="gloss" aria-live="polite"></div>
 
-  <!-- tinyfly v0.79.0 from jsDelivr; falls back to the repo's local build (npm run build:browser) when offline. -->
-  <script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.79.0/cdn/tinyfly.iife.js"
+  <!-- tinyfly v0.90.0 from jsDelivr; falls back to the repo's local build (npm run build:browser) when offline. -->
+  <script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.90.0/cdn/tinyfly.iife.js"
     onerror="document.write('<script src=\'../../lib/browser/tinyfly.iife.js\'><\/script>')"></script>
   <script>
   /**
@@ -44,7 +44,12 @@
    * Everything on the canvas is drawn from one number, the time in ms, so any
    * frame can be scrubbed to and the same time always draws the same picture.
    * - Movement (walking across, the water level) is a JSON timeline.
-   * - Acting is a list of poses at times, blended in between.
+   * - Acting is key poses through actTracks(): the traveller winds up,
+   *   overshoots, overlaps and blinks; a take when he sees the pot, a double
+   *   take when it vanishes; a tired walk in the heat, a bouncy one to the
+   *   water; his exclamation is lip-synced.
+   * - The camera pushes in on the big moments (cameraTracks); the animator's
+   *   hand and the narration stay on the page.
    * - Each drawn-on stroke is a "beat": how far it has got, 0..1.
    * - The pencil, the hand, the eraser and the figure all come from tinyfly.
    */
@@ -76,10 +81,7 @@
   // ── Movement as plain JSON keyframes ────────────────────────────────────
   const POUR = { start: 15800, each: 1300, count: 4 }
   const pourAt = (i) => POUR.start + i * POUR.each
-  const timeline = tinyfly.deserializeTimeline({
-    id: 'pyasa-rahgir',
-    config: { duration: LOOP },
-    tracks: [
+  const movement = [
       { id: 'walker-x', target: 'walker', property: 'x', keyframes: [
         { time: 0, value: -90 },
         { time: 2900, value: -90 },
@@ -99,9 +101,7 @@
         { time: 23000, value: 0.66, easing: 'ease-in-out' },
         { time: LOOP, value: 0.66 },
       ] },
-    ],
-  })
-  const valueAt = (t, target, property) => timeline.getStateAtTime(t).values.get(target)?.get(property) ?? 0
+  ]
 
   // ── Beats: how far each drawn-on (or rubbed-out) stroke has got ─────────
   // One stroke at a time, so a single hand can draw them all.
@@ -165,67 +165,123 @@
 
   const pebbleSpots = [400, 422, 446, 468].map((x, i) => ({ x, y: GROUND - 7, r: 6 + (i % 2) }))
 
-  // ── Acting: poses at times, blended in between ──────────────────────────
+  // ── Acting: key poses, acted by tinyfly ─────────────────────────────────
+  // The keys say what he does and when; actTracks() adds the wind-ups,
+  // overshoot, overlapping joints, blinks and eye darts in between.
   const P = (changes, face) => tinyfly.withExpression(tinyfly.pose(changes), face ?? {})
   const E = tinyfly.EXPRESSIONS
-  const tired = P({ turn: 0.5, headTilt: -6 }, { ...E.sad, lookY: 0.2 })
-  const peek = P({ turn: 0.6, lean: 16, rightShoulder: 40, rightElbow: 30 }, { ...E.sad, lookX: 1, lookY: 1 })
+  const tired = P({ turn: 0.5, headTilt: -6, bend: 10 }, { ...E.sad, lookY: 0.2 })
+  const peek = P({ turn: 0.6, lean: 16, bend: 12, rightShoulder: 40, rightElbow: 30 }, { ...E.sad, lookX: 1, lookY: 1 })
   const think = P({ ...tinyfly.POSES.think, turn: 0.2 }, E.thinking)
-  const idea = P({ turn: 0.2, rightShoulder: 150, rightElbow: 10, leftShoulder: 20 }, { ...E.joyful, leftEye: 1.3, rightEye: 1.3 })
-  const reach = P({ turn: 0.6, stretch: 0.8, lean: -14, leftShoulder: -10, rightShoulder: -40, rightElbow: -20, leftHip: 20, rightHip: 20 }, { ...E.happy, lookX: -1, lookY: 1 })
-  const toss = P({ turn: 0.6, lean: 6, rightShoulder: 125, rightElbow: 15 }, { ...E.happy, lookX: 1, lookY: 0.3 })
-  const drink = P({ turn: 0.7, lean: 24, headTilt: 10, rightShoulder: 70, rightElbow: 50, leftShoulder: 60, leftElbow: -60 }, { ...E.happy, leftEye: 0, rightEye: 0, smile: 1 })
+  const idea = P({ turn: 0.2, bend: -10, rightShoulder: 150, rightElbow: 10, leftShoulder: 20 }, { ...E.joyful, leftEye: 1.3, rightEye: 1.3 })
+  const ready = P({ turn: 0.4 }, { ...E.happy, lookX: -1, lookY: 0.6 })
+  const reach = P({ turn: 0.6, stretch: 0.8, lean: -14, bend: 12, leftShoulder: -10, rightShoulder: -40, rightElbow: -20, leftHip: 20, rightHip: 20 }, { ...E.happy, lookX: -1, lookY: 1 })
+  const toss = P({ turn: 0.6, lean: 6, bend: -8, rightShoulder: 125, rightElbow: 15 }, { ...E.happy, lookX: 1, lookY: 0.3 })
+  const watch = P({ turn: 0.5 }, { ...E.happy, lookX: 1, lookY: 0.5 })
+  const drink = P({ turn: 0.7, lean: 24, bend: 10, headTilt: 10, rightShoulder: 70, rightElbow: 50, leftShoulder: 60, leftElbow: -60 }, { ...E.happy, leftEye: 0, rightEye: 0, smile: 1 })
+  const cheer = P({ ...tinyfly.POSES.cheer, turn: 0.2, bend: -8 })
   const shocked = P({ ...tinyfly.POSES.surprised, turn: 0.3 }, { ...E.shocked, lookX: 1, lookY: 0.4 })
   const toViewer = P({ ...tinyfly.POSES.shrug, turn: 0 }, { ...E.confused, lookX: 0, lookY: 0 })
-  const content = P({ ...tinyfly.POSES.handsOnHips, turn: 0 }, E.happy)
+  const content = P({ ...tinyfly.POSES.handsOnHips, turn: 0, bend: -4 }, E.happy)
 
-  const acting = [
-    [0, tired], [6500, tired],
-    [6900, P({ ...tinyfly.POSES.surprised, turn: 0.4 }, { ...E.surprised, lookX: 1 })],
-    [8300, P({ ...tinyfly.POSES.surprised, turn: 0.4 }, { ...E.joyful })],
-    [8700, P({ turn: 0.5 }, E.happy)], [10600, P({ turn: 0.5 }, E.happy)],
-    [11000, peek], [12400, peek],
-    [12900, think], [13500, think], [13800, idea], [14500, idea],
-    [14900, P({ turn: 0.4 }, { ...E.happy, lookX: -1, lookY: 0.6 })], [15800, P({ turn: 0.4 }, { ...E.happy, lookX: -1, lookY: 0.6 })],
-    // The four throws are acted separately (see throwPose).
-    [21000, P({ turn: 0.6 }, E.happy)], [21500, drink], [23000, drink],
-    [23400, P({ ...tinyfly.POSES.cheer, turn: 0.2 })], [24400, P({ ...tinyfly.POSES.cheer, turn: 0.2 })],
-    [24800, shocked], [26200, shocked],
-    [26700, toViewer], [28000, toViewer], [28500, content], [LOOP, content],
+  const TAKE_AT = 6600
+  const DOUBLE_TAKE_AT = 24400
+  /** His one line, said as the eraser rubs the pot out. */
+  const SHOUT = { text: 'अरे! मेरा घड़ा कहाँ गया?!', start: 25200, end: 26500 }
+
+  const keys = [
+    { time: 0, pose: tired },
+    { time: 6500, pose: tired },
+    // He sees the pot: a take (squash, shoot up, hang, land).
+    ...tinyfly.gag('take', { at: TAKE_AT, from: tired }),
+    { time: 8300, pose: P({ ...tinyfly.POSES.surprised, turn: 0.4 }, E.joyful) },
+    { time: 8700, pose: P({ turn: 0.5 }, E.happy) },
+    { time: 10600, pose: P({ turn: 0.5 }, E.happy) },
+    { time: 11000, pose: peek },
+    { time: 12400, pose: peek },
+    { time: 12900, pose: think },
+    { time: 13500, pose: think },
+    { time: 13800, pose: idea },
+    { time: 14500, pose: idea },
+    { time: 14900, pose: ready },
+    // Four throws: pick up (a crouch), wind up, toss, watch it land.
+    ...[0, 1, 2, 3].flatMap((i) => [
+      { time: pourAt(i), pose: ready },
+      { time: pourAt(i) + POUR.each * 0.3, pose: reach },
+      { time: pourAt(i) + POUR.each * 0.5, pose: toss },
+      { time: pourAt(i) + POUR.each * 0.95, pose: watch },
+    ]),
+    { time: 21000, pose: P({ turn: 0.6 }, E.happy) },
+    { time: 21500, pose: drink },
+    { time: 23000, pose: drink },
+    { time: 23400, pose: cheer },
+    { time: 24300, pose: cheer },
+    // The pot is going: glance, look away, snap back.
+    ...tinyfly.gag('doubleTake', { at: DOUBLE_TAKE_AT, from: cheer }),
+    { time: 26200, pose: shocked },
+    { time: 26700, pose: toViewer },
+    { time: 28000, pose: toViewer },
+    { time: 28500, pose: content },
+    { time: LOOP, pose: content },
   ]
+  /** Fields no key changes keep the first key's value. */
+  const BASE = tinyfly.resolvePoseKeys(keys)[0]
+  const acting = tinyfly.lipSyncOver('walker', tinyfly.actTracks('walker', keys, { style: 'snappy' }), [SHOUT])
+
+  // ── The camera: push in on the big moments, then back out ───────────────
+  const camera = tinyfly.cameraTracks([
+    { at: TAKE_AT + 200, duration: 450, frame: { focus: { x: 460, y: 330 }, scale: 1.18 } },
+    { at: TAKE_AT + 900, duration: 380, shake: { strength: 6, seed: 7 } },
+    { at: 8500, duration: 700, frame: {} },
+    // Close on his head for the idea, keeping the ground above the narration.
+    { at: 12700, duration: 600, frame: { focus: { x: 500, y: 300 }, scale: 1.3 } },
+    { at: 14500, duration: 600, frame: {} },
+    { at: 21200, duration: 700, frame: { focus: { x: 560, y: 330 }, scale: 1.15 } },
+    { at: 23300, duration: 500, frame: {} },
+    // A crash zoom on the double take's snap back.
+    { at: DOUBLE_TAKE_AT + 1180, duration: 120, frame: { focus: { x: 560, y: 320 }, scale: 1.3 } },
+    { at: DOUBLE_TAKE_AT + 1180, duration: 300, shake: { strength: 5, seed: 3 } },
+    { at: 26700, duration: 700, frame: {} },
+  ], { stage: { width: W, height: H } })
+
+  const timeline = tinyfly.deserializeTimeline({ id: 'pyasa-rahgir', config: { duration: LOOP }, tracks: [...movement, ...acting, ...camera] })
+  const stateAt = (t) => timeline.getStateAtTime(t)
+  const valueAt = (t, target, property) => stateAt(t).values.get(target)?.get(property) ?? 0
+  const cameraAt = (t) => tinyfly.cameraFromValues(stateAt(t).values.get('Camera'))
+
+  /** The acted pose at t: the walker's tracks over the first key's pose. */
   const actingAt = (t) => {
-    const next = acting.findIndex(([time]) => time > t)
-    if (next <= 0) return acting[acting.length - 1][1]
-    const [t0, a] = acting[next - 1]
-    const [t1, b] = acting[next]
-    return tinyfly.blendPose(a, b, smooth((t - t0) / (t1 - t0)))
+    const figure = { ...BASE }
+    for (const [field, value] of stateAt(t).values.get('walker') ?? []) if (field in BASE) figure[field] = value
+    return figure
+  }
+
+  // Walking happens while x moves: a tired trudge in the heat, a bouncy walk to the water.
+  const WALKS = [
+    { start: 2900, end: 6500, gait: 'tired' },
+    { start: 8600, end: 10600, gait: 'bouncy' },
+  ]
+  const walkAt = (t) => {
+    const fade = (ms) => Math.min(1, Math.max(0, ms / 250))
+    for (const walk of WALKS) if (t >= walk.start && t <= walk.end) return { gait: walk.gait, amount: Math.min(fade(t - walk.start), fade(walk.end - t)) }
+    return null
+  }
+
+  const figureAt = (t) => {
+    const x = valueAt(t, 'walker', 'x')
+    let figure = actingAt(t)
+    const walk = walkAt(t)
+    if (walk && walk.amount > 0) {
+      const phase = x / tinyfly.gaitStrideLength(walk.gait, FIGURE_HEIGHT)
+      figure = tinyfly.blendPose(figure, tinyfly.gaitPose(walk.gait, phase, figure), walk.amount)
+    }
+    return { x, figure }
   }
 
   /** Which throw is happening at t, and how far through it (0..1), or null. */
   const throwAt = (t) => {
     const i = Math.floor((t - POUR.start) / POUR.each)
     return i >= 0 && i < POUR.count ? { i, k: (t - pourAt(i)) / POUR.each } : null
-  }
-  // Pick up, wind up, toss, settle.
-  const throwPose = (k) =>
-    k < 0.3 ? tinyfly.blendPose(P({ turn: 0.4 }, E.happy), reach, smooth(k / 0.3))
-    : k < 0.5 ? tinyfly.blendPose(reach, toss, smooth((k - 0.3) / 0.2))
-    : tinyfly.blendPose(toss, P({ turn: 0.5 }, { ...E.happy, lookX: 1, lookY: 0.5 }), smooth((k - 0.5) / 0.5))
-
-  // Walking happens while x moves; fade the stride in and out at either end.
-  const walking = (t) => {
-    const fade = (ms) => Math.min(1, Math.max(0, ms / 250))
-    const inWalk = (a, b) => (t >= a && t <= b ? Math.min(fade(t - a), fade(b - t)) : 0)
-    return Math.max(inWalk(2900, 6500), inWalk(8600, 10600))
-  }
-
-  const figureAt = (t) => {
-    const x = valueAt(t, 'walker', 'x')
-    const throwing = throwAt(t)
-    let figure = throwing ? throwPose(throwing.k) : actingAt(t)
-    const w = walking(t)
-    if (w > 0) figure = tinyfly.blendPose(figure, tinyfly.walkPose(x / tinyfly.strideLength(FIGURE_HEIGHT), figure), w)
-    return { x, figure }
   }
 
   // ── The hand's strokes, in the order it draws them ──────────────────────
@@ -242,13 +298,21 @@
   const ellipsePath = (cx, cy, rx, ry) =>
     Array.from({ length: 25 }, (_, i) => ({ x: cx + Math.cos(-Math.PI / 2 + (i / 24) * Math.PI * 2) * rx, y: cy + Math.sin(-Math.PI / 2 + (i / 24) * Math.PI * 2) * ry }))
   let strokes = null
-  /** Every stroke the hand makes, timed. Built once the font is in, since writing follows the text's width. */
-  function handStrokes() {
-    if (strokes) return strokes
+  /**
+   * Every stroke the hand makes, timed, as seen through the camera `view`: the
+   * page's strokes move with it, the writing stays put. Built once the font is
+   * in, since writing follows the text's width.
+   */
+  function handStrokes(view) {
+    if (!strokes) strokes = pageStrokes()
+    const seen = (p) => tinyfly.cameraPoint(view, { width: W, height: H }, p)
+    return strokes.map((stroke) => (stroke.writing ? stroke : { ...stroke, path: stroke.path.map(seen) }))
+  }
+  function pageStrokes() {
     const titleWidth = textWidth(TITLE, TITLE_FONT)
-    strokes = [
+    const strokes = [
       { start: TIMES.ground[0], end: TIMES.ground[1], path: ground },
-      { start: TIMES.title[0], end: TIMES.title[1], path: [{ x: W - 60 - titleWidth, y: 84 }, { x: W - 60, y: 84 }] },
+      { start: TIMES.title[0], end: TIMES.title[1], path: [{ x: W - 60 - titleWidth, y: 84 }, { x: W - 60, y: 84 }], writing: true },
       { start: TIMES.sun[0], end: TIMES.sun[1], path: sunPath },
       ...rays.map((ray, i) => {
         const step = (TIMES.rays[1] - TIMES.rays[0]) / rays.length
@@ -268,27 +332,28 @@
       const end = line.at + WRITE_MS
       if (strokes.some((s) => s.start < end && s.end > line.at)) continue
       const width = textWidth(line.hi, NARRATION_FONT)
-      strokes.push({ start: line.at, end, path: [{ x: W / 2 - width / 2, y: 502 }, { x: W / 2 + width / 2, y: 502 }] })
+      strokes.push({ start: line.at, end, path: [{ x: W / 2 - width / 2, y: 502 }, { x: W / 2 + width / 2, y: 502 }], writing: true })
     }
     return strokes
   }
 
   // ── Drawing helpers ─────────────────────────────────────────────────────
   function drawPaper() {
+    // A little past the frame, so a camera move never shows the edge of the page.
     ctx.fillStyle = PAPER
-    ctx.fillRect(0, 0, W, H)
+    ctx.fillRect(-120, -120, W + 240, H + 240)
     ctx.strokeStyle = '#d6e4f2'
     ctx.lineWidth = 1.5
-    for (let y = 48; y < H; y += 36) {
+    for (let y = 48 - 36 * 3; y < H + 120; y += 36) {
       ctx.beginPath()
-      ctx.moveTo(0, y)
-      ctx.lineTo(W, y)
+      ctx.moveTo(-120, y)
+      ctx.lineTo(W + 120, y)
       ctx.stroke()
     }
     ctx.strokeStyle = '#f2b8b8'
     ctx.beginPath()
-    ctx.moveTo(70, 0)
-    ctx.lineTo(70, H)
+    ctx.moveTo(70, -120)
+    ctx.lineTo(70, H + 120)
     ctx.stroke()
   }
 
@@ -391,18 +456,16 @@
     const b = beats(t)
     const pen = tinyfly.sketchPen(ctx, { roughness: 2.3, boil: 8, seed: 11 }, t)
     const sketch = { roughness: 2.3, boil: 8, seed: 5 }
+    const view = cameraAt(t)
 
+    // The page and everything on it, seen through the camera.
+    ctx.save()
+    tinyfly.applyCamera(ctx, view, { width: W, height: H })
     drawPaper()
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
     ctx.strokeStyle = INK
     ctx.lineWidth = 4
-
-    // Title, top right, while the scene sets up.
-    const titleFade = 1 - span(t, 5200, 6000)
-    ctx.globalAlpha = titleFade
-    writeOn(TITLE, W - 60, 74, TITLE_FONT, b.title, 'right')
-    ctx.globalAlpha = 1
 
     // Sun and rays.
     pen.curve(sunPath, b.sun)
@@ -509,6 +572,17 @@
     ctx.strokeStyle = INK
     ctx.lineWidth = 4
     pen.line(ground, b.ground)
+    ctx.restore()
+
+    // The writing and the animator's hand stay put while the camera moves.
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
+    ctx.strokeStyle = INK
+    ctx.lineWidth = 4
+    // Title, top right, while the scene sets up.
+    ctx.globalAlpha = 1 - span(t, 5200, 6000)
+    writeOn(TITLE, W - 60, 74, TITLE_FONT, b.title, 'right')
+    ctx.globalAlpha = 1
 
     // Narration, written on along the bottom of the page.
     const line = lineAt(t)
@@ -517,7 +591,7 @@
     }
 
     // The animator's hand: drawing, writing, rubbing out, or gliding between strokes.
-    const hand = tinyfly.handAt(handStrokes(), t, { offstage: { x: W + 260, y: H + 220 } })
+    const hand = tinyfly.handAt(handStrokes(view), t, { offstage: { x: W + 260, y: H + 220 } })
     if (hand) {
       // A little wrist sway while it works.
       const sway = hand.drawing ? Math.sin(t / 180) * 4 : 0

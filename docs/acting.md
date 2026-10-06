@@ -67,7 +67,7 @@ works on any record of numbers.
 A few rules keep the result predictable:
 
 - Moves shorter than 160 ms are not wound up, and moves shorter than 120 ms land without an overshoot. There is no time for either to read.
-- Delays are capped at a quarter of the shortest gap between keys, so shifted keys never pass each other.
+- A move's delay is at most half the time between its two keys, so a quick move still lands near its key.
 - A settle takes at most half the time to the next key.
 - If the keys animate `blink` themselves, the pass leaves blinking alone; if they animate `stretch`, it adds no jump squash.
 
@@ -150,24 +150,148 @@ export default { width: 1280, height: 720, fps: 24, drawingRate: 12, timeline, t
 In the browser, `heldTime(time, 12)` (from `@algorisys/tinyfly`) gives the
 same held time to evaluate a timeline at.
 
-## Example
+## Line of action
 
-`examples/headless-video/cartoon-acting.mjs` plays the same keys on two pencil
-figures, `poseTracks()` on the left and `actTracks()` (`snappy`) on the right,
-with a take, speed lines and a dust puff, drawn on twos:
+`bend` curves the stick figure's spine, in degrees from hips to neck: positive
+curls forward (the way `lean` tips), negative arches back. Unlike `lean`, which
+tips a straight back, the curve spreads along the spine, and the chest, arms
+and head ride on its end. A slump, a recoil and a cheer each read from the
+curve before anything else.
+
+```js
+pose({ bend: 18, headTilt: 10 })   // a slump
+pose({ bend: -14, leftShoulder: 150, rightShoulder: 150 })   // arched back, arms up
+```
+
+It is a pose field like any other, so it blends, keys and acts (it leads with
+the hips, winds up and overshoots). The gags use it: a take arches back as it
+shoots up and curls on landing. At 0 the figure is drawn exactly as before.
+
+## Gaits
+
+How a figure walks is data: `GAITS` has `walk` (the plain walk, the same as
+`walkPose()`), `bouncy`, `doubleBounce` (two bobs a step), `sneak` (tiptoe in
+a crouch, paws up), `strut` (chest out), `tired` (slumped and dragging) and
+`run` (knees high, arms pumping, off the ground between steps).
+
+```js
+gaitPose('sneak', phase, base)          // a pose at a phase of the cycle
+gaitStrideLength('sneak', height)       // ground per cycle, so feet stay planted
+```
+
+A gait is a handful of numbers (`swing`, `knee`, `arm`, `elbow`, `forearm`,
+`shoulder`, `lean`, `bend`, `headTilt`, `bounce`, `bounces`, `squash`,
+`crouch`, `tiptoe`, `sway`), so you can write your own and pass it in place of
+a name. On a `stickFigureTarget` the `gait` prop picks one, and a string track
+switches it: `{ property: 'gait', keyframes: [{ time: 0, value: 'walk' }, { time: 3000, value: 'run' }] }`.
+
+## Lip-sync
+
+`lipSyncKeyframes({ text, start, end })` reads a line as mouth shapes:
+vowels open the mouth in their shape, m/b/p close it, f/v bite the lip, and
+pauses rest it. The shapes share the line's time by how long each sound tends
+to take. It reads Latin script and Devanagari: inherent vowels, matras and
+virama, with lip consonants (प फ ब भ म) closing the mouth. It writes the
+`mouth` and `mouthWidth` fields, which both figure systems have.
+
+```js
+lipSyncTracks('hero', [{ text: 'Where did my pot go?', start: 4000, end: 5400 }])
+// Over acted tracks: the face carries on around the line (a gape, a grin).
+lipSyncOver('hero', actTracks('hero', keys), lines)
+```
+
+`VISEMES` holds the shapes and `soundsOf(text)` the sounds, for drawing your
+own mouths.
+
+## Beat scripts
+
+`scriptTracks()` takes a story written as beats (what the figure does, not
+when its joints move) and compiles it into tracks:
+
+```js
+const { tracks, duration, lines, beats } = scriptTracks('hero', [
+  { do: 'walk', to: 640, mood: 'happy' },
+  { do: 'look', toward: 900, mood: 'confused' },
+  { do: 'take' },
+  { do: 'say', say: 'Is that box ticking?', mood: 'worried' },
+  { do: 'sneak', to: 820, mood: 'scared' },
+  { do: 'face', toward: 0 },
+  { do: 'run', to: 120, say: 'Nope!' },
+], { from: 180, height: 220, style: 'snappy' })
+```
+
+Each beat starts when the one before ends (or at `at`) and lasts its action's
+own length (or `for`).
+
+| `do` | What happens |
+|---|---|
+| a gait name, with `to` | Walks to a scene x at the gait's pace, feet planted. It turns round first if the place is behind it. Writes `x` (an offset from `from`), `walk`, `walking`, `gait` and `facing`. |
+| a pose name (`wave`, `point`, `cheer`, `sit`…) or `stand` | Moves into the pose and holds it. The figure keeps the way it is turned unless the pose sets its own. |
+| a gag name (`take`, `doubleTake`…) | Splices the gag in, built on the current pose. |
+| `look`, with `toward` | Turns the head and eyes toward a scene x, `viewer`, `ahead` or `back`. |
+| `face`, with `toward` | Turns the whole figure, turning round if needed. |
+| `say`, with `say` | Lip-syncs the line, with small head nods and brow lifts, for as long as the line takes. |
+| `hold` | Holds (the acting pass drifts long holds). |
+
+Any beat can take `say` (a line said while it happens), `mood` (an
+expression) and `pose` (joints to change). The result carries the spoken lines
+with their times (for captions) and when each beat starts and ends (for
+camera shots and effects).
+
+## Camera
+
+Video scenes can be seen through a camera: `camera: true` reads the tracks of
+the `Camera` target (the editor's camera uses the same name). `x` and `y`
+pan, `scale` zooms and `rotate` rolls about the stage centre, and `shakeX`,
+`shakeY` and `shakeRotate` add on top, so a shake never disturbs a pan. A new
+`overlay` step draws in screen space after everything else, for captions and
+titles that should not move with the camera.
+
+`cameraTracks()` (in `@algorisys/tinyfly`) compiles shots into those tracks:
+
+```js
+cameraTracks([
+  { at: 2000, duration: 500, frame: { focus: { x: 760, y: 470 }, scale: 1.25 } },    // push in
+  { at: 3300, duration: 0, frame: { focus: { x: 640, y: 440 }, scale: 1.6 } },       // a cut (crash zoom)
+  { at: 3900, duration: 450, shake: { strength: 14 } },                               // an impact
+  { at: 7000, until: 9000, follow: { x: heroX.keyframes, y: 470, lag: 220 } },       // follow a runner
+  { at: 9200, duration: 600, frame: {} },                                             // back to the full frame
+], { stage: { width: 1280, height: 720 } })
+```
+
+A `frame` shot moves so `focus` sits at the centre at `scale` (and `rotate`);
+a duration of 0 cuts. A `shake` dies away over its duration and is seeded, so
+renders repeat exactly. A `follow` keeps a subject's x (its x track's
+keyframes) centred, `lag` ms behind it, with an optional `lead`. Shots play in
+time order, and a later one takes over from an earlier one.
+
+In the browser, `applyCamera(ctx, cameraFromValues(values), stage)` applies a
+view to any canvas, and `cameraPoint(view, stage, point)` says where a scene
+point lands on screen (the pencil story maps the drawing hand's strokes this
+way, so the hand stays on the page while the camera moves).
+
+## Examples
+
+- `examples/headless-video/cartoon-acting.mjs`: the same keys through
+  `poseTracks()` and `actTracks()`, side by side, with a take, speed lines
+  and a dust puff, drawn on twos.
+- `examples/headless-video/beat-script.mjs`: a beat script with gaits, a
+  take, dialogue, a sneak and a run, filmed by camera shots (a push-in, a
+  crash zoom, a shake and a follow).
+- `examples/pencil-story-hindi/`: the thirsty-traveller story, acted. It has a
+  take and a double take, a tired walk and a bouncy one, a lip-synced line in
+  Hindi, and camera pushes, with the animator's hand drawing through the
+  camera.
+- The **Cartoon Acting** card in the website gallery: the script live in the
+  browser, with pickers for the acting style and the walk, and toggles for
+  drawing on twos, speed lines and the camera.
 
 ```bash
-npx tinyfly video examples/headless-video/cartoon-acting.mjs
+npx tinyfly video examples/headless-video/beat-script.mjs
 ```
 
 ## Not yet
 
-Planned next, toward feature-animation fluency:
-
-- A bendable spine set by one "line of action" value
-- Gaits with personality (bouncy, sneak, double-bounce walk)
-- Follow-through on hair, tails and ears
-- Lip-sync from narration timing
-- Story scripts written as beats that compile to acted keys
-- Camera acting (shake on impact, push in on a take, a follow with lag)
-- Acting in the editor
+- Acting in the editor (an acting style on the Character element, gags from a picker)
+- Line of action, gaits and lip-sync for the v2 characters (they get `bend` through `stickToHuman` as lean and head tilt)
+- Follow-through on hair, tails and ears (character-system milestones 3 and 5)
