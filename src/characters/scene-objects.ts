@@ -5,8 +5,11 @@ import { cylinderMesh, sphereMesh } from '../scene-3d/geometry/primitives'
 import { prepareMesh, type PreparedMesh } from '../scene-3d/load-scene'
 import type { BodyPlan, Pose } from './rig/body-plan'
 import { stagePlanSpace, type StagedSpace, type ViewProjection } from './rig/skeleton'
-import { character, drawCharacterInView, type Character, type CharacterOptions } from './character'
+import { character, characterPartsInView, type Character, type CharacterOptions } from './character'
 import { HUMAN_REST } from './species/human'
+import { fogAmount, lightAt } from '../scene-3d/shading'
+import { lit } from './props/draw'
+import { humanGaitPose } from './species/human-motion'
 
 /**
  * Characters in 3D scenes: the `character` object kind for
@@ -32,6 +35,11 @@ const OBJECT_PROPERTIES = new Set([
   'scale', 'scaleX', 'scaleY', 'scaleZ',
   'visible', 'opacity', 'color',
 ])
+
+/** Values that walk it (see `characterScript3D`): the phase of its gait, how much of it, and which gait. */
+const WALK_PROPERTIES = new Set(['walk', 'walking', 'gait'])
+
+const num = (value: unknown) => (typeof value === 'number' ? value : undefined)
 
 /** The default height of a person, metres. */
 const DEFAULT_HEIGHT = 1.7
@@ -133,13 +141,21 @@ export const characterObjects: ObjectKind = {
     }
   },
 
-  resolve({ object, prepared, values, world, camera, toScreen }): ObjectView | null {
+  // `lights` may be missing from a scene entry older than this add-on: treated as none.
+  resolve({ object, prepared, values, world, camera, lights = [], fog, toScreen }): ObjectView | null {
     const o = object as CharacterObject3D
     const parts = prepared as Prepared
     const who = parts.who
-    const pose: Pose = { ...HUMAN_REST, ...o.pose }
+    let pose: Pose = { ...HUMAN_REST, ...o.pose }
     for (const [property, value] of values) {
-      if (typeof value === 'number' && !OBJECT_PROPERTIES.has(property)) pose[property] = value
+      if (typeof value === 'number' && !OBJECT_PROPERTIES.has(property) && !WALK_PROPERTIES.has(property)) pose[property] = value
+    }
+    // Walking: the gait's pose at its phase, blended in as far as `walking` says, on the pose it holds.
+    const walking = Math.max(0, Math.min(1, num(values.get('walking')) ?? o.walking ?? 0))
+    if (walking > 0) {
+      const gait = typeof values.get('gait') === 'string' ? (values.get('gait') as string) : o.gait
+      const stepped = humanGaitPose(gait, num(values.get('walk')) ?? 0, pose)
+      pose = Object.fromEntries(Object.keys({ ...pose, ...stepped }).map((key) => [key, (pose[key] ?? 0) + ((stepped[key] ?? 0) - (pose[key] ?? 0)) * walking]))
     }
     const height = o.height ?? DEFAULT_HEIGHT
     const modelView = mat4.multiply(camera.view, world)
@@ -157,17 +173,22 @@ export const characterObjects: ObjectKind = {
       const staged = stagePlanSpace(who.plan, pose, { height, contact: who.contact })
       return { meshes: solidMeshes(o, parts, who.plan, staged, world), drawables: shadow }
     }
+    // Drawn part by part, each at its own depth, so it sorts among the parts of things round it: a rider's
+    // far leg behind a horse's barrel and the near one in front.
+    // Lit by the scene (when it brings lights): its skin takes the light reaching its chest from the camera's
+    // side, and the fog there, so the sun behind the camera lights its face and the night dims it. Its ink is
+    // its own: give a character a light ink in a dark scene, so its lines read.
+    const chest = mat4.transformPoint(world, [0, height * 0.6, 0])
+    const toEye = vec3.normalize(vec3.subtract(camera.position, chest))
+    // Full light is its own colour (light past that would bleach a drawn face); less light darkens it.
+    const light = lightAt(chest, toEye, lights).map((v) => Math.min(1, v)) as [number, number, number]
+    const litWho: Character = lights.length > 0 && who.skin !== 'none' ? { ...who, skin: lit(who.skin, light, fogAmount(fog, vec3.distance(chest, camera.position)), fog?.color) } : who
+    const seen = characterPartsInView(litWho, pose, projection, { height })
     return {
       drawables: [
         ...shadow,
-        {
-          depth,
-          draw(ctx, frame) {
-            ctx.lineCap = 'round'
-            ctx.lineJoin = 'round'
-            drawCharacterInView(ctx, who, pose, projection, { height, time: frame.time })
-          },
-        },
+        // Ties keep the character's own order.
+        ...seen.map((part, index) => ({ depth: -part.depth - index * 1e-6, draw: (ctx: CanvasRenderingContext2D, frame: { time: number }) => part.draw(ctx, frame.time) })),
       ],
     }
   },

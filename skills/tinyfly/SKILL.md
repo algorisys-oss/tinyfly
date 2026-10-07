@@ -41,6 +41,14 @@ names.
   Canvas `x`/`y` tracks are offsets from where a target was placed. Scene y
   grows downward. Angles are degrees.
 - Record code-panel edits before `code.ride(tracks, figureId, { ground })`.
+- For objects in the scene (vehicles, trees, houses, aircraft, animals,
+  birds) use the prop presets with `propScript()`; seat figures with
+  `propRide()`, tow with `propTow()`. Aim figure beats at prop anchors
+  (`propAt(...).anchor('door')`), and perch birds at them (`branch`, `ridge`).
+  `style: 'stick'` draws props as line art. In a 3D scene, place props with
+  `rotation: [0, deg, 0]` (`rotateY` is a track) and script them with
+  `propScript3D` (`to: [x, z]` metres), not `propScript` (screen px);
+  characters there with `characterScript3D`, riders with `propRide3D`.
 - For recurring characters, make a `persona()` (look, acting, gait, mood,
   stance) and use `persona.script()`; for a move the catalog lacks, write it
   with `defineAction()` rather than hand-keying joints in many places.

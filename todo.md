@@ -2524,7 +2524,81 @@ poses (docs/acting.md).
 - [x] `capabilities(version, cast)` lists a cast's own actions and gaits; the catalog documents the API
 - [x] `stepsToKeys()` shared by gags and step actions; gallery card **Code Review** (two personas)
 
+### 36L — Props (done, on feature/scene-props)
+- [x] Prop rigs: 3D parts on pivots (box, cylinder, ellipsoid, extrude, panel, tube), controls bound to part transforms,
+      anchors; `solveProp` through the same view contract as the v2 human (`turn`, `tilt`), drawn with the characters'
+      pens (opaque fills, one pencil seed per part), face shading, silhouette and crease outlines, contact shadow, fades
+- [x] `propScript`: beats through `actKeyframes` with a per-family acting rig and an `exaggeration` dial; exact (unacted)
+      controls for wheels and rotors; `checkPropBeats` with did-you-mean; common `hold`, `turn`, `pop`, `vanish`
+- [x] `springFollow` (engine) and `Prop.follow` for follow-through (a car's antenna)
+- [x] Families: `vehicle(spec)` with `car`, `truck`, `bus`, `tractor`, `cart`, `trainCar`, `bike`, `motorbike` (drive, brake,
+      bump, honk, door, lights; wheels of any size roll exactly); `tree`, `house` (sway, shake, leaves; door, lights,
+      smoke); `helicopter`, `airplane` (take off, fly, hover, loop, land; rotors blur)
+- [x] `propTarget` (+ `about` for `describeTarget`), `propAt`, `drawProp` with a rider between far and near parts,
+      `propRide` + `spliceTracks`, `drawPropEffects` (dust, exhaust, skids, honks, leaves, smoke)
+- [x] Catalog: props section; `docs/props.md`; gallery cards **Road Trip**, **Windy Day**, **Helicopter**, **Traffic**
+
+### 36M — Animals (done, on feature/animals)
+- [x] `horse()`: barrel, neck and mane, head with ears, eyes and muzzle, four jointed legs, a tail on a spring; gaits walk,
+      trot, canter, gallop worked out by the rig's new `derive` from `gait` and the stride phase `walk` (keyed with the
+      distance, so the hooves keep pace); `rear` (about the hind hooves), `buck`, `neigh`, `graze`, `nod`, `swish`
+- [x] Rig additions: static part rotations (`rotate`), `derive` (controls worked out from others); seamless smooth fills
+- [x] `propTow`: a towed prop (cart) on a leader's hitch, turning with it, wheels rolling exactly; cart `shafts` anchor
+- [x] Gallery card **Horse & Cart**
+
+### 36N — More animals and line art (done, on feature/animals)
+- [x] `quadruped(spec)`: species from proportions; `horse`, `dog`, `cat`, `cow` presets; shared gaits (per-species set and
+      cycle scale), `sit` (worked out from the legs: front feet planted, hind paws flat via a new ankle joint), `jump`,
+      the species' call, `nod`, `swish`, `graze` for grazers; dog `wag`, `sniff`; cat `arch`, `pounce`
+- [x] Rounder animals: tapered tubes (a radius per point), rounded knees, paws and hooves, tail tips
+- [x] Outlines weighted by the prop's size on screen
+- [x] Stick look (`style: 'stick'`): line art for any prop — tubes as strokes, shapes over paper, solid-only parts hidden
+- [x] Gallery card **Farmyard** (with a solid/stick picker)
+
+### 36O — Birds (done, on feature/animals)
+- [x] `bird(spec)` with `songbird`, `crow`, `chicken` presets: body, head on a neck joint, beak, eyes, a comb and wattle
+      for the chicken, tail, two thin legs with toes, and wings that fold back along the body (rolled flat against its
+      side, shorter) and spread out to their full span, with tapering flight feathers
+- [x] Wingbeats from a phase (`wingbeat`, keyed steadily at the species' beats per second) through `derive` while
+      `flapping` is on; a walk phase (`step`) for legs and a bobbing head
+- [x] Actions: `hop`, `walk`, `peck` (a stoop, and a neck that reaches for a chicken), `flap`, `fly` (take-off crouch
+      unless already in the air), `land` (to the ground or a perch), `flutter` for a chicken, and each one's call
+- [x] Gallery card **Birds** (a robin off a branch and back, a crow up onto a roof, a hen), perches read from anchors
+
+### 36P — Props in 3D scenes (done, on feature/animals)
+- [x] `propObjects`: the `prop` object kind (`{ kind: 'prop', prop: 'car', options, values, look, style }`), solved through
+      the scene camera and drawn with the props' pens; controls are tracks on the object; did-you-mean on a wrong preset
+- [x] `solveProp` in perspective: normals seen as directions, faces culled toward the camera's eye (`{ perspective: true }`)
+- [x] `propPreset(name, options)` / `PROP_PRESETS`; the editor's 3D Scene element loads props
+- [x] Gallery card **3D Scene: Village** (orbiting camera; car, horse, crow, hen, trees, houses, a character; solid / stick)
+
+- [x] Depth order in 3D: a prop is cut into ~1 m columns (in its rest space, cached) that each sort at their own depth;
+      faces drawn far to near inside a column with their own outlines; faces inside or against another solid part left
+      out; faces lying on a part's face drawn after it; part `layer` for parts that sit into each other (cabin, roof);
+      clipping at the camera's near plane; scene objects refuse `rotateY` as a field (it is a track)
+
+### 36Q — 3D stories (next, in order)
+- [x] Props in world metres: `propScript3D` (moves to a point or through points on a smooth path, turning first; wheels,
+      strides, wingbeats and rotors keyed from each prop's `moves`; fliers' height; `face`, `hold`, and 2D actions as
+      controls only; `checkPropBeats3D`); the Village demo is scripted with it
+- [x] Characters in world metres: `characterScript3D` (gaits to a point or through points, the walk phase keyed with the
+      distance; face, hold, pose, gag; `checkCharacterBeats3D`); the character object steps its legs from `walk`,
+      `walking` and `gait` on the pose it holds; Tum walks, waves, runs and does a take in the Village demo
+- [x] Riders in 3D: `propRide3D` (hips on a seat anchor as the prop moves, bobs and pitches; mount and dismount hops),
+      `propAnchors3D`, `RIDING_POSES`, a `place` beat; characters drawn part by part at their own depths
+      (`characterPartsInView`), so a leg astride a horse shows on each side; Tum rides the horse in the Village demo
+- [ ] Riders in closed cabins in the pen looks (the mesh look's glass is see-through already)
+- [x] Props lit by the scene's lights (ambient, directional, point, spot, fog), glowing parts over the top; object kinds
+      get the scene's lights and fog; the Village demo has a day / sunset / night picker (lit windows and headlights)
+- [x] Characters lit by the scene's lights: a pen character's skin takes the light at its chest from the camera's side
+      (capped at its own colour) and the fog; the Village demo gives Tum a light ink at night
+- [ ] Wardrobe layers lit by the scene (they draw their own colours)
+- [x] The mesh look for props (`look: 'mesh'`): parts as the scene's own meshes (built once, placed each frame), lit,
+      outlined (smooth shapes without creases: a new `creases` material option), glass see-through, glow emissive, hidden
+      faces left out, a disc shadow; exact depth with WebGL2; front windows set a centimetre off their wall
+
 ### 36E — Next
+- [ ] Rider pedalling and steering poses; props in the editor's 3D Scene element palette
 - [ ] Code panel in the editor (a Code element whose anchors snap beats)
 - [ ] Beat scripts for v2 characters (`scriptTracks` on the human plan)
 - [ ] Follow-through on hair, tails, ears (character-system milestones 3 and 5)

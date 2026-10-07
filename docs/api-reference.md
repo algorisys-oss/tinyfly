@@ -658,11 +658,13 @@ new WebGL2Renderer(gl, { overlay? })                         // @algorisys/tinyf
 loadScene3D(scene, { kinds: [characterObjects] })            // object kinds beyond the built-ins: ObjectKind { kind, validate?, prepare?, resolve }
 // from @algorisys/tinyfly/characters:
 characterObjects                                             // the `character` object kind (pen or solid look)
+propObjects                                                  // the `prop` object kind: { kind: 'prop', prop: 'car', options?, values?, look?, style? }
+propPreset(name, options?) / PROP_PRESETS                    // a prop preset by name (did-you-mean on a wrong one)
 drawCharacterInView(ctx, character, pose, projection, { height, time? }) / characterJointsInView(…)
 skeletonInView(plan, pose, { height }, projection) / stagePlanSpace(plan, pose, { height }) / solvePlanSpace(plan, pose, height)
 ```
 
-Types: `Scene3D`, `Object3D` (`group`, `mesh`, `camera`, `light`, `character`), `Geometry3D`,
+Types: `Scene3D`, `Object3D` (`group`, `mesh`, `camera`, `light`, `character`, `prop`), `Geometry3D`,
 `Material3D`, `ResolvedScene3D`, `DrawTriangle`. Tracks address objects as
 `<sceneId>/<objectId>`; see [3D Scenes](scene-3d.md) for the properties.
 

@@ -13,6 +13,11 @@ import { BEAT_FIELDS, SCRIPT_ACTIONS } from './acting/beat-check'
 import { STICK_FIGURE_EXTRAS, STICK_POSE_FIELDS, HAND_FIELDS } from './figure-props'
 import { CODE_LANGUAGES, CODE_PANEL_EDITS, REMOVE_STYLES } from './code-panel'
 import type { Cast } from './acting/custom'
+import { PROP_COMMON_CONTROLS } from './props/rig'
+import { PROP_PRESETS } from './props/presets'
+import { PROP_COMMON_ACTIONS, PROP_BEAT_FIELDS } from './props/script'
+
+/** Every prop preset, by the name of the function that makes it. */
 
 /**
  * Everything tinyfly can do, as data read from the code itself: easings,
@@ -61,6 +66,14 @@ export interface Capabilities {
     flips: Record<string, string>
     handShapes: string[]
     mudras: string[]
+  }
+  /** Props: everyday objects with behaviours */
+  props: {
+    api: Record<string, string>
+    beatFields: readonly string[]
+    commonControls: Record<string, string>
+    commonActions: Record<string, string>
+    presets: Record<string, { family: string; summary: string; actions: Record<string, { summary: string; needs?: string[] }>; controls: string[]; anchors: string[] }>
   }
   /** Making your own: actions, gaits and personas */
   custom: { api: Record<string, string>; actions: Record<string, { summary: string; needs?: string[] }>; gaits: Record<string, string> }
@@ -115,6 +128,46 @@ export function capabilities(version?: string, cast: Cast = {}): Capabilities {
       flips: Object.fromEntries(Object.entries(FLIPS).map(([name, flip]) => [name, flip.label])),
       handShapes: Object.keys(HAND_SHAPES),
       mudras: Object.keys(MUDRAS),
+    },
+    props: {
+      api: {
+        'car() · truck() · bus() · tractor() · cart() · trainCar() · bike() · motorbike()': 'wheeled vehicles (vehicle(spec) makes your own)',
+        'tree() · house()': 'environment (tree(spec), house(spec))',
+        'helicopter() · airplane()': 'aircraft',
+        'horse() · dog() · cat() · cow()': 'animals (quadruped(spec) makes your own): gaits with footfall patterns keyed in step with the distance, sit, jump, their calls, species actions',
+        'songbird() · crow() · chicken()': 'birds (bird(spec) makes your own): hop, walk, peck, flap, fly and land (a chicken flutters), their calls; wings fold and beat in rhythm',
+        "{ kind: 'prop', prop: 'car', position, rotation, values } with loadScene3D(scene, { kinds: [characterObjects, propObjects] })": 'props in 3D scenes, by preset name, seen in perspective by the scene camera; controls are tracks on the object',
+        'characterScript3D(id, beats, { scene, position?, heading?, height?, pose? })': 'a v2 character in a 3D scene in world metres: gaits to [x, z] or through points (its walk phase keyed with the distance), face, hold, pose, gag; checkCharacterBeats3D checks the beats',
+        'propRide3D({ prop, propId, propTracks, scene, placement, anchor, riderId, pose, start, end, mount?, dismount? })': 'a character riding a prop in a 3D scene: hips on a seat anchor (saddle, seat) as it moves, hopping on and off; RIDING_POSES.astride / .seated',
+        'propScript3D(id, prop, beats, { scene, position?, heading?, values? })': 'props scripted in world metres for 3D scenes: moves to [x, z] or through points (wheels and strides keyed with the distance), face, hold, and their actions; checkPropBeats3D checks the beats',
+        'propPreset(name, options?)': 'a prop preset by name (did-you-mean on a wrong one)',
+        "propTarget({ …, style: 'stick' })": 'line art to go with stick figures: tubes as single strokes, shapes outlined over paper',
+        'propTow({ leader, leaderId, leaderTracks, hitch, towed, towedId, anchor, start, end })': 'a prop towed by another (a cart behind a horse): turns with it, its wheels roll exactly',
+        'propTarget({ x, y, prop, scale?, values?, look?, ink? })': 'a canvas target that draws a prop (x, y: its middle on the ground; scale px per metre, default 60)',
+        'propScript(id, prop, beats, { from, ground, scale, style?, exaggeration?, start? })': 'beats → acted tracks, with contact times and effect cues; checkPropBeats(beats, prop) checks them',
+        'drawProp(ctx, target, frame, id, { rider? })': 'draw it as it is in a frame (a rider is drawn between its far and near parts)',
+        'propAt(target, frame, id).anchor(name)': 'where an anchor (seat, door, chimney…) is, in scene px',
+        'propRide({ prop, propId, propTracks, anchor, figure, figureId, start, end, offset? })': 'a figure carried at an anchor, turning with the prop; spliceTracks() puts it into the figure’s tracks',
+        'drawPropEffects(ctx, effects, time)': 'dust, exhaust, skid marks, honk lines, leaves, smoke',
+      },
+      beatFields: PROP_BEAT_FIELDS,
+      commonControls: Object.fromEntries(Object.entries(PROP_COMMON_CONTROLS).map(([name, spec]) => [name, `${spec.description}${spec.unit ? ` (${spec.unit})` : ''}`])),
+      commonActions: Object.fromEntries(Object.entries(PROP_COMMON_ACTIONS).map(([name, action]) => [name, action.summary])),
+      presets: Object.fromEntries(
+        Object.entries(PROP_PRESETS).map(([name, make]) => {
+          const prop = make()
+          return [
+            name,
+            {
+              family: prop.family,
+              summary: prop.summary,
+              actions: Object.fromEntries(Object.entries(prop.actions).map(([action, a]) => [action, { summary: a.summary, ...(a.needs ? { needs: a.needs as string[] } : {}) }])),
+              controls: Object.keys(prop.rig.controls),
+              anchors: Object.keys(prop.rig.anchors ?? {}),
+            },
+          ]
+        })
+      ),
     },
     custom: {
       api: {
@@ -256,6 +309,21 @@ export function capabilitiesMarkdown(version?: string, cast: Cast = {}): string 
           '',
         ]
       : []),
+    '## Props (everyday objects with behaviours)',
+    '',
+    'A prop is a 3D rig of simple parts drawn with the characters’ pens (clean, pencil, silhouette), so it turns toward the camera (`turn`), and its beats go through the same acting pass (anticipation, overshoot, overlap; `exaggeration` scales them).',
+    '',
+    ...Object.entries(c.props.api).map(([name, what]) => `- \`${name}\`: ${what}`),
+    '',
+    `Prop beat fields: ${list(c.props.beatFields)}. Every prop has the controls ${Object.keys(c.props.commonControls).map((n) => `\`${n}\``).join(', ')} and the actions ${Object.keys(c.props.commonActions).map((n) => `\`${n}\``).join(', ')}.`,
+    '',
+    '| Preset | Family | Actions (needs) | Controls | Anchors |',
+    '|---|---|---|---|---|',
+    ...Object.entries(c.props.presets).map(
+      ([name, p]) =>
+        `| \`${name}()\` | ${p.family} | ${Object.entries(p.actions).map(([a, d]) => `\`${a}\`${d.needs?.length ? ` (${d.needs.join(', ')})` : ''}`).join(', ')} | ${p.controls.map((n) => `\`${n}\``).join(', ')} | ${p.anchors.join(', ')} |`
+    ),
+    '',
     '## Character (v2 human)',
     '',
     `Poses: ${list(c.character.poses)}. Expressions: ${list(c.character.expressions)}. Gags: ${list(c.character.gags)}.`,

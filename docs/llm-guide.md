@@ -26,6 +26,23 @@ It is also the last part of `llms-full.txt`.
 From code, the same catalog is `capabilities()` (and `capabilitiesMarkdown()`)
 in `@algorisys/tinyfly/characters`.
 
+## Props
+
+For objects in a story (vehicles, trees, houses, aircraft, animals, birds),
+use the presets (`car()`, `tree()`, `helicopter()`, `dog()`, `crow()`…) with
+`propTarget` and `propScript`; the catalog lists each preset's actions,
+controls and anchors, and `checkPropBeats` checks prop beats. `style: 'stick'`
+draws any prop as line art to go with stick figures. A bird's `lift` is in
+metres: to perch it on a branch or a roof, work the height out from that
+prop's anchor (`propAt(tree, frame, 'tree').anchor('branch')`). In a 3D
+scene a prop is an object, `{ kind: 'prop', prop: 'car', position, rotation: [0, 90, 0] }` (`rotateY` is a track, not a field),
+loaded with `kinds: [characterObjects, propObjects]`; its controls are tracks
+on the object. Script it in world metres with `propScript3D` (`to: [x, z]`,
+`through: [[x, z], …]`, `face`), not with `propScript`, whose `to` is screen px.
+Characters in a 3D scene walk the same way with `characterScript3D`
+(`{ do: 'walk', to: [x, z] }`, `pose`, `gag`, `face`, `place`); a rider is
+seated with `propRide3D` and spliced into its script with `spliceTracks`. See `docs/props.md`.
+
 ## Your own behaviours
 
 Write new actions with `defineAction()` (from beats, or as timed pose steps),

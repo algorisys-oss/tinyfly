@@ -23,6 +23,13 @@ import { codeRefactor } from './code-refactor'
 import { codeFix } from './code-fix'
 import { codeTidy } from './code-tidy'
 import { codeReview } from './code-review'
+import { propCar } from './prop-car'
+import { propScene } from './prop-scene'
+import { propHelicopter } from './prop-helicopter'
+import { propTraffic } from './prop-traffic'
+import { propHorse } from './prop-horse'
+import { propAnimals } from './prop-animals'
+import { propBirds } from './prop-birds'
 import { dressedFigures } from './dressed-figures'
 import { danceFloor } from './dance-floor'
 import { mapRoute } from './map-route'
@@ -50,6 +57,7 @@ import { cardFlip3d } from './card-flip-3d'
 import { quaternionCube } from './quaternion-cube'
 import { scene3dOrbit } from './scene-3d-orbit'
 import { characters3d } from './characters-3d'
+import { props3d } from './props-3d'
 import { lightTrails } from './light-trails'
 import { cometTrails3d } from './comet-trails-3d'
 import { statsDecode } from './stats-decode'
@@ -81,6 +89,13 @@ import codeRefactorSource from './code-refactor.js?raw'
 import codeFixSource from './code-fix.js?raw'
 import codeTidySource from './code-tidy.js?raw'
 import codeReviewSource from './code-review.js?raw'
+import propCarSource from './prop-car.js?raw'
+import propSceneSource from './prop-scene.js?raw'
+import propHelicopterSource from './prop-helicopter.js?raw'
+import propTrafficSource from './prop-traffic.js?raw'
+import propHorseSource from './prop-horse.js?raw'
+import propAnimalsSource from './prop-animals.js?raw'
+import propBirdsSource from './prop-birds.js?raw'
 import dressedFiguresSource from './dressed-figures.js?raw'
 import danceFloorSource from './dance-floor.js?raw'
 import mapRouteSource from './map-route.js?raw'
@@ -108,6 +123,7 @@ import cardFlip3dSource from './card-flip-3d.js?raw'
 import quaternionCubeSource from './quaternion-cube.js?raw'
 import scene3dOrbitSource from './scene-3d-orbit.js?raw'
 import characters3dSource from './characters-3d.js?raw'
+import props3dSource from './props-3d.js?raw'
 import lightTrailsSource from './light-trails.js?raw'
 import cometTrails3dSource from './comet-trails-3d.js?raw'
 import statsDecodeSource from './stats-decode.js?raw'
@@ -165,6 +181,7 @@ export const liveDemos: LiveDemoWithCode[] = [
   withCode(quaternionCube, quaternionCubeSource),
   withCode(scene3dOrbit, scene3dOrbitSource),
   withCode(characters3d, characters3dSource),
+  withCode(props3d, props3dSource),
   withCode(cometTrails3d, cometTrails3dSource),
   withCode(lightTrails, lightTrailsSource),
   withCode(statsDecode, statsDecodeSource),
@@ -196,6 +213,13 @@ export const liveDemos: LiveDemoWithCode[] = [
   withCode(codeFix, codeFixSource),
   withCode(codeTidy, codeTidySource),
   withCode(codeReview, codeReviewSource),
+  withCode(propCar, propCarSource),
+  withCode(propScene, propSceneSource),
+  withCode(propHelicopter, propHelicopterSource),
+  withCode(propTraffic, propTrafficSource),
+  withCode(propHorse, propHorseSource),
+  withCode(propAnimals, propAnimalsSource),
+  withCode(propBirds, propBirdsSource),
   withCode(dressedFigures, dressedFiguresSource),
   withCode(danceFloor, danceFloorSource),
   withCode(mapRoute, mapRouteSource),

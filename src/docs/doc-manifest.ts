@@ -100,6 +100,12 @@ export const DOCS: DocEntry[] = [
     section: 'Guides',
   },
   {
+    id: 'props',
+    title: 'Props: Everyday Objects with Behaviours',
+    summary: 'Cars, trucks, buses, tractors, carts, train carriages, bikes, motorbikes, trees, houses, a helicopter and a plane: 3D rigs drawn with the characters’ pens (clean, pencil) that turn toward the camera, with beats acted through the 12 principles (anticipation, squash and stretch, follow-through, an exaggeration dial), wheels that roll exactly, effects, and figures riding them.',
+    section: 'Guides',
+  },
+  {
     id: 'llm-guide',
     title: 'Building Animations with an LLM',
     summary: 'For assistants and the people setting them up: read the capability catalog (`tinyfly capabilities`), ask targets what they animate (`describeTarget`), check beats and tracks with did-you-mean errors (`tinyfly check`, `checkTracks`), render stills to look at, and the agent skill shipped in the package.',

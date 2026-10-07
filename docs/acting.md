@@ -316,6 +316,11 @@ one). Scripts are deterministic, so two personas can be timed against each
 other by reading one's `beats` before writing the other's (the **Code Review**
 example does).
 
+## Props
+
+Vehicles, trees, houses and aircraft act from beats through the same acting
+pass, and figures can ride them: see [Props](props.md).
+
 ## Acting on code
 
 `codePanel()` makes a code listing a scene object. Its layout is plain

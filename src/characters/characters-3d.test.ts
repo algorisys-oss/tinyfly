@@ -132,5 +132,27 @@ describe('characters in 3D scenes', () => {
     const lowest = (f: typeof frame) => Math.max(...f.triangles.filter((t) => t.objectId === 'didi').flatMap((t) => t.screen.map((p) => p.y)))
     expect(lowest(raised)).toBeLessThan(lowest(frame))
   })
+
+  it('is lit by the scene: its skin dims at night, and a scene with no lights leaves it as it was', () => {
+    const lit = (lights: Scene3D['objects']) => {
+      const ctx = createCanvas(SIZE.width, SIZE.height).getContext('2d') as unknown as CanvasRenderingContext2D
+      drawScene3D(ctx, loadScene3D({ ...scene(), objects: [...scene().objects, ...lights] }, { kinds: [characterObjects] }), undefined, SIZE)
+      return ctx.getImageData(0, 0, SIZE.width, SIZE.height).data
+    }
+    const plain = lit([])
+    // The face's fill, where it is unlit (warm pixels, red well above blue), measured at the same pixels lit.
+    const skin = (data: Uint8ClampedArray) => {
+      let sum = 0
+      let count = 0
+      for (let i = 0; i < plain.length; i += 4) if (plain[i] > plain[i + 2] + 30) { sum += data[i] + data[i + 1] + data[i + 2]; count++ }
+      expect(count).toBeGreaterThan(50)
+      return sum / count
+    }
+    expect(lit([]).every((v, i) => v === plain[i])).toBe(true)
+    const day = lit([{ id: 'sun', kind: 'light', light: 'directional', color: '#ffffff', intensity: 1, position: [0, 3, 5] }, { id: 'sky', kind: 'light', light: 'ambient', color: '#ffffff', intensity: 0.5 }])
+    const night = lit([{ id: 'sky', kind: 'light', light: 'ambient', color: '#6070a0', intensity: 0.3 }])
+    expect(skin(day)).toBeCloseTo(skin(plain), -1)
+    expect(skin(night)).toBeLessThan(skin(day) * 0.6)
+  })
 })
 

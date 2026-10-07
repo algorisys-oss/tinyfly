@@ -2,7 +2,7 @@ import type { Mat4, Vec3 } from '../engine/math'
 import type { AnimatableValue } from '../engine/types'
 import type { Material3D, Object3D } from './scene-types'
 import type { PreparedMesh } from './load-scene'
-import type { ResolvedCamera, ResolvedScene3D, ScreenPoint } from './resolve-scene'
+import type { ResolvedCamera, ResolvedLight, ResolvedScene3D, ScreenPoint } from './resolve-scene'
 
 /**
  * A kind of scene object beyond the built-in meshes, lights and cameras,
@@ -44,6 +44,9 @@ export interface ObjectContext {
   /** Its world matrix */
   world: Mat4
   camera: ResolvedCamera
+  /** The scene's lights (empty when it brings none), and its fog: for kinds that light what they draw as the meshes are */
+  lights: ResolvedLight[]
+  fog?: ResolvedScene3D['fog']
   /** Canvas size, px */
   width: number
   height: number

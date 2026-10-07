@@ -124,6 +124,10 @@ export interface CharacterObject3D extends ObjectBase {
   pose?: Record<string, number>
   /** A soft shadow on the ground under it (default true) */
   shadow?: boolean
+  /** The gait it walks in when walking (`walk`, `run`, `sneak`, `strut`, `tired`, `bouncy`…; default walk); a `gait` track can change it */
+  gait?: string
+  /** How much of its gait is applied, 0..1 (default 0); its `walk` track (the gait's phase, in cycles) steps it — see `characterScript3D` */
+  walking?: number
   /**
    * `pen` (default): drawn by its pens, in its 2D look (clean, pencil,
    * silhouette) seen in perspective. `solid`: built of shaded capsules and an
@@ -132,6 +136,41 @@ export interface CharacterObject3D extends ObjectBase {
   look?: 'pen' | 'solid'
   /** The solid look's colours and shading (default: a slate body, skin, toon with ink) */
   solid?: { color?: string; skin?: string; shading?: 'unlit' | 'flat' | 'lambert' | 'toon'; outline?: { width: number; color: string } | false }
+}
+
+/**
+ * A prop (a car, a tree, a house, a horse, a bird…) named by its preset,
+ * drawn with the characters' pens in its look. Like characters, it needs the
+ * characters add-on: `loadScene3D(scene, { kinds: [characterObjects, propObjects] })`
+ * with both from `@algorisys/tinyfly/characters`. It stands on its object's
+ * ground and faces +z; `rotateY` turns it. Its controls (`door`, `wheelSpin`,
+ * `spread`, …) are tracks on the object too.
+ */
+export interface PropObject3D extends ObjectBase {
+  kind: 'prop'
+  /** The preset: car, truck, bus, tractor, cart, trainCar, bike, motorbike, tree, house, helicopter, airplane, horse, dog, cat, cow, songbird, crow, chicken */
+  prop: string
+  /** The preset's options (colours, sizes) */
+  options?: Record<string, unknown>
+  /** Its control values as placed (`door: 1`, `lights: 1`); tracks animate them */
+  values?: Record<string, number>
+  /** clean (default), pencil or silhouette, as the figures */
+  /**
+   * clean (default), pencil or silhouette: drawn with the figures' pens. `mesh`: built of the scene's own
+   * meshes, lit, outlined and depth-sorted with them (exact with the WebGL2 renderer); glass is see-through
+   */
+  look?: 'clean' | 'pencil' | 'silhouette' | 'mesh'
+  /** The mesh look's shading (default toon) and outline width in px (default 2) */
+  shading?: 'unlit' | 'flat' | 'lambert' | 'toon'
+  outline?: number
+  /** solid (default) or stick (line art) */
+  style?: 'solid' | 'stick'
+  /** Outline colour */
+  ink?: string
+  /** The paper a stick prop's shapes are filled with */
+  paper?: string
+  /** A contact shadow on the ground under it (default true) */
+  shadow?: boolean
 }
 
 /** How a line or trail looks: a flat band facing the camera, drawn among the meshes by depth. */
@@ -176,7 +215,7 @@ export interface TrailObject3D extends ObjectBase, StrokeStyle3D {
   period?: number
 }
 
-export type Object3D = GroupObject | MeshObject | CameraObject | LightObject | CharacterObject3D | LineObject3D | TrailObject3D
+export type Object3D = GroupObject | MeshObject | CameraObject | LightObject | CharacterObject3D | PropObject3D | LineObject3D | TrailObject3D
 
 export type Geometry3D =
   | { type: 'box'; size: Vec3Tuple }
@@ -200,6 +239,8 @@ export interface Material3D {
   shading?: 'unlit' | 'flat' | 'lambert' | 'toon'
   /** Toon: number of light bands (default 3) */
   bands?: number
+  /** Inked creases too, where faces meet at a sharp angle (default true); false for smooth surfaces built of facets: only their silhouettes */
+  creases?: boolean
   /** Ink outline along silhouettes and creases, px */
   outline?: { width: number; color: string }
   /** Light the surface gives off itself, added after lighting (both modes): neon, screens, lamps; feeds bloom */

@@ -1,7 +1,7 @@
 import type { CustomTarget } from '../../adapters/canvas'
 import type { AnimatableValue, AnimationState } from '../../engine/types'
 import { drawScene3D, loadScene3D, type LoadedScene3D, type Object3D, type SceneValues } from '../../scene-3d'
-import { characterObjects } from '../../characters'
+import { characterObjects, propObjects } from '../../characters'
 import type { Scene3DElement } from '../stores/scene-store'
 
 /**
@@ -25,7 +25,7 @@ export function loadedScene3D(element: Scene3DElement): LoadedScene3D {
   const key = JSON.stringify(element.scene)
   let loaded = loadedCache.get(key)
   if (!loaded) {
-    loaded = loadScene3D(element.scene, { kinds: [characterObjects] })
+    loaded = loadScene3D(element.scene, { kinds: [characterObjects, propObjects] })
     if (loadedCache.size >= CACHE_LIMIT) loadedCache.delete(loadedCache.keys().next().value!)
     loadedCache.set(key, loaded)
   }

@@ -1,3 +1,4 @@
+import { hashSeed } from '../engine/authoring/random'
 import type { CustomTarget } from '../adapters/canvas'
 import type { EasingType, Track } from '../engine/types'
 import type { Point } from '../adapters/canvas/sketch'
@@ -381,6 +382,60 @@ export function drawCharacterInView(ctx: CanvasRenderingContext2D, character: Ch
   const skeleton = skeletonInView(character.plan, full, { height: options.height, contact: character.contact }, projection)
   const seen = seenAt(character, skeleton.height)
   drawSolved(ctx, seen, full, solveFrom(seen, full, skeleton), options.time ?? 0)
+}
+
+/** One part of a character seen through a camera: its depth (nearer is larger) and how to draw it. */
+export interface CharacterPartInView {
+  /** The chain's id (`spine`, `arm.left`, `leg.right`…) or `head` */
+  part: string
+  /** Its depth in the view, in the projection's units, nearer is larger (metres in a 3D scene) */
+  depth: number
+  /** Draws it; `time` (ms) is the pencil's boil frame and the layer hooks' time */
+  draw(ctx: CanvasRenderingContext2D, time?: number): void
+}
+
+/**
+ * A character seen through any camera, part by part, each with its depth:
+ * for drawing it among other things that each sort by depth (in a 3D scene,
+ * a rider's far leg behind a horse and the near one in front). Drawn in
+ * their order they make what `drawCharacterInView` draws; each part has its
+ * own pen, seeded by the character and the part, so a pencil boils the same
+ * whatever order they come in. Wardrobe layers go with their parts; those
+ * behind and in front of the whole figure go with its first and last parts.
+ */
+export function characterPartsInView(character: Character, pose: Pose, projection: ViewProjection, options: Pick<InViewOptions, 'height'>): CharacterPartInView[] {
+  const full = character.plan.id === 'human' ? { ...HUMAN_REST, ...pose } : pose
+  const skeleton = skeletonInView(character.plan, full, { height: options.height, contact: character.contact }, projection)
+  const seen = seenAt(character, skeleton.height)
+  const { joints, order } = solveFrom(seen, full, skeleton)
+  // The skeleton's depths are px at the hips; the projection's own units (metres in a scene) are wanted.
+  const pxPerUnit = skeleton.height / options.height
+  return order.map((id, index) => ({
+    part: id,
+    depth: (joints.parts[id]?.depth ?? 0) / pxPerUnit,
+    draw(ctx: CanvasRenderingContext2D, time = 0) {
+      const pen = createPen(ctx, { look: seen.look, ink: seen.ink, lineWidth: seen.lineWidth, seed: hashSeed(`${seen.seed}:${id}`), time, pencil: seen.pencil })
+      const hook = (layer?: CharacterLayer) => {
+        if (!layer) return
+        ctx.save()
+        layer(ctx, joints, pen, time)
+        ctx.restore()
+      }
+      ctx.save()
+      ctx.lineCap = 'round'
+      ctx.lineJoin = 'round'
+      if (index === 0) {
+        if (seen.look === 'pencil' && seen.pencil.construction !== false) drawConstruction(pen, seen, joints)
+        hook(seen.layers.behind)
+      }
+      const layers = seen.layers.parts?.[id]
+      hook(layers?.under)
+      drawPart(ctx, pen, seen, joints, id, full)
+      hook(layers?.over)
+      if (index === order.length - 1) hook(seen.layers.front)
+      ctx.restore()
+    },
+  }))
 }
 
 function drawSolved(ctx: CanvasRenderingContext2D, character: Character, full: Pose, solved: Solved, time: number): void {

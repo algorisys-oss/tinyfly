@@ -301,6 +301,8 @@ export function resolveScene3D(loaded: LoadedScene3D, values: SceneValues = new 
       values: valuesOf(object.id),
       world: worlds.get(object.id)!,
       camera,
+      lights,
+      fog: scene.fog,
       width: options.width,
       height: options.height,
       toScreen,
@@ -441,7 +443,7 @@ function meshTriangles(
       for (const edge of mesh.faceEdges[f]) {
         const across = edge.across
         const silhouette = across === -1 || !facing[across]
-        const crease = !silhouette && f < across && vec3.dot(faceNormals[f], faceNormals[across]) < CREASE_COS
+        const crease = material.creases !== false && !silhouette && f < across && vec3.dot(faceNormals[f], faceNormals[across]) < CREASE_COS
         if ((silhouette || crease) && inFront(edge.a) && inFront(edge.b)) outline.push([toScreen(viewPoints[edge.a]), toScreen(viewPoints[edge.b])])
       }
     }

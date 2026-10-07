@@ -54,3 +54,14 @@ describe('capabilities with a cast', () => {
     expect(capabilitiesMarkdown()).toContain('persona({ name')
   })
 })
+
+describe('capabilities: props', () => {
+  it('lists every preset with its actions, controls and anchors', () => {
+    const c = capabilities()
+    expect(Object.keys(c.props.presets)).toEqual(expect.arrayContaining(['car', 'tree', 'house', 'helicopter', 'airplane', 'bike']))
+    expect(c.props.presets.car.actions.drive.needs).toEqual(['to'])
+    expect(c.props.presets.car.anchors).toContain('seat')
+    expect(c.props.commonActions.pop).toMatch(/Pops/)
+    expect(capabilitiesMarkdown()).toMatch(/\| `helicopter\(\)` \| aircraft \|/)
+  })
+})

@@ -242,9 +242,150 @@ plays in 3D: `stickToHuman(danceFrame(style, beat))` gives the pose, and
 `lift` and ground contact behave as they do front-on; seen front-on through a
 flat camera, a character is exactly the 2D figure.
 
+**Walking in metres.** `characterScript3D(id, beats, { scene, position, heading, height })`
+scripts a character in world metres, as `propScript3D` does props:
+
+```js
+import { characterScript3D } from '@algorisys/tinyfly/characters'
+
+const tum = characterScript3D('tum', [
+  { do: 'walk', to: [1.4, 1.6] },                       // a gait, to a point [x, z] metres
+  { do: 'pose', pose: 'wave', for: 500 },               // a named pose (or pose fields)
+  { do: 'run', through: [[3.5, 0], [2.5, -3], [-3, 0]] }, // along a smooth path
+  { do: 'face', toward: [0, 3] },                       // a point, or a heading in degrees
+  { do: 'gag', gag: 'take' },
+], { scene: 'village', position: [0.6, 0.2], heading: 0 })
+```
+
+A move is a gait (`walk`, `run`, `sneak`, `strut`, `tired`, `bouncy`,
+`doubleBounce`, `shove`); it turns to face the way first and goes at the
+gait's pace for its height (or `speed`, `for`). It keys `walk` (the gait's
+phase) with the distance, one stride per cycle, so the feet stay planted, plus
+`walking` (eased in and out) and `gait`. The character object turns those into
+the stepping pose as it draws, on the pose it holds: a wave carries on while it
+walks. Objects take `gait` and `walking` as fields too.
+
+**Riding.** `propRide3D({ prop, propId, propTracks, scene, placement, anchor, riderId, pose, start, end, mount?, dismount? })`
+keeps a rider's hips on a prop's seat anchor (a horse's `saddle`, a bike's or
+a cart's `seat`) as the prop moves, turns, bobs with its stride and pitches,
+writing the rider's `x`, `y`, `z` and `rotateY`; `mount: { from: [x, z] }` and
+`dismount: { to: [x, z] }` hop it on and off. `spliceTracks(riderTracks, ride, { from, to })`
+puts the ride into the rider's script, which holds the riding pose
+(`RIDING_POSES.astride` or `.seated`) meanwhile and `place`s it where it got
+off. A character in a scene is drawn part by part, each part at its own depth
+(`characterPartsInView`), so a leg astride a horse shows on each side of it.
+A seat inside a closed cabin (a car's) is not handled yet: its glass is opaque
+in 3D.
+
 Outside scenes, `drawCharacterInView(ctx, character, pose, projection, { height })`
 draws a character through any camera (`projection.toView` / `toScreen`), and
 `skeletonInView` / `stagePlanSpace` give its joints.
+
+## Props
+
+Props (cars, trucks, trees, houses, aircraft, horses, dogs, birds…) stand in
+scenes too, named by their preset in plain data and drawn with the same pens
+as the characters, solid or as line art:
+
+```js
+import { characterObjects, propObjects } from '@algorisys/tinyfly/characters'
+
+const scene = loadScene3D({
+  id: 'village', camera: 'cam', /* … */
+  objects: [
+    /* camera, lights, ground … */
+    { id: 'car', kind: 'prop', prop: 'car', position: [0, 0, 3], rotation: [0, 90, 0], values: { door: 1 } },
+    { id: 'barn', kind: 'prop', prop: 'house', position: [3.5, 0, -5], options: { colors: { walls: '#c0583f' } } },
+    { id: 'crow', kind: 'prop', prop: 'crow', position: [0, 3, 0], values: { spread: 1, flapping: 1 }, style: 'stick' },
+  ],
+}, { kinds: [characterObjects, propObjects] })
+```
+
+| Field | |
+|---|---|
+| `prop` | the preset's name (`car`, `truck`, `bus`, `tractor`, `cart`, `trainCar`, `bike`, `motorbike`, `tree`, `house`, `helicopter`, `airplane`, `horse`, `dog`, `cat`, `cow`, `songbird`, `crow`, `chicken`); a wrong one is refused with the one probably meant |
+| `options` | the preset's options (colours, sizes) |
+| `values` | its control values as placed (`door`, `lights`, `spread`, …) |
+| `look` | `clean` (default), `pencil` or `silhouette`, drawn with the figures' pens; or `mesh`, built of the scene's own meshes |
+| `shading`, `outline` | the mesh look's shading (`toon` by default) and outline width in px (default 2) |
+| `style` | `solid` (default) or `stick` (line art) |
+| `ink`, `paper` | outline colour, and the paper a stick prop is filled with |
+| `shadow` | its contact shadow (default true) |
+
+A prop is built in metres, faces +z and stands on its object's ground; the
+scene's camera turns it (its own `turn` and `tilt` are not used), and faces
+are culled toward the camera's eye, so it is right in perspective close up.
+Its controls are tracks on its object: `village/car` `wheelSpin`,
+`village/horse` `walk` and `walking`, `village/crow` `wingbeat`. Keep wheels
+and strides honest the way the 2D scripts do: key `wheelSpin` as the distance
+over the wheel radius (`car().wheelRadius`), and a horse's `walk` phase as the
+distance over `horseStrideLength('walk')`.
+
+**Scripting props in metres.** `propScript3D(id, prop, beats, { scene, position, heading })`
+compiles beats with world targets into the object's tracks (`x`, `z`,
+`rotateY` and its controls):
+
+```js
+import { propScript3D, car, horse, crow } from '@algorisys/tinyfly/characters'
+
+const drive = propScript3D('car', car(), [
+  { do: 'drive', to: [9, 3] },                                   // a point on the ground, [x, z] metres
+  { do: 'honk' },                                                // any action, as in 2D (controls only)
+  { do: 'drive', through: [[11, 4.6], [9, 6.2], [-9, 6.2]] },   // a smooth path through points
+  { do: 'face', toward: [0, 0] },                                // a point, or a heading in degrees
+], { scene: 'village', position: [-9, 3], heading: 90 })
+const flight = propScript3D('crow', crow(), [{ do: 'fly', to: [2, 1], height: 0 }], { scene: 'village', position: [0, 5], values: { lift: 3 } })
+const timeline = deserializeTimeline({ id: 'village', tracks: [...drive.tracks, ...flight.tracks] })
+```
+
+A move (a prop's `moves`: `drive`; `walk`, `trot`, `canter`, `gallop` or
+`run`; a bird's `walk` and `fly`; an aircraft's `fly`) turns to face the way
+first, then goes at its own speed (or `speed`, metres per second, or `for`
+ms), easing in and out. Its wheels and strides are keyed with the distance at
+every moment, so wheels roll and feet step exactly; a wingbeat or a rotor
+keeps time. A flier's `height` is how high it goes (`0` lands it); between
+flights it stays up with its wings beating. `face`, `hold` and the prop's own
+actions (`honk`, `bark`, `peck`, `door`…) work as in 2D. `checkPropBeats3D`
+names what was probably meant; `end` gives where it finished, for the next
+script.
+
+**Lit by the scene.** A pen-drawn prop is lit by the scene's lights as its
+meshes are (ambient, directional, point and spot, with fog): each face at its
+place in the world, so a low orange sun warms its sunlit sides and a night's
+blue moon darkens it. Glowing parts (lit windows, headlights: a house's or a
+car's `lights` control) glow over the top, so they shine in the dark. A scene
+with no lights keeps the props' own light, which follows the camera; line art
+(`style: 'stick'`) stays unlit. A pen-drawn character's skin takes the light
+reaching its chest from the camera's side (at most its own colour) and the fog
+there: lit from behind the camera its face shows, against a low sun it goes
+dark, at night it dims. Its ink is its own, so give a character a light ink in
+a dark scene (`character: { ink: '#dfe5f0' }`). The solid look is lit as
+meshes are.
+
+**The mesh look.** `look: 'mesh'` builds a prop of the scene's own meshes, as
+a character's `look: 'solid'` does: each part's shape is built once and placed
+each frame, lit and outlined like everything else, glass see-through (so a
+driver shows behind a windscreen), glowing parts as light of their own, hidden
+faces left out, its shadow a soft disc. With the WebGL2 renderer its depth
+order is exact, pixel by pixel; the canvas renderer sorts it triangle by
+triangle, which can slip where a small part lies on a big face (a window on a
+wall). For the canvas, the pen looks sort better (below); for exact depth, use
+the mesh look with WebGL2.
+
+**How props sort.** A pen-drawn prop is not drawn whole at one depth. It is
+cut into columns about a metre across (along its length and width), and each
+column sorts at its own depth among the scene's other things, so a figure
+walking past a bus is covered by its front end and covers its back. Inside a
+column, faces are drawn far to near, each with its own outlines. Faces no one
+can see are left out: those inside another solid part, or lying against one
+(a house's wall tops under its roof, a tyre's tread inside the fender). A
+face lying on another part's face (a light, a window, a door) is drawn just
+after it. Where a part sits partly into another, its `layer` says which is
+drawn over (a car's cabin over its body, a roof over its walls). What is
+nearer than the camera's near plane is cut away, so a camera can come close or
+go inside. A pen-drawn character is still drawn whole at its middle's depth,
+and painter's order has limits: for exact order use the solid look and the
+WebGL2 renderer.
 
 **Other object kinds** come the same way: an `ObjectKind` validates its
 objects, prepares them once, and each frame returns meshes (shaded and sorted
