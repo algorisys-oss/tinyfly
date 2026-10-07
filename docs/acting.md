@@ -253,6 +253,69 @@ leaves, with a time, a scene x and y and a length, ready for `drawDustPuff`.
 Any beat can also take `onto` (a scene y): the figure is carried to that floor
 over the beat, as when the line it stands on moves up.
 
+## Your own actions, gaits and personas
+
+Behaviours of your own are plain values passed where they are used; nothing
+is registered globally.
+
+**Actions** come in two kinds. Built from other beats (a macro):
+
+```js
+const nervousPoint = defineAction({
+  summary: 'Trembles, then points at the target.',
+  needs: ['target'],
+  beats: (beat) => [{ do: 'tremble' }, { do: 'point', target: beat.target }],
+})
+```
+
+Or written as timed pose steps from the pose it starts on, like a gag:
+
+```js
+const facepalm = defineAction({
+  summary: 'Drops its face into its hand.',
+  steps: (from) => [
+    { after: 220, pose: { rightShoulder: 150, rightElbow: 155, headTilt: from.headTilt - 10 }, easing: 'ease-out' },
+    { after: 900, pose: { headTilt: from.headTilt - 16 } },
+  ],
+})
+```
+
+**Gaits** are data, like the built-in ones: `defineGait({ swing, knee, arm,
+elbow, lean, cycle?, sway?, … })` (degrees; `cycle` is ms per two steps).
+
+Pass them to `scriptTracks(id, beats, { actions, gaits })`, `checkBeats(beats,
+{ actions, gaits })` and the figure that draws them
+(`stickFigureTarget({ …, cast: { actions, gaits } })`, which lists them in
+`describeTarget`). A custom name may not reuse a built-in one. A beats action's
+first beat keeps the original's `at`, and its `mood` and `say` go to the first
+beat that has none; the expanded beats are checked too.
+
+**Personas** bundle a character: its look, acting style, gait, usual face,
+stance and own actions.
+
+```js
+const junior = persona({
+  name: 'Junior', summary: 'A nervous junior developer',
+  look: { color: '#89b4fa', rubber: 0.7 }, height: 92,
+  acting: 'full', gait: 'sneak', mood: 'worried', stance: 'rest',
+  actions: { facepalm },
+})
+const hero = junior.figure({ x: 600, y: 300, facing: -1 })
+const script = junior.script('hero', [
+  { do: 'go', to: 300 },              // walks in its own gait
+  { do: 'facepalm', say: 'Oh no.' },
+  { do: 'stand' },                    // back to its stance and usual face
+], { from: 600, ground: 300, facing: -1 })
+junior.check(beats)                   // its own actions count as known
+junior.describe()                     // { name, summary, habits, actions, own }
+junior.handPath('hero', script.tracks, { x: 600, y: 300, start, end })
+```
+
+`go` is a built-in action: it walks in the persona's gait (in `walk` without
+one). Scripts are deterministic, so two personas can be timed against each
+other by reading one's `beats` before writing the other's (the **Code Review**
+example does).
+
 ## Acting on code
 
 `codePanel()` makes a code listing a scene object. Its layout is plain

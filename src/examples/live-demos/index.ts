@@ -22,6 +22,7 @@ import { codeActing } from './code-acting'
 import { codeRefactor } from './code-refactor'
 import { codeFix } from './code-fix'
 import { codeTidy } from './code-tidy'
+import { codeReview } from './code-review'
 import { dressedFigures } from './dressed-figures'
 import { danceFloor } from './dance-floor'
 import { mapRoute } from './map-route'
@@ -79,6 +80,7 @@ import codeActingSource from './code-acting.js?raw'
 import codeRefactorSource from './code-refactor.js?raw'
 import codeFixSource from './code-fix.js?raw'
 import codeTidySource from './code-tidy.js?raw'
+import codeReviewSource from './code-review.js?raw'
 import dressedFiguresSource from './dressed-figures.js?raw'
 import danceFloorSource from './dance-floor.js?raw'
 import mapRouteSource from './map-route.js?raw'
@@ -193,6 +195,7 @@ export const liveDemos: LiveDemoWithCode[] = [
   withCode(codeRefactor, codeRefactorSource),
   withCode(codeFix, codeFixSource),
   withCode(codeTidy, codeTidySource),
+  withCode(codeReview, codeReviewSource),
   withCode(dressedFigures, dressedFiguresSource),
   withCode(danceFloor, danceFloorSource),
   withCode(mapRoute, mapRouteSource),

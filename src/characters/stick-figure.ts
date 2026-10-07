@@ -1,6 +1,7 @@
 import type { PropertyInfo, TargetAbout } from '../adapters/canvas/target-properties'
 import { STICK_POSE_FIELDS, STICK_FIGURE_EXTRAS, HAND_FIELDS } from './figure-props'
 import { figureActions } from './figure-actions'
+import type { Cast } from './acting/custom'
 import type { CustomTarget } from '../adapters/canvas'
 import type { FrameInfo } from '../headless/video-scene'
 import type { EasingType, Track } from '../engine/types'
@@ -1296,9 +1297,11 @@ export type Dancer = (beat: number) => DanceFrame
  * cycle (by `walking`), a dance (by `dancing`) and the chatter of `talk`
  * folded in, and the dance's hand shapes.
  */
-export function resolveStickFrame(props: StickFigureProps, time: number, dance?: Dancer): DanceFrame {
+export function resolveStickFrame(props: StickFigureProps, time: number, dance?: Dancer, gaits?: Cast['gaits']): DanceFrame {
   const standing: StickPose = { ...props }
-  let figure = props.walking > 0 ? blendPose(standing, gaitPose(props.gait, props.walk, standing), props.walking) : standing
+  // A cast's own gaits are looked up by name first.
+  const gait = (props.gait && gaits?.[props.gait]) || props.gait
+  let figure = props.walking > 0 ? blendPose(standing, gaitPose(gait, props.walk, standing), props.walking) : standing
   // The target's own hands (its `hand.*` props), which a dance blends away from.
   let hands = handsFromProps(props as unknown as Record<string, unknown>)
   const dancing = props.dancing ?? 0
@@ -1315,8 +1318,8 @@ export function resolveStickFrame(props: StickFigureProps, time: number, dance?:
 }
 
 /** The pose of {@link resolveStickFrame}. */
-export function resolveStickPose(props: StickFigureProps, time: number, dance?: Dancer): StickPose {
-  return resolveStickFrame(props, time, dance).pose
+export function resolveStickPose(props: StickFigureProps, time: number, dance?: Dancer, gaits?: Cast['gaits']): StickPose {
+  return resolveStickFrame(props, time, dance, gaits).pose
 }
 
 /** A target's facing: its `facing` prop's sign, else its style's. */
@@ -1354,6 +1357,8 @@ export interface StickFigureTargetOptions {
    * (see `dancer()` and `danceTracks()`). Its hand shapes show when the style has `hands`.
    */
   dance?: Dancer
+  /** Your own actions and gaits (see `defineAction`, `defineGait`): it draws the gaits, and lists the actions in `about` */
+  cast?: Cast
 }
 
 /** A `custom` target made by {@link stickFigureTarget}. */
@@ -1362,6 +1367,8 @@ export interface StickFigureTarget extends CustomTarget {
   readonly figureStyle: StickStyle
   /** The dance it plays, if any */
   readonly figureDance?: Dancer
+  /** Its cast's own gaits, if any */
+  readonly figureGaits?: Cast['gaits']
 }
 
 /**
@@ -1390,12 +1397,13 @@ export function stickFigureTarget(options: StickFigureTargetOptions): StickFigur
     width,
     height,
     props: { ...props, ...handProps },
-    about: stickFigureAbout(Object.keys(handProps)),
+    about: stickFigureAbout(Object.keys(handProps), options.cast),
     figureStyle: style,
     figureDance: options.dance,
+    figureGaits: options.cast?.gaits,
     draw(ctx, target, time) {
       const values = target.props as unknown as StickFigureProps
-      const frame = resolveStickFrame(values, time, options.dance)
+      const frame = resolveStickFrame(values, time, options.dance, options.cast?.gaits)
       ctx.translate(width / 2, height)
       drawStickFigure(ctx, frame.pose, withDanceHands({ ...style, rubber: values.rubber, facing: facingOf(values, style) }, frame.hands), time)
     },
@@ -1407,7 +1415,7 @@ export function stickFigureTarget(options: StickFigureTargetOptions): StickFigur
  * joint and prop with its unit and range, and the actions a beat script can
  * give it.
  */
-function stickFigureAbout(handProps: string[]): TargetAbout {
+function stickFigureAbout(handProps: string[], cast?: Cast): TargetAbout {
   const props: Record<string, PropertyInfo> = { ...STICK_POSE_FIELDS, ...STICK_FIGURE_EXTRAS }
   for (const name of handProps) {
     const [, side, ...field] = name.split('.')
@@ -1420,7 +1428,7 @@ function stickFigureAbout(handProps: string[]): TargetAbout {
     props,
     // Read when asked: the list is registered by the acting module (see figure-actions).
     get actions() {
-      return figureActions()
+      return figureActions(cast)
     },
   }
 }
@@ -1452,7 +1460,7 @@ export function stickFigureAt(
     else if (property === 'y' || property === 'motionPathY') dy = value
     else if (property in props) (props as unknown as Record<string, number>)[property] = value
   }
-  const figure = resolveStickPose(props, frame.time, (target as Partial<StickFigureTarget>).figureDance)
+  const figure = resolveStickPose(props, frame.time, (target as Partial<StickFigureTarget>).figureDance, (target as Partial<StickFigureTarget>).figureGaits)
   const joints = stickFigureJoints(figure, { ...style, rubber: props.rubber, facing: facingOf(props, style) })
   return { pose: figure, joints: jointsToScene(joints, target.x + dx + target.width / 2, target.y + dy + target.height) }
 }

@@ -26,6 +26,14 @@ It is also the last part of `llms-full.txt`.
 From code, the same catalog is `capabilities()` (and `capabilitiesMarkdown()`)
 in `@algorisys/tinyfly/characters`.
 
+## Your own behaviours
+
+Write new actions with `defineAction()` (from beats, or as timed pose steps),
+new gaits with `defineGait()`, and characters with `persona()`. Pass them where
+they are used; `persona.describe()` and `capabilities(version, cast)` list them,
+and the checks accept them. See "Your own actions, gaits and personas" in
+`docs/acting.md`.
+
 ## 2. Ask a target what it can do
 
 ```js

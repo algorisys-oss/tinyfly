@@ -5,6 +5,8 @@ import { actTracks } from './act-tracks'
 import { GAGS, gag, gagDuration, type GagName } from './gags'
 import { lipSyncOver, type SpokenLine } from './lip-sync'
 import { assertBeats } from './beat-check'
+import { expandBeats, stepsDuration, type Cast, type GaitDefinition, type StepsAction } from './custom'
+import { stepsToKeys } from './gags'
 import type { ActingOptions } from './acting'
 
 /**
@@ -50,7 +52,7 @@ import type { ActingOptions } from './acting'
 /** The ways to get somewhere. */
 export type GaitAction = GaitName
 /** Everything a beat can do. */
-export type Action = GaitAction | PoseName | GagName | 'look' | 'say' | 'hold' | 'stand' | 'face' | 'zip' | 'leap' | 'swipe' | 'grab' | 'throw' | 'kick' | 'put' | 'write' | 'push'
+export type Action = GaitAction | PoseName | GagName | 'look' | 'say' | 'hold' | 'stand' | 'face' | 'zip' | 'leap' | 'swipe' | 'grab' | 'throw' | 'kick' | 'put' | 'write' | 'push' | 'go'
 
 /** Something in the scene a beat acts on: a point, or a box (a `CodeBox` fits). */
 export interface BeatTarget {
@@ -63,8 +65,8 @@ export interface BeatTarget {
 }
 
 export interface Beat {
-  /** What happens */
-  do: Action
+  /** What happens: a built-in action, or one of the cast's own actions and gaits */
+  do: Action | (string & {})
   /** When it starts, ms (default: when the beat before ends) */
   at?: number
   /** How long it takes, ms (default: the action's own length) */
@@ -92,7 +94,11 @@ export interface Beat {
   onto?: number
 }
 
-export interface ScriptOptions extends ActingOptions {
+export interface ScriptOptions extends ActingOptions, Cast {
+  /** The gait `go` walks in (a built-in or one of `gaits`; default walk) */
+  gait?: string
+  /** The stance `stand` returns to (default rest) */
+  rest?: StickPose
   /** Scene x the figure was placed at (its `x` track is an offset from here; default 0) */
   from?: number
   /** Scene y of its feet as placed (its `y` track is an offset from here; default 0) */
@@ -229,9 +235,8 @@ const START_STOP = 220
 const SPEECH_PER_CHAR = 65
 const SPEECH_MIN = 700
 
-const isGait = (action: Action): action is GaitName => action in GAITS
-const isGag = (action: Action): action is GagName => action in GAGS
-const isPose = (action: Action): action is PoseName => action in POSES
+const isGag = (action: string): action is GagName => action in GAGS
+const isPose = (action: string): action is PoseName => action in POSES
 
 /** How long a line takes to say, ms. */
 export function speechDuration(text: string): number {
@@ -243,8 +248,20 @@ export function speechDuration(text: string): number {
  * beat has an unknown action, mood, joint or field, or misses a field its
  * action needs: the message names what was probably meant (see `checkBeats`).
  */
-export function scriptTracks(target: string, beats: Beat[], options: ScriptOptions = {}): ScriptResult {
-  assertBeats(beats)
+export function scriptTracks(target: string, written: Beat[], options: ScriptOptions = {}): ScriptResult {
+  const cast: Cast = { actions: options.actions, gaits: options.gaits }
+  assertBeats(written, cast)
+  // `go` walks in its own gait; actions built from beats become those beats (checked again: a custom action can be wrong too).
+  const goGait = options.gait ?? 'walk'
+  const beats = expandBeats(written, options.actions).map((beat) => (beat.do === 'go' ? { ...beat, do: goGait } : beat))
+  assertBeats(beats, cast, 'scriptTracks (after expanding custom actions)')
+  /** The spec of a gait name, built in or the cast's. */
+  const gaitOf = (name: string): GaitDefinition | undefined => (GAITS as Record<string, GaitDefinition>)[name] ?? options.gaits?.[name]
+  const cycleOf = (name: string) => (GAIT_CYCLE_MS as Record<string, number>)[name] ?? options.gaits?.[name]?.cycle ?? 1000
+  const stepsOf = (name: string) => {
+    const definition = options.actions?.[name]
+    return definition && 'steps' in definition ? (definition as StepsAction) : undefined
+  }
   const from = options.from ?? 0
   const ground = options.ground ?? 0
   const height = options.height ?? 300
@@ -373,7 +390,8 @@ export function scriptTracks(target: string, beats: Beat[], options: ScriptOptio
     let releaseAt: number | undefined
     const extra = beat.pose ?? {}
 
-    if (isGait(beat.do)) {
+    const ownSteps = stepsOf(beat.do)
+    if (gaitOf(beat.do)) {
       const goal = beat.to ?? x
       const direction = goal === x ? facing : directionTo(goal)
       let walkStart = start
@@ -383,8 +401,8 @@ export function scriptTracks(target: string, beats: Beat[], options: ScriptOptio
         keyPose(walkStart, { turn: 1, ...extra }, beat.mood)
       } else if (beat.mood || beat.pose) keyPose(start + START_STOP, extra, beat.mood)
       const distance = Math.abs(goal - x)
-      const cycles = distance / gaitStrideLength(beat.do, height)
-      const walkTime = beat.for ?? Math.max(START_STOP * 2, cycles * GAIT_CYCLE_MS[beat.do])
+      const cycles = distance / gaitStrideLength(gaitOf(beat.do), height)
+      const walkTime = beat.for ?? Math.max(START_STOP * 2, cycles * cycleOf(beat.do))
       const walkEnd = walkStart + walkTime
       gaitKeys.push({ time: walkStart, value: beat.do })
       walkingKeys.push({ time: walkStart, value: 0 }, { time: walkStart + START_STOP, value: 1, easing: 'ease-out' })
@@ -643,6 +661,14 @@ export function scriptTracks(target: string, beats: Beat[], options: ScriptOptio
       end = release + PUSH_AWAY
       contactAt = contact
       releaseAt = release
+    } else if (ownSteps) {
+      // A custom action written as steps: spliced in like a gag, built on the current pose.
+      const from = beat.mood ? withExpression(pose, beat.mood) : pose
+      const steps = ownSteps.steps(from, beat)
+      const keysOfAction = stepsToKeys(steps, { at: start, from })
+      keys.push(...keysOfAction)
+      pose = keysOfAction[keysOfAction.length - 1].pose as StickPose
+      end = start + Math.max(stepsDuration(steps), beat.for ?? 0)
     } else if (isGag(beat.do)) {
       const keysOfGag = gag(beat.do, { at: start, from: beat.mood ? withExpression(pose, beat.mood) : pose })
       keys.push(...keysOfGag)
@@ -667,7 +693,7 @@ export function scriptTracks(target: string, beats: Beat[], options: ScriptOptio
       }
       end = start + Math.max(length, POSE_MOVE)
     } else if (isPose(beat.do) || beat.do === 'stand') {
-      const named = beat.do === 'stand' ? REST_POSE : POSES[beat.do]
+      const named = beat.do === 'stand' ? (options.rest ?? REST_POSE) : POSES[beat.do as PoseName]
       // A named pose keeps the way the figure is turned unless it sets its own (sitting does).
       const turn = named.turn !== REST_POSE.turn ? named.turn : pose.turn
       const face = beat.mood ? EXPRESSIONS[beat.mood] : { lookX: pose.lookX, lookY: pose.lookY }
@@ -682,8 +708,8 @@ export function scriptTracks(target: string, beats: Beat[], options: ScriptOptio
 
     if (beat.say) {
       // Speech starts once the beat's move has settled, and ends a little before the beat does.
-      const begin = isGait(beat.do) || isGag(beat.do) ? start : start + Math.min(150, (end - start) / 4)
-      const finish = isGait(beat.do) ? end : Math.max(begin + 200, end - 100)
+      const begin = gaitOf(beat.do) || isGag(beat.do) || ownSteps ? start : start + Math.min(150, (end - start) / 4)
+      const finish = gaitOf(beat.do) ? end : Math.max(begin + 200, end - 100)
       lines.push({ text: beat.say, start: begin, end: finish })
       if (beat.do === 'say') addTalkingHead(keys, pose, begin, finish)
     }

@@ -6,14 +6,16 @@
  * entry always loads it), and the figure's `about.actions` reads it then.
  */
 
-let provider: (() => Record<string, string>) | undefined
+import type { Cast } from './acting/custom'
+
+let provider: ((cast?: Cast) => Record<string, string>) | undefined
 
 /** Called once by the acting module. */
-export function provideFigureActions(list: () => Record<string, string>): void {
+export function provideFigureActions(list: (cast?: Cast) => Record<string, string>): void {
   provider = list
 }
 
-/** The actions a stick figure can be given, with a line each (empty until the acting module has loaded). */
-export function figureActions(): Record<string, string> {
-  return provider?.() ?? {}
+/** The actions a stick figure can be given (with a cast's own), a line each (empty until the acting module has loaded). */
+export function figureActions(cast?: Cast): Record<string, string> {
+  return provider?.(cast) ?? {}
 }

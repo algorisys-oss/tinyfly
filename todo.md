@@ -2515,6 +2515,15 @@ poses (docs/acting.md).
 - [x] npm package ships `docs/*.md`, `llms.txt`, `llms-full.txt` and `skills/tinyfly/SKILL.md`; `docs/llm-guide.md`
 - [x] Code panels reject unknown languages and remove styles; `editDistance`, `closestName`, `unknownName` in the engine
 
+### 36K — Your own behaviours (done)
+- [x] `defineAction()` (beats macros or timed pose steps), `defineGait()` (with `cycle`), passed as a cast to
+      `scriptTracks`, `checkBeats`, `stickFigureTarget({ cast })` and `handPath`; no global registry; custom names may
+      not shadow built-ins; expansions are checked; nesting is capped
+- [x] `persona()`: look, height, acting style, gait (`go`), usual mood, stance (`stand` returns to it), energy, own
+      actions and gaits; `.figure()`, `.script()`, `.check()`, `.handPath()`, `.describe()`
+- [x] `capabilities(version, cast)` lists a cast's own actions and gaits; the catalog documents the API
+- [x] `stepsToKeys()` shared by gags and step actions; gallery card **Code Review** (two personas)
+
 ### 36E — Next
 - [ ] Code panel in the editor (a Code element whose anchors snap beats)
 - [ ] Beat scripts for v2 characters (`scriptTracks` on the human plan)

@@ -5,6 +5,7 @@ import { GAGS, type GagName } from './gags'
 import type { Action, Beat } from './script'
 import type { PoseName } from '../stick-figure'
 import { provideFigureActions } from '../figure-actions'
+import type { Cast } from './custom'
 
 /**
  * Checking beat scripts before they are compiled. Beats are often written by
@@ -29,7 +30,8 @@ export const SCRIPT_ACTIONS = {
   face: { summary: 'Turns the whole figure toward a scene x (turning round if needed), `viewer`, `ahead` or `back`.', uses: ['toward'] },
   say: { summary: 'Lip-syncs the `say` line with small nods; the beat lasts as long as the line.', needs: ['say'] },
   hold: { summary: 'Holds the pose (the acting pass drifts long holds).' },
-  stand: { summary: 'Back to the rest pose, keeping the way it is turned.' },
+  stand: { summary: 'Back to its resting stance (a character’s own, else the rest pose), keeping the way it is turned.' },
+  go: { summary: 'Walks to `to` in its own gait (a character’s, else walk).', needs: ['to'] },
   zip: { summary: 'The cartoon exit: winds up, wheels its legs in place, then shoots off to `to`, leaving dust.', needs: ['to'] },
   leap: { summary: 'Crouches, springs, arcs and lands squashed at `to`, on the floor `onto` (a scene y).', uses: ['to', 'onto'] },
   swipe: { summary: 'Winds an arm up, then slides along the target with the arm out so the hand crosses it edge to edge.', uses: ['target'] },
@@ -43,18 +45,40 @@ export const SCRIPT_ACTIONS = {
 
 export type ScriptActionName = keyof typeof SCRIPT_ACTIONS
 
-/** Every name `do` accepts: gaits, named poses, gags and the actions above. */
-export function actionNames(): string[] {
-  return [...Object.keys(GAITS), ...Object.keys(POSES), ...Object.keys(GAGS), ...Object.keys(SCRIPT_ACTIONS)]
+/** Every name `do` accepts: gaits, named poses, gags, the actions above, and a cast's own actions and gaits. */
+export function actionNames(cast: Cast = {}): string[] {
+  return [
+    ...Object.keys(GAITS),
+    ...Object.keys(POSES),
+    ...Object.keys(GAGS),
+    ...Object.keys(SCRIPT_ACTIONS),
+    ...Object.keys(cast.gaits ?? {}),
+    ...Object.keys(cast.actions ?? {}),
+  ]
+}
+
+/** Errors in a cast itself: a custom name may not reuse a built-in one (it would be ambiguous which runs). */
+export function checkCast(cast: Cast = {}): string[] {
+  const builtIn = new Set(actionNames())
+  const problems: string[] = []
+  for (const name of [...Object.keys(cast.actions ?? {}), ...Object.keys(cast.gaits ?? {})]) {
+    if (builtIn.has(name)) problems.push(`Custom action or gait "${name}" has the name of a built-in one; give it its own name.`)
+  }
+  for (const name of Object.keys(cast.actions ?? {})) {
+    if (cast.gaits && name in cast.gaits) problems.push(`"${name}" is both a custom action and a custom gait.`)
+  }
+  return problems
 }
 
 /** Every action `do` accepts, with a line each: what a stick figure can do. */
-export function scriptActionSummaries(): Record<string, string> {
+export function scriptActionSummaries(cast: Cast = {}): Record<string, string> {
   const out: Record<string, string> = {}
   for (const gait of Object.keys(GAITS)) out[gait] = `Walks to \`to\` in the ${gait} gait, feet planted, turning round first if needed.`
   for (const pose of Object.keys(POSES)) out[pose] = `Moves into the ${pose} pose and holds it.`
   for (const gag of Object.keys(GAGS)) out[gag] = `The ${gag} gag, built on the current pose.`
   for (const [name, guide] of Object.entries(SCRIPT_ACTIONS)) out[name] = guide.summary
+  for (const [name, gait] of Object.entries(cast.gaits ?? {})) out[name] = gait.summary ?? `Walks to \`to\` in the ${name} gait (custom).`
+  for (const [name, action] of Object.entries(cast.actions ?? {})) out[name] = action.summary
   return out
 }
 
@@ -108,10 +132,11 @@ const isNumber = (value: unknown): value is number => typeof value === 'number' 
  * that go backwards. Errors make `scriptTracks` throw; warnings are things
  * that compile but probably do not do what was meant.
  */
-export function checkBeats(beats: unknown): BeatProblem[] {
-  const problems: BeatProblem[] = []
-  if (!Array.isArray(beats)) return [{ level: 'error', beat: -1, message: `Beats must be an array of { do: … } objects (got ${typeof beats}).` }]
-  const actions = actionNames()
+export function checkBeats(beats: unknown, cast: Cast = {}): BeatProblem[] {
+  const problems: BeatProblem[] = checkCast(cast).map((message) => ({ level: 'error', beat: -1, message }))
+  if (!Array.isArray(beats)) return [...problems, { level: 'error', beat: -1, message: `Beats must be an array of { do: … } objects (got ${typeof beats}).` }]
+  const actions = actionNames(cast)
+  const isGaitName = (name: string) => name in GAITS || name in (cast.gaits ?? {})
   const moods = Object.keys(EXPRESSIONS)
   const joints = Object.keys(REST_POSE)
   let lastAt = -Infinity
@@ -139,12 +164,12 @@ export function checkBeats(beats: unknown): BeatProblem[] {
       error(unknownName('action', action, actions))
       return
     }
-    const guide = (SCRIPT_ACTIONS as Record<string, ActionGuide>)[action]
+    const guide = (SCRIPT_ACTIONS as Record<string, ActionGuide>)[action] ?? cast.actions?.[action]
 
     for (const field of guide?.needs ?? []) {
       if (fields[field] === undefined) error(`\`${action}\` needs \`${field}\`.`)
     }
-    if (action in GAITS && fields.to === undefined) warning(`\`${action}\` without \`to\` walks nowhere.`)
+    if (isGaitName(action) && fields.to === undefined) warning(`\`${action}\` without \`to\` walks nowhere.`)
     if (action === 'leap' && fields.to === undefined && fields.onto === undefined) warning('`leap` without `to` or `onto` jumps on the spot.')
 
     if (fields.mood !== undefined && (typeof fields.mood !== 'string' || !moods.includes(fields.mood))) error(unknownName('mood', fields.mood, moods))
@@ -187,10 +212,10 @@ export function checkBeats(beats: unknown): BeatProblem[] {
 }
 
 /** Throws one error listing every error in the beats (warnings are left to `checkBeats`). */
-export function assertBeats(beats: unknown): void {
-  const errors = checkBeats(beats).filter((problem) => problem.level === 'error')
+export function assertBeats(beats: unknown, cast: Cast = {}, context = 'scriptTracks'): void {
+  const errors = checkBeats(beats, cast).filter((problem) => problem.level === 'error')
   if (errors.length === 0) return
-  throw new Error(`scriptTracks: ${errors.length} problem(s) in the beats:\n${errors.map((p) => `  beat ${p.beat}: ${p.message}`).join('\n')}`)
+  throw new Error(`${context}: ${errors.length} problem(s) in the beats:\n${errors.map((p) => `  ${p.beat >= 0 ? `beat ${p.beat}: ` : ''}${p.message}`).join('\n')}`)
 }
 
 // A stick figure's `about.actions` lists what this module can compile.

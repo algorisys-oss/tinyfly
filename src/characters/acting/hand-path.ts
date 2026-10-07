@@ -1,6 +1,7 @@
 import { Timeline } from '../../engine/core/timeline'
 import type { Track } from '../../engine/types'
 import { stickFigureAt, stickFigureTarget, type StickSide, type StickStyle } from '../stick-figure'
+import type { Cast } from './custom'
 
 /**
  * Where a stick figure's hand is over a stretch of time, scene px, sampled
@@ -19,6 +20,8 @@ export interface HandPathOptions {
   y: number
   /** The style it is drawn with (its height and look move the hand) */
   style?: StickStyle
+  /** Its cast, when it walks in a gait of its own */
+  cast?: Cast
   /** From and to, ms */
   start: number
   end: number
@@ -30,7 +33,7 @@ export interface HandPathOptions {
 
 export function handPath(target: string, tracks: Track[], options: HandPathOptions): Array<{ time: number; x: number; y: number }> {
   const timeline = new Timeline({ id: `${target}-hand`, tracks: tracks.filter((track) => track.target === target) })
-  const figure = stickFigureTarget({ x: options.x, y: options.y, style: options.style })
+  const figure = stickFigureTarget({ x: options.x, y: options.y, style: options.style, cast: options.cast })
   const side = options.side ?? 'right'
   const every = options.every ?? 33
   const path: Array<{ time: number; x: number; y: number }> = []

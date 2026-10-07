@@ -204,7 +204,7 @@ with a GSAP-style call (durations are in seconds here):
 ```html
 <div class="box" style="width:60px;height:60px;background:#4a9eff"></div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.93.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.94.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -412,7 +412,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.93.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.94.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -2278,7 +2278,7 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.93.0/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.94.0/cdn/tinyfly-player.iife.js`.
 
 ---
 
@@ -6464,7 +6464,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.93.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.94.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed
@@ -7364,6 +7364,14 @@ It is also the last part of `llms-full.txt`.
 From code, the same catalog is `capabilities()` (and `capabilitiesMarkdown()`)
 in `@algorisys/tinyfly/characters`.
 
+## Your own behaviours
+
+Write new actions with `defineAction()` (from beats, or as timed pose steps),
+new gaits with `defineGait()`, and characters with `persona()`. Pass them where
+they are used; `persona.describe()` and `capabilities(version, cast)` list them,
+and the checks accept them. See "Your own actions, gaits and personas" in
+`docs/acting.md`.
+
 ## 2. Ask a target what it can do
 
 ```js
@@ -7491,7 +7499,7 @@ path for all of that:
 </figure>
 
 <!-- once, anywhere on the page (a site-wide footer is fine) -->
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.93.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.94.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 Every `[data-tinyfly-embed]` mounts when the page is ready, with no per-post
@@ -8566,8 +8574,8 @@ On a page with no build step, load the maps add-on after the browser bundle; it
 adds to the same `tinyfly` global:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.93.0/cdn/tinyfly.iife.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.93.0/cdn/tinyfly-maps.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.94.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.94.0/cdn/tinyfly-maps.iife.js"></script>
 ```
 
 It is a separate script because the offline world map it carries adds about
@@ -9026,6 +9034,69 @@ leaves, with a time, a scene x and y and a length, ready for `drawDustPuff`.
 
 Any beat can also take `onto` (a scene y): the figure is carried to that floor
 over the beat, as when the line it stands on moves up.
+
+## Your own actions, gaits and personas
+
+Behaviours of your own are plain values passed where they are used; nothing
+is registered globally.
+
+**Actions** come in two kinds. Built from other beats (a macro):
+
+```js
+const nervousPoint = defineAction({
+  summary: 'Trembles, then points at the target.',
+  needs: ['target'],
+  beats: (beat) => [{ do: 'tremble' }, { do: 'point', target: beat.target }],
+})
+```
+
+Or written as timed pose steps from the pose it starts on, like a gag:
+
+```js
+const facepalm = defineAction({
+  summary: 'Drops its face into its hand.',
+  steps: (from) => [
+    { after: 220, pose: { rightShoulder: 150, rightElbow: 155, headTilt: from.headTilt - 10 }, easing: 'ease-out' },
+    { after: 900, pose: { headTilt: from.headTilt - 16 } },
+  ],
+})
+```
+
+**Gaits** are data, like the built-in ones: `defineGait({ swing, knee, arm,
+elbow, lean, cycle?, sway?, … })` (degrees; `cycle` is ms per two steps).
+
+Pass them to `scriptTracks(id, beats, { actions, gaits })`, `checkBeats(beats,
+{ actions, gaits })` and the figure that draws them
+(`stickFigureTarget({ …, cast: { actions, gaits } })`, which lists them in
+`describeTarget`). A custom name may not reuse a built-in one. A beats action's
+first beat keeps the original's `at`, and its `mood` and `say` go to the first
+beat that has none; the expanded beats are checked too.
+
+**Personas** bundle a character: its look, acting style, gait, usual face,
+stance and own actions.
+
+```js
+const junior = persona({
+  name: 'Junior', summary: 'A nervous junior developer',
+  look: { color: '#89b4fa', rubber: 0.7 }, height: 92,
+  acting: 'full', gait: 'sneak', mood: 'worried', stance: 'rest',
+  actions: { facepalm },
+})
+const hero = junior.figure({ x: 600, y: 300, facing: -1 })
+const script = junior.script('hero', [
+  { do: 'go', to: 300 },              // walks in its own gait
+  { do: 'facepalm', say: 'Oh no.' },
+  { do: 'stand' },                    // back to its stance and usual face
+], { from: 600, ground: 300, facing: -1 })
+junior.check(beats)                   // its own actions count as known
+junior.describe()                     // { name, summary, habits, actions, own }
+junior.handPath('hero', script.tracks, { x: 600, y: 300, start, end })
+```
+
+`go` is a built-in action: it walks in the persona's gait (in `walk` without
+one). Scripts are deterministic, so two personas can be timed against each
+other by reading one's `beats` before writing the other's (the **Code Review**
+example does).
 
 ## Acting on code
 
@@ -12301,7 +12372,7 @@ magnet.addEventListener('pointerleave', () => {
 
 <!-- capabilities: generated from the library -->
 
-# tinyfly capabilities (v0.93.0)
+# tinyfly capabilities (v0.94.0)
 
 Generated from the library itself: every name below is accepted, and names not listed are rejected (beat scripts, code panels and `checkTracks` say which name was probably meant).
 
@@ -12481,7 +12552,8 @@ With `style.hands`, each hand has `hand.left.<field>` / `hand.right.<field>` pro
 | `face` |  | Turns the whole figure toward a scene x (turning round if needed), `viewer`, `ahead` or `back`. |
 | `say` | `say` | Lip-syncs the `say` line with small nods; the beat lasts as long as the line. |
 | `hold` |  | Holds the pose (the acting pass drifts long holds). |
-| `stand` |  | Back to the rest pose, keeping the way it is turned. |
+| `stand` |  | Back to its resting stance (a character’s own, else the rest pose), keeping the way it is turned. |
+| `go` | `to` | Walks to `to` in its own gait (a character’s, else walk). |
 | `zip` | `to` | The cartoon exit: winds up, wheels its legs in place, then shoots off to `to`, leaving dust. |
 | `leap` |  | Crouches, springs, arcs and lands squashed at `to`, on the floor `onto` (a scene y). |
 | `swipe` |  | Winds an arm up, then slides along the target with the arm out so the hand crosses it edge to edge. |
@@ -12499,6 +12571,17 @@ Beats that touch something report `contact` (and `release`) times in `result.bea
 **Flips**: `frontFlip` (Front flip (tuck)), `backFlip` (Back flip (tuck)), `layout` (Back layout (straight body)), `scissorFlip` (Scissor flip), `sideFlip` (Side flip (tuck)), `cartwheel` (Cartwheel), `splitLeap` (Split leap (grand jeté)), `toeTouch` (Toe touch (straddle jump)), `backHandspring` (Back handspring).
 
 **Hand shapes**: `relaxed`, `open`, `spread`, `flat`, `fist`, `point`, `thumbsUp`, `peace`, `ok`, `pinch`, `cupped`, `wave`, `pencilGrip`, `hold`. **Mudras**: `pataka`, `tripataka`, `alapadma`, `mushti`, `shikhara`, `hamsasya`, `katakamukha`.
+
+### Your own actions, gaits and personas
+
+Nothing is registered globally: pass your definitions where they are used.
+
+- `defineAction({ summary, needs?, steps: (from, beat) => [{ after, pose, easing? }] })`: a new action written as timed pose steps from the current pose, like a gag
+- `defineAction({ summary, needs?, beats: (beat) => [beats] })`: a new action built from other beats (which may be custom too)
+- `defineGait({ swing, knee, arm, elbow, lean, cycle?, … })`: a new gait (the Gait fields in degrees; cycle is ms per two steps)
+- `scriptTracks(id, beats, { actions, gaits })`: beats may then use those names; checkBeats(beats, { actions, gaits }) knows them
+- `stickFigureTarget({ …, cast: { actions, gaits } })`: a figure that draws the gaits and lists the actions in describeTarget
+- `persona({ name, summary?, height?, look?, acting?, gait?, mood?, stance?, energy?, actions?, gaits? })`: a character’s look, acting style and habits: .figure({ x, y }), .script(id, beats, { from, ground }), .check(beats), .handPath(…), .describe(); `go` walks in its gait, `stand` returns to its stance and face
 
 ## Character (v2 human)
 

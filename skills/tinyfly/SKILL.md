@@ -41,6 +41,9 @@ names.
   Canvas `x`/`y` tracks are offsets from where a target was placed. Scene y
   grows downward. Angles are degrees.
 - Record code-panel edits before `code.ride(tracks, figureId, { ground })`.
+- For recurring characters, make a `persona()` (look, acting, gait, mood,
+  stance) and use `persona.script()`; for a move the catalog lacks, write it
+  with `defineAction()` rather than hand-keying joints in many places.
 
 ## 3. Check
 

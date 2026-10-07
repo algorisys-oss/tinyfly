@@ -12,6 +12,7 @@ import { ACTING_STYLES } from './acting/acting'
 import { BEAT_FIELDS, SCRIPT_ACTIONS } from './acting/beat-check'
 import { STICK_FIGURE_EXTRAS, STICK_POSE_FIELDS, HAND_FIELDS } from './figure-props'
 import { CODE_LANGUAGES, CODE_PANEL_EDITS, REMOVE_STYLES } from './code-panel'
+import type { Cast } from './acting/custom'
 
 /**
  * Everything tinyfly can do, as data read from the code itself: easings,
@@ -61,6 +62,8 @@ export interface Capabilities {
     handShapes: string[]
     mudras: string[]
   }
+  /** Making your own: actions, gaits and personas */
+  custom: { api: Record<string, string>; actions: Record<string, { summary: string; needs?: string[] }>; gaits: Record<string, string> }
   character: { poses: string[]; expressions: string[]; gags: string[] }
   codePanel: { languages: readonly string[]; removeStyles: readonly string[]; anchors: Record<string, string>; edits: Record<string, string> }
   cameraShots: Record<string, string>
@@ -68,7 +71,8 @@ export interface Capabilities {
   cli: Record<string, string>
 }
 
-export function capabilities(version?: string): Capabilities {
+/** The catalog; pass a cast (or a persona's `cast`) to list its own actions and gaits too. */
+export function capabilities(version?: string, cast: Cast = {}): Capabilities {
   const actions: Capabilities['stickFigure']['actions'] = {}
   for (const gait of Object.keys(GAITS)) actions[gait] = { summary: `Walks to \`to\` in the ${gait} gait.`, needs: ['to'] }
   for (const pose of Object.keys(POSES)) actions[pose] = { summary: `Moves into the ${pose} pose and holds it (\`for\` ms).` }
@@ -112,6 +116,19 @@ export function capabilities(version?: string): Capabilities {
       handShapes: Object.keys(HAND_SHAPES),
       mudras: Object.keys(MUDRAS),
     },
+    custom: {
+      api: {
+        'defineAction({ summary, needs?, steps: (from, beat) => [{ after, pose, easing? }] })': 'a new action written as timed pose steps from the current pose, like a gag',
+        'defineAction({ summary, needs?, beats: (beat) => [beats] })': 'a new action built from other beats (which may be custom too)',
+        'defineGait({ swing, knee, arm, elbow, lean, cycle?, … })': 'a new gait (the Gait fields in degrees; cycle is ms per two steps)',
+        'scriptTracks(id, beats, { actions, gaits })': 'beats may then use those names; checkBeats(beats, { actions, gaits }) knows them',
+        'stickFigureTarget({ …, cast: { actions, gaits } })': 'a figure that draws the gaits and lists the actions in describeTarget',
+        'persona({ name, summary?, height?, look?, acting?, gait?, mood?, stance?, energy?, actions?, gaits? })':
+          'a character’s look, acting style and habits: .figure({ x, y }), .script(id, beats, { from, ground }), .check(beats), .handPath(…), .describe(); `go` walks in its gait, `stand` returns to its stance and face',
+      },
+      actions: Object.fromEntries(Object.entries(cast.actions ?? {}).map(([name, a]) => [name, { summary: a.summary, ...(a.needs ? { needs: a.needs as string[] } : {}) }])),
+      gaits: Object.fromEntries(Object.entries(cast.gaits ?? {}).map(([name, g]) => [name, g.summary ?? 'custom gait'])),
+    },
     character: { poses: Object.keys(HUMAN_POSES), expressions: Object.keys(HUMAN_EXPRESSIONS), gags: Object.keys(HUMAN_GAGS) },
     codePanel: {
       languages: CODE_LANGUAGES,
@@ -152,8 +169,8 @@ const table = (rows: Record<string, PropertyInfo>) =>
     .join('\n')
 
 /** The catalog as markdown, for people and language models. */
-export function capabilitiesMarkdown(version?: string): string {
-  const c = capabilities(version)
+export function capabilitiesMarkdown(version?: string, cast: Cast = {}): string {
+  const c = capabilities(version, cast)
   const f = c.stickFigure
   const lines = [
     `# tinyfly capabilities${c.version ? ` (v${c.version})` : ''}`,
@@ -224,6 +241,21 @@ export function capabilitiesMarkdown(version?: string): string {
     '',
     `**Hand shapes**: ${list(f.handShapes)}. **Mudras**: ${list(f.mudras)}.`,
     '',
+    '### Your own actions, gaits and personas',
+    '',
+    'Nothing is registered globally: pass your definitions where they are used.',
+    '',
+    ...Object.entries(c.custom.api).map(([name, what]) => `- \`${name}\`: ${what}`),
+    '',
+    ...(Object.keys(c.custom.actions).length || Object.keys(c.custom.gaits).length
+      ? [
+          '**This cast’s own:**',
+          '',
+          ...Object.entries(c.custom.actions).map(([name, a]) => `- \`${name}\`${a.needs?.length ? ` (needs ${a.needs.map((n) => `\`${n}\``).join(', ')})` : ''}: ${a.summary}`),
+          ...Object.entries(c.custom.gaits).map(([name, summary]) => `- \`${name}\` (gait): ${summary}`),
+          '',
+        ]
+      : []),
     '## Character (v2 human)',
     '',
     `Poses: ${list(c.character.poses)}. Expressions: ${list(c.character.expressions)}. Gags: ${list(c.character.gags)}.`,

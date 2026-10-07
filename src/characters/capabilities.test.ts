@@ -39,3 +39,18 @@ describe('capabilities', () => {
     expect(md).toMatch(/\| `push` \| `target`, `to` \|/)
   })
 })
+
+describe('capabilities with a cast', () => {
+  it('lists the cast’s own actions and gaits', async () => {
+    const { defineAction, defineGait } = await import('./acting/custom')
+    const cast = {
+      actions: { facepalm: defineAction({ summary: 'Face into hand.', steps: () => [{ after: 300, pose: { rightShoulder: 150 } }] }) },
+      gaits: { limp: defineGait({ swing: 14, knee: 10, arm: 10, elbow: 6, lean: 6, summary: 'A limp' }) },
+    }
+    expect(capabilities(undefined, cast).custom.actions.facepalm.summary).toBe('Face into hand.')
+    const md = capabilitiesMarkdown(undefined, cast)
+    expect(md).toContain('- `facepalm`: Face into hand.')
+    expect(md).toContain('- `limp` (gait): A limp')
+    expect(capabilitiesMarkdown()).toContain('persona({ name')
+  })
+})

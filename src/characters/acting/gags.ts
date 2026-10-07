@@ -91,12 +91,20 @@ export interface GagOptions {
 /** The keys of a gag, starting at `at` on the pose it starts from; splice them into a key list. */
 export function gag(name: GagName, options: GagOptions): PoseKey[] {
   const from = typeof options.from === 'string' ? POSES[options.from] : options.from ?? REST_POSE
+  return stepsToKeys(GAGS[name](from), { ...options, from })
+}
+
+/**
+ * Timed steps (a gag's, or a custom action's) as pose keys from `at`: each
+ * step changes the pose from the one before. The move onto the starting pose
+ * is acted like any other; the steps are taken as written (`act: false`).
+ */
+export function stepsToKeys(steps: GagStep[], options: { at: number; from: StickPose; speed?: number }): PoseKey[] {
   const scale = options.speed ?? 1
-  let pose = from
+  let pose = options.from
   return [
-    // The move onto the starting pose is acted like any other; the gag itself is not.
-    { time: options.at, pose: from },
-    ...GAGS[name](from).map((step): PoseKey => {
+    { time: options.at, pose: options.from },
+    ...steps.map((step): PoseKey => {
       pose = { ...pose, ...step.pose }
       return { time: options.at + step.after * scale, pose, act: false, ...(step.easing ? { easing: step.easing } : {}) }
     }),
