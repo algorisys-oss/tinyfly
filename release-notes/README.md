@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.96.0](v0.96.0.md) | 2026-10-08 | Surfaces: figures act on more than code. Named places (`line:7`, `term:eq:+ 4`, `bar:q4`) and edits by name; `surfaceScript` for whole scenes as JSON (`then` cues at contact or release, `carry`); `whiteboard()` and `chart()` (bars a figure rides as they grow); Board Lesson and Chart Talk demos; fix: a figure starting left that never turns is drawn facing left |
 | [v0.95.0](v0.95.0.md) | 2026-10-07 | Props (vehicles, trees, houses, aircraft), animals (horse, dog, cat, cow) and birds that act from beats and turn toward the camera; in 3D scenes: props and characters scripted in world metres, riders, depth order, lit by the scene, a mesh look exact with WebGL2 |
 | [v0.94.0](v0.94.0.md) | 2026-10-07 | Your own behaviours: `defineAction()` (from beats or timed pose steps), `defineGait()`, `persona()` (look, acting style, gait, mood, stance, own actions), the `go` action; Code Review demo with two personas |
 | [v0.93.0](v0.93.0.md) | 2026-10-07 | Figures act on code (`codePanel`: leap, point, swipe, grab, throw, kick, put, write, push, ride; wipe/fly/blur deletes); made for LLMs: `tinyfly capabilities`, did-you-mean `check`/`checkBeats`/`checkTracks`, `describeTarget`, docs, `llms-full.txt` and an agent skill in the package |

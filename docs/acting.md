@@ -437,6 +437,136 @@ writes them out as one track per prop (`line.N.highlight`, `line.N.strike`,
 keyword lists for Go, Rust, C#, JavaScript, TypeScript and Python (strings,
 numbers and line comments too); `plain` leaves the text uncoloured.
 
+### Places and edits by name
+
+A code panel is a *surface*: every place on it has a name, so a scene can be
+written as plain data. `anchor(name)` gives the box there, `piece(name)` the
+word there, and `edit(name, anchor, options)` does the same as the methods
+above:
+
+```js
+code.anchor('line:7')               // = code.line(7)
+code.anchor('token:4:Println')      // = code.token(4, 'Println'); token:4#2:x is the second x
+code.anchor('spot:3:4')             // = code.spot(3, 4)
+
+code.edit('highlight', ['line:2', 'line:3'], { at: 100 })
+code.edit('fling', 'token:4:Println', { at: grab.release })
+code.edit('drop', 'token:1:int', { at: 1600, into: 'spot:3:2' })
+code.edit('move', 'token:4:fmt.', { at: 600, to: 'box' })
+```
+
+A wrong name says what it meant (`Unknown anchor "lin": did you mean "line"?`),
+and an edit given the wrong kind of place says which kind it takes. The
+anchors and edits are listed under "Surfaces" in `capabilities()`. Boards,
+charts and props that change state are planned as surfaces that work the
+same way.
+
+### A whole scene as data
+
+`surfaceScript()` takes beats that name places and say what the surface does
+in answer, so the reactions above need no wiring by hand. A beat's `target`,
+`to` and `onto` can be a place (`{ surface, anchor }`: its box, its centre x,
+its top), and `then` holds the surface's cues, each at a moment of the beat:
+
+```js
+const result = surfaceScript('hero', { code }, [
+  { do: 'leap', to: 300, onto: { surface: 'code', anchor: 'line:5' } },
+  { do: 'grab', target: { surface: 'code', anchor: 'token:4:Println' },
+    then: { surface: 'code', edit: 'carry', anchor: 'token:4:Println', until: { beat: 2, at: 'release' } } },
+  { do: 'throw', to: 700,
+    then: { surface: 'code', edit: 'fling', anchor: 'token:4:Println', at: 'release' } },
+  { do: 'swipe', target: { surface: 'code', anchor: 'line:2' },
+    then: { surface: 'code', edit: 'remove', anchor: 'line:2', style: 'blur', duration: 600 } },
+], { from: 600, ground: code.box.bottom, height: 100 })
+
+const timeline = deserializeTimeline({ id: 'scene', tracks: result.tracks })
+```
+
+A cue's `at` is `start`, `contact`, `release` or `end` (default: the beat's
+contact, or its start when it has none). `until` ends it at a moment of the
+same beat or of a later one (`{ beat: 2, at: 'release' }`) and sets the
+edit's duration. Every other field is the edit's own option (`text`, `into`,
+`style`, `on`). `carry` is the one cue that is not a surface edit: the piece
+follows the figure's hand (`handPath`) until `until`; pass `figureStyle` when
+the figure is drawn with more than a `height`.
+
+It does what the hand-wired version does, in the same order: the beats go to
+`scriptTracks` with places swapped for their boxes as laid out, each cue runs
+`surface.edit()` in beat order, and the figure rides the surfaces it stands
+on (`ride: false` turns that off). The Code Tidy demo written this way gives
+the same tracks, key for key. `result.tracks` holds the figure's tracks and
+every surface's (named by its key in `{ code }`); `checkSurfaceBeats(beats, surfaces)`
+lists the problems without compiling.
+
+### Whiteboards
+
+`whiteboard()` is a second surface, for lessons that are not code: a board
+(or `theme: 'chalkboard'`) whose texts and hand-drawn marks are declared as
+data, each with an id, and named as places like a code panel's lines:
+
+```js
+const board = whiteboard({
+  x: 20, y: 20, width: 470, height: 300, theme: 'chalkboard', fontSize: 30,
+  items: [
+    { id: 'eq', text: '2x + 4 = 12', at: [40, 30] },
+    { id: 'move', text: '2x = 12 - 4', at: [40, 100], hidden: true },
+    { id: 'ring', mark: 'circle', around: 'term:eq:+ 4', hidden: true },
+    { id: 'across', mark: 'arrow', from: 'mark:ring', to: 'term:move:- 4', color: 'orange', hidden: true },
+  ],
+})
+
+surfaceScript('teacher', { board }, [
+  { do: 'point', target: { surface: 'board', anchor: 'term:eq:+ 4' },
+    then: { surface: 'board', edit: 'draw', anchor: 'mark:ring', until: 'end' } },
+  { do: 'write', target: { surface: 'board', anchor: 'text:move' },
+    then: { surface: 'board', edit: 'write', anchor: 'text:move', until: 'release' } },
+], { from: 640, ground: 400, height: 190, facing: -1 })
+```
+
+Its places are `box`, `text:ID`, `term:ID:TEXT` (part of a text; `term:ID#K:TEXT`
+for the Kth) and `mark:ID`. Marks are `circle`, `box`, `underline` (each
+`around` a place) and `arrow` (`from` one place `to` another), and can only
+name items declared before them. Its edits: `write` (a hidden text, by hand;
+or new `text` into a term's place), `draw` (a hidden mark), `erase`, `strike`,
+and `move` and `fling` for a term, which comes loose as a piece (`carry` works
+too). Text is laid out in fixed-width cells, never measured, and each mark's
+wobble comes from a seed made of its id, so a board is drawn the same
+everywhere. Colours are theme names (`red`, `blue`, `green`, `orange`, and
+`yellow` on chalk) or any CSS colour. The Board Lesson demo solves an
+equation this way.
+
+### Charts
+
+`chart()` is a surface for talking through data: a bar or line chart whose
+values are declared as data, scaled once when it is made (`max`, or a round
+number above the largest value).
+
+```js
+const sales = chart({
+  x: 20, y: 20, width: 480, height: 340, kind: 'bar', theme: 'dark', title: 'Sales', max: 100, suffix: 'k',
+  data: [
+    { id: 'q3', label: 'Q3', value: 30 },
+    { id: 'q4', label: 'Q4', value: 20 },
+  ],
+})
+
+surfaceScript('hero', { sales }, [
+  { do: 'point', target: { surface: 'sales', anchor: 'bar:q3' },
+    then: { surface: 'sales', edit: 'highlight', anchor: 'bar:q3' } },
+  { do: 'leap', to: { surface: 'sales', anchor: 'bar:q4' }, onto: { surface: 'sales', anchor: 'bar:q4' } },
+  { do: 'cheer', for: 1600,
+    then: { surface: 'sales', edit: 'set', anchor: 'bar:q4', value: 85, at: 'start', until: 'end' } },
+], { from: 640, ground: 400, height: 90, facing: -1 })
+```
+
+Its places are `bar:ID` (on a bar chart) or `point:ID` (on a line chart),
+`label:ID`, `value:ID` and `box`, and they follow the values:
+`sales.anchor('bar:q4', time)` is the bar as it stands then. Its edits:
+`set` (a new `value`; the value label counts along), `show` (grow a
+`hidden` bar in from the axis, or draw the line out to a point; `on: false`
+takes it back) and `highlight`. A bar's top is a floor: a figure standing on
+it is carried up and down as it grows and shrinks, as in the Chart Talk demo.
+
 ## Camera
 
 Video scenes can be seen through a camera: `camera: true` reads the tracks of

@@ -242,3 +242,15 @@ describe('scriptTracks: put, write, push', () => {
     }
   })
 })
+
+describe('scriptTracks: which way it faces', () => {
+  it('keeps a start facing left when the figure never turns, so its target is drawn that way', () => {
+    const { tracks } = scriptTracks('hero', [{ do: 'walk', to: 300 }, { do: 'point', target: { x: 100, y: 200 } }], { from: 600, facing: -1 })
+    expect(tracks.find((track) => track.property === 'facing')?.keyframes).toEqual([{ time: 0, value: -1 }])
+  })
+
+  it('leaves out facing when it starts right and never turns (the target’s default)', () => {
+    const { tracks } = scriptTracks('hero', [{ do: 'walk', to: 300 }], {})
+    expect(tracks.some((track) => track.property === 'facing')).toBe(false)
+  })
+})

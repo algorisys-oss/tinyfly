@@ -204,7 +204,7 @@ with a GSAP-style call (durations are in seconds here):
 ```html
 <div class="box" style="width:60px;height:60px;background:#4a9eff"></div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.95.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.96.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -412,7 +412,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.95.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.96.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -2278,7 +2278,7 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.95.0/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.96.0/cdn/tinyfly-player.iife.js`.
 
 ---
 
@@ -6466,7 +6466,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.95.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.96.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed
@@ -7565,8 +7565,9 @@ npx @algorisys/tinyfly capabilities --json   # the same as data
 It lists the easings, track kinds, every property each canvas shape can
 animate (with units and ranges), the stick figure's joints, poses,
 expressions, gags, gaits, beat actions, dances, flips and hand shapes, the v2
-character's poses, the code panel's languages, anchors and edits, camera
-shots and the teaching helpers. It is generated from the code, so it can't
+character's poses, the code panel's languages, every surface's anchors and
+edits (code panel, whiteboard, chart), camera shots and the teaching
+helpers. It is generated from the code, so it can't
 fall behind: **a name in it is accepted, and a name not in it is rejected.**
 It is also the last part of `llms-full.txt`.
 
@@ -7589,6 +7590,19 @@ on the object. Script it in world metres with `propScript3D` (`to: [x, z]`,
 Characters in a 3D scene walk the same way with `characterScript3D`
 (`{ do: 'walk', to: [x, z] }`, `pose`, `gag`, `face`, `place`); a rider is
 seated with `propRide3D` and spliced into its script with `spliceTracks`. See `docs/props.md`.
+
+## Surfaces
+
+Code panels (`codePanel()`), whiteboards (`whiteboard()`) and charts
+(`chart()`) are surfaces: their places have names (`line:7`,
+`token:4:Println`, `text:eq`, `term:eq:+ 4`, `bar:q4`) and their edits are
+called by name (`surface.edit('highlight', 'line:4', { at })`). Write a scene
+on one with `surfaceScript()`: beats aim at `{ surface, anchor }` and say what
+the surface does in answer with `then`, at a moment of the beat (`at:
+'contact'`, `'release'`…). A whiteboard's texts and marks and a chart's data
+are declared up front, each with an id the places use. The catalog lists each
+surface's places and edits. See "A whole scene as data", "Whiteboards" and
+"Charts" in `docs/acting.md`.
 
 ## Your own behaviours
 
@@ -7664,6 +7678,11 @@ Fix, render again.
   `result.beats[i].contact` (and `release`): wipe the line, fling the word or
   type the text at those times.
 - **Record panel edits before `code.ride()`**, which reads the moves they make.
+- **Or write it all as data with `surfaceScript`**: name places
+  (`target: { surface: 'code', anchor: 'token:3:var' }`) and put the surface's
+  answer on the beat (`then: { surface: 'code', edit: 'fling', anchor: 'token:3:var', at: 'release' }`).
+  A cue's `at` is a moment name (`start`, `contact`, `release`, `end`), never
+  ms. It records the edits and rides the lines for you, in beat order.
 
 ## Set up your assistant
 
@@ -7725,7 +7744,7 @@ path for all of that:
 </figure>
 
 <!-- once, anywhere on the page (a site-wide footer is fine) -->
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.95.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.96.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 Every `[data-tinyfly-embed]` mounts when the page is ready, with no per-post
@@ -8800,8 +8819,8 @@ On a page with no build step, load the maps add-on after the browser bundle; it
 adds to the same `tinyfly` global:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.95.0/cdn/tinyfly.iife.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.95.0/cdn/tinyfly-maps.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.96.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.96.0/cdn/tinyfly-maps.iife.js"></script>
 ```
 
 It is a separate script because the offline world map it carries adds about
@@ -9444,6 +9463,136 @@ writes them out as one track per prop (`line.N.highlight`, `line.N.strike`,
 `line.N.wipe`, `line.N.reveal`, `line.N.shift`). Syntax colours come from small
 keyword lists for Go, Rust, C#, JavaScript, TypeScript and Python (strings,
 numbers and line comments too); `plain` leaves the text uncoloured.
+
+### Places and edits by name
+
+A code panel is a *surface*: every place on it has a name, so a scene can be
+written as plain data. `anchor(name)` gives the box there, `piece(name)` the
+word there, and `edit(name, anchor, options)` does the same as the methods
+above:
+
+```js
+code.anchor('line:7')               // = code.line(7)
+code.anchor('token:4:Println')      // = code.token(4, 'Println'); token:4#2:x is the second x
+code.anchor('spot:3:4')             // = code.spot(3, 4)
+
+code.edit('highlight', ['line:2', 'line:3'], { at: 100 })
+code.edit('fling', 'token:4:Println', { at: grab.release })
+code.edit('drop', 'token:1:int', { at: 1600, into: 'spot:3:2' })
+code.edit('move', 'token:4:fmt.', { at: 600, to: 'box' })
+```
+
+A wrong name says what it meant (`Unknown anchor "lin": did you mean "line"?`),
+and an edit given the wrong kind of place says which kind it takes. The
+anchors and edits are listed under "Surfaces" in `capabilities()`. Boards,
+charts and props that change state are planned as surfaces that work the
+same way.
+
+### A whole scene as data
+
+`surfaceScript()` takes beats that name places and say what the surface does
+in answer, so the reactions above need no wiring by hand. A beat's `target`,
+`to` and `onto` can be a place (`{ surface, anchor }`: its box, its centre x,
+its top), and `then` holds the surface's cues, each at a moment of the beat:
+
+```js
+const result = surfaceScript('hero', { code }, [
+  { do: 'leap', to: 300, onto: { surface: 'code', anchor: 'line:5' } },
+  { do: 'grab', target: { surface: 'code', anchor: 'token:4:Println' },
+    then: { surface: 'code', edit: 'carry', anchor: 'token:4:Println', until: { beat: 2, at: 'release' } } },
+  { do: 'throw', to: 700,
+    then: { surface: 'code', edit: 'fling', anchor: 'token:4:Println', at: 'release' } },
+  { do: 'swipe', target: { surface: 'code', anchor: 'line:2' },
+    then: { surface: 'code', edit: 'remove', anchor: 'line:2', style: 'blur', duration: 600 } },
+], { from: 600, ground: code.box.bottom, height: 100 })
+
+const timeline = deserializeTimeline({ id: 'scene', tracks: result.tracks })
+```
+
+A cue's `at` is `start`, `contact`, `release` or `end` (default: the beat's
+contact, or its start when it has none). `until` ends it at a moment of the
+same beat or of a later one (`{ beat: 2, at: 'release' }`) and sets the
+edit's duration. Every other field is the edit's own option (`text`, `into`,
+`style`, `on`). `carry` is the one cue that is not a surface edit: the piece
+follows the figure's hand (`handPath`) until `until`; pass `figureStyle` when
+the figure is drawn with more than a `height`.
+
+It does what the hand-wired version does, in the same order: the beats go to
+`scriptTracks` with places swapped for their boxes as laid out, each cue runs
+`surface.edit()` in beat order, and the figure rides the surfaces it stands
+on (`ride: false` turns that off). The Code Tidy demo written this way gives
+the same tracks, key for key. `result.tracks` holds the figure's tracks and
+every surface's (named by its key in `{ code }`); `checkSurfaceBeats(beats, surfaces)`
+lists the problems without compiling.
+
+### Whiteboards
+
+`whiteboard()` is a second surface, for lessons that are not code: a board
+(or `theme: 'chalkboard'`) whose texts and hand-drawn marks are declared as
+data, each with an id, and named as places like a code panel's lines:
+
+```js
+const board = whiteboard({
+  x: 20, y: 20, width: 470, height: 300, theme: 'chalkboard', fontSize: 30,
+  items: [
+    { id: 'eq', text: '2x + 4 = 12', at: [40, 30] },
+    { id: 'move', text: '2x = 12 - 4', at: [40, 100], hidden: true },
+    { id: 'ring', mark: 'circle', around: 'term:eq:+ 4', hidden: true },
+    { id: 'across', mark: 'arrow', from: 'mark:ring', to: 'term:move:- 4', color: 'orange', hidden: true },
+  ],
+})
+
+surfaceScript('teacher', { board }, [
+  { do: 'point', target: { surface: 'board', anchor: 'term:eq:+ 4' },
+    then: { surface: 'board', edit: 'draw', anchor: 'mark:ring', until: 'end' } },
+  { do: 'write', target: { surface: 'board', anchor: 'text:move' },
+    then: { surface: 'board', edit: 'write', anchor: 'text:move', until: 'release' } },
+], { from: 640, ground: 400, height: 190, facing: -1 })
+```
+
+Its places are `box`, `text:ID`, `term:ID:TEXT` (part of a text; `term:ID#K:TEXT`
+for the Kth) and `mark:ID`. Marks are `circle`, `box`, `underline` (each
+`around` a place) and `arrow` (`from` one place `to` another), and can only
+name items declared before them. Its edits: `write` (a hidden text, by hand;
+or new `text` into a term's place), `draw` (a hidden mark), `erase`, `strike`,
+and `move` and `fling` for a term, which comes loose as a piece (`carry` works
+too). Text is laid out in fixed-width cells, never measured, and each mark's
+wobble comes from a seed made of its id, so a board is drawn the same
+everywhere. Colours are theme names (`red`, `blue`, `green`, `orange`, and
+`yellow` on chalk) or any CSS colour. The Board Lesson demo solves an
+equation this way.
+
+### Charts
+
+`chart()` is a surface for talking through data: a bar or line chart whose
+values are declared as data, scaled once when it is made (`max`, or a round
+number above the largest value).
+
+```js
+const sales = chart({
+  x: 20, y: 20, width: 480, height: 340, kind: 'bar', theme: 'dark', title: 'Sales', max: 100, suffix: 'k',
+  data: [
+    { id: 'q3', label: 'Q3', value: 30 },
+    { id: 'q4', label: 'Q4', value: 20 },
+  ],
+})
+
+surfaceScript('hero', { sales }, [
+  { do: 'point', target: { surface: 'sales', anchor: 'bar:q3' },
+    then: { surface: 'sales', edit: 'highlight', anchor: 'bar:q3' } },
+  { do: 'leap', to: { surface: 'sales', anchor: 'bar:q4' }, onto: { surface: 'sales', anchor: 'bar:q4' } },
+  { do: 'cheer', for: 1600,
+    then: { surface: 'sales', edit: 'set', anchor: 'bar:q4', value: 85, at: 'start', until: 'end' } },
+], { from: 640, ground: 400, height: 90, facing: -1 })
+```
+
+Its places are `bar:ID` (on a bar chart) or `point:ID` (on a line chart),
+`label:ID`, `value:ID` and `box`, and they follow the values:
+`sales.anchor('bar:q4', time)` is the bar as it stands then. Its edits:
+`set` (a new `value`; the value label counts along), `show` (grow a
+`hidden` bar in from the axis, or draw the line out to a point; `on: false`
+takes it back) and `highlight`. A bar's top is a floor: a figure standing on
+it is carried up and down as it grows and shrinks, as in the Chart Talk demo.
 
 ## Camera
 
@@ -12744,7 +12893,7 @@ magnet.addEventListener('pointerleave', () => {
 
 <!-- capabilities: generated from the library -->
 
-# tinyfly capabilities (v0.95.0)
+# tinyfly capabilities (v0.96.0)
 
 Generated from the library itself: every name below is accepted, and names not listed are rejected (beat scripts, code panels and `checkTracks` say which name was probably meant).
 
@@ -13028,6 +13177,74 @@ Poses: `rest`, `wave`, `cheer`, `point`, `handsOnHips`, `think`, `shrug`, `sit`,
 - `insert(n, column, text, { at, duration? })`: type new text into a line; the line makes room
 - `drop(piece, n, column, { at, duration? })`: put a piece into a line (into its own line it slides, the text closing behind it)
 - `ride(tracks, figureId, { ground })`: a figure’s tracks with it carried by the line it stands on
+
+## Surfaces
+
+Scene objects figures act on. Places are named `kind:args`: `surface.anchor(name)` gives the box there (stand on `top`, point at `x`, `y`; pass it as a beat `target`), `surface.piece(name)` makes the part there come loose, and `surface.edit(name, anchor, options)` changes the surface at a time (`at`, ms).
+
+Beats name places and say what surfaces do in answer (`surfaceScript`):
+
+- `surfaceScript(figureId, { name: surface }, beats, options)`: compiles beats that act on surfaces: returns the script result with `tracks` (the figure’s, ridden, then every surface’s, keyed by its name) and `figureTracks`; options are scriptTracks’ plus `figureStyle` (for carry) and `ride` (default true)
+- `checkSurfaceBeats(beats, surfaces, cast?)`: every problem checkBeats finds, plus unknown surfaces, places, edits and moments, with suggestions
+- `{ surface, anchor }`: a named place, where a beat takes `target` (its box), `to` (its centre x) or `onto` (its top); as laid out, before any edit moves it
+- `then: { surface, edit, anchor, at?, until?, …options }`: what the surface does in answer to the beat (or a list of them): one of its edits, or `carry` (the piece follows the hand until `until`); the other fields are the edit’s options
+- `at`: a moment of the beat: start, contact, release, end (default contact, or start when the beat has none); not ms
+- `until`: a moment of this beat, or { beat: index, at? } of a later one; sets the edit’s duration (carry needs it)
+
+### code
+
+`codePanel({ code, language?, x, y, fontSize?, lineHeight?, width?, hidden? })`
+
+Anchors:
+- `box`: the whole panel
+- `line:N`: line N’s text (lines count from 1): stand on top, point at x, y, swipe left to right
+- `token:N:TEXT`: the first TEXT on line N (token:N#K:TEXT for the Kth): a word, which can come loose as a piece
+- `spot:N:C`: a place in line N before column C (0 is before its first character); spot:N:C:W is W characters wide. Aim a put or a write here
+
+Edits:
+- `highlight`: line anchors; { at, duration?, on? }: tint lines (on: false clears)
+- `strike`: line anchors; { at, duration? }: strike lines through, left to right
+- `remove`: line anchors; { at, duration?, style?: wipe | fly | blur, from?: left | right, close? }: take lines away; the lines below close the gap
+- `type`: line anchors given in `hidden`; { at, duration? }: type them in
+- `insert`: a spot; { at, text, duration? }: type new text into the line there; the line makes room
+- `write`: a token; { at, text, duration? }: write new text into the word’s place
+- `drop`: a token; { at, into: a spot, duration? }: put the word into a line there
+- `move`: a token; { at, to: an anchor name or { x, y }, duration? }: move the word there
+- `fling`: a token; { at, velocity?, spin?, gravity?, duration? }: throw or kick the word away on a spinning arc
+
+### board
+
+`whiteboard({ x, y, width, height, theme?: whiteboard | chalkboard, fontSize?, items: [{ id, text, at: [x, y], size?, color?, hidden? } | { id, mark: circle | box | underline | arrow, around? | from?, to?, color?, hidden? }] })`
+
+Anchors:
+- `box`: the whole board
+- `text:ID`: a text item: write along it from left to right, point at it
+- `term:ID:TEXT`: the first TEXT in text ID (term:ID#K:TEXT for the Kth): a term, which can come loose as a piece
+- `mark:ID`: a mark (circle, box, underline or arrow)
+
+Edits:
+- `write`: text anchors given `hidden`; { at, duration? }: write them in by hand. Or a term; { at, text, duration? }: write new text in its place (move or erase the term first)
+- `draw`: mark anchors given `hidden`; { at, duration? }: draw them in
+- `erase`: text, term or mark anchors; { at, duration? }: wipe them off
+- `strike`: text or term anchors; { at, duration? }: cross them out
+- `move`: a term; { at, to: an anchor name or { x, y }, duration? }: move the term there
+- `fling`: a term; { at, velocity?, spin?, gravity?, duration? }: throw or knock the term off on a spinning arc
+
+### chart
+
+`chart({ x, y, width, height, kind: bar | line, data: [{ id, label?, value, hidden? }], max?, title?, theme?: light | dark, decimals?, prefix?, suffix?, values? })`
+
+Anchors:
+- `box`: the whole chart
+- `bar:ID`: a bar (bar charts), as it stands at the time: stand on its top (it carries a figure as it grows), point at it
+- `point:ID`: a point on the line (line charts), as it stands at the time
+- `label:ID`: its label under the axis
+- `value:ID`: its value label, above it
+
+Edits:
+- `set`: bar or point anchors; { at, value, duration? }: animate to a new value; its value label counts along
+- `show`: bar or point anchors given `hidden`; { at, duration?, on? }: grow a bar in from the axis, or draw the line out to a point (on: false takes it back)
+- `highlight`: bar or point anchors; { at, duration?, on? }: colour it out (on: false clears)
 
 ## Camera shots (`cameraTracks(shots, { stage })`)
 

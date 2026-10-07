@@ -1,8 +1,12 @@
 import type { CustomTarget } from '../adapters/canvas/canvas-adapter'
 import type { PropertyInfo } from '../adapters/canvas/target-properties'
 import { unknownName } from '../engine/authoring/did-you-mean'
-import { Timeline } from '../engine/core/timeline'
-import type { EasingType, Keyframe, Track } from '../engine/types'
+import type { Track } from '../engine/types'
+import { changingWindows, editLog, valueAt, type EditOptions } from './surface/edit-log'
+import { pieceMotion, SAMPLE_STEP, type FlingOptions, type SurfacePiece, type TimedPoint } from './surface/pieces'
+import { rideFloors } from './surface/ride'
+import { anchorError, editError, parseAnchor, type Surface, type SurfaceAbout, type SurfaceEditOptions } from './surface/surface'
+import { surfaceBox, type SurfaceBox } from './surface/surface-box'
 
 /**
  * A code listing as a scene object characters can act on: they stand on its
@@ -86,24 +90,11 @@ export interface CodePanelOptions {
 }
 
 /** A place on the panel, scene px. Stand on `top`; point at `x`, `y` (the centre). */
-export interface CodeBox {
-  x: number
-  y: number
-  left: number
-  right: number
-  top: number
-  bottom: number
-  width: number
-  height: number
-}
+export type CodeBox = SurfaceBox
 
-export interface CodeEditOptions {
-  /** When the edit starts, ms */
-  at: number
-  /** ms (default 300) */
-  duration?: number
-  easing?: EasingType
-}
+export type CodeEditOptions = EditOptions
+
+export type { TimedPoint }
 
 /** How a removed line goes: wiped away, knocked off the panel, or out of focus. */
 export type CodeRemoveStyle = 'wipe' | 'fly' | 'blur'
@@ -118,38 +109,17 @@ export interface CodeRemoveOptions extends CodeEditOptions {
   close?: number
 }
 
-/** A word that can come loose from its line: made by `piece()`. */
-export interface CodePiece {
-  /** Its key in the panel's props (`piece.K.x`…) */
-  readonly id: number
+/** A word that can come loose from its line: made by `piece()`. Its `home` is where it sits in its line. */
+export interface CodePiece extends SurfacePiece {
   readonly line: number
   readonly column: number
   readonly text: string
-  /** Where it sits in its line */
-  readonly home: CodeBox
 }
 
-/** A point at a time, scene px: a path for a piece to follow (see `handPath`). */
-export interface TimedPoint {
-  time: number
-  x: number
-  y: number
-}
+export type CodeFlingOptions = FlingOptions
 
-export interface CodeFlingOptions {
-  /** When it leaves, ms */
-  at: number
-  /** px/ms (default: how fast it was moving along its `follow` path at `at`, or up and to the right) */
-  velocity?: { x: number; y: number }
-  /** Turns, degrees per ms (default 0.6, signed by the throw's direction) */
-  spin?: number
-  /** px/ms² (default 0.0016) */
-  gravity?: number
-  /** How long it flies before it is gone, ms (default 900) */
-  duration?: number
-}
-
-export interface CodePanel {
+export interface CodePanel extends Surface {
+  readonly kind: 'code'
   /** The canvas target that draws the panel; put it in the scene's targets */
   readonly target: CustomTarget
   readonly lines: readonly string[]
@@ -169,6 +139,12 @@ export interface CodePanel {
   type(n: number, options: CodeEditOptions): CodePanel
   /** Make the `occurrence`th `text` on line `n` a piece that can come loose */
   piece(n: number, text: string, occurrence?: number): CodePiece
+  /** Make the word at a token anchor (`token:7:Println`) a piece that can come loose */
+  piece(anchor: string): CodePiece
+  /** The box at a named place: `box`, `line:N`, `token:N:TEXT` (`token:N#K:TEXT` for the Kth), `spot:N:C` or `spot:N:C:W` */
+  anchor(name: string, time?: number): CodeBox
+  /** Change the panel at a time by name, at named places (see `CODE_SURFACE.edits`): `edit('highlight', 'line:4', { at: 1200 })` */
+  edit(name: string, anchor: string | string[], options: SurfaceEditOptions): CodePanel
   /** Carry a piece along a path of scene points (its centre follows them) */
   follow(piece: CodePiece, path: TimedPoint[]): CodePanel
   /** Throw or kick a piece away: it flies on a ballistic arc, spinning, and fades */
@@ -203,12 +179,36 @@ export interface CodePanel {
   tracks(target: string): Track[]
 }
 
-type Edit = { time: number; value: number; easing?: EasingType }
+/** A named place on a code panel, parsed. */
+type CodeAnchor =
+  | { kind: 'box' }
+  | { kind: 'line'; n: number }
+  | { kind: 'token'; n: number; text: string; occurrence: number }
+  | { kind: 'spot'; n: number; column: number; width: number }
 
-/** Gravity and spin of a fling, and how often its arc is sampled, ms. */
-const FLING_GRAVITY = 0.0016
-const FLING_SPIN = 0.6
-const FLING_STEP = 33
+/** A code panel's anchors and edits, as data: for its `about`, the capability catalog and the checks. */
+export const CODE_SURFACE: SurfaceAbout = {
+  kind: 'code',
+  create: 'codePanel({ code, language?, x, y, fontSize?, lineHeight?, width?, hidden? })',
+  anchors: {
+    box: 'the whole panel',
+    'line:N': 'line N’s text (lines count from 1): stand on top, point at x, y, swipe left to right',
+    'token:N:TEXT': 'the first TEXT on line N (token:N#K:TEXT for the Kth): a word, which can come loose as a piece',
+    'spot:N:C': 'a place in line N before column C (0 is before its first character); spot:N:C:W is W characters wide. Aim a put or a write here',
+  },
+  edits: {
+    highlight: 'line anchors; { at, duration?, on? }: tint lines (on: false clears)',
+    strike: 'line anchors; { at, duration? }: strike lines through, left to right',
+    remove: 'line anchors; { at, duration?, style?: wipe | fly | blur, from?: left | right, close? }: take lines away; the lines below close the gap',
+    type: 'line anchors given in `hidden`; { at, duration? }: type them in',
+    insert: 'a spot; { at, text, duration? }: type new text into the line there; the line makes room',
+    write: 'a token; { at, text, duration? }: write new text into the word’s place',
+    drop: 'a token; { at, into: a spot, duration? }: put the word into a line there',
+    move: 'a token; { at, to: an anchor name or { x, y }, duration? }: move the word there',
+    fling: 'a token; { at, velocity?, spin?, gravity?, duration? }: throw or kick the word away on a spinning arc',
+  },
+}
+
 /** How far a `fly` removal throws the line, as a fraction of the panel width, and its blur at the end, px. */
 const FLY_DISTANCE = 0.9
 const MAX_BLUR = 8
@@ -231,7 +231,8 @@ export function codePanel(options: CodePanelOptions): CodePanel {
   /** Each line's colour per column. */
   const colours = lines.map((line) => codeTokens(line, language).flatMap((token) => Array.from(token.text, () => theme[token.kind])))
 
-  const edits = new Map<string, Edit[]>()
+  const log = editLog()
+  const motion = pieceMotion(log)
   /** Lines removed, and when their gap has closed. */
   const removals: Array<{ line: number; closed: number }> = []
   /** How each removed line goes, and from which side. */
@@ -243,33 +244,18 @@ export function codePanel(options: CodePanelOptions): CodePanel {
   const check = (n: number) => {
     if (!Number.isInteger(n) || n < 1 || n > lines.length) throw new Error(`codePanel: no line ${n} (it has ${lines.length})`)
   }
-  const push = (key: string, ...keys: Edit[]) => edits.set(key, [...(edits.get(key) ?? []), ...keys])
-  /** An edit from one value to another, as a start and an end key. */
-  const tween = (key: string, from: number, to: number, edit: CodeEditOptions, defaultDuration = 300) =>
-    push(key, { time: edit.at, value: from }, { time: edit.at + (edit.duration ?? defaultDuration), value: to, ...(edit.easing ? { easing: edit.easing } : {}) })
+  const tween = log.tween
+  const lastValue = log.last
   const record = (n: number, field: string, from: number, to: number, edit: CodeEditOptions, defaultDuration = 300) => {
     check(n)
     tween(`line.${n}.${field}`, from, to, edit, defaultDuration)
   }
   /** Rows line `n` has moved up by at `time` (the closed gaps above it). */
   const rowsUp = (n: number, time: number) => removals.filter((r) => r.line < n && r.closed <= time).length
-  const box = (left: number, top: number, w: number, h: number): CodeBox => ({
-    x: left + w / 2,
-    y: top + h / 2,
-    left,
-    right: left + w,
-    top,
-    bottom: top + h,
-    width: w,
-    height: h,
-  })
+  const box = surfaceBox
 
   const lineTop = (n: number) => options.y + padding + (n - 1) * lineHeight
   const all = (n: number | number[]) => (Array.isArray(n) ? n : [n])
-  const lastValue = (key: string, fallback: number) => {
-    const list = edits.get(key)
-    return list ? [...list].sort((a, b) => a.time - b.time)[list.length - 1].value : fallback
-  }
   const columnOf = (n: number, text: string, occurrence: number) => {
     let column = -1
     for (let k = 0; k < occurrence; k++) {
@@ -413,21 +399,48 @@ export function codePanel(options: CodePanelOptions): CodePanel {
     },
   }
 
-  /** Where a piece's centre is at `time`, scene px, from its recorded x/y keys. */
-  const pieceAt = (piece: CodePiece, time: number) => ({
-    x: piece.home.x + valueAt(edits.get(`piece.${piece.id}.x`), time),
-    y: piece.home.y + valueAt(edits.get(`piece.${piece.id}.y`), time),
-  })
-  /** Drop a piece's x/y keys after `time` (a fling takes over from there). */
-  const cutAfter = (piece: CodePiece, time: number) => {
-    for (const field of ['x', 'y', 'rotate']) {
-      const key = `piece.${piece.id}.${field}`
-      const kept = (edits.get(key) ?? []).filter((k) => k.time <= time)
-      edits.set(key, kept)
+  /** A named place on the panel, parsed (lines are checked when it is used). */
+  const named = (name: string): CodeAnchor => {
+    const { kind, rest } = parseAnchor(name)
+    const fail = (why?: string) => anchorError('codePanel', name, CODE_SURFACE, why)
+    if (kind === 'box') {
+      if (rest) throw fail('box takes no arguments')
+      return { kind }
     }
+    if (kind === 'line') {
+      if (!/^\d+$/.test(rest)) throw fail('write it line:N')
+      return { kind, n: Number(rest) }
+    }
+    if (kind === 'token') {
+      const match = /^(\d+)(?:#(\d+))?:(.+)$/.exec(rest)
+      if (!match) throw fail('write it token:N:TEXT, or token:N#K:TEXT for the Kth')
+      return { kind, n: Number(match[1]), occurrence: match[2] ? Number(match[2]) : 1, text: match[3] }
+    }
+    if (kind === 'spot') {
+      const match = /^(\d+):(\d+)(?::(\d+))?$/.exec(rest)
+      if (!match) throw fail('write it spot:N:C, or spot:N:C:W for W characters')
+      return { kind, n: Number(match[1]), column: Number(match[2]), width: match[3] ? Number(match[3]) : 1 }
+    }
+    throw fail()
+  }
+  /** The places named, each of `kind`. */
+  const namedAll = <K extends CodeAnchor['kind']>(edit: string, names: string | string[], kind: K, one = false) => {
+    const list = Array.isArray(names) ? names : [names]
+    if (list.length === 0 || (one && list.length > 1)) throw new Error(`codePanel.edit: ${edit} takes ${one ? 'one' : 'at least one'} ${kind} anchor`)
+    return list.map((name) => {
+      const anchor = named(name)
+      if (anchor.kind !== kind) throw new Error(`codePanel.edit: ${edit} takes ${kind} anchors (${kind}:…), not "${name}"`)
+      return anchor as Extract<CodeAnchor, { kind: K }>
+    })
+  }
+  const text = (edit: string, options: SurfaceEditOptions) => {
+    if (typeof options.text !== 'string') throw new Error(`codePanel.edit: ${edit} needs \`text\` (the text to write)`)
+    return options.text
   }
 
   const panel: CodePanel = {
+    kind: 'code',
+    about: CODE_SURFACE,
     target,
     lines,
     box: box(options.x, options.y, width, height),
@@ -477,7 +490,14 @@ export function codePanel(options: CodePanelOptions): CodePanel {
       record(n, 'reveal', 0, 1, { duration: lines[n - 1].length * 45, ...edit })
       return panel
     },
-    piece(n, text, occurrence = 1) {
+    piece(at: number | string, text?: string, occurrence: number = 1) {
+      if (typeof at === 'string') {
+        const anchor = named(at)
+        if (anchor.kind !== 'token') throw new Error(`codePanel.piece: a piece is a word, token:N:TEXT, not "${at}"`)
+        return panel.piece(anchor.n, anchor.text, anchor.occurrence)
+      }
+      const n = at
+      if (text === undefined) throw new Error('codePanel.piece: which word? piece(n, text) or piece("token:N:TEXT")')
       check(n)
       const column = columnOf(n, text, occurrence)
       const existing = pieces.find((p) => p.line === n && p.column === column && p.text === text)
@@ -491,34 +511,15 @@ export function codePanel(options: CodePanelOptions): CodePanel {
       return piece
     },
     follow(piece, path) {
-      for (const point of path) {
-        push(`piece.${piece.id}.x`, { time: point.time, value: point.x - piece.home.x })
-        push(`piece.${piece.id}.y`, { time: point.time, value: point.y - piece.home.y })
-      }
+      motion.follow(piece, path)
       return panel
     },
     fling(piece, fling) {
-      const start = pieceAt(piece, fling.at)
-      const velocity = fling.velocity ?? pathVelocity(piece, fling.at) ?? { x: 0.5, y: -0.6 }
-      const gravity = fling.gravity ?? FLING_GRAVITY
-      const duration = fling.duration ?? 900
-      const spin = (fling.spin ?? FLING_SPIN) * (velocity.x < 0 ? -1 : 1)
-      const turned = valueAt(edits.get(`piece.${piece.id}.rotate`), fling.at)
-      cutAfter(piece, fling.at)
-      for (let t = 0; t <= duration; t += FLING_STEP) {
-        const x = start.x + velocity.x * t
-        const y = start.y + velocity.y * t + 0.5 * gravity * t * t
-        push(`piece.${piece.id}.x`, { time: fling.at + t, value: x - piece.home.x })
-        push(`piece.${piece.id}.y`, { time: fling.at + t, value: y - piece.home.y })
-        push(`piece.${piece.id}.rotate`, { time: fling.at + t, value: turned + spin * t })
-      }
-      tween(`piece.${piece.id}.opacity`, 1, 0, { at: fling.at + duration * 0.6, duration: duration * 0.4 })
+      motion.fling(piece, fling)
       return panel
     },
     move(piece, edit) {
-      const from = pieceAt(piece, edit.at)
-      tween(`piece.${piece.id}.x`, from.x - piece.home.x, edit.to.x - piece.home.x, edit, 400)
-      tween(`piece.${piece.id}.y`, from.y - piece.home.y, edit.to.y - piece.home.y, edit, 400)
+      motion.move(piece, edit)
       return panel
     },
     write(piece, text, edit) {
@@ -556,9 +557,9 @@ export function codePanel(options: CodePanelOptions): CodePanel {
       props[`insert.${insert.id}.open`] = 0
       tween(`insert.${insert.id}.open`, 0, 1, { at: edit.at, duration, easing: sameLine ? easing : 'ease-out' })
       tween(`piece.${piece.id}.away`, lastValue(`piece.${piece.id}.away`, 0), 1, { at: edit.at, duration, easing: sameLine ? easing : 'ease-in-out' })
-      cutAfter(piece, edit.at)
+      motion.cutAfter(piece, edit.at)
       panel.move(piece, { at: edit.at, duration, easing, to: { x: landing.x, y: landing.y } })
-      tween(`piece.${piece.id}.rotate`, valueAt(edits.get(`piece.${piece.id}.rotate`), edit.at), 0, { at: edit.at, duration })
+      tween(`piece.${piece.id}.rotate`, log.valueAt(`piece.${piece.id}.rotate`, edit.at), 0, { at: edit.at, duration })
       return panel
     },
     landing(piece, n, column, time = Infinity) {
@@ -568,92 +569,49 @@ export function codePanel(options: CodePanelOptions): CodePanel {
       return box(spot.left - closed, spot.top, spot.width, spot.height)
     },
     ride(tracks, target, ride) {
-      return rideLines(tracks, target, ride.ground, ride.every ?? FLING_STEP)
+      const floors = lines.map((_, i) => {
+        const shifts = log.keys(`line.${i + 1}.shift`) ?? []
+        return { top: lineTop(i + 1), offset: (time: number) => -valueAt(shifts, time) * lineHeight, windows: changingWindows(shifts) }
+      })
+      return rideFloors(tracks, target, { ground: ride.ground, every: ride.every ?? SAMPLE_STEP, floors })
     },
-    tracks(id) {
-      return [...edits].filter(([, keys]) => keys.length > 0).map(([property, keys]) => ({
-        id: `${id}-${property}`,
-        target: id,
-        property,
-        keyframes: inTimeOrder(keys),
-      }))
+    tracks: log.tracks,
+    anchor(name, time = Infinity) {
+      const anchor = named(name)
+      if (anchor.kind === 'box') return panel.box
+      if (anchor.kind === 'line') return panel.line(anchor.n, time)
+      if (anchor.kind === 'token') return panel.token(anchor.n, anchor.text, anchor.occurrence, time)
+      return panel.spot(anchor.n, anchor.column, anchor.width, time)
     },
-  }
-
-  /**
-   * `target`'s tracks with its `y` carried by the line under its feet. Each
-   * segment of the `y` track keeps its keys (and easing) where what is under
-   * it does not move; where a line under it moves (or it steps from one
-   * line to another that has moved), the segment is sampled every `every` ms.
-   */
-  function rideLines(tracks: Track[], target: string, ground: number, every: number): Track[] {
-    const shifts = lines.map((_, i) => edits.get(`line.${i + 1}.shift`) ?? [])
-    if (shifts.every((keys) => keys.length === 0)) return tracks
-    const yTrack = tracks.find((track) => track.target === target && track.property === 'y') as Track<number> | undefined
-    const timeline = new Timeline({ id: `${target}-ride`, tracks: yTrack ? [yTrack] : [] })
-    const yAt = (time: number) => (yTrack ? Number(timeline.getStateAtTime(time).values.get(target)?.get('y') ?? 0) : 0)
-    /** The line whose top the feet are on at `time` (as laid out), or -1 when they are on none (in the air, on the ground). */
-    const under = (time: number) => {
-      const feet = ground + yAt(time)
-      return lines.findIndex((_, i) => Math.abs(lineTop(i + 1) - feet) < 0.5)
-    }
-    const keyTimes = (yTrack?.keyframes ?? []).map((key) => key.time)
-    /**
-     * How far the line under the feet has moved at `time`, px (up is
-     * negative). In the air, it blends from the line it left to the line it
-     * lands on, so a hop off a moved line lands back on it.
-     */
-    const carried = (time: number) => {
-      const lift = (index: number) => (index < 0 ? 0 : -valueAt(shifts[index], time) * lineHeight)
-      const now = under(time)
-      if (now >= 0) return lift(now)
-      // On its own ground (not a line), nothing carries it.
-      if (Math.abs(yAt(time)) < 0.5) return 0
-      const standing = (t: number) => under(t) >= 0 || Math.abs(yAt(t)) < 0.5
-      const left = [...keyTimes].reverse().find((t) => t <= time && standing(t))
-      const lands = keyTimes.find((t) => t >= time && standing(t))
-      if (left === undefined && lands === undefined) return 0
-      if (left === undefined) return lift(under(lands!))
-      if (lands === undefined || lands === left) return lift(under(left))
-      // From the floor it left to the floor it lands on, over the flight.
-      return lift(under(left)) + ((lift(under(lands)) - lift(under(left))) * (time - left)) / (lands - left)
-    }
-    // When any line is moving.
-    const windows = shifts.flatMap((keys) => {
-      const sorted = [...keys].sort((a, b) => a.time - b.time)
-      return sorted.slice(1).flatMap((key, i) => (key.value !== sorted[i].value ? [{ start: sorted[i].time, end: key.time }] : []))
-    })
-    const moving = (a: number, b: number) => windows.some((w) => w.start < b && w.end > a) || carried(a) !== carried(b)
-    const keys: Keyframe<number>[] = yTrack ? [...yTrack.keyframes] : [{ time: 0, value: 0 }]
-    const out: Keyframe<number>[] = [{ ...keys[0], value: keys[0].value + carried(keys[0].time) }]
-    // Every `every` ms, and exactly when a line starts or stops moving.
-    const sample = (a: number, b: number) => {
-      const times = new Set<number>([b])
-      for (let time = a + every; time < b; time += every) times.add(time)
-      for (const w of windows) for (const edge of [w.start, w.end]) if (edge > a && edge < b) times.add(edge)
-      for (const time of [...times].sort((p, q) => p - q)) out.push({ time, value: yAt(time) + carried(time) })
-    }
-    for (let i = 1; i < keys.length; i++) {
-      const a = keys[i - 1].time
-      const b = keys[i].time
-      if (moving(a, b)) sample(a, b)
-      else out.push({ ...keys[i], value: keys[i].value + carried(b) })
-    }
-    // Lines that move after its last key still carry it.
-    const last = keys[keys.length - 1].time
-    const end = Math.max(last, ...windows.map((w) => w.end))
-    if (end > last) sample(last, end)
-    const ridden: Track<number> = { id: yTrack?.id ?? `${target}-y`, target, property: 'y', keyframes: out }
-    return yTrack ? tracks.map((track) => (track === yTrack ? ridden : track)) : [...tracks, ridden]
-  }
-
-  /** How fast a piece was moving along its recorded path just before `time`, px/ms. */
-  function pathVelocity(piece: CodePiece, time: number): { x: number; y: number } | undefined {
-    const xs = edits.get(`piece.${piece.id}.x`)
-    if (!xs || xs.length < 2) return undefined
-    const before = pieceAt(piece, time - FLING_STEP)
-    const now = pieceAt(piece, time)
-    return { x: (now.x - before.x) / FLING_STEP, y: (now.y - before.y) / FLING_STEP }
+    edit(name, anchors, options) {
+      const lineNumbers = () => namedAll(name, anchors, 'line').map((anchor) => anchor.n)
+      if (name === 'highlight') return panel.highlight(lineNumbers(), options)
+      if (name === 'strike') return panel.strike(lineNumbers(), options)
+      if (name === 'remove') return panel.remove(lineNumbers(), options as CodeRemoveOptions)
+      if (name === 'type') {
+        for (const n of lineNumbers()) panel.type(n, options)
+        return panel
+      }
+      if (name === 'insert') {
+        const [spot] = namedAll(name, anchors, 'spot', true)
+        return panel.insert(spot.n, spot.column, text(name, options), options)
+      }
+      if (name === 'write' || name === 'drop' || name === 'move' || name === 'fling') {
+        const [token] = namedAll(name, anchors, 'token', true)
+        const word = panel.piece(token.n, token.text, token.occurrence)
+        if (name === 'write') return panel.write(word, text(name, options), options)
+        if (name === 'fling') return panel.fling(word, options as CodeFlingOptions)
+        if (name === 'drop') {
+          const into = typeof options.into === 'string' ? named(options.into) : undefined
+          if (into?.kind !== 'spot') throw new Error('codePanel.edit: drop needs `into`, a spot anchor (spot:N:C)')
+          return panel.drop(word, into.n, into.column, options)
+        }
+        const to = typeof options.to === 'string' ? panel.anchor(options.to, options.at) : (options.to as { x: number; y: number } | undefined)
+        if (!to || typeof to.x !== 'number' || typeof to.y !== 'number') throw new Error('codePanel.edit: move needs `to`, an anchor name or { x, y }')
+        return panel.move(word, { ...options, to })
+      }
+      throw editError('codePanel', name, CODE_SURFACE)
+    },
   }
 
   return panel
@@ -697,21 +655,6 @@ function leaving(
   }
 }
 
-/** A recorded prop's value at `time`: linear between its keys, held before the first and after the last (0 with none). */
-function valueAt(keys: Edit[] | undefined, time: number): number {
-  if (!keys || keys.length === 0) return 0
-  const sorted = [...keys].sort((a, b) => a.time - b.time)
-  if (time <= sorted[0].time) return sorted[0].value
-  for (let i = 1; i < sorted.length; i++) {
-    if (time <= sorted[i].time) {
-      const a = sorted[i - 1]
-      const b = sorted[i]
-      return b.time === a.time ? b.value : a.value + ((b.value - a.value) * (time - a.time)) / (b.time - a.time)
-    }
-  }
-  return sorted[sorted.length - 1].value
-}
-
 /** What a code panel's methods do, for its `about` and the capability catalog. */
 export const CODE_PANEL_EDITS: Record<string, string> = {
   highlight: 'highlight(n | n[], { at, duration?, on? }): tint lines (on: false clears)',
@@ -750,15 +693,6 @@ function describeCodeProps(names: string[]): Record<string, PropertyInfo> {
     if (match) out[name] = match[1]
   }
   return out
-}
-
-/**
- * Keys in time order. Each edit is a (start, end) pair, so the value holds
- * flat between edits and a later edit starts where the earlier one ended.
- */
-function inTimeOrder(keys: Edit[]): Keyframe<number>[] {
-  const sorted = [...keys].sort((a, b) => a.time - b.time)
-  return sorted.map((key) => ({ time: key.time, value: key.value, ...(key.easing ? { easing: key.easing } : {}) }))
 }
 
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {

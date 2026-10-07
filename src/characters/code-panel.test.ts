@@ -186,3 +186,73 @@ describe('codePanel.ride from the ground', () => {
     expect(y(1400)).toBeCloseTo(onto - 20)
   })
 })
+
+describe('codePanel as a surface: places and edits by name', () => {
+  it('names its places: the same boxes as line, token and spot', () => {
+    const code = make()
+    expect(code.kind).toBe('code')
+    expect(code.anchor('box')).toEqual(code.box)
+    expect(code.anchor('line:2')).toEqual(code.line(2))
+    expect(code.anchor('token:4:Println')).toEqual(code.token(4, 'Println'))
+    expect(code.anchor('token:1#2:t')).toEqual(code.token(1, 't', 2))
+    // A token's text may hold colons.
+    expect(code.anchor('token:2::=')).toEqual(code.token(2, ':='))
+    expect(code.anchor('spot:3:4')).toEqual(code.spot(3, 4))
+    expect(code.anchor('spot:3:4:6')).toEqual(code.spot(3, 4, 6))
+  })
+
+  it('says what is wrong with a place it does not have', () => {
+    const code = make()
+    expect(() => code.anchor('lin:2')).toThrow(/Unknown anchor "lin": did you mean "line"\?/)
+    expect(() => code.anchor('line:two')).toThrow(/write it line:N/)
+    expect(() => code.anchor('line:9')).toThrow(/no line 9/)
+    expect(() => code.anchor('token:4')).toThrow(/token:N:TEXT/)
+    expect(() => code.piece('line:4')).toThrow(/a piece is a word/)
+  })
+
+  it('makes the same piece whether asked by name or by line and word', () => {
+    const code = make()
+    expect(code.piece('token:4:Println')).toBe(code.piece(4, 'Println'))
+  })
+
+  it('records the same tracks by name as by the direct calls', () => {
+    const direct = make()
+    direct.highlight([2, 3], { at: 100 }).strike(3, { at: 200 }).remove(2, { at: 900, style: 'fly' })
+    direct.insert(3, 4, 'x', { at: 400 })
+    const word = direct.piece(4, 'Println')
+    direct.write(word, 'Printf', { at: 500 })
+    direct.move(direct.piece(4, 'fmt.'), { at: 600, to: { x: direct.box.x, y: direct.box.y } })
+    direct.fling(word, { at: 1500 })
+    direct.drop(direct.piece(1, 'int'), 3, 2, { at: 1600 })
+
+    const named = make()
+    named
+      .edit('highlight', ['line:2', 'line:3'], { at: 100 })
+      .edit('strike', 'line:3', { at: 200 })
+      .edit('remove', 'line:2', { at: 900, style: 'fly' })
+      .edit('insert', 'spot:3:4', { at: 400, text: 'x' })
+      .edit('write', 'token:4:Println', { at: 500, text: 'Printf' })
+      .edit('move', 'token:4:fmt.', { at: 600, to: 'box' })
+      .edit('fling', ['token:4:Println'], { at: 1500 })
+      .edit('drop', 'token:1:int', { at: 1600, into: 'spot:3:2' })
+    expect(named.tracks('code')).toEqual(direct.tracks('code'))
+  })
+
+  it('says what an edit takes when it is given the wrong place or options', () => {
+    const code = make()
+    expect(() => code.edit('higlight', 'line:2', { at: 0 })).toThrow(/Unknown edit "higlight": did you mean "highlight"\?/)
+    expect(() => code.edit('strike', 'token:4:fmt', { at: 0 })).toThrow(/strike takes line anchors/)
+    expect(() => code.edit('fling', ['token:4:fmt', 'token:4:Println'], { at: 0 })).toThrow(/takes one token anchor/)
+    expect(() => code.edit('write', 'token:4:fmt', { at: 0 })).toThrow(/needs `text`/)
+    expect(() => code.edit('drop', 'token:4:fmt', { at: 0, into: 'line:2' })).toThrow(/a spot anchor/)
+    expect(() => code.edit('move', 'token:4:fmt', { at: 0 })).toThrow(/needs `to`/)
+  })
+
+  it('lists an edit for every name it takes', () => {
+    const code = make()
+    for (const name of Object.keys(code.about.edits)) {
+      const anchor = ['insert'].includes(name) ? 'spot:3:4' : ['highlight', 'strike', 'remove', 'type'].includes(name) ? 'line:3' : 'token:4:fmt'
+      expect(() => code.edit(name, anchor, { at: 0, text: 'x', into: 'spot:3:1', to: 'box' }), name).not.toThrow()
+    }
+  })
+})

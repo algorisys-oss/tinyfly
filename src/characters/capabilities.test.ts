@@ -19,6 +19,17 @@ describe('capabilities', () => {
     expect(c.codePanel.languages).toContain('rust')
   })
 
+  it('lists each surface with the anchors and edits it takes', () => {
+    const c = capabilities()
+    expect(Object.keys(c.surfaces.code.anchors)).toEqual(['box', 'line:N', 'token:N:TEXT', 'spot:N:C'])
+    expect(c.surfaces.code.edits).toHaveProperty('fling')
+    expect(Object.keys(c.surfaces.board.anchors)).toEqual(['box', 'text:ID', 'term:ID:TEXT', 'mark:ID'])
+    expect(capabilitiesMarkdown()).toContain('### code')
+    expect(capabilitiesMarkdown()).toContain('`whiteboard({')
+    expect(Object.keys(c.surfaces.chart.edits)).toEqual(['set', 'show', 'highlight'])
+    expect(capabilitiesMarkdown()).toContain('- `token:N:TEXT`')
+  })
+
   it('names teaching helpers that exist', () => {
     for (const name of ['lesson', 'cells', 'pointer', 'stack', 'queue', 'table', 'pipeline', 'figure']) expect(teach, name).toHaveProperty(name)
   })

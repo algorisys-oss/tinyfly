@@ -18,8 +18,9 @@ npx @algorisys/tinyfly capabilities --json   # the same as data
 It lists the easings, track kinds, every property each canvas shape can
 animate (with units and ranges), the stick figure's joints, poses,
 expressions, gags, gaits, beat actions, dances, flips and hand shapes, the v2
-character's poses, the code panel's languages, anchors and edits, camera
-shots and the teaching helpers. It is generated from the code, so it can't
+character's poses, the code panel's languages, every surface's anchors and
+edits (code panel, whiteboard, chart), camera shots and the teaching
+helpers. It is generated from the code, so it can't
 fall behind: **a name in it is accepted, and a name not in it is rejected.**
 It is also the last part of `llms-full.txt`.
 
@@ -42,6 +43,19 @@ on the object. Script it in world metres with `propScript3D` (`to: [x, z]`,
 Characters in a 3D scene walk the same way with `characterScript3D`
 (`{ do: 'walk', to: [x, z] }`, `pose`, `gag`, `face`, `place`); a rider is
 seated with `propRide3D` and spliced into its script with `spliceTracks`. See `docs/props.md`.
+
+## Surfaces
+
+Code panels (`codePanel()`), whiteboards (`whiteboard()`) and charts
+(`chart()`) are surfaces: their places have names (`line:7`,
+`token:4:Println`, `text:eq`, `term:eq:+ 4`, `bar:q4`) and their edits are
+called by name (`surface.edit('highlight', 'line:4', { at })`). Write a scene
+on one with `surfaceScript()`: beats aim at `{ surface, anchor }` and say what
+the surface does in answer with `then`, at a moment of the beat (`at:
+'contact'`, `'release'`…). A whiteboard's texts and marks and a chart's data
+are declared up front, each with an id the places use. The catalog lists each
+surface's places and edits. See "A whole scene as data", "Whiteboards" and
+"Charts" in `docs/acting.md`.
 
 ## Your own behaviours
 
@@ -117,6 +131,11 @@ Fix, render again.
   `result.beats[i].contact` (and `release`): wipe the line, fling the word or
   type the text at those times.
 - **Record panel edits before `code.ride()`**, which reads the moves they make.
+- **Or write it all as data with `surfaceScript`**: name places
+  (`target: { surface: 'code', anchor: 'token:3:var' }`) and put the surface's
+  answer on the beat (`then: { surface: 'code', edit: 'fling', anchor: 'token:3:var', at: 'release' }`).
+  A cue's `at` is a moment name (`start`, `contact`, `release`, `end`), never
+  ms. It records the edits and rides the lines for you, in beat order.
 
 ## Set up your assistant
 

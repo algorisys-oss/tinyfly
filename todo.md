@@ -2597,6 +2597,38 @@ poses (docs/acting.md).
       outlined (smooth shapes without creases: a new `creases` material option), glass see-through, glow emissive, hidden
       faces left out, a disc shadow; exact depth with WebGL2; front windows set a centimetre off their wall
 
+### 36R — Surfaces: figures act on more than code (in progress, on dev)
+Goal: the code panel's pattern (named places to stand on and point at, timed edits, pieces that
+come loose, floors that carry a figure) as a contract any scene object can follow: boards, charts,
+tables, UI mockups, stateful props. For creators who don't make code.
+- [x] Step 1: the shared parts pulled out of `codePanel` into `src/characters/surface/` (`editLog`,
+      `pieceMotion`, `rideFloors`, `surfaceBox`); `codePanel` built on them, its output unchanged
+      (checked byte for byte against the old code on every edit, fling, drop and ride)
+- [x] Step 2: the `Surface` contract (`src/characters/surface/surface.ts`), with `codePanel` as the first
+      surface: `anchor(name)` (`box`, `line:N`, `token:N:TEXT`, `token:N#K:TEXT`, `spot:N:C[:W]`),
+      `piece(anchor)`, `edit(name, anchor, options)` for every panel edit (highlight, strike, remove,
+      type, insert, write, drop, move, fling); did-you-mean on anchor kinds and edit names; a
+      `surfaces` section in `capabilities()` and the catalog; documented in docs/acting.md
+- [x] Step 3: `surfaceScript(figure, surfaces, beats, options)`: `target` / `to` / `onto` as named
+      places (`{ surface, anchor }`), `then` cues (a surface edit, or `carry` along the hand) at a beat
+      moment (`at`: start / contact / release / end) with `until` (this beat or `{ beat, at }`);
+      cues run in beat order, then the figure rides; `checkSurfaceBeats` with did-you-mean on
+      surfaces, places, edits and moments; the Code Tidy demo as data gives its tracks key for key
+- [x] Step 4: `whiteboard()`, the second surface: whiteboard and chalkboard themes, items as data
+      (texts at fixed-width cells; circle / box / underline / arrow marks with a wobble seeded by id),
+      places `text:ID`, `term:ID:TEXT`, `mark:ID`; edits write, draw, erase, strike, move, fling;
+      terms come loose as pieces; the Board Lesson demo (a figure solves 2x + 4 = 12)
+- [x] Fix: `scriptTracks` dropped a start `facing: -1` when the figure never turned, so it was drawn
+      facing right with its arm aims mirrored (found by the Board Lesson demo)
+- [ ] Board: handwriting font loaded with the page (falls back to the system cursive), arrows that
+      bend round other items, a `lines` (ruled paper) theme
+- [x] Step 5a: `chart()`, the third surface: bar and line charts from data (light and dark themes,
+      a round scale, value labels with prefix / suffix / decimals); places `bar:ID` / `point:ID`,
+      `label:ID`, `value:ID` that follow the values over time; edits set, show, highlight; bar tops
+      are floors a figure rides as they grow; the Chart Talk demo
+- [ ] Step 5b: stateful props (door open, lamp on) through the same `edit()`
+- [ ] Charts: pie / donut (a slice pulled out as a piece), several series, an axis title
+
 ### 36E — Next
 - [ ] Rider pedalling and steering poses; props in the editor's 3D Scene element palette
 - [ ] Code panel in the editor (a Code element whose anchors snap beats)

@@ -732,7 +732,13 @@ export function scriptTracks(target: string, written: Beat[], options: ScriptOpt
     { id: `${target}-walking`, target, property: 'walking', keyframes: walkingKeys },
     { id: `${target}-gait`, target, property: 'gait', keyframes: gaitKeys },
     { id: `${target}-facing`, target, property: 'facing', keyframes: facingKeys },
-  ].filter((track) => track.keyframes.length > 1 || track.property === 'x')
+  ].filter(
+    (track) =>
+      track.keyframes.length > 1 ||
+      track.property === 'x' ||
+      // Starting left is kept even if it never turns: a figure target faces right unless told.
+      (track.property === 'facing' && track.keyframes[0].value === -1)
+  )
   return {
     tracks: [...lipSyncOver(target, tracks, lines, { energy: options.energy }), ...extraTracks],
     duration: time,

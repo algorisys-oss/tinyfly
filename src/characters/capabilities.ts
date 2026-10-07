@@ -11,7 +11,11 @@ import { GAGS, gagDuration, type GagName } from './acting/gags'
 import { ACTING_STYLES } from './acting/acting'
 import { BEAT_FIELDS, SCRIPT_ACTIONS } from './acting/beat-check'
 import { STICK_FIGURE_EXTRAS, STICK_POSE_FIELDS, HAND_FIELDS } from './figure-props'
-import { CODE_LANGUAGES, CODE_PANEL_EDITS, REMOVE_STYLES } from './code-panel'
+import { CODE_LANGUAGES, CODE_PANEL_EDITS, CODE_SURFACE, REMOVE_STYLES } from './code-panel'
+import { WHITEBOARD_SURFACE } from './whiteboard'
+import { CHART_SURFACE } from './chart'
+import type { SurfaceAbout } from './surface/surface'
+import { BEAT_MOMENTS } from './acting/surface-script'
 import type { Cast } from './acting/custom'
 import { PROP_COMMON_CONTROLS } from './props/rig'
 import { PROP_PRESETS } from './props/presets'
@@ -79,6 +83,10 @@ export interface Capabilities {
   custom: { api: Record<string, string>; actions: Record<string, { summary: string; needs?: string[] }>; gaits: Record<string, string> }
   character: { poses: string[]; expressions: string[]; gags: string[] }
   codePanel: { languages: readonly string[]; removeStyles: readonly string[]; anchors: Record<string, string>; edits: Record<string, string> }
+  /** Surfaces figures act on, by kind: their named anchors and edits (`surface.anchor(name)`, `surface.edit(name, anchor, options)`) */
+  surfaces: Record<string, SurfaceAbout>
+  /** Beats that act on surfaces (`surfaceScript`): named places and the cues surfaces answer with */
+  surfaceScript: Record<string, string>
   cameraShots: Record<string, string>
   teach: Record<string, string>
   cli: Record<string, string>
@@ -194,6 +202,15 @@ export function capabilities(version?: string, cast: Cast = {}): Capabilities {
         box: 'the whole panel',
       },
       edits: CODE_PANEL_EDITS,
+    },
+    surfaces: { code: CODE_SURFACE, board: WHITEBOARD_SURFACE, chart: CHART_SURFACE },
+    surfaceScript: {
+      'surfaceScript(figureId, { name: surface }, beats, options)': 'compiles beats that act on surfaces: returns the script result with `tracks` (the figure’s, ridden, then every surface’s, keyed by its name) and `figureTracks`; options are scriptTracks’ plus `figureStyle` (for carry) and `ride` (default true)',
+      'checkSurfaceBeats(beats, surfaces, cast?)': 'every problem checkBeats finds, plus unknown surfaces, places, edits and moments, with suggestions',
+      '{ surface, anchor }': 'a named place, where a beat takes `target` (its box), `to` (its centre x) or `onto` (its top); as laid out, before any edit moves it',
+      'then: { surface, edit, anchor, at?, until?, …options }': 'what the surface does in answer to the beat (or a list of them): one of its edits, or `carry` (the piece follows the hand until `until`); the other fields are the edit’s options',
+      'at': `a moment of the beat: ${BEAT_MOMENTS.join(', ')} (default contact, or start when the beat has none); not ms`,
+      'until': 'a moment of this beat, or { beat: index, at? } of a later one; sets the edit’s duration (carry needs it)',
     },
     cameraShots: {
       frame: '{ at, duration?, easing?, frame: { focus?: { x, y }, scale?, rotate? } }: push in, pull out, or cut (duration 0)',
@@ -336,6 +353,25 @@ export function capabilitiesMarkdown(version?: string, cast: Cast = {}): string 
     '',
     ...Object.values(c.codePanel.edits).map((what) => `- \`${what.split(':')[0]}\`:${what.split(':').slice(1).join(':')}`),
     '',
+    '## Surfaces',
+    '',
+    'Scene objects figures act on. Places are named `kind:args`: `surface.anchor(name)` gives the box there (stand on `top`, point at `x`, `y`; pass it as a beat `target`), `surface.piece(name)` makes the part there come loose, and `surface.edit(name, anchor, options)` changes the surface at a time (`at`, ms).',
+    '',
+    'Beats name places and say what surfaces do in answer (`surfaceScript`):',
+    '',
+    ...Object.entries(c.surfaceScript).map(([name, what]) => `- \`${name}\`: ${what}`),
+    '',
+    ...Object.entries(c.surfaces).flatMap(([kind, about]) => [
+      `### ${kind}`,
+      '',
+      ...(about.create ? [`\`${about.create}\``, ''] : []),
+      'Anchors:',
+      ...Object.entries(about.anchors).map(([pattern, what]) => `- \`${pattern}\`: ${what}`),
+      '',
+      'Edits:',
+      ...Object.entries(about.edits).map(([name, what]) => `- \`${name}\`: ${what}`),
+      '',
+    ]),
     '## Camera shots (`cameraTracks(shots, { stage })`)',
     '',
     ...Object.entries(c.cameraShots).map(([name, shape]) => `- **${name}**: \`${shape}\``),
