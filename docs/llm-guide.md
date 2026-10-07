@@ -46,8 +46,8 @@ seated with `propRide3D` and spliced into its script with `spliceTracks`. See `d
 
 ## Surfaces
 
-Code panels (`codePanel()`), whiteboards (`whiteboard()`) and charts
-(`chart()`) are surfaces: their places have names (`line:7`,
+Code panels (`codePanel()`), whiteboards (`whiteboard()`), charts
+(`chart()`) and props (`propSurface(propTarget(…))`) are surfaces: their places have names (`line:7`,
 `token:4:Println`, `text:eq`, `term:eq:+ 4`, `bar:q4`) and their edits are
 called by name (`surface.edit('highlight', 'line:4', { at })`). Write a scene
 on one with `surfaceScript()`: beats aim at `{ surface, anchor }` and say what
@@ -123,6 +123,9 @@ Fix, render again.
   positions. A beat script's `to` is a scene x, and its tracks are offsets
   from `from` (and `ground` for y).
 - **Scene y grows downward.** A floor higher up the screen has a smaller y.
+- **Walk figures in front of props, not through them.** A prop stands on its
+  middle; its front comes forward of that. Use its front line as the
+  figure's `ground` (a house's `anchor:doorstep`).
 - **Angles are degrees.** Stick-figure arms: 0 hangs down, 90 straight out,
   180 straight up; in profile the left arm's forward is negative.
 - **Aim beats at anchors, not guessed numbers**: `code.line(7)`,

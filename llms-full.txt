@@ -204,7 +204,7 @@ with a GSAP-style call (durations are in seconds here):
 ```html
 <div class="box" style="width:60px;height:60px;background:#4a9eff"></div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.96.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.97.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -412,7 +412,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.96.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.97.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -2278,7 +2278,7 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.96.0/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.97.0/cdn/tinyfly-player.iife.js`.
 
 ---
 
@@ -6466,7 +6466,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.96.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.97.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed
@@ -7593,8 +7593,8 @@ seated with `propRide3D` and spliced into its script with `spliceTracks`. See `d
 
 ## Surfaces
 
-Code panels (`codePanel()`), whiteboards (`whiteboard()`) and charts
-(`chart()`) are surfaces: their places have names (`line:7`,
+Code panels (`codePanel()`), whiteboards (`whiteboard()`), charts
+(`chart()`) and props (`propSurface(propTarget(…))`) are surfaces: their places have names (`line:7`,
 `token:4:Println`, `text:eq`, `term:eq:+ 4`, `bar:q4`) and their edits are
 called by name (`surface.edit('highlight', 'line:4', { at })`). Write a scene
 on one with `surfaceScript()`: beats aim at `{ surface, anchor }` and say what
@@ -7670,6 +7670,9 @@ Fix, render again.
   positions. A beat script's `to` is a scene x, and its tracks are offsets
   from `from` (and `ground` for y).
 - **Scene y grows downward.** A floor higher up the screen has a smaller y.
+- **Walk figures in front of props, not through them.** A prop stands on its
+  middle; its front comes forward of that. Use its front line as the
+  figure's `ground` (a house's `anchor:doorstep`).
 - **Angles are degrees.** Stick-figure arms: 0 hangs down, 90 straight out,
   180 straight up; in profile the left arm's forward is negative.
 - **Aim beats at anchors, not guessed numbers**: `code.line(7)`,
@@ -7744,7 +7747,7 @@ path for all of that:
 </figure>
 
 <!-- once, anywhere on the page (a site-wide footer is fine) -->
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.96.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.97.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 Every `[data-tinyfly-embed]` mounts when the page is ready, with no per-post
@@ -8819,8 +8822,8 @@ On a page with no build step, load the maps add-on after the browser bundle; it
 adds to the same `tinyfly` global:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.96.0/cdn/tinyfly.iife.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.96.0/cdn/tinyfly-maps.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.97.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.97.0/cdn/tinyfly-maps.iife.js"></script>
 ```
 
 It is a separate script because the offline world map it carries adds about
@@ -9593,6 +9596,41 @@ Its places are `bar:ID` (on a bar chart) or `point:ID` (on a line chart),
 `hidden` bar in from the axis, or draw the line out to a point; `on: false`
 takes it back) and `highlight`. A bar's top is a floor: a figure standing on
 it is carried up and down as it grows and shrinks, as in the Chart Talk demo.
+
+### Props as surfaces
+
+A prop's controls are state a figure can change: `propSurface(propTarget(…))`
+makes a car, a house or a tree a surface. Its places are `anchor:NAME` (the
+rig's anchors: `door`, `doorstep`, `seat`, `branch`…), `part:ID` (one part as
+seen: `window-1`, `wheel-0-left`), `control:NAME` (where the parts a control
+moves or lights are) and `box`. Its edits are `set` (a control to a `value`)
+and `switch` (a control to its full value, open or on, or back to rest with
+`on: false`).
+
+```js
+const home = propTarget({ x: 430, y: 320, prop: house(), values: { turn: 0.25 } })
+const homeSurface = propSurface(home)
+const floor = homeSurface.anchor('anchor:doorstep').y
+
+surfaceScript('hero', { home: homeSurface }, [
+  { do: 'walk', to: homeSurface.anchor('anchor:door').x - 70 },
+  { do: 'grab', target: { surface: 'home', anchor: 'anchor:door' },
+    then: { surface: 'home', edit: 'switch', anchor: 'control:door', until: 'end' } },
+  { do: 'point', target: { surface: 'home', anchor: 'part:window-1' },
+    then: { surface: 'home', edit: 'switch', anchor: 'control:lights' } },
+], { from: 40, ground: floor, height: 100 })
+```
+
+A prop stands on its middle, and seen from a little above its front comes
+forward of that line. A figure that walks on the prop's own `y` is inside
+its footprint and seems to walk through the wall; walk it on the prop's
+front line instead (a house's `doorstep`, as above). Places are worked out
+from the prop's values at a time, so they follow a door as it swings; pass
+the prop's own script as `propSurface(target, { tracks })` and they follow
+it as it drives off. Do not key a control both in its own script and here.
+A part turned away from the viewer has no place on screen (a car's
+headlights in profile); the error names the anchors to aim at instead. The
+Home Time demo is this scene.
 
 ## Camera
 
@@ -12893,7 +12931,7 @@ magnet.addEventListener('pointerleave', () => {
 
 <!-- capabilities: generated from the library -->
 
-# tinyfly capabilities (v0.96.0)
+# tinyfly capabilities (v0.97.0)
 
 Generated from the library itself: every name below is accepted, and names not listed are rejected (beat scripts, code panels and `checkTracks` say which name was probably meant).
 
@@ -13245,6 +13283,20 @@ Edits:
 - `set`: bar or point anchors; { at, value, duration? }: animate to a new value; its value label counts along
 - `show`: bar or point anchors given `hidden`; { at, duration?, on? }: grow a bar in from the axis, or draw the line out to a point (on: false takes it back)
 - `highlight`: bar or point anchors; { at, duration?, on? }: colour it out (on: false clears)
+
+### prop
+
+`propSurface(propTarget({ x, y, prop }), { tracks? }): its controls and anchors are those the catalog lists for its preset`
+
+Anchors:
+- `box`: the prop’s whole box
+- `anchor:NAME`: one of its rig’s anchors (door, seat, branch, ridge…), as posed at the time
+- `part:ID`: one of its parts as seen at the time (window-1, door-left, wheel-0-left…)
+- `control:NAME`: where the parts a control moves or lights are (control:door is the doors, control:lights the lamps)
+
+Edits:
+- `set`: control anchors; { at, value, duration? }: move a control to a value
+- `switch`: control anchors; { at, on?, duration? }: a control to its full value (open, on), or back to its rest value with on: false
 
 ## Camera shots (`cameraTracks(shots, { stage })`)
 

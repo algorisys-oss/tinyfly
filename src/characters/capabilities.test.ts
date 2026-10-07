@@ -27,6 +27,7 @@ describe('capabilities', () => {
     expect(capabilitiesMarkdown()).toContain('### code')
     expect(capabilitiesMarkdown()).toContain('`whiteboard({')
     expect(Object.keys(c.surfaces.chart.edits)).toEqual(['set', 'show', 'highlight'])
+    expect(Object.keys(c.surfaces.prop.anchors)).toEqual(['box', 'anchor:NAME', 'part:ID', 'control:NAME'])
     expect(capabilitiesMarkdown()).toContain('- `token:N:TEXT`')
   })
 

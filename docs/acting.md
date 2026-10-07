@@ -567,6 +567,41 @@ Its places are `bar:ID` (on a bar chart) or `point:ID` (on a line chart),
 takes it back) and `highlight`. A bar's top is a floor: a figure standing on
 it is carried up and down as it grows and shrinks, as in the Chart Talk demo.
 
+### Props as surfaces
+
+A prop's controls are state a figure can change: `propSurface(propTarget(…))`
+makes a car, a house or a tree a surface. Its places are `anchor:NAME` (the
+rig's anchors: `door`, `doorstep`, `seat`, `branch`…), `part:ID` (one part as
+seen: `window-1`, `wheel-0-left`), `control:NAME` (where the parts a control
+moves or lights are) and `box`. Its edits are `set` (a control to a `value`)
+and `switch` (a control to its full value, open or on, or back to rest with
+`on: false`).
+
+```js
+const home = propTarget({ x: 430, y: 320, prop: house(), values: { turn: 0.25 } })
+const homeSurface = propSurface(home)
+const floor = homeSurface.anchor('anchor:doorstep').y
+
+surfaceScript('hero', { home: homeSurface }, [
+  { do: 'walk', to: homeSurface.anchor('anchor:door').x - 70 },
+  { do: 'grab', target: { surface: 'home', anchor: 'anchor:door' },
+    then: { surface: 'home', edit: 'switch', anchor: 'control:door', until: 'end' } },
+  { do: 'point', target: { surface: 'home', anchor: 'part:window-1' },
+    then: { surface: 'home', edit: 'switch', anchor: 'control:lights' } },
+], { from: 40, ground: floor, height: 100 })
+```
+
+A prop stands on its middle, and seen from a little above its front comes
+forward of that line. A figure that walks on the prop's own `y` is inside
+its footprint and seems to walk through the wall; walk it on the prop's
+front line instead (a house's `doorstep`, as above). Places are worked out
+from the prop's values at a time, so they follow a door as it swings; pass
+the prop's own script as `propSurface(target, { tracks })` and they follow
+it as it drives off. Do not key a control both in its own script and here.
+A part turned away from the viewer has no place on screen (a car's
+headlights in profile); the error names the anchors to aim at instead. The
+Home Time demo is this scene.
+
 ## Camera
 
 Video scenes can be seen through a camera: `camera: true` reads the tracks of

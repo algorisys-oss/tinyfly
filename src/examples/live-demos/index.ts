@@ -24,6 +24,7 @@ import { codeFix } from './code-fix'
 import { codeTidy } from './code-tidy'
 import { boardLesson } from './board-lesson'
 import { chartTalk } from './chart-talk'
+import { homeTime } from './home-time'
 import { codeReview } from './code-review'
 import { propCar } from './prop-car'
 import { propScene } from './prop-scene'
@@ -92,6 +93,7 @@ import codeFixSource from './code-fix.js?raw'
 import codeTidySource from './code-tidy.js?raw'
 import boardLessonSource from './board-lesson.js?raw'
 import chartTalkSource from './chart-talk.js?raw'
+import homeTimeSource from './home-time.js?raw'
 import codeReviewSource from './code-review.js?raw'
 import propCarSource from './prop-car.js?raw'
 import propSceneSource from './prop-scene.js?raw'
@@ -219,6 +221,7 @@ export const liveDemos: LiveDemoWithCode[] = [
   withCode(codeReview, codeReviewSource),
   withCode(boardLesson, boardLessonSource),
   withCode(chartTalk, chartTalkSource),
+  withCode(homeTime, homeTimeSource),
   withCode(propCar, propCarSource),
   withCode(propScene, propSceneSource),
   withCode(propHelicopter, propHelicopterSource),

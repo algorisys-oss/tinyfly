@@ -2626,7 +2626,11 @@ tables, UI mockups, stateful props. For creators who don't make code.
       a round scale, value labels with prefix / suffix / decimals); places `bar:ID` / `point:ID`,
       `label:ID`, `value:ID` that follow the values over time; edits set, show, highlight; bar tops
       are floors a figure rides as they grow; the Chart Talk demo
-- [ ] Step 5b: stateful props (door open, lamp on) through the same `edit()`
+- [x] Step 5b: `propSurface(target, { tracks? })`: any prop as a surface; places `anchor:NAME`,
+      `part:ID`, `control:NAME` (the parts a control moves or lights), `box`, worked out from its
+      values at a time (and its own script's, so they follow it); edits `set` and `switch`; the Home
+      Time demo (a figure opens a house's door and its windows light up)
+- [ ] Props: a roof or a seat as a floor a figure stands on (`ride`), parts that come loose as pieces
 - [ ] Charts: pie / donut (a slice pulled out as a piece), several series, an axis title
 
 ### 36E — Next

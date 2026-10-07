@@ -1,6 +1,6 @@
 ---
 name: tinyfly
-description: Write animations with tinyfly (@algorisys/tinyfly), the JSON-first animation engine — timelines and tracks, canvas shapes, stick-figure characters acting from beat scripts, surfaces figures act on (code panels, whiteboards, charts), teaching figures and headless video. Use when asked to create, edit or fix a tinyfly animation, a stick-figure scene, an animated code walkthrough, a whiteboard lesson, a chart presentation or a tinyfly timeline.
+description: Write animations with tinyfly (@algorisys/tinyfly), the JSON-first animation engine — timelines and tracks, canvas shapes, stick-figure characters acting from beat scripts, surfaces figures act on (code panels, whiteboards, charts, props), teaching figures and headless video. Use when asked to create, edit or fix a tinyfly animation, a stick-figure scene, an animated code walkthrough, a whiteboard lesson, a chart presentation or a tinyfly timeline.
 ---
 
 # Writing tinyfly animations
@@ -53,6 +53,11 @@ names.
   surfaces). Places name items by id: declare them first (`items`, `data`).
 - A figure that starts on the right walking left needs `facing: -1` in the
   script options.
+- A figure changes a prop's state through `propSurface(propTarget(…))`
+  (`switch` / `set` on `control:door`, `control:lights`; aim at `anchor:NAME`
+  or `part:ID`). Walk figures on a prop's front line (a house's
+  `anchor:doorstep` y), not on the prop's own `y`, or they pass through its
+  walls.
 - For objects in the scene (vehicles, trees, houses, aircraft, animals,
   birds) use the prop presets with `propScript()`; seat figures with
   `propRide()`, tow with `propTow()`. Aim figure beats at prop anchors

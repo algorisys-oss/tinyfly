@@ -14,6 +14,7 @@ import { STICK_FIGURE_EXTRAS, STICK_POSE_FIELDS, HAND_FIELDS } from './figure-pr
 import { CODE_LANGUAGES, CODE_PANEL_EDITS, CODE_SURFACE, REMOVE_STYLES } from './code-panel'
 import { WHITEBOARD_SURFACE } from './whiteboard'
 import { CHART_SURFACE } from './chart'
+import { PROP_SURFACE } from './props/prop-surface'
 import type { SurfaceAbout } from './surface/surface'
 import { BEAT_MOMENTS } from './acting/surface-script'
 import type { Cast } from './acting/custom'
@@ -203,7 +204,7 @@ export function capabilities(version?: string, cast: Cast = {}): Capabilities {
       },
       edits: CODE_PANEL_EDITS,
     },
-    surfaces: { code: CODE_SURFACE, board: WHITEBOARD_SURFACE, chart: CHART_SURFACE },
+    surfaces: { code: CODE_SURFACE, board: WHITEBOARD_SURFACE, chart: CHART_SURFACE, prop: PROP_SURFACE },
     surfaceScript: {
       'surfaceScript(figureId, { name: surface }, beats, options)': 'compiles beats that act on surfaces: returns the script result with `tracks` (the figure’s, ridden, then every surface’s, keyed by its name) and `figureTracks`; options are scriptTracks’ plus `figureStyle` (for carry) and `ride` (default true)',
       'checkSurfaceBeats(beats, surfaces, cast?)': 'every problem checkBeats finds, plus unknown surfaces, places, edits and moments, with suggestions',
