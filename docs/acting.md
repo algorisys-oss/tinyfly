@@ -233,12 +233,141 @@ own length (or `for`).
 | `zip`, with `to` | The cartoon exit: winds up, wheels its legs in place, then shoots off to `to`. The script's `effects` say where to draw the dust it leaves hanging. |
 | `say`, with `say` | Lip-syncs the line, with small head nods and brow lifts, for as long as the line takes. |
 | `hold` | Holds (the acting pass drifts long holds). |
+| `leap`, with `to` and `onto` | Crouches, springs, arcs over the higher floor and lands squashed on a new floor (`onto`, a scene y). Writes a `y` track (an offset from `ground`). Dust where it lands. |
+| `point`, with `target` | Turns toward the target if it is behind, then aims a straight arm and the eyes at it. Without `target` it is the plain `point` pose. |
+| `swipe`, with `target` | Steps in and winds the arm up behind the head, then slides along the target with the arm out, so the hand crosses it edge to edge (`left` to `right`, or back), follows through and settles. |
+| `grab`, with `target` | Steps to where its straight arm just reaches the target (crouching over something low), closes its hand on it, and lifts it overhead. |
+| `throw`, with `to` or `target` | Winds the arm back over the shoulder and throws forward and up; `release` is when it lets go. |
+| `kick`, with `target` | Steps to a leg's length from it, draws the leg back and kicks through it, arms out for balance. |
+| `put`, with `target` | Steps to where the straight arm reaches the spot, sets the thing down there, and brings the arm back. |
+| `write`, with `target` | Reaches a pen to the spot and scribbles along it left to right (the arm bends to follow the line); when the spot is wider than it reaches, it moves along with the pen. `release` is when it is done. |
+| `push`, with `target` and `to` | Sets both hands on the near side and walks it along (the `shove` gait: short steps, steady arms) until its centre is at `to`. |
+| `duck`, `lie` (poses) | Ducks low with arms over the head; lies on its back on the floor, hands behind the head. |
 
 Any beat can take `say` (a line said while it happens), `mood` (an
 expression) and `pose` (joints to change). The result carries the spoken lines
 with their times (for captions), when each beat starts and ends (for camera
 shots), and `effects`: dust cues for where a take lands and where a zip
-leaves, with a time, a scene x and a length, ready for `drawDustPuff`.
+leaves, with a time, a scene x and y and a length, ready for `drawDustPuff`.
+
+Any beat can also take `onto` (a scene y): the figure is carried to that floor
+over the beat, as when the line it stands on moves up.
+
+## Acting on code
+
+`codePanel()` makes a code listing a scene object. Its layout is plain
+arithmetic (each character `charWidth` em wide, lines `lineHeight` em apart),
+never measured from a font, so every line and word is a known place in the
+scene in a browser, a worker or a build script. Beats aim at those places, and
+the beats that touch something report when: `contact` (when a leap lands, a
+pointing arm arrives or a swipe's hand reaches the target) and `release`
+(when the swipe's hand has crossed it). The code reacts on those frames.
+
+```js
+const code = codePanel({ code: source, language: 'go', x: 30, y: 70, fontSize: 17 })
+const dead = code.line(7)                      // { x, y, left, right, top, bottom, width, height }
+const script = scriptTracks('hero', [
+  { do: 'walk', to: dead.right + 60 },
+  { do: 'point', target: dead, say: 'Unreachable!', mood: 'angry' },
+  { do: 'swipe', target: dead, mood: 'furious' },
+  { do: 'leap', to: code.token(6, 'return').x, onto: code.line(6).top },
+  { do: 'lie', for: 1800 },
+], { from: 720, ground: code.box.bottom, height: 100, facing: -1 })
+
+const [, point, swipe] = script.beats
+code.highlight(7, { at: point.contact })
+code.remove(7, { at: swipe.contact, duration: swipe.release - swipe.contact, from: 'right' })
+const tracks = [...script.tracks, ...code.tracks('code')]   // `code.target` is the canvas target
+```
+
+| Anchor | What it is |
+|---|---|
+| `code.line(n, time?)` | Line `n`'s text (numbered from 1). Stand on `top`, point at `x`, `y`. With a `time`, after the gaps of removed lines above it have closed. |
+| `code.token(n, text, occurrence?, time?)` | A word on a line. |
+| `code.box` | The whole panel. |
+
+| Edit | What it does |
+|---|---|
+| `highlight(n, { at, on? })` | Tints a line (`on: false` clears it). |
+| `strike(n, { at })` | Strikes it through, left to right. |
+| `remove(n, { at, duration, style?, from?, close? })` | Takes it away, then the lines below close the gap. `style`: `wipe` (default) erases it from `left` or `right`; `fly` knocks it off the panel (pushed from `from`), blurring and fading as it goes; `blur` takes it out of focus where it is. |
+| `type(n, { at })` | Types in a line given in `hidden`, character by character. |
+
+### Words that come loose
+
+`code.piece(n, text)` makes a word a piece that can leave its line. A grabbed
+word follows the figure's hand: `handPath()` samples where the hand is from
+the script's tracks, and `follow()` carries the piece along it. `fling()`
+throws or kicks it away on a spinning arc (by default at the speed it was
+moving along its path), and `write()` types new text into the gap it left,
+the rest of the line making room.
+
+```js
+const word = code.piece(3, 'var')
+const script = scriptTracks('hero', [
+  { do: 'grab', target: word.home },
+  { do: 'throw', to: 680 },
+], { from: 560, ground: code.line(5).top, height: 100 })
+const [grab, toss] = script.beats
+code.follow(word, handPath('hero', script.tracks, { x: 560, y: code.line(5).top, style: { height: 100 }, start: grab.contact, end: toss.release }))
+code.fling(word, { at: toss.release })
+code.write(word, 'let', { at: toss.release + 500 })
+// A kick: code.fling(other, { at: kick.contact, velocity: { x: 0.7, y: -0.8 } })
+```
+
+| Piece edit | What it does |
+|---|---|
+| `follow(piece, path)` | Its centre follows timed scene points (a `handPath()`). |
+| `fling(piece, { at, velocity?, spin?, gravity?, duration? })` | Flies off on a ballistic arc, spinning, and fades. |
+| `move(piece, { at, to })` | Moves its centre to a scene point (home is `piece.home`). |
+| `write(piece, text, { at })` | Types new text into its place in the line. |
+| `drop(piece, n, column, { at })` | Puts it into line `n` before `column`: it moves there as the line opens room, and its old place closes. |
+
+New text goes into a line with `insert(n, column, text, { at, duration })`:
+the line opens room and the text is typed in. `spot(n, column, width?)` is
+where a place in a line is (after the room earlier inserts opened), for a
+`put` or a `write` to aim at:
+
+```js
+const semicolon = code.piece(5, ';')
+const end = code.spot(4, code.lines[3].length)        // just past the end of line 4
+const mutSpot = code.spot(2, 8, 4)                   // four characters before column 8 of line 2
+// beats: { do: 'grab', target: semicolon.home }, { do: 'put', target: end }, { do: 'write', target: mutSpot }
+code.follow(semicolon, handPath('hero', script.tracks, { …, start: grab.contact, end: put.contact }))
+code.drop(semicolon, 4, code.lines[3].length, { at: put.contact })
+code.insert(2, 8, 'mut ', { at: write.contact, duration: write.release - write.contact })
+```
+
+To slide a word along its own line, `push` it to where `landing()` says it
+will end up, and `drop()` it into its own line over the push: it slides at the
+push's pace, and the text it passes closes up behind it.
+
+```js
+const not = code.piece(3, 'not ')                       // "if not user is None:"
+const beforeNone = code.lines[2].indexOf('None')
+// beat: { do: 'push', target: not.home, to: code.landing(not, 3, beforeNone).x }
+code.drop(not, 3, beforeNone, { at: push.contact, duration: push.release - push.contact })   // "if user is not None:"
+```
+
+### Riding a line
+
+Beats are written against the code as laid out. When a gap closes above the
+line a figure stands on, `ride()` carries it up with that line (and a hop
+off a line that has moved lands back on it):
+
+```js
+code.remove(2, { at: swipe.contact, duration: 600, style: 'blur' })
+const tracks = [...code.ride(script.tracks, 'hero', { ground }), ...code.tracks('code')]
+```
+
+Record the panel's edits first: `ride()` reads the moves they make. On the
+script's own `ground` (not a line), nothing carries the figure.
+
+Edits take a line or a list of lines, and are recorded on the panel; `tracks(id)`
+writes them out as one track per prop (`line.N.highlight`, `line.N.strike`,
+`line.N.wipe`, `line.N.reveal`, `line.N.shift`). Syntax colours come from small
+keyword lists for Go, Rust, C#, JavaScript, TypeScript and Python (strings,
+numbers and line comments too); `plain` leaves the text uncoloured.
 
 ## Camera
 
@@ -332,5 +461,6 @@ timeline plays: editor previews, players, embeds and exports.
 
 ## Not yet
 
+- A code panel in the editor (a Code element whose lines and words snap beats)
 - Beat scripts for v2 characters (`scriptTracks` drives the stick figure)
 - Follow-through on hair, tails and ears (character-system milestones 3 and 5)

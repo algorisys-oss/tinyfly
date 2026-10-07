@@ -2,6 +2,18 @@
 /**
  * tinyfly command line.
  *
+ *   tinyfly capabilities [--json]
+ *       Print everything tinyfly can do, read from the library itself: easings,
+ *       track kinds, what every shape animates, the stick figure's joints,
+ *       poses, expressions, gags, gaits, beat actions, dances and flips, and the
+ *       code panel's languages and edits. Read it before writing an animation
+ *       (it is what a language model should read). --json prints it as data.
+ *
+ *   tinyfly check <beats.json>
+ *       Check a beat script (an array of beats, or { "beats": [...] }) before
+ *       compiling it: unknown actions, moods, joints and fields are errors that
+ *       name what was probably meant. Exit 1 on errors.
+ *
  *   tinyfly validate <timeline.json> [<timeline.json> …] [--markup <figure.svg|.html>]
  *       Exit 1 when the timeline has errors: tracks aimed at elements the markup
  *       lacks, markers out of order or outside the animation, keyframes past an
@@ -69,6 +81,8 @@ function listFlag(name) {
 const usage = () => {
   console.error(
     'Usage:\n' +
+      '  tinyfly capabilities [--json]\n' +
+      '  tinyfly check <beats.json>\n' +
       '  tinyfly validate <timeline.json> [<timeline.json> …] [--markup <file>]\n' +
       '  tinyfly render <timeline.json> <markup file> [--at start|end|<ms>|<marker id>]\n' +
       '  tinyfly video <scene.mjs> [-o <out.mp4>] [--stills <dir>] [--frames <i,j,…> | --times <ms,…>] [--loop-check]\n' +
@@ -86,7 +100,26 @@ const readJson = (file) => {
   }
 }
 
-if (command === 'validate') {
+if (command === 'capabilities') {
+  const json = has('--json')
+  const characters = await import('../lib/addons/characters.js')
+  const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+  process.stdout.write(json ? `${JSON.stringify(characters.capabilities(version), null, 2)}\n` : characters.capabilitiesMarkdown(version))
+} else if (command === 'check') {
+  const [beatsFile] = rest
+  if (!beatsFile) usage()
+  const data = readJson(beatsFile)
+  const beats = Array.isArray(data) ? data : data?.beats
+  const { checkBeats } = await import('../lib/addons/characters.js')
+  const problems = checkBeats(beats)
+  for (const problem of problems) console.error(`${problem.level}: ${problem.beat >= 0 ? `beat ${problem.beat}: ` : ''}${problem.message}`)
+  const errors = problems.filter((problem) => problem.level === 'error').length
+  if (errors > 0) {
+    console.error(`${beatsFile}: ${errors} error(s)`)
+    process.exit(1)
+  }
+  console.error(`${beatsFile}: ok${problems.length ? ` (${problems.length} warning(s))` : ''}`)
+} else if (command === 'validate') {
   const markupFile = flag('--markup')
   const timelineFiles = rest
   if (timelineFiles.length === 0) usage()

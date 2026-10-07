@@ -43,6 +43,7 @@ const GAIT_LABELS: Record<GaitName, string> = {
   strut: 'Strut',
   tired: 'Tired',
   run: 'Run',
+  shove: 'Shove (steady arms)',
 }
 
 /** The character's own pose: rest, then its element pose. */

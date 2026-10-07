@@ -18,6 +18,10 @@ import { narratedScene } from './narrated-scene'
 import { stickFigure } from './stick-figure'
 import { pencilSketch } from './pencil-sketch'
 import { cartoonActing } from './cartoon-acting'
+import { codeActing } from './code-acting'
+import { codeRefactor } from './code-refactor'
+import { codeFix } from './code-fix'
+import { codeTidy } from './code-tidy'
 import { dressedFigures } from './dressed-figures'
 import { danceFloor } from './dance-floor'
 import { mapRoute } from './map-route'
@@ -71,6 +75,10 @@ import narratedSceneSource from './narrated-scene.js?raw'
 import stickFigureSource from './stick-figure.js?raw'
 import pencilSketchSource from './pencil-sketch.js?raw'
 import cartoonActingSource from './cartoon-acting.js?raw'
+import codeActingSource from './code-acting.js?raw'
+import codeRefactorSource from './code-refactor.js?raw'
+import codeFixSource from './code-fix.js?raw'
+import codeTidySource from './code-tidy.js?raw'
 import dressedFiguresSource from './dressed-figures.js?raw'
 import danceFloorSource from './dance-floor.js?raw'
 import mapRouteSource from './map-route.js?raw'
@@ -181,6 +189,10 @@ export const liveDemos: LiveDemoWithCode[] = [
   withCode(stickFigure, stickFigureSource),
   withCode(pencilSketch, pencilSketchSource),
   withCode(cartoonActing, cartoonActingSource),
+  withCode(codeActing, codeActingSource),
+  withCode(codeRefactor, codeRefactorSource),
+  withCode(codeFix, codeFixSource),
+  withCode(codeTidy, codeTidySource),
   withCode(dressedFigures, dressedFiguresSource),
   withCode(danceFloor, danceFloorSource),
   withCode(mapRoute, mapRouteSource),

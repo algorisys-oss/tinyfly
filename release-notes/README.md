@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.93.0](v0.93.0.md) | 2026-10-07 | Figures act on code (`codePanel`: leap, point, swipe, grab, throw, kick, put, write, push, ride; wipe/fly/blur deletes); made for LLMs: `tinyfly capabilities`, did-you-mean `check`/`checkBeats`/`checkTracks`, `describeTarget`, docs, `llms-full.txt` and an agent skill in the package |
 | [v0.92.0](v0.92.0.md) | 2026-10-06 | Character builds in the editor (slim, kid, broad, curvy, stocky, sliders); native v2 motion: `bend` line of action, `humanGaitPose`, `humanGag`, used by the editor's gags and walks |
 | [v0.91.0](v0.91.0.md) | 2026-10-06 | Acting in the editor (style, gags, walks, lines), `drawingRate` as a timeline setting, the cartoon zip, script effect cues, camera helpers from the characters entry; front-on flips mirror correctly facing left |
 | [v0.90.0](v0.90.0.md) | 2026-10-06 | Story tools: line of action (`bend`), gaits with personality, lip-sync from text (Latin and Devanagari), beat scripts (`scriptTracks`), camera shots (`cameraTracks`, `camera` and `overlay` in video scenes); the Hindi pencil story acted; Cartoon Acting gallery card |

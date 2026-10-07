@@ -1,3 +1,4 @@
+import type { TargetAbout } from './target-properties'
 import type { AnimationState, AnimatableValue } from '../../engine/types'
 import { composeFilter } from '../filter-utils'
 import { shineStops } from '../shine-utils'
@@ -196,6 +197,11 @@ export interface CustomTarget extends CanvasTargetBase {
    * whose tracks name its objects: `cube.rotateY`). They land in `props`.
    */
   acceptsProp?: (property: string) => boolean
+  /**
+   * What it is, its props described and what it can do, for `describeTarget`
+   * and `checkTracks` (a stick figure says its joints and actions).
+   */
+  about?: TargetAbout
 }
 
 /** Union of all canvas target types */

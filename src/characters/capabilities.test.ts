@@ -1,0 +1,41 @@
+import { describe, it, expect } from 'vitest'
+import { capabilities, capabilitiesMarkdown } from './capabilities'
+import { POSES, EXPRESSIONS } from './stick-figure'
+import { GAITS } from './gaits'
+import { GAGS } from './acting/gags'
+import { actionNames } from './acting/beat-check'
+import * as teach from '../teach'
+import { scriptTracks } from './acting/script'
+
+describe('capabilities', () => {
+  it('lists what the library has, read from the library', () => {
+    const c = capabilities('1.2.3')
+    expect(c.version).toBe('1.2.3')
+    expect(c.stickFigure.poses).toEqual(Object.keys(POSES))
+    expect(c.stickFigure.expressions).toEqual(Object.keys(EXPRESSIONS))
+    expect(c.stickFigure.gaits).toEqual(Object.keys(GAITS))
+    expect(Object.keys(c.stickFigure.gags)).toEqual(Object.keys(GAGS))
+    expect(Object.keys(c.stickFigure.actions).sort()).toEqual([...actionNames()].sort())
+    expect(c.codePanel.languages).toContain('rust')
+  })
+
+  it('names teaching helpers that exist', () => {
+    for (const name of ['lesson', 'cells', 'pointer', 'stack', 'queue', 'table', 'pipeline', 'figure']) expect(teach, name).toHaveProperty(name)
+  })
+
+  it('every action it lists compiles in a beat script', () => {
+    const target = { x: 120, y: -60, left: 100, right: 140 }
+    for (const [action, guide] of Object.entries(capabilities().stickFigure.actions)) {
+      const beat = { do: action, ...(guide.needs?.includes('to') || action in GAITS ? { to: 200 } : {}), ...(guide.needs?.includes('target') ? { target } : {}), ...(guide.needs?.includes('say') ? { say: 'hi' } : {}) }
+      expect(() => scriptTracks('hero', [beat as never], { height: 100 }), action).not.toThrow()
+    }
+  })
+
+  it('reads as markdown', () => {
+    const md = capabilitiesMarkdown('1.2.3')
+    expect(md.startsWith('# tinyfly capabilities (v1.2.3)')).toBe(true)
+    expect(md).toContain('| `rightShoulder` | degrees |')
+    expect(md).toContain('`doubleTake`')
+    expect(md).toMatch(/\| `push` \| `target`, `to` \|/)
+  })
+})

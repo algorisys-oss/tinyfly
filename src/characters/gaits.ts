@@ -53,6 +53,7 @@ export interface Gait {
  * - `strut`: chest out, head high, a swagger.
  * - `tired`: slumped, dragging, arms hanging.
  * - `run`: leaning in, knees high, arms pumping, off the ground between steps.
+ * - `shove`: short steady steps that leave the body and arms alone, for pushing something along.
  */
 export const GAITS = {
   walk: { swing: 24, knee: 30, arm: 22, elbow: 28, lean: 4 },
@@ -62,6 +63,7 @@ export const GAITS = {
   strut: { swing: 26, knee: 30, arm: 30, elbow: 20, lean: -4, bend: -10, headTilt: -6, sway: 4, bounce: 0.01 },
   tired: { swing: 14, knee: 14, arm: 6, elbow: 6, lean: 10, bend: 16, headTilt: 12 },
   run: { swing: 40, knee: 95, arm: 45, elbow: 0, forearm: 90, lean: 16, bend: 6, bounce: 0.05, squash: 0.06 },
+  shove: { swing: 18, knee: 28, arm: 0, elbow: 0, lean: 0 },
 } satisfies Record<string, Gait>
 
 export type GaitName = keyof typeof GAITS
@@ -87,7 +89,8 @@ export function gaitPose(gait: GaitName | Gait | string | undefined, phase: numb
   const angle = phase * Math.PI * 2
   const swing = Math.sin(angle) * stride
   const lift = Math.cos(angle) * stride
-  const swings = (shoulder: number) => shoulder <= SWINGING_ARM_LIMIT
+  // Raised either way: a left arm reaching forward has a negative angle.
+  const swings = (shoulder: number) => Math.abs(shoulder) <= SWINGING_ARM_LIMIT
   // Paws held up (sneak) start from the held angle. Forward is negative for the
   // left limbs and positive for the right (angles run outward per side), so the
   // same swing moves the two arms opposite ways, against the legs.

@@ -4,6 +4,7 @@ import { scriptTracks, speechDuration, GAIT_CYCLE_MS } from './script'
 import { gagDuration } from './gags'
 import { gaitStrideLength } from '../gaits'
 import { stickFigureAt, stickFigureTarget } from '../stick-figure'
+import { handPath } from './hand-path'
 
 const H = 170
 const run = (beats: Parameters<typeof scriptTracks>[1], options: Parameters<typeof scriptTracks>[2] = {}) => {
@@ -92,7 +93,7 @@ describe('scriptTracks', () => {
 
   it('asks for dust where a take lands', () => {
     const { result } = run([{ do: 'walk', to: 300 }, { do: 'take' }], { from: 0 })
-    expect(result.effects).toEqual([{ kind: 'dust', time: result.beats[1].start + 900, x: 300, length: 500 }])
+    expect(result.effects).toEqual([{ kind: 'dust', time: result.beats[1].start + 900, x: 300, y: 0, length: 500 }])
   })
 
   it('starts beats at `at` when given, and every track stays in time order', () => {
@@ -108,5 +109,136 @@ describe('scriptTracks', () => {
       expect([...times].sort((a, b) => a - b), track.property).toEqual(times)
     }
     expect(JSON.parse(JSON.stringify(result.tracks))).toEqual(result.tracks)
+  })
+})
+
+describe('scriptTracks: acting on things', () => {
+  it('leaps onto a higher floor: arcs above it and lands at contact', () => {
+    const { result } = run([{ do: 'leap', to: 300, onto: -80 }], { from: 100, ground: 0 })
+    const span = result.beats[0]
+    const timeline = new Timeline({ id: 's', tracks: result.tracks })
+    const y = (time: number) => timeline.getStateAtTime(time).values.get('hero')?.get('y') as number
+    const x = (time: number) => timeline.getStateAtTime(time).values.get('hero')?.get('x') as number
+    expect(span.contact).toBeGreaterThan(span.start)
+    expect(y(span.contact!)).toBeCloseTo(-80)
+    expect(x(span.contact!)).toBeCloseTo(200)
+    // Mid-flight it is above both floors.
+    const ys = Array.from({ length: 40 }, (_, i) => y(span.start + ((span.contact! - span.start) * i) / 40))
+    expect(Math.min(...ys)).toBeLessThan(-80 - 0.3 * H)
+    expect(result.effects.at(-1)).toMatchObject({ kind: 'dust', x: 300, y: -80, time: span.contact })
+  })
+
+  it('points a straight arm at a target', () => {
+    const target = { x: 400, y: -200 }
+    const { result, at } = run([{ do: 'point', target }], { from: 100 })
+    const { joints } = at(result.beats[0].contact! + 200)
+    const shoulder = joints.shoulders.right
+    const hand = joints.hands.right
+    const aimed = Math.atan2(hand.y - shoulder.y, hand.x - shoulder.x)
+    const wanted = Math.atan2(target.y - shoulder.y, target.x - (shoulder.x + 100))
+    expect(Math.abs(aimed - wanted)).toBeLessThan(0.12)
+  })
+
+  it('turns round to point at something behind it', () => {
+    const { result, at } = run([{ do: 'point', target: { x: -300, y: -120 } }], { from: 0 })
+    expect(at(result.beats[0].contact! + 100).values?.get('facing')).toBe(-1)
+  })
+
+  it('swipes across a target from the near edge to the far edge', () => {
+    const box = { x: 200, y: -100, left: 150, right: 250 }
+    const { result, at } = run([{ do: 'swipe', target: box }], { from: 0 })
+    const span = result.beats[0]
+    expect(span.release! - span.contact!).toBeGreaterThan(0)
+    const handX = (time: number) => at(time).joints.hands.right.x
+    // The hand is at the near edge on contact, and crosses to the far edge.
+    expect(Math.abs(handX(span.contact!) - 150)).toBeLessThan(12)
+    expect(Math.abs(handX(span.release!) - 250)).toBeLessThan(12)
+    expect(span.end).toBeGreaterThan(span.release!)
+  })
+
+  it('is carried to a new floor with `onto`', () => {
+    const { result } = run([{ do: 'hold', for: 400, onto: -24 }], { ground: 0 })
+    const timeline = new Timeline({ id: 's', tracks: result.tracks })
+    expect(timeline.getStateAtTime(400).values.get('hero')?.get('y')).toBeCloseTo(-24)
+  })
+
+  it('ducks and lies down as named poses', () => {
+    const { result, at } = run([{ do: 'duck', for: 600 }, { do: 'lie', for: 900 }])
+    expect(at(result.beats[0].end - 50).pose.stretch).toBeLessThan(0.8)
+    expect(at(result.beats[1].end).pose.spin).toBeCloseTo(-90, 0)
+  })
+})
+
+describe('scriptTracks: grab, throw, kick', () => {
+  it('reaches its hand to what it grabs, then lifts it overhead', () => {
+    const target = { x: 200, y: -70 }
+    const { result } = run([{ do: 'grab', target }], { from: 0 })
+    const span = result.beats[0]
+    const path = handPath('hero', result.tracks, { x: 0, y: 0, style: { height: H }, start: span.contact!, end: span.end })
+    expect(Math.hypot(path[0].x - target.x, path[0].y - target.y)).toBeLessThan(0.08 * H)
+    // Lifted: the hand ends above the head.
+    expect(path.at(-1)!.y).toBeLessThan(-H)
+  })
+
+  it('bends down to grab something low', () => {
+    const target = { x: 60, y: -30 }
+    const { result } = run([{ do: 'grab', target }], { from: 0 })
+    const contact = result.beats[0].contact!
+    const [hand] = handPath('hero', result.tracks, { x: 0, y: 0, style: { height: H }, start: contact, end: contact })
+    expect(Math.hypot(hand.x - target.x, hand.y - target.y)).toBeLessThan(0.12 * H)
+  })
+
+  it('throws: the hand moves forward and up as it lets go', () => {
+    const { result } = run([{ do: 'throw', to: 500 }], { from: 0 })
+    const release = result.beats[0].release!
+    const path = handPath('hero', result.tracks, { x: 0, y: 0, style: { height: H }, start: release - 66, end: release })
+    expect(path.at(-1)!.x).toBeGreaterThan(path[0].x)
+  })
+
+  it('kicks: the foot meets the target at contact', () => {
+    const target = { x: 300, y: -20 }
+    const { result, at } = run([{ do: 'kick', target }], { from: 0 })
+    const { joints } = at(result.beats[0].contact!)
+    const foot = joints.feet.right
+    expect(Math.abs(foot.x - target.x)).toBeLessThan(0.15 * H)
+    expect(foot.y).toBeLessThan(-0.05 * H)
+  })
+})
+
+describe('scriptTracks: put, write, push', () => {
+  const palm = (result: ReturnType<typeof scriptTracks>, time: number) =>
+    handPath('hero', result.tracks, { x: 0, y: 0, style: { height: H }, start: time, end: time })[0]
+
+  it('puts its hand on the spot', () => {
+    const target = { x: 200, y: -60 }
+    const { result } = run([{ do: 'put', target }], { from: 0 })
+    const hand = palm(result, result.beats[0].contact!)
+    expect(Math.hypot(hand.x - target.x, hand.y - target.y)).toBeLessThan(1)
+  })
+
+  it('writes along a spot left to right, shuffling along when it is wider than the arm reaches', () => {
+    for (const [left, right] of [[200, 260], [200, 420]]) {
+      const target = { x: (left + right) / 2, y: -150, left, right }
+      const { result } = run([{ do: 'write', target }], { from: 0 })
+      const span = result.beats[0]
+      const path = handPath('hero', result.tracks, { x: 0, y: 0, style: { height: H }, start: span.contact!, end: span.release!, every: 50 })
+      expect(path[0].x).toBeCloseTo(left, 0)
+      expect(path.at(-1)!.x).toBeCloseTo(right, 0)
+      for (const point of path) expect(Math.abs(point.y - target.y)).toBeLessThan(0.05 * H)
+      for (let i = 1; i < path.length; i++) expect(path[i].x).toBeGreaterThanOrEqual(path[i - 1].x - 4)
+    }
+  })
+
+  it('pushes: both hands on the near side, carried along with it at a steady height', () => {
+    const target = { x: 200, y: -90, left: 180, right: 220 }
+    const { result, at } = run([{ do: 'push', target, to: 400 }], { from: 0 })
+    const span = result.beats[0]
+    for (const [time, edge] of [[span.contact!, 180], [(span.contact! + span.release!) / 2, 280], [span.release!, 380]]) {
+      const { joints } = at(time)
+      for (const side of ['left', 'right'] as const) {
+        expect(Math.abs(joints.hands[side].x - edge)).toBeLessThan(0.06 * H)
+        expect(Math.abs(joints.hands[side].y - target.y)).toBeLessThan(0.06 * H)
+      }
+    }
   })
 })

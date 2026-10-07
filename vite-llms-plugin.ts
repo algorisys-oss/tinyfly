@@ -5,6 +5,7 @@ import { DOCS } from './src/docs/doc-manifest.ts'
 import { buildLlmsTxt, buildLlmsFullTxt } from './src/docs/llms-text.ts'
 import { course } from './src/learn/course.ts'
 import { courseMarkdown } from './src/learn/course-text.ts'
+import { capabilitiesMarkdown } from './src/characters/capabilities.ts'
 
 /**
  * Publishes the docs for language models alongside the editor:
@@ -21,7 +22,7 @@ export function llmsPlugin(): Plugin {
   const files = (): Map<string, string> => {
     const out = new Map<string, string>()
     out.set('llms.txt', buildLlmsTxt({ docUrl: (id) => `docs/${id}.md`, fullUrl: 'llms-full.txt' }))
-    out.set('llms-full.txt', buildLlmsFullTxt(readDoc, courseMarkdown(course)))
+    out.set('llms-full.txt', buildLlmsFullTxt(readDoc, courseMarkdown(course), capabilitiesMarkdown(JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 'utf-8')).version)))
     for (const doc of DOCS) out.set(`docs/${doc.id}.md`, readDoc(doc.id))
     return out
   }

@@ -61,7 +61,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **The drawing hand** - `drawnPathTarget()` draws a sketched stroke on from a `draw` track while a cartoon hand holds the pencil at its end in a writing grip; the same hand can hold the eraser. `handAt()` gives one hand for a whole scene: it follows each stroke, lifts and glides to the next, and enters and leaves the page
 - **Erasing** - An eraser rubs out part of a target (`erasable()`, animated by an `erase` track) or of anything drawn in code (`withErased()`); clip-based, so it works in the browser and headless alike
 - **Cartoon hands** - A hand rig in 3D, drawn flat: thumb and fingers posed by numbers (`index.curl`, `thumb.across`, `spread`, `turn`), ready-made shapes (fist, point, thumbs-up, peace, OK, pinch, wave, pencil grip…), left and right, four or five fingers, in every look; the animator's hand and (opt-in) character gloves are built on it. See [docs/cartoon-hands.md](docs/cartoon-hands.md)
-- **Cartoon acting** - `actTracks()` turns the same key poses into acted motion: wind-ups, overshoot that settles or wobbles, joints that overlap (hips lead, wrists drag), eyes that dart ahead and blink on head turns, moving holds and jump squash, in `full`, `snappy` or `limited` styles. Gags come as data (`gag('take')`, double take, wind-up, tremble). A line of action (`bend`) curves the spine, and gaits have personality (bouncy, double bounce, sneak, strut, tired, run). Lip-sync works from text, Latin or Devanagari. `scriptTracks()` compiles a story written as beats (`{ do: 'walk', to: 640 }`, `{ do: 'take' }`, `{ do: 'say', say: '…' }`) into all of it. `cameraTracks()` films it with push-ins, cuts, shakes and follows. The cartoon zip (`{ do: 'zip' }`) has the legs wheel in place before it is gone. In the editor, a Character's **Acting** section acts its keyed poses in a style and adds gags, walks in a gait and lip-synced lines, with drawing on twos as a timeline setting. Characters come in builds (slim, kid, broad, curvy, stocky), and the v2 human has its own line of action, gaits and gags, posed in 3D so they read from every view. It also adds speed lines from earlier frames (`drawStickSmear()`), dust puffs, impact stars, and drawing on twos for video (`drawingRate`). Output is plain keyframes. See [docs/acting.md](docs/acting.md)
+- **Cartoon acting** - `actTracks()` turns the same key poses into acted motion: wind-ups, overshoot that settles or wobbles, joints that overlap (hips lead, wrists drag), eyes that dart ahead and blink on head turns, moving holds and jump squash, in `full`, `snappy` or `limited` styles. Gags come as data (`gag('take')`, double take, wind-up, tremble). A line of action (`bend`) curves the spine, and gaits have personality (bouncy, double bounce, sneak, strut, tired, run). Lip-sync works from text, Latin or Devanagari. `scriptTracks()` compiles a story written as beats (`{ do: 'walk', to: 640 }`, `{ do: 'take' }`, `{ do: 'say', say: '…' }`) into all of it. `cameraTracks()` films it with push-ins, cuts, shakes and follows. The cartoon zip (`{ do: 'zip' }`) has the legs wheel in place before it is gone. Figures can act on code, Animator vs Animation style: `codePanel()` lays a listing out so every line and word is a place in the scene, and beats leap onto lines, point at them and swipe them away (`{ do: 'swipe', target: code.line(7) }`), with the line wiped, knocked off the panel or blurred out of focus on the frames the hand crosses it. Words come loose too: a figure grabs `var` and throws it, kicks another out of a loop, carries a stray `;` to where it belongs, pushes a word along its line (the text closing up behind it), and writes `mut` into a line by hand. A figure standing on a line rides it when a gap above closes (`code.ride()`). In the editor, a Character's **Acting** section acts its keyed poses in a style and adds gags, walks in a gait and lip-synced lines, with drawing on twos as a timeline setting. Characters come in builds (slim, kid, broad, curvy, stocky), and the v2 human has its own line of action, gaits and gags, posed in 3D so they read from every view. It also adds speed lines from earlier frames (`drawStickSmear()`), dust puffs, impact stars, and drawing on twos for video (`drawingRate`). Output is plain keyframes. See [docs/acting.md](docs/acting.md)
 - **Pencil story example** - `examples/pencil-story-hindi/index.html` tells a short Hindi story (प्यासा राहगीर, the thirsty traveller) Pencilmation-style with the browser bundle alone: the hand draws the scene and writes the narration, then rubs out the pot
 - **Captions** - `toSRT()` / `toWebVTT()` from narration cues or from a timeline's markers
 
@@ -140,6 +140,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 ## Documentation
 
 - [Getting Started](docs/getting-started.md) — Installation, setup, and your first animation
+- [Building Animations with an LLM](docs/llm-guide.md) — The capability catalog, `describeTarget`, did-you-mean checks for beats and tracks, rendering stills to look at, and the agent skill
 - [Editor Guide](docs/editor-guide.md) — Complete guide to the visual editor (elements, timeline, scenes, presets, shortcuts)
 - [API Reference](docs/api-reference.md) — Full engine, player, adapter, and export API documentation
 - [File Format](docs/file-format.md) — The tinyfly JSON format (animation documents, timelines, projects, sequences) for integrations
@@ -154,7 +155,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 
 **Feature guides:** [Symbols & Library](docs/symbols-and-library.md) · [Camera](docs/camera.md) · [Polygon & Star](docs/polygon-star.md) · [Pen tool](docs/pen-tool.md) · [Shape morph](docs/shape-morph.md) · [Grid & snapping](docs/grid-and-snapping.md) · [Onion skinning](docs/onion-skinning.md) · [Sprite-sheet export](docs/sprite-sheet-export.md)
 
-**Docs for LLMs:** the repo root has [`llms.txt`](llms.txt), an [llmstxt.org](https://llmstxt.org) index of these docs. The built editor also serves `/llms.txt`, `/llms-full.txt` (every doc in one file) and each page as raw markdown at `/docs/<page>.md`.
+**Docs for LLMs:** the repo root has [`llms.txt`](llms.txt), an [llmstxt.org](https://llmstxt.org) index of these docs, and [`llms-full.txt`](llms-full.txt): every doc, the course, and the capability catalog in one file. Both ship in the npm package with the docs and an agent skill (`skills/tinyfly/SKILL.md`), so an assistant finds them in `node_modules` at the installed version. `npx @algorisys/tinyfly capabilities` prints the catalog: every pose, expression, gag, gait, beat action, canvas property and code-panel edit, read from the library, so a name in it is accepted and a name not in it is rejected with the name probably meant (`tinyfly check beats.json`, `checkTracks`). The built editor also serves `/llms.txt`, `/llms-full.txt` and each page as raw markdown at `/docs/<page>.md`.
 
 ## Installation
 
@@ -236,7 +237,7 @@ GSAP-shaped functions at the top level. Teaching embeds are included: add
 itself.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.92.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.93.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -272,7 +273,7 @@ A teaching figure needs no code at all:
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON with markers… }</script>
   <figcaption>Appending to a full slice</figcaption>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.92.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.93.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
 ```
 
 See [Teaching Animations](docs/teaching.md).
@@ -371,7 +372,7 @@ Without a build step, the player bundle puts the same functions on a `tinyfly` g
   <div data-tinyfly="box" style="width: 60px; height: 60px; background: #4a9eff;"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.92.0/cdn/tinyfly-player.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.93.0/cdn/tinyfly-player.iife.js"></script>
 <script>
   tinyfly.play('#animation', './animation.json', { loop: -1 })
 </script>
@@ -480,7 +481,7 @@ Or skip the code entirely with declarative embeds (see [Teaching Animations](doc
   <svg viewBox="0 0 720 200">…</svg>
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON… }</script>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.92.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.93.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 ### Audio / Video Sync

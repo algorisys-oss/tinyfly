@@ -26,12 +26,13 @@ const SUMMARY =
 
 const KEY_FACTS = `Key facts:
 
-- Package: \`@algorisys/tinyfly\` on npm (\`npm install @algorisys/tinyfly\`). Entry points: \`@algorisys/tinyfly\` (engine), \`/player\`, \`/export\` (CSS, Lottie, GIF, video exporters), \`/adapters\` (DOM, Canvas, SVG, WebGL), \`/gsap-compat\` (GSAP-style API), \`/drivers\` (scroll, visibility, smooth scroll), \`/interaction\` (Observer, Draggable), \`/teach\` (lesson steps and diagram primitives), \`/embed\` (teaching embeds), \`/characters\` (poseable stick figure with facial expressions), \`/headless\` (render scenes to MP4 and PNG stills in Node), \`/react\`, \`/vue\`, \`/svelte\`, \`/solid\` (framework wrappers), and \`/browser\` (the GSAP-style runtime plus engine, player, drivers, interaction and the stick figure — no exporters — for script tags). A CLI: \`npx @algorisys/tinyfly validate\`, \`render\` and \`video\`.
+- Package: \`@algorisys/tinyfly\` on npm (\`npm install @algorisys/tinyfly\`). Entry points: \`@algorisys/tinyfly\` (engine), \`/player\`, \`/export\` (CSS, Lottie, GIF, video exporters), \`/adapters\` (DOM, Canvas, SVG, WebGL), \`/gsap-compat\` (GSAP-style API), \`/drivers\` (scroll, visibility, smooth scroll), \`/interaction\` (Observer, Draggable), \`/teach\` (lesson steps and diagram primitives), \`/embed\` (teaching embeds), \`/characters\` (poseable stick figure with facial expressions), \`/headless\` (render scenes to MP4 and PNG stills in Node), \`/react\`, \`/vue\`, \`/svelte\`, \`/solid\` (framework wrappers), and \`/browser\` (the GSAP-style runtime plus engine, player, drivers, interaction and the stick figure — no exporters — for script tags). A CLI: \`npx @algorisys/tinyfly capabilities\`, \`check\`, \`validate\`, \`render\` and \`video\`.
 - Script tag: \`https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v{version}/cdn/tinyfly.iife.js\` defines a global \`tinyfly\`, e.g. \`tinyfly.to('.box', { x: 200, duration: 1 })\`. Replace \`{version}\` with a release tag.
 - The GSAP-style \`live\` API covers \`scrollTrigger\` (scrub, pin, toggleActions), \`splitText\` (chars, words, lines, masks), \`drawSVG\`, \`spring\`, \`morphSVG\`, \`motionPath\`, text/scramble, inertia and Draggable, Flip (including shared elements by \`data-flip-id\`), plain-object targets and \`live.ticker\`.
 - Times in JSON timelines are milliseconds; durations in the GSAP-style API are seconds, as in GSAP.
 - The GSAP-style API is familiar, not compatible: GSAP code does not run unchanged. \`docs/gsap-compat.md\` lists every supported option and each difference.
 - Track kinds: keyframe tracks, spring (\`kind: 'spring'\`), inertia (\`kind: 'inertia'\`), motion path (\`property: 'motionPath'\`) and text (\`property: 'text'\`). All serialize to JSON; \`docs/file-format.md\` defines them.
+- For language models: read the capability catalog first (\`npx @algorisys/tinyfly capabilities\`, or the end of llms-full.txt). It is generated from the library, so every name in it (poses, expressions, gags, gaits, beat actions, canvas properties, code-panel edits) is accepted, and names not in it are rejected with the name probably meant. Check beat scripts with \`npx @algorisys/tinyfly check beats.json\`, tracks with \`checkTracks(tracks, targets)\`, and ask any target what it animates with \`describeTarget(target)\`. The npm package ships \`docs/\`, \`llms.txt\`, \`llms-full.txt\` and an agent skill (\`skills/tinyfly/SKILL.md\`); \`docs/llm-guide.md\` describes the workflow.
 - Source: https://github.com/algorisys-oss/tinyfly. License: MIT.`
 
 export function buildLlmsTxt(options: LlmsTxtOptions): string {
@@ -62,12 +63,14 @@ export function buildLlmsTxt(options: LlmsTxtOptions): string {
  * Every doc in manifest order, each under a marker naming its file, so a model
  * reading one long file still knows where each part came from.
  */
-export function buildLlmsFullTxt(readDoc: (id: string) => string, courseText?: string): string {
+export function buildLlmsFullTxt(readDoc: (id: string) => string, courseText?: string, capabilitiesText?: string): string {
   const parts = [`# tinyfly — full documentation\n\n> ${SUMMARY}\n\n${KEY_FACTS}\n`]
   for (const doc of DOCS) {
     parts.push(`<!-- docs/${doc.id}.md -->\n\n${readDoc(doc.id).trim()}\n`)
   }
   // The course lives in the app, not docs/, so the caller renders it (see `courseMarkdown`).
   if (courseText) parts.push(`<!-- learn: the interactive course -->\n\n${courseText.trim()}\n`)
+  // Last, the catalog of every name the library accepts (see `capabilitiesMarkdown`).
+  if (capabilitiesText) parts.push(`<!-- capabilities: generated from the library -->\n\n${capabilitiesText.trim()}\n`)
   return parts.join('\n---\n\n')
 }

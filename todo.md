@@ -2463,7 +2463,60 @@ poses (docs/acting.md).
 - [x] Native v2 gags: `HUMAN_GAGS`, `humanGag` (take, double take, wind-up, land, tremble, deflate) in the
       character's frame; the editor's gags and walks use them (no more stick-figure conversion)
 
+### 36F — Acting on code (done)
+- [x] `codePanel()` (characters): a code listing as a canvas scene object with fixed-width layout, so
+      lines and words are anchors (`line(n, time?)`, `token(n, text)`, `box`); syntax colours for Go, Rust,
+      C#, JS, TS, Python; timed edits `highlight`, `strike`, `remove` (wipe, then the gap closes), `type`
+      (hidden lines), written by `tracks(id)` as one track per prop
+- [x] Script beats that act on things: `leap` (`to`, `onto` a new floor; `y` track, `ground` option, dust),
+      aimed `point` (`target`), sliding `swipe` (`target`), and `onto` on any beat (carried to a floor);
+      beat spans report `contact` and `release`; effects carry `y`
+- [x] Poses `duck` and `lie` (bed down)
+- [x] Gallery card **Code Acting**: a figure points at an unreachable Go line, swipes it away, leaps onto
+      `return sum` and lies down
+
+### 36G — Grab, throw, kick (done)
+- [x] Code pieces: `piece(n, text)` words that come loose; `follow` (a path), `fling` (ballistic, spinning, fading;
+      velocity from the path by default), `move`, `write` (type new text into the gap, the line makes room)
+- [x] `remove` styles: `wipe`, `fly` (knocked off the panel, blurring), `blur` (out of focus in place)
+- [x] Beats `grab` (stands where the straight arm just reaches, crouches for low things, lifts overhead), `throw`,
+      `kick` (stands a leg's length away; the foot meets the target at contact)
+- [x] `handPath()`: where a figure's hand is over time, sampled from its tracks
+- [x] Aiming measures the body: limb angles are from the chest/pelvis, so a lean or bend no longer throws the aim off
+- [x] Fixed: `jointsToScene` (and so `stickFigureAt`) left `fingertips` in figure space
+- [x] Gallery card **Code Refactor** (grab and throw `var`, kick the other, `let` typed in, a comment knocked off);
+      **Code Acting** gains a delete-style picker
+
+### 36H — Put, write, push (done)
+- [x] Code panel `spot(n, column, width?)`, `insert(n, column, text)` (room opens, text types in), `drop(piece, n, column)`
+      (lands in room the line opens; its old place closes: `piece.K.away`)
+- [x] Beats `put` (palm on the spot), `write` (two-bone arm IK traces the spot left to right; slides along when it is
+      wider than the arm reaches), `push` (both hands on the near side, the new `shove` gait keeps them steady)
+- [x] Two-bone arm IK in scripts (`reachArm`): law of cosines on the measured upper arm and forearm
+- [x] Walks keep a raised arm still either way: a left arm reaching forward (a negative angle) no longer swings
+- [x] Gallery card **Code Fix** (Rust: carry the stray `;` to its line, write `mut` in)
+
+### 36I — Ride and reflow (done)
+- [x] `code.ride(tracks, target, { ground })`: the figure's `y` follows the line under its feet as gaps close (eased
+      keys kept where nothing moves, sampled where a line does; a hop blends between the floors it leaves and lands on;
+      its own ground never moves)
+- [x] Same-line `drop()` slides the word at the push's pace and closes the text it passes; `landing()` says where it ends
+- [x] Gallery card **Code Tidy** (Python: push `not` into place, blur out the TODO, ride the line up); **Code Refactor**
+      rides instead of an `onto` beat
+
+### 36J — Made for LLMs (done)
+- [x] Beat scripts fail loudly: `checkBeats()` / `scriptTracks()` reject unknown actions, moods, joints and fields with
+      "did you mean" (field synonyms: duration → for, expression → mood, text → say…), missing needed fields, bad shapes
+- [x] `describeTarget()`, `animatableProperties()`, `checkTracks()`; `CANVAS_PROPERTIES` (units, ranges, types); custom
+      targets describe themselves with `about` (stick figure: every joint, prop and action; code panel: props and edits)
+- [x] `capabilities()` / `capabilitiesMarkdown()`: the catalog generated from the library; `tinyfly capabilities [--json]`,
+      `tinyfly check <beats.json>`
+- [x] `llms-full.txt` in the repo (docs, course, catalog); `llms.txt` links pinned to the release tag
+- [x] npm package ships `docs/*.md`, `llms.txt`, `llms-full.txt` and `skills/tinyfly/SKILL.md`; `docs/llm-guide.md`
+- [x] Code panels reject unknown languages and remove styles; `editDistance`, `closestName`, `unknownName` in the engine
+
 ### 36E — Next
+- [ ] Code panel in the editor (a Code element whose anchors snap beats)
 - [ ] Beat scripts for v2 characters (`scriptTracks` on the human plan)
 - [ ] Follow-through on hair, tails, ears (character-system milestones 3 and 5)
 - [ ] AI generator emits beat scripts

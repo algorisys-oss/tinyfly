@@ -16,6 +16,7 @@ export * from '../adapters/canvas/sketch'
 // The 2D camera, for scenes that film characters (applyCamera, cameraPoint, cameraFromValues).
 export * from '../adapters/canvas/camera'
 export * from './erase'
+export * from './code-panel'
 export * from '../adapters/canvas/polyline'
 export * from './hand'
 // Characters v2: body plans, turned in 3D, drawn in a look (see docs/character-system-m1.md).
@@ -30,3 +31,5 @@ export { basicOutfit, type BasicOutfitOptions } from './wardrobe/basic-outfit'
 export * from './hands'
 // Acting: anticipation, overshoot, overlap, eyes leading, gags and speed lines (see docs/acting.md).
 export * from './acting'
+export * from './capabilities'
+export { describeTarget, checkTracks, animatableProperties, CANVAS_PROPERTIES, type PropertyInfo, type TargetAbout, type TargetDescription, type TrackProblem } from '../adapters/canvas/target-properties'

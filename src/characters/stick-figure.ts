@@ -1,3 +1,6 @@
+import type { PropertyInfo, TargetAbout } from '../adapters/canvas/target-properties'
+import { STICK_POSE_FIELDS, STICK_FIGURE_EXTRAS, HAND_FIELDS } from './figure-props'
+import { figureActions } from './figure-actions'
 import type { CustomTarget } from '../adapters/canvas'
 import type { FrameInfo } from '../headless/video-scene'
 import type { EasingType, Track } from '../engine/types'
@@ -222,6 +225,10 @@ export const POSES = {
   // reaching forward (+x, the way the figure faces) is negative for the left arm.
   sit: pose({ sit: 1, turn: 0.5, leftShoulder: -25, rightShoulder: 25, leftElbow: -55, rightElbow: 55 }),
   jump: pose({ stretch: 1.22, leftShoulder: 140, rightShoulder: 140, leftElbow: 20, rightElbow: 20, leftHip: 4, rightHip: 4, ...EXPRESSIONS.joyful }),
+  // Ducking: squashed low, bent over, arms over the head.
+  duck: pose({ stretch: 0.62, bend: 28, headTilt: -8, leftShoulder: 150, rightShoulder: 150, leftElbow: 130, rightElbow: 130, leftHip: 25, rightHip: 25, ...EXPRESSIONS.scared }),
+  // Lying on its back on the floor (rolled back about the hips and lowered), hands behind the head.
+  lie: pose({ spin: -90, rise: -0.42, leftShoulder: 165, rightShoulder: 165, leftElbow: 150, rightElbow: 150, ...EXPRESSIONS.sleepy }),
   // Full splits: legs flat along the floor, so the planted feet bring the hips right down to it.
   // Side (straddle) split, seen front-on: each leg straight out to its side, toes pointed.
   sideSplit: pose({ leftHip: 90, rightHip: 90, leftAnkle: -45, rightAnkle: -45, leftShoulder: 120, rightShoulder: 120, leftElbow: 10, rightElbow: 10, ...EXPRESSIONS.happy }),
@@ -265,7 +272,8 @@ const SWINGING_ARM_LIMIT = 40
 export function walkPose(phase: number, base: StickPose = REST_POSE, stride = 1): StickPose {
   const swing = Math.sin(phase * Math.PI * 2) * stride
   const lift = Math.cos(phase * Math.PI * 2) * stride
-  const swings = (shoulder: number) => shoulder <= SWINGING_ARM_LIMIT
+  // Raised either way: a left arm reaching forward has a negative angle.
+  const swings = (shoulder: number) => Math.abs(shoulder) <= SWINGING_ARM_LIMIT
   const armSwing = (shoulder: number) => (swings(shoulder) ? 22 * swing : shoulder)
   // A swinging arm's forearm follows through as it comes forward. Forward (+x) is a
   // negative angle for the left arm and a positive one for the right.
@@ -1033,6 +1041,7 @@ export function jointsToScene(joints: StickJoints, x: number, y: number): StickJ
     shoulders: pair(joints.shoulders),
     elbows: pair(joints.elbows),
     hands: pair(joints.hands),
+    fingertips: pair(joints.fingertips),
     knees: pair(joints.knees),
     feet: pair(joints.feet),
     toes: pair(joints.toes),
@@ -1381,6 +1390,7 @@ export function stickFigureTarget(options: StickFigureTargetOptions): StickFigur
     width,
     height,
     props: { ...props, ...handProps },
+    about: stickFigureAbout(Object.keys(handProps)),
     figureStyle: style,
     figureDance: options.dance,
     draw(ctx, target, time) {
@@ -1388,6 +1398,29 @@ export function stickFigureTarget(options: StickFigureTargetOptions): StickFigur
       const frame = resolveStickFrame(values, time, options.dance)
       ctx.translate(width / 2, height)
       drawStickFigure(ctx, frame.pose, withDanceHands({ ...style, rubber: values.rubber, facing: facingOf(values, style) }, frame.hands), time)
+    },
+  }
+}
+
+/**
+ * What a stick-figure target says about itself (`describeTarget`): every
+ * joint and prop with its unit and range, and the actions a beat script can
+ * give it.
+ */
+function stickFigureAbout(handProps: string[]): TargetAbout {
+  const props: Record<string, PropertyInfo> = { ...STICK_POSE_FIELDS, ...STICK_FIGURE_EXTRAS }
+  for (const name of handProps) {
+    const [, side, ...field] = name.split('.')
+    const info = HAND_FIELDS[field.join('.')]
+    if (info) props[name] = { ...info, description: `${side === 'left' ? 'Left' : 'Right'} hand: ${info.description.toLowerCase()}` }
+  }
+  return {
+    kind: 'stick figure',
+    summary: 'A poseable stick figure: pose it with joint tracks, or give it beats (`scriptTracks`) that compile into acted tracks.',
+    props,
+    // Read when asked: the list is registered by the acting module (see figure-actions).
+    get actions() {
+      return figureActions()
     },
   }
 }

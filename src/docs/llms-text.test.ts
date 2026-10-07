@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { DOCS, DOC_SECTIONS } from './doc-manifest'
 import { buildLlmsTxt, buildLlmsFullTxt } from './llms-text'
-import { repoLlmsTxt } from './repo-llms'
+import { repoLlmsTxt, repoLlmsFullTxt } from './repo-llms'
+import { capabilitiesMarkdown } from '../characters/capabilities'
 import { allSteps, course, stepKey } from '../learn/course'
 import { courseMarkdown } from '../learn/course-text'
 
@@ -60,7 +61,7 @@ describe('llms.txt', () => {
   })
 
   it('in the repo root is up to date (run `npx vitest run -u src/docs` to refresh)', async () => {
-    await expect(repoLlmsTxt()).toMatchFileSnapshot('../../llms.txt')
+    await expect(repoLlmsTxt(__APP_VERSION__)).toMatchFileSnapshot('../../llms.txt')
   })
 })
 
@@ -74,6 +75,12 @@ describe('llms-full.txt', () => {
       last = at
     }
     expect(full).toContain(readDoc('api-reference').trim())
+  })
+
+  it('in the repo root is up to date, ending with the capability catalog (run `npx vitest run -u src/docs` to refresh)', async () => {
+    const full = repoLlmsFullTxt(readDoc, courseMarkdown(course), capabilitiesMarkdown(__APP_VERSION__))
+    expect(full.indexOf('<!-- capabilities: generated from the library -->')).toBeGreaterThan(full.indexOf('<!-- learn: the interactive course -->'))
+    await expect(full).toMatchFileSnapshot('../../llms-full.txt')
   })
 
   it('ends with the course, every step linked with its solution', () => {
