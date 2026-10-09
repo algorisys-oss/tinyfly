@@ -20,7 +20,10 @@ import { EXPRESSIONS, type ExpressionName } from '../stick-figure'
  *   turned-out plié), and the same for `.right`
  * - `stretch` (1 normal), `lift` (fraction of height above the ground), `roll` (whole-figure roll, degrees)
  * - the face: `mouth`, `smile`, `mouthWidth`, `blink`, `eye.left`, `eye.right`,
- *   `brow.left`, `brow.right`, `browTilt`, `lookX`, `lookY` (as the v1 stick figure)
+ *   `brow.left`, `brow.right`, `browTilt`, `lookX`, `lookY` (as the v1 stick figure),
+ *   and marks that fade in from 0 to 1: `blush` (cheeks), `tears`, `sweat` (a bead at the temple)
+ * - `held.left`, `held.right`, `held.both`: whether what the character holds
+ *   there shows (1, the default) or has been let go (below 0.5)
  *
  * The character's left is +x: facing the viewer its left arm is on screen-right.
  */
@@ -32,7 +35,32 @@ export interface HumanBuild {
   shoulderWidth?: number
   /** Half the hip width, fraction of the height (0: both legs from one point) */
   hipWidth?: number
+  /** Leg length, as a share of the standard (default 1); the body takes up the difference */
+  legLength?: number
+  /** Arm length, as a share of the standard (default 1) */
+  armLength?: number
 }
+
+/**
+ * Ready-made builds: proportions only, so the same poses, gaits and actions
+ * work on each. Age, posture and clothes are separate choices: a child build
+ * has a larger head and shorter limbs, nothing more. How tall a character
+ * stands is its `height`; a build changes how that height is shared out.
+ */
+export const HUMAN_BUILDS = {
+  standard: {},
+  slim: { headSize: 0.24, shoulderWidth: 0.05, hipWidth: 0.02 },
+  tall: { headSize: 0.25, legLength: 1.1, armLength: 1.05 },
+  short: { headSize: 0.33, legLength: 0.92, shoulderWidth: 0.065, hipWidth: 0.03 },
+  broad: { shoulderWidth: 0.11, hipWidth: 0.04 },
+  curvy: { shoulderWidth: 0.055, hipWidth: 0.065 },
+  stocky: { headSize: 0.34, shoulderWidth: 0.1, hipWidth: 0.06 },
+  kid: { headSize: 0.42 },
+  child: { headSize: 0.4, legLength: 0.88, armLength: 0.9, shoulderWidth: 0.05, hipWidth: 0.02 },
+  toddler: { headSize: 0.46, legLength: 0.78, armLength: 0.82, shoulderWidth: 0.05, hipWidth: 0.025 },
+} satisfies Record<string, HumanBuild>
+
+export type HumanBuildName = keyof typeof HUMAN_BUILDS
 
 const THIGH = 0.215
 const SHIN = 0.205
@@ -93,6 +121,12 @@ export const HUMAN_REST: Pose = {
   browTilt: 0,
   lookX: 0,
   lookY: 0,
+  blush: 0,
+  tears: 0,
+  sweat: 0,
+  'held.left': 1,
+  'held.right': 1,
+  'held.both': 1,
 }
 
 /** A full human pose from the fields that differ from rest. */
@@ -154,6 +188,19 @@ export const HUMAN_POSES = {
   // pointed back along the ground.
   crawl: humanPose({ lean: 82, 'head.nod': -35, ...both('arm', { swing: 80, elbow: 0, spread: 4 }), ...both('leg', { knee: 92, ankle: -88 }) }),
   lieDown: humanPose({ roll: 90, ...both('arm', { spread: 8 }), 'head.nod': 0 }),
+  // Everyday actions (the motion and everyday-life reference sheets). Hands that hold
+  // something are where its grip goes: see `holding` and `handGrip`.
+  sleep: humanPose({ roll: 90, ...both('arm', { spread: 8, swing: 20, elbow: 40 }), 'leg.left.knee': 20, 'leg.left.swing': 15, blink: 1, smile: 0.2 }),
+  stretch: humanPose({ side: -16, 'arm.left.spread': 165, 'arm.left.bend': 35, 'arm.left.elbow': 0, 'arm.right.spread': 40, 'arm.right.bend': -110, 'arm.right.elbow': 0, 'head.tilt': -10, 'eye.left': 0, 'eye.right': 0, smile: 0.4 }),
+  sitFloor: humanPose({ ...both('leg', { swing: 80, spread: 22, rotate: 75, knee: 145 }), ...both('arm', { swing: 25, spread: 18, elbow: 30 }), lean: 5, smile: 0.5 }),
+  carry: humanPose({ ...both('arm', { spread: 16, elbow: 4 }), lean: -3, smile: 0.4 }),
+  lift: humanPose({ ...both('arm', { swing: 28, spread: 24, elbow: 85, bend: -45 }), ...both('leg', { swing: 12, knee: 22, spread: 6 }), lean: -4, smile: 0.2 }),
+  push: humanPose({ lean: 28, ...both('arm', { swing: 82, spread: 12, elbow: 18 }), 'leg.left.swing': 28, 'leg.left.knee': 30, 'leg.right.swing': -28, 'leg.right.knee': 6, 'head.nod': -20, browTilt: -0.6, smile: -0.2 }),
+  pull: humanPose({ lean: -22, ...both('arm', { swing: 70, spread: 6, elbow: 0 }), 'leg.left.swing': 32, 'leg.left.knee': 8, 'leg.right.swing': -8, 'leg.right.knee': 34, 'head.nod': 12, browTilt: -0.6, smile: -0.2 }),
+  drink: humanPose({ 'arm.right.swing': 85, 'arm.right.spread': 8, 'arm.right.elbow': 120, 'arm.right.bend': 0, 'head.nod': -14, 'eye.left': 0.5, 'eye.right': 0.5, smile: 0 }),
+  phone: humanPose({ 'arm.right.swing': 80, 'arm.right.spread': 8, 'arm.right.elbow': 80, 'arm.right.bend': -10, 'head.nod': 18, lookY: 0.7, lookX: -0.3, smile: 0.4 }),
+  read: humanPose({ ...both('arm', { swing: 32, spread: 10, elbow: 82, bend: -28 }), 'head.nod': 22, lookY: 0.8, smile: 0.2 }),
+  type: humanPose({ ...both('leg', { swing: 90, knee: 90, spread: 4 }), ...both('arm', { swing: 40, spread: 10, elbow: 55, bend: -20 }), lean: 8, 'head.nod': 10, lookY: 0.5, smile: 0 }),
 } satisfies Record<string, Pose>
 
 export type HumanPoseName = keyof typeof HUMAN_POSES
@@ -163,7 +210,9 @@ export function humanPlan(build: HumanBuild = {}): BodyPlan {
   const headSize = build.headSize ?? 0.3
   const shoulder = build.shoulderWidth ?? 0.06
   const hip = build.hipWidth ?? 0.022
-  const spine = Math.max(0.12, 1 - headSize - NECK - (THIGH + SHIN))
+  const legs = build.legLength ?? 1
+  const arms = build.armLength ?? 1
+  const spine = Math.max(0.12, 1 - headSize - NECK - (THIGH + SHIN) * legs)
 
   const arm = (side: 'left' | 'right'): ChainSpec => ({
     id: `arm.${side}`,
@@ -172,8 +221,8 @@ export function humanPlan(build: HumanBuild = {}): BodyPlan {
     rest: [0, -1, 0],
     side: side === 'left' ? 1 : -1,
     bones: [
-      { length: UPPER_ARM, width: [1.25, 0.9] },
-      { length: FOREARM, width: [0.9, 0.75] },
+      { length: UPPER_ARM * arms, width: [1.25, 0.9] },
+      { length: FOREARM * arms, width: [0.9, 0.75] },
     ],
   })
   const leg = (side: 'left' | 'right'): ChainSpec => ({
@@ -183,9 +232,9 @@ export function humanPlan(build: HumanBuild = {}): BodyPlan {
     rest: [0, -1, 0],
     side: side === 'left' ? 1 : -1,
     bones: [
-      { length: THIGH, width: [1.45, 1.05] },
-      { length: SHIN, width: [1.05, 0.85] },
-      { length: FOOT, width: [0.95, 0.7] },
+      { length: THIGH * legs, width: [1.45, 1.05] },
+      { length: SHIN * legs, width: [1.05, 0.85] },
+      { length: FOOT * Math.sqrt(legs), width: [0.95, 0.7] },
     ],
   })
 
@@ -193,7 +242,7 @@ export function humanPlan(build: HumanBuild = {}): BodyPlan {
 
   return {
     id: 'human',
-    hipHeight: THIGH + SHIN,
+    hipHeight: (THIGH + SHIN) * legs,
     // Tie order: legs, then the body, then the arms (in front of the chest unless turned away), then the head.
     chains: [
       leg('left'),
@@ -357,6 +406,12 @@ export function humanFieldLabel(field: string): string {
     browTilt: 'Brow slant',
     lookX: 'Look left / right',
     lookY: 'Look up / down',
+    blush: 'Blush',
+    tears: 'Tears',
+    sweat: 'Sweat',
+    'held.left': 'Left hand · holding',
+    'held.right': 'Right hand · holding',
+    'held.both': 'Both hands · holding',
   }
   return names[field] ?? field
 }
@@ -369,13 +424,43 @@ const FACE_FIELDS: Record<string, string> = {
   rightBrow: 'brow.right',
 }
 
-/**
- * The ready-made faces (happy, sad, surprised, angry…), as human pose fields.
- * Each sets every face field, so applying one replaces the whole face.
- */
-export const HUMAN_EXPRESSIONS = Object.fromEntries(
-  Object.entries(EXPRESSIONS).map(([name, face]) => [
+/** The face marks, cleared by every expression that does not set them. */
+const NO_MARKS = { blush: 0, tears: 0, sweat: 0 }
+
+/** The stick figure's faces as human pose fields, with the marks some of them call for. */
+const SHARED_EXPRESSIONS = Object.fromEntries(
+  Object.entries(EXPRESSIONS).map(([name, face]): [string, Pose] => [
     name,
-    Object.fromEntries(Object.entries(face).map(([field, value]) => [FACE_FIELDS[field] ?? field, value])),
+    { ...Object.fromEntries(Object.entries(face).map(([field, value]) => [FACE_FIELDS[field] ?? field, value])), ...NO_MARKS },
   ])
 ) as Record<ExpressionName, Pose>
+SHARED_EXPRESSIONS.crying.tears = 1
+SHARED_EXPRESSIONS.scared.sweat = 0.8
+SHARED_EXPRESSIONS.worried.sweat = 0.6
+
+/** A face from the neutral one: the fields that change. */
+const humanFace = (changes: Pose): Pose => ({ ...SHARED_EXPRESSIONS.neutral, ...changes })
+
+/**
+ * The ready-made faces (happy, sad, surprised, angry…), as human pose fields.
+ * Each sets every face field, so applying one replaces the whole face; any
+ * two blend. The second group, from the emotions reference sheet, uses the
+ * human face's marks (blush, tears, sweat).
+ */
+export const HUMAN_EXPRESSIONS = {
+  ...SHARED_EXPRESSIONS,
+  laughing: humanFace({ mouth: 0.75, smile: 1, mouthWidth: 1.25, 'eye.left': 0, 'eye.right': 0, 'brow.left': 0.5, 'brow.right': 0.5 }),
+  afraid: humanFace({ mouth: 0.4, smile: -0.6, mouthWidth: 0.9, 'eye.left': 1.3, 'eye.right': 1.3, 'brow.left': 0.6, 'brow.right': 0.6, browTilt: 1, sweat: 1 }),
+  bored: humanFace({ smile: -0.05, mouthWidth: 0.6, 'eye.left': 0.45, 'eye.right': 0.45, 'brow.left': -0.4, 'brow.right': -0.4, lookX: 0.5 }),
+  tired: humanFace({ mouth: 0.2, smile: -0.3, mouthWidth: 0.7, 'eye.left': 0.3, 'eye.right': 0.3, 'brow.left': -0.1, 'brow.right': -0.1, browTilt: 0.6, lookY: 0.6 }),
+  embarrassed: humanFace({ smile: 0.4, mouthWidth: 0.7, 'eye.left': 0.9, 'eye.right': 0.9, browTilt: 0.7, 'brow.left': 0.2, 'brow.right': 0.2, lookX: -0.6, lookY: 0.5, blush: 1 }),
+  proud: humanFace({ smile: 0.75, mouthWidth: 1, 'eye.left': 0.75, 'eye.right': 0.75, 'brow.left': 0.5, 'brow.right': 0.5, lookY: -0.2 }),
+  determined: humanFace({ smile: 0.35, mouthWidth: 0.8, 'eye.left': 0.85, 'eye.right': 0.85, 'brow.left': -0.5, 'brow.right': -0.5, browTilt: -0.9 }),
+  affectionate: humanFace({ smile: 0.85, 'eye.left': 0, 'eye.right': 0, 'brow.left': 0.3, 'brow.right': 0.3, blush: 0.8 }),
+  hurt: humanFace({ smile: -0.7, mouthWidth: 0.8, 'eye.left': 1.1, 'eye.right': 1.1, 'brow.left': 0.2, 'brow.right': 0.2, browTilt: 1, lookY: 0.3, tears: 0.35 }),
+  suspicious: humanFace({ smile: -0.25, mouthWidth: 0.7, 'eye.left': 0.5, 'eye.right': 0.85, 'brow.left': -0.6, 'brow.right': 0.4, browTilt: -0.3, lookX: 0.8 }),
+  relieved: humanFace({ smile: 0.7, 'eye.left': 0, 'eye.right': 0, 'brow.left': 0.4, 'brow.right': 0.4, browTilt: 0.4 }),
+  excited: humanFace({ mouth: 0.6, smile: 1, mouthWidth: 1.1, 'eye.left': 1.4, 'eye.right': 1.4, 'brow.left': 0.9, 'brow.right': 0.9, blush: 0.4 }),
+} satisfies Record<string, Pose>
+
+export type HumanExpressionName = keyof typeof HUMAN_EXPRESSIONS

@@ -69,10 +69,13 @@ export function humanGaitPose(gait: GaitName | Gait | string | undefined, phase:
   return out
 }
 
-/** Ground covered by one gait cycle (two steps) for a character `height` px tall: the feet stay planted. */
-export function humanGaitStrideLength(gait: GaitName | Gait | string | undefined, height: number, stride = 1): number {
+/**
+ * Ground covered by one gait cycle (two steps) for a character `height` px
+ * tall: the feet stay planted. `legLength` is the build's (see HUMAN_BUILDS).
+ */
+export function humanGaitStrideLength(gait: GaitName | Gait | string | undefined, height: number, stride = 1, legLength = 1): number {
   const spec = resolveGait(gait)
-  return 4 * LEG * height * Math.sin((spec.swing * stride * Math.PI) / 180)
+  return 4 * LEG * legLength * height * Math.sin((spec.swing * stride * Math.PI) / 180)
 }
 
 /** One step of a gag: when (ms in), what changes from the pose so far, and the ease into it. */

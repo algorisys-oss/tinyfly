@@ -18,7 +18,8 @@ npx @algorisys/tinyfly capabilities --json   # the same as data
 It lists the easings, track kinds, every property each canvas shape can
 animate (with units and ranges), the stick figure's joints, poses,
 expressions, gags, gaits, beat actions, dances, flips and hand shapes, the v2
-character's poses, the code panel's languages, every surface's anchors and
+character's poses, expressions, builds, hairstyles, facial hair, glasses,
+hats and cast, the code panel's languages, every surface's anchors and
 edits (code panel, whiteboard, chart), camera shots and the teaching
 helpers. It is generated from the code, so it can't
 fall behind: **a name in it is accepted, and a name not in it is rejected.**
@@ -43,6 +44,21 @@ on the object. Script it in world metres with `propScript3D` (`to: [x, z]`,
 Characters in a 3D scene walk the same way with `characterScript3D`
 (`{ do: 'walk', to: [x, z] }`, `pose`, `gag`, `face`, `place`); a rider is
 seated with `propRide3D` and spliced into its script with `spliceTracks`. See `docs/props.md`.
+
+## Characters with a look
+
+A v2 character's appearance is plain options to `character()`, never drawing
+code: `build` (`child`, `tall`, `short`…), `hair` (a style name, or
+`{ style, color, length, … }`), `facialHair`, `glasses`, `hat`, `ears: true`
+and `outfit: { shirt, trousers }`. `castMember('grandpa', 300)` gives a whole
+ready-made character to start from. Expressions come from `HUMAN_EXPRESSIONS`
+and are pose fields, as are the face marks `blush`, `tears` and `sweat` (0–1),
+so any face goes with any action or view. Hair and hats turn with the head:
+don't draw a different hairstyle per view. Put things in hands with `holding`
+(`{ right: 'mug' }`, `{ both: 'parcel' }`; the pose field `held.both` lets go),
+and for two characters touching use `meetHands('handshake', a, b)` with the
+two standing `meetingSpacing(…)` apart, never two separate clips. See
+`docs/character-appearance.md`.
 
 ## Surfaces
 
@@ -128,6 +144,10 @@ Fix, render again.
   figure's `ground` (a house's `anchor:doorstep`).
 - **Angles are degrees.** Stick-figure arms: 0 hangs down, 90 straight out,
   180 straight up; in profile the left arm's forward is negative.
+- **A character's look is data, and names are checked.** `hair: 'bob'`, not
+  a drawing in `layers`; a style name not in the catalog throws (`hair:
+  unknown style`). Side names (`at: 'left'`, `arm.left`) are the character's
+  own: from the front its left is on screen right.
 - **Aim beats at anchors, not guessed numbers**: `code.line(7)`,
   `code.token(3, 'var')`, `code.spot(2, 8, 4)`, `piece.home`.
 - **Key reactions to contact times.** Beats that touch something report

@@ -1,8 +1,9 @@
 import type { CustomTarget } from '../../adapters/canvas'
 import type { AnimationState } from '../../engine/types'
 import { hashSeed } from '../../engine/authoring/random'
-import { basicOutfit, character, drawCharacter, HAND_REST, HUMAN_REST, type Character, type CharacterPose } from '../../characters'
+import { basicOutfit, character, drawCharacter, HAND_REST, HUMAN_REST, CHARACTER_CAST, type CastName, type Character, type CharacterPose, type FacialHairStyleName, type GlassesStyle, type HairStyleName, type HatStyle, type HoldingSpec } from '../../characters'
 import type { CharacterBuild, CharacterElement } from '../stores/scene-store'
+import { HUMAN_BUILDS } from '../../characters/species/human'
 
 /**
  * Character elements: the editor's bridge to the v2 character system. The
@@ -20,11 +21,54 @@ export function characterOf(element: CharacterElement): Character {
     skin: element.skin,
     // Each character boils on its own: the seed comes from its id.
     seed: hashSeed(element.id) % 1000,
-    layers: element.outfit === 'basic' ? basicOutfit({ shirt: element.shirt, trousers: element.trousers }) : undefined,
+    layers:
+      element.outfit === 'basic'
+        ? basicOutfit({ shirt: element.shirt, trousers: element.trousers, sleeves: element.sleeves, bottom: element.bottom, collar: element.collar, tie: element.tie, over: element.over })
+        : undefined,
     hands: (element.hands ?? 'dot') === 'dot' ? 'dot' : 'cartoon',
     handStyle: element.hands === 'natural' ? 'natural' : 'glove',
     ...element.build,
+    hair: element.hair ? { style: element.hair as HairStyleName, ...(element.hairColor ? { color: element.hairColor } : {}) } : null,
+    facialHair: element.facialHair ? { style: element.facialHair as FacialHairStyleName, ...(element.hairColor ? { color: element.hairColor } : {}) } : null,
+    glasses: (element.glasses as GlassesStyle | undefined) ?? null,
+    hat: (element.hat as HatStyle | undefined) ?? null,
+    ears: element.ears ?? false,
+    holding: element.holding ? (element.holding as HoldingSpec) : null,
   })
+}
+
+/**
+ * The element fields that dress a character as a cast member: its build,
+ * hair, facial hair, glasses, ears and clothes. Heights are left alone (the
+ * box sets the height).
+ */
+export function castElementFields(name: CastName): Partial<CharacterElement> {
+  const { options } = CHARACTER_CAST[name] as (typeof CHARACTER_CAST)[CastName] & { options: Record<string, unknown> }
+  const styleOf = (value: unknown) => (typeof value === 'string' ? value : (value as { style?: string } | undefined)?.style)
+  const colorOf = (value: unknown) => (typeof value === 'object' && value ? (value as { color?: string }).color : undefined)
+  const outfit = options.outfit as Pick<CharacterElement, 'sleeves' | 'bottom' | 'collar' | 'tie' | 'over'> & { shirt?: string; trousers?: string } | undefined
+  const build = options.build as keyof typeof CHARACTER_BUILDS | undefined
+  return {
+    build: build && build in CHARACTER_BUILDS ? { ...CHARACTER_BUILDS[build].build } : {},
+    hair: styleOf(options.hair),
+    hairColor: colorOf(options.hair) ?? colorOf(options.facialHair),
+    facialHair: styleOf(options.facialHair),
+    glasses: styleOf(options.glasses),
+    hat: styleOf(options.hat),
+    ears: Boolean(options.ears),
+    ...(outfit
+      ? {
+          outfit: 'basic' as const,
+          shirt: outfit.shirt ?? '#e2493b',
+          trousers: outfit.trousers ?? '#24476b',
+          sleeves: outfit.sleeves,
+          bottom: outfit.bottom,
+          collar: outfit.collar,
+          tie: outfit.tie,
+          over: outfit.over,
+        }
+      : {}),
+  }
 }
 
 /** Named builds for the property panel; each sets every build field it changes from standard. */
@@ -32,18 +76,25 @@ export const CHARACTER_BUILDS = {
   standard: { label: 'Standard', build: {} },
   slim: { label: 'Slim', build: { proportions: 'thin' } },
   kid: { label: 'Kid (big head)', build: { headSize: 0.42 } },
+  child: { label: 'Child', build: { ...HUMAN_BUILDS.child } },
+  toddler: { label: 'Toddler', build: { ...HUMAN_BUILDS.toddler } },
+  tall: { label: 'Tall', build: { ...HUMAN_BUILDS.tall } },
+  short: { label: 'Short', build: { ...HUMAN_BUILDS.short } },
   broad: { label: 'Broad', build: { shoulderWidth: 0.11, hipWidth: 0.04 } },
   curvy: { label: 'Curvy', build: { shoulderWidth: 0.055, hipWidth: 0.065 } },
-  stocky: { label: 'Stocky', build: { headSize: 0.34, shoulderWidth: 0.1, hipWidth: 0.06 } },
+  stocky: { label: 'Stocky', build: { ...HUMAN_BUILDS.stocky } },
 } satisfies Record<string, { label: string; build: CharacterBuild }>
 
 export type CharacterBuildName = keyof typeof CHARACTER_BUILDS
 
+type BuildField = 'headSize' | 'shoulderWidth' | 'hipWidth' | 'legLength' | 'armLength'
+
 /** The build's value for a field, with the standard build's default when it leaves it out. */
-export function buildValue(build: CharacterBuild | undefined, field: 'headSize' | 'shoulderWidth' | 'hipWidth'): number {
+export function buildValue(build: CharacterBuild | undefined, field: BuildField): number {
   const value = build?.[field]
   if (value !== undefined) return value
   if (field === 'headSize') return build?.proportions === 'thin' ? 0.24 : 0.3
+  if (field === 'legLength' || field === 'armLength') return 1
   return field === 'shoulderWidth' ? 0.06 : 0.022
 }
 
@@ -51,7 +102,7 @@ export function buildValue(build: CharacterBuild | undefined, field: 'headSize' 
 export function buildName(build: CharacterBuild | undefined): CharacterBuildName | undefined {
   const same = (a: CharacterBuild, b: CharacterBuild) =>
     (a.proportions ?? 'bold') === (b.proportions ?? 'bold') &&
-    (['headSize', 'shoulderWidth', 'hipWidth'] as const).every((field) => Math.abs(buildValue(a, field) - buildValue(b, field)) < 1e-6)
+    (['headSize', 'shoulderWidth', 'hipWidth', 'legLength', 'armLength'] as const).every((field) => Math.abs(buildValue(a, field) - buildValue(b, field)) < 1e-6)
   return (Object.keys(CHARACTER_BUILDS) as CharacterBuildName[]).find((name) => same(build ?? {}, CHARACTER_BUILDS[name].build))
 }
 

@@ -25,12 +25,12 @@ import { InertiaInspector } from './inertia-inspector'
 import { MarkerInspector } from './marker-inspector'
 import type { SketchStyle } from '../../adapters/canvas'
 import { HUMAN_POSES, HUMAN_EXPRESSIONS, HUMAN_REST } from '../../characters/species/human'
-import { CHARACTER_BUILDS, buildName, buildValue, isCharacterField, type CharacterBuildName } from '../utils/character-element'
+import { CHARACTER_BUILDS, buildName, buildValue, castElementFields, isCharacterField, type CharacterBuildName } from '../utils/character-element'
 import { CharacterActingPanel, keyActedPose } from './character-acting-panel'
 import { characterDanceTracks, characterFlipTracks, danceLength, facingOf, mergeKeyframes } from '../utils/character-dance'
 import { beatGridOf, detectAudioTempo, tapTempo } from '../utils/beat-grid'
 import { nearestBeat, nextBeat } from '../../engine'
-import { DANCE_STYLES, FLIPS, type DanceStyleName, type FlipName } from '../../characters'
+import { DANCE_STYLES, FLIPS, CHARACTER_CAST, HELD_ITEMS, FACIAL_HAIR_STYLES, GLASSES_STYLES, HAIR_STYLES, HAT_STYLES, resolveHair, type CastName, type DanceStyleName, type FlipName } from '../../characters'
 import { fitPlaces, mapElementProps, placeId, tripTracks } from '../utils/map-element'
 import { WORLD_CITIES } from '../../maps'
 import { Scene3DProperties } from './scene3d-properties'
@@ -1560,6 +1560,17 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
     ['crouch', 'Crouching'],
     ['crawl', 'Crawling'],
     ['lieDown', 'Lying down'],
+    ['sleep', 'Sleeping'],
+    ['stretch', 'Stretching'],
+    ['sitFloor', 'Sitting cross-legged'],
+    ['carry', 'Carrying (arms down)'],
+    ['lift', 'Lifting (at the chest)'],
+    ['push', 'Pushing'],
+    ['pull', 'Pulling'],
+    ['drink', 'Drinking'],
+    ['phone', 'On the phone'],
+    ['read', 'Reading'],
+    ['type', 'Typing (seated)'],
   ]
   /** Views along the turn: 0 front, 1 side (facing right), 2 back, 3 other side. */
   const CHARACTER_VIEWS: Array<[number, string]> = [
@@ -1735,12 +1746,18 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
           <For each={Object.entries(CHARACTER_BUILDS)}>{([name, entry]) => <option value={name}>{entry.label}</option>}</For>
         </select>
       </div>
-      <For each={(element.figure === 'stick' ? ['headSize'] : ['headSize', 'shoulderWidth', 'hipWidth']) as Array<'headSize' | 'shoulderWidth' | 'hipWidth'>}>
+      <For
+        each={
+          (element.figure === 'stick' ? ['headSize', 'legLength', 'armLength'] : ['headSize', 'shoulderWidth', 'hipWidth', 'legLength', 'armLength']) as Array<
+            'headSize' | 'shoulderWidth' | 'hipWidth' | 'legLength' | 'armLength'
+          >
+        }
+      >
         {(field) => {
-          const range = { headSize: [0.18, 0.46], shoulderWidth: [0, 0.14], hipWidth: [0, 0.08] }[field]
+          const range = { headSize: [0.18, 0.46], shoulderWidth: [0, 0.14], hipWidth: [0, 0.08], legLength: [0.7, 1.2], armLength: [0.7, 1.2] }[field]
           return (
             <div class="property-row">
-              <label>{{ headSize: 'Head', shoulderWidth: 'Shoulders', hipWidth: 'Hips' }[field]}</label>
+              <label>{{ headSize: 'Head', shoulderWidth: 'Shoulders', hipWidth: 'Hips', legLength: 'Legs', armLength: 'Arms' }[field]}</label>
               <input
                 type="range"
                 min={range[0]}
@@ -1789,7 +1806,118 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
           <label>Trousers</label>
           <input type="color" value={element.trousers} onInput={handleColorChange('trousers')} />
         </div>
+        <div class="property-row">
+          <label>Sleeves</label>
+          <select value={element.sleeves ?? 'short'} onChange={(e) => updateElement({ sleeves: (e.target as HTMLSelectElement).value })}>
+            <option value="short">Short</option>
+            <option value="long">Long</option>
+            <option value="none">None</option>
+          </select>
+        </div>
+        <div class="property-row">
+          <label>Below</label>
+          <select value={element.bottom ?? 'trousers'} onChange={(e) => updateElement({ bottom: (e.target as HTMLSelectElement).value })}>
+            <option value="trousers">Trousers</option>
+            <option value="shorts">Shorts</option>
+            <option value="skirt">Skirt</option>
+          </select>
+        </div>
+        <div class="property-row">
+          <label>Over</label>
+          <select value={element.over ?? ''} onChange={(e) => updateElement({ over: (e.target as HTMLSelectElement).value || undefined })}>
+            <option value="">Nothing</option>
+            <option value="apron">Apron</option>
+            <option value="labCoat">Lab coat</option>
+          </select>
+        </div>
+        <div class="property-row">
+          <label>Collar</label>
+          <input type="checkbox" checked={element.collar ?? false} onChange={(e) => updateElement({ collar: (e.target as HTMLInputElement).checked })} />
+        </div>
+        <div class="property-row">
+          <label>Tie</label>
+          <input type="checkbox" checked={Boolean(element.tie)} onChange={(e) => updateElement({ tie: (e.target as HTMLInputElement).checked ? '#2b4f8c' : undefined })} />
+          <Show when={element.tie}>
+            <input type="color" value={element.tie} onInput={handleColorChange('tie')} />
+          </Show>
+        </div>
       </Show>
+
+      <h4>Head</h4>
+      <div class="property-row">
+        <label>Cast</label>
+        <select
+          value=""
+          title="Dress this character as one of the ready-made cast: build, hair, facial hair, glasses and clothes"
+          onChange={(e) => {
+            const name = (e.target as HTMLSelectElement).value as CastName
+            if (name) updateElement(castElementFields(name))
+            ;(e.target as HTMLSelectElement).value = ''
+          }}
+        >
+          <option value="">Dress as…</option>
+          <For each={Object.entries(CHARACTER_CAST)}>{([name, member]) => <option value={name}>{member.label}</option>}</For>
+        </select>
+      </div>
+      <div class="property-row">
+        <label>Hair</label>
+        <select value={element.hair ?? ''} onChange={(e) => updateElement({ hair: (e.target as HTMLSelectElement).value || undefined })}>
+          <option value="">None</option>
+          <For each={Object.keys(HAIR_STYLES)}>{(name) => <option value={name}>{name}</option>}</For>
+        </select>
+      </div>
+      <Show when={element.hair || element.facialHair}>
+        <div class="property-row">
+          <label>Hair colour</label>
+          <input type="color" value={element.hairColor ?? resolveHair('short').color} onInput={handleColorChange('hairColor')} />
+        </div>
+      </Show>
+      <div class="property-row">
+        <label>Facial hair</label>
+        <select value={element.facialHair ?? ''} onChange={(e) => updateElement({ facialHair: (e.target as HTMLSelectElement).value || undefined })}>
+          <option value="">None</option>
+          <For each={Object.keys(FACIAL_HAIR_STYLES)}>{(name) => <option value={name}>{name}</option>}</For>
+        </select>
+      </div>
+      <div class="property-row">
+        <label>Glasses</label>
+        <select value={element.glasses ?? ''} onChange={(e) => updateElement({ glasses: (e.target as HTMLSelectElement).value || undefined })}>
+          <option value="">None</option>
+          <For each={Object.keys(GLASSES_STYLES)}>{(name) => <option value={name}>{name}</option>}</For>
+        </select>
+      </div>
+      <div class="property-row">
+        <label>Hat</label>
+        <select value={element.hat ?? ''} onChange={(e) => updateElement({ hat: (e.target as HTMLSelectElement).value || undefined })}>
+          <option value="">None</option>
+          <For each={Object.keys(HAT_STYLES)}>{(name) => <option value={name}>{name}</option>}</For>
+        </select>
+      </div>
+      <div class="property-row">
+        <label>Ears</label>
+        <input type="checkbox" checked={element.ears ?? false} onChange={(e) => updateElement({ ears: (e.target as HTMLInputElement).checked })} />
+      </div>
+      <For each={[['right', 'Right hand'], ['left', 'Left hand'], ['both', 'Both hands']] as const}>
+        {([side, label]) => (
+          <div class="property-row">
+            <label>{label}</label>
+            <select
+              value={element.holding?.[side] ?? ''}
+              title="What this hand holds; a held.* track lets go of it"
+              onChange={(e) => {
+                const item = (e.target as HTMLSelectElement).value
+                const holding = { ...element.holding, [side]: item || undefined }
+                updateElement({ holding: Object.values(holding).some(Boolean) ? holding : undefined })
+              }}
+            >
+              <option value="">Nothing</option>
+              <For each={Object.entries(HELD_ITEMS).filter(([, info]) => (side === 'both' ? info.hands !== 'one' : info.hands !== 'both'))}>
+                {([name]) => <option value={name}>{name}</option>}
+              </For>
+            </select>
+          </div>
+        )}
+      </For>
 
       <h4>Pose</h4>
       <div class="property-row">

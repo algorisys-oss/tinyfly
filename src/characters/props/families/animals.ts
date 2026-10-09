@@ -363,7 +363,38 @@ export const QUADRUPED_ACTING: ActingRig = {
 /** Kept for the horse's name. */
 export const HORSE_ACTING = QUADRUPED_ACTING
 
-/** The actions every four-legged animal has: its gaits, sitting, jumping, its call, nodding, its tail. */
+/**
+ * Lying down with the head up (a sphinx pose): the body lowered until the
+ * folded hind legs and the belly are on the ground, the front legs stretched
+ * forward along it, paws flat.
+ */
+export function lyingPose(h: Pick<QuadrupedHelpers, 'upper' | 'lower' | 'foot' | 'legLength' | 'tailHangs'>): Record<string, number> {
+  // The hips come down to just above the folded hind leg's height.
+  const hipY = (h.upper + h.lower) * 0.32
+  // Front legs reach forward from the shoulders, a little below level, so the paws touch the ground ahead.
+  const front = Math.asin(Math.min(1, hipY / (h.upper + h.lower + h.foot))) / RAD
+  const pose: Record<string, number> = {
+    pitch: 0,
+    lift: hipY - h.legLength,
+    neck: -14,
+    tail: h.tailHangs ? 60 : -60,
+    'fl.swing': 90 - front,
+    'fr.swing': 90 - front,
+    'fl.knee': 0,
+    'fr.knee': 0,
+    'fl.ankle': front,
+    'fr.ankle': front,
+  }
+  for (const id of ['hl', 'hr']) {
+    // The thigh lies forward under the body, the lower leg folded back flat beside it.
+    pose[`${id}.swing`] = 70
+    pose[`${id}.knee`] = -155
+    pose[`${id}.ankle`] = 85
+  }
+  return pose
+}
+
+/** The actions every four-legged animal has: its gaits, sitting, lying down, jumping, its call, nodding, its tail. */
 function quadrupedActions(spec: QuadrupedSpec, helpers: QuadrupedHelpers): Record<string, PropAction> {
   const cycleScale = spec.cycleScale ?? 1
   /** Move to `to` in a gait: the stride phase and the distance keyed together, so the feet keep pace. */
@@ -436,6 +467,24 @@ function quadrupedActions(spec: QuadrupedSpec, helpers: QuadrupedHelpers): Recor
         for (const key of Object.keys(pose)) rest[key] = 0
         context.key(up, rest)
         return { end: up, contact: sat, release: up - 450 }
+      },
+    },
+    lie: {
+      summary: 'Lies down for `for` ms (default 2000), head up and front paws forward (sinking back onto its haunches first), then gets up.',
+      uses: ['for'],
+      run(context, beat, start) {
+        const pose = lyingPose(helpers)
+        const half = { ...sittingPose(helpers) }
+        const sat = start + 400
+        const down = sat + 450
+        context.key(sat, half, { act: false, easing: 'ease-in-out' })
+        context.key(down, pose, { act: false, easing: 'ease-in-out' })
+        context.key(down + (beat.for ?? 2000), pose, { act: false })
+        const up = down + (beat.for ?? 2000) + 600
+        const rest: Record<string, number> = {}
+        for (const key of new Set([...Object.keys(pose), ...Object.keys(half)])) rest[key] = 0
+        context.key(up, rest)
+        return { end: up, contact: down, release: up - 600 }
       },
     },
     jump: {

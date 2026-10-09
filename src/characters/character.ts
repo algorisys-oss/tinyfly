@@ -9,7 +9,10 @@ import { reachPose as reachPlanPose } from './rig/reach'
 import { createPen, type Look, type Pen, type PencilOptions } from './look/pen'
 import { rubberLimb } from './look/curves'
 import { drawFace, faceToScreen } from './head/face'
-import { HUMAN_POSES, HUMAN_REST, humanPlan, type HumanPoseName } from './species/human'
+import { drawHeadBehind, drawHeadFront, drawHeadOver, resolveHeadLook, type HeadLook, type HeadLookOptions } from './head/head-look'
+import { HUMAN_BUILDS, HUMAN_POSES, HUMAN_REST, humanPlan, type HumanBuild, type HumanBuildName, type HumanPoseName } from './species/human'
+import { basicOutfit, type BasicOutfitOptions } from './wardrobe/basic-outfit'
+import { holdingLayers, resolveHolding, type Holding, type HoldingSpec } from './hands/held-items'
 import { HAND_REST, type HandPose } from './hands/hand-rig'
 import { drawCartoonHand } from './hands/draw-cartoon-hand'
 
@@ -27,9 +30,10 @@ export type FigureStyle = 'fluid' | 'stick'
 /**
  * Draws part of a character: clothes, hair, a prop. The context is in the
  * character's drawing space (feet at 0, 0), saved and restored around the
- * call. Draw with `pen` so it matches the look.
+ * call. Draw with `pen` so it matches the look. `pose` is the full pose being
+ * drawn (for a layer that a pose field switches, like a held item's `held.*`).
  */
-export type CharacterLayer = (ctx: CanvasRenderingContext2D, joints: CharacterJoints, pen: Pen, time: number) => void
+export type CharacterLayer = (ctx: CanvasRenderingContext2D, joints: CharacterJoints, pen: Pen, time: number, pose?: Pose) => void
 
 export interface CharacterLayers {
   /** Before anything (a shadow, a cape) */
@@ -40,9 +44,19 @@ export interface CharacterLayers {
   front?: CharacterLayer
 }
 
-export interface CharacterOptions {
+export interface CharacterOptions extends HeadLookOptions {
   /** Body plan (default: human, built from the options below) */
   plan?: BodyPlan
+  /** A named build (`child`, `tall`, `broad`…; see HUMAN_BUILDS): its proportions, unless the options below set them */
+  build?: HumanBuildName
+  /** Leg length, as a share of the standard (default 1) */
+  legLength?: number
+  /** Arm length, as a share of the standard (default 1) */
+  armLength?: number
+  /** A T-shirt and trousers in these colours (see basicOutfit), as data; drawn under any `layers` */
+  outfit?: BasicOutfitOptions | null
+  /** What each hand holds (`{ right: 'mug' }`, `{ both: 'parcel' }`); a pose field `held.<side>` below 0.5 lets go */
+  holding?: HoldingSpec | null
   figure?: FigureStyle
   look?: Look
   /** Feet to top of head, px (default 300) */
@@ -100,21 +114,47 @@ export interface Character {
   hands: 'dot' | 'cartoon'
   handStyle: 'glove' | 'natural'
   handSize: number
+  /** Hair, facial hair, glasses, a hat and ears: every choice spelled out, so a saved character never changes when a preset does */
+  head: HeadLook
+  /** What each hand holds (drawn by its layers) */
+  holding: Holding
+}
+
+/** Layers that draw `first`'s parts and then `second`'s. */
+function stackLayers(first: CharacterLayers, second: CharacterLayers): CharacterLayers {
+  const both = (a?: CharacterLayer, b?: CharacterLayer): CharacterLayer | undefined =>
+    a && b ? (ctx, joints, pen, time, pose) => { a(ctx, joints, pen, time, pose); b(ctx, joints, pen, time, pose) } : (a ?? b)
+  const parts: NonNullable<CharacterLayers['parts']> = {}
+  for (const id of new Set([...Object.keys(first.parts ?? {}), ...Object.keys(second.parts ?? {})])) {
+    const a = first.parts?.[id]
+    const b = second.parts?.[id]
+    parts[id] = { under: both(a?.under, b?.under), over: both(a?.over, b?.over) }
+  }
+  return { behind: both(first.behind, second.behind), parts, front: both(first.front, second.front) }
 }
 
 export function character(options: CharacterOptions = {}): Character {
+  if (options.build && !(options.build in HUMAN_BUILDS)) throw new Error(`character: unknown build '${options.build}'`)
+  const build: HumanBuild = options.build ? HUMAN_BUILDS[options.build] : {}
   const bold = (options.proportions ?? 'bold') === 'bold'
   const figure = options.figure ?? 'fluid'
   const look = options.look ?? 'clean'
   const height = options.height ?? 300
   const stick = figure === 'stick'
+  const outfit = options.outfit ? basicOutfit(options.outfit) : null
+  const holding = options.holding ? resolveHolding(options.holding) : {}
+  // Clothes first, then the author's layers, then what the hands hold.
+  let layers: CharacterLayers = outfit ? stackLayers(outfit, options.layers ?? {}) : (options.layers ?? {})
+  if (Object.keys(holding).length > 0) layers = stackLayers(layers, holdingLayers(holding))
   return {
     plan:
       options.plan ??
       humanPlan({
-        headSize: options.headSize ?? (bold ? 0.3 : 0.24),
-        shoulderWidth: stick ? 0 : (options.shoulderWidth ?? 0.06),
-        hipWidth: stick ? 0 : (options.hipWidth ?? 0.022),
+        headSize: options.headSize ?? build.headSize ?? (bold ? 0.3 : 0.24),
+        shoulderWidth: stick ? 0 : (options.shoulderWidth ?? build.shoulderWidth ?? 0.06),
+        hipWidth: stick ? 0 : (options.hipWidth ?? build.hipWidth ?? 0.022),
+        legLength: options.legLength ?? build.legLength ?? 1,
+        armLength: options.armLength ?? build.armLength ?? 1,
       }),
     figure,
     look,
@@ -124,11 +164,13 @@ export function character(options: CharacterOptions = {}): Character {
     skin: options.skin ?? (look === 'pencil' ? 'none' : '#ffffff'),
     seed: options.seed ?? 1,
     pencil: options.pencil ?? {},
-    layers: options.layers ?? {},
+    layers,
+    holding,
     contact: options.contact ?? 'ground',
     hands: options.hands ?? 'dot',
     handStyle: options.handStyle ?? 'glove',
     handSize: options.handSize ?? (options.handStyle === 'natural' ? 0.14 : 0.17),
+    head: resolveHeadLook(options),
   }
 }
 
@@ -254,7 +296,9 @@ function drawPart(ctx: CanvasRenderingContext2D, pen: Pen, character: Character,
     const { head } = joints
     const fill = character.skin === 'none' ? null : character.skin
     pen.ellipse(head.center.x, head.center.y, head.rx, head.ry, head.angle, fill, lw)
-    if (pen.look !== 'silhouette') drawFace(pen, head, pose, lw)
+    drawHeadFront(ctx, pen, character.head, head, pose, { lineWidth: lw, skin: character.skin }, () => {
+      if (pen.look !== 'silhouette') drawFace(pen, head, pose, lw)
+    })
     return
   }
   const chain = character.plan.chains.find((c) => c.id === id)!
@@ -418,7 +462,7 @@ export function characterPartsInView(character: Character, pose: Pose, projectio
       const hook = (layer?: CharacterLayer) => {
         if (!layer) return
         ctx.save()
-        layer(ctx, joints, pen, time)
+        layer(ctx, joints, pen, time, full)
         ctx.restore()
       }
       ctx.save()
@@ -427,12 +471,16 @@ export function characterPartsInView(character: Character, pose: Pose, projectio
       if (index === 0) {
         if (seen.look === 'pencil' && seen.pencil.construction !== false) drawConstruction(pen, seen, joints)
         hook(seen.layers.behind)
+        drawHeadBehind(ctx, pen, seen.head, joints.head, full, { lineWidth: seen.lineWidth, skin: seen.skin })
       }
       const layers = seen.layers.parts?.[id]
       hook(layers?.under)
       drawPart(ctx, pen, seen, joints, id, full)
       hook(layers?.over)
-      if (index === order.length - 1) hook(seen.layers.front)
+      if (index === order.length - 1) {
+        drawHeadOver(ctx, pen, seen.head, joints.head, full, { lineWidth: seen.lineWidth, skin: seen.skin })
+        hook(seen.layers.front)
+      }
       ctx.restore()
     },
   }))
@@ -451,7 +499,7 @@ function drawSolved(ctx: CanvasRenderingContext2D, character: Character, full: P
   const hook = (layer?: CharacterLayer) => {
     if (!layer) return
     ctx.save()
-    layer(ctx, joints, pen, time)
+    layer(ctx, joints, pen, time, full)
     ctx.restore()
   }
   ctx.save()
@@ -459,12 +507,14 @@ function drawSolved(ctx: CanvasRenderingContext2D, character: Character, full: P
   ctx.lineJoin = 'round'
   if (character.look === 'pencil' && character.pencil.construction !== false) drawConstruction(pen, character, joints)
   hook(character.layers.behind)
+  drawHeadBehind(ctx, pen, character.head, joints.head, full, { lineWidth: character.lineWidth, skin: character.skin })
   for (const id of order) {
     const layers = character.layers.parts?.[id]
     hook(layers?.under)
     drawPart(ctx, pen, character, joints, id, full)
     hook(layers?.over)
   }
+  drawHeadOver(ctx, pen, character.head, joints.head, full, { lineWidth: character.lineWidth, skin: character.skin })
   hook(character.layers.front)
   ctx.restore()
 }

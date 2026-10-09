@@ -4,13 +4,16 @@ import { A, useNavigate, useParams, useLocation } from '@solidjs/router'
 import { renderMarkdown } from './markdown'
 import { DOCS, DOC_SECTIONS } from './doc-manifest'
 import { searchDocs } from './doc-search'
-import { rewriteDocLinks } from './doc-links'
+import { rewriteDocImages, rewriteDocLinks } from './doc-links'
 import { BrandMark } from '../components/brand-mark'
 import './docs-viewer.css'
 
 // Every markdown file in docs/, as raw strings; the manifest decides which are shown.
 const files = import.meta.glob<string>('../../docs/*.md', { query: '?raw', import: 'default', eager: true })
 const contentById = new Map(Object.entries(files).map(([path, text]) => [path.replace(/^.*\/|\.md$/g, ''), text]))
+// Model sheets shown in the docs, bundled so they load from the app itself.
+const images = import.meta.glob<string>('../../docs/model-sheet/*.png', { query: '?url', import: 'default', eager: true })
+const imageUrls = new Map(Object.entries(images).map(([path, url]) => [path.replace(/^.*\/docs\//, ''), url]))
 
 const pages = DOCS.map((doc) => ({ ...doc, content: contentById.get(doc.id) ?? '' }))
 const pageIds = new Set(pages.map((page) => page.id))
@@ -23,7 +26,7 @@ export const DocsViewer: Component = () => {
   let contentEl: HTMLElement | undefined
 
   const currentPage = createMemo(() => pages.find((page) => page.id === params.page) ?? pages[0])
-  const renderedHtml = createMemo(() => rewriteDocLinks(renderMarkdown(currentPage().content), pageIds))
+  const renderedHtml = createMemo(() => rewriteDocImages(rewriteDocLinks(renderMarkdown(currentPage().content), pageIds), imageUrls))
   const hits = createMemo(() => searchDocs(pages, query()))
 
   // After a page or anchor change, show the anchor (or the top of the page).

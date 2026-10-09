@@ -2642,6 +2642,72 @@ tables, UI mockups, stateful props. For creators who don't make code.
 
 ---
 
+## Phase 37: Character appearance (from the everyday-life reference pack)
+
+Guide: [docs/character-appearance.md](docs/character-appearance.md). From a 16-sheet reference pack
+(turnarounds, people, emotions, motion, everyday life, work, animals, birds, home and city,
+nature, style families, age and cast, short and long hair, facial hair, hair turnarounds),
+reviewed against the library: sheets 1 and 11 were mostly covered already (eight views through
+`turn`, the six hand shapes, clean / pencil / silhouette / stick / fluid / rubber-hose); the
+biggest gap was the head (sheets 2 and 12–16), so that came first.
+
+### 37A — Heads ✓
+- [x] Head regions (`head/shell.ts`): hair, beards and hat crowns are fields over the head's
+      surface, split into the part facing the viewer and the part facing away and traced
+      (marching squares) to outlines; far parts draw before the body (long hair behind the
+      shoulders), near parts over the head, and turned away the hair draws after the whole body
+- [x] Hair as data (`hair: 'bob'` or `{ style, color, length, hairline, texture, ties… }`):
+      34 presets (bald to twin braids), textures (spiky, curly, wavy, locs), partings and strands,
+      ponytails, buns and braids tied to one place on the head, `HAIR_COLORS`
+- [x] Facial hair: 20 presets; moustaches on the face (they slide with the mouth), beards on the
+      jaw with an opening so every mouth and lip-sync shape stays readable; stubble
+- [x] Glasses (round, square, sunglasses; the arm to the ear in profile), hats (cap, beanie,
+      hard hat, sun hat, bowler) over the hair, ears (behind the head from the front, on it in profile)
+- [x] Face marks `blush`, `tears`, `sweat` (pose fields, 0–1) and 12 more expressions (laughing,
+      afraid, bored, tired, embarrassed, proud, determined, affectionate, hurt, suspicious,
+      relieved, excited); `crying`, `scared`, `worried` use the marks
+- [x] Plain figures draw exactly as before (a test compares the pixels)
+
+### 37B — Bodies and cast ✓
+- [x] `HUMAN_BUILDS` in the library (standard, slim, tall, short, broad, curvy, stocky, kid,
+      child, toddler) and `legLength` / `armLength`; `humanGaitStrideLength` takes the leg length
+- [x] `outfit: { shirt, trousers }` as data; `castMember(name, height)` and `CHARACTER_CAST`
+      (boy, girl, young man, young woman, man, woman, grandpa, grandma)
+- [x] Editor: a Head section (Cast, Hair, Hair colour, Facial hair, Glasses, Hat, Ears), the new
+      builds, Legs and Arms sliders
+- [x] Gallery: Cast Turnaround and Hair, Beards & Hats cards; appearance model sheet
+      (`examples/headless-video/appearance-sheet.mjs` → `docs/model-sheet/appearance.png`)
+- [x] Web help: the Character Appearance page, and the docs viewer now shows images (model
+      sheets were links before)
+
+### 37C — Everyday actions ✓
+- [x] Held items as data (`holding: { right: 'mug' }`, `{ both: 'parcel' }`): mug, phone, book,
+      bag, briefcase, umbrella (canopy over the head), broom, parcel, drawn at the hand's grip and
+      sorted with that arm; `held.left` / `held.right` / `held.both` pose fields let go;
+      `handGrip(joints, side)` for drawing anything else in a hand
+- [x] `meetHands(kind, a, b)`: handshake, high five, fist bump, hand-over (four hands round one
+      parcel) as two poses reaching one point; `meetingSpacing`, `reached`; three-quarter or side views
+- [x] Poses: sleep, stretch, sitFloor (cross-legged), carry, lift, push, pull, drink, phone, read,
+      type (seated); in the editor's Body list, and Right / Left / Both hands pickers
+- [x] Hand Over gallery card (walk up, hand a parcel over, wave)
+
+- [x] Wardrobe as data (`outfit`): long or no sleeves, shorts, a skirt, a collar, a tie, an apron,
+      a lab coat; the cast dressed with them, and six work cast members (doctor, cook, builder,
+      courier, teacher, farmer); editor Sleeves / Below / Over / Collar / Tie
+
+### 37D — Next, from the same pack
+- [ ] Hug and help-up (two people, more than hands), sweeping and brushing as cycles
+- [ ] More wardrobe: overalls, boots, a hoodie, a cardigan, a sari (the dressed-figures demo's)
+- [ ] Furniture and scenery with targets (seat height, desk, bed, door), sky, sun, moon, clouds,
+      rain, snow, wind; office, street, park and home scene presets
+- [x] Animals: `lie` for every four-legged animal (head up, front paws forward; `lyingPose`), `glide`
+      for birds (wings held out still, sinking toward `height`)
+- [ ] Animals: perch contact, more species (goat, rabbit, squirrel, pigeon, duck, owl, parrot)
+- [ ] Hair follow-through (swing with a turn or a run), a mouth with teeth and a tongue, foot shapes
+- [ ] Wheelchair and cane as accessories, not part of an age
+
+---
+
 ## Backlog / For Review
 
 - [x] **Live demo controls no longer cut off** — a gallery card's live preview grows to fit its

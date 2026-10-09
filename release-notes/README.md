@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.98.0](v0.98.0.md) | 2026-10-09 | Character appearance: 34 hairstyles, 20 facial-hair styles, glasses, hats and ears as data that turn with the head; builds, clothes and a recurring cast (`castMember`); blush, tears, sweat and 12 more expressions; held items, `meetHands` and everyday poses; animals lie down, birds glide; three gallery cards; images in the docs viewer |
 | [v0.97.0](v0.97.0.md) | 2026-10-08 | Props as surfaces: `propSurface()` (places `anchor:NAME`, `part:ID`, `control:NAME` that follow the prop; `set` and `switch` edits), so a figure opens a door or switches lights on; Home Time demo; walk figures on a prop's front line |
 | [v0.96.0](v0.96.0.md) | 2026-10-08 | Surfaces: figures act on more than code. Named places (`line:7`, `term:eq:+ 4`, `bar:q4`) and edits by name; `surfaceScript` for whole scenes as JSON (`then` cues at contact or release, `carry`); `whiteboard()` and `chart()` (bars a figure rides as they grow); Board Lesson and Chart Talk demos; fix: a figure starting left that never turns is drawn facing left |
 | [v0.95.0](v0.95.0.md) | 2026-10-07 | Props (vehicles, trees, houses, aircraft), animals (horse, dog, cat, cow) and birds that act from beats and turn toward the camera; in 3D scenes: props and characters scripted in world metres, riders, depth order, lit by the scene, a mesh look exact with WebGL2 |

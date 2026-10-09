@@ -5,7 +5,14 @@ import { GAITS } from './gaits'
 import { DANCE_STYLES, MUDRAS } from './dance'
 import { FLIPS } from './acrobatics'
 import { HAND_SHAPES } from './hands/hand-rig'
-import { HUMAN_POSES, HUMAN_EXPRESSIONS } from './species/human'
+import { HUMAN_POSES, HUMAN_EXPRESSIONS, HUMAN_BUILDS } from './species/human'
+import { HAIR_STYLES, HAIR_COLORS } from './head/hair'
+import { FACIAL_HAIR_STYLES } from './head/facial-hair'
+import { GLASSES_STYLES } from './head/glasses'
+import { HAT_STYLES } from './head/hats'
+import { CHARACTER_CAST } from './cast'
+import { HELD_ITEMS } from './hands/held-items'
+import { HAND_MEETINGS } from './interactions'
 import { HUMAN_GAGS } from './species/human-motion'
 import { GAGS, gagDuration, type GagName } from './acting/gags'
 import { ACTING_STYLES } from './acting/acting'
@@ -82,7 +89,26 @@ export interface Capabilities {
   }
   /** Making your own: actions, gaits and personas */
   custom: { api: Record<string, string>; actions: Record<string, { summary: string; needs?: string[] }>; gaits: Record<string, string> }
-  character: { poses: string[]; expressions: string[]; gags: string[] }
+  character: {
+    poses: string[]
+    expressions: string[]
+    gags: string[]
+    /** `build` option */
+    builds: string[]
+    /** `hair` option (`{ style, color, length, … }` changes any field) */
+    hair: string[]
+    hairColors: Record<string, string>
+    /** `facialHair` option */
+    facialHair: string[]
+    glasses: string[]
+    hats: string[]
+    /** `castMember(name, height)` */
+    cast: string[]
+    /** `holding: { left | right | both: item }`, and which hands each takes */
+    heldItems: Record<string, string>
+    /** `meetHands(kind, a, b)` */
+    handMeetings: string[]
+  }
   codePanel: { languages: readonly string[]; removeStyles: readonly string[]; anchors: Record<string, string>; edits: Record<string, string> }
   /** Surfaces figures act on, by kind: their named anchors and edits (`surface.anchor(name)`, `surface.edit(name, anchor, options)`) */
   surfaces: Record<string, SurfaceAbout>
@@ -191,7 +217,20 @@ export function capabilities(version?: string, cast: Cast = {}): Capabilities {
       actions: Object.fromEntries(Object.entries(cast.actions ?? {}).map(([name, a]) => [name, { summary: a.summary, ...(a.needs ? { needs: a.needs as string[] } : {}) }])),
       gaits: Object.fromEntries(Object.entries(cast.gaits ?? {}).map(([name, g]) => [name, g.summary ?? 'custom gait'])),
     },
-    character: { poses: Object.keys(HUMAN_POSES), expressions: Object.keys(HUMAN_EXPRESSIONS), gags: Object.keys(HUMAN_GAGS) },
+    character: {
+      poses: Object.keys(HUMAN_POSES),
+      expressions: Object.keys(HUMAN_EXPRESSIONS),
+      gags: Object.keys(HUMAN_GAGS),
+      builds: Object.keys(HUMAN_BUILDS),
+      hair: Object.keys(HAIR_STYLES),
+      hairColors: { ...HAIR_COLORS },
+      facialHair: Object.keys(FACIAL_HAIR_STYLES),
+      glasses: Object.keys(GLASSES_STYLES),
+      hats: Object.keys(HAT_STYLES),
+      cast: Object.keys(CHARACTER_CAST),
+      heldItems: Object.fromEntries(Object.entries(HELD_ITEMS).map(([name, item]) => [name, item.hands])),
+      handMeetings: Object.keys(HAND_MEETINGS),
+    },
     codePanel: {
       languages: CODE_LANGUAGES,
       removeStyles: REMOVE_STYLES,
@@ -345,6 +384,18 @@ export function capabilitiesMarkdown(version?: string, cast: Cast = {}): string 
     '## Character (v2 human)',
     '',
     `Poses: ${list(c.character.poses)}. Expressions: ${list(c.character.expressions)}. Gags: ${list(c.character.gags)}.`,
+    '',
+    'Appearance options of `character({ … })`, all plain data that turns with the head (see docs/character-appearance.md):',
+    '',
+    `- \`build\`: ${list(c.character.builds)}`,
+    `- \`hair\`: ${list(c.character.hair)} (colours: ${list(Object.keys(c.character.hairColors))} in \`HAIR_COLORS\`)`,
+    `- \`facialHair\`: ${list(c.character.facialHair)}`,
+    `- \`glasses\`: ${list(c.character.glasses)}; \`hat\`: ${list(c.character.hats)}; \`ears: true\``,
+    '- `outfit`: `{ shirt, trousers, sleeves: short | long | none, bottom: trousers | shorts | skirt, collar, tie: colour, over: apron | labCoat, overColor }`',
+    `- \`castMember(name, height)\`: ${list(c.character.cast)}`,
+    '- Face marks (pose fields, 0–1): `blush`, `tears`, `sweat`',
+    `- \`holding\`: ${Object.entries(c.character.heldItems).map(([name, hands]) => `\`${name}\` (${hands === 'both' ? 'both' : hands === 'either' ? 'one hand or both' : 'left or right'})`).join(', ')}; pose fields \`held.left\`, \`held.right\`, \`held.both\` (below 0.5 lets go); \`handGrip(joints, side)\``,
+    `- \`meetHands(kind, a, b)\` (stand them \`meetingSpacing(kind, a, b)\` apart): ${list(c.character.handMeetings)}`,
     '',
     '## Code panel',
     '',

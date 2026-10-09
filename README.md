@@ -54,7 +54,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Code-drawn targets** - A `custom` canvas target draws with code (characters, charts, props) while the timeline animates its position, opacity and its own `props`, so drawing stays code and timing stays JSON
 - **Immediate mode too** - A scene's `background` and `draw(ctx, { time })` functions paint each frame directly, Cairo/Processing-style, and mix freely with timeline targets
 - **Timing from narration** - `planNarration()` lays spoken lines out from their clip lengths (lead, gap, tail) into cues, scene spans and markers; `voiceNarration()` measures recorded clips with ffmpeg and writes the sample-aligned narration WAV
-- **Characters** - A poseable stick figure (`@algorisys/tinyfly/characters`): named poses, facial expressions (brows, eyes that widen, close and look around, mouth shapes), squash and stretch, rubber-hose limbs, blending, walk cycles and talking, all driven by timeline tracks. **Characters v2**: one skeleton in 3D drawn flat, turning front to side to back, resting on whatever touches the ground, reaching for points, in clean, pencil or silhouette looks, and a 🧍 Character element in the editor you pose and keyframe
+- **Characters** - A poseable stick figure (`@algorisys/tinyfly/characters`): named poses, facial expressions (brows, eyes that widen, close and look around, mouth shapes), squash and stretch, rubber-hose limbs, blending, walk cycles and talking, all driven by timeline tracks. **Characters v2**: one skeleton in 3D drawn flat, turning front to side to back, resting on whatever touches the ground, reaching for points, in clean, pencil or silhouette looks, and a 🧍 Character element in the editor you pose and keyframe. **Character appearance**: 34 hairstyles, 20 facial-hair styles, glasses, hats and ears as plain data on the head (they turn with it through all eight views), builds from toddler to tall, a recurring cast (`castMember`), and 30 expressions with blush, tears and sweat ([guide](docs/character-appearance.md))
 - **Dance and flips** - The stick figure dances disco, hip hop, breaking toprock, jazz, K-pop, Bollywood, Bhangra, Bharatanatyam (with mudras), the Charleston, tap (foot strikes as data, for tap sounds) and popping (side glide, moonwalk, forward glide, which travel with the planted foot staying put), and does front, back, layout, scissor and side flips, cartwheels, back handsprings, split leaps, toe touches and full splits. Wrists, ankles, foot turn-out, whole-body `spin` and `rise` are pose fields; moves are keyed in beats, so any tempo plays them; styles, grooves and routines are plain JSON (`danceFrame()`, `danceTracks()`, `flipPose()`, `flipTracks()`). In the editor a 🧍 Character dances from the playhead, in time with the music: an Audio element's tempo is detected (`detectTempo()`) or tapped, the timeline shows its beats and bars, and keyframes snap to them. See [docs/dance.md](docs/dance.md)
 - **Maps** - Animated maps on OpenStreetMap tiles or an offline world outline (also in pencil): the camera flies in, pins drop, routes draw themselves while a marker travels them; a 🗺 Map element in the editor with a one-click trip
 - **Pencil sketch style** - Hand-drawn strokes with line boil (`sketch` style, `sketchPen`) for a pencil-test, Pencilmation-like look, on the stick figure and on canvas rect / circle / line / path shapes (also from the editor's Properties panel); a `drawOn` track draws any of those shapes on; the wobble is seeded by time, so renders stay deterministic
@@ -153,7 +153,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - [Deployment](docs/DEPLOYMENT.md) — Hosting, Docker, and CDN configuration
 - [2D Animation Roadmap](docs/2d-animation-roadmap.md) — Adobe Animate gap analysis and phased plan (symbols/library, camera, onion skinning, …)
 
-**Feature guides:** [Symbols & Library](docs/symbols-and-library.md) · [Camera](docs/camera.md) · [Polygon & Star](docs/polygon-star.md) · [Pen tool](docs/pen-tool.md) · [Shape morph](docs/shape-morph.md) · [Grid & snapping](docs/grid-and-snapping.md) · [Onion skinning](docs/onion-skinning.md) · [Sprite-sheet export](docs/sprite-sheet-export.md)
+**Feature guides:** [Character appearance](docs/character-appearance.md) · [Symbols & Library](docs/symbols-and-library.md) · [Camera](docs/camera.md) · [Polygon & Star](docs/polygon-star.md) · [Pen tool](docs/pen-tool.md) · [Shape morph](docs/shape-morph.md) · [Grid & snapping](docs/grid-and-snapping.md) · [Onion skinning](docs/onion-skinning.md) · [Sprite-sheet export](docs/sprite-sheet-export.md)
 
 **Docs for LLMs:** the repo root has [`llms.txt`](llms.txt), an [llmstxt.org](https://llmstxt.org) index of these docs, and [`llms-full.txt`](llms-full.txt): every doc, the course, and the capability catalog in one file. Both ship in the npm package with the docs and an agent skill (`skills/tinyfly/SKILL.md`), so an assistant finds them in `node_modules` at the installed version. `npx @algorisys/tinyfly capabilities` prints the catalog: every pose, expression, gag, gait, beat action, canvas property and code-panel edit, read from the library, so a name in it is accepted and a name not in it is rejected with the name probably meant (`tinyfly check beats.json`, `checkTracks`). The built editor also serves `/llms.txt`, `/llms-full.txt` and each page as raw markdown at `/docs/<page>.md`.
 
@@ -189,7 +189,7 @@ for what you import:
 | `@algorisys/tinyfly/teach` | `lesson()` step builder and diagram primitives (cells, pointer, stack, queue, table, pipeline) | Anywhere |
 | `@algorisys/tinyfly/react`, `@algorisys/tinyfly/vue`, `@algorisys/tinyfly/svelte`, `@algorisys/tinyfly/solid` | `useTinyfly` hooks, a Svelte action and a Solid primitive: `live` animations scoped to a component and reverted on unmount | Browser (frameworks are optional peer dependencies) |
 | `@algorisys/tinyfly/maps` | Animated maps: OpenStreetMap tiles or an offline world outline, places, routes that draw on, a camera that flies (`mapTarget`, `mapFlyTracks`, `fitView`, `WORLD_CITIES`) | Anywhere with a Canvas 2D context (tiles need a network) |
-| `@algorisys/tinyfly/characters` | Poseable stick figure: `stickFigureTarget`, `poseTracks`, `POSES`, `blendPose`, `walkPose`, `drawStickFigure`; `stickFigureJoints` and `layers` for costumes, hair and props; `turn`, `sit` and ground contact; an organic look by default (`classic` keeps the old one); **characters v2**: `character()` / `characterTarget()`, turnarounds front to back, contact, reaching, clean / pencil / silhouette looks | Anywhere with a Canvas 2D context |
+| `@algorisys/tinyfly/characters` | Poseable stick figure: `stickFigureTarget`, `poseTracks`, `POSES`, `blendPose`, `walkPose`, `drawStickFigure`; `stickFigureJoints` and `layers` for costumes, hair and props; `turn`, `sit` and ground contact; an organic look by default (`classic` keeps the old one); **characters v2**: `character()` / `characterTarget()`, turnarounds front to back, contact, reaching, clean / pencil / silhouette looks; `hair`, `facialHair`, `glasses`, `hat`, `ears`, `build`, `outfit` as data, `castMember()`, `HUMAN_EXPRESSIONS` with face marks | Anywhere with a Canvas 2D context |
 | `@algorisys/tinyfly/headless` | `renderVideo`, `renderStills`, `FrameRenderer`: render a scene to MP4 or PNGs (see [Rendering Video from Code](docs/video-rendering.md)) | Node (`@napi-rs/canvas` optional peer, ffmpeg) |
 | `@algorisys/tinyfly/browser` | One script-tag bundle (`tinyfly.iife.js`): the engine, player, drivers, interaction, the GSAP-style `live` / `tf` facades, teaching-embed controls and mounting, and the `characters` stick figure. Not included: `export`, `adapters`, `teach`, the framework hooks, `headless` | Browser |
 
@@ -237,7 +237,7 @@ GSAP-shaped functions at the top level. Teaching embeds are included: add
 itself.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.97.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.98.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -273,7 +273,7 @@ A teaching figure needs no code at all:
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON with markers… }</script>
   <figcaption>Appending to a full slice</figcaption>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.97.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.98.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
 ```
 
 See [Teaching Animations](docs/teaching.md).
@@ -372,7 +372,7 @@ Without a build step, the player bundle puts the same functions on a `tinyfly` g
   <div data-tinyfly="box" style="width: 60px; height: 60px; background: #4a9eff;"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.97.0/cdn/tinyfly-player.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.98.0/cdn/tinyfly-player.iife.js"></script>
 <script>
   tinyfly.play('#animation', './animation.json', { loop: -1 })
 </script>
@@ -481,7 +481,7 @@ Or skip the code entirely with declarative embeds (see [Teaching Animations](doc
   <svg viewBox="0 0 720 200">…</svg>
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON… }</script>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.97.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.98.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 ### Audio / Video Sync

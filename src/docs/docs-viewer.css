@@ -232,6 +232,15 @@
   text-decoration: underline;
 }
 
+.docs-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 12px 0;
+  border-radius: 8px;
+  background: #fbf6ec;
+}
+
 .docs-content strong {
   color: #ddd;
   font-weight: 600;

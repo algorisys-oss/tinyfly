@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { characterJoints, humanPose } from '../../characters'
 import type { CharacterElement } from '../stores/scene-store'
-import { CHARACTER_BUILDS, buildName, buildValue, characterOf } from './character-element'
+import { CHARACTER_BUILDS, buildName, buildValue, castElementFields, characterOf } from './character-element'
 
 const element = (changes: Partial<CharacterElement> = {}): CharacterElement => ({
   id: 'c1', name: 'Hero', type: 'character', x: 0, y: 0, width: 100, height: 200, rotation: 0, opacity: 1, visible: true, locked: false,
@@ -36,5 +36,29 @@ describe('character builds', () => {
     expect(buildName({ headSize: 0.42 })).toBe('kid')
     expect(buildName({ proportions: 'thin' })).toBe('slim')
     expect(buildName({ headSize: 0.33 })).toBeUndefined()
+    expect(buildValue({}, 'legLength')).toBe(1)
+    expect(buildName({ ...CHARACTER_BUILDS.child.build })).toBe('child')
+  })
+})
+
+describe('character heads', () => {
+  it('turn the element’s head fields into the character’s head look', () => {
+    const plain = characterOf(element())
+    expect(plain.head).toEqual({ hair: null, facialHair: null, glasses: null, hat: null, ears: false })
+    const dressed = characterOf(element({ hair: 'bob', hairColor: '#9a4426', facialHair: 'goatee', glasses: 'round', hat: 'cap', ears: true }))
+    expect(dressed.head.hair?.length).toBeGreaterThan(0)
+    expect(dressed.head.hair?.color).toBe('#9a4426')
+    expect(dressed.head.facialHair).toMatchObject({ beard: 'goatee', color: '#9a4426' })
+    expect(dressed.head.glasses).toEqual({ style: 'round' })
+    expect(dressed.head.hat?.style).toBe('cap')
+    expect(dressed.head.ears).toBe(true)
+  })
+
+  it('dress an element as a cast member: build, head and clothes, as plain fields', () => {
+    const grandpa = castElementFields('grandpa')
+    expect(grandpa).toMatchObject({ hair: 'receding', facialHair: 'shortBoxed', glasses: 'square', ears: true, outfit: 'basic' })
+    expect(buildName(grandpa.build)).toBe('stocky')
+    expect(buildName(castElementFields('boy').build)).toBe('child')
+    expect(JSON.parse(JSON.stringify(grandpa))).toEqual(grandpa)
   })
 })

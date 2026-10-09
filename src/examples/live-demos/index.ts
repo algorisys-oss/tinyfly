@@ -34,6 +34,9 @@ import { propHorse } from './prop-horse'
 import { propAnimals } from './prop-animals'
 import { propBirds } from './prop-birds'
 import { dressedFigures } from './dressed-figures'
+import { castTurnaround } from './cast-turnaround'
+import { hairAndHats } from './hair-and-hats'
+import { handOver } from './hand-over'
 import { danceFloor } from './dance-floor'
 import { mapRoute } from './map-route'
 import { lineMaskReveal } from './line-mask-reveal'
@@ -94,6 +97,9 @@ import codeTidySource from './code-tidy.js?raw'
 import boardLessonSource from './board-lesson.js?raw'
 import chartTalkSource from './chart-talk.js?raw'
 import homeTimeSource from './home-time.js?raw'
+import castTurnaroundSource from './cast-turnaround.js?raw'
+import hairAndHatsSource from './hair-and-hats.js?raw'
+import handOverSource from './hand-over.js?raw'
 import codeReviewSource from './code-review.js?raw'
 import propCarSource from './prop-car.js?raw'
 import propSceneSource from './prop-scene.js?raw'
@@ -222,6 +228,9 @@ export const liveDemos: LiveDemoWithCode[] = [
   withCode(boardLesson, boardLessonSource),
   withCode(chartTalk, chartTalkSource),
   withCode(homeTime, homeTimeSource),
+  withCode(castTurnaround, castTurnaroundSource),
+  withCode(hairAndHats, hairAndHatsSource),
+  withCode(handOver, handOverSource),
   withCode(propCar, propCarSource),
   withCode(propScene, propSceneSource),
   withCode(propHelicopter, propHelicopterSource),

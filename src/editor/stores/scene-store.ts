@@ -267,6 +267,12 @@ export interface CharacterElement extends BaseElement {
   outfit: 'none' | 'basic'
   shirt: string
   trousers: string
+  /** Outfit cut and extras (see basicOutfit): sleeves, below the waist, collar, tie colour, an apron or lab coat */
+  sleeves?: 'short' | 'long' | 'none'
+  bottom?: 'trousers' | 'shorts' | 'skirt'
+  collar?: boolean
+  tie?: string
+  over?: 'apron' | 'labCoat'
   /**
    * Hands: round (default), cartoon gloves, or natural five-fingered hands.
    * Gloves and natural hands take hand shapes (`hand.left.*` fields).
@@ -281,8 +287,22 @@ export interface CharacterElement extends BaseElement {
   /** The named pose and face last picked (for the property panel) */
   poseName?: string
   faceName?: string
-  /** Body shape: proportions, head size, shoulder and hip width (default: the bold standard build) */
+  /** Body shape: proportions, head size, shoulder and hip width, limb lengths (default: the bold standard build) */
   build?: CharacterBuild
+  /** Hairstyle preset (`HAIR_STYLES`); none when left out */
+  hair?: string
+  /** Hair colour (default the style's brown) */
+  hairColor?: string
+  /** Facial hair preset (`FACIAL_HAIR_STYLES`); none when left out */
+  facialHair?: string
+  /** Glasses (`round`, `square`, `sunglasses`); none when left out */
+  glasses?: string
+  /** Hat (`cap`, `beanie`, `hardHat`, `sunHat`, `bowler`); none when left out */
+  hat?: string
+  /** Draw ears */
+  ears?: boolean
+  /** What each hand holds (`HELD_ITEMS` names); a `held.*` track lets go */
+  holding?: { left?: string; right?: string; both?: string }
   /**
    * Acting, when on: the plain key poses, the style, and spoken lines. The
    * character's tracks are generated from these (see character-acting.ts),
@@ -304,6 +324,10 @@ export interface CharacterBuild {
   shoulderWidth?: number
   /** Half the hip width (default 0.022; fluid figures) */
   hipWidth?: number
+  /** Leg length as a share of the standard (default 1) */
+  legLength?: number
+  /** Arm length as a share of the standard (default 1) */
+  armLength?: number
 }
 
 /** A place on a map element: a pin with a label. Its id names its tracks (`<id>.show`). */

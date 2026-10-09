@@ -137,12 +137,19 @@ its box; resize the box to change its height. In the property panel:
   traditional stick figure).
 - **Look**: *Clean*, *Pencil* (hand-drawn strokes that boil, with faint
   construction lines) or *Silhouette*.
-- **Build**: *Standard*, *Slim*, *Kid* (big head), *Broad*, *Curvy* or
-  *Stocky*, or set **Head**, **Shoulders** and **Hips** with the sliders (the
-  Stick figure has a head size only). Clothes, gags, walks and dances fit
-  every build.
+- **Build**: *Standard*, *Slim*, *Kid* (big head), *Child*, *Toddler*, *Tall*,
+  *Short*, *Broad*, *Curvy* or *Stocky*, or set **Head**, **Shoulders**,
+  **Hips**, **Legs** and **Arms** with the sliders (the Stick figure has no
+  shoulders or hips). Clothes, gags, walks and dances fit every build.
 - **Line**, **Skin**, and **Clothes** (a T-shirt and trousers, with their
   colours, or none).
+- **Head**: **Cast** dresses the character as one of the ready-made cast
+  (boy, girl, young man, young woman, man, woman, grandpa, grandma: build,
+  hair, facial hair, glasses and clothes in one step); then **Hair** (34
+  styles, from buzz cut to twin braids) and its **Hair colour**, **Facial
+  hair** (20 styles), **Glasses**, **Hat** and **Ears** change one thing at a
+  time. Hair and hats turn with the head in every view (see
+  [Character Appearance](character-appearance.md)).
 - **Hands**: *Round*, *Cartoon gloves* (a thumb and three plump fingers), or
   *Natural* (five fingers, best for mudras). Gloves and natural hands take hand
   shapes: dances key them (jazz hands, mudras), and each finger is a track
@@ -154,7 +161,8 @@ its box; resize the box to change its height. In the property panel:
 - **Body**: a pose (standing, waving, pointing, cheering, hands on hips,
   thinking, shrugging, sitting, kneeling, crouching, crawling, lying down).
   Poses that rest on a knee, the hands or the back are set down on the ground.
-- **Face**: an expression (happy, sad, surprised, angry…), or the pose's own.
+- **Face**: an expression (happy, sad, surprised, angry, embarrassed with a
+  blush, crying with tears, afraid with a bead of sweat…), or the pose's own.
 
 To animate a character, pick a view, a pose and a face, and click
 **◆ Keyframe pose at playhead**. Move the playhead, pick the next pose, and
@@ -1058,7 +1066,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.97.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.98.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed

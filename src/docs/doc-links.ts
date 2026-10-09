@@ -41,3 +41,19 @@ export function rewriteDocLinks(html: string, pageIds: ReadonlySet<string>): str
       : `<a href="${link.href}">`
   })
 }
+
+const RAW = 'https://raw.githubusercontent.com/algorisys-oss/tinyfly/main'
+
+/**
+ * Point every `<img src>` in rendered doc HTML somewhere the app can load it:
+ * images the app bundles (`assets`, keyed by their path under `docs/`, such as
+ * `model-sheet/appearance.png`) by their bundled URL, other relative images at
+ * the repository, and absolute URLs as they are.
+ */
+export function rewriteDocImages(html: string, assets: ReadonlyMap<string, string>): string {
+  return html.replace(/<img src="([^"]*)"/g, (_, src: string) => {
+    if (/^[a-z][a-z0-9+.-]*:/i.test(src) || src.startsWith('/')) return `<img src="${src}"`
+    const path = src.replace(/^\.\//, '')
+    return `<img src="${assets.get(path) ?? `${RAW}/docs/${path}`}"`
+  })
+}

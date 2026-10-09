@@ -15,7 +15,8 @@ Run `npx @algorisys/tinyfly capabilities` (add `--json` for data) and read it
 before writing anything. It is generated from the installed library: easings,
 track kinds, every canvas property with units and ranges, the stick figure's
 joints, poses, expressions (moods), gags, gaits, beat actions (and the fields
-each needs), dances, flips, hand shapes, the code panel's languages, every surface's
+each needs), dances, flips, hand shapes, the v2 character's builds, hairstyles,
+facial hair, glasses, hats, cast and expressions, the code panel's languages, every surface's
 anchors and edits (code, board, chart), camera shots, teaching helpers.
 
 For the how-to, read the docs shipped with the package, at the installed
@@ -66,6 +67,14 @@ names.
   `rotation: [0, deg, 0]` (`rotateY` is a track) and script them with
   `propScript3D` (`to: [x, z]` metres), not `propScript` (screen px);
   characters there with `characterScript3D`, riders with `propRide3D`.
+- Give a v2 `character()` its look as options, not drawing code: `build`,
+  `hair` (`'bob'` or `{ style, color, length }`), `facialHair`, `glasses`,
+  `hat`, `ears: true`, `outfit: { shirt, trousers }`; or start from
+  `castMember('grandma', height)`. Hair and hats turn with the head, so one
+  description serves every view. Faces are `HUMAN_EXPRESSIONS` plus the pose
+  fields `blush`, `tears`, `sweat` (0–1). Items in hands: `holding`
+  (`held.<side>` lets go); hands that meet: `meetHands(kind, a, b)` at
+  `meetingSpacing`. See `docs/character-appearance.md`.
 - For recurring characters, make a `persona()` (look, acting, gait, mood,
   stance) and use `persona.script()`; for a move the catalog lacks, write it
   with `defineAction()` rather than hand-keying joints in many places.

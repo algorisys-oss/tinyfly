@@ -344,6 +344,31 @@ function birdActions(spec: BirdSpec): Record<string, PropAction> {
         return { end: off + travel, contact: off, release: off + travel }
       },
     }
+    actions.glide = {
+      summary: 'Glides to `to` on still, spread wings, sinking gently to `height` metres (default: a third lower than it is); from the ground it takes off first, flying the first stretch.',
+      needs: ['to'],
+      uses: ['height', 'for'],
+      run(context, beat, start) {
+        let t = start
+        if (context.values.lift <= spec.legs.length) {
+          // Not in the air yet: fly the first third of the way up, then glide.
+          const third = context.x + (beat.to! - context.x) / 3
+          t = actions.fly.run(context, { do: 'fly', to: third, height: (beat.height ?? 1.5) * 1.3 }, start).end
+        }
+        t = face(context, t, beat.to!)
+        const from = context.values.lift
+        const height = beat.height ?? from * 0.67
+        const travel = beat.for ?? Math.max(900, Math.abs(beat.to! - context.x) / 0.3)
+        // The wings stop beating and hold out level, tips a little raised; the nose dips.
+        context.set('flapping', t, context.values.flapping ?? 1)
+        context.set('flapping', t + 250, 0, 'ease-out')
+        beatWings(context, t, t + 250)
+        context.key(t + 300, { spread: 1, flap: 10, pitch: -6 }, { act: false, easing: 'ease-out' })
+        context.key(t + travel, { lift: height, pitch: -3, flap: 10 }, { act: false, easing: 'ease-in-out' })
+        context.move(t, t + travel, beat.to!, { easing: 'ease-in-out' })
+        return { end: t + travel, contact: t, release: t + travel }
+      },
+    }
     actions.land = {
       summary: 'Comes down to the floor it is over (or to `height` metres above it, a branch or a roof): wings braking, a squash on touchdown.',
       uses: ['height', 'to'],
@@ -357,7 +382,7 @@ function birdActions(spec: BirdSpec): Record<string, PropAction> {
         context.key(start + length * 0.6, { pitch: 14 }, { act: false, easing: 'ease-out' })
         context.key(start + length, { lift: down, pitch: 0, squash: 0.85 }, { act: false, easing: 'ease-in' })
         if (beat.to !== undefined) context.move(start, start + length, beat.to, { easing: 'ease-out' })
-        context.key(start + length + 160, { squash: 1, spread: 0 })
+        context.key(start + length + 160, { squash: 1, spread: 0, flap: 0 })
         return { end: start + length + 200, contact: start + length }
       },
     }

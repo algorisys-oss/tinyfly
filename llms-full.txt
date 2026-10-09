@@ -204,7 +204,7 @@ with a GSAP-style call (durations are in seconds here):
 ```html
 <div class="box" style="width:60px;height:60px;background:#4a9eff"></div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.97.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.98.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -412,7 +412,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.97.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.98.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -2278,7 +2278,7 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.97.0/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.98.0/cdn/tinyfly-player.iife.js`.
 
 ---
 
@@ -5545,12 +5545,19 @@ its box; resize the box to change its height. In the property panel:
   traditional stick figure).
 - **Look**: *Clean*, *Pencil* (hand-drawn strokes that boil, with faint
   construction lines) or *Silhouette*.
-- **Build**: *Standard*, *Slim*, *Kid* (big head), *Broad*, *Curvy* or
-  *Stocky*, or set **Head**, **Shoulders** and **Hips** with the sliders (the
-  Stick figure has a head size only). Clothes, gags, walks and dances fit
-  every build.
+- **Build**: *Standard*, *Slim*, *Kid* (big head), *Child*, *Toddler*, *Tall*,
+  *Short*, *Broad*, *Curvy* or *Stocky*, or set **Head**, **Shoulders**,
+  **Hips**, **Legs** and **Arms** with the sliders (the Stick figure has no
+  shoulders or hips). Clothes, gags, walks and dances fit every build.
 - **Line**, **Skin**, and **Clothes** (a T-shirt and trousers, with their
   colours, or none).
+- **Head**: **Cast** dresses the character as one of the ready-made cast
+  (boy, girl, young man, young woman, man, woman, grandpa, grandma: build,
+  hair, facial hair, glasses and clothes in one step); then **Hair** (34
+  styles, from buzz cut to twin braids) and its **Hair colour**, **Facial
+  hair** (20 styles), **Glasses**, **Hat** and **Ears** change one thing at a
+  time. Hair and hats turn with the head in every view (see
+  [Character Appearance](character-appearance.md)).
 - **Hands**: *Round*, *Cartoon gloves* (a thumb and three plump fingers), or
   *Natural* (five fingers, best for mudras). Gloves and natural hands take hand
   shapes: dances key them (jazz hands, mudras), and each finger is a track
@@ -5562,7 +5569,8 @@ its box; resize the box to change its height. In the property panel:
 - **Body**: a pose (standing, waving, pointing, cheering, hands on hips,
   thinking, shrugging, sitting, kneeling, crouching, crawling, lying down).
   Poses that rest on a knee, the hands or the back are set down on the ground.
-- **Face**: an expression (happy, sad, surprised, angry…), or the pose's own.
+- **Face**: an expression (happy, sad, surprised, angry, embarrassed with a
+  blush, crying with tears, afraid with a bead of sweat…), or the pose's own.
 
 To animate a character, pick a view, a pose and a face, and click
 **◆ Keyframe pose at playhead**. Move the playhead, pick the next pose, and
@@ -6466,7 +6474,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.97.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.98.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed
@@ -7449,11 +7457,11 @@ one probably meant, and `propScript` throws on them.
 | `house()` | `door` (`open`), `lights` (`on`), `smoke` (`for`, runs in the background), `shake` |
 | `helicopter()` | `takeOff` (`height`), `fly` (`to`, `height`), `hover`, `land` |
 | `airplane()` | `takeOff` (`to`, `height`), `fly` (`to`, `height`), `loop`, `land` (`to`) |
-| `horse()` | `walk`, `trot`, `canter`, `gallop` (`to`), `rear`, `buck`, `neigh`, `graze`, `sit`, `jump`, `nod`, `swish` |
-| `dog()` | `walk`, `trot`, `run` (`to`), `bark`, `wag`, `sniff`, `sit`, `jump`, `nod`, `swish` |
-| `cat()` | `walk`, `trot`, `run` (`to`), `meow`, `arch`, `pounce` (`to`), `sit`, `jump`, `nod`, `swish` |
-| `cow()` | `walk`, `trot` (`to`), `moo`, `graze`, `sit`, `jump`, `nod`, `swish` |
-| `songbird()`, `crow()` | `hop`, `walk` (`to`), `peck` (`for`), `flap` (`for`), `fly` (`to`, `height`), `land` (`height`, `to`), `tweet` / `caw` |
+| `horse()` | `walk`, `trot`, `canter`, `gallop` (`to`), `rear`, `buck`, `neigh`, `graze`, `sit`, `lie`, `jump`, `nod`, `swish` |
+| `dog()` | `walk`, `trot`, `run` (`to`), `bark`, `wag`, `sniff`, `sit`, `lie`, `jump`, `nod`, `swish` |
+| `cat()` | `walk`, `trot`, `run` (`to`), `meow`, `arch`, `pounce` (`to`), `sit`, `lie`, `jump`, `nod`, `swish` |
+| `cow()` | `walk`, `trot` (`to`), `moo`, `graze`, `sit`, `lie`, `jump`, `nod`, `swish` |
+| `songbird()`, `crow()` | `hop`, `walk` (`to`), `peck` (`for`), `flap` (`for`), `fly` (`to`, `height`), `glide` (`to`, `height`), `land` (`height`, `to`), `tweet` / `caw` |
 | `chicken()` | `walk` (`to`), `peck`, `flap`, `flutter`, `cluck` (it cannot fly) |
 
 **Line art.** `propTarget({ …, style: 'stick' })` (or `drawSolvedProp(…, { style: 'stick' })`)
@@ -7478,7 +7486,9 @@ and while `flapping` is on, the rig's `derive` beats them from a phase,
 a second, a crow four). Its head pecks from a neck joint (`peck`; a chicken's
 neck stretches down to reach), and it walks with its head bobbing or hops.
 `fly` takes off with a crouch and a leap (no crouch if it is already in the
-air) and flies to `height` metres; `land` comes down to the ground or to a
+air) and flies to `height` metres; `glide` holds the wings out still and sinks
+gently toward `height` on the way to `to` (from the ground it flies the first
+stretch); `land` comes down to the ground or to a
 perch (`height`). Perch it with anchors:
 
 ```js
@@ -7565,7 +7575,8 @@ npx @algorisys/tinyfly capabilities --json   # the same as data
 It lists the easings, track kinds, every property each canvas shape can
 animate (with units and ranges), the stick figure's joints, poses,
 expressions, gags, gaits, beat actions, dances, flips and hand shapes, the v2
-character's poses, the code panel's languages, every surface's anchors and
+character's poses, expressions, builds, hairstyles, facial hair, glasses,
+hats and cast, the code panel's languages, every surface's anchors and
 edits (code panel, whiteboard, chart), camera shots and the teaching
 helpers. It is generated from the code, so it can't
 fall behind: **a name in it is accepted, and a name not in it is rejected.**
@@ -7590,6 +7601,21 @@ on the object. Script it in world metres with `propScript3D` (`to: [x, z]`,
 Characters in a 3D scene walk the same way with `characterScript3D`
 (`{ do: 'walk', to: [x, z] }`, `pose`, `gag`, `face`, `place`); a rider is
 seated with `propRide3D` and spliced into its script with `spliceTracks`. See `docs/props.md`.
+
+## Characters with a look
+
+A v2 character's appearance is plain options to `character()`, never drawing
+code: `build` (`child`, `tall`, `short`…), `hair` (a style name, or
+`{ style, color, length, … }`), `facialHair`, `glasses`, `hat`, `ears: true`
+and `outfit: { shirt, trousers }`. `castMember('grandpa', 300)` gives a whole
+ready-made character to start from. Expressions come from `HUMAN_EXPRESSIONS`
+and are pose fields, as are the face marks `blush`, `tears` and `sweat` (0–1),
+so any face goes with any action or view. Hair and hats turn with the head:
+don't draw a different hairstyle per view. Put things in hands with `holding`
+(`{ right: 'mug' }`, `{ both: 'parcel' }`; the pose field `held.both` lets go),
+and for two characters touching use `meetHands('handshake', a, b)` with the
+two standing `meetingSpacing(…)` apart, never two separate clips. See
+`docs/character-appearance.md`.
 
 ## Surfaces
 
@@ -7675,6 +7701,10 @@ Fix, render again.
   figure's `ground` (a house's `anchor:doorstep`).
 - **Angles are degrees.** Stick-figure arms: 0 hangs down, 90 straight out,
   180 straight up; in profile the left arm's forward is negative.
+- **A character's look is data, and names are checked.** `hair: 'bob'`, not
+  a drawing in `layers`; a style name not in the catalog throws (`hair:
+  unknown style`). Side names (`at: 'left'`, `arm.left`) are the character's
+  own: from the front its left is on screen right.
 - **Aim beats at anchors, not guessed numbers**: `code.line(7)`,
   `code.token(3, 'var')`, `code.spot(2, 8, 4)`, `piece.home`.
 - **Key reactions to contact times.** Beats that touch something report
@@ -7747,7 +7777,7 @@ path for all of that:
 </figure>
 
 <!-- once, anywhere on the page (a site-wide footer is fine) -->
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.97.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.98.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 Every `[data-tinyfly-embed]` mounts when the page is ready, with no per-post
@@ -8822,8 +8852,8 @@ On a page with no build step, load the maps add-on after the browser bundle; it
 adds to the same `tinyfly` global:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.97.0/cdn/tinyfly.iife.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.97.0/cdn/tinyfly-maps.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.98.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.98.0/cdn/tinyfly-maps.iife.js"></script>
 ```
 
 It is a separate script because the offline world map it carries adds about
@@ -9023,6 +9053,292 @@ prop, or the depths to slot it between fingers.
 - A forearm pointing straight at the viewer does not foreshorten the hand.
 - The v1 stick figure draws these hands with `style.hands`; see
   [Dance and Flips](dance.md).
+
+---
+
+<!-- docs/character-appearance.md -->
+
+# Character Appearance
+
+Hair, facial hair, glasses, hats, ears, builds, a ready-made cast, held items
+and meeting hands for the v2 character (`character()` in `@algorisys/tinyfly/characters`). Every choice
+is plain data, so a character can be saved, synced, generated by a language
+model and changed one field at a time.
+
+![Character appearance sheet: the cast, every hairstyle, facial-hair style, glasses, hats and expressions](model-sheet/appearance.png)
+
+The sheet is drawn by `examples/headless-video/appearance-sheet.mjs`
+(`npx tinyfly video examples/headless-video/appearance-sheet.mjs --stills stills/`).
+
+## Quick start
+
+```js
+import { character, characterTarget, drawCharacter, humanPose, castMember, HUMAN_EXPRESSIONS } from '@algorisys/tinyfly/characters'
+
+// Pick everything by name…
+const maya = character({
+  height: 300,
+  build: 'slim',
+  hair: { style: 'highPonytail', color: '#9a4426' },
+  glasses: 'round',
+  ears: true,
+  outfit: { shirt: '#f0b43c', trousers: '#36507a' },
+})
+
+// …or start from the cast and change what you like.
+const grandpa = character(castMember('grandpa', 300, { look: 'pencil' }))
+
+// Faces are pose fields, so any expression goes with any action and view.
+drawCharacter(ctx, maya, humanPose({ ...HUMAN_EXPRESSIONS.embarrassed, turn: 0.5 }))
+```
+
+A plain figure (no `hair`, `facialHair`, `glasses`, `hat` or `ears`) draws
+exactly as it did before these options existed.
+
+## How it turns
+
+Hair, beards and hats are not flat drawings pasted on the face. Each is a
+region on the head's surface (where the hairline runs, how far the hair stands
+off the head, how far it hangs), drawn wherever the head's `turn`, `head.turn`,
+`head.nod` and `head.tilt` put it:
+
+- the part facing away is drawn before the body, so long hair hangs behind the
+  shoulders seen from the front, and a bob shows beside the face;
+- the part facing the viewer is drawn over the head, so a fringe crosses the
+  forehead and, from behind, the hair covers the whole head;
+- turned away (past about `turn` 1.2), the hair is drawn after the whole body,
+  over an arm at the side;
+- a parting, a side ponytail or a braid stays on the character's own side
+  through a turn: left and right are the character's, never mirrored.
+
+Glasses, moustaches and the face marks sit on the face itself, placed like the
+eyes and mouth, so they slide round with the face and hide with it.
+
+**Which part wins where two overlap** is fixed: eyes and brows draw over a
+fringe; the mouth draws over a beard, which leaves an opening for it (so every
+lip-sync shape stays readable); a moustache draws over the top of the mouth;
+glasses over the eyes; a hat over the hair. Ears are hidden by hair that
+`coversEars`.
+
+## Views
+
+`turn` runs 0 → 4. The eight reference views:
+
+| View | `turn` |
+|---|---|
+| Front | 0 |
+| Front 3/4 right (nose toward screen right) | 0.5 |
+| Right profile | 1 |
+| Back 3/4 right | 1.5 |
+| Back | 2 |
+| Back 3/4 left | 2.5 |
+| Left profile | 3 |
+| Front 3/4 left | 3.5 |
+
+The view names describe the screen; limb and side names (`arm.left`,
+`at: 'left'`) are always the character's own.
+
+## Hair
+
+`hair` takes a style name, a style with changes, or `null`:
+
+```js
+character({ hair: 'bob' })
+character({ hair: { style: 'bob', color: HAIR_COLORS.auburn, length: 1.4 } })
+character({ hair: { volume: 0.2, hairline: { front: 0.3 }, ties: [{ kind: 'bun', at: 'top' }] } })
+```
+
+Short cuts and hairlines: `bald`, `buzzCut`, `crewCut`, `short`, `sidePart`,
+`sideSwept`, `slickBack`, `quiff`, `spiky`, `undercut`, `curlyCrop`, `afro`,
+`wavyCrop`, `shortLocs`, `flatTop`, `receding`, `thinning`.
+
+Medium and long hair: `pixie`, `bob`, `longBob`, `wavyBob`, `shoulderStraight`,
+`shoulderWaves`, `longStraight`, `longWaves`, `longCurls`, `longLocs`,
+`lowPonytail`, `highPonytail`, `ponytail`, `sidePonytail`, `topBun`, `lowBun`,
+`singleBraid`, `twinBraids`, `braids`.
+
+Every style is the same few fields (`resolveHair(spec)` fills them all in):
+
+| Field | Meaning |
+|---|---|
+| `color` | Fill colour. `HAIR_COLORS` has `black`, `brown`, `chestnut`, `auburn`, `blond`, `ginger`, `gray`, `white` |
+| `volume` | How far the hair stands off the head (head radii) |
+| `hairline` | `{ front, side, back }`: its height at the forehead, temples and nape (head radii, +up from the head's centre) |
+| `sweep` | A side fringe: the hairline drops toward the character's left (+) or right (−) |
+| `recede` | Temples pushed back |
+| `length` | Long hair: where it ends, head radii below the head's centre (`0` short; about 1.75 is the shoulders) |
+| `opening` | Long hair: half the opening left for the face, degrees |
+| `texture`, `textureAmount` | `smooth`, `spiky`, `curly`, `wavy` or `locs`, and how strong |
+| `quiff`, `flat` | Volume swept up over the forehead; a flat top's height |
+| `part`, `strands` | A parting (degrees round from the middle of the face) and the detail lines: `none`, `part`, `sweep`, `combed`, `hanging`, `thin` |
+| `fill` | `solid`, or `stipple` (close-cropped: dots on the scalp) |
+| `ties` | Ponytails, buns and braids: `{ kind: 'ponytail' \| 'bun' \| 'braid', at: 'top' \| 'high' \| 'low' \| 'left' \| 'right', length?, size? }` |
+| `coversEars` | The hair hides the ears |
+
+A style stays a starting point: any style suits anyone.
+
+## Facial hair
+
+`facialHair` takes a style name or `{ moustache, beard, color }` (the colour
+defaults to the hair's):
+
+`cleanShaven`, `stubble`, `pencilMoustache`, `shortMoustache`, `chevron`,
+`handlebar`, `walrus`, `goatee`, `vanDyke`, `circleBeard`, `shortBoxed`,
+`fullBeard`, `longBeard`, `roundedBeard`, `pointedBeard`, `chinStrap`,
+`soulPatch`, `sideburns`, `muttonChops`, `moustacheStubble`.
+
+Moustaches: `none`, `pencil`, `short`, `chevron`, `handlebar`, `walrus`.
+Beards: `none`, `stubble`, `goatee`, `soulPatch`, `chinStrap`, `circle`,
+`boxed`, `full`, `rounded`, `pointed`, `long`, `sideburns`, `muttonChops`.
+
+## Glasses, hats and ears
+
+- `glasses`: `round`, `square`, `sunglasses` (drawn in the ink; the near arm
+  runs back to the ear in profile).
+- `hat`: `cap`, `beanie`, `hardHat`, `sunHat`, `bowler`, or `{ style, color }`.
+  The crown sits over the hair; hair below the brim still shows.
+- `ears: true` adds ears: they stick out past the head from the front and
+  behind, and sit on the head with a curl when turned toward the viewer.
+
+## Builds
+
+`build` sets proportions; `height` sets how tall the character stands. Any
+field can still be set on its own (`headSize`, `shoulderWidth`, `hipWidth`,
+`legLength`, `armLength`).
+
+| Build | What changes |
+|---|---|
+| `standard` | Nothing |
+| `slim` | Smaller head, narrower |
+| `tall` | Smaller head, longer legs and arms |
+| `short` | Larger head, shorter legs, a little wider |
+| `broad`, `curvy`, `stocky` | Shoulder and hip widths (stocky: a larger head) |
+| `kid`, `child`, `toddler` | Larger head, shorter limbs |
+
+Age, posture and accessories are separate choices: a child build is only
+proportions, and an older character is shown by hair and glasses, never by a
+stoop unless one is posed. The same poses, gaits and actions work on every
+build; `humanGaitStrideLength(gait, height, stride, legLength)` gives a build's
+stride so its feet stay planted.
+
+## Clothes
+
+`outfit` dresses the character as data (any `layers` are drawn over it):
+
+```js
+character({ outfit: { shirt: '#7a8fa6', trousers: '#3b3f46', sleeves: 'long', collar: true, tie: '#2b4f8c' } })
+character({ outfit: { bottom: 'skirt' } })
+character({ outfit: { over: 'labCoat' } })
+```
+
+| Field | Choices |
+|---|---|
+| `shirt`, `trousers` | Colours (the trousers' colour also colours shorts and a skirt) |
+| `sleeves` | `short` (default), `long`, `none` |
+| `bottom` | `trousers` (default), `shorts`, `skirt` |
+| `collar` | `true` for a shirt collar |
+| `tie` | A colour, for a tie down the front |
+| `over`, `overColor` | `apron` or `labCoat`, and its colour |
+
+The front details (collar, tie, apron, the coat's opening) show from the
+front and turn away with the body; from behind an apron shows its ties.
+`basicOutfit(options)` gives the same clothes as layers.
+
+## The cast
+
+`castMember(name, height, changes?)` returns character options for a recurring
+cast member at an adult `height` (each stands at their own scale of it). The
+family: `boy`, `girl`, `youngMan`, `youngWoman`, `man`, `woman`, `grandpa`,
+`grandma`; at work (from the occupations sheet): `doctor`, `cook`, `builder`,
+`courier`, `teacher`, `farmer`. `CHARACTER_CAST` has each one's `label`,
+`group` (`family` or `work`), `scale` and `options`.
+
+```js
+const family = ['man', 'woman', 'girl', 'grandma'].map((name) => character(castMember(name, 280)))
+```
+
+## Expressions and face marks
+
+`HUMAN_EXPRESSIONS` sets every face field, so applying one replaces the whole
+face, and any two blend. Besides the stick figure's faces (`neutral`, `happy`,
+`joyful`, `sad`, `crying`, `surprised`, `shocked`, `angry`, `furious`,
+`worried`, `scared`, `confused`, `skeptical`, `thinking`, `sleepy`,
+`disgusted`, `smug`, `wink`) there are `laughing`, `afraid`, `bored`, `tired`,
+`embarrassed`, `proud`, `determined`, `affectionate`, `hurt`, `suspicious`,
+`relieved` and `excited`.
+
+Three face marks fade in from 0 to 1 and are pose fields like any other (so
+tracks animate them): `blush` (rosy cheeks, with hatch lines past 0.5),
+`tears` (a drop under each eye, running down past 0.6) and `sweat` (a bead at
+the temple).
+
+## Everyday actions, held items and meeting hands
+
+The motion and everyday-life sheets add poses to `HUMAN_POSES`: `sleep`,
+`stretch`, `sitFloor` (cross-legged), `carry`, `lift`, `push`, `pull`,
+`drink`, `phone`, `read` and `type` (seated, for a desk). Like every pose they
+blend, turn and take any face.
+
+**Holding things.** `holding` puts an item in a hand, as data:
+
+```js
+character({ holding: { right: 'mug' } })                 // drink
+character({ holding: { left: 'bag', right: 'bag' } })    // carry
+character({ holding: { both: { item: 'parcel', color: '#c9a06a' } } })
+```
+
+Items: `mug`, `phone`, `briefcase`, `bag`, `umbrella` and `broom` (one hand,
+`left` or `right`), `book` (one hand or `both`) and `parcel` (`both`). Each is
+drawn at the hand's grip, so it follows the hand through any pose, gait or
+turn, and sorts with that arm (a mug goes behind the body with the far arm).
+An umbrella's canopy sits just over the head. `handGrip(joints, side)` gives
+the grip point and the forearm's direction for drawing anything else in a
+hand.
+
+Whether an item shows is a pose field, `held.left`, `held.right` or
+`held.both` (1 by default; below 0.5 it has been let go), so a track lets go
+of it at a moment: a parcel handed over is the giver's `held.both` going to 0
+as the taker's goes to 1.
+
+**Meeting hands.** `meetHands(kind, a, b, options?)` poses two characters so
+their hands meet at one point, rather than playing two clips and hoping they
+line up: `handshake`, `highFive`, `fistBump` and `handOver` (four hands round
+one parcel). Each partner is `{ character, x, pose? }` on the same ground
+line; the one on the left turns to face right and the other left,
+three-quarters on (`view: 'side'` for profiles). Stand them
+`meetingSpacing(kind, a, b)` apart; the result's `reached` says whether both
+got there.
+
+```js
+const gap = meetingSpacing('handOver', courier, neighbour)
+const give = meetHands('handOver', { character: courier, x: 300 }, { character: neighbour, x: 300 + gap })
+// give.a and give.b are poses to key; give.point is where the parcel is.
+```
+
+## In the editor
+
+Select a 🧍 Character and open **Head** in the properties: **Cast** dresses it
+as a cast member (build, hair, facial hair, glasses and clothes in one step),
+then **Hair**, **Hair colour**, **Facial hair**, **Glasses**, **Hat** and
+**Ears** change one thing at a time; **Right hand**, **Left hand** and **Both
+hands** put an item in them. **Build** lists the builds, with **Legs** and
+**Arms** sliders. The new expressions and everyday poses are in the **Face**
+and **Body** lists. All of it is saved as plain fields on the element and
+exported to video and GIF.
+
+## In the gallery
+
+- **Cast Turnaround**: the whole cast turning through all eight views together.
+- **Hair, Beards & Hats**: pick a style, colour, facial hair, glasses, hat and
+  face, and see the character turning and in all eight views at once.
+- **Hand Over**: a courier walks up and hands a parcel over (`meetHands`,
+  `holding`, `held.both`).
+
+## Determinism
+
+Outlines are traced from the same numbers every time (no randomness, no state
+between frames), so a frame at a given time always draws the same, and the
+pencil look's boil stays seeded as before.
 
 ---
 
@@ -12931,7 +13247,7 @@ magnet.addEventListener('pointerleave', () => {
 
 <!-- capabilities: generated from the library -->
 
-# tinyfly capabilities (v0.97.0)
+# tinyfly capabilities (v0.98.0)
 
 Generated from the library itself: every name below is accepted, and names not listed are rejected (beat scripts, code panels and `checkTracks` say which name was probably meant).
 
@@ -13181,17 +13497,29 @@ Prop beat fields: `do`, `at`, `for`, `to`, `toward`, `speed`, `open`, `on`, `hei
 | `house()` | building | `door` (open), `lights` (on), `shake`, `smoke` | `door`, `lights` | door, doorstep, ridge, chimney |
 | `helicopter()` | aircraft | `takeOff`, `fly` (to), `hover`, `land` | `rotor`, `blur` | seat, door, rotor, skids, hook |
 | `airplane()` | aircraft | `takeOff` (to), `fly` (to), `loop`, `land` (to) | `rotor`, `blur` | seat, nose, tail, wingtip |
-| `horse()` | animal | `walk` (to), `trot` (to), `canter` (to), `gallop` (to), `neigh`, `sit`, `jump`, `nod`, `swish`, `graze`, `rear`, `buck` | `walk`, `walking`, `gait`, `neck`, `tail`, `wag`, `fl.swing`, `fl.knee`, `fl.ankle`, `fr.swing`, `fr.knee`, `fr.ankle`, `hl.swing`, `hl.knee`, `hl.ankle`, `hr.swing`, `hr.knee`, `hr.ankle` | back, head, mouth, front, hitch, saddle |
-| `dog()` | animal | `walk` (to), `trot` (to), `run` (to), `gallop` (to), `bark`, `sit`, `jump`, `nod`, `swish`, `wag`, `sniff` | `walk`, `walking`, `gait`, `neck`, `tail`, `wag`, `fl.swing`, `fl.knee`, `fl.ankle`, `fr.swing`, `fr.knee`, `fr.ankle`, `hl.swing`, `hl.knee`, `hl.ankle`, `hr.swing`, `hr.knee`, `hr.ankle` | back, head, mouth, front, leash |
-| `cat()` | animal | `walk` (to), `trot` (to), `run` (to), `gallop` (to), `meow`, `sit`, `jump`, `nod`, `swish`, `arch`, `pounce` (to) | `walk`, `walking`, `gait`, `neck`, `tail`, `wag`, `fl.swing`, `fl.knee`, `fl.ankle`, `fr.swing`, `fr.knee`, `fr.ankle`, `hl.swing`, `hl.knee`, `hl.ankle`, `hr.swing`, `hr.knee`, `hr.ankle` | back, head, mouth, front |
-| `cow()` | animal | `walk` (to), `trot` (to), `moo`, `sit`, `jump`, `nod`, `swish`, `graze` | `walk`, `walking`, `gait`, `neck`, `tail`, `wag`, `fl.swing`, `fl.knee`, `fl.ankle`, `fr.swing`, `fr.knee`, `fr.ankle`, `hl.swing`, `hl.knee`, `hl.ankle`, `hr.swing`, `hr.knee`, `hr.ankle` | back, head, mouth, front |
-| `songbird()` | bird | `hop` (to), `walk` (to), `peck`, `flap`, `tweet`, `fly` (to), `land` | `spread`, `flap`, `wingbeat`, `flapping`, `peck`, `step`, `stepping`, `leg.left`, `leg.right` | beak, head, back, feet |
-| `crow()` | bird | `hop` (to), `walk` (to), `peck`, `flap`, `caw`, `fly` (to), `land` | `spread`, `flap`, `wingbeat`, `flapping`, `peck`, `step`, `stepping`, `leg.left`, `leg.right` | beak, head, back, feet |
+| `horse()` | animal | `walk` (to), `trot` (to), `canter` (to), `gallop` (to), `neigh`, `sit`, `lie`, `jump`, `nod`, `swish`, `graze`, `rear`, `buck` | `walk`, `walking`, `gait`, `neck`, `tail`, `wag`, `fl.swing`, `fl.knee`, `fl.ankle`, `fr.swing`, `fr.knee`, `fr.ankle`, `hl.swing`, `hl.knee`, `hl.ankle`, `hr.swing`, `hr.knee`, `hr.ankle` | back, head, mouth, front, hitch, saddle |
+| `dog()` | animal | `walk` (to), `trot` (to), `run` (to), `gallop` (to), `bark`, `sit`, `lie`, `jump`, `nod`, `swish`, `wag`, `sniff` | `walk`, `walking`, `gait`, `neck`, `tail`, `wag`, `fl.swing`, `fl.knee`, `fl.ankle`, `fr.swing`, `fr.knee`, `fr.ankle`, `hl.swing`, `hl.knee`, `hl.ankle`, `hr.swing`, `hr.knee`, `hr.ankle` | back, head, mouth, front, leash |
+| `cat()` | animal | `walk` (to), `trot` (to), `run` (to), `gallop` (to), `meow`, `sit`, `lie`, `jump`, `nod`, `swish`, `arch`, `pounce` (to) | `walk`, `walking`, `gait`, `neck`, `tail`, `wag`, `fl.swing`, `fl.knee`, `fl.ankle`, `fr.swing`, `fr.knee`, `fr.ankle`, `hl.swing`, `hl.knee`, `hl.ankle`, `hr.swing`, `hr.knee`, `hr.ankle` | back, head, mouth, front |
+| `cow()` | animal | `walk` (to), `trot` (to), `moo`, `sit`, `lie`, `jump`, `nod`, `swish`, `graze` | `walk`, `walking`, `gait`, `neck`, `tail`, `wag`, `fl.swing`, `fl.knee`, `fl.ankle`, `fr.swing`, `fr.knee`, `fr.ankle`, `hl.swing`, `hl.knee`, `hl.ankle`, `hr.swing`, `hr.knee`, `hr.ankle` | back, head, mouth, front |
+| `songbird()` | bird | `hop` (to), `walk` (to), `peck`, `flap`, `tweet`, `fly` (to), `glide` (to), `land` | `spread`, `flap`, `wingbeat`, `flapping`, `peck`, `step`, `stepping`, `leg.left`, `leg.right` | beak, head, back, feet |
+| `crow()` | bird | `hop` (to), `walk` (to), `peck`, `flap`, `caw`, `fly` (to), `glide` (to), `land` | `spread`, `flap`, `wingbeat`, `flapping`, `peck`, `step`, `stepping`, `leg.left`, `leg.right` | beak, head, back, feet |
 | `chicken()` | bird | `hop` (to), `walk` (to), `peck`, `flap`, `cluck`, `flutter` | `spread`, `flap`, `wingbeat`, `flapping`, `peck`, `step`, `stepping`, `leg.left`, `leg.right` | beak, head, back, feet |
 
 ## Character (v2 human)
 
-Poses: `rest`, `wave`, `cheer`, `point`, `handsOnHips`, `think`, `shrug`, `sit`, `kneel`, `crouch`, `crawl`, `lieDown`. Expressions: `neutral`, `happy`, `joyful`, `sad`, `crying`, `surprised`, `shocked`, `angry`, `furious`, `worried`, `scared`, `confused`, `skeptical`, `thinking`, `sleepy`, `disgusted`, `smug`, `wink`. Gags: `take`, `doubleTake`, `windUp`, `land`, `tremble`, `deflate`.
+Poses: `rest`, `wave`, `cheer`, `point`, `handsOnHips`, `think`, `shrug`, `sit`, `kneel`, `crouch`, `crawl`, `lieDown`, `sleep`, `stretch`, `sitFloor`, `carry`, `lift`, `push`, `pull`, `drink`, `phone`, `read`, `type`. Expressions: `neutral`, `happy`, `joyful`, `sad`, `crying`, `surprised`, `shocked`, `angry`, `furious`, `worried`, `scared`, `confused`, `skeptical`, `thinking`, `sleepy`, `disgusted`, `smug`, `wink`, `laughing`, `afraid`, `bored`, `tired`, `embarrassed`, `proud`, `determined`, `affectionate`, `hurt`, `suspicious`, `relieved`, `excited`. Gags: `take`, `doubleTake`, `windUp`, `land`, `tremble`, `deflate`.
+
+Appearance options of `character({ … })`, all plain data that turns with the head (see docs/character-appearance.md):
+
+- `build`: `standard`, `slim`, `tall`, `short`, `broad`, `curvy`, `stocky`, `kid`, `child`, `toddler`
+- `hair`: `bald`, `buzzCut`, `crewCut`, `short`, `sidePart`, `sideSwept`, `slickBack`, `quiff`, `spiky`, `undercut`, `curlyCrop`, `afro`, `wavyCrop`, `shortLocs`, `flatTop`, `receding`, `thinning`, `pixie`, `bob`, `longBob`, `wavyBob`, `shoulderStraight`, `shoulderWaves`, `longStraight`, `longWaves`, `longCurls`, `longLocs`, `lowPonytail`, `highPonytail`, `ponytail`, `sidePonytail`, `topBun`, `lowBun`, `singleBraid`, `twinBraids`, `braids` (colours: `black`, `brown`, `chestnut`, `auburn`, `blond`, `ginger`, `gray`, `white` in `HAIR_COLORS`)
+- `facialHair`: `cleanShaven`, `stubble`, `pencilMoustache`, `shortMoustache`, `chevron`, `handlebar`, `walrus`, `goatee`, `vanDyke`, `circleBeard`, `shortBoxed`, `fullBeard`, `longBeard`, `roundedBeard`, `pointedBeard`, `chinStrap`, `soulPatch`, `sideburns`, `muttonChops`, `moustacheStubble`
+- `glasses`: `round`, `square`, `sunglasses`; `hat`: `cap`, `beanie`, `hardHat`, `sunHat`, `bowler`; `ears: true`
+- `outfit`: `{ shirt, trousers, sleeves: short | long | none, bottom: trousers | shorts | skirt, collar, tie: colour, over: apron | labCoat, overColor }`
+- `castMember(name, height)`: `boy`, `girl`, `youngMan`, `youngWoman`, `man`, `woman`, `grandpa`, `grandma`, `doctor`, `cook`, `builder`, `courier`, `teacher`, `farmer`
+- Face marks (pose fields, 0–1): `blush`, `tears`, `sweat`
+- `holding`: `mug` (left or right), `phone` (left or right), `book` (one hand or both), `bag` (left or right), `briefcase` (left or right), `umbrella` (left or right), `broom` (left or right), `parcel` (both); pose fields `held.left`, `held.right`, `held.both` (below 0.5 lets go); `handGrip(joints, side)`
+- `meetHands(kind, a, b)` (stand them `meetingSpacing(kind, a, b)` apart): `handshake`, `highFive`, `fistBump`, `handOver`
 
 ## Code panel
 

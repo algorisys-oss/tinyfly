@@ -1,0 +1,5 @@
+export { HAIR_STYLES, HAIR_COLORS, resolveHair, hairlineAt, type Hair, type HairSpec, type HairStyleName, type HairTexture, type HairStrands, type HairTie } from './hair'
+export { FACIAL_HAIR_STYLES, resolveFacialHair, type FacialHair, type FacialHairSpec, type FacialHairStyleName, type MoustacheStyle, type BeardStyle } from './facial-hair'
+export { GLASSES_STYLES, resolveGlasses, type Glasses, type GlassesSpec, type GlassesStyle } from './glasses'
+export { HAT_STYLES, resolveHat, type Hat, type HatSpec, type HatStyle } from './hats'
+export { resolveHeadLook, type HeadLook, type HeadLookOptions } from './head-look'

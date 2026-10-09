@@ -26,12 +26,18 @@ export * from '../adapters/canvas/polyline'
 export * from './hand'
 // Characters v2: body plans, turned in 3D, drawn in a look (see docs/character-system-m1.md).
 export * from './character'
-export { humanPlan, humanPose, mirrorHumanPose, humanFieldLabel, HUMAN_REST, HUMAN_POSES, HUMAN_EXPRESSIONS, type HumanBuild, type HumanPoseName } from './species/human'
+export { humanPlan, humanPose, mirrorHumanPose, humanFieldLabel, HUMAN_REST, HUMAN_POSES, HUMAN_EXPRESSIONS, HUMAN_BUILDS, type HumanBuild, type HumanBuildName, type HumanPoseName, type HumanExpressionName } from './species/human'
+// A recurring cast of ready-made characters (family, ages, looks).
+export { CHARACTER_CAST, castMember, type CastMember, type CastName } from './cast'
+// Two characters whose hands meet: handshakes, high fives, fist bumps, a parcel handed over.
+export { meetHands, meetingSpacing, HAND_MEETINGS, type HandMeeting, type HandsMeet, type MeetingPartner, type MeetHandsOptions } from './interactions'
 // Native motion for the human plan: gaits from the shared GAITS data, and gags in the character's own frame.
 export * from './species/human-motion'
 export type { BodyPlan, ChainSpec, BoneSpec, BoneAngles, ContactSpec, HeadSpec, Pose as CharacterPose, Vec3 } from './rig/body-plan'
 export { createPen, ellipsePoints, type Pen, type Look, type PencilOptions, type PenOptions } from './look/pen'
 export { basicOutfit, type BasicOutfitOptions } from './wardrobe/basic-outfit'
+// Heads: hair, ears, facial hair, glasses and hats, as plain data that turns with the head (see docs/character-appearance.md).
+export * from './head'
 // Cartoon hands: posed in 3D, drawn in a look.
 export * from './hands'
 // Acting: anticipation, overshoot, overlap, eyes leading, gags and speed lines (see docs/acting.md).

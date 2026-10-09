@@ -109,11 +109,11 @@ one probably meant, and `propScript` throws on them.
 | `house()` | `door` (`open`), `lights` (`on`), `smoke` (`for`, runs in the background), `shake` |
 | `helicopter()` | `takeOff` (`height`), `fly` (`to`, `height`), `hover`, `land` |
 | `airplane()` | `takeOff` (`to`, `height`), `fly` (`to`, `height`), `loop`, `land` (`to`) |
-| `horse()` | `walk`, `trot`, `canter`, `gallop` (`to`), `rear`, `buck`, `neigh`, `graze`, `sit`, `jump`, `nod`, `swish` |
-| `dog()` | `walk`, `trot`, `run` (`to`), `bark`, `wag`, `sniff`, `sit`, `jump`, `nod`, `swish` |
-| `cat()` | `walk`, `trot`, `run` (`to`), `meow`, `arch`, `pounce` (`to`), `sit`, `jump`, `nod`, `swish` |
-| `cow()` | `walk`, `trot` (`to`), `moo`, `graze`, `sit`, `jump`, `nod`, `swish` |
-| `songbird()`, `crow()` | `hop`, `walk` (`to`), `peck` (`for`), `flap` (`for`), `fly` (`to`, `height`), `land` (`height`, `to`), `tweet` / `caw` |
+| `horse()` | `walk`, `trot`, `canter`, `gallop` (`to`), `rear`, `buck`, `neigh`, `graze`, `sit`, `lie`, `jump`, `nod`, `swish` |
+| `dog()` | `walk`, `trot`, `run` (`to`), `bark`, `wag`, `sniff`, `sit`, `lie`, `jump`, `nod`, `swish` |
+| `cat()` | `walk`, `trot`, `run` (`to`), `meow`, `arch`, `pounce` (`to`), `sit`, `lie`, `jump`, `nod`, `swish` |
+| `cow()` | `walk`, `trot` (`to`), `moo`, `graze`, `sit`, `lie`, `jump`, `nod`, `swish` |
+| `songbird()`, `crow()` | `hop`, `walk` (`to`), `peck` (`for`), `flap` (`for`), `fly` (`to`, `height`), `glide` (`to`, `height`), `land` (`height`, `to`), `tweet` / `caw` |
 | `chicken()` | `walk` (`to`), `peck`, `flap`, `flutter`, `cluck` (it cannot fly) |
 
 **Line art.** `propTarget({ …, style: 'stick' })` (or `drawSolvedProp(…, { style: 'stick' })`)
@@ -138,7 +138,9 @@ and while `flapping` is on, the rig's `derive` beats them from a phase,
 a second, a crow four). Its head pecks from a neck joint (`peck`; a chicken's
 neck stretches down to reach), and it walks with its head bobbing or hops.
 `fly` takes off with a crouch and a leap (no crouch if it is already in the
-air) and flies to `height` metres; `land` comes down to the ground or to a
+air) and flies to `height` metres; `glide` holds the wings out still and sinks
+gently toward `height` on the way to `to` (from the ground it flies the first
+stretch); `land` comes down to the ground or to a
 perch (`height`). Perch it with anchors:
 
 ```js

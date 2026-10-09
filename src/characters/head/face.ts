@@ -12,7 +12,10 @@ import type { Pen } from '../look/pen'
  *
  * The face fields are the v1 stick figure's: `mouth`, `smile`, `mouthWidth`,
  * `blink`, `eye.left`, `eye.right`, `brow.left`, `brow.right`, `browTilt`,
- * `lookX` (toward the character's left +), `lookY` (down +).
+ * `lookX` (toward the character's left +), `lookY` (down +). Marks fade in
+ * from 0 to 1: `blush` (rosy cheeks with a few hatch lines), `tears` (a drop
+ * under each eye, running down at full strength) and `sweat` (a bead at the
+ * temple).
  */
 
 const EYE_X = 0.34
@@ -118,6 +121,8 @@ export function drawFace(pen: Pen, head: SolvedHead, pose: Pose, lineWidth: numb
     pen.line(toScreen([outer, { x: (outer.x + inner.x) / 2, y: (outer.y + inner.y) / 2 }, inner], { x: ex, y: brow }), thin)
   }
 
+  drawMarks(pen, head, pose, thin)
+
   // Mouth: closed is a curve; open is an O, a grin (flat top) or a wail (flat bottom).
   const mouthCentre = { x: 0, y: MOUTH_Y }
   if (facingAt(0, MOUTH_Y) < -SHOWN) return
@@ -139,4 +144,55 @@ export function drawFace(pen: Pen, head: SolvedHead, pose: Pose, lineWidth: numb
     outline = ellipse(0, MOUTH_Y, w * 0.8, depth)
   }
   pen.shape(toScreen(outline, mouthCentre), pen.ink, 0)
+}
+
+const WATER = '#8fd0f5'
+
+/** A drop: round at the bottom, pointed at the top, in face coordinates. */
+const drop = (cx: number, cy: number, r: number): Point[] =>
+  Array.from({ length: 18 }, (_, i) => {
+    const a = (Math.PI * 2 * i) / 18
+    // From the point at the top round the bulb below.
+    const bulb = Math.sin(a / 2)
+    return { x: cx + Math.sin(a) * r * bulb, y: cy - r * 0.9 + Math.cos(a) * r * 1.6 * (0.55 + 0.45 * bulb) - r * 0.4 }
+  })
+
+/** Blush, tears and sweat: marks that fade in with their fields. */
+function drawMarks(pen: Pen, head: SolvedHead, pose: Pose, thin: number) {
+  const blush = Math.min(1, Math.max(0, field(pose, 'blush', 0)))
+  const tears = Math.min(1, Math.max(0, field(pose, 'tears', 0)))
+  const sweat = Math.min(1, Math.max(0, field(pose, 'sweat', 0)))
+  if (blush + tears + sweat <= 0.01) return
+  for (const side of [1, -1]) {
+    const cheek = { x: 0.5 * side, y: -0.16 }
+    const shown = faceToScreen(head, [], cheek).facing >= SHOWN
+    if (blush > 0.01 && shown) {
+      const { points } = faceToScreen(head, ellipse(cheek.x, cheek.y, 0.17, 0.1), cheek)
+      pen.shape(points, `rgba(240, 120, 140, ${(0.75 * blush).toFixed(3)})`, 0)
+      if (blush > 0.5) {
+        // Hatch lines over the cheek.
+        for (const dx of [-0.07, 0, 0.07]) {
+          const hatch = [{ x: cheek.x + dx - 0.018, y: cheek.y - 0.03 }, { x: cheek.x + dx + 0.018, y: cheek.y + 0.03 }]
+          pen.line(faceToScreen(head, hatch, cheek).points, thin * 0.3)
+        }
+      }
+    }
+    const eye = { x: EYE_X * side, y: EYE_Y }
+    if (tears > 0.01 && faceToScreen(head, [], eye).facing >= SHOWN) {
+      const r = 0.05 + 0.04 * tears
+      const below = { x: eye.x + 0.06 * side, y: EYE_Y - 0.2 - 0.12 * tears }
+      pen.shape(faceToScreen(head, drop(below.x, below.y, r), below).points, WATER, thin * 0.35)
+      if (tears > 0.6) {
+        const streak = [{ x: eye.x + 0.05 * side, y: EYE_Y - 0.1 }, { x: below.x, y: below.y + r * 0.8 }]
+        pen.line(faceToScreen(head, streak, below).points, thin * 0.3)
+      }
+    }
+  }
+  if (sweat > 0.01) {
+    // One bead at the temple on the character's left (screen right from the front).
+    const temple = { x: 0.64, y: 0.42 }
+    if (faceToScreen(head, [], temple).facing >= SHOWN) {
+      pen.shape(faceToScreen(head, drop(temple.x, temple.y, 0.05 + 0.05 * sweat), temple).points, WATER, thin * 0.35)
+    }
+  }
 }
