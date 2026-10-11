@@ -21,8 +21,10 @@ export interface Scene3D {
   /** In order: parents before children; array order breaks depth ties */
   objects: Object3D[]
   materials?: Record<string, Material3D>
-  /** Background colour, or 'transparent' (default) */
-  background?: string
+  /** Background colour, or 'transparent' (default), or a sky: a vertical gradient from `top` to `bottom` */
+  background?: string | SkyGradient
+  /** The ground's height, metres, where blob shadows lie (default 0) */
+  ground?: number
   /** Fog from `near` to `far` metres from the camera, toward `color` (outlines fade with it too) */
   fog?: { color: string; near: number; far: number }
   /** Geometry nearer the camera than `to` metres fades out, gone at `from`: a dive passes through things as if they were glass */
@@ -66,6 +68,14 @@ export interface MeshObject extends ObjectBase {
   geometry: Geometry3D
   /** A key of `materials` */
   material: string
+  /** A soft blob shadow on the ground under it (default none): `true`, or its opacity and a ground height of its own */
+  shadow?: boolean | { opacity?: number; ground?: number }
+}
+
+/** A sky as a vertical gradient: `top` at the top of the frame to `bottom` at the bottom. */
+export interface SkyGradient {
+  top: string
+  bottom: string
 }
 
 interface CameraBase extends ObjectBase {

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { createCanvas, loadImage } from '@napi-rs/canvas'
-import { drawScene3D, loadScene3D, orbitPosition, type Scene3D } from './index'
+import { drawScene3D, loadScene3D, orbitPosition, lightingPreset, ground, type Scene3D } from './index'
 import type { AnimatableValue } from '../engine/types'
 
 /**
@@ -34,7 +34,48 @@ const base = (materials: Scene3D['materials'], objects: Scene3D['objects'], extr
   ...extra,
 })
 
-const CASES: Array<{ name: string; scene: Scene3D; values?: Record<string, Record<string, AnimatableValue>> }> = [
+const CASES: Array<{ name: string; scene: Scene3D; values?: Record<string, Record<string, AnimatableValue>>; depthBuffer?: boolean }> = [
+  {
+    name: 'dusk-shadows',
+    scene: (() => {
+      const light = lightingPreset('dusk')
+      const floor = ground({ size: 20, color: '#4b5563' })
+      return {
+        id: 'stage',
+        camera: 'cam',
+        background: light.background,
+        fog: light.fog,
+        materials: { ...floor.materials, red: { color: '#ef4444', shading: 'toon', outline: { width: 2, color: '#0f172a' } }, blue: { color: '#4a9eff', shading: 'lambert' }, gold: { color: '#f1c40f', shading: 'flat' } },
+        objects: [
+          { id: 'cam', kind: 'camera', projection: 'perspective', fov: 45, near: 0.1, far: 60, position: orbitPosition([0, 0.6, 0], 25, 18, 8), lookAt: [0, 0.6, 0] },
+          ...light.objects,
+          ...floor.objects,
+          { id: 'box', kind: 'mesh', geometry: { type: 'box', size: [1.2, 1.2, 1.2] }, material: 'red', position: [-1.8, 0.6, 0], rotation: [0, 30, 0], shadow: true },
+          { id: 'ball', kind: 'mesh', geometry: { type: 'sphere', radius: 0.7, segments: 20 }, material: 'blue', position: [0, 1.6, 0.8], shadow: true },
+          { id: 'cone', kind: 'mesh', geometry: { type: 'cone', radius: 0.6, height: 1.4, segments: 20 }, material: 'gold', position: [1.8, 0.7, 0], shadow: true },
+        ],
+      } satisfies Scene3D
+    })(),
+  },
+  {
+    name: 'depth-buffer-crossing',
+    depthBuffer: true,
+    scene: base(
+      {
+        red: { color: '#ef4444', shading: 'toon', outline: { width: 2, color: '#0f172a' } },
+        blue: { color: '#4a9eff', shading: 'lambert', outline: { width: 2, color: '#0f172a' } },
+        glass: { color: '#2ecc71', shading: 'flat', opacity: 0.5 },
+      },
+      [
+        // Two long beams crossing, and a see-through ball: what the painter's order cannot draw.
+        { id: 'a', kind: 'mesh', geometry: { type: 'box', size: [4, 0.4, 0.4] }, material: 'red', position: [0, 0.6, 0], rotation: [0, 30, 0] },
+        { id: 'b', kind: 'mesh', geometry: { type: 'box', size: [4, 0.4, 0.4] }, material: 'blue', position: [0, 0.6, 0], rotation: [0, -50, 0] },
+        { id: 'ball', kind: 'mesh', geometry: { type: 'sphere', radius: 0.5, segments: 16 }, material: 'glass', position: [1.2, 0.5, 1.2] },
+      ],
+      { fog: { color: '#1e293b', near: 8, far: 20 } },
+      1
+    ),
+  },
   {
     name: 'primitives-toon',
     scene: base(
@@ -82,18 +123,18 @@ const CASES: Array<{ name: string; scene: Scene3D; values?: Record<string, Recor
   },
 ]
 
-function render(scene: Scene3D, values?: Record<string, Record<string, AnimatableValue>>) {
+function render(scene: Scene3D, values?: Record<string, Record<string, AnimatableValue>>, depthBuffer = false) {
   const canvas = createCanvas(W, H)
   const ctx = canvas.getContext('2d') as unknown as CanvasRenderingContext2D
   const animated = new Map(Object.entries(values ?? {}).map(([target, props]) => [target, new Map(Object.entries(props))]))
-  drawScene3D(ctx, loadScene3D(scene), animated, { width: W, height: H })
+  drawScene3D(ctx, loadScene3D(scene), animated, { width: W, height: H, depthBuffer })
   return canvas
 }
 
 describe('scene-3d golden frames', () => {
-  for (const { name, scene, values } of CASES) {
+  for (const { name, scene, values, depthBuffer } of CASES) {
     it(`draws ${name} pixel-identically`, async () => {
-      const canvas = render(scene, values)
+      const canvas = render(scene, values, depthBuffer)
       const file = join(GOLDEN_DIR, `${name}.png`)
       if (process.env.UPDATE_GOLDEN) {
         mkdirSync(GOLDEN_DIR, { recursive: true })

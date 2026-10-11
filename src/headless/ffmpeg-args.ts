@@ -16,6 +16,8 @@ export interface FfmpegOptions {
   crf?: number
   /** x264 preset (default `medium`) */
   preset?: string
+  /** `h264` (default): an MP4 for the web. `prores`: Apple ProRes 422 HQ in a .mov for editing elsewhere (10-bit, PCM audio) */
+  codec?: 'h264' | 'prores'
 }
 
 export function ffmpegArgs(options: FfmpegOptions): string[] {
@@ -30,6 +32,12 @@ export function ffmpegArgs(options: FfmpegOptions): string[] {
     '-i', '-',
   ]
   if (audio) args.push('-i', audio)
+  if (options.codec === 'prores') {
+    args.push('-c:v', 'prores_ks', '-profile:v', '3', '-vendor', 'apl0', '-vf', 'pad=ceil(iw/2)*2:ceil(ih/2)*2', '-pix_fmt', 'yuv422p10le')
+    if (audio) args.push('-c:a', 'pcm_s16le', '-shortest')
+    args.push(output)
+    return args
+  }
   args.push(
     '-c:v', 'libx264',
     '-preset', options.preset ?? 'medium',

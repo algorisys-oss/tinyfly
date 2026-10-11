@@ -30,6 +30,7 @@ resolves to the built package.
 | `hand-shapes.mjs` | Cartoon hands (a still): every `HAND_SHAPES` entry from the back, 3/4, thumb side and palm, a left hand in pencil, four-fingered gloves, silhouettes, a fist opening by `mixHandPoses`, and the animator's hand (`drawHand`) built on the same rig. Kept in [`docs/model-sheet/`](../../docs/model-sheet/); see [docs/cartoon-hands.md](../../docs/cartoon-hands.md) |
 | `dance-sheet.mjs` | Dance and flips (a still): every `DANCE_STYLES` move at its keys with hand shapes and mudras, and every `FLIPS` entry from wind-up to landing. Kept in [`docs/model-sheet/`](../../docs/model-sheet/); see [docs/dance.md](../../docs/dance.md) |
 | `nested-zoom.mjs` | A looping Droste zoom: `loop: true`, `nestedZoom` with a `similarityAbout` step (one level per loop, only the visible levels drawn), `wobble` and `loopNoise` for a periodic sway and drift, bloom. See [docs/video-rendering.md](../../docs/video-rendering.md#loops) |
+| `film-shots.mjs` | A film from a 3D scene as data: a shot list (`shotTracks`, `transitionAt`, `drawTransition`: a crossfade and a dip to black), camera moves written as tracks (`cameraMoveTracks`: a dolly, an orbit), a seeded handheld close-up (`cameraHandheldTracks`), a 2.39:1 letterbox. See [docs/scene-3d.md](../../docs/scene-3d.md#shots-and-cameras) |
 | `drawing-hand.mjs` | The animator's hand: `drawnPathTarget()` draws the ground and a sun on (`draw` tracks), `erasable(…, { hand: true })` rubs the sun out |
 
 The guide is [docs/video-rendering.md](../../docs/video-rendering.md). The unit

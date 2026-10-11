@@ -4,6 +4,8 @@ import { quat } from '../engine/math'
 import type { AnimatableValue } from '../engine/types'
 import { Timeline } from '../engine/core/timeline'
 import { inkColor } from './shading'
+import { rasterizeResolvedScene } from './software-renderer'
+import { drawResolvedScene } from './canvas-2d-renderer'
 import {
   drawScene3D,
   loadScene3D,
@@ -15,6 +17,7 @@ import {
   Scene3DAdapter,
   Canvas2DRenderer,
   type Scene3D,
+  type MeshObject,
 } from './index'
 
 const SIZE = { width: 400, height: 300 }
@@ -267,6 +270,102 @@ describe('shading', () => {
     const dark = frameWith({ objects: [...scene().objects, { id: 'lamp', kind: 'light', light: 'directional', color: '#ffffff', intensity: 1, position: [0, 0, -10] }] })
     const glowing = { ...dark.triangles[0], material: { color: '#ff0000', emissive: '#00ffff' } }
     expect(shadeTriangle(glowing, dark.lights, dark.camera).color).toBe('rgb(0, 255, 255)')
+  })
+})
+
+describe('sets: shadows and skies', () => {
+  it('lays a blob shadow under a mesh that asks for one, fading as it lifts off the ground', () => {
+    // Seen from above (a level camera would see the disc edge-on).
+    const raised = (shadow: MeshObject['shadow'] | undefined): Scene3D =>
+      scene({ objects: scene().objects.map((o) => (o.id === 'box' ? ({ ...o, shadow } as Scene3D['objects'][number]) : o.id === 'front' ? ({ ...o, position: [0, 3, 5], lookAt: [0, 0, 0] } as Scene3D['objects'][number]) : o)) })
+    const withShadow = (shadow: MeshObject['shadow']) => loadScene3D(raised(shadow))
+    const shadowed = withShadow(true)
+    const plain = resolveScene3D(loadScene3D(raised(undefined)), new Map(), SIZE)
+    const frame = resolveScene3D(shadowed, new Map(), SIZE)
+    const shadow = frame.triangles.filter((t) => t.objectId === 'box:shadow')
+    expect(shadow.length).toBe(16)
+    expect(frame.triangles.length).toBe(plain.triangles.length + 16)
+    expect(shadow[0].opacity).toBeCloseTo(0.22, 6)
+    expect(shadow[0].centroid[1]).toBeCloseTo(0.002, 6)
+    // Painted before the box's own faces when they tie in depth.
+    expect(frame.triangles.findIndex((t) => t.objectId === 'box:shadow')).toBeLessThan(frame.triangles.findIndex((t) => t.objectId === 'box'))
+    // Lifted high, the shadow fades right down; on its own ground height it stays strong.
+    const high = resolveScene3D(shadowed, values({ 'stage/box': { y: 3 } }), SIZE).triangles.filter((t) => t.objectId === 'box:shadow')
+    expect(high.length === 0 || high[0].opacity < 0.08).toBe(true)
+    const own = withShadow({ ground: -0.5, opacity: 0.5 })
+    expect(resolveScene3D(own, new Map(), SIZE).triangles.find((t) => t.objectId === 'box:shadow')!.opacity).toBeCloseTo(0.5, 6)
+  })
+
+  it('paints a sky gradient from top to bottom in both renderers', () => {
+    const sky = loadScene3D(scene({ background: { top: '#ff0000', bottom: '#0000ff' } }))
+    const frame = resolveScene3D(sky, new Map(), SIZE)
+    const canvas = createCanvas(SIZE.width, SIZE.height)
+    const ctx = canvas.getContext('2d') as unknown as CanvasRenderingContext2D
+    drawResolvedScene(ctx, frame)
+    const top = Array.from(ctx.getImageData(2, 0, 1, 1).data.slice(0, 3))
+    const bottom = Array.from(ctx.getImageData(2, SIZE.height - 1, 1, 1).data.slice(0, 3))
+    expect(top[0]).toBeGreaterThan(240)
+    expect(bottom[2]).toBeGreaterThan(240)
+    const raster = rasterizeResolvedScene(frame)
+    expect(Array.from(raster.data.slice(8, 11))).toEqual([255, 0, 0])
+    expect(Array.from(raster.data.slice((SIZE.height - 1) * SIZE.width * 4 + 8, (SIZE.height - 1) * SIZE.width * 4 + 11))).toEqual([0, 0, 255])
+  })
+})
+
+describe('software depth buffer', () => {
+  const crossing = (): Scene3D => ({
+    id: 'stage',
+    camera: 'front',
+    background: '#000000',
+    materials: { red: { color: '#ff0000', shading: 'unlit' }, blue: { color: '#0000ff', shading: 'unlit', outline: { width: 2, color: '#00ff00' } }, glass: { color: '#ffffff', shading: 'unlit', opacity: 0.5 } },
+    objects: [
+      { id: 'front', kind: 'camera', projection: 'perspective', fov: 60, near: 0.1, far: 100, position: [0, 0, 5] },
+      // A wide slab at the origin and a long bar running through it toward the camera: at the middle the bar is nearer.
+      { id: 'slab', kind: 'mesh', geometry: { type: 'box', size: [3, 1, 0.2] }, material: 'red' },
+      { id: 'bar', kind: 'mesh', geometry: { type: 'box', size: [0.3, 0.3, 6] }, material: 'blue' },
+    ],
+  })
+  const pixel = (data: Uint8ClampedArray, w: number, x: number, y: number) => Array.from(data.slice((y * w + x) * 4, (y * w + x) * 4 + 3))
+
+  it('draws what is nearest at each pixel, inks with a depth test, and is deterministic', () => {
+    const loaded = loadScene3D(crossing())
+    const frame = resolveScene3D(loaded, new Map(), SIZE)
+    const image = rasterizeResolvedScene(frame)
+    const cx = SIZE.width / 2
+    const cy = SIZE.height / 2
+    // The bar's near end wins the middle; the slab shows beside it; nothing is drawn in the corner.
+    expect(pixel(image.data, SIZE.width, cx, cy)).toEqual([0, 0, 255])
+    expect(pixel(image.data, SIZE.width, cx + 60, cy)).toEqual([255, 0, 0])
+    expect(pixel(image.data, SIZE.width, 2, 2)).toEqual([0, 0, 0])
+    expect(image.depth[cy * SIZE.width + cx]).toBeCloseTo(2, 1)
+    expect(image.depth[2 * SIZE.width + 2]).toBe(Infinity)
+    // The bar's ink is green somewhere on its edge, and never over the slab where the slab is nearer… the slab is never nearer here, so just: ink exists.
+    let green = 0
+    for (let i = 0; i < image.data.length; i += 4) if (image.data[i] === 0 && image.data[i + 1] === 255 && image.data[i + 2] === 0) green++
+    expect(green).toBeGreaterThan(20)
+    expect(Buffer.from(rasterizeResolvedScene(frame).data).equals(Buffer.from(image.data))).toBe(true)
+  })
+
+  it('blends see-through meshes over what is behind, keeps layers, and leaves a transparent scene’s canvas under it', () => {
+    const glassy = loadScene3D({ ...crossing(), objects: [...crossing().objects.slice(0, 2), { id: 'pane', kind: 'mesh', geometry: { type: 'box', size: [1, 1, 0.1] }, material: 'glass', position: [0, 0, 1] }] })
+    const image = rasterizeResolvedScene(resolveScene3D(glassy, new Map(), SIZE))
+    // Half white over red: pink.
+    const mid = pixel(image.data, SIZE.width, SIZE.width / 2, SIZE.height / 2)
+    expect(mid[0]).toBe(255)
+    expect(mid[1]).toBeGreaterThan(100)
+    expect(mid[1]).toBeLessThan(160)
+    // A floor on layer -1 that cuts through the bar is still painted under it.
+    const layered = loadScene3D({ ...crossing(), objects: [...crossing().objects, { id: 'floor', kind: 'mesh', layer: -1, geometry: { type: 'box', size: [8, 0.1, 8] }, material: 'red', position: [0, 0, 2] }] })
+    const under = rasterizeResolvedScene(resolveScene3D(layered, new Map(), SIZE))
+    expect(pixel(under.data, SIZE.width, SIZE.width / 2, SIZE.height / 2)).toEqual([0, 0, 255])
+    // Transparent background: the canvas keeps what was drawn before.
+    const canvas = createCanvas(SIZE.width, SIZE.height)
+    const ctx = canvas.getContext('2d') as unknown as CanvasRenderingContext2D
+    ctx.fillStyle = '#ff00ff'
+    ctx.fillRect(0, 0, SIZE.width, SIZE.height)
+    drawScene3D(ctx, loadScene3D({ ...crossing(), background: 'transparent' }), undefined, { ...SIZE, depthBuffer: true })
+    expect(Array.from(ctx.getImageData(2, 2, 1, 1).data.slice(0, 3))).toEqual([255, 0, 255])
+    expect(Array.from(ctx.getImageData(SIZE.width / 2, SIZE.height / 2, 1, 1).data.slice(0, 3))).toEqual([0, 0, 255])
   })
 })
 

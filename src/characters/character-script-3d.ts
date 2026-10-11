@@ -1,3 +1,4 @@
+import { lipSyncOver, type SpokenLine } from './acting/lip-sync'
 import type { EasingType, Keyframe, Track } from '../engine/types'
 import { getEasingFunction } from '../engine/interpolation/easing'
 import { unknownName } from '../engine/authoring/did-you-mean'
@@ -45,13 +46,56 @@ export interface CharacterBeat3D {
   pose?: HumanPoseName | Pose
   /** `gag`: a gag's name (`take`, `doubleTake`, `windUp`…) */
   gag?: HumanGagName
+  /** `say`: the line spoken, lip-synced, with a talking head; the beat lasts as long as the line (or `for`) */
+  say?: string
+  /** `look`: a point [x, z] (at eye height) or [x, y, z] to look at with the head and eyes, or `camera` for the viewer; `toward` as `face` takes it */
+  look?: GroundPoint | [number, number, number] | 'camera'
 }
 
-export const CHARACTER_BEAT_3D_FIELDS = ['do', 'at', 'for', 'to', 'through', 'toward', 'speed', 'pose', 'gag'] as const satisfies ReadonlyArray<keyof CharacterBeat3D>
+/** The talking head nods on this beat, ms. */
+const TALK_BEAT = 520
+
+export const CHARACTER_BEAT_3D_FIELDS = ['do', 'at', 'for', 'to', 'through', 'toward', 'speed', 'pose', 'gag', 'say', 'look'] as const satisfies ReadonlyArray<keyof CharacterBeat3D>
+
+/** How long a line takes to say, ms: by its length, never shorter than a beat. */
+export const speechLength = (text: string): number => Math.max(700, Array.from(text).length * 65)
+
+/** The head's most turn and nod toward something, degrees; the eyes carry the rest. */
+const HEAD_TURN_MOST = 70
+const HEAD_NOD_MOST = 35
+
+/**
+ * Where to turn the head and eyes to look at a point from a place and a
+ * heading: the pose fields `head.turn` (toward the character's left, +),
+ * `head.nod` (down, +), `lookX` and `lookY` (the eyes, −1..1). A point behind
+ * turns the head as far as it goes and the eyes the rest of the way.
+ */
+export function lookFields(from: { x: number; z: number; heading: number; eyeHeight: number }, at: [number, number, number]): Pose {
+  const dx = at[0] - from.x
+  const dy = at[1] - from.eyeHeight
+  const dz = at[2] - from.z
+  // Into the character's own frame: facing +z before its turn, its left is +x.
+  const h = (from.heading * Math.PI) / 180
+  const localX = dx * Math.cos(h) - dz * Math.sin(h)
+  const localZ = dx * Math.sin(h) + dz * Math.cos(h)
+  const yaw = (Math.atan2(localX, localZ) * 180) / Math.PI
+  const level = Math.hypot(localX, localZ)
+  const down = (-Math.atan2(dy, level) * 180) / Math.PI
+  const headTurn = Math.max(-HEAD_TURN_MOST, Math.min(HEAD_TURN_MOST, yaw * 0.75))
+  const headNod = Math.max(-HEAD_NOD_MOST, Math.min(HEAD_NOD_MOST, down * 0.7))
+  return {
+    'head.turn': headTurn,
+    'head.nod': headNod,
+    lookX: Math.max(-1, Math.min(1, (yaw - headTurn) / 45)),
+    lookY: Math.max(-1, Math.min(1, (down - headNod) / 30)),
+  }
+}
 
 export interface CharacterScript3DOptions {
   /** The scene's id: the tracks target `<scene>/<id>` */
   scene: string
+  /** Where the camera is, metres, for `look: 'camera'` (default [0, 1.6, 8]) */
+  camera?: [number, number, number]
   /** Where it was placed, [x, z] metres (its object's position) */
   position?: GroundPoint
   /** Which way it faces at first, degrees (its object's rotation about y; 0 faces +z) */
@@ -92,7 +136,7 @@ const EASE_IN_OUT = 300
 /** Problems in 3D character beats, naming what was probably meant. */
 export function checkCharacterBeats3D(beats: unknown): Array<{ beat: number; message: string }> {
   if (!Array.isArray(beats)) return [{ beat: -1, message: `Beats must be an array of { do: … } objects (got ${typeof beats}).` }]
-  const names = [...GAIT_NAMES, 'face', 'hold', 'pose', 'gag', 'place']
+  const names = [...GAIT_NAMES, 'face', 'hold', 'pose', 'gag', 'place', 'say', 'look']
   const problems: Array<{ beat: number; message: string }> = []
   beats.forEach((beat: unknown, index) => {
     const error = (message: string) => problems.push({ beat: index, message })
@@ -110,6 +154,12 @@ export function checkCharacterBeats3D(beats: unknown): Array<{ beat: number; mes
     }
     if (fields.do === 'place' && !isGroundPoint(fields.to)) error('`place` needs `to`: a point on the ground, [x, z] metres.')
     if (fields.do === 'face' && !(isGroundPoint(fields.toward) || typeof fields.toward === 'number')) error('`face` needs `toward`: a point [x, z] or a heading in degrees.')
+    if (fields.do === 'say' && !(typeof fields.say === 'string' && fields.say.trim().length > 0)) error('`say` needs `say`: the line spoken.')
+    if (fields.do === 'look') {
+      const at = fields.look ?? fields.toward
+      const point = Array.isArray(at) && (at.length === 2 || at.length === 3) && at.every((v) => typeof v === 'number' && Number.isFinite(v))
+      if (!(point || at === 'camera')) error('`look` needs `look`: a point [x, z] or [x, y, z] to look at, or `camera`.')
+    }
     if (fields.do === 'pose' && !(typeof fields.pose === 'object' && fields.pose !== null) && !POSE_NAMES.includes(fields.pose as string)) error(unknownName('pose', fields.pose, POSE_NAMES))
     if (fields.do === 'gag' && !GAG_NAMES.includes(fields.gag as string)) error(unknownName('gag', fields.gag, GAG_NAMES))
   })
@@ -193,6 +243,7 @@ export function characterScript3D(id: string, beats: CharacterBeat3D[], options:
   }
 
   const spans: CharacterScript3DResult['beats'] = []
+  const lines: SpokenLine[] = []
   let time = 0
   for (const beat of beats) {
     const start = beat.at ?? time
@@ -225,13 +276,31 @@ export function characterScript3D(id: string, beats: CharacterBeat3D[], options:
         previous = step
       }
       end = previous.time
+    } else if (beat.do === 'say') {
+      end = start + (beat.for ?? speechLength(beat.say!))
+      lines.push({ text: beat.say!, start, end })
+      // A talking head: small nods and a lifted brow on the beat of the speech, back to rest at the end.
+      const was = { tilt: pose['head.tilt'] ?? 0, left: pose['brow.left'] ?? 0, right: pose['brow.right'] ?? 0 }
+      let i = 0
+      for (let t = start + TALK_BEAT; t < end - TALK_BEAT / 2; t += TALK_BEAT, i++) {
+        const up = i % 2 === 0
+        poseTo(t - TALK_BEAT / 2, t, { 'head.tilt': was.tilt + (up ? 3 : -2), 'brow.left': was.left + (up ? 0.25 : 0), 'brow.right': was.right + (up ? 0.25 : 0) })
+      }
+      if (i > 0) poseTo(end - TALK_BEAT / 2, end, { 'head.tilt': was.tilt, 'brow.left': was.left, 'brow.right': was.right })
+    } else if (beat.do === 'look') {
+      const at = beat.look ?? (beat.toward as GroundPoint | undefined)
+      const eye = height * 0.9
+      const point: [number, number, number] = at === 'camera' ? (options.camera ?? [0, 1.6, 8]) : at!.length === 3 ? (at as [number, number, number]) : [at![0], eye, at![1]]
+      end = start + (beat.for ?? 500)
+      poseTo(start, end, lookFields({ x, z, heading, eyeHeight: eye }, point), 'ease-out')
     }
     spans.push({ do: beat.do, start, end })
     time = end
   }
 
   const target = `${options.scene}/${id}`
-  const tracks: Track[] = [...keys].map(([property, frames]) => ({ id: `${id}-${property}`, target, property, keyframes: tidy(frames) }))
+  let tracks: Track[] = [...keys].map(([property, frames]) => ({ id: `${id}-${property}`, target, property, keyframes: tidy(frames) }))
   if (gaitKeys.length > 0) tracks.push({ id: `${id}-gait`, target, property: 'gait', keyframes: gaitKeys })
+  if (lines.length > 0) tracks = lipSyncOver(target, tracks, lines, { rest: { mouth: options.pose?.mouth ?? HUMAN_REST.mouth ?? 0, mouthWidth: options.pose?.mouthWidth ?? HUMAN_REST.mouthWidth ?? 1 } })
   return { tracks, duration: time, beats: spans, end: { position: [x, z], heading, pose: { ...pose } } }
 }

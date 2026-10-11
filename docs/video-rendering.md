@@ -14,6 +14,7 @@ npx tinyfly video scene.mjs --stills stills/     # one PNG per caption line (els
 npx tinyfly video scene.mjs --stills stills/ --frames 0,79,88   # stills at chosen frames (or --times 0,2640 in ms)
 npx tinyfly video scene.mjs --loop-check         # does it loop? (exit 1 when not)
 npx tinyfly video scene.mjs --scale 0.5 --fps 12 # quick preview
+npx tinyfly video scene.mjs --codec prores       # a ProRes 422 HQ .mov for editing elsewhere
 ```
 
 Runnable scenes are in [`examples/headless-video/`](../examples/headless-video/):
@@ -141,6 +142,38 @@ export default { /* …timeline built from plan… */ audio, captions: plan.cues
 Scene modules may use top-level `await`, or default-export an async function.
 `assembleNarration(plan, clips, sampleRate)` and `encodeWav(samples, sampleRate)`
 are the pure steps underneath, for audio you generate yourself.
+
+### A sound mix
+
+A film's sound is layers: a music bed, the narration, effects at the moments
+things happen, with the music ducked under the voice. `renderMix` decodes
+every file with ffmpeg, mixes them and writes one WAV for the scene's
+`audio`:
+
+```js
+import { renderMix } from '@algorisys/tinyfly/headless'
+
+const audio = await renderMix(
+  [
+    { id: 'bed', file: 'music/bed.mp3', loop: true, gain: 0.6, fadeOut: 1500, duck: { under: 'voice', amount: 0.7 } },
+    { id: 'voice', file: 'build/narration.wav' },
+    { file: 'sfx/tap.wav', at: [1200, 2650, 4100], gain: 0.8 },     // a sound effect at three moments
+    { file: 'sfx/thud.wav', at: landings.map((t) => t + 40) },      // or at every landing a script reports
+  ],
+  { output: 'build/mix.wav', duration: END, baseDir: here }
+)
+export default { /* … */ audio }
+```
+
+Each layer has `start` (ms) or `at` (times for a sound effect), `gain`,
+`fadeIn` and `fadeOut`, `loop` for a bed shorter than the film, and `duck:
+{ under, amount, attack, release }` to make way for another layer while it
+sounds. The whole mix is soft-limited so peaks never clip. `mixAudio(layers,
+{ sampleRate, duration, master })` is the pure step on samples. For cuts and
+dances on the music's beat, `detectTempo(samples, sampleRate)` finds the
+grid; `snapShotsToBeats(shots, grid)` moves each cut to the nearest beat,
+and `danceTracks(target, { bpm: grid.bpm, start: nextBeat(grid, t) })`
+dances to it.
 
 ## Characters
 
@@ -798,6 +831,12 @@ draw(ctx, frame) {
   stay put while the camera moves.
 - `drawingRate: 12` holds the timeline's poses for two frames of 24 fps ("on
   twos"), as hand-drawn animation is timed.
+- `motionBlur: { samples: 4, shutter: 0.5 }` makes each frame the average of
+  four drawings spread over the shutter's open time (half the frame, a 180°
+  shutter): fast moves streak as a camera's do. Deterministic, `samples`
+  times the work.
+- `supersample: 2` draws at twice the size and scales down: smoother edges
+  on thin lines and small text (four times the work).
 
 See [acting.md](acting.md) for camera shots, beat scripts and the rest of the
 cartoon acting tools.
@@ -822,6 +861,7 @@ await renderVideo(scene, {
   output: 'out.mp4',
   baseDir: '.', // relative audio and font paths resolve against this
   scale: 1, crf: 20, preset: 'medium',
+  codec: 'h264', // or 'prores' for a .mov
   onProgress: (done, total) => {},
 })
 await renderStills(scene, { dir: 'stills' })
@@ -878,5 +918,8 @@ room) was ported call for call to Canvas 2D and rendered at 1920×1080, 24 fps,
   rendering) and `ffmpeg`. Rendering defines `globalThis.Path2D` from the canvas
   package when it is missing, because path targets use it.
 - Output is H.264 MP4 (`yuv420p`, odd sizes padded to even), with AAC audio when
-  `audio` is set; video stops at the shorter of picture and sound.
+  `audio` is set; video stops at the shorter of picture and sound. `codec:
+  'prores'` (or `--codec prores`) writes ProRes 422 HQ (10-bit, PCM audio) in
+  a `.mov` for an editor; any size works, 1080p and 4K included; `renderStills`
+  gives a PNG sequence.
 - `image` targets need images loaded with the canvas package's `loadImage`.

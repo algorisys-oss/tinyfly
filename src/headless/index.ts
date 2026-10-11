@@ -11,5 +11,6 @@ export * from './narration-audio'
 export * from './node-audio'
 export * from './loop-check'
 export * from './loop-audio'
+export * from './audio-mix'
 // Caption writers, so a render script can write .srt/.vtt next to its video.
 export { toSRT, toWebVTT, captionCuesFromTimeline, type CaptionCue } from '../engine/export/captions'

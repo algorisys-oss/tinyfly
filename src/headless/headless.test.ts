@@ -187,6 +187,37 @@ describe('FrameRenderer', () => {
     expect(periods).toEqual([800, undefined])
   })
 
+  it('supersamples for smoother edges and blurs motion by averaging sub-frames', () => {
+    // A box moving 100 px over the frame at 10 fps, drawn by the draw hook.
+    const moving = (extra: Partial<VideoScene>): VideoScene => ({
+      width: 200, height: 40, fps: 10, duration: 1000, background: '#000000',
+      draw: (ctx, frame) => { ctx.fillStyle = '#ffffff'; ctx.fillRect((frame.time / 1000) * 1000, 10, 20, 20) },
+      ...extra,
+    })
+    const render = (scene: VideoScene) => {
+      const renderer = new FrameRenderer(scene)
+      const ctx = createCanvas(renderer.width, renderer.height).getContext('2d') as unknown as CanvasRenderingContext2D
+      renderer.render(ctx, 0)
+      return ctx
+    }
+    const sharp = render(moving({}))
+    expect(pixel(sharp, 10, 20)).toEqual([255, 255, 255])
+    expect(pixel(sharp, 40, 20)).toEqual([0, 0, 0])
+    // Half a shutter at 10 fps is 50 ms: the box covers 0..70 px, each part lit for a share of the samples.
+    const blurred = render(moving({ motionBlur: { samples: 5 } }))
+    expect(pixel(blurred, 10, 20)[0]).toBeLessThan(255)
+    expect(pixel(blurred, 10, 20)[0]).toBeGreaterThan(50)
+    expect(pixel(blurred, 50, 20)[0]).toBeGreaterThan(20)
+    expect(pixel(blurred, 50, 20)[0]).toBeLessThan(200)
+    expect(pixel(blurred, 120, 20)).toEqual([0, 0, 0])
+    expect(Buffer.from(render(moving({ motionBlur: { samples: 5 } })).getImageData(0, 0, 200, 40).data).equals(Buffer.from(blurred.getImageData(0, 0, 200, 40).data))).toBe(true)
+    // Supersampled, the output is still the scene's size and the box is where it was.
+    const smooth = render(moving({ supersample: 2 }))
+    expect(pixel(smooth, 10, 20)).toEqual([255, 255, 255])
+    expect(pixel(smooth, 40, 20)).toEqual([0, 0, 0])
+    expect(new FrameRenderer(moving({ supersample: 2 })).width).toBe(200)
+  })
+
   it('counts frames, times and stills', () => {
     const renderer = new FrameRenderer(scene())
     expect(renderer.frameCount).toBe(10)
@@ -228,6 +259,11 @@ describe('ffmpegArgs', () => {
     expect(voiced.join(' ')).toContain('-i - -i n.wav')
     expect(voiced.join(' ')).toContain('-crf 18')
     expect(voiced).toContain('-shortest')
+    const prores = ffmpegArgs({ width: 8, height: 8, fps: 24, output: 'o.mov', audio: 'n.wav', codec: 'prores' })
+    expect(prores.join(' ')).toContain('-c:v prores_ks -profile:v 3')
+    expect(prores.join(' ')).toContain('-c:a pcm_s16le')
+    expect(prores).not.toContain('libx264')
+    expect(prores.at(-1)).toBe('o.mov')
   })
 })
 

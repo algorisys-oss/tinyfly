@@ -352,17 +352,23 @@ export const Scene3DProperties: Component<Props> = (props) => {
       <h4>Scene</h4>
       <div class="property-row">
         <label>Background</label>
-        <input type="color" value={scene().background && scene().background !== 'transparent' ? scene().background : '#1e293b'} onInput={(e) => setScene({ ...scene(), background: e.currentTarget.value })} />
+        <input type="color" value={backgroundColor(scene().background)} onInput={(e) => setScene({ ...scene(), background: e.currentTarget.value })} />
       </div>
       <div class="property-row checkbox-row">
         <label>Fog</label>
         <input
           type="checkbox"
           checked={!!scene().fog}
-          onChange={(e) => setScene({ ...scene(), fog: e.currentTarget.checked ? { color: scene().background ?? '#1e293b', near: 8, far: 20 } : undefined })}
+          onChange={(e) => setScene({ ...scene(), fog: e.currentTarget.checked ? { color: backgroundColor(scene().background), near: 8, far: 20 } : undefined })}
         />
       </div>
       <p class="property-hint">Objects animate by tracks on this element named object.property (box.rotateY). Edit a value, move the playhead, edit again, or key the transform.</p>
     </div>
   )
+}
+
+/** A scene's background as one colour for the picker: a sky gradient shows its bottom. */
+function backgroundColor(background: Scene3D['background']): string {
+  if (!background || background === 'transparent') return '#1e293b'
+  return typeof background === 'string' ? background : background.bottom
 }

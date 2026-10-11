@@ -19,3 +19,6 @@ export { MeshBuilder, meshEdges, type Mesh, type MeshEdge } from './geometry/mes
 export { extrudeMesh, type ExtrudeOptions } from './geometry/extrude'
 export { triangulate, signedArea, pointInPolygon, type Point2 } from './geometry/triangulate'
 export { penroseTriangle3D, type PenroseTriangle3DOptions } from './impossible-3d'
+export { SoftwareRenderer, drawResolvedSceneWithDepth, rasterizeResolvedScene, type RasterImage, type RasterOptions } from './software-renderer'
+export { shotAt, checkShots, snapShotsToBeats, shotTracks, shotMarkers, transitionAt, withActiveCamera, cameraPoseAt, cameraMoveTracks, cameraFollowTracks, cameraHandheldTracks, type Shot, type ShotTransition, type ActiveTransition, type CameraPose, type CameraMoveOptions, type CameraFollowOptions, type HandheldOptions } from './shots'
+export { LIGHTING_PRESETS, lightingPreset, lightingTracks, ground, type LightingMood, type LightingPresetName, type LightingOptions, type LightingTrackOptions, type GroundOptions } from './lighting'

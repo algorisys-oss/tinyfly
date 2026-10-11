@@ -38,7 +38,8 @@ export class WebGL2Renderer {
     const width = gl.drawingBufferWidth
     const height = gl.drawingBufferHeight
     gl.viewport(0, 0, width, height)
-    const background = frame.background && frame.background !== 'transparent' ? parseColor(frame.background) : null
+    // A sky gradient clears to its bottom colour here (the GL path has no gradient backdrop).
+    const background = frame.background && frame.background !== 'transparent' ? parseColor(typeof frame.background === 'string' ? frame.background : frame.background.bottom) : null
     gl.clearColor(background?.[0] ?? 0, background?.[1] ?? 0, background?.[2] ?? 0, background ? 1 : 0)
     gl.clearDepth(1)
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)

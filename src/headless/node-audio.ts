@@ -10,6 +10,7 @@ import {
 } from '../engine/authoring/narration'
 import { assembleNarration, encodeWav } from './narration-audio'
 import { loopSamples } from './loop-audio'
+import { mixAudio, type MixLayer, type MixOptions } from './audio-mix'
 import { ffmpegDecodeArgs, ffmpegExitError, ffmpegStartError } from './ffmpeg-args'
 
 /**
@@ -109,6 +110,38 @@ export async function cutAudioToLoop(file: string, options: CutAudioToLoopOption
   const output = resolve(baseDir, options.output)
   await mkdir(dirname(output), { recursive: true })
   await writeFile(output, encodeWav(looped, sampleRate))
+  return output
+}
+
+export interface MixFileLayer extends Omit<MixLayer, 'samples'> {
+  /** The audio file, relative to `baseDir` (any format ffmpeg reads) */
+  file: string
+}
+
+export interface RenderMixOptions extends Omit<MixOptions, 'sampleRate'> {
+  /** WAV file to write, relative to `baseDir` */
+  output: string
+  baseDir?: string
+  sampleRate?: number
+  ffmpeg?: string
+}
+
+/**
+ * A film's sound: decode a music bed, the narration and sound effects, mix
+ * them (gains, fades, effects at times, the music ducked under the voice)
+ * and write the WAV to pass as the scene's `audio`; ffmpeg muxes it with the
+ * picture. `mixAudio` is the pure step.
+ */
+export async function renderMix(layers: MixFileLayer[], options: RenderMixOptions): Promise<string> {
+  const baseDir = options.baseDir ?? process.cwd()
+  const sampleRate = options.sampleRate ?? 48000
+  const decoded: MixLayer[] = []
+  for (const { file, ...layer } of layers) {
+    decoded.push({ ...layer, samples: await decodeAudio(resolve(baseDir, file), { sampleRate, ffmpeg: options.ffmpeg ?? 'ffmpeg' }) })
+  }
+  const output = resolve(baseDir, options.output)
+  await mkdir(dirname(output), { recursive: true })
+  await writeFile(output, encodeWav(mixAudio(decoded, { sampleRate, duration: options.duration, master: options.master }), sampleRate))
   return output
 }
 

@@ -67,6 +67,8 @@ export interface DrawTriangle {
   screen: [ScreenPoint, ScreenPoint, ScreenPoint]
   /** Distance in front of the camera, metres: what the draw order sorts by */
   depth: number
+  /** Each screen corner's distance in front of the camera, metres (a depth buffer interpolates these) */
+  depths: [number, number, number]
   /** World centre of the face (lighting, fog) */
   centroid: Vec3
   /** World face normal, unit, toward the viewer */
@@ -80,6 +82,8 @@ export interface DrawTriangle {
   opacity: number
   /** Edges to ink on top of this triangle (silhouettes, creases, open rims), when it has an `ink` */
   outline: Array<[ScreenPoint, ScreenPoint]>
+  /** The ink edges' end depths, metres, in `outline`'s order */
+  outlineDepths: Array<[number, number]>
   /** The outline's look: the material's, with the object's `outlineWidth` and `outlineColor` over it */
   ink?: { width: number; color: string }
 }
@@ -113,7 +117,7 @@ export interface ResolvedScene3D {
   height: number
   /** ms: the moment drawn (for looks that move with time, such as a boiling pencil line) */
   time: number
-  background?: string
+  background?: Scene3D['background']
   fog?: Scene3D['fog']
   camera: ResolvedCamera
   lights: ResolvedLight[]
@@ -228,6 +232,21 @@ export interface ResolveOptions {
   nearFade?: { from: number; to: number }
 }
 
+/** A flat ellipse on the ground, facing up: a blob shadow. */
+function discMesh(centre: Vec3, rx: number, rz: number, segments = 16): PreparedMesh {
+  const positions: number[] = [centre[0], centre[1], centre[2]]
+  const normals: number[] = [0, 1, 0]
+  const indices: number[] = []
+  for (let i = 0; i < segments; i++) {
+    const a = (i / segments) * Math.PI * 2
+    positions.push(centre[0] + Math.cos(a) * rx, centre[1], centre[2] + Math.sin(a) * rz)
+    normals.push(0, 1, 0)
+  }
+  for (let i = 0; i < segments; i++) indices.push(0, 1 + ((i + 1) % segments), 1 + i)
+  const faceEdges: PreparedMesh['faceEdges'] = Array.from({ length: segments }, () => [])
+  return { positions, normals, indices, faceEdges }
+}
+
 /** The outline an object draws: the material's, with the object's own `outlineWidth` and `outlineColor` over it. */
 function inkOf(material: Material3D, own: ReadonlyMap<string, AnimatableValue>): { width: number; color: string } | undefined {
   const width = num(own.get('outlineWidth')) ?? material.outline?.width
@@ -312,6 +331,40 @@ export function resolveScene3D(loaded: LoadedScene3D, values: SceneValues = new 
       color: typeof color === 'string' ? color : undefined,
       opacity,
       ink,
+      nearFade,
+    }))
+  })
+
+  // Blob shadows: a dark see-through disc on the ground under each mesh that asks for one, painted before the mesh.
+  scene.objects.forEach((object, objectIndex) => {
+    if (object.kind !== 'mesh' || !object.shadow || !visible.get(object.id)) return
+    const mesh = loaded.meshes.get(object.id)
+    if (!mesh) return
+    const own = valuesOf(object.id)
+    if ((num(own.get('opacity')) ?? 1) <= 0) return
+    const world = worlds.get(object.id)!
+    const shadow = object.shadow === true ? {} : object.shadow
+    const ground = shadow.ground ?? scene.ground ?? 0
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, minZ = Infinity, maxZ = -Infinity
+    for (let i = 0; i < mesh.positions.length; i += 3) {
+      const p = mat4.transformPoint(world, [mesh.positions[i], mesh.positions[i + 1], mesh.positions[i + 2]])
+      minX = Math.min(minX, p[0]); maxX = Math.max(maxX, p[0]); minY = Math.min(minY, p[1]); minZ = Math.min(minZ, p[2]); maxZ = Math.max(maxZ, p[2])
+    }
+    const size = Math.max(maxX - minX, maxZ - minZ)
+    if (!(size > 0)) return
+    // Higher up, the shadow spreads a little and fades.
+    const height = Math.max(0, minY - ground)
+    const lift = Math.min(1, height / (2 * size))
+    const opacity = (shadow.opacity ?? 0.22) * (1 - lift * 0.8)
+    if (opacity <= 0.01) return
+    const spread = 1.1 + lift * 0.4
+    const disc = discMesh([(minX + maxX) / 2, ground + 0.002, (minZ + maxZ) / 2], ((maxX - minX) / 2) * spread, ((maxZ - minZ) / 2) * spread)
+    const material: Material3D = { color: '#000000', shading: 'unlit', opacity }
+    triangles.push(...meshTriangles(disc, mat4.identity(), mat4.identity(), camera, toScreen, material, {
+      objectId: `${object.id}:shadow`,
+      objectIndex: objectIndex - 0.5,
+      layer: object.layer ?? 0,
+      opacity,
       nearFade,
     }))
   })
@@ -467,12 +520,16 @@ function meshTriangles(
 
     // Ink: open rims, silhouettes (the face across turns away) and creases, each edge once.
     const outline: Array<[ScreenPoint, ScreenPoint]> = []
+    const outlineDepths: Array<[number, number]> = []
     if (owner.ink && front) {
       for (const edge of mesh.faceEdges[f]) {
         const across = edge.across
         const silhouette = across === -1 || !facing[across]
         const crease = material.creases !== false && !silhouette && f < across && vec3.dot(faceNormals[f], faceNormals[across]) < CREASE_COS
-        if ((silhouette || crease) && inFront(edge.a) && inFront(edge.b)) outline.push([toScreen(viewPoints[edge.a]), toScreen(viewPoints[edge.b])])
+        if ((silhouette || crease) && inFront(edge.a) && inFront(edge.b)) {
+          outline.push([toScreen(viewPoints[edge.a]), toScreen(viewPoints[edge.b])])
+          outlineDepths.push([-viewPoints[edge.a][2], -viewPoints[edge.b][2]])
+        }
       }
     }
 
@@ -488,6 +545,7 @@ function meshTriangles(
         part: k - 1,
         screen: [screen[0], screen[k], screen[k + 1]],
         depth,
+        depths: [-clipped[0][2], -clipped[k][2], -clipped[k + 1][2]],
         centroid,
         normal,
         vertexNormals,
@@ -495,6 +553,7 @@ function meshTriangles(
         color: owner.color ?? mesh.faceColors?.[f],
         opacity: faded,
         outline: k === 1 ? outline : [],
+        outlineDepths: k === 1 ? outlineDepths : [],
         ink: owner.ink,
       })
     }

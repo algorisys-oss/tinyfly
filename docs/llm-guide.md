@@ -48,8 +48,14 @@ loaded with `kinds: [characterObjects, propObjects]`; its controls are tracks
 on the object. Script it in world metres with `propScript3D` (`to: [x, z]`,
 `through: [[x, z], …]`, `face`), not with `propScript`, whose `to` is screen px.
 Characters in a 3D scene walk the same way with `characterScript3D`
-(`{ do: 'walk', to: [x, z] }`, `pose`, `gag`, `face`, `place`); a rider is
-seated with `propRide3D` and spliced into its script with `spliceTracks`. See `docs/props.md`.
+(`{ do: 'walk', to: [x, z] }`, `pose`, `gag`, `face`, `place`, `say` with a
+line, `look` at a point or `'camera'`); a rider is seated with `propRide3D`
+and spliced into its script with `spliceTracks`. A film from a 3D scene is a
+shot list (`shotTracks`, `transitionAt` + `drawTransition`), camera moves as
+tracks (`cameraMoveTracks`, `cameraHandheldTracks`), a mood from
+`lightingPreset('dusk')` with `ground()` and `shadow: true` on meshes, and
+sound from `renderMix`; draw it with `depthBuffer: true` when shapes cross.
+See `docs/props.md` and `docs/scene-3d.md`.
 
 ## Characters with a look
 

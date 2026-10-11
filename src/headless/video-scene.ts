@@ -68,6 +68,15 @@ export interface VideoScene {
    * See `applyBloom`.
    */
   bloom?: boolean | BloomOptions
+  /**
+   * Motion blur by sub-frame sampling: each frame is the average of `samples`
+   * drawings spread over the shutter's open time (`shutter` as a share of the
+   * frame, default 0.5: a 180° shutter). Deterministic; `samples` times the
+   * work.
+   */
+  motionBlur?: { samples: number; shutter?: number }
+  /** Anti-aliasing by supersampling: draw at this many times the size and scale down (2 is plenty; 4× the work) */
+  supersample?: number
   /** Soundtrack to mux into the video, relative to the scene file */
   audio?: string
   /** Font files to register before drawing, by family, relative to the scene file */

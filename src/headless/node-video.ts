@@ -54,6 +54,8 @@ export interface RenderVideoOptions extends HeadlessOptions {
   preset?: string
   /** ffmpeg executable (default `ffmpeg`) */
   ffmpeg?: string
+  /** `h264` (default) or `prores` (a .mov for editing) */
+  codec?: 'h264' | 'prores'
   /** Called after each frame */
   onProgress?: (done: number, total: number) => void
 }
@@ -111,6 +113,7 @@ export async function renderVideo(scene: VideoScene, options: RenderVideoOptions
       audio: audioFile ? resolve(baseDir, audioFile) : undefined,
       crf: options.crf,
       preset: options.preset,
+      codec: options.codec,
     })
   )
 

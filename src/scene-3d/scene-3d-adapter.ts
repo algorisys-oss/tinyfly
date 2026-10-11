@@ -2,6 +2,7 @@ import type { AnimationState } from '../engine/types'
 import type { LoadedScene3D } from './load-scene'
 import { resolveScene3D, type SceneValues } from './resolve-scene'
 import { drawResolvedScene, type Renderer3D } from './canvas-2d-renderer'
+import { drawResolvedSceneWithDepth } from './software-renderer'
 
 /**
  * Plays 3D scenes from a timeline, like the other adapters: `applyState`
@@ -75,11 +76,15 @@ export function drawScene3D(
     time?: number
     /** A looping video's period (a frame's `period`): trails wrap at it */
     period?: number
+    /** Draw through a software depth buffer (shapes that cut through each other draw right; hard edges) instead of back to front */
+    depthBuffer?: boolean
     valuesAt?: (time: number) => SceneValues
     stateAt?: (time: number) => { values: SceneValues }
   }
 ): void {
   const stateAt = size.stateAt
   const valuesAt = size.valuesAt ?? (stateAt && ((time: number) => stateAt(time).values))
-  drawResolvedScene(ctx, resolveScene3D(scene, values ?? new Map(), { width: size.width, height: size.height, time: size.time, period: size.period, valuesAt }))
+  const frame = resolveScene3D(scene, values ?? new Map(), { width: size.width, height: size.height, time: size.time, period: size.period, valuesAt })
+  if (size.depthBuffer) drawResolvedSceneWithDepth(ctx, frame)
+  else drawResolvedScene(ctx, frame)
 }

@@ -2292,36 +2292,57 @@ frame is rendered from data. Builds on Phase 31 (narration, voice audio, caption
 film re-renders identically, frames in any order.
 
 ### 34A — Shots and cameras
-- [ ] Several cameras per scene; `activeCamera` as a stepped track, so a cut is one keyframe
-- [ ] Shots as data: `{ id, start, end, camera, label }`, a shot list the editor and CLI read
-- [ ] Transitions between shots: cut, crossfade, dip to black, wipe (pure, frame-addressable)
-- [ ] Camera moves as presets that write tracks: orbit, dolly, crane, pan / tilt, follow, `lookAt`
-      a target, focal-length zoom, a deterministic (seeded) handheld shake
-- [ ] Aspect ratios and safe areas: 16:9, 2.39:1 letterbox, 9:16 vertical, 1:1
+- [x] Several cameras per scene; `activeCamera` as a stepped track, so a cut is one keyframe (Phase 33)
+- [x] Shots as data (`scene-3d/shots.ts`): `Shot { id, start, end, camera, label, transition }`,
+      `shotTracks` (the activeCamera track), `shotMarkers`, `shotAt`, `checkShots`; the editor's shot
+      strip is 34F
+- [x] Transitions between shots: cut, crossfade, dip to black, wipe (`transitionAt` is pure and
+      frame-addressable; `drawTransition` draws both shots blended; `withActiveCamera`)
+- [x] Camera moves as presets that write tracks: `cameraMoveTracks` (orbit, dolly, crane, pan / tilt,
+      zoom by `fov`, any mix, eased), `cameraFollowTracks` (a subject with an offset and a lag),
+      `cameraHandheldTracks` (a seeded shake onto a move or a still camera)
+- [x] Aspect ratios and safe areas (`engine/authoring/framing.ts`, `adapters/canvas/framing.ts`):
+      `FRAME_ASPECTS` (16:9, 2.39:1, 4:3, 1:1, 9:16, 4:5), `frameRect`, `frameSize`, `safeAreas`,
+      `drawLetterbox`, `drawSafeAreas`; `examples/headless-video/film-shots.mjs`
 
 ### 34B — Sets, props and light for mood
-- [ ] Ground, sky / gradient backdrop, simple set pieces and props as reusable scene objects
-- [ ] Ground and contact shadows (blob first, then projected); fog for depth
-- [ ] Lighting presets (day, dusk, night, stage spotlight) that write light tracks
+- [x] Ground (`ground()`: a floor on layer −1 with its material), a sky as a gradient background
+      (`background: { top, bottom }` in the Canvas 2D and software renderers; the GL path clears to
+      the bottom colour), set pieces from the props catalog by preset name
+- [x] Blob shadows under meshes (`shadow: true | { opacity, ground }`, the scene's `ground`): a
+      see-through disc painted before the mesh, spreading and fading as it lifts; fog exists
+      (projected shadows: still to do)
+- [x] Lighting presets (`scene-3d/lighting.ts`: day, dusk, night, stage spotlight) with the same
+      light ids, `lightingPreset(name)` for the lights, sky and fog, `lightingTracks(from, to)` for a
+      change of mood as tracks; a dusk golden
 
 ### 34C — Characters acting in 3D
-- [ ] Walk along a 3D path with feet planted on the ground (stride from speed, as `strideLength`)
-- [ ] Head and eyes `lookAt` another character or the camera
-- [ ] Lip sync from narration: mouth shapes timed from each line (phoneme-ish from text first,
-      from audio energy later), on v2 characters
-- [ ] Dances, glides, flips and the moonwalk from Phase 32 placed in the world (travel along the
-      character's facing), several characters in one scene, staging so they do not overlap
+- [x] Walk along a 3D path with feet planted on the ground (`characterScript3D`: `to` / `through`,
+      the gait's phase keyed with the distance; Phase 33)
+- [x] Head and eyes look at a point, another character or the camera: the `look` beat (`lookFields`),
+      `characterLookAtTracks` over moving targets (`objectPositionAt`)
+- [x] Lip sync from narration on v2 characters in 3D: the `say` beat (`lipSyncOver` from the text, a
+      talking head, `speechLength`); from audio energy: later
+- [x] Several characters in one scene without overlap: `stageSpots` (line, arc, circle, cluster);
+      dances, glides and flips in the world exist (Phase 33: `characterObjects` dance)
 
 ### 34D — Sound
-- [ ] A mix: music bed, narration, sound effects at times or on events (taps, landings)
-- [ ] Ducking the music under narration; fades; the mix rendered with the video by ffmpeg
-- [ ] Beat grid from the music drives dances and cut timing (reuse `detectTempo`, `BeatGrid`)
+- [x] A mix (`headless/audio-mix.ts`: `mixAudio`, pure; `renderMix` in Node decodes files and writes
+      the WAV): a music bed (looped), narration, sound effects at times (`at: [...]`, from a script's
+      contacts), gains, fades, soft-limited
+- [x] Ducking the music under narration (`duck: { under, amount, attack, release }`); fades; the mix
+      is the scene's `audio`, muxed by ffmpeg as before
+- [x] Beat grid from the music drives cut timing (`snapShotsToBeats(shots, grid)` with `detectTempo`)
+      and dances (`danceTracks` takes `bpm` and a `start` on a beat)
 
 ### 34E — Rendering a film
-- [ ] Motion blur by deterministic sub-frame sampling; anti-aliasing (supersampling)
+- [x] Motion blur by deterministic sub-frame sampling (`motionBlur: { samples, shutter }`: the frame
+      is the average of drawings across the shutter's time); anti-aliasing by supersampling
+      (`supersample: 2`); both in `FrameRenderer`
 - [ ] Parallel rendering across worker threads (Phase 31's "next"), chunked and resumable, with a
       frame cache so changing one shot re-renders only that shot
-- [ ] Output: 1080p and 4K H.264, ProRes / PNG sequence for editing elsewhere, SRT / VTT (exists)
+- [x] Output: any size (1080p, 4K) H.264; ProRes 422 HQ `.mov` (`codec: 'prores'`, `--codec prores`);
+      PNG sequence (`renderStills`); SRT / VTT (exists)
 - [ ] Headless WebGL2 (Chromium) for heavy scenes, Canvas 2D stays the reference renderer
 
 ### 34F — Editor
@@ -2425,8 +2446,10 @@ triangles) and "Droste Head" (a cartoon head whose pupil holds the same head, fo
 - [x] Lines, polylines and trails in 3D, depth-sorted with meshes (grids, comet trails, dust
       streaks), near-clipped: `line` and `trail` scene objects, one drawable per segment, fog,
       animatable `color` / `width` / `opacity` / `length`, `valuesAt` for trails (WebGL2: on the overlay)
-- [ ] A depth buffer for headless video: a software z-buffer in the Canvas 2D path, or WebGL2 through
-      a headless GL
+- [x] A depth buffer for headless video: a software z-buffer in the Canvas 2D path
+      (`scene-3d/software-renderer.ts`: `rasterizeResolvedScene` with 1/z interpolation, see-through
+      meshes blended after the opaque ones, ink depth-tested with a bias, layers clearing the depth,
+      drawables on top; `drawScene3D(…, { depthBuffer: true })`, `SoftwareRenderer`; a golden)
 - [x] Camera `up` / `roll` alongside `lookAt` (`roll` is a track too; `rollView`); a near-camera fade
       (`nearFade: { from, to }` on the scene or `resolveScene3D` options) so geometry turns to glass
       at the lens

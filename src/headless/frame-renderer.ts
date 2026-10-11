@@ -1,6 +1,6 @@
 import type { Timeline } from '../engine/core/timeline'
 import { deserializeTimeline } from '../engine/serialization'
-import { CanvasAdapter, applyBloom, applyCamera, cameraFromValues } from '../adapters/canvas'
+import { CanvasAdapter, applyBloom, applyCamera, cameraFromValues, canvasLike } from '../adapters/canvas'
 import type { DrawFunction, FrameInfo, VideoScene } from './video-scene'
 import { DEFAULT_FPS } from './video-scene'
 import { heldTime } from '../engine/core/clock'
@@ -76,8 +76,54 @@ export class FrameRenderer {
     })
   }
 
-  /** Clear the context and draw the scene at `time` ms. */
+  /**
+   * Clear the context and draw the scene at `time` ms. With `supersample` the
+   * frame is drawn larger and scaled down; with `motionBlur` it is the average
+   * of several drawings across the shutter's time.
+   */
   render(ctx: CanvasRenderingContext2D, time: number, index = 0): void {
+    const super_ = Math.max(1, Math.round(this.scene.supersample ?? 1))
+    const blur = this.scene.motionBlur
+    const samples = blur ? Math.max(1, Math.round(blur.samples)) : 1
+    if (super_ === 1 && samples === 1) {
+      this.paint(ctx, time, index, this.scale)
+      return
+    }
+    const W = this.width
+    const H = this.height
+    const big = canvasLike(ctx, W * super_, H * super_)
+    const bctx = big?.getContext('2d') as CanvasRenderingContext2D | null | undefined
+    if (!big || !bctx) {
+      this.paint(ctx, time, index, this.scale)
+      return
+    }
+    const target = samples > 1 ? canvasLike(ctx, W * super_, H * super_) : null
+    const tctx = target?.getContext('2d') as CanvasRenderingContext2D | null | undefined
+    if (samples > 1 && target && tctx) {
+      // The shutter opens at the frame's time and stays open a share of the frame: average the drawings across it.
+      const open = ((blur!.shutter ?? 0.5) * 1000) / this.fps
+      tctx.setTransform(1, 0, 0, 1, 0, 0)
+      tctx.clearRect(0, 0, W * super_, H * super_)
+      for (let k = 0; k < samples; k++) {
+        this.paint(bctx, time + (open * k) / samples, index, this.scale * super_)
+        tctx.globalAlpha = 1 / (k + 1)
+        tctx.drawImage(big as unknown as CanvasImageSource, 0, 0)
+      }
+      tctx.globalAlpha = 1
+    } else {
+      this.paint(bctx, time, index, this.scale * super_)
+    }
+    const source = samples > 1 && target ? target : big
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
+    ctx.clearRect(0, 0, W, H)
+    ctx.save()
+    ctx.imageSmoothingEnabled = true
+    ctx.drawImage(source as unknown as CanvasImageSource, 0, 0, W * super_, H * super_, 0, 0, W, H)
+    ctx.restore()
+  }
+
+  /** One drawing of the scene at `time` on a context, at an output scale. */
+  private paint(ctx: CanvasRenderingContext2D, time: number, index: number, scale: number): void {
     // The timeline is never played here, so its own clock stays at 0: stamp
     // the state with the frame's time, which custom targets draw at.
     // On twos (or threes), the animation holds each drawing for several frames.
@@ -85,10 +131,12 @@ export class FrameRenderer {
     const animated = heldTime(time, drawingRate)
     const timelineState = this.timeline?.getStateAtTime(animated)
     const state = timelineState && { ...timelineState, currentTime: animated }
+    const W = Math.round(this.scene.width * scale)
+    const H = Math.round(this.scene.height * scale)
     ctx.setTransform(1, 0, 0, 1, 0, 0)
-    ctx.clearRect(0, 0, this.width, this.height)
+    ctx.clearRect(0, 0, W, H)
     ctx.save()
-    ctx.scale(this.scale, this.scale)
+    ctx.scale(scale, scale)
     const timeline = this.timeline
     const stateAt = timeline && ((at: number) => timeline.getStateAtTime(heldTime(at, drawingRate)))
     const frame: FrameInfo = { index, time, state, stateAt, width: this.scene.width, height: this.scene.height }
@@ -112,14 +160,14 @@ export class FrameRenderer {
     if (this.scene.overlay) {
       // Screen space: the output scale, but not the camera.
       ctx.save()
-      ctx.scale(this.scale, this.scale)
+      ctx.scale(scale, scale)
       this.drawIsolated(ctx, this.scene.overlay, frame)
       ctx.restore()
     }
     if (this.scene.bloom) {
       // Over the finished frame, in output pixels: a radius in scene px grows with the scale.
       const options = this.scene.bloom === true ? {} : this.scene.bloom
-      applyBloom(ctx, options.radius !== undefined ? { ...options, radius: options.radius * this.scale } : options)
+      applyBloom(ctx, options.radius !== undefined ? { ...options, radius: options.radius * scale } : options)
     }
   }
 

@@ -12,7 +12,8 @@ export { stickToHuman } from './stick-to-human'
 export { skeletonInView, solvePlanSpace, stagePlanSpace, type ViewProjection, type PlanSpace, type StagedSpace } from './rig/skeleton'
 // Characters in 3D scenes (@algorisys/tinyfly/scene-3d): loadScene3D(scene, { kinds: [characterObjects] }).
 export { characterObjects } from './scene-objects'
-export { characterScript3D, checkCharacterBeats3D, CHARACTER_GAIT_SPEEDS, CHARACTER_BEAT_3D_FIELDS, type CharacterBeat3D, type CharacterScript3DOptions, type CharacterScript3DResult } from './character-script-3d'
+export { characterScript3D, checkCharacterBeats3D, lookFields, speechLength, CHARACTER_GAIT_SPEEDS, CHARACTER_BEAT_3D_FIELDS, type CharacterBeat3D, type CharacterScript3DOptions, type CharacterScript3DResult } from './character-script-3d'
+export { characterLookAtTracks, objectPositionAt, stageSpots, type LookAtTracksOptions, type StageSpotsOptions } from './staging-3d'
 export { type GroundPoint } from './ground-path'
 export * from '../adapters/canvas/sketch'
 // The 2D camera, for scenes that film characters (applyCamera, cameraPoint, cameraFromValues).

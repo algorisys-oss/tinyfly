@@ -27,7 +27,7 @@
  *       JavaScript (RSS, email, print, previews).
  *
  *   tinyfly video <scene.mjs> [-o <out.mp4>] [--stills <dir>] [--frames <i,j,…> | --times <ms,ms,…>]
- *                 [--loop-check] [--scale <n>] [--fps <n>] [--crf <n>] [--no-audio] [--srt <file>] [--vtt <file>]
+ *                 [--loop-check] [--scale <n>] [--fps <n>] [--crf <n>] [--codec h264|prores] [--no-audio] [--srt <file>] [--vtt <file>]
  *       Render a scene module to an MP4 without a browser. The module's default
  *       export is a VideoScene (or a function returning one): a timeline and
  *       canvas targets, a draw(ctx, frame) function, or both. --stills writes
@@ -86,7 +86,7 @@ const usage = () => {
       '  tinyfly validate <timeline.json> [<timeline.json> …] [--markup <file>]\n' +
       '  tinyfly render <timeline.json> <markup file> [--at start|end|<ms>|<marker id>]\n' +
       '  tinyfly video <scene.mjs> [-o <out.mp4>] [--stills <dir>] [--frames <i,j,…> | --times <ms,…>] [--loop-check]\n' +
-      '                [--scale <n>] [--fps <n>] [--crf <n>] [--no-audio] [--srt <file>] [--vtt <file>]'
+      '                [--scale <n>] [--fps <n>] [--crf <n>] [--codec h264|prores] [--no-audio] [--srt <file>] [--vtt <file>]'
   )
   process.exit(2)
 }
@@ -162,6 +162,11 @@ async function video() {
   const scale = numberFlag('--scale')
   const fps = numberFlag('--fps')
   const crf = numberFlag('--crf')
+  const codec = flag('--codec')
+  if (codec && codec !== 'h264' && codec !== 'prores') {
+    console.error('tinyfly: --codec is h264 or prores')
+    process.exit(2)
+  }
   const silent = has('--no-audio')
   const loopCheck = has('--loop-check')
   const framesList = listFlag('--frames')
@@ -214,7 +219,7 @@ async function video() {
       console.error(`stills: ${files.length} PNG(s) in ${stillsDir}`)
       return
     }
-    const out = output ?? join(baseDir, `${basename(scenePath, extname(scenePath))}.mp4`)
+    const out = output ?? join(baseDir, `${basename(scenePath, extname(scenePath))}.${codec === 'prores' ? 'mov' : 'mp4'}`)
     let lastPercent = -1
     const started = Date.now()
     const result = await headless.renderVideo(scene, {
@@ -223,6 +228,7 @@ async function video() {
       scale,
       fps,
       crf,
+      codec,
       audio: silent ? false : undefined,
       onProgress: (done, total) => {
         const percent = Math.floor((done / total) * 20) * 5

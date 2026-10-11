@@ -72,7 +72,10 @@ names.
   `style: 'stick'` draws props as line art. In a 3D scene, place props with
   `rotation: [0, deg, 0]` (`rotateY` is a track) and script them with
   `propScript3D` (`to: [x, z]` metres), not `propScript` (screen px);
-  characters there with `characterScript3D`, riders with `propRide3D`.
+  characters there with `characterScript3D` (`say`, `look` too), riders with
+  `propRide3D`. A film: `shotTracks` + `transitionAt` / `drawTransition`,
+  `cameraMoveTracks`, `lightingPreset`, `ground`, `shadow: true`, `renderMix`;
+  `depthBuffer: true` when shapes cut through each other.
 - Give a v2 `character()` its look as options, not drawing code: `build`,
   `hair` (`'bob'` or `{ style, color, length }`), `facialHair`, `glasses`,
   `hat`, `ears: true`, `face: { teeth, tongue }`, `feet: 'flat' | 'pointed' |

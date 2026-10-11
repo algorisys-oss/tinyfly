@@ -95,8 +95,11 @@ for a neon glow: `{ color: '#000000', emissive: '#ff2bd6', shading: 'unlit' }`.
 `roughness` and `metalness` are for the realistic look (three.js, a later
 milestone); the stylized renderers ignore them, so one material serves both.
 
-The scene can have `background` and `fog: { color, near, far }` (metres from
-the camera). A scene with no lights gets a soft default (ambient plus a key
+The scene can have `background` (a colour, or a sky as a vertical gradient
+`{ top, bottom }`), `fog: { color, near, far }` (metres from the camera) and
+`ground` (the height blob shadows lie at, default 0). A mesh with `shadow:
+true` (or `{ opacity, ground }`) gets a soft blob shadow on the ground under
+it, which spreads and fades as the mesh lifts off. A scene with no lights gets a soft default (ambient plus a key
 light from upper right). Outlines fade into the fog too. `nearFade: { from, to }` fades geometry
 nearer the camera than `to` metres, gone at `from`, so a dive passes through
 things as if they were glass (also an option of `resolveScene3D`).
@@ -128,6 +131,85 @@ so instead of picking a winner.
 **Orbiting** is a rotation, not a path: put the camera on a `group` and turn
 the group. `orbitPosition(target, yaw, pitch, distance)` and
 `dollyPosition(eye, target, amount)` place cameras for keyframes.
+
+## Shots and cameras
+
+A film is a shot list, as data, over the same scene and timeline:
+
+```js
+import { shotTracks, shotMarkers, transitionAt, withActiveCamera, cameraMoveTracks, cameraHandheldTracks } from '@algorisys/tinyfly/scene-3d'
+import { drawTransition, drawLetterbox } from '@algorisys/tinyfly/adapters'
+
+const shots = [
+  { id: 'establish', start: 0, end: 4000, camera: 'wide', label: 'Dolly in' },
+  { id: 'orbit', start: 4000, end: 7500, camera: 'orbiter', transition: { kind: 'crossfade', duration: 700 } },
+  { id: 'close', start: 7500, end: 10000, camera: 'close', transition: { kind: 'dipToBlack', duration: 600 } },
+]
+const tracks = [
+  ...shotTracks(shots, 'set'),                                      // the activeCamera track: a cut is one keyframe
+  ...cameraMoveTracks({ scene: 'set', camera: 'wide', start: 0, end: 4000,
+    from: { target: [0, 0.8, 0], yaw: 20, pitch: 18, distance: 11 }, to: { distance: 7 } }),   // a dolly
+  ...cameraHandheldTracks([], { scene: 'set', camera: 'close', start: 7500, end: 10000,
+    base: { position: [1.2, 1.4, 3.6], lookAt: [0, 0.75, 1.3] }, seed: 'close' }),
+]
+```
+
+- **Shots** are `{ id, start, end, camera, label?, transition? }`;
+  `checkShots` names overlaps, bad ends and a transition on the first shot;
+  `shotAt(shots, time)` is the shot playing; `shotMarkers` gives the
+  timeline's markers (stills and captions step through them).
+- **Transitions** (`cut`, `crossfade`, `dipToBlack`, `wipe` with a
+  `direction`) start at the shot's start and last `duration` ms. Any frame can
+  ask `transitionAt(shots, time)` which two shots to draw and how far along
+  (0..1); `drawTransition(ctx, transition, { width, height, draw(ctx,
+  cameraId) })` draws both and blends them (a crossfade mixes, a dip covers
+  the cut, a wipe sweeps the new shot in), with `withActiveCamera(values,
+  sceneId, cameraId)` to draw the shot going out. Pure and frame-addressable:
+  the film renders the same in any order.
+- **Camera moves** are presets that write `position`, `lookAt` (and `fov`)
+  tracks on the camera: `cameraMoveTracks({ from, to, easing, every })` with
+  poses as an orbit round a target (`yaw`, `pitch`, `distance`), or a fixed
+  `position` with a moving `lookAt`, or a `fov`: change `yaw` for an orbit,
+  `distance` for a dolly, `pitch` and `distance` for a crane, `lookAt` for a
+  pan or tilt, `fov` for a zoom, or any mix. `cameraFollowTracks({ subjectAt,
+  offset, lag })` keeps a camera on a moving subject. `cameraHandheldTracks(
+  tracks, { amount, aim, rate, seed })` adds a deterministic handheld shake
+  onto a move's tracks or a still camera's `base`.
+- **Aspect and safe areas**: `drawLetterbox(ctx, canvas, '2.39:1')` paints
+  the bars (in a video's `overlay`), `frameRect`, `frameSize` and `safeAreas`
+  are the geometry, `drawSafeAreas` draws the action and title guides for
+  stills. `FRAME_ASPECTS` has 16:9, 2.39:1, 4:3, 1:1, 9:16 and 4:5.
+
+`examples/headless-video/film-shots.mjs` is a three-shot film with a dolly, a
+crossfade into an orbit, a dip to black into a handheld close-up, letterboxed.
+
+## Sets and light for mood
+
+A set is objects like any other; what sets the mood is its light, its sky and
+its fog, and those come as presets:
+
+```js
+import { lightingPreset, lightingTracks, ground } from '@algorisys/tinyfly/scene-3d'
+
+const light = lightingPreset('dusk')       // or 'day', 'night', 'stage'
+const floor = ground({ size: 20 })
+const scene = {
+  id: 'set', camera: 'cam', background: light.background, fog: light.fog,
+  materials: { ...floor.materials, red: { color: '#ef4444', shading: 'toon' } },
+  objects: [camera, ...light.objects, ...floor.objects, { id: 'box', kind: 'mesh', geometry: { type: 'box', size: [1, 1, 1] }, material: 'red', position: [0, 0.5, 0], shadow: true }],
+}
+// Day turning to night over four seconds: tracks on the same lights.
+const tracks = lightingTracks('day', 'night', { scene: 'set', start: 0, end: 4000 })
+```
+
+Every preset uses the same light ids (`key`, `fill`, `sky`, and `spot` on
+the stage), so `lightingTracks(from, to, { scene, start, end })` keys each
+light's `color`, `intensity`, `position` and `target` from one mood to the
+other (a spot only one mood has fades in or out); the sky and fog are the
+scene's to set per shot. `ground({ size, color, segments, y })` is a floor
+on layer −1 with its material; props from the catalog (trees, houses,
+furniture) are the set pieces, placed by preset name (see Props). Blob
+shadows under meshes are `shadow: true`; projected shadows are planned.
 
 ## Lines and trails
 
@@ -174,7 +256,7 @@ front of the meshes. For trails on a plain 2D canvas, see `drawTrail` in
 loadScene3D(json): LoadedScene3D            // validates and builds meshes once (throws with every problem)
 validateScene3D(json, tracks?): string[]    // problems as sentences, empty when fine
 resolveScene3D(loaded, values, { width, height, time?, valuesAt? }): ResolvedScene3D   // pure: matrices, camera, lights, sorted triangles
-drawScene3D(ctx, loaded, values, { width, height, time?, valuesAt? | stateAt? })      // resolve and draw, in one call
+drawScene3D(ctx, loaded, values, { width, height, time?, valuesAt? | stateAt?, depthBuffer? })   // resolve and draw, in one call
 new Scene3DAdapter(new Canvas2DRenderer(ctx), { width, height, valuesAt? })           // registerScene, applyState(state), render()
 ```
 
@@ -271,6 +353,21 @@ phase) with the distance, one stride per cycle, so the feet stay planted, plus
 `walking` (eased in and out) and `gait`. The character object turns those into
 the stepping pose as it draws, on the pose it holds: a wave carries on while it
 walks. Objects take `gait` and `walking` as fields too.
+
+**Speaking and looking.** `{ do: 'say', say: 'A pot of water!' }` lip-syncs
+the line on the character's mouth (the same `lipSyncOver` the 2D scripts use)
+with a talking head, and lasts as long as the line (`speechLength(text)`, or
+`for`). `{ do: 'look', look: [x, z] }` turns the head and eyes toward a point
+at eye height (`[x, y, z]` for any height, `'camera'` for the viewer with
+`options.camera`); `lookFields(from, at)` is the maths. To keep looking at
+something that moves, `characterLookAtTracks(tracks, { scene, character,
+at: { object: 'didi' } | { camera: 'cam' } | [x, y, z] | (time) => [x, y, z],
+start, end, objects })` keys `head.turn`, `head.nod`, `lookX` and `lookY`
+from where both are at every moment; `objectPositionAt(tracks, target,
+base)` is the sampler it uses. For several figures, `stageSpots({ count,
+shape: 'line' | 'arc' | 'circle' | 'cluster', spacing, centre })` gives
+positions and headings that do not overlap: a line across, an arc facing its
+middle, a circle facing in, or a seeded loose group.
 
 **Riding.** `propRide3D({ prop, propId, propTracks, scene, placement, anchor, riderId, pose, start, end, mount?, dismount? })`
 keeps a rider's hips on a prop's seat anchor (a horse's `saddle`, a bike's or
@@ -440,8 +537,9 @@ renderer.render(resolveScene3D(scene, values, { width: canvas.width, height: can
   trails, go on `overlay`, a 2D canvas laid over the GL one (in front of the meshes);
   solid characters are meshes and sort properly.
 
-It runs on a page or in a Worker (OffscreenCanvas). Node has no WebGL2, so
-headless video uses the Canvas 2D renderer. The cross-browser checks
+It runs on a page or in a Worker (OffscreenCanvas). Node has no WebGL2;
+headless video uses the Canvas 2D renderer, or its software depth buffer
+(below) when shapes cut through each other. The cross-browser checks
 (`npm run e2e -- --check scene-3d-webgl`) compile it in Chromium, Firefox and
 WebKit, compare its silhouettes with the Canvas 2D renderer's and check the
 depth buffer.
@@ -456,6 +554,20 @@ or very long ones, can sort wrongly: give big planes `segments`, keep meshes
 modest, or use a layer. Each triangle has one colour, so smooth shading is
 smoothed per triangle, not per pixel; more segments look rounder. The WebGL2
 renderer (above) has a depth buffer and per-pixel light.
+
+**A software depth buffer** draws right where the painter's order cannot:
+`drawScene3D(ctx, scene, values, { …, depthBuffer: true })`, or
+`new Scene3DAdapter(new SoftwareRenderer(ctx), …)`. Every triangle is
+rasterised into a pixel buffer with a depth per pixel (`rasterizeResolvedScene`
+gives the bytes and depths without a canvas), so crossing beams, huge floors
+and long meshes need no `layer` or segments; see-through meshes blend over
+what is behind them, and ink is depth-tested so an outline never shows
+through what is in front. Each triangle keeps its one shaded colour and its
+fog, edges are hard (no anti-aliasing), and objects drawn whole (characters
+in their pen looks, lines, trails) go on top of the meshes, as on the WebGL2
+overlay. It costs about three times the painter's time and works anywhere
+the Canvas 2D renderer does. Layers keep their meaning: a lower layer is
+drawn first and a higher one paints over it whatever the depths.
 
 Rendering speed in Node: a 1280×720 scene of a few thousand triangles renders
 at a few frames a second; parallel rendering for long films is planned.

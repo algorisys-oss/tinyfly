@@ -32,7 +32,13 @@ export class Canvas2DRenderer implements Renderer3D {
 export function drawResolvedScene(ctx: CanvasRenderingContext2D, frame: ResolvedScene3D): void {
   ctx.save()
   if (frame.background && frame.background !== 'transparent') {
-    ctx.fillStyle = frame.background
+    if (typeof frame.background === 'string') ctx.fillStyle = frame.background
+    else {
+      const sky = ctx.createLinearGradient(0, 0, 0, frame.height)
+      sky.addColorStop(0, frame.background.top)
+      sky.addColorStop(1, frame.background.bottom)
+      ctx.fillStyle = sky
+    }
     ctx.fillRect(0, 0, frame.width, frame.height)
   }
   ctx.lineJoin = 'round'
