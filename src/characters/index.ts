@@ -38,6 +38,8 @@ export { createPen, ellipsePoints, type Pen, type Look, type PencilOptions, type
 export { basicOutfit, type BasicOutfitOptions } from './wardrobe/basic-outfit'
 // Heads: hair, ears, facial hair, glasses and hats, as plain data that turns with the head (see docs/character-appearance.md).
 export * from './head'
+// Hair in motion: hanging hair lags behind the head, keyed ahead of time from its motion.
+export { hairFollow, hairFollowTracks, hairMotionAt, type HairFollowSample, type HairFollowOptions, type HairFollowKey, type HairFollowTrackOptions } from './hair-follow'
 // Cartoon hands: posed in 3D, drawn in a look.
 export * from './hands'
 // Acting: anticipation, overshoot, overlap, eyes leading, gags and speed lines (see docs/acting.md).

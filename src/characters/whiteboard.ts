@@ -41,7 +41,7 @@ import { surfaceBox, type SurfaceBox } from './surface/surface-box'
  * `tracks()`.
  */
 
-export type BoardThemeName = 'whiteboard' | 'chalkboard'
+export type BoardThemeName = 'whiteboard' | 'chalkboard' | 'lines'
 
 export interface BoardTheme {
   background: string
@@ -55,9 +55,15 @@ export interface BoardTheme {
   stroke: number
   /** Ink opacity (chalk is a little see-through) */
   opacity: number
+  /** Ruled paper: the lines' colour, their spacing (em of the font size) and a margin line's colour */
+  rule?: { color: string; spacing?: number; margin?: string }
 }
 
-const HAND_FONT = '"Segoe Print", "Bradley Hand", "Comic Sans MS", "Chalkboard SE", cursive'
+/**
+ * A handwriting font: Patrick Hand when the page loads it (the editor and
+ * examples do, from Google Fonts), else whatever hand the system has.
+ */
+const HAND_FONT = '"Patrick Hand", "Segoe Print", "Bradley Hand", "Comic Sans MS", "Chalkboard SE", cursive'
 
 export const BOARD_THEMES: Record<BoardThemeName, BoardTheme> = {
   whiteboard: {
@@ -77,6 +83,16 @@ export const BOARD_THEMES: Record<BoardThemeName, BoardTheme> = {
     font: HAND_FONT,
     stroke: 0.1,
     opacity: 0.9,
+  },
+  lines: {
+    background: '#fffdf5',
+    frame: '#d9d3c0',
+    ink: '#24315c',
+    colors: { ink: '#24315c', red: '#c73b3b', blue: '#2f6fd0', green: '#2e9a52', orange: '#e07b1a', pencil: '#6b6b6b' },
+    font: HAND_FONT,
+    stroke: 0.08,
+    opacity: 1,
+    rule: { color: '#c9d6ec', spacing: 1.55, margin: '#f0a3a3' },
   },
 }
 
@@ -107,6 +123,12 @@ export interface BoardMark {
   /** `arrow`: from one place to another */
   from?: string
   to?: string
+  /**
+   * `arrow`: how far it bows, as a fraction of its length (+ bows to the left of
+   * the way it points, − to the right). Default: a slight hand-drawn bow, or
+   * round any text it would cross.
+   */
+  bend?: number
   color?: string
   /** Start undrawn, to be drawn in with the `draw` edit */
   hidden?: boolean
@@ -157,7 +179,7 @@ export interface Whiteboard extends Surface {
 /** A board's anchors and edits, as data: for its `about`, the capability catalog and the checks. */
 export const WHITEBOARD_SURFACE: SurfaceAbout = {
   kind: 'board',
-  create: 'whiteboard({ x, y, width, height, theme?: whiteboard | chalkboard, fontSize?, items: [{ id, text, at: [x, y], size?, color?, hidden? } | { id, mark: circle | box | underline | arrow, around? | from?, to?, color?, hidden? }] })',
+  create: 'whiteboard({ x, y, width, height, theme?: whiteboard | chalkboard | lines, fontSize?, items: [{ id, text, at: [x, y], size?, color?, hidden? } | { id, mark: circle | box | underline | arrow, around? | from?, to?, bend?, color?, hidden? }] })',
   anchors: {
     box: 'the whole board',
     'text:ID': 'a text item: write along it from left to right, point at it',
@@ -263,7 +285,10 @@ export function whiteboard(options: WhiteboardOptions): Whiteboard {
     if (!BOARD_MARKS.includes(item.mark)) throw new Error(`whiteboard: mark "${item.id}": ${unknownName('mark', item.mark, BOARD_MARKS)}`)
     const needs = item.mark === 'arrow' ? (['from', 'to'] as const) : (['around'] as const)
     for (const field of needs) if (typeof item[field] !== 'string') throw new Error(`whiteboard: ${item.mark} "${item.id}" needs \`${field}\`, a place on the board (an item before it)`)
-    const points = markPoints(item, local, fontSize)
+    // Texts an arrow should bend round: every text but the ones it runs between.
+    const ends = new Set([item.from, item.to].filter((name): name is string => typeof name === 'string').map((name) => name.split(':')[1]))
+    const obstacles = item.mark === 'arrow' ? [...placed.values()].filter((p): p is Extract<Placed, { kind: 'text' }> => p.kind === 'text' && !ends.has(p.item.id)).map((p) => p.box) : []
+    const points = markPoints(item, local, fontSize, obstacles)
     placed.set(item.id, { kind: 'mark', item, color: colorOf(item.color), points, box: boundsOf(points) })
     props[`mark.${item.id}.draw`] = item.hidden ? 0 : 1
     props[`mark.${item.id}.erase`] = 0
@@ -296,6 +321,30 @@ export function whiteboard(options: WhiteboardOptions): Whiteboard {
       ctx.lineWidth = Math.max(4, options.width * 0.012)
       ctx.strokeStyle = theme.frame
       ctx.stroke()
+      if (theme.rule) {
+        // Ruled paper: faint lines down the page, and a margin line.
+        ctx.save()
+        ctx.beginPath()
+        roundRect(ctx, 0, 0, options.width, options.height, 10)
+        ctx.clip()
+        ctx.lineWidth = 1
+        ctx.strokeStyle = theme.rule.color
+        const spacing = fontSize * (theme.rule.spacing ?? 1.55)
+        for (let y = spacing; y < options.height; y += spacing) {
+          ctx.beginPath()
+          ctx.moveTo(0, y)
+          ctx.lineTo(options.width, y)
+          ctx.stroke()
+        }
+        if (theme.rule.margin) {
+          ctx.strokeStyle = theme.rule.margin
+          ctx.beginPath()
+          ctx.moveTo(fontSize * 2.2, 0)
+          ctx.lineTo(fontSize * 2.2, options.height)
+          ctx.stroke()
+        }
+        ctx.restore()
+      }
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.lineCap = 'round'
@@ -471,7 +520,7 @@ export function whiteboard(options: WhiteboardOptions): Whiteboard {
 }
 
 /** A mark's line, board-local, with a hand-drawn wobble seeded by its id. */
-function markPoints(mark: BoardMark, local: (name: string) => SurfaceBox, fontSize: number): Point[] {
+function markPoints(mark: BoardMark, local: (name: string) => SurfaceBox, fontSize: number, obstacles: SurfaceBox[] = []): Point[] {
   const random = createRandom(hashSeed(mark.id))
   const jitter = (amount: number) => (random.next() * 2 - 1) * amount
   const pad = fontSize * MARK_PAD
@@ -480,9 +529,15 @@ function markPoints(mark: BoardMark, local: (name: string) => SurfaceBox, fontSi
     const to = local(mark.to!)
     const start = edgeToward(from, to, pad * 0.6)
     const end = edgeToward(to, from, pad * 0.6)
-    // A slight bow, as a hand draws it.
-    const bow = Math.hypot(end.x - start.x, end.y - start.y) * (0.06 + jitter(0.04))
+    const length = Math.hypot(end.x - start.x, end.y - start.y)
     const normal = normalOf(start, end)
+    // A slight bow, as a hand draws it; as asked; or enough to clear a text it would cross.
+    let bow = length * (0.06 + jitter(0.04))
+    if (mark.bend !== undefined) bow = length * mark.bend
+    else {
+      const clearance = arrowClearance(start, end, normal, obstacles, pad)
+      if (clearance !== 0) bow = clearance
+    }
     const mid = { x: (start.x + end.x) / 2 + normal.x * bow, y: (start.y + end.y) / 2 + normal.y * bow }
     const line: Point[] = []
     for (let k = 0; k <= 24; k++) {
@@ -525,6 +580,38 @@ function markPoints(mark: BoardMark, local: (name: string) => SurfaceBox, fontSi
     points.push({ x: box.x + Math.cos(angle) * rx * wobble, y: box.y + Math.sin(angle) * ry * wobble })
   }
   return points
+}
+
+/**
+ * How far a quadratic arrow from `start` to `end` must bow to pass the
+ * boxes its straight line crosses, as the control point's offset along
+ * `normal` (the curve's middle lies half as far out): the nearer side, with
+ * `pad` to spare; 0 when it crosses nothing.
+ */
+function arrowClearance(start: Point, end: Point, normal: Point, obstacles: SurfaceBox[], pad: number): number {
+  const length = Math.hypot(end.x - start.x, end.y - start.y)
+  if (length < 1e-6) return 0
+  const along = { x: (end.x - start.x) / length, y: (end.y - start.y) / length }
+  let most = 0
+  let least = 0
+  for (const box of obstacles) {
+    const corners = [
+      { x: box.left, y: box.top },
+      { x: box.right, y: box.top },
+      { x: box.right, y: box.bottom },
+      { x: box.left, y: box.bottom },
+    ]
+    // Where the box's corners lie along the arrow and either side of it.
+    const sides = corners.map((c) => ({ t: (c.x - start.x) * along.x + (c.y - start.y) * along.y, n: (c.x - start.x) * normal.x + (c.y - start.y) * normal.y }))
+    const inReach = sides.some((s) => s.t > 0 && s.t < length)
+    const crosses = sides.some((s) => s.n > 0) && sides.some((s) => s.n < 0)
+    if (!inReach || !crosses) continue
+    most = Math.max(most, ...sides.map((s) => s.n))
+    least = Math.min(least, ...sides.map((s) => s.n))
+  }
+  if (most === 0 && least === 0) return 0
+  // Pass on the side that needs the smaller detour; the middle of the curve is half the control's offset.
+  return most <= -least ? 2 * (most + pad) : 2 * (least - pad)
 }
 
 /** Where a line from `box`'s centre toward `other`'s leaves `box`, `gap` px out. */

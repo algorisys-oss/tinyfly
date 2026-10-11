@@ -133,3 +133,51 @@ describe('whiteboard with surfaceScript', () => {
     expect(track('piece.1.opacity')).toBeDefined()
   })
 })
+
+describe('board polish', () => {
+  const lines = () =>
+    whiteboard({
+      x: 0,
+      y: 0,
+      width: 600,
+      height: 300,
+      theme: 'lines',
+      fontSize: 24,
+      items: [
+        { id: 'a', text: 'left', at: [40, 120] },
+        { id: 'mid', text: 'in the way', at: [200, 110] },
+        { id: 'b', text: 'right', at: [460, 120] },
+        { id: 'over', mark: 'arrow', from: 'text:a', to: 'text:b' },
+        { id: 'bent', mark: 'arrow', from: 'text:a', to: 'text:b', bend: -0.5 },
+        { id: 'c', text: 'below', at: [40, 240] },
+        { id: 'd', text: 'also below', at: [360, 240] },
+        { id: 'flat', mark: 'arrow', from: 'text:c', to: 'text:d' },
+      ],
+    })
+  const points = (board: ReturnType<typeof whiteboard>, id: string) => {
+    const box = board.anchor(`mark:${id}`)
+    return box
+  }
+
+  it('bends an arrow round a text in its way, and as asked', () => {
+    const board = lines()
+    const mid = board.anchor('text:mid')
+    const over = points(board, 'over')
+    // The arrow's box reaches clear of the text it crosses, above or below it.
+    expect(over.top < mid.top - 4 || over.bottom > mid.bottom + 4).toBe(true)
+    const flat = points(board, 'flat')
+    expect(flat.height).toBeLessThan(40)
+    const bent = points(board, 'bent')
+    expect(bent.height).toBeGreaterThan(80)
+  })
+
+  it('draws ruled paper under the writing', () => {
+    const board = lines()
+    const calls: string[] = []
+    const ctx = new Proxy({}, { get: (_, key) => (typeof key === 'string' && !['font', 'fillStyle', 'strokeStyle', 'lineWidth', 'globalAlpha', 'textAlign', 'textBaseline', 'lineCap', 'lineJoin'].includes(key) ? () => calls.push(String(key)) : undefined), set: () => true }) as unknown as CanvasRenderingContext2D
+    board.target.draw(ctx, board.target, 0)
+    expect(calls.filter((call) => call === 'clip').length).toBeGreaterThanOrEqual(1)
+    expect(calls.filter((call) => call === 'stroke').length).toBeGreaterThan(8)
+    expect(() => whiteboard({ x: 0, y: 0, width: 100, height: 100, theme: 'paper' as never })).toThrow(/Unknown theme "paper"/)
+  })
+})

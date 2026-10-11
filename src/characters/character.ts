@@ -11,6 +11,8 @@ import { rubberLimb } from './look/curves'
 import { drawFace, faceToScreen } from './head/face'
 import { drawHeadBehind, drawHeadFront, drawHeadOver, resolveHeadLook, type HeadLook, type HeadLookOptions } from './head/head-look'
 import { HUMAN_BUILDS, HUMAN_POSES, HUMAN_REST, humanPlan, type HumanBuild, type HumanBuildName, type HumanPoseName } from './species/human'
+import { humanGaitPose } from './species/human-motion'
+import type { Gait } from './gaits'
 import { basicOutfit, type BasicOutfitOptions } from './wardrobe/basic-outfit'
 import { holdingLayers, resolveHolding, type Holding, type HoldingSpec } from './hands/held-items'
 import { HAND_REST, type HandPose } from './hands/hand-rig'
@@ -570,16 +572,44 @@ export interface CharacterTargetOptions {
   character: Character
   /** Starting pose (default rest) */
   pose?: Pose
+  /** Your own gaits, by the names a `gait` track uses (built-in names need no entry) */
+  gaits?: Record<string, Gait>
 }
 
 /** A `custom` target made by {@link characterTarget}. */
 export interface CharacterTarget extends CustomTarget {
   readonly character: Character
+  readonly gaits?: Record<string, Gait>
+}
+
+/** Values that walk a character target (see `characterScript`): the gait's phase, how much of it, and which gait. */
+const WALK_PROPERTIES = new Set(['walk', 'walking', 'gait'])
+
+/**
+ * The pose a target's props describe: its pose fields, with its gait stepped
+ * in as far as `walking` says (`walk` is the phase, `gait` which gait), on the
+ * pose it holds. Props that are not pose fields (`facing`, strings) are left
+ * out.
+ */
+export function characterPoseOf(props: Record<string, unknown>, rest: Pose = HUMAN_REST, gaits?: Record<string, Gait>): Pose {
+  let pose: Pose = { ...rest }
+  for (const [property, value] of Object.entries(props)) {
+    if (typeof value === 'number' && !WALK_PROPERTIES.has(property)) pose[property] = value
+  }
+  const walking = Math.max(0, Math.min(1, typeof props.walking === 'number' ? props.walking : 0))
+  if (walking > 0) {
+    const name = typeof props.gait === 'string' ? props.gait : undefined
+    const gait = name ? (gaits?.[name] ?? name) : undefined
+    const stepped = humanGaitPose(gait, typeof props.walk === 'number' ? props.walk : 0, pose)
+    pose = Object.fromEntries(Object.keys({ ...pose, ...stepped }).map((key) => [key, (pose[key] ?? 0) + ((stepped[key] ?? 0) - (pose[key] ?? 0)) * walking]))
+  }
+  return pose
 }
 
 /**
  * A `custom` canvas target that draws a character. Every pose field is a
- * prop, so timeline tracks pose, turn and roll it. `x`/`y` are the feet.
+ * prop, so timeline tracks pose, turn and roll it; `walk`, `walking` and
+ * `gait` tracks step its gait (see `characterScript`). `x`/`y` are the feet.
  */
 export function characterTarget(options: CharacterTargetOptions): CharacterTarget {
   const { character: who } = options
@@ -594,9 +624,10 @@ export function characterTarget(options: CharacterTargetOptions): CharacterTarge
     height,
     props: { ...rest, ...options.pose },
     character: who,
+    ...(options.gaits ? { gaits: options.gaits } : {}),
     draw(ctx, target, time) {
       ctx.translate(width / 2, height)
-      drawCharacter(ctx, who, target.props as Pose, time)
+      drawCharacter(ctx, who, characterPoseOf(target.props ?? {}, rest, options.gaits), time)
     },
   }
 }
@@ -625,15 +656,15 @@ export function jointsInScene(joints: CharacterJoints, x: number, y: number): Ch
 export function characterAt(target: CustomTarget, frame: Pick<FrameInfo, 'time' | 'state'>, id: string): { pose: Pose; joints: CharacterJoints } {
   const who = (target as Partial<CharacterTarget>).character
   if (!who) throw new Error('characterAt: the target was not made by characterTarget')
-  const pose = { ...(target.props as Pose) }
+  const props: Record<string, unknown> = { ...target.props }
   let dx = 0
   let dy = 0
   for (const [property, value] of frame.state?.values.get(id) ?? []) {
-    if (typeof value !== 'number') continue
-    if (property === 'x' || property === 'motionPathX') dx = value
-    else if (property === 'y' || property === 'motionPathY') dy = value
-    else if (property in pose) pose[property] = value
+    if (property === 'x' || property === 'motionPathX') dx = typeof value === 'number' ? value : dx
+    else if (property === 'y' || property === 'motionPathY') dy = typeof value === 'number' ? value : dy
+    else if (typeof value === 'number' || WALK_PROPERTIES.has(property)) props[property] = value
   }
+  const pose = characterPoseOf(props, who.plan.id === 'human' ? HUMAN_REST : {}, (target as Partial<CharacterTarget>).gaits)
   const joints = characterJoints(who, pose)
   return { pose, joints: jointsInScene(joints, target.x + dx + target.width / 2, target.y + dy + target.height) }
 }

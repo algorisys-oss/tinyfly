@@ -2,7 +2,8 @@ import { createSignal, For, Show } from 'solid-js'
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
 import type { Scene3DElement } from '../stores/scene-store'
-import type { CameraObject, CharacterObject3D, LightObject, Material3D, MeshObject, Object3D, Scene3D } from '../../scene-3d'
+import type { CameraObject, CharacterObject3D, LightObject, Material3D, MeshObject, Object3D, PropObject3D, Scene3D } from '../../scene-3d'
+import { PROP_PRESETS } from '../../characters'
 import { orbitPosition } from '../../scene-3d'
 import { DANCE_STYLES, type DanceStyleName } from '../../characters'
 import { characterDanceTracks, mergeKeyframes } from '../utils/character-dance'
@@ -121,7 +122,7 @@ export const Scene3DProperties: Component<Props> = (props) => {
     )
   }
 
-  const add = (kind: 'box' | 'sphere' | 'cylinder' | 'cone' | 'torus' | 'star' | 'character' | 'light') => {
+  const add = (kind: 'box' | 'sphere' | 'cylinder' | 'cone' | 'torus' | 'star' | 'character' | 'light' | 'prop') => {
     const objects = scene().objects
     const id = freeObjectId(objects, kind)
     const count = objects.filter((o) => o.kind === 'mesh').length
@@ -130,6 +131,9 @@ export const Scene3DProperties: Component<Props> = (props) => {
     let materials = scene().materials ?? {}
     if (kind === 'character') {
       added = { id, kind: 'character', position: [at[0], 0, at[2]], character: { look: 'clean', skin: '#f2c49b', ink: '#e2e8f0' } } satisfies CharacterObject3D
+    } else if (kind === 'prop') {
+      // A prop from the catalog (a car to start), standing on the ground, facing +z; its controls are tracks on it.
+      added = { id, kind: 'prop', prop: 'car', position: [at[0], 0, at[2]], look: 'clean' } satisfies PropObject3D
     } else if (kind === 'light') {
       added = { id, kind: 'light', light: 'point', color: '#ffd166', intensity: 0.8, position: [0, 2.5, 1.5], range: 8 } satisfies LightObject
     } else {
@@ -183,7 +187,7 @@ export const Scene3DProperties: Component<Props> = (props) => {
       <div class="property-row scene3d-objects">
         <label>Objects</label>
         <select value={object()?.id ?? ''} onChange={(e) => setPicked((e.target as HTMLSelectElement).value)}>
-          <For each={scene().objects}>{(o) => <option value={o.id}>{o.id} ({o.kind === 'mesh' ? (o as MeshObject).geometry.type : o.kind === 'light' ? `${(o as LightObject).light} light` : o.kind})</option>}</For>
+          <For each={scene().objects}>{(o) => <option value={o.id}>{o.id} ({o.kind === 'mesh' ? (o as MeshObject).geometry.type : o.kind === 'light' ? `${(o as LightObject).light} light` : o.kind === 'prop' ? (o as PropObject3D).prop : o.kind})</option>}</For>
         </select>
       </div>
       <div class="property-row scene3d-add">
@@ -196,6 +200,7 @@ export const Scene3DProperties: Component<Props> = (props) => {
           <button onClick={() => add('torus')}>Ring</button>
           <button onClick={() => add('star')}>Star</button>
           <button onClick={() => add('character')}>Character</button>
+          <button onClick={() => add('prop')}>Prop</button>
           <button onClick={() => add('light')}>Light</button>
         </div>
       </div>
@@ -293,6 +298,41 @@ export const Scene3DProperties: Component<Props> = (props) => {
                 </select>
               </div>
               <button class="secondary-button" onClick={() => danceFromPlayhead(current() as CharacterObject3D)}>🕺 Dance from playhead</button>
+            </Show>
+
+            <Show when={current().kind === 'prop'}>
+              <div class="property-row">
+                <label>Prop</label>
+                <select
+                  value={(current() as PropObject3D).prop}
+                  title="Which prop from the catalog: vehicles, a tree, a house, aircraft, animals and birds. Its controls (door, lights, wheelSpin, tail…) are tracks on the object."
+                  onChange={(e) => replaceObject(current().id, { ...(current() as PropObject3D), prop: e.currentTarget.value, values: undefined } as PropObject3D)}
+                >
+                  <For each={Object.keys(PROP_PRESETS)}>{(name) => <option value={name}>{name}</option>}</For>
+                </select>
+              </div>
+              <div class="property-row">
+                <label>Look</label>
+                <select
+                  value={(current() as PropObject3D).look ?? 'clean'}
+                  onChange={(e) => replaceObject(current().id, { ...(current() as PropObject3D), look: e.currentTarget.value as PropObject3D['look'] } as PropObject3D)}
+                >
+                  <option value="clean">Clean (pens)</option>
+                  <option value="pencil">Pencil (pens)</option>
+                  <option value="silhouette">Silhouette (pens)</option>
+                  <option value="mesh">Mesh (lit with the scene)</option>
+                </select>
+              </div>
+              <div class="property-row">
+                <label>Style</label>
+                <select
+                  value={(current() as PropObject3D).style ?? 'solid'}
+                  onChange={(e) => replaceObject(current().id, { ...(current() as PropObject3D), style: e.currentTarget.value as PropObject3D['style'] } as PropObject3D)}
+                >
+                  <option value="solid">Solid</option>
+                  <option value="stick">Stick (line art)</option>
+                </select>
+              </div>
             </Show>
           </>
         )}

@@ -204,7 +204,7 @@ with a GSAP-style call (durations are in seconds here):
 ```html
 <div class="box" style="width:60px;height:60px;background:#4a9eff"></div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.98.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.99.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -412,7 +412,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.98.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.99.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -2278,7 +2278,7 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.98.0/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.99.0/cdn/tinyfly-player.iife.js`.
 
 ---
 
@@ -5451,7 +5451,9 @@ left to right:
   is a reassuring, tap-friendly manual save (handy on tablets).
 - **New** — start a fresh project (prompts if you have unsaved changes).
 - **AI** — show or hide the AI prompt bar, where you describe an animation and
-  click **Generate**.
+  click **Generate**. A brief with a story in it ("grandma walks up to a ticking
+  box, jumps, and runs off") gets a 🧍 Character from the cast with a beat
+  script, compiled into its tracks on load (the beats stay on the element).
 - **My Animations** — open the gallery of every project you've saved (thumbnails,
   open / duplicate / delete). See [Project Management](#project-management).
 - **Examples** — every ready-made animation on one page (`/examples`). Open one in
@@ -5486,6 +5488,8 @@ Shapes, text, images, video, lines, arrows and paths are added from the
 | **Group** | Container that groups multiple elements |
 | **🧍 Character** | A posable figure: pick a view, a pose and a face, and keyframe them to animate (see [Characters](#characters)) |
 | **🗺 Map** | An animated map: places, a route between them, and a camera (see [Maps](#maps)) |
+| **🧊 3D Scene** | A real 3D scene seen through its camera: meshes, lights, characters and props (see [3D Scenes](#3d-scenes)) |
+| **⌨ Code** | A code panel whose lines a Character's beats aim at and change (see [Code](#code)) |
 
 Polygon and star are **parametric** paths: change the sides/points/inner ratio in
 the Property Panel and the shape regenerates, and they rescale cleanly when you
@@ -5621,11 +5625,38 @@ Dances and flips are written as they are, and turn acting off.
   (`drawingRate` in the JSON), so previews, players and exports all hold the
   same way.
 
+- **Beats**: a story written as beats, compiled in the chosen style into the
+  character's tracks and kept on the element (`beats` in the JSON). Write them
+  as JSON (`[{ "do": "walk", "to": 320, "mood": "happy" }, { "do": "say",
+  "say": "Hello!" }, { "do": "take" }]`) and click **🎬 Run beats**; the
+  timeline grows to fit. A beat can aim at a **⌨ Code** element's lines
+  (`"target": { "surface": "Code 1", "anchor": "line:2" }`, also for `to`,
+  `toward` and `onto`) and change them (`"then": { "surface": "Code 1",
+  "edit": "highlight", "anchor": "line:2", "at": "contact" }`): the edits
+  become tracks on that element. Problems are named by beat (an unknown
+  action, mood or place) before anything is written. The AI prompt bar writes
+  beats this way too.
+
 See [Cartoon Acting](acting.md).
 
 Characters show in the DOM and Canvas previews and in GIF / WebP / MP4
 export. They are not part of exported HTML or embeds yet, and the SVG preview
 does not draw them.
+
+### Code
+
+A **⌨ Code** element is a code panel (`codePanel()` from code): a listing with
+line numbers, drawn by code into its box, which grows to fit its lines. In the
+property panel: the **Language** (JavaScript, TypeScript, Python, Go, Rust,
+C#, plain), **Font size**, **Line numbers**, **Hidden lines** (typed in later)
+and the **Listing** itself.
+
+Its lines are places. A Character's **Beats** aim at them and change them
+(highlight, strike, remove, type, fling a token…), and those edits are tracks
+on the Code element named `line.N.highlight`, `line.N.strike`, `line.N.wipe`,
+`line.N.reveal` and so on, which you can also key by hand. Code panels show in
+the DOM and Canvas previews and in GIF / WebP / MP4 export. See [Acting on
+code](acting.md#acting-on-code) for the same from code.
 
 ### Maps
 
@@ -5661,8 +5692,8 @@ camera: it starts with a camera at three-quarters, a key light, a floor and a
 red box. In the property panel:
 
 - **Objects**: pick one to edit. **Add** puts a box, sphere, cylinder, cone,
-  ring, star (an extruded path), character or light on the next free spot;
-  ✕ removes the picked one (not the scene's camera).
+  ring, star (an extruded path), character, prop or light on the next free
+  spot; ✕ removes the picked one (not the scene's camera).
 - **Transform**: X, Y, Z (metres, +y up), Tilt X, Turn Y, Roll Z and Scale.
   **◆ Key transform at playhead** keys all of them; once a value is animated
   (◆ by its name), changing it keys it at the playhead.
@@ -5671,6 +5702,12 @@ red box. In the property panel:
 - **Characters**: a look (*Clean*, *Pencil*, *Silhouette* drawn by their pens
   in perspective, or *Solid*) and **🕺 Dance from playhead** with any dance
   style.
+- **Props**: which prop from the catalog (car, truck, bus, tractor, cart, train
+  car, bike, motorbike, tree, house, helicopter, airplane, horse, dog, cat, cow,
+  songbird, crow, chicken), its look (*Clean*, *Pencil*, *Silhouette*, or
+  *Mesh*, lit with the scene) and style (*Solid* or *Stick* line art). Its
+  controls (`car.door`, `car.wheelSpin`, `dog.tail`…) are tracks on the
+  element.
 - **Cameras**: field of view, **Look through this camera**, and **✂ Cut to
   this camera at playhead**, which keys the shot change.
 - **Camera** view presets (*Front*, *¾*, *Side*, *Top*) and the scene's
@@ -6474,7 +6511,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.98.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.99.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed
@@ -7611,7 +7648,10 @@ and `outfit: { shirt, trousers }`. `castMember('grandpa', 300)` gives a whole
 ready-made character to start from. Expressions come from `HUMAN_EXPRESSIONS`
 and are pose fields, as are the face marks `blush`, `tears` and `sweat` (0–1),
 so any face goes with any action or view. Hair and hats turn with the head:
-don't draw a different hairstyle per view. Put things in hands with `holding`
+don't draw a different hairstyle per view. Hanging hair swings on its own:
+after the character's tracks add `hairFollowTracks(target, tracks, who)` (or,
+posing per frame, `hairFollow` once and `hairMotionAt(keys, t)` each frame)
+rather than keying `hair.swing` by hand. Put things in hands with `holding`
 (`{ right: 'mug' }`, `{ both: 'parcel' }`; the pose field `held.both` lets go),
 and for two characters touching use `meetHands('handshake', a, b)` with the
 two standing `meetingSpacing(…)` apart, never two separate clips. See
@@ -7667,7 +7707,11 @@ scriptTracks: 2 problem(s) in the beats:
 
 - **Beat scripts**: `scriptTracks()` throws on errors. `checkBeats(beats)`
   returns errors and warnings without throwing, and from the command line:
-  `npx @algorisys/tinyfly check beats.json`.
+  `npx @algorisys/tinyfly check beats.json`. For a v2 `character()` use
+  `characterScript(target, who, beats, options)`: the same beats and checks,
+  compiled for the human body and a `characterTarget` (its `walk`, `walking`
+  and `gait` tracks step the gait as it draws); add
+  `hairFollowTracks(target, tracks, who)` after it.
 - **Tracks**: `checkTracks(tracks, targets)` finds tracks aimed at targets
   that aren't there, properties a target can't animate (`rotation` → `rotate`),
   keys out of time order, values of the wrong kind and values out of range.
@@ -7777,7 +7821,7 @@ path for all of that:
 </figure>
 
 <!-- once, anywhere on the page (a site-wide footer is fine) -->
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.98.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.99.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 Every `[data-tinyfly-embed]` mounts when the page is ready, with no per-post
@@ -8852,8 +8896,8 @@ On a page with no build step, load the maps add-on after the browser bundle; it
 adds to the same `tinyfly` global:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.98.0/cdn/tinyfly.iife.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.98.0/cdn/tinyfly-maps.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.99.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.99.0/cdn/tinyfly-maps.iife.js"></script>
 ```
 
 It is a separate script because the offline world map it carries adds about
@@ -9060,8 +9104,8 @@ prop, or the depths to slot it between fingers.
 
 # Character Appearance
 
-Hair, facial hair, glasses, hats, ears, builds, a ready-made cast, held items
-and meeting hands for the v2 character (`character()` in `@algorisys/tinyfly/characters`). Every choice
+Hair, facial hair, glasses, hats, ears, builds, a ready-made cast, held items,
+meeting hands and hair that swings for the v2 character (`character()` in `@algorisys/tinyfly/characters`). Every choice
 is plain data, so a character can be saved, synced, generated by a language
 model and changed one field at a time.
 
@@ -9176,6 +9220,52 @@ Every style is the same few fields (`resolveHair(spec)` fills them all in):
 | `coversEars` | The hair hides the ears |
 
 A style stays a starting point: any style suits anyone.
+
+## Hair in motion
+
+Hair that hangs (long hair, ponytails, braids) lags behind the head: it swings
+round after a turn, streams back on a run, drops on a jump and lifts on the
+landing. The roots stay on the head; the ends move, more the further they hang.
+Short hair, buns, beards and hats stay put.
+
+The lag is three pose fields, so it keys, saves and mirrors like any other:
+
+| Field | Meaning |
+|---|---|
+| `hair.swing` | Swung round the head toward the character's left (+) or right (−), degrees |
+| `hair.trail` | Streaming back behind the head (+) or thrown forward (−), head radii |
+| `hair.lift` | Lifted (+) or dropped (−), head radii |
+
+You rarely set them by hand. `hairFollowTracks` works them out from the
+character's own tracks (the target's `x` and `y`, the pose's `turn` and
+`head.turn`), each on a spring that chases the head, the way a prop's `follow`
+trails a car's antenna or a dog's tail:
+
+```js
+const tracks = characterPoseTracks('maya', keys)
+tracks.push(...hairFollowTracks('maya', tracks, maya))
+// Nothing is added for hair with nothing to swing. A `hair.swing` track written
+// by hand (a flick) keeps its values, with the lag added on.
+```
+
+Code that poses a character every frame keys the lag once for its loop, then
+reads it at each frame's time:
+
+```js
+const lag = hairFollow((t) => ({ x: xAt(t), y: yAt(t), turn: turnAt(t) }), { end: 8000, headRadius: 24 })
+drawCharacter(ctx, maya, humanPose({ turn: turnAt(t), ...hairMotionAt(lag, t) }), t)
+```
+
+`hairFollow` options: `stiffness` (default 70, higher follows the head more
+tightly), `damping` (6, lower swings longer), `amount` (1; 0 pins the hair) and
+`step` (33 ms between keys). `hairFollowTracks` also takes `settle`, how long
+the hair keeps moving after the last key (1500 ms). The springs step in fixed
+1 ms steps, so the same motion always gives the same keys, and the drawing
+itself keeps no state between frames.
+
+Four-legged animals get the same treatment for free: their `ears` control
+(pricked forward +, laid back −) and `tail` both trail the animal's motion on a
+spring in every `propScript`.
 
 ## Facial hair
 
@@ -9338,7 +9428,9 @@ exported to video and GIF.
 
 Outlines are traced from the same numbers every time (no randomness, no state
 between frames), so a frame at a given time always draws the same, and the
-pencil look's boil stays seeded as before.
+pencil look's boil stays seeded as before. Hair in motion keeps to this: the
+lag is keyed ahead of time from the motion (`hairFollow`), not accumulated
+while drawing.
 
 ---
 
@@ -9599,6 +9691,42 @@ leaves, with a time, a scene x and y and a length, ready for `drawDustPuff`.
 Any beat can also take `onto` (a scene y): the figure is carried to that floor
 over the beat, as when the line it stands on moves up.
 
+### On a v2 character
+
+`characterScript(target, who, beats, options)` compiles the same beats for a
+v2 `character()` (see [Character Appearance](character-appearance.md)), so a
+cast member acts the story the stick figure does:
+
+```js
+import { character, castMember, characterScript, characterTarget, hairFollowTracks } from '@algorisys/tinyfly/characters'
+
+const amy = character(castMember('youngWoman', 170))
+const script = characterScript('amy', amy, [
+  { do: 'walk', to: 330, mood: 'happy' },
+  { do: 'say', say: 'Is that box ticking?', mood: 'worried' },
+  { do: 'take' },
+  { do: 'zip', to: -200 },
+], { from: 90, style: 'snappy' })
+const tracks = [...script.tracks, ...hairFollowTracks('amy', script.tracks, amy)]
+const targets = { amy: characterTarget({ x: 90, y: 300, character: amy }) }
+```
+
+It takes every `scriptTracks` option but `height` (the character's own is
+used) and returns the same result: tracks, `duration`, `lines`, `beats`,
+`effects`, and the key poses on the human body. The stick-figure script plans
+the story (timing, where the figure is, which way it faces, its gait, its
+speech); its key poses are taken onto the human body, mirrored when it faces
+left (so `turn` runs negative that way); the human acting pass then winds up,
+overshoots and overlaps on this body, and the lines are lip-synced over its
+mouth. The walk phase is rekeyed to the character's own stride (its height and
+legs: a child takes shorter steps), so its feet stay planted. The `walk`,
+`walking` and `gait` tracks step the gait as the target draws
+(`characterPoseOf(props)` folds them into the pose, for drawing by hand). Hands
+reach in the stick figure's proportions, so a `grab` or a `point` lands near
+its target on the human body, not exactly on it. Your own gaits go in
+`options.gaits` for the script and `gaits` on `characterTarget` so the drawing
+knows them too.
+
 ## Your own actions, gaits and personas
 
 Behaviours of your own are plain values passed where they are used; nothing
@@ -9847,7 +9975,7 @@ lists the problems without compiling.
 ### Whiteboards
 
 `whiteboard()` is a second surface, for lessons that are not code: a board
-(or `theme: 'chalkboard'`) whose texts and hand-drawn marks are declared as
+(or `theme: 'chalkboard'`, or `'lines'`, ruled paper with a margin) whose texts and hand-drawn marks are declared as
 data, each with an id, and named as places like a code panel's lines:
 
 ```js
@@ -9881,11 +10009,17 @@ everywhere. Colours are theme names (`red`, `blue`, `green`, `orange`, and
 `yellow` on chalk) or any CSS colour. The Board Lesson demo solves an
 equation this way.
 
+The boards write in a handwriting font, Patrick Hand, when the page loads it
+(the editor and the examples do, from Google Fonts), else the system's own
+hand. An arrow bows a little as a hand draws it; it bends round any text it
+would cross, and `bend` (a fraction of its length, + to its left) sets the bow.
+
 ### Charts
 
-`chart()` is a surface for talking through data: a bar or line chart whose
-values are declared as data, scaled once when it is made (`max`, or a round
-number above the largest value).
+`chart()` is a surface for talking through data: a bar, line, pie or donut
+chart whose values are declared as data. Bar and line charts are scaled once
+when they are made (`max`, or a round number above the largest value); a pie
+shares its circle by value.
 
 ```js
 const sales = chart({
@@ -9905,13 +10039,26 @@ surfaceScript('hero', { sales }, [
 ], { from: 640, ground: 400, height: 90, facing: -1 })
 ```
 
-Its places are `bar:ID` (on a bar chart) or `point:ID` (on a line chart),
-`label:ID`, `value:ID` and `box`, and they follow the values:
-`sales.anchor('bar:q4', time)` is the bar as it stands then. Its edits:
-`set` (a new `value`; the value label counts along), `show` (grow a
-`hidden` bar in from the axis, or draw the line out to a point; `on: false`
-takes it back) and `highlight`. A bar's top is a floor: a figure standing on
-it is carried up and down as it grows and shrinks, as in the Chart Talk demo.
+Its places are `bar:ID` (on a bar chart), `point:ID` (on a line chart) or
+`slice:ID` (on a pie or donut), `label:ID`, `value:ID` and `box`, and they
+follow the values: `sales.anchor('bar:q4', time)` is the bar as it stands
+then. Its edits: `set` (a new `value`; the value label counts along, and a
+pie re-shares its circle), `show` (grow a `hidden` bar in from the axis, draw
+the line out to a point, or open a slice; `on: false` takes it back),
+`highlight`, and on a pie `pull` (the slice stands out from the centre). A
+bar's top is a floor: a figure standing on it is carried up and down as it
+grows and shrinks, as in the Chart Talk demo.
+
+A slice can come loose: `traffic.piece('slice:other')` is a piece, and
+`fling`, `follow` and `move` carry it off as they do a term on a board, so a
+figure can kick the smallest slice out of the pie.
+
+Several series (`series: [{ id: 'plan' }, { id: 'actual', color }]`, each
+datum with `values: { plan: 40, actual: 46 }`) draw grouped bars or one line
+per series, with a legend (`legend:SERIES` is a place too). Their places and
+edits take the series after the id: `bar:q1:actual`. Axis titles go in
+`axis: { x, y }`. A pie shows one series. The Pies & Series card shows all of
+it.
 
 ### Props as surfaces
 
@@ -9936,6 +10083,14 @@ surfaceScript('hero', { home: homeSurface }, [
     then: { surface: 'home', edit: 'switch', anchor: 'control:lights' } },
 ], { from: 40, ground: floor, height: 100 })
 ```
+
+A prop's parts come loose too: `carSurface.piece('part:wheel-0-left')` is a
+piece, and `fling`, `follow` and `move` carry it off, drawn where it went
+(or as edits from a beat: `then: { edit: 'fling', anchor: 'part:wheel-0-left',
+at: 'contact' }` on a `kick`). Every anchor and part is also a floor: a figure
+that leaps `onto: { surface: 'car', anchor: 'anchor:roof' }` is carried as the
+car lifts, drives or is squashed, the way a bar carries it on a chart. The Kick
+the Tyre card does both.
 
 A prop stands on its middle, and seen from a little above its front comes
 forward of that line. A figure that walks on the prop's own `y` is inside
@@ -10041,8 +10196,8 @@ timeline plays: editor previews, players, embeds and exports.
 ## Not yet
 
 - A code panel in the editor (a Code element whose lines and words snap beats)
-- Beat scripts for v2 characters (`scriptTracks` drives the stick figure)
-- Follow-through on hair, tails and ears (character-system milestones 3 and 5)
+- Beat scripts' hands reaching in the v2 character's own proportions (a `grab`
+  lands near its target, not on it)
 
 ---
 
@@ -10641,7 +10796,9 @@ a cart's `seat`) as the prop moves, turns, bobs with its stride and pitches,
 writing the rider's `x`, `y`, `z` and `rotateY`; `mount: { from: [x, z] }` and
 `dismount: { to: [x, z] }` hop it on and off. `spliceTracks(riderTracks, ride, { from, to })`
 puts the ride into the rider's script, which holds the riding pose
-(`RIDING_POSES.astride` or `.seated`) meanwhile and `place`s it where it got
+(`RIDING_POSES.astride`, `.seated`, `.driving` with the hands on a wheel, or
+`.cycling`; `pedallingKeys({ start, end, cadence })` keys the legs round the
+pedals on the cycling pose) meanwhile and `place`s it where it got
 off. A character in a scene is drawn part by part, each part at its own depth
 (`characterPartsInView`), so a leg astride a horse shows on each side of it.
 A seat inside a closed cabin (a car's) is not handled yet: its glass is opaque
@@ -13247,7 +13404,7 @@ magnet.addEventListener('pointerleave', () => {
 
 <!-- capabilities: generated from the library -->
 
-# tinyfly capabilities (v0.98.0)
+# tinyfly capabilities (v0.99.0)
 
 Generated from the library itself: every name below is accepted, and names not listed are rejected (beat scripts, code panels and `checkTracks` say which name was probably meant).
 
@@ -13391,6 +13548,8 @@ With `style.hands`, each hand has `hand.left.<field>` / `hand.right.<field>` pro
 
 `scriptTracks(target, beats, { from, ground, height, facing, style })`. A beat has these fields only: `do`, `at`, `for`, `to`, `toward`, `mood`, `say`, `pose`, `target`, `onto`. Times are ms; `to` and `target` are scene px; `onto` is a floor's scene y.
 
+`characterScript(target, who, beats, options)` compiles the same beats for a v2 `character()` on a `characterTarget` (every option but `height`; the same result, its key poses on the human body; the walk phase keyed to that character's stride, and `walk` / `walking` / `gait` tracks that step the gait as the target draws). Add `hairFollowTracks(target, tracks, who)` after it so hanging hair swings.
+
 | `do` | Needs | What happens |
 |---|---|---|
 | `walk` | `to` | Walks to `to` in the walk gait. |
@@ -13497,10 +13656,10 @@ Prop beat fields: `do`, `at`, `for`, `to`, `toward`, `speed`, `open`, `on`, `hei
 | `house()` | building | `door` (open), `lights` (on), `shake`, `smoke` | `door`, `lights` | door, doorstep, ridge, chimney |
 | `helicopter()` | aircraft | `takeOff`, `fly` (to), `hover`, `land` | `rotor`, `blur` | seat, door, rotor, skids, hook |
 | `airplane()` | aircraft | `takeOff` (to), `fly` (to), `loop`, `land` (to) | `rotor`, `blur` | seat, nose, tail, wingtip |
-| `horse()` | animal | `walk` (to), `trot` (to), `canter` (to), `gallop` (to), `neigh`, `sit`, `lie`, `jump`, `nod`, `swish`, `graze`, `rear`, `buck` | `walk`, `walking`, `gait`, `neck`, `tail`, `wag`, `fl.swing`, `fl.knee`, `fl.ankle`, `fr.swing`, `fr.knee`, `fr.ankle`, `hl.swing`, `hl.knee`, `hl.ankle`, `hr.swing`, `hr.knee`, `hr.ankle` | back, head, mouth, front, hitch, saddle |
-| `dog()` | animal | `walk` (to), `trot` (to), `run` (to), `gallop` (to), `bark`, `sit`, `lie`, `jump`, `nod`, `swish`, `wag`, `sniff` | `walk`, `walking`, `gait`, `neck`, `tail`, `wag`, `fl.swing`, `fl.knee`, `fl.ankle`, `fr.swing`, `fr.knee`, `fr.ankle`, `hl.swing`, `hl.knee`, `hl.ankle`, `hr.swing`, `hr.knee`, `hr.ankle` | back, head, mouth, front, leash |
-| `cat()` | animal | `walk` (to), `trot` (to), `run` (to), `gallop` (to), `meow`, `sit`, `lie`, `jump`, `nod`, `swish`, `arch`, `pounce` (to) | `walk`, `walking`, `gait`, `neck`, `tail`, `wag`, `fl.swing`, `fl.knee`, `fl.ankle`, `fr.swing`, `fr.knee`, `fr.ankle`, `hl.swing`, `hl.knee`, `hl.ankle`, `hr.swing`, `hr.knee`, `hr.ankle` | back, head, mouth, front |
-| `cow()` | animal | `walk` (to), `trot` (to), `moo`, `sit`, `lie`, `jump`, `nod`, `swish`, `graze` | `walk`, `walking`, `gait`, `neck`, `tail`, `wag`, `fl.swing`, `fl.knee`, `fl.ankle`, `fr.swing`, `fr.knee`, `fr.ankle`, `hl.swing`, `hl.knee`, `hl.ankle`, `hr.swing`, `hr.knee`, `hr.ankle` | back, head, mouth, front |
+| `horse()` | animal | `walk` (to), `trot` (to), `canter` (to), `gallop` (to), `neigh`, `sit`, `lie`, `jump`, `nod`, `swish`, `graze`, `rear`, `buck` | `walk`, `walking`, `gait`, `neck`, `tail`, `wag`, `ears`, `fl.swing`, `fl.knee`, `fl.ankle`, `fr.swing`, `fr.knee`, `fr.ankle`, `hl.swing`, `hl.knee`, `hl.ankle`, `hr.swing`, `hr.knee`, `hr.ankle` | back, head, mouth, front, hitch, saddle |
+| `dog()` | animal | `walk` (to), `trot` (to), `run` (to), `gallop` (to), `bark`, `sit`, `lie`, `jump`, `nod`, `swish`, `wag`, `sniff` | `walk`, `walking`, `gait`, `neck`, `tail`, `wag`, `ears`, `fl.swing`, `fl.knee`, `fl.ankle`, `fr.swing`, `fr.knee`, `fr.ankle`, `hl.swing`, `hl.knee`, `hl.ankle`, `hr.swing`, `hr.knee`, `hr.ankle` | back, head, mouth, front, leash |
+| `cat()` | animal | `walk` (to), `trot` (to), `run` (to), `gallop` (to), `meow`, `sit`, `lie`, `jump`, `nod`, `swish`, `arch`, `pounce` (to) | `walk`, `walking`, `gait`, `neck`, `tail`, `wag`, `ears`, `fl.swing`, `fl.knee`, `fl.ankle`, `fr.swing`, `fr.knee`, `fr.ankle`, `hl.swing`, `hl.knee`, `hl.ankle`, `hr.swing`, `hr.knee`, `hr.ankle` | back, head, mouth, front |
+| `cow()` | animal | `walk` (to), `trot` (to), `moo`, `sit`, `lie`, `jump`, `nod`, `swish`, `graze` | `walk`, `walking`, `gait`, `neck`, `tail`, `wag`, `ears`, `fl.swing`, `fl.knee`, `fl.ankle`, `fr.swing`, `fr.knee`, `fr.ankle`, `hl.swing`, `hl.knee`, `hl.ankle`, `hr.swing`, `hr.knee`, `hr.ankle` | back, head, mouth, front |
 | `songbird()` | bird | `hop` (to), `walk` (to), `peck`, `flap`, `tweet`, `fly` (to), `glide` (to), `land` | `spread`, `flap`, `wingbeat`, `flapping`, `peck`, `step`, `stepping`, `leg.left`, `leg.right` | beak, head, back, feet |
 | `crow()` | bird | `hop` (to), `walk` (to), `peck`, `flap`, `caw`, `fly` (to), `glide` (to), `land` | `spread`, `flap`, `wingbeat`, `flapping`, `peck`, `step`, `stepping`, `leg.left`, `leg.right` | beak, head, back, feet |
 | `chicken()` | bird | `hop` (to), `walk` (to), `peck`, `flap`, `cluck`, `flutter` | `spread`, `flap`, `wingbeat`, `flapping`, `peck`, `step`, `stepping`, `leg.left`, `leg.right` | beak, head, back, feet |
@@ -13518,6 +13677,7 @@ Appearance options of `character({ … })`, all plain data that turns with the h
 - `outfit`: `{ shirt, trousers, sleeves: short | long | none, bottom: trousers | shorts | skirt, collar, tie: colour, over: apron | labCoat, overColor }`
 - `castMember(name, height)`: `boy`, `girl`, `youngMan`, `youngWoman`, `man`, `woman`, `grandpa`, `grandma`, `doctor`, `cook`, `builder`, `courier`, `teacher`, `farmer`
 - Face marks (pose fields, 0–1): `blush`, `tears`, `sweat`
+- Hair in motion (pose fields): `hair.swing` (degrees round the head, + toward its left), `hair.trail` (head radii back), `hair.lift` (head radii up); key them with `hairFollowTracks(target, tracks, who)` after the character's tracks, or `hairFollow` + `hairMotionAt` when posing per frame
 - `holding`: `mug` (left or right), `phone` (left or right), `book` (one hand or both), `bag` (left or right), `briefcase` (left or right), `umbrella` (left or right), `broom` (left or right), `parcel` (both); pose fields `held.left`, `held.right`, `held.both` (below 0.5 lets go); `handGrip(joints, side)`
 - `meetHands(kind, a, b)` (stand them `meetingSpacing(kind, a, b)` apart): `handshake`, `highFive`, `fistBump`, `handOver`
 
@@ -13580,7 +13740,7 @@ Edits:
 
 ### board
 
-`whiteboard({ x, y, width, height, theme?: whiteboard | chalkboard, fontSize?, items: [{ id, text, at: [x, y], size?, color?, hidden? } | { id, mark: circle | box | underline | arrow, around? | from?, to?, color?, hidden? }] })`
+`whiteboard({ x, y, width, height, theme?: whiteboard | chalkboard | lines, fontSize?, items: [{ id, text, at: [x, y], size?, color?, hidden? } | { id, mark: circle | box | underline | arrow, around? | from?, to?, bend?, color?, hidden? }] })`
 
 Anchors:
 - `box`: the whole board
@@ -13598,19 +13758,22 @@ Edits:
 
 ### chart
 
-`chart({ x, y, width, height, kind: bar | line, data: [{ id, label?, value, hidden? }], max?, title?, theme?: light | dark, decimals?, prefix?, suffix?, values? })`
+`chart({ x, y, width, height, kind: bar | line | pie | donut, data: [{ id, label?, value | values: { SERIES: value }, hidden? }], series?: [{ id, label?, color? }], max?, title?, axis?: { x?, y? }, legend?, theme?: light | dark, decimals?, prefix?, suffix?, values? })`
 
 Anchors:
 - `box`: the whole chart
-- `bar:ID`: a bar (bar charts), as it stands at the time: stand on its top (it carries a figure as it grows), point at it
-- `point:ID`: a point on the line (line charts), as it stands at the time
-- `label:ID`: its label under the axis
-- `value:ID`: its value label, above it
+- `bar:ID`: a bar (bar charts; bar:ID:SERIES with several series), as it stands at the time: stand on its top (it carries a figure as it grows), point at it
+- `point:ID`: a point on the line (line charts; point:ID:SERIES with several series), as it stands at the time
+- `slice:ID`: a slice of a pie or donut, as it stands at the time (its middle; pulled out, it moves): point at it, make it a piece
+- `label:ID`: its label: under the axis, or beside the slice
+- `value:ID`: its value label: above the bar or point (value:ID:SERIES), or on the slice
+- `legend:SERIES`: a series in the legend (several series)
 
 Edits:
-- `set`: bar or point anchors; { at, value, duration? }: animate to a new value; its value label counts along
-- `show`: bar or point anchors given `hidden`; { at, duration?, on? }: grow a bar in from the axis, or draw the line out to a point (on: false takes it back)
-- `highlight`: bar or point anchors; { at, duration?, on? }: colour it out (on: false clears)
+- `set`: bar, point or slice anchors; { at, value, duration? }: animate to a new value; its value label counts along (a pie re-shares the circle)
+- `show`: bar, point or slice anchors given `hidden`; { at, duration?, on? }: grow a bar in from the axis, draw the line out to a point, or open a slice (on: false takes it back)
+- `highlight`: bar, point or slice anchors; { at, duration?, on? }: colour it out (on: false clears)
+- `pull`: slice anchors; { at, duration?, on? }: pull the slice out from the centre (on: false puts it back)
 
 ### prop
 
@@ -13619,12 +13782,14 @@ Edits:
 Anchors:
 - `box`: the prop’s whole box
 - `anchor:NAME`: one of its rig’s anchors (door, seat, branch, ridge…), as posed at the time
-- `part:ID`: one of its parts as seen at the time (window-1, door-left, wheel-0-left…)
-- `control:NAME`: where the parts a control moves or lights are (control:door is the doors, control:lights the lamps)
+- `part:ID`: one of its parts as seen at the time (window-1, door-left, wheel-0-left…); it can come loose as a piece
+- `control:NAME`: where the parts a control moves or lights are (control:door is the doors, control:lights the lamps; a control of the whole prop, like lift, is its box)
 
 Edits:
 - `set`: control anchors; { at, value, duration? }: move a control to a value
 - `switch`: control anchors; { at, on?, duration? }: a control to its full value (open, on), or back to its rest value with on: false
+- `move`: a part; { at, to: an anchor name or { x, y }, duration? }: carry the part there, loose
+- `fling`: a part; { at, velocity?, spin?, gravity?, duration? }: knock the part off on a spinning arc
 
 ## Camera shots (`cameraTracks(shots, { stage })`)
 

@@ -3,7 +3,7 @@ import type { Vec3 } from '../../engine/math'
 import { Timeline } from '../../engine/core/timeline'
 import type { Pose } from '../rig/body-plan'
 import { stagePlanSpace } from '../rig/skeleton'
-import { character, type CharacterOptions } from '../character'
+import { character, type CharacterOptions, type CharacterPoseKey } from '../character'
 import { HUMAN_POSES, HUMAN_REST } from '../species/human'
 import { controlValue, propAnchors3D } from './rig'
 import type { Prop } from './target'
@@ -61,11 +61,76 @@ export interface PropRide3DOptions {
 /** How high a rider hops getting on or off, metres above the straight line. */
 const HOP = 0.35
 
-/** Riding poses for a human: on a seat, and astride a saddle (legs apart round a horse's barrel). */
+/**
+ * Riding poses for a human: on a seat, astride a saddle (legs apart round a
+ * horse's barrel), driving (hands forward on a wheel) and on a bike's saddle
+ * (leaning to the handlebars; the legs cycle with `pedallingPose`).
+ */
 export const RIDING_POSES = {
   seated: HUMAN_POSES.sit,
   astride: { ...HUMAN_POSES.sit, 'leg.left.spread': 26, 'leg.right.spread': 26, 'leg.left.swing': 40, 'leg.right.swing': 40, 'leg.left.knee': 70, 'leg.right.knee': 70 } as Pose,
+  driving: { ...HUMAN_POSES.sit, 'arm.left.swing': 52, 'arm.right.swing': 52, 'arm.left.spread': 8, 'arm.right.spread': 8, 'arm.left.elbow': 38, 'arm.right.elbow': 38, lean: 4 } as Pose,
+  cycling: { ...HUMAN_POSES.sit, lean: 22, bend: 10, 'head.nod': -14, 'arm.left.swing': 58, 'arm.right.swing': 58, 'arm.left.spread': 10, 'arm.right.spread': 10, 'arm.left.elbow': 22, 'arm.right.elbow': 22, 'leg.left.spread': 6, 'leg.right.spread': 6 } as Pose,
 } satisfies Record<string, Pose>
+
+/** How far a pedalling knee lifts and the thigh swings, degrees, either side of the cycling pose. */
+const PEDAL_SWING = 22
+const PEDAL_KNEE = 38
+
+/**
+ * The cycling pose with the legs part way round the pedals: `phase` 0 → 1
+ * is one turn of the cranks (the left foot at the top at 0, the right half a
+ * turn behind), built on `base` (default `RIDING_POSES.cycling`).
+ */
+export function pedallingPose(phase: number, base: Pose = RIDING_POSES.cycling): Pose {
+  const angle = phase * Math.PI * 2
+  const leg = (offset: number) => ({
+    swing: (base['leg.left.swing'] ?? 40) + PEDAL_SWING * Math.cos(angle + offset),
+    // The knee straightens as the foot pushes down and over the bottom of the stroke.
+    knee: (base['leg.left.knee'] ?? 70) + PEDAL_KNEE * (0.5 + 0.5 * Math.cos(angle + offset)) - PEDAL_KNEE * 0.5,
+    ankle: 12 * Math.sin(angle + offset),
+  })
+  const left = leg(0)
+  const right = leg(Math.PI)
+  return {
+    ...base,
+    'leg.left.swing': left.swing,
+    'leg.left.knee': left.knee,
+    'leg.left.ankle': left.ankle,
+    'leg.right.swing': right.swing,
+    'leg.right.knee': right.knee,
+    'leg.right.ankle': right.ankle,
+  }
+}
+
+export interface PedallingOptions {
+  /** From and to, ms */
+  start: number
+  end: number
+  /** Turns of the cranks per second (default 1.2) */
+  cadence?: number
+  /** The pose the legs cycle on (default `RIDING_POSES.cycling`) */
+  base?: Pose
+  /** Keys per turn (default 8) */
+  samplesPerTurn?: number
+}
+
+/**
+ * Pose keys that pedal from `start` to `end` (`act: false`: a cycle is
+ * already timed), for a rider's own pose tracks (`characterPoseTracks` or
+ * `actCharacterTracks`) while `propRide3D` or `propRide` carries it.
+ */
+export function pedallingKeys(options: PedallingOptions): CharacterPoseKey[] {
+  const cadence = options.cadence ?? 1.2
+  const perTurn = Math.max(2, options.samplesPerTurn ?? 8)
+  const step = 1000 / cadence / perTurn
+  const keys: CharacterPoseKey[] = []
+  for (let time = options.start, i = 0; time < options.end; time += step, i++) {
+    keys.push({ time: Math.round(time), pose: pedallingPose(((time - options.start) / 1000) * cadence, options.base), ...(i > 0 ? { act: false } : {}) })
+  }
+  keys.push({ time: options.end, pose: pedallingPose(((options.end - options.start) / 1000) * cadence, options.base), act: false })
+  return keys
+}
 
 const turnY = (v: Vec3, degrees: number): Vec3 => {
   const a = (degrees * Math.PI) / 180

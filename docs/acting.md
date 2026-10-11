@@ -253,6 +253,42 @@ leaves, with a time, a scene x and y and a length, ready for `drawDustPuff`.
 Any beat can also take `onto` (a scene y): the figure is carried to that floor
 over the beat, as when the line it stands on moves up.
 
+### On a v2 character
+
+`characterScript(target, who, beats, options)` compiles the same beats for a
+v2 `character()` (see [Character Appearance](character-appearance.md)), so a
+cast member acts the story the stick figure does:
+
+```js
+import { character, castMember, characterScript, characterTarget, hairFollowTracks } from '@algorisys/tinyfly/characters'
+
+const amy = character(castMember('youngWoman', 170))
+const script = characterScript('amy', amy, [
+  { do: 'walk', to: 330, mood: 'happy' },
+  { do: 'say', say: 'Is that box ticking?', mood: 'worried' },
+  { do: 'take' },
+  { do: 'zip', to: -200 },
+], { from: 90, style: 'snappy' })
+const tracks = [...script.tracks, ...hairFollowTracks('amy', script.tracks, amy)]
+const targets = { amy: characterTarget({ x: 90, y: 300, character: amy }) }
+```
+
+It takes every `scriptTracks` option but `height` (the character's own is
+used) and returns the same result: tracks, `duration`, `lines`, `beats`,
+`effects`, and the key poses on the human body. The stick-figure script plans
+the story (timing, where the figure is, which way it faces, its gait, its
+speech); its key poses are taken onto the human body, mirrored when it faces
+left (so `turn` runs negative that way); the human acting pass then winds up,
+overshoots and overlaps on this body, and the lines are lip-synced over its
+mouth. The walk phase is rekeyed to the character's own stride (its height and
+legs: a child takes shorter steps), so its feet stay planted. The `walk`,
+`walking` and `gait` tracks step the gait as the target draws
+(`characterPoseOf(props)` folds them into the pose, for drawing by hand). Hands
+reach in the stick figure's proportions, so a `grab` or a `point` lands near
+its target on the human body, not exactly on it. Your own gaits go in
+`options.gaits` for the script and `gaits` on `characterTarget` so the drawing
+knows them too.
+
 ## Your own actions, gaits and personas
 
 Behaviours of your own are plain values passed where they are used; nothing
@@ -501,7 +537,7 @@ lists the problems without compiling.
 ### Whiteboards
 
 `whiteboard()` is a second surface, for lessons that are not code: a board
-(or `theme: 'chalkboard'`) whose texts and hand-drawn marks are declared as
+(or `theme: 'chalkboard'`, or `'lines'`, ruled paper with a margin) whose texts and hand-drawn marks are declared as
 data, each with an id, and named as places like a code panel's lines:
 
 ```js
@@ -535,11 +571,17 @@ everywhere. Colours are theme names (`red`, `blue`, `green`, `orange`, and
 `yellow` on chalk) or any CSS colour. The Board Lesson demo solves an
 equation this way.
 
+The boards write in a handwriting font, Patrick Hand, when the page loads it
+(the editor and the examples do, from Google Fonts), else the system's own
+hand. An arrow bows a little as a hand draws it; it bends round any text it
+would cross, and `bend` (a fraction of its length, + to its left) sets the bow.
+
 ### Charts
 
-`chart()` is a surface for talking through data: a bar or line chart whose
-values are declared as data, scaled once when it is made (`max`, or a round
-number above the largest value).
+`chart()` is a surface for talking through data: a bar, line, pie or donut
+chart whose values are declared as data. Bar and line charts are scaled once
+when they are made (`max`, or a round number above the largest value); a pie
+shares its circle by value.
 
 ```js
 const sales = chart({
@@ -559,13 +601,26 @@ surfaceScript('hero', { sales }, [
 ], { from: 640, ground: 400, height: 90, facing: -1 })
 ```
 
-Its places are `bar:ID` (on a bar chart) or `point:ID` (on a line chart),
-`label:ID`, `value:ID` and `box`, and they follow the values:
-`sales.anchor('bar:q4', time)` is the bar as it stands then. Its edits:
-`set` (a new `value`; the value label counts along), `show` (grow a
-`hidden` bar in from the axis, or draw the line out to a point; `on: false`
-takes it back) and `highlight`. A bar's top is a floor: a figure standing on
-it is carried up and down as it grows and shrinks, as in the Chart Talk demo.
+Its places are `bar:ID` (on a bar chart), `point:ID` (on a line chart) or
+`slice:ID` (on a pie or donut), `label:ID`, `value:ID` and `box`, and they
+follow the values: `sales.anchor('bar:q4', time)` is the bar as it stands
+then. Its edits: `set` (a new `value`; the value label counts along, and a
+pie re-shares its circle), `show` (grow a `hidden` bar in from the axis, draw
+the line out to a point, or open a slice; `on: false` takes it back),
+`highlight`, and on a pie `pull` (the slice stands out from the centre). A
+bar's top is a floor: a figure standing on it is carried up and down as it
+grows and shrinks, as in the Chart Talk demo.
+
+A slice can come loose: `traffic.piece('slice:other')` is a piece, and
+`fling`, `follow` and `move` carry it off as they do a term on a board, so a
+figure can kick the smallest slice out of the pie.
+
+Several series (`series: [{ id: 'plan' }, { id: 'actual', color }]`, each
+datum with `values: { plan: 40, actual: 46 }`) draw grouped bars or one line
+per series, with a legend (`legend:SERIES` is a place too). Their places and
+edits take the series after the id: `bar:q1:actual`. Axis titles go in
+`axis: { x, y }`. A pie shows one series. The Pies & Series card shows all of
+it.
 
 ### Props as surfaces
 
@@ -590,6 +645,14 @@ surfaceScript('hero', { home: homeSurface }, [
     then: { surface: 'home', edit: 'switch', anchor: 'control:lights' } },
 ], { from: 40, ground: floor, height: 100 })
 ```
+
+A prop's parts come loose too: `carSurface.piece('part:wheel-0-left')` is a
+piece, and `fling`, `follow` and `move` carry it off, drawn where it went
+(or as edits from a beat: `then: { edit: 'fling', anchor: 'part:wheel-0-left',
+at: 'contact' }` on a `kick`). Every anchor and part is also a floor: a figure
+that leaps `onto: { surface: 'car', anchor: 'anchor:roof' }` is carried as the
+car lifts, drives or is squashed, the way a bar carries it on a chart. The Kick
+the Tyre card does both.
 
 A prop stands on its middle, and seen from a little above its front comes
 forward of that line. A figure that walks on the prop's own `y` is inside
@@ -695,5 +758,5 @@ timeline plays: editor previews, players, embeds and exports.
 ## Not yet
 
 - A code panel in the editor (a Code element whose lines and words snap beats)
-- Beat scripts for v2 characters (`scriptTracks` drives the stick figure)
-- Follow-through on hair, tails and ears (character-system milestones 3 and 5)
+- Beat scripts' hands reaching in the v2 character's own proportions (a `grab`
+  lands near its target, not on it)

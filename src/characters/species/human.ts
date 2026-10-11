@@ -22,6 +22,8 @@ import { EXPRESSIONS, type ExpressionName } from '../stick-figure'
  * - the face: `mouth`, `smile`, `mouthWidth`, `blink`, `eye.left`, `eye.right`,
  *   `brow.left`, `brow.right`, `browTilt`, `lookX`, `lookY` (as the v1 stick figure),
  *   and marks that fade in from 0 to 1: `blush` (cheeks), `tears`, `sweat` (a bead at the temple)
+ * - hair in motion: `hair.swing` (round the head toward its left +, degrees), `hair.trail`
+ *   (streaming back +, head radii), `hair.lift` (up +, head radii); `hairFollow` keys them
  * - `held.left`, `held.right`, `held.both`: whether what the character holds
  *   there shows (1, the default) or has been let go (below 0.5)
  *
@@ -124,6 +126,9 @@ export const HUMAN_REST: Pose = {
   blush: 0,
   tears: 0,
   sweat: 0,
+  'hair.swing': 0,
+  'hair.trail': 0,
+  'hair.lift': 0,
   'held.left': 1,
   'held.right': 1,
   'held.both': 1,
@@ -135,7 +140,7 @@ export function humanPose(changes: Pose = {}): Pose {
 }
 
 /** Fields that turn or tip the body one way across the picture: a mirror image reverses them. */
-const MIRROR_NEGATED = new Set(['turn', 'side', 'head.turn', 'head.tilt', 'roll', 'lookX'])
+const MIRROR_NEGATED = new Set(['turn', 'side', 'head.turn', 'head.tilt', 'roll', 'lookX', 'hair.swing'])
 
 /**
  * The mirror image of a pose, as if seen in a mirror beside the picture: the
@@ -409,6 +414,9 @@ export function humanFieldLabel(field: string): string {
     blush: 'Blush',
     tears: 'Tears',
     sweat: 'Sweat',
+    'hair.swing': 'Hair · swing',
+    'hair.trail': 'Hair · trail',
+    'hair.lift': 'Hair · lift',
     'held.left': 'Left hand · holding',
     'held.right': 'Right hand · holding',
     'held.both': 'Both hands · holding',

@@ -31,6 +31,16 @@ describe('character elements', () => {
     expect(characterElementPose(element, stateWith(element.id, { turn: 2 })).turn).toBe(2)
   })
 
+  it('steps its gait from walk, walking and gait tracks (a beat script’s walk)', () => {
+    const element = aCharacter({ pose: { turn: 1 } })
+    const standing = characterElementPose(element)
+    const state: AnimationState = { ...stateWith(element.name, { walk: 0.25, walking: 1 }), values: new Map([[element.name, new Map<string, number | string>([['walk', 0.25], ['walking', 1], ['gait', 'run']])]]) }
+    const stepping = characterElementPose(element, state)
+    expect(stepping['leg.left.swing']).not.toBeCloseTo(standing['leg.left.swing'] ?? 0, 1)
+    expect(stepping.turn).toBe(1)
+    expect(stepping).not.toHaveProperty('gait')
+  })
+
   it('is a canvas target in its box whose props are every pose field', () => {
     const element = aCharacter({ pose: { lean: 10 } })
     const target = characterElementTarget(element)

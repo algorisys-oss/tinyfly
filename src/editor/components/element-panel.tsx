@@ -1,6 +1,7 @@
 import { For, Show, createMemo } from 'solid-js'
+import { codeElementHeight } from '../utils/code-element'
 import type { Component } from 'solid-js'
-import type { SceneStore, ElementType, GroupElement, DeviceVariant } from '../stores/scene-store'
+import type { SceneStore, ElementType, GroupElement, DeviceVariant, CodeElement } from '../stores/scene-store'
 import type { ProjectStore } from '../stores/project-store'
 import { HelpIcon } from './tooltip'
 import { createCollapsed } from '../utils/use-collapsed'
@@ -24,6 +25,7 @@ const ELEMENT_TYPES: { type: ElementType; icon: string; label: string }[] = [
   { type: 'character', icon: '🧍', label: 'Character' },
   { type: 'map', icon: '🗺', label: 'Map' },
   { type: 'scene3d', icon: '🧊', label: '3D Scene' },
+  { type: 'code', icon: '⌨', label: 'Code' },
 ]
 
 export const ElementPanel: Component<ElementPanelProps> = (props) => {
@@ -38,6 +40,13 @@ export const ElementPanel: Component<ElementPanelProps> = (props) => {
         height: canvas.height,
         view: { lon: 20, lat: 20, zoom: Math.max(0, Math.log2(canvas.width / 256)) },
       })
+      return
+    }
+    if (type === 'code') {
+      // A code panel near the top left, as wide as fits, as tall as its lines.
+      const canvas = props.projectStore.currentProject().canvas
+      const placed = props.sceneStore.addElement('code', { x: 40, y: 40, width: Math.min(420, Math.max(200, canvas.width - 80)) }) as CodeElement
+      props.sceneStore.updateElement(placed.id, { height: codeElementHeight(placed) })
       return
     }
     if (type === 'scene3d') {
@@ -290,6 +299,7 @@ export const ElementPanel: Component<ElementPanelProps> = (props) => {
                       {element.type === 'character' && '🧍'}
                       {element.type === 'map' && '🗺'}
                       {element.type === 'scene3d' && '🧊'}
+                      {element.type === 'code' && '⌨'}
                     </span>
                     <span class="element-name">
                       {element.name}

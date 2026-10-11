@@ -1,4 +1,5 @@
 import { createSignal } from 'solid-js'
+import type { CodeLanguage } from '../../characters'
 import type { CharacterActing } from '../utils/character-acting'
 import { createStore } from 'solid-js/store'
 import { measureTextLetters } from '../utils/split-text'
@@ -8,7 +9,7 @@ import type { Scene3D } from '../../scene-3d'
 
 export type { PolyStarSpec }
 
-export type ElementType = 'rect' | 'circle' | 'text' | 'image' | 'audio' | 'video' | 'line' | 'arrow' | 'path' | 'group' | 'symbol' | 'character' | 'map' | 'scene3d'
+export type ElementType = 'rect' | 'circle' | 'text' | 'image' | 'audio' | 'video' | 'line' | 'arrow' | 'path' | 'group' | 'symbol' | 'character' | 'map' | 'scene3d' | 'code'
 
 /** Device-frame preset silhouettes. */
 export type DeviceVariant = 'phone' | 'landscape' | 'tablet'
@@ -289,6 +290,14 @@ export interface CharacterElement extends BaseElement {
   faceName?: string
   /** Body shape: proportions, head size, shoulder and hip width, limb lengths (default: the bold standard build) */
   build?: CharacterBuild
+  /**
+   * The beat script it acts (`characterScript`), when it was generated or
+   * written from one: kept with the element so the story travels with the
+   * JSON. The tracks are what play; the script is the source they came from.
+   * Beats may aim at the scene's surfaces (`{ surface, anchor }` places and
+   * `then` cues): see `compileCharacterBeats`.
+   */
+  beats?: Array<{ do: string }>
   /** Hairstyle preset (`HAIR_STYLES`); none when left out */
   hair?: string
   /** Hair colour (default the style's brown) */
@@ -362,6 +371,24 @@ export interface MapElement extends BaseElement {
 }
 
 /**
+ * A code panel on the stage (`codePanel()`): a listing with line numbers,
+ * drawn by code. Its lines are places a Character's beats aim at
+ * (`target: { surface: '<its name>', anchor: 'line:3' }`) and change
+ * (`then: { edit: 'highlight', anchor: 'line:3' }`); its edits are tracks on
+ * the element named `line.N.highlight`, `line.N.strike`, `line.N.wipe`,
+ * `line.N.reveal` and so on. Its height follows its lines.
+ */
+export interface CodeElement extends BaseElement {
+  type: 'code'
+  code: string
+  language: CodeLanguage
+  fontSize: number
+  lineNumbers: boolean
+  /** Lines that start hidden, to be typed in (1-based) */
+  hidden?: number[]
+}
+
+/**
  * A 3D scene in a box on the stage: cameras, lights, meshes and characters
  * as `@algorisys/tinyfly/scene-3d` JSON, drawn through the scene's camera.
  * Its objects animate by tracks on the element named `<objectId>.<property>`
@@ -372,7 +399,7 @@ export interface Scene3DElement extends BaseElement {
   scene: Scene3D
 }
 
-export type SceneElement = RectElement | CircleElement | TextElement | ImageElement | AudioElement | VideoElement | LineElement | ArrowElement | PathElement | GroupElement | SymbolInstanceElement | CharacterElement | MapElement | Scene3DElement
+export type SceneElement = RectElement | CircleElement | TextElement | ImageElement | AudioElement | VideoElement | LineElement | ArrowElement | PathElement | GroupElement | SymbolInstanceElement | CharacterElement | MapElement | Scene3DElement | CodeElement
 
 export interface SceneState {
   elements: SceneElement[]
@@ -558,6 +585,22 @@ const DEFAULT_MAP: Omit<MapElement, 'id' | 'name'> = {
   pinColor: '#dc2626',
 }
 
+const DEFAULT_CODE: Omit<CodeElement, 'id' | 'name'> = {
+  type: 'code',
+  x: 40,
+  y: 40,
+  width: 380,
+  height: 160,
+  rotation: 0,
+  opacity: 1,
+  visible: true,
+  locked: false,
+  code: 'function greet(name) {\n  return `Hello, ${name}!`\n}\n\ngreet("tinyfly")',
+  language: 'javascript',
+  fontSize: 16,
+  lineNumbers: true,
+}
+
 /** A new 3D scene: a camera at three-quarters, a key light and ambient light, a floor and a box. */
 export function defaultScene3D(): Scene3D {
   return {
@@ -611,6 +654,7 @@ function generateName(type: ElementType, elements: SceneElement[]): string {
     character: 'Character',
     map: 'Map',
     scene3d: '3D Scene',
+    code: 'Code',
   }
   return `${names[type]} ${count}`
 }
@@ -737,6 +781,9 @@ export function createSceneStore() {
           id,
           name,
         } as MapElement
+        break
+      case 'code':
+        element = { ...DEFAULT_CODE, ...overrides, id, name } as CodeElement
         break
       case 'group':
         // Groups are created via groupElements(), not addElement()

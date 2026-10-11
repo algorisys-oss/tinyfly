@@ -18,12 +18,14 @@ import { narratedScene } from './narrated-scene'
 import { stickFigure } from './stick-figure'
 import { pencilSketch } from './pencil-sketch'
 import { cartoonActing } from './cartoon-acting'
+import { characterActing } from './character-acting'
 import { codeActing } from './code-acting'
 import { codeRefactor } from './code-refactor'
 import { codeFix } from './code-fix'
 import { codeTidy } from './code-tidy'
 import { boardLesson } from './board-lesson'
 import { chartTalk } from './chart-talk'
+import { chartKinds } from './chart-kinds'
 import { homeTime } from './home-time'
 import { codeReview } from './code-review'
 import { propCar } from './prop-car'
@@ -37,6 +39,7 @@ import { dressedFigures } from './dressed-figures'
 import { castTurnaround } from './cast-turnaround'
 import { hairAndHats } from './hair-and-hats'
 import { handOver } from './hand-over'
+import { kickTheTyre } from './kick-the-tyre'
 import { danceFloor } from './dance-floor'
 import { mapRoute } from './map-route'
 import { lineMaskReveal } from './line-mask-reveal'
@@ -90,16 +93,19 @@ import narratedSceneSource from './narrated-scene.js?raw'
 import stickFigureSource from './stick-figure.js?raw'
 import pencilSketchSource from './pencil-sketch.js?raw'
 import cartoonActingSource from './cartoon-acting.js?raw'
+import characterActingSource from './character-acting.js?raw'
 import codeActingSource from './code-acting.js?raw'
 import codeRefactorSource from './code-refactor.js?raw'
 import codeFixSource from './code-fix.js?raw'
 import codeTidySource from './code-tidy.js?raw'
 import boardLessonSource from './board-lesson.js?raw'
 import chartTalkSource from './chart-talk.js?raw'
+import chartKindsSource from './chart-kinds.js?raw'
 import homeTimeSource from './home-time.js?raw'
 import castTurnaroundSource from './cast-turnaround.js?raw'
 import hairAndHatsSource from './hair-and-hats.js?raw'
 import handOverSource from './hand-over.js?raw'
+import kickTheTyreSource from './kick-the-tyre.js?raw'
 import codeReviewSource from './code-review.js?raw'
 import propCarSource from './prop-car.js?raw'
 import propSceneSource from './prop-scene.js?raw'
@@ -220,6 +226,7 @@ export const liveDemos: LiveDemoWithCode[] = [
   withCode(stickFigure, stickFigureSource),
   withCode(pencilSketch, pencilSketchSource),
   withCode(cartoonActing, cartoonActingSource),
+  withCode(characterActing, characterActingSource),
   withCode(codeActing, codeActingSource),
   withCode(codeRefactor, codeRefactorSource),
   withCode(codeFix, codeFixSource),
@@ -227,10 +234,12 @@ export const liveDemos: LiveDemoWithCode[] = [
   withCode(codeReview, codeReviewSource),
   withCode(boardLesson, boardLessonSource),
   withCode(chartTalk, chartTalkSource),
+  withCode(chartKinds, chartKindsSource),
   withCode(homeTime, homeTimeSource),
   withCode(castTurnaround, castTurnaroundSource),
   withCode(hairAndHats, hairAndHatsSource),
   withCode(handOver, handOverSource),
+  withCode(kickTheTyre, kickTheTyreSource),
   withCode(propCar, propCarSource),
   withCode(propScene, propSceneSource),
   withCode(propHelicopter, propHelicopterSource),

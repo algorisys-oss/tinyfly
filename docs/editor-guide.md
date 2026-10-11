@@ -43,7 +43,9 @@ left to right:
   is a reassuring, tap-friendly manual save (handy on tablets).
 - **New** — start a fresh project (prompts if you have unsaved changes).
 - **AI** — show or hide the AI prompt bar, where you describe an animation and
-  click **Generate**.
+  click **Generate**. A brief with a story in it ("grandma walks up to a ticking
+  box, jumps, and runs off") gets a 🧍 Character from the cast with a beat
+  script, compiled into its tracks on load (the beats stay on the element).
 - **My Animations** — open the gallery of every project you've saved (thumbnails,
   open / duplicate / delete). See [Project Management](#project-management).
 - **Examples** — every ready-made animation on one page (`/examples`). Open one in
@@ -78,6 +80,8 @@ Shapes, text, images, video, lines, arrows and paths are added from the
 | **Group** | Container that groups multiple elements |
 | **🧍 Character** | A posable figure: pick a view, a pose and a face, and keyframe them to animate (see [Characters](#characters)) |
 | **🗺 Map** | An animated map: places, a route between them, and a camera (see [Maps](#maps)) |
+| **🧊 3D Scene** | A real 3D scene seen through its camera: meshes, lights, characters and props (see [3D Scenes](#3d-scenes)) |
+| **⌨ Code** | A code panel whose lines a Character's beats aim at and change (see [Code](#code)) |
 
 Polygon and star are **parametric** paths: change the sides/points/inner ratio in
 the Property Panel and the shape regenerates, and they rescale cleanly when you
@@ -213,11 +217,38 @@ Dances and flips are written as they are, and turn acting off.
   (`drawingRate` in the JSON), so previews, players and exports all hold the
   same way.
 
+- **Beats**: a story written as beats, compiled in the chosen style into the
+  character's tracks and kept on the element (`beats` in the JSON). Write them
+  as JSON (`[{ "do": "walk", "to": 320, "mood": "happy" }, { "do": "say",
+  "say": "Hello!" }, { "do": "take" }]`) and click **🎬 Run beats**; the
+  timeline grows to fit. A beat can aim at a **⌨ Code** element's lines
+  (`"target": { "surface": "Code 1", "anchor": "line:2" }`, also for `to`,
+  `toward` and `onto`) and change them (`"then": { "surface": "Code 1",
+  "edit": "highlight", "anchor": "line:2", "at": "contact" }`): the edits
+  become tracks on that element. Problems are named by beat (an unknown
+  action, mood or place) before anything is written. The AI prompt bar writes
+  beats this way too.
+
 See [Cartoon Acting](acting.md).
 
 Characters show in the DOM and Canvas previews and in GIF / WebP / MP4
 export. They are not part of exported HTML or embeds yet, and the SVG preview
 does not draw them.
+
+### Code
+
+A **⌨ Code** element is a code panel (`codePanel()` from code): a listing with
+line numbers, drawn by code into its box, which grows to fit its lines. In the
+property panel: the **Language** (JavaScript, TypeScript, Python, Go, Rust,
+C#, plain), **Font size**, **Line numbers**, **Hidden lines** (typed in later)
+and the **Listing** itself.
+
+Its lines are places. A Character's **Beats** aim at them and change them
+(highlight, strike, remove, type, fling a token…), and those edits are tracks
+on the Code element named `line.N.highlight`, `line.N.strike`, `line.N.wipe`,
+`line.N.reveal` and so on, which you can also key by hand. Code panels show in
+the DOM and Canvas previews and in GIF / WebP / MP4 export. See [Acting on
+code](acting.md#acting-on-code) for the same from code.
 
 ### Maps
 
@@ -253,8 +284,8 @@ camera: it starts with a camera at three-quarters, a key light, a floor and a
 red box. In the property panel:
 
 - **Objects**: pick one to edit. **Add** puts a box, sphere, cylinder, cone,
-  ring, star (an extruded path), character or light on the next free spot;
-  ✕ removes the picked one (not the scene's camera).
+  ring, star (an extruded path), character, prop or light on the next free
+  spot; ✕ removes the picked one (not the scene's camera).
 - **Transform**: X, Y, Z (metres, +y up), Tilt X, Turn Y, Roll Z and Scale.
   **◆ Key transform at playhead** keys all of them; once a value is animated
   (◆ by its name), changing it keys it at the playhead.
@@ -263,6 +294,12 @@ red box. In the property panel:
 - **Characters**: a look (*Clean*, *Pencil*, *Silhouette* drawn by their pens
   in perspective, or *Solid*) and **🕺 Dance from playhead** with any dance
   style.
+- **Props**: which prop from the catalog (car, truck, bus, tractor, cart, train
+  car, bike, motorbike, tree, house, helicopter, airplane, horse, dog, cat, cow,
+  songbird, crow, chicken), its look (*Clean*, *Pencil*, *Silhouette*, or
+  *Mesh*, lit with the scene) and style (*Solid* or *Stick* line art). Its
+  controls (`car.door`, `car.wheelSpin`, `dog.tail`…) are tracks on the
+  element.
 - **Cameras**: field of view, **Look through this camera**, and **✂ Cut to
   this camera at playhead**, which keys the shot change.
 - **Camera** view presets (*Front*, *¾*, *Side*, *Top*) and the scene's
@@ -1066,7 +1103,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.98.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.99.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed

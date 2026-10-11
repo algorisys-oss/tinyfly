@@ -167,6 +167,8 @@ export function quadruped(spec: QuadrupedSpec): Prop {
     // The tail bends along its length: each segment turns its share, so the whole tail curls.
     tail: { description: 'Tail flicked up and back (+), curling along its length, on a spring behind the motion', unit: 'degrees', bind: [{ parts: TAIL_SEGMENTS, rotate: { axis: 'x', degrees: 1 / TAIL_SEGMENTS.length } }] },
     wag: { description: 'Tail swung side to side, curling', unit: 'degrees', bind: [{ parts: TAIL_SEGMENTS, rotate: { axis: 'y', degrees: 1 / TAIL_SEGMENTS.length } }] },
+    // The ears hinge at their base: laid back on a run, on a spring behind the motion.
+    ears: { description: 'Ears pricked forward (+) or laid back (−), on a spring behind the motion', unit: 'degrees', bind: [{ parts: ['ear-left', 'ear-right'], rotate: { axis: 'x', degrees: 1, pivot: [0, -spec.ears.radii[1], 0] } }] },
   }
   for (const id of LEGS) {
     const front = id[0] === 'f'
@@ -222,7 +224,10 @@ export function quadruped(spec: QuadrupedSpec): Prop {
     actions: { ...quadrupedActions(spec, helpers), ...spec.actions?.(helpers) },
     acting: QUADRUPED_ACTING,
     colors: { body: colors.coat, ink: '#26262b' },
-    follow: [{ control: 'tail', of: 'x', per: 0.6, stiffness: 90, damping: 6, limit: 40 }],
+    follow: [
+      { control: 'tail', of: 'x', per: 0.6, stiffness: 90, damping: 6, limit: 40 },
+      { control: 'ears', of: 'x', per: 1.4, stiffness: 150, damping: 8, limit: 45 },
+    ],
     moves: quadrupedMoves(spec, leg),
   }
 }

@@ -34,6 +34,16 @@ export interface PropDrawOptions {
   paper?: string
   /** The fog's colour, for faces lit by a scene (`light`, `fog` on the solved faces) */
   fog?: string
+  /** Parts that have come loose (see `propSurface().piece`): drawn carried from where they sit and turned about their middle, by part id */
+  loose?: Record<string, LoosePart>
+}
+
+/** Where a loose part has gone: px from its place in the prop's space, its turn (degrees) and how faded it is. */
+export interface LoosePart {
+  x: number
+  y: number
+  rotate: number
+  opacity: number
 }
 
 /** Draws in the prop's own space: feet at 0, 0, up is −y. */
@@ -47,7 +57,7 @@ export function drawSolvedProp(ctx: CanvasRenderingContext2D, solved: SolvedProp
 function drawSolvedPropInside(ctx: CanvasRenderingContext2D, solved: SolvedProp, options: PropDrawOptions): void {
   const lineWidth = propLineWidth(solved, options)
   if (options.shadow !== false) drawPropShadow(ctx, solved, options)
-  for (const part of solved.under) drawPart(ctx, part, lineWidth, options)
+  for (const part of solved.under) drawPartInPlace(ctx, part, lineWidth, options)
   if (options.rider) {
     // A rider is inside the prop: it shows only through the see-through parts (glass, an open doorway).
     // A prop with none (an open cart, a bike) shows the whole rider.
@@ -64,7 +74,29 @@ function drawSolvedPropInside(ctx: CanvasRenderingContext2D, solved: SolvedProp,
     options.rider(ctx)
     ctx.restore()
   }
-  for (const part of solved.over) drawPart(ctx, part, lineWidth, options)
+  for (const part of solved.over) drawPartInPlace(ctx, part, lineWidth, options)
+}
+
+/** A part where it sits, or, come loose, carried and turned about its middle. */
+function drawPartInPlace(ctx: CanvasRenderingContext2D, part: SolvedPart, lineWidth: number, options: PropDrawOptions): void {
+  const loose = options.loose?.[part.part.id]
+  if (!loose) {
+    drawPart(ctx, part, lineWidth, options)
+    return
+  }
+  if (loose.opacity <= 0) return
+  const points = part.faces.flatMap((face) => face.points)
+  if (points.length === 0) return
+  const xs = points.map((p) => p.x)
+  const ys = points.map((p) => p.y)
+  const centre = { x: (Math.min(...xs) + Math.max(...xs)) / 2, y: (Math.min(...ys) + Math.max(...ys)) / 2 }
+  ctx.save()
+  ctx.globalAlpha *= Math.min(1, loose.opacity)
+  ctx.translate(centre.x + loose.x, centre.y + loose.y)
+  ctx.rotate((loose.rotate * Math.PI) / 180)
+  ctx.translate(-centre.x, -centre.y)
+  drawPart(ctx, part, lineWidth, options)
+  ctx.restore()
 }
 
 /** The outline width a prop is drawn with: weighted by how big it looks, so a cat drawn large and a bus drawn small both read. */

@@ -1,7 +1,7 @@
 import type { CustomTarget } from '../../adapters/canvas'
 import type { AnimationState } from '../../engine/types'
 import { hashSeed } from '../../engine/authoring/random'
-import { basicOutfit, character, drawCharacter, HAND_REST, HUMAN_REST, CHARACTER_CAST, type CastName, type Character, type CharacterPose, type FacialHairStyleName, type GlassesStyle, type HairStyleName, type HatStyle, type HoldingSpec } from '../../characters'
+import { basicOutfit, character, characterPoseOf, drawCharacter, HAND_REST, HUMAN_REST, CHARACTER_CAST, type CastName, type Character, type CharacterPose, type FacialHairStyleName, type GlassesStyle, type HairStyleName, type HatStyle, type HoldingSpec } from '../../characters'
 import type { CharacterBuild, CharacterElement } from '../stores/scene-store'
 import { HUMAN_BUILDS } from '../../characters/species/human'
 
@@ -117,20 +117,25 @@ export const isCharacterField = (property: string) => {
   return hand !== null && hand[2] in HAND_REST
 }
 
+/** Tracks that step a character's gait rather than pose a field (see `characterScript`). */
+const WALK_PROPERTIES = new Set(['walk', 'walking', 'gait'])
+
 /**
  * The full pose at a moment: rest, then the element's own pose, then any
- * animated values in `state` (tracks address an element by name, or by id).
+ * animated values in `state` (tracks address an element by name, or by id),
+ * with its gait stepped in by `walk`, `walking` and `gait` tracks.
  */
 export function characterElementPose(element: CharacterElement, state?: AnimationState | null): CharacterPose {
-  const pose: CharacterPose = { ...HUMAN_REST, ...element.pose }
+  const props: Record<string, unknown> = { ...HUMAN_REST, ...element.pose }
   for (const key of [element.id, element.name]) {
     const values = state?.values.get(key)
     if (!values) continue
     for (const [property, value] of values) {
-      if (typeof value === 'number' && isCharacterField(property)) pose[property] = value
+      if (typeof value === 'number' && isCharacterField(property)) props[property] = value
+      else if (WALK_PROPERTIES.has(property)) props[property] = value
     }
   }
-  return pose
+  return characterPoseOf(props)
 }
 
 /**
@@ -153,7 +158,7 @@ export function characterElementTarget(element: CharacterElement): CustomTarget 
     props: { ...HUMAN_REST, ...element.pose },
     draw(ctx, target, time) {
       ctx.translate(width / 2, height)
-      drawCharacter(ctx, who, target.props as CharacterPose, time)
+      drawCharacter(ctx, who, characterPoseOf(target.props ?? {}), time)
     },
   }
 }

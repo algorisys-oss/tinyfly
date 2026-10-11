@@ -7,10 +7,11 @@ import type {
   LineElement,
   PathElement,
   CharacterElement,
-  MapElement, Scene3DElement } from '../stores/scene-store'
+  MapElement, Scene3DElement, CodeElement } from '../stores/scene-store'
 import { characterElementTarget } from './character-element'
 import { mapElementTarget } from './map-element'
 import { scene3dElementTarget } from './scene3d-element'
+import { codeElementTarget } from './code-element'
 
 /**
  * Map a scene element to a Canvas adapter target.
@@ -102,6 +103,9 @@ export function sceneElementToCanvasTarget(element: SceneElement): CanvasTarget 
     case 'scene3d':
       // A custom target drawing the scene; tracks named `<object>.<property>` reach its objects.
       return scene3dElementTarget(element as Scene3DElement)
+    case 'code':
+      // A custom target drawing the code panel; its props are the panel's animatable values.
+      return codeElementTarget(element as CodeElement)
     default:
       return null
   }

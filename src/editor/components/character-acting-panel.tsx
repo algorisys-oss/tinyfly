@@ -6,6 +6,9 @@ import type { CharacterElement, SceneStore } from '../stores/scene-store'
 import { actingTracks, characterGagKeys, characterWalk, keyPosesOf, spliceKeys, upsertKey, withRemovals, type CharacterActing } from '../utils/character-acting'
 import { mergeKeyframes, type PropertyKeyframes } from '../utils/character-dance'
 import { isCharacterField } from '../utils/character-element'
+import { beatProblems, compileCharacterBeats, SCRIPT_TAIL, type ElementBeat } from '../utils/character-beats'
+import { codeElementSurface } from '../utils/code-element'
+import type { CodeElement } from '../stores/scene-store'
 
 /**
  * The Character element's Acting section: act the keyed poses in a style,
@@ -75,6 +78,8 @@ export function CharacterActingPanel(props: ActingPanelProps) {
   const [distance, setDistance] = createSignal(240)
   const [line, setLine] = createSignal('')
   const [message, setMessage] = createSignal('')
+  const [beatsText, setBeatsText] = createSignal(JSON.stringify(props.element.beats ?? [], null, 2))
+  const [beatsMessage, setBeatsMessage] = createSignal('')
 
   const name = () => props.element.name
   const tracks = () => props.store.state.timeline?.tracks ?? []
@@ -167,6 +172,47 @@ export function CharacterActingPanel(props: ActingPanelProps) {
 
   const drawingRate = () => props.store.state.timeline?.drawingRate ?? 0
 
+  /** The scene's surfaces beats can aim at: every Code element, by name. */
+  const surfaces = () => Object.fromEntries(props.sceneStore.elements().filter((e) => e.type === 'code').map((e) => [e.name, codeElementSurface(e as CodeElement)]))
+
+  /** Compile the beats written in the box into this character's tracks (and the surfaces' they change), and keep them on the element. */
+  const runBeats = () => {
+    let beats: unknown
+    try {
+      beats = JSON.parse(beatsText())
+    } catch (error) {
+      setBeatsMessage(`Not JSON: ${(error as Error).message}`)
+      return
+    }
+    const problems = beatProblems(beats, surfaces())
+    if (problems.length > 0) {
+      setBeatsMessage(problems.join(' · '))
+      return
+    }
+    const list = beats as ElementBeat[]
+    if (list.length === 0) {
+      setBeatsMessage('Write at least one beat, like { "do": "walk", "to": 300 }.')
+      return
+    }
+    let compiled: ReturnType<typeof compileCharacterBeats>
+    try {
+      compiled = compileCharacterBeats(props.element, list, { acting: style(), surfaces: surfaces() })
+    } catch (error) {
+      setBeatsMessage((error as Error).message)
+      return
+    }
+    setBeatsMessage('')
+    const byTarget = new Map<string, PropertyKeyframes[]>()
+    for (const track of compiled.tracks) byTarget.set(track.target, [...(byTarget.get(track.target) ?? []), { property: track.property, keyframes: track.keyframes as Keyframe[] }])
+    props.sceneStore.updateElement(props.element.id, { beats: list as CharacterElement['beats'], acting: undefined })
+    for (const [target, fresh] of byTarget) {
+      const own = target === name() ? withRemovals(tracks(), name(), fresh) : fresh
+      props.store.replaceTracks(target, own, target === name())
+    }
+    const needed = compiled.duration + SCRIPT_TAIL
+    if (needed > (props.store.state.timeline?.duration ?? 0)) props.store.setDuration(needed)
+  }
+
   return (
     <div class="property-section">
       <h4>Acting</h4>
@@ -232,6 +278,30 @@ export function CharacterActingPanel(props: ActingPanelProps) {
           💬 Say at playhead ({(speechDuration(line().trim() || ' ') / 1000).toFixed(1)} s)
         </button>
       </div>
+
+      <div class="property-row property-row-stacked">
+        <label>Beats</label>
+        <textarea
+          rows="6"
+          spellcheck={false}
+          style={{ 'font-family': 'ui-monospace, Menlo, monospace', width: '100%' }}
+          placeholder={'[\n  { "do": "walk", "to": 320, "mood": "happy" },\n  { "do": "say", "say": "Hello!" },\n  { "do": "take" }\n]'}
+          value={beatsText()}
+          onInput={(e) => setBeatsText((e.target as HTMLTextAreaElement).value)}
+        />
+      </div>
+      <div class="property-row">
+        <label></label>
+        <button class="character-key-btn" onClick={runBeats}>🎬 Run beats</button>
+      </div>
+      <Show when={beatsMessage()}>
+        <p class="property-hint">{beatsMessage()}</p>
+      </Show>
+      <p class="property-hint">
+        A story as beats (walk, look, say, poses, gags, zip…), compiled in the style above into this character's tracks and
+        kept on it. Aim a beat at a Code element's line with <code>{'"target": { "surface": "Code 1", "anchor": "line:2" }'}</code>{' '}
+        and change it with <code>{'"then": { "surface": "Code 1", "edit": "highlight", "anchor": "line:2" }'}</code>.
+      </p>
 
       <div class="property-row">
         <label>Drawing</label>

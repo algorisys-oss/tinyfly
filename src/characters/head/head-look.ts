@@ -1,7 +1,7 @@
 import type { Pose } from '../rig/body-plan'
 import type { SolvedHead } from '../rig/skeleton'
 import type { Pen } from '../look/pen'
-import { drawHairBehind, drawHairFront, resolveHair, type Hair, type HairSpec, type HairStyleName } from './hair'
+import { drawHairBehind, drawHairFront, hairMotionOf, resolveHair, type Hair, type HairSpec, type HairStyleName } from './hair'
 import { drawEarsBehind, drawEarsFront } from './ears'
 import { drawBeardBehind, drawBeardFront, drawMoustache, resolveFacialHair, type FacialHair, type FacialHairSpec, type FacialHairStyleName } from './facial-hair'
 import { drawGlasses, resolveGlasses, type Glasses, type GlassesSpec, type GlassesStyle } from './glasses'
@@ -23,6 +23,9 @@ import { drawHat, resolveHat, type Hat, type HatSpec, type HatStyle } from './ha
  * Which part wins where two overlap is fixed by that order: the face's eyes
  * and brows draw over a fringe, the mouth over a beard (which leaves an
  * opening for it), a moustache over the mouth's top, and a hat over the hair.
+ *
+ * Hanging hair lags behind the head by the pose's `hair.swing`, `hair.trail`
+ * and `hair.lift` (see `hairFollow`); the passes read them from the pose.
  */
 
 export interface HeadLookOptions {
@@ -73,9 +76,9 @@ const facesAway = (head: SolvedHead) => head.axes[2][2] < -0.3
 
 const showsEars = (look: HeadLook) => look.ears && !look.hair?.coversEars
 
-export function drawHeadBehind(ctx: CanvasRenderingContext2D, pen: Pen, look: HeadLook, head: SolvedHead, _pose: Pose, options: HeadDrawOptions): void {
+export function drawHeadBehind(ctx: CanvasRenderingContext2D, pen: Pen, look: HeadLook, head: SolvedHead, pose: Pose, options: HeadDrawOptions): void {
   if (isBare(look)) return
-  if (look.hair) drawHairBehind(pen, ctx, head, look.hair, options)
+  if (look.hair) drawHairBehind(pen, ctx, head, look.hair, { ...options, motion: hairMotionOf(pose) })
   if (look.facialHair) drawBeardBehind(pen, ctx, head, look.facialHair, options)
   if (showsEars(look)) drawEarsBehind(pen, ctx, head, options)
 }
@@ -96,7 +99,7 @@ export function drawHeadFront(
   }
   const away = facesAway(head)
   if (showsEars(look)) drawEarsFront(pen, head, options)
-  if (look.hair && !away) drawHairFront(pen, head, look.hair, options)
+  if (look.hair && !away) drawHairFront(pen, head, look.hair, { ...options, motion: hairMotionOf(pose) })
   if (look.facialHair) drawBeardFront(pen, head, look.facialHair, options, pose.mouthWidth ?? 1)
   drawFace()
   if (look.facialHair) drawMoustache(pen, head, look.facialHair, options)
@@ -105,8 +108,8 @@ export function drawHeadFront(
 }
 
 /** After the whole figure: the hair and hat, when the head is turned away. */
-export function drawHeadOver(_ctx: CanvasRenderingContext2D, pen: Pen, look: HeadLook, head: SolvedHead, _pose: Pose, options: HeadDrawOptions): void {
+export function drawHeadOver(_ctx: CanvasRenderingContext2D, pen: Pen, look: HeadLook, head: SolvedHead, pose: Pose, options: HeadDrawOptions): void {
   if (!facesAway(head)) return
-  if (look.hair) drawHairFront(pen, head, look.hair, options)
+  if (look.hair) drawHairFront(pen, head, look.hair, { ...options, motion: hairMotionOf(pose) })
   if (look.hat) drawHat(pen, head, look.hat, { lineWidth: options.lineWidth, hairVolume: look.hair?.volume ?? 0 })
 }

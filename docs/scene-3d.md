@@ -271,7 +271,9 @@ a cart's `seat`) as the prop moves, turns, bobs with its stride and pitches,
 writing the rider's `x`, `y`, `z` and `rotateY`; `mount: { from: [x, z] }` and
 `dismount: { to: [x, z] }` hop it on and off. `spliceTracks(riderTracks, ride, { from, to })`
 puts the ride into the rider's script, which holds the riding pose
-(`RIDING_POSES.astride` or `.seated`) meanwhile and `place`s it where it got
+(`RIDING_POSES.astride`, `.seated`, `.driving` with the hands on a wheel, or
+`.cycling`; `pedallingKeys({ start, end, cadence })` keys the legs round the
+pedals on the cycling pose) meanwhile and `place`s it where it got
 off. A character in a scene is drawn part by part, each part at its own depth
 (`characterPartsInView`), so a leg astride a horse shows on each side of it.
 A seat inside a closed cabin (a car's) is not handled yet: its glass is opaque

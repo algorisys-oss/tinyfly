@@ -6,6 +6,12 @@
  * it, then load it through the SAME store calls `applySample` uses — so an
  * AI-generated animation and a hand-authored sample are indistinguishable to
  * the rest of the editor. No animation logic lives here; this is pure data.
+ *
+ * Characters are the one exception to keyframes-only: a character element may
+ * carry a beat script (`beats`, the same beats `scriptTracks` takes), and a
+ * `cast` name that dresses it. Loading compiles the beats with
+ * `characterScript` (the public API, as the Character Acting card uses it),
+ * adds hair follow-through, and keeps the beats on the element.
  */
 
 import type { EditorStore } from '../stores/editor-store'
@@ -13,9 +19,24 @@ import type { SceneStore } from '../stores/scene-store'
 import type { ProjectStore } from '../stores/project-store'
 import type { SceneElement } from '../stores/scene-store'
 import type { Track } from '../../engine/types'
+import { CHARACTER_CAST, checkBeats, type ActingStyleName, type Beat, type CastName } from '../../characters'
+import { castElementFields } from '../utils/character-element'
+import { compileCharacterBeats, SCRIPT_TAIL } from '../utils/character-beats'
 import { callLLM } from './ai-providers'
 import { getActiveProviderConfig } from './ai-settings'
 import { buildAnimationSystemPrompt } from './animation-system-prompt'
+
+/** What a generated character element may carry besides its element fields. */
+export interface GeneratedCharacterFields {
+  /** A cast member to dress it as (`CHARACTER_CAST`) */
+  cast?: string
+  /** Which way it faces at first: 1 right (default), -1 left */
+  facing?: 1 | -1
+  /** The acting style its beats are compiled in (default snappy) */
+  acting?: ActingStyleName
+  /** The story it acts, as beats; compiled on load into its tracks */
+  beats?: Beat[]
+}
 
 /** The animation shape the LLM produces (mirrors SampleDefinition, sans presentation fields). */
 export interface GeneratedAnimation {
@@ -23,7 +44,7 @@ export interface GeneratedAnimation {
   description: string
   duration: number
   canvas?: { width: number; height: number }
-  elements: Partial<SceneElement>[]
+  elements: Array<Partial<SceneElement> & GeneratedCharacterFields>
   tracks: Omit<Track, 'id'>[]
 }
 
@@ -68,6 +89,8 @@ function validate(obj: unknown): obj is GeneratedAnimation {
   const names = new Set<string>()
   for (const el of a.elements as Record<string, unknown>[]) {
     if (!el || typeof el.type !== 'string' || typeof el.name !== 'string') return false
+    // A character's beats, when given, are a list of beats with an action each (`checkBeats` says more).
+    if (el.beats !== undefined && (el.type !== 'character' || !Array.isArray(el.beats) || el.beats.some((beat) => !beat || typeof beat !== 'object' || typeof (beat as Record<string, unknown>).do !== 'string'))) return false
     names.add(el.name)
   }
   // Every track must reference a real element name and carry keyframes.
@@ -80,8 +103,28 @@ function validate(obj: unknown): obj is GeneratedAnimation {
 }
 
 /**
+ * What stops a parsed animation from loading: beat scripts that would not
+ * compile (an unknown action or mood, a missing field), named by element.
+ * Empty when it is fine.
+ */
+export function generatedProblems(anim: GeneratedAnimation): string[] {
+  const problems: string[] = []
+  for (const element of anim.elements) {
+    if (element.type !== 'character' || !element.beats?.length) continue
+    for (const problem of checkBeats(element.beats)) {
+      if (problem.level === 'error') problems.push(`${element.name}: beat ${problem.beat + 1}: ${problem.message}`)
+    }
+  }
+  return problems
+}
+
+export { compileCharacterBeats } from '../utils/character-beats'
+
+/**
  * Load a validated animation into the editor, replacing the current scene's
- * content. Mirrors `applySample` in samples/apply-sample.ts.
+ * content. Mirrors `applySample` in samples/apply-sample.ts. A character's
+ * beats compile into its tracks (and stay on the element); the timeline
+ * grows to fit the longest script.
  */
 export function applyGeneratedAnimation(stores: EditorStores, anim: GeneratedAnimation): void {
   const { store, sceneStore, projectStore } = stores
@@ -95,18 +138,40 @@ export function applyGeneratedAnimation(stores: EditorStores, anim: GeneratedAni
     projectStore.setCanvas({ ...anim.canvas })
   }
 
-  // Fresh timeline.
+  // Elements; a character's cast dresses it, its beats compile once it is placed.
   const id = `ai-${anim.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 32)}`
-  store.createNewTimeline(id, anim.name, { duration: anim.duration })
-
-  // Elements.
+  const compiled: Track[] = []
+  let duration = anim.duration
   anim.elements.forEach((element) => {
-    sceneStore.addElement(element.type!, element)
+    const { cast, facing, acting, beats, ...fields } = element
+    let overrides: Partial<SceneElement> = fields
+    if (element.type === 'character') {
+      const dressed = cast && cast in CHARACTER_CAST ? castElementFields(cast as CastName) : {}
+      const height = typeof fields.height === 'number' ? fields.height : undefined
+      overrides = {
+        ...dressed,
+        ...fields,
+        ...(fields.width === undefined && height ? { width: Math.round(height * 0.8) } : {}),
+        ...(beats?.length ? { beats } : {}),
+      } as Partial<SceneElement>
+    }
+    const placed = sceneStore.addElement(element.type!, overrides)
+    if (placed.type === 'character' && beats?.length) {
+      const script = compileCharacterBeats(placed, beats, { facing, acting })
+      compiled.push(...script.tracks)
+      duration = Math.max(duration, script.duration + SCRIPT_TAIL)
+    }
   })
+
+  // Fresh timeline, long enough for every script.
+  store.createNewTimeline(id, anim.name, { duration })
 
   // Tracks (assign stable ids; the AI schema intentionally omits ids).
   anim.tracks.forEach((track, index) => {
     store.addTrack({ id: `${id}-track-${index}`, ...track })
+  })
+  compiled.forEach((track, index) => {
+    store.addTrack({ ...track, id: `${id}-script-${index}` })
   })
 
   store.clearHistory()
@@ -139,6 +204,8 @@ export async function generateAnimation(promptText: string, stores: EditorStores
 
   const animation = parseAnimation(res.content)
   if (!animation) return { ok: false, error: 'The AI returned an unusable animation — try rephrasing.' }
+  const problems = generatedProblems(animation)
+  if (problems.length > 0) return { ok: false, error: `The AI wrote a beat script that will not play: ${problems.join('; ')}`, animation }
 
   applyGeneratedAnimation(stores, animation)
   return { ok: true, animation }

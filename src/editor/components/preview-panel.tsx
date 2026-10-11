@@ -14,13 +14,14 @@ import { elementsBounds } from '../utils/element-bounds'
 import { buildPenPath, localizePenPath, mirrorHandle, type PenNode } from '../utils/pen-path'
 import type { EditorStore } from '../stores/editor-store'
 import type { ProjectStore } from '../stores/project-store'
-import { fillToCss, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type GroupElement, type SymbolInstanceElement, type CharacterElement, type MapElement, type Scene3DElement } from '../stores/scene-store'
+import { fillToCss, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type GroupElement, type SymbolInstanceElement, type CharacterElement, type MapElement, type Scene3DElement, type CodeElement } from '../stores/scene-store'
 import { generateElementHtml } from '../utils/element-html'
 import { parsePathForEditing, buildPathString, updatePathPoint, getControlLines, type EditablePoint, type EditableCommand } from '../utils/path-editor'
 import { sceneElementToCanvasTarget } from '../utils/scene-to-canvas'
 import { characterElementPose, paintCharacterCanvas, CHARACTER_OVERFLOW } from '../utils/character-element'
 import { paintScene3DCanvas, scene3dValues } from '../utils/scene3d-element'
 import { mapElementProps, onMapTile, paintMapCanvas } from '../utils/map-element'
+import { codeElementProps, paintCodeCanvas } from '../utils/code-element'
 import { MediaSync, syncMediaElement } from '../../player/media-sync'
 import './preview-panel.css'
 
@@ -679,7 +680,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     const state = props.store.state.timeline?.getStateAtTime(time) ?? null
     const ratio = window.devicePixelRatio || 1
     for (const element of props.sceneStore.elements()) {
-      if (element.type !== 'character' && element.type !== 'map' && element.type !== 'scene3d') continue
+      if (element.type !== 'character' && element.type !== 'map' && element.type !== 'scene3d' && element.type !== 'code') continue
       const canvas = canvasRef.querySelector<HTMLCanvasElement>(`canvas[data-drawn-id="${element.id}"]`)
       if (!canvas) continue
       if (element.type === 'scene3d') {
@@ -688,6 +689,9 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
       } else if (element.type === 'character') {
         const character = element as CharacterElement
         paintCharacterCanvas(canvas, character, characterElementPose(character, state), time, ratio)
+      } else if (element.type === 'code') {
+        const code = element as CodeElement
+        paintCodeCanvas(canvas, code, codeElementProps(code, state), time, ratio)
       } else {
         const map = element as MapElement
         paintMapCanvas(canvas, map, mapElementProps(map, state), time, ratio)
@@ -697,7 +701,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
 
   // Repaint characters and maps when one of them is edited (colour, pose, places…).
   createEffect(() => {
-    const drawn = props.sceneStore.elements().filter((element) => element.type === 'character' || element.type === 'map' || element.type === 'scene3d')
+    const drawn = props.sceneStore.elements().filter((element) => element.type === 'character' || element.type === 'map' || element.type === 'scene3d' || element.type === 'code')
     JSON.stringify(drawn)
     rendererType()
     requestAnimationFrame(paintDrawnElements)
@@ -2036,6 +2040,14 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
                   {/* Drawn by code, clipped to its box. */}
                   <canvas
                     class="map-canvas"
+                    data-drawn-id={element.id}
+                    style={{ position: 'absolute', left: '0', top: '0', width: '100%', height: '100%', 'pointer-events': 'none' }}
+                  />
+                </Show>
+                <Show when={element.type === 'code'}>
+                  {/* A code panel, drawn by code into its box. */}
+                  <canvas
+                    class="code-canvas"
                     data-drawn-id={element.id}
                     style={{ position: 'absolute', left: '0', top: '0', width: '100%', height: '100%', 'pointer-events': 'none' }}
                   />

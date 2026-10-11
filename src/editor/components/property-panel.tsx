@@ -2,7 +2,7 @@ import { createMemo, createSignal, createEffect, on, untrack, Show, For } from '
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
 import type { ProjectStore } from '../stores/project-store'
-import { isGradient, createLinearGradient, createRadialGradient, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type SymbolInstanceElement, type CharacterElement, type MapElement, type Scene3DElement, type FillValue, type LinearGradient, type RadialGradient } from '../stores/scene-store'
+import { isGradient, createLinearGradient, createRadialGradient, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type SymbolInstanceElement, type CharacterElement, type MapElement, type Scene3DElement, type CodeElement, type FillValue, type LinearGradient, type RadialGradient } from '../stores/scene-store'
 import type { EasingType, BuiltInEasingType, CubicBezierPoints, ParametricEasing, EaseMode } from '../../engine'
 import {
   isCubicBezierEasing,
@@ -26,11 +26,12 @@ import { MarkerInspector } from './marker-inspector'
 import type { SketchStyle } from '../../adapters/canvas'
 import { HUMAN_POSES, HUMAN_EXPRESSIONS, HUMAN_REST } from '../../characters/species/human'
 import { CHARACTER_BUILDS, buildName, buildValue, castElementFields, isCharacterField, type CharacterBuildName } from '../utils/character-element'
+import { codeElementHeight } from '../utils/code-element'
 import { CharacterActingPanel, keyActedPose } from './character-acting-panel'
 import { characterDanceTracks, characterFlipTracks, danceLength, facingOf, mergeKeyframes } from '../utils/character-dance'
 import { beatGridOf, detectAudioTempo, tapTempo } from '../utils/beat-grid'
 import { nearestBeat, nextBeat } from '../../engine'
-import { DANCE_STYLES, FLIPS, CHARACTER_CAST, HELD_ITEMS, FACIAL_HAIR_STYLES, GLASSES_STYLES, HAIR_STYLES, HAT_STYLES, resolveHair, type CastName, type DanceStyleName, type FlipName } from '../../characters'
+import { CODE_LANGUAGES, DANCE_STYLES, FLIPS, CHARACTER_CAST, HELD_ITEMS, FACIAL_HAIR_STYLES, GLASSES_STYLES, HAIR_STYLES, HAT_STYLES, resolveHair, type CastName, type DanceStyleName, type FlipName } from '../../characters'
 import { fitPlaces, mapElementProps, placeId, tripTracks } from '../utils/map-element'
 import { WORLD_CITIES } from '../../maps'
 import { Scene3DProperties } from './scene3d-properties'
@@ -2076,6 +2077,48 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
     props.store.replaceTracks(element.name, tripTracks(element, start, duration))
   }
 
+  /** A code panel: its listing, language and type; its height follows its lines. */
+  const renderCodeProperties = (element: CodeElement) => {
+    const resize = (changes: Partial<CodeElement>) => updateElement({ ...changes, height: codeElementHeight({ ...element, ...changes }) })
+    return (
+      <div class="property-section">
+        <h4>Code</h4>
+        <div class="property-row">
+          <label>Language</label>
+          <select value={element.language} onChange={(e) => updateElement({ language: (e.target as HTMLSelectElement).value })}>
+            <For each={CODE_LANGUAGES}>{(language) => <option value={language}>{language}</option>}</For>
+          </select>
+        </div>
+        <div class="property-row">
+          <label>Font size</label>
+          <input type="number" min="8" max="64" value={element.fontSize} onChange={(e) => resize({ fontSize: Math.max(8, Math.min(64, parseFloat((e.target as HTMLInputElement).value) || 16)) })} />
+        </div>
+        <div class="property-row">
+          <label>Line numbers</label>
+          <input type="checkbox" checked={element.lineNumbers} onChange={(e) => updateElement({ lineNumbers: (e.target as HTMLInputElement).checked })} />
+        </div>
+        <div class="property-row">
+          <label>Hidden lines</label>
+          <input
+            type="text"
+            placeholder="e.g. 3, 4 (typed in later)"
+            value={(element.hidden ?? []).join(', ')}
+            onChange={(e) => updateElement({ hidden: (e.target as HTMLInputElement).value.split(',').map((s) => parseInt(s.trim(), 10)).filter((n) => Number.isFinite(n) && n > 0) })}
+          />
+        </div>
+        <div class="property-row property-row-stacked">
+          <label>Listing</label>
+          <textarea rows="8" spellcheck={false} style={{ 'font-family': 'ui-monospace, Menlo, monospace', width: '100%' }} value={element.code} onChange={(e) => resize({ code: (e.target as HTMLTextAreaElement).value })} />
+        </div>
+        <p class="property-hint">
+          Its lines are places a Character's beats aim at: in a Character's Beats, write{' '}
+          <code>{`{ "do": "point", "target": { "surface": "${element.name}", "anchor": "line:2" }, "then": { "surface": "${element.name}", "edit": "highlight", "anchor": "line:2" } }`}</code>.
+          Edits (highlight, strike, remove, type, fling…) become tracks on this element.
+        </p>
+      </div>
+    )
+  }
+
   const renderMapProperties = (element: MapElement) => (
     <div class="property-section">
       <h4>Map</h4>
@@ -2231,6 +2274,7 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
       case 'symbol': return renderSymbolProperties(liveElement as SymbolInstanceElement)
       case 'character': return renderCharacterProperties(liveElement as CharacterElement)
       case 'map': return renderMapProperties(liveElement as MapElement)
+      case 'code': return renderCodeProperties(liveElement as CodeElement)
       case 'scene3d': return <Scene3DProperties element={liveElement as Scene3DElement} store={props.store} update={(changes) => updateElement(changes)} />
       default: return null
     }

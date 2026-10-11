@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { Timeline } from '../../engine/core/timeline'
 import { mat4, type Vec3 } from '../../engine/math'
 import { propScript3D } from './script-3d'
-import { propRide3D, RIDING_POSES } from './ride-3d'
+import { pedallingKeys, pedallingPose, propRide3D, RIDING_POSES } from './ride-3d'
 import { propAnchors3D } from './rig'
 import { horse } from './families/animals'
 import { character, characterPartsInView } from '../character'
@@ -61,5 +61,31 @@ describe('riding in 3D', () => {
     expect(state(502).x).toBeCloseTo(4)
     expect(state(502).z).toBeCloseTo(2)
     expect(state(502).rotateY).toBeCloseTo(180)
+  })
+})
+
+describe('rider poses', () => {
+  it('drive with the hands forward on a wheel, and cycle the legs round the pedals', () => {
+    expect(RIDING_POSES.driving['arm.left.swing']).toBeGreaterThan(40)
+    expect(RIDING_POSES.driving['arm.right.elbow']).toBeGreaterThan(20)
+    const top = pedallingPose(0)
+    const half = pedallingPose(0.5)
+    // Half a turn on, the legs have swapped places.
+    expect(top['leg.left.swing']).toBeCloseTo(half['leg.right.swing'], 6)
+    expect(top['leg.left.knee']).toBeCloseTo(half['leg.right.knee'], 6)
+    expect(top['leg.left.swing']).not.toBeCloseTo(top['leg.right.swing'], 1)
+    // The upper body keeps the cycling pose.
+    expect(top.lean).toBe(RIDING_POSES.cycling.lean)
+    expect(pedallingPose(1)['leg.left.swing']).toBeCloseTo(top['leg.left.swing'], 6)
+  })
+
+  it('key a stretch of pedalling at a cadence, timed as written', () => {
+    const keys = pedallingKeys({ start: 1000, end: 3000, cadence: 1 })
+    expect(keys[0].time).toBe(1000)
+    expect(keys[keys.length - 1].time).toBe(3000)
+    expect(keys.length).toBe(17)
+    expect(keys.slice(1).every((key) => key.act === false)).toBe(true)
+    // One turn later the legs are back where they started.
+    expect((keys[8].pose as Record<string, number>)['leg.left.swing']).toBeCloseTo((keys[0].pose as Record<string, number>)['leg.left.swing'], 6)
   })
 })

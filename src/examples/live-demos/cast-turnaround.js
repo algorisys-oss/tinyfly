@@ -1,8 +1,8 @@
-import { character, drawCharacter, humanPose, castMember, CHARACTER_CAST, HUMAN_EXPRESSIONS } from '../../characters'
+import { character, drawCharacter, humanPose, castMember, hairFollow, hairMotionAt, CHARACTER_CAST, HUMAN_EXPRESSIONS } from '../../characters'
 
 // On a standalone page these come from the browser bundle's `tinyfly` global;
 // here they come from the source modules, so the code below runs unchanged in both.
-const tinyfly = { character, drawCharacter, humanPose, castMember, CHARACTER_CAST, HUMAN_EXPRESSIONS }
+const tinyfly = { character, drawCharacter, humanPose, castMember, hairFollow, hairMotionAt, CHARACTER_CAST, HUMAN_EXPRESSIONS }
 
 export const html = `<style>
   .ctn-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
@@ -54,12 +54,19 @@ export function run(live, root) {
   const clock = { time: 0 }
   live.to(clock, { time: 16000, duration: 16, ease: 'none', repeat: -1 })
 
-  const draw = () => {
-    const t = clock.time
-    // Turn all the way round, pausing at each of the eight views.
+  // Turn all the way round, pausing at each of the eight views.
+  const turnAt = (t) => {
     const step = t / 2000
     const settle = Math.min(1, (step % 1) / 0.45)
-    const turn = spin.checked ? (Math.floor(step) + settle * settle * (3 - 2 * settle)) * 0.5 : 0
+    return (Math.floor(step) + settle * settle * (3 - 2 * settle)) * 0.5
+  }
+  // Hanging hair (the ponytails, the waves) lags behind each turn and swings back: keyed once
+  // for the whole loop from the same turn, then read at each frame, so drawing stays stateless.
+  const hairLag = tinyfly.hairFollow((t) => ({ x: 0, y: 0, turn: turnAt(t) }), { end: 16000, headRadius: 18 })
+
+  const draw = () => {
+    const t = clock.time
+    const turn = spin.checked ? turnAt(t) : 0
     const mood = tinyfly.HUMAN_EXPRESSIONS[moods[Math.floor(t / 2300) % moods.length]]
     const talking = Math.max(0, Math.sin(t / 90)) * 0.5
     readout.textContent = `${VIEW_NAMES[Math.round(turn * 2) % 8]} · ${moods[Math.floor(t / 2300) % moods.length]}`
@@ -75,7 +82,7 @@ export function run(live, root) {
     cast.forEach((who, i) => {
       ctx.save()
       ctx.translate(55 + i * 93, GROUND)
-      const pose = tinyfly.humanPose({ ...mood, turn, mouth: i === Math.floor(t / 1200) % cast.length ? talking : mood.mouth })
+      const pose = tinyfly.humanPose({ ...mood, turn, ...(spin.checked ? tinyfly.hairMotionAt(hairLag, t) : {}), mouth: i === Math.floor(t / 1200) % cast.length ? talking : mood.mouth })
       tinyfly.drawCharacter(ctx, who, pose, t)
       ctx.restore()
     })
@@ -91,9 +98,9 @@ export const castTurnaround = {
   id: 'live-cast-turnaround',
   name: 'Cast Turnaround',
   description:
-    'A recurring cast (castMember: boy, girl, young man and woman, man, woman, grandpa, grandma) turning through all eight views together. Hair, beards, glasses and ears are plain data on the head, so they turn with it: partings and ponytails stay on their own side, the back view shows the back of the hair, and the face marks (blush, tears, sweat) come with the expressions.',
+    'A recurring cast (castMember: boy, girl, young man and woman, man, woman, grandpa, grandma) turning through all eight views together. Hair, beards, glasses and ears are plain data on the head, so they turn with it: partings and ponytails stay on their own side, the back view shows the back of the hair, ponytails and long hair swing round after each turn and settle (hairFollow keys the lag ahead of time), and the face marks (blush, tears, sweat) come with the expressions.',
   category: 'video',
-  tags: ['canvas', 'character', 'appearance', 'hair', 'cast', 'turnaround', 'video'],
+  tags: ['canvas', 'character', 'appearance', 'hair', 'follow-through', 'cast', 'turnaround', 'video'],
   html,
   run,
 }

@@ -54,7 +54,10 @@ and `outfit: { shirt, trousers }`. `castMember('grandpa', 300)` gives a whole
 ready-made character to start from. Expressions come from `HUMAN_EXPRESSIONS`
 and are pose fields, as are the face marks `blush`, `tears` and `sweat` (0–1),
 so any face goes with any action or view. Hair and hats turn with the head:
-don't draw a different hairstyle per view. Put things in hands with `holding`
+don't draw a different hairstyle per view. Hanging hair swings on its own:
+after the character's tracks add `hairFollowTracks(target, tracks, who)` (or,
+posing per frame, `hairFollow` once and `hairMotionAt(keys, t)` each frame)
+rather than keying `hair.swing` by hand. Put things in hands with `holding`
 (`{ right: 'mug' }`, `{ both: 'parcel' }`; the pose field `held.both` lets go),
 and for two characters touching use `meetHands('handshake', a, b)` with the
 two standing `meetingSpacing(…)` apart, never two separate clips. See
@@ -110,7 +113,11 @@ scriptTracks: 2 problem(s) in the beats:
 
 - **Beat scripts**: `scriptTracks()` throws on errors. `checkBeats(beats)`
   returns errors and warnings without throwing, and from the command line:
-  `npx @algorisys/tinyfly check beats.json`.
+  `npx @algorisys/tinyfly check beats.json`. For a v2 `character()` use
+  `characterScript(target, who, beats, options)`: the same beats and checks,
+  compiled for the human body and a `characterTarget` (its `walk`, `walking`
+  and `gait` tracks step the gait as it draws); add
+  `hairFollowTracks(target, tracks, who)` after it.
 - **Tracks**: `checkTracks(tracks, targets)` finds tracks aimed at targets
   that aren't there, properties a target can't animate (`rotation` → `rotate`),
   keys out of time order, values of the wrong kind and values out of range.

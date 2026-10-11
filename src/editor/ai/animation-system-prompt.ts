@@ -8,7 +8,40 @@
  *  - element types      → src/editor/stores/scene-store.ts (SceneElement)
  *  - animatable props   → src/adapters/dom/dom-adapter.ts (transform/color maps)
  *  - easing names       → src/engine/types.ts (BuiltInEasingType)
+ *
+ * Characters are the exception to "keyframes only": the model writes a beat
+ * script (what the character does), and `applyGeneratedAnimation` compiles it
+ * with `characterScript`, so the names below come straight from the library.
  */
+
+import { CHARACTER_CAST, EXPRESSIONS, GAGS, GAITS, POSES, SCRIPT_ACTIONS } from '../../characters'
+
+const names = (record: Record<string, unknown>) => Object.keys(record).join(', ')
+
+/** The character section: the cast, the beat vocabulary and the rules that keep scripts compilable. */
+function characterSection(): string {
+  const actions = Object.entries(SCRIPT_ACTIONS)
+    .map(([name, guide]) => {
+      const { needs = [], uses = [] } = guide as { needs?: string[]; uses?: string[] }
+      const fields = [...needs, ...uses]
+      return fields.length > 0 ? `${name} (${fields.join(', ')})` : name
+    })
+    .join(', ')
+  return `## Characters (optional)
+A character is a person from tinyfly's cast who ACTS a story written as beats. You write what it does; its keyframes, lip-sync and dust are compiled for you.
+- character: { type:"character", name, x, y, height, width?, cast?:"<cast name>", facing?: 1|-1, acting?: "snappy"|"full"|"limited"|"none", beats?: [ ...beats ] }
+  Its box is x/y (top-left) by width (default 0.8 × height) by height. Its FEET stand at the bottom centre of the box, so set y so that y + height is on the floor. A good height is 140–220.
+  cast (who it is; default a plain figure): ${names(CHARACTER_CAST)}. facing: 1 faces right (default), -1 faces left.
+- A beat: { "do": "<action>", "to"?: <canvas x the feet walk to>, "toward"?: <canvas x> | "viewer" | "ahead" | "back", "for"?: ms, "say"?: "a spoken line", "mood"?: "<mood>", "target"?: { "x": <canvas x>, "y": <canvas y> }, "onto"?: <floor's canvas y> }
+  Beats play one after another; each lasts its action's own length unless "for" is given. "to", "toward" and "target" are canvas pixels, like elements.
+  Actions for "do": gaits that walk to "to": ${names(GAITS)}. Poses: ${names(POSES)}. Gags: ${names(GAGS)}. And: ${actions}.
+  Moods: ${names(EXPRESSIONS)}.
+- Do NOT write tracks for a character that has beats: the beats become its motion. Give a character tracks only when it has no beats.
+- Things it acts on (a box it grabs, a ball it kicks, a sign it points at) are ordinary rect/circle/text elements; aim the beat's "target" at that element's centre in canvas pixels.
+  Example: a character at { "x": 60, "y": 120, "height": 180 } (feet on the floor at y 300) with
+  "beats": [ { "do": "walk", "to": 330, "mood": "happy" }, { "do": "look", "toward": 520, "mood": "confused" }, { "do": "take" }, { "do": "say", "say": "Is that box ticking?", "mood": "worried" }, { "do": "zip", "to": -200 } ]
+`
+}
 
 export function buildAnimationSystemPrompt(canvasWidth: number, canvasHeight: number): string {
   return `You are an animation director for tinyfly, a lightweight keyframe animation engine.
@@ -66,8 +99,10 @@ linear, ease-in, ease-out, ease-in-out,
 ease-in-quad, ease-out-quad, ease-in-out-quad,
 ease-in-cubic, ease-out-cubic, ease-in-out-cubic
 
+${characterSection()}
 ## Rules
 - Keep everything inside the ${canvasWidth}×${canvasHeight} canvas.
+- "duration" covers the keyframed tracks; a character's beats may run longer, and the timeline grows to fit them.
 - Prefer tasteful, purposeful motion: fade-ups, staggered entrances, pop-ins, gentle overshoot with ease-out-cubic.
 - To stagger, offset each element's keyframe times (e.g. element 2 starts 120ms after element 1).
 - "duration" must be >= the last keyframe time (add a short hold at the end).

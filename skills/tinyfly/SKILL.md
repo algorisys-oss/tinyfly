@@ -31,9 +31,11 @@ names.
 
 ## 2. Write
 
-- Prefer the high-level builders: `scriptTracks()` beats for characters,
-  `codePanel()` for code, `whiteboard()` for lessons on a board,
-  `chart()` for bar and line charts, `lesson()` and the diagram primitives for teaching
+- Prefer the high-level builders: `scriptTracks()` beats for characters
+  (`characterScript(target, who, beats)` for the same beats on a v2
+  `character()`, then `hairFollowTracks`), `codePanel()` for code, `whiteboard()` for lessons on a board,
+  `chart()` for bar, line, pie and donut charts (several series, a legend, axis
+  titles; slices come loose as pieces), `lesson()` and the diagram primitives for teaching
   figures, `cameraTracks()` for camera moves. They produce plain JSON tracks.
 - Aim beats at anchors, never guessed coordinates: `code.line(n)`,
   `code.token(n, 'word')`, `code.spot(n, column, width)`, `piece.home`,
@@ -71,7 +73,10 @@ names.
   `hair` (`'bob'` or `{ style, color, length }`), `facialHair`, `glasses`,
   `hat`, `ears: true`, `outfit: { shirt, trousers }`; or start from
   `castMember('grandma', height)`. Hair and hats turn with the head, so one
-  description serves every view. Faces are `HUMAN_EXPRESSIONS` plus the pose
+  description serves every view; hanging hair swings after a turn or a run when
+  you add `hairFollowTracks(target, tracks, who)` after the character's tracks
+  (per-frame code: `hairFollow` once, `hairMotionAt(keys, t)` each frame).
+  Faces are `HUMAN_EXPRESSIONS` plus the pose
   fields `blush`, `tears`, `sweat` (0–1). Items in hands: `holding`
   (`held.<side>` lets go); hands that meet: `meetHands(kind, a, b)` at
   `meetingSpacing`. See `docs/character-appearance.md`.

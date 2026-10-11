@@ -1,5 +1,5 @@
 import type { Point } from '../../adapters/canvas/sketch'
-import type { Vec3 } from '../rig/body-plan'
+import type { Pose, Vec3 } from '../rig/body-plan'
 import type { SolvedHead } from '../rig/skeleton'
 import type { Pen } from '../look/pen'
 import { taperedOutline } from '../look/tapered-line'
@@ -17,7 +17,52 @@ import { aroundDistance, behindHead, cachedOutlines, facingOf, onScreen, shellOu
  * turn, the back view shows the back of the hair, and a ponytail stays tied
  * to the same place. The part facing away is drawn before the head, the part
  * facing the viewer after it.
+ *
+ * Hair that hangs (long hair, ponytails, braids) also swings: three pose
+ * fields (`hair.swing`, `hair.trail`, `hair.lift`) carry how far its ends
+ * lag behind the head, and `hairFollow` works them out from the head's
+ * motion as keyframes, so drawing stays stateless.
  */
+
+/**
+ * How far hanging hair lags behind the head, at its ends (the roots stay on
+ * the head). Plain numbers that live in the pose as `hair.swing`,
+ * `hair.trail` and `hair.lift`, so they key, save and mirror like any field.
+ */
+export interface HairMotion {
+  /** Swung round the head toward the character's left (+) or right (−), degrees */
+  swing: number
+  /** Streaming back behind the head (+) or thrown forward (−), head radii */
+  trail: number
+  /** Lifted (+) or dropped (−), head radii */
+  lift: number
+}
+
+export const HAIR_STILL: HairMotion = { swing: 0, trail: 0, lift: 0 }
+
+/** The hair motion a pose carries (`hair.swing`, `hair.trail`, `hair.lift`; missing fields are still). */
+export function hairMotionOf(pose: Pose | undefined): HairMotion {
+  if (!pose) return HAIR_STILL
+  const swing = pose['hair.swing'] ?? 0
+  const trail = pose['hair.trail'] ?? 0
+  const lift = pose['hair.lift'] ?? 0
+  return swing === 0 && trail === 0 && lift === 0 ? HAIR_STILL : { swing, trail, lift }
+}
+
+const isStill = (motion: HairMotion) => motion.swing === 0 && motion.trail === 0 && motion.lift === 0
+
+/** Whether a style has anything that swings: hair hanging below the head, or a ponytail or braid. */
+export function hairHangs(hair: Hair): boolean {
+  return hair.length > 0 || hair.ties.some((tie) => tie.kind !== 'bun')
+}
+
+/** A head-space point swung round the head's up axis by `angle` (radians, + toward the character's left at the back). */
+function swung([x, y, z]: Vec3, angle: number): Vec3 {
+  if (angle === 0) return [x, y, z]
+  const cos = Math.cos(angle)
+  const sin = Math.sin(angle)
+  return [x * cos - z * sin, y, z * cos + x * sin]
+}
 
 export type HairTexture = 'smooth' | 'spiky' | 'curly' | 'wavy' | 'locs'
 
@@ -215,7 +260,7 @@ function textureAt(hair: Hair, around: number, up: number): number {
  * The hair as a region on the head. `pad` (head radii) lifts it clear of
  * the head's own outline, so a thick head line never shows through it.
  */
-export function hairRegion(hair: Hair, pad: number): ShellRegion {
+export function hairRegion(hair: Hair, pad: number, motion: HairMotion = HAIR_STILL): ShellRegion {
   const long = hair.length > 0
   // The hairline depends only on the place around the head: work it out once per column.
   const hairlines = new Map<number, number>()
@@ -235,7 +280,7 @@ export function hairRegion(hair: Hair, pad: number): ShellRegion {
     const y = 0.45 + (1 + hair.flat - 0.45) * Math.min(1, t * 1.8)
     return [ring * Math.sin(around), y * (1 + pad), ring * Math.cos(around)]
   }
-  return {
+  const region: ShellRegion = {
     top: 1,
     bottom: long ? -(hair.length + 0.25) : -1,
     inside(around, up) {
@@ -271,14 +316,49 @@ export function hairRegion(hair: Hair, pad: number): ShellRegion {
       return spherePoint(around, up)
     },
   }
+  return long && !isStill(motion) ? swingingRegion(region, hair, motion) : region
+}
+
+/**
+ * The hanging part of the hair, lagging behind the head: the roots stay put
+ * and the ends swing round the head, stream back and lift, in proportion to
+ * how far below the head they hang. The cap is left as it is.
+ */
+function swingingRegion(base: ShellRegion, hair: Hair, motion: HairMotion): ShellRegion {
+  // 0 at the head's bottom edge, 1 at the hair's ends.
+  const weight = (up: number) => (up < 0 ? smoothstep(-0.15, -Math.max(0.7, hair.length), up) : 0)
+  const angle = (up: number) => rad(motion.swing) * weight(up)
+  return {
+    top: base.top,
+    bottom: base.bottom,
+    inside: (around, up) => base.inside(around + angle(up), up),
+    position(around, up) {
+      const w = weight(up)
+      if (w === 0) return base.position(around, up)
+      const a = angle(up)
+      const [x, y, z] = swung(base.position(around + a, up), a)
+      return [x, y + motion.lift * w, z - motion.trail * w]
+    },
+    normal: (around, up) => swung(base.normal!(around + angle(up), up), angle(up)),
+  }
 }
 
 /** Fine textures need more columns round the head to show. */
 const columnsFor = (hair: Hair) => (hair.texture === 'spiky' || hair.texture === 'curly' || hair.texture === 'locs' ? 104 : hair.texture === 'wavy' ? 80 : 64)
 
 /** The hair's outlines for this head, traced once per drawing. */
-function hairOutlines(head: SolvedHead, hair: Hair, region: ShellRegion): ShellOutlines {
-  return cachedOutlines(head, hair, () => shellOutlines(head, region, columnsFor(hair)))
+function hairOutlines(head: SolvedHead, hair: Hair, region: ShellRegion, motion: HairMotion): ShellOutlines {
+  return cachedOutlines(head, motionKey(hair, motion), () => shellOutlines(head, region, columnsFor(hair)))
+}
+
+/** Outlines are cached per head by the hair; moving hair is cached by the hair and its motion. */
+const hairIds = new WeakMap<Hair, number>()
+let nextHairId = 1
+function motionKey(hair: Hair, motion: HairMotion): unknown {
+  if (isStill(motion)) return hair
+  let id = hairIds.get(hair)
+  if (!id) hairIds.set(hair, (id = nextHairId++))
+  return `${id}:${motion.swing}:${motion.trail}:${motion.lift}`
 }
 
 /** Where a tie sits on the head (head radii) and which way it points out. */
@@ -317,18 +397,20 @@ function curve(from: Point, control: Point, to: Point, samples = 16): Point[] {
  * then down. Hung from the side of the head it falls straight; tied at the
  * back it swings out toward the character's left, so it shows from the front.
  */
-function hangingPath(head: SolvedHead, tie: HairTie, root: Point, out: Vec3): Point[] {
+function hangingPath(head: SolvedHead, tie: HairTie, root: Point, out: Vec3, motion: HairMotion): Point[] {
   const scale = head.ry
   const length = (tie.length ?? 1.8) * scale
-  const outward = screenVector(head, out)
+  // Lagging behind the head: swung round it, and its end carried back and up or down.
+  const outward = screenVector(head, swung(out, rad(motion.swing)))
+  const carried = screenVector(head, [0, motion.lift, -motion.trail])
   const outLength = Math.hypot(outward.x, outward.y) || 1
   const sway = tie.at === 'high' || tie.at === 'low' || tie.at === 'top' ? screenVector(head, [0.95, 0, 0]) : { x: 0, y: 0 }
   const reach = tie.kind === 'braid' ? 0.15 : 0.5
   const control = {
-    x: root.x + (outward.x / outLength) * scale * reach + sway.x * 0.9,
-    y: root.y + (outward.y / outLength) * scale * reach * 0.6,
+    x: root.x + (outward.x / outLength) * scale * reach + sway.x * 0.9 + carried.x * 0.5,
+    y: root.y + (outward.y / outLength) * scale * reach * 0.6 + carried.y * 0.5,
   }
-  const tip = { x: root.x + (outward.x / outLength) * scale * reach * 0.6 + sway.x * 1.3, y: root.y + length }
+  const tip = { x: root.x + (outward.x / outLength) * scale * reach * 0.6 + sway.x * 1.3 + carried.x, y: root.y + length + carried.y }
   return curve(root, control, tip)
 }
 
@@ -337,6 +419,8 @@ export interface HairDrawOptions {
   lineWidth: number
   /** Skin colour, for the scalp under close-cropped hair */
   skin: string
+  /** How far hanging hair lags behind the head (default still) */
+  motion?: HairMotion
 }
 
 /** Outline weight of hair: lighter than the body's line. */
@@ -345,7 +429,7 @@ const outlineOf = (lineWidth: number) => Math.max(1, lineWidth * 0.5)
 const detailOf = (lineWidth: number, head: SolvedHead) => Math.max(0.8, Math.min(lineWidth * 0.4, 0.1 * head.rx))
 
 /** Draw one tie (a bun, ponytail or braid). */
-function drawTie(pen: Pen, head: SolvedHead, hair: Hair, tie: HairTie, lineWidth: number) {
+function drawTie(pen: Pen, head: SolvedHead, hair: Hair, tie: HairTie, lineWidth: number, motion: HairMotion) {
   const { point, out } = tieAnchor(tie.at)
   const lift = 1 + hair.volume
   const root = onScreen(head, [point[0] * lift, point[1] * lift, point[2] * lift])
@@ -366,7 +450,7 @@ function drawTie(pen: Pen, head: SolvedHead, hair: Hair, tie: HairTie, lineWidth
     )
     return
   }
-  const path = hangingPath(head, tie, root, out)
+  const path = hangingPath(head, tie, root, out, motion)
   const width = (tie.size ?? (tie.kind === 'braid' ? 0.2 : 0.34)) * head.rx * 2
   if (tie.kind === 'ponytail') {
     pen.shape(taperedOutline(path, width, width * 0.15), hair.color, outline)
@@ -441,10 +525,11 @@ function strandCurves(hair: Hair): Array<Array<[number, number]>> {
  */
 export function drawHairBehind(pen: Pen, ctx: CanvasRenderingContext2D, head: SolvedHead, hair: Hair, options: HairDrawOptions): void {
   if (hair.fill === 'stipple' || hair.hairline.front > 1.5) return
+  const motion = options.motion ?? HAIR_STILL
   const pad = (options.lineWidth * 0.45) / head.rx
-  const { far } = hairOutlines(head, hair, hairRegion(hair, pad))
+  const { far } = hairOutlines(head, hair, hairRegion(hair, pad, motion), motion)
   behindHead(ctx, head, () => {
-    for (const tie of hair.ties) if (tieIsFar(head, tie)) drawTie(pen, head, hair, tie, options.lineWidth)
+    for (const tie of hair.ties) if (tieIsFar(head, tie)) drawTie(pen, head, hair, tie, options.lineWidth, motion)
     for (const loop of far) pen.shape(loop, hair.color, outlineOf(options.lineWidth))
   })
 }
@@ -452,8 +537,9 @@ export function drawHairBehind(pen: Pen, ctx: CanvasRenderingContext2D, head: So
 /** The hair over the head: the part facing the viewer, its detail lines, and near ties. */
 export function drawHairFront(pen: Pen, head: SolvedHead, hair: Hair, options: HairDrawOptions): void {
   if (hair.hairline.front > 1.5) return
+  const motion = options.motion ?? HAIR_STILL
   const pad = (options.lineWidth * 0.45) / head.rx
-  const region = hairRegion(hair, pad)
+  const region = hairRegion(hair, pad, motion)
   const detail = detailOf(options.lineWidth, head)
   if (hair.fill === 'stipple') {
     // Close-cropped: dots over the scalp, and a dotted hairline.
@@ -469,7 +555,7 @@ export function drawHairFront(pen: Pen, head: SolvedHead, hair: Hair, options: H
     }
     return
   }
-  const { near } = hairOutlines(head, hair, region)
+  const { near } = hairOutlines(head, hair, region, motion)
   const outline = outlineOf(options.lineWidth)
   for (const loop of near) pen.shape(loop, hair.color, outline)
   // Detail lines: on the hair, just inside its surface.
@@ -481,5 +567,5 @@ export function drawHairFront(pen: Pen, head: SolvedHead, hair: Hair, options: H
     const normals = strand.map(([around, up]) => region.normal!(around, up))
     for (const run of visibleRuns(head, points, normals, 0.12)) pen.line(run, detail)
   }
-  for (const tie of hair.ties) if (!tieIsFar(head, tie)) drawTie(pen, head, hair, tie, options.lineWidth)
+  for (const tie of hair.ties) if (!tieIsFar(head, tie)) drawTie(pen, head, hair, tie, options.lineWidth, motion)
 }

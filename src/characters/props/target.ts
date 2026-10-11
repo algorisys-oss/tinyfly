@@ -3,7 +3,7 @@ import type { PropertyInfo } from '../../adapters/canvas/target-properties'
 import type { FrameInfo } from '../../headless/video-scene'
 import type { ActingRig } from '../acting/acting'
 import { PROP_COMMON_CONTROLS, propView, solveProp, controlValue, type PropRig, type SolvedProp } from './rig'
-import { drawSolvedProp, type PropDrawOptions } from './draw'
+import { drawSolvedProp, type LoosePart, type PropDrawOptions } from './draw'
 import type { PropAction } from './script'
 
 /**
@@ -94,6 +94,18 @@ export interface PropTarget extends CustomTarget {
   /** px per metre */
   readonly propScale: number
   readonly propDraw: Omit<PropDrawOptions, 'time' | 'rider'>
+  /** Parts that have come loose as pieces (`propSurface().piece`): the piece's key in its props, by part id */
+  readonly loose?: Map<string, number>
+}
+
+/** Where the loose parts have gone in this frame, from the `piece.K.*` values, by part id. */
+export function loosePartsOf(target: PropTarget, values: Record<string, number>): Record<string, LoosePart> | undefined {
+  if (!target.loose?.size) return undefined
+  const out: Record<string, LoosePart> = {}
+  for (const [part, key] of target.loose) {
+    out[part] = { x: values[`piece.${key}.x`] ?? 0, y: values[`piece.${key}.y`] ?? 0, rotate: values[`piece.${key}.rotate`] ?? 0, opacity: values[`piece.${key}.opacity`] ?? 1 }
+  }
+  return out
 }
 
 /** Every control a prop has, described: the common ones and its own. */
@@ -139,7 +151,7 @@ export function propTarget(options: PropTargetOptions): PropTarget {
     draw(ctx, self, time) {
       const values = (self.props ?? {}) as Record<string, number>
       ctx.translate(width / 2, height)
-      drawSolvedProp(ctx, solveAt(prop, values, scale), { ...draw, time })
+      drawSolvedProp(ctx, solveAt(prop, values, scale), { ...draw, time, loose: loosePartsOf(self as PropTarget, values) })
     },
   }
 }
@@ -199,6 +211,7 @@ export function drawProp(
   drawSolvedProp(ctx, at.solved, {
     ...target.propDraw,
     time: frame.time,
+    loose: loosePartsOf(target, at.values),
     // The rider is drawn in scene px.
     rider: options.rider
       ? (c) => {
