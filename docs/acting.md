@@ -283,9 +283,13 @@ overshoots and overlaps on this body, and the lines are lip-synced over its
 mouth. The walk phase is rekeyed to the character's own stride (its height and
 legs: a child takes shorter steps), so its feet stay planted. The `walk`,
 `walking` and `gait` tracks step the gait as the target draws
-(`characterPoseOf(props)` folds them into the pose, for drawing by hand). Hands
-reach in the stick figure's proportions, so a `grab` or a `point` lands near
-its target on the human body, not exactly on it. Your own gaits go in
+(`characterPoseOf(props)` folds them into the pose, for drawing by hand). Reaches
+are planned for the character's own arms and legs (`reach`, the share of the
+stick figure's reach its limbs have, so it steps to where they reach), and
+while a beat's hand or foot is on its target the limb is re-aimed on the
+human body: a `point` aims at the spot, a `grab`, `put` or `kick` lands on it
+(leaning down to a low one), and a `swipe`, `write` or `push` follows where
+the stick figure's palm went. Your own gaits go in
 `options.gaits` for the script and `gaits` on `characterTarget` so the drawing
 knows them too.
 
@@ -757,6 +761,6 @@ timeline plays: editor previews, players, embeds and exports.
 
 ## Not yet
 
-- A code panel in the editor (a Code element whose lines and words snap beats)
-- Beat scripts' hands reaching in the v2 character's own proportions (a `grab`
-  lands near its target, not on it)
+- Beat scripts for v2 characters acting on surfaces directly (`surfaceScript`
+  drives the stick figure; in the editor, a Character's Beats box resolves
+  surface places and cues for it)

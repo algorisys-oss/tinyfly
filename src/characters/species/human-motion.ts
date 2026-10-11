@@ -2,6 +2,7 @@ import type { EasingType } from '../../engine/types'
 import type { Pose } from '../rig/body-plan'
 import type { CharacterPoseKey } from '../character'
 import { resolveGait, type Gait, type GaitName } from '../gaits'
+import { unknownName } from '../../engine/authoring/did-you-mean'
 import { HUMAN_EXPRESSIONS, HUMAN_REST, humanPose } from './human'
 
 /**
@@ -183,4 +184,69 @@ export function humanGag(name: HumanGagName, options: { at: number; from?: Pose;
       return { time: options.at + step.after * scale, pose, act: false, ...(step.easing ? { easing: step.easing } : {}) }
     }),
   ]
+}
+
+/**
+ * Everyday actions as cycles, like a gait: the pose at `phase` (0 → 1 is one
+ * stroke and back), built on `base`. Sweeping holds a broom in both hands
+ * (`holding: { right: 'broom' }` draws it) and sweeps it side to side, the
+ * body turning a little with it; brushing works a hand across a surface in
+ * front at chest height (a wall, a window, a horse's flank).
+ */
+export function sweepingPose(phase: number, base: Pose = HUMAN_REST): Pose {
+  const angle = phase * Math.PI * 2
+  const s = Math.sin(angle)
+  return {
+    ...base,
+    lean: (base.lean ?? 0) + 14,
+    bend: (base.bend ?? 0) + 8,
+    side: 5 * s,
+    'head.nod': 22,
+    'arm.right.swing': 38 + 22 * s,
+    'arm.right.spread': 6,
+    'arm.right.elbow': 20 + 10 * Math.max(0, -s),
+    'arm.right.bend': -10,
+    'arm.left.swing': 52 + 22 * s,
+    'arm.left.spread': 14,
+    'arm.left.elbow': 35 + 10 * Math.max(0, s),
+    'arm.left.bend': -20,
+    'leg.left.swing': 10,
+    'leg.right.swing': -10,
+    'leg.left.knee': 8,
+    'leg.right.knee': 4,
+    'leg.left.spread': 8,
+    'leg.right.spread': 8,
+  }
+}
+
+export function brushingPose(phase: number, base: Pose = HUMAN_REST): Pose {
+  const angle = phase * Math.PI * 2
+  const s = Math.sin(angle)
+  const c = Math.cos(angle)
+  return {
+    ...base,
+    lean: (base.lean ?? 0) + 4,
+    side: 2 * s,
+    'head.nod': 6,
+    'arm.right.swing': 62,
+    'arm.right.spread': 18 + 16 * s,
+    'arm.right.elbow': 48 - 18 * Math.abs(s),
+    'arm.right.bend': -30 + 8 * c,
+    'arm.left.swing': 12,
+    'arm.left.spread': 14,
+    'arm.left.elbow': 12,
+    'leg.left.spread': 6,
+    'leg.right.spread': 6,
+  }
+}
+
+/** The cycles by name, for `humanCyclePose`. */
+export const HUMAN_CYCLES = { sweeping: sweepingPose, brushing: brushingPose } as const
+export type HumanCycleName = keyof typeof HUMAN_CYCLES
+
+/** The pose of a named cycle at `phase` (0 → 1 is one stroke and back), built on `base`. */
+export function humanCyclePose(name: HumanCycleName | string, phase: number, base: Pose = HUMAN_REST): Pose {
+  const cycle = HUMAN_CYCLES[name as HumanCycleName] as ((phase: number, base?: Pose) => Pose) | undefined
+  if (!cycle) throw new Error(`humanCyclePose: ${unknownName('cycle', name, Object.keys(HUMAN_CYCLES))}`)
+  return cycle(phase, base)
 }

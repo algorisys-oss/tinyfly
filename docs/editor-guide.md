@@ -82,6 +82,7 @@ Shapes, text, images, video, lines, arrows and paths are added from the
 | **🗺 Map** | An animated map: places, a route between them, and a camera (see [Maps](#maps)) |
 | **🧊 3D Scene** | A real 3D scene seen through its camera: meshes, lights, characters and props (see [3D Scenes](#3d-scenes)) |
 | **⌨ Code** | A code panel whose lines a Character's beats aim at and change (see [Code](#code)) |
+| **📊 Chart** | A bar, line, pie or donut chart from data, whose bars and slices beats aim at, change and ride (see [Charts](#charts-1)) |
 
 Polygon and star are **parametric** paths: change the sides/points/inner ratio in
 the Property Panel and the shape regenerates, and they rescale cleanly when you
@@ -221,11 +222,13 @@ Dances and flips are written as they are, and turn acting off.
   character's tracks and kept on the element (`beats` in the JSON). Write them
   as JSON (`[{ "do": "walk", "to": 320, "mood": "happy" }, { "do": "say",
   "say": "Hello!" }, { "do": "take" }]`) and click **🎬 Run beats**; the
-  timeline grows to fit. A beat can aim at a **⌨ Code** element's lines
+  timeline grows to fit. A beat can aim at a **⌨ Code** element's lines or a
+  **📊 Chart** element's bars, points and slices
   (`"target": { "surface": "Code 1", "anchor": "line:2" }`, also for `to`,
   `toward` and `onto`) and change them (`"then": { "surface": "Code 1",
   "edit": "highlight", "anchor": "line:2", "at": "contact" }`): the edits
-  become tracks on that element. Problems are named by beat (an unknown
+  become tracks on that element, and a figure standing on a bar or a line
+  rides it as it moves. Problems are named by beat (an unknown
   action, mood or place) before anything is written. The AI prompt bar writes
   beats this way too.
 
@@ -309,6 +312,28 @@ Its tracks are on the element, named `object.property` (`box.rotateY`,
 `character.arm.right.spread`, `activeCamera` for cuts). 3D scenes show in the
 DOM and Canvas previews and in GIF / WebP / MP4 export. See [3D
 Scenes](scene-3d.md) for the same from code.
+
+### Charts
+
+A **📊 Chart** element is a `chart()` from code: a bar, line, pie or donut
+chart drawn by code into its box. In the property panel: the **Kind**,
+**Title**, **Theme** (light or dark), **Max** (the top of the scale; blank
+for a round number above the data), **Value labels** (a prefix, a suffix,
+decimal places, and whether to show them), **Axis titles**, the **Data** as
+JSON (`[{ "id": "q1", "label": "Q1", "value": 45 }, …]`; `"hidden": true`
+starts a bar, point or slice out of sight) and, for several series, the
+**Series** (`[{ "id": "plan", "label": "Plan" }, …]`, each datum then with
+`"values": { "plan": 40, … }`). Bad data is named under the fields instead of
+breaking the stage.
+
+Its bars, points and slices are places. A Character's **Beats** aim at them
+(`{ "surface": "Chart 1", "anchor": "bar:q2" }`), change them (`set` to a
+value, `show` a hidden one, `highlight`, `pull` a slice out) and ride them:
+a figure that leaps `onto` a bar is carried up as the bar grows. The edits are
+tracks on the Chart element named `bar.q2.value`, `slice.a.pull` and so on,
+which you can also key by hand. Charts show in the DOM and Canvas previews and
+in GIF / WebP / MP4 export. See [Charts](acting.md#charts) for the same from
+code.
 
 ### Selecting Elements
 
@@ -1103,7 +1128,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.99.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.100.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed
@@ -1141,6 +1166,16 @@ The preview panel supports three rendering modes, switchable via the renderer se
 - **SVG** — Elements rendered as SVG shapes
 
 All three renderers play the same animation — switch between them to verify cross-renderer compatibility.
+
+Every renderer is editable on stage. The DOM preview's elements take the
+pointer themselves; the Canvas and SVG previews draw into one surface, so a
+transparent hit layer over the drawing carries the same boxes, handlers and
+selection chrome (resize and rotation handles, path points), placed by the
+animation and the camera exactly as the drawing is. Clicking selects (the
+topmost element first), dragging moves, handles resize and rotate, and the
+grid, snapping, rulers, guides, the pen tool and camera panning work the
+same whichever preview is on. Characters, charts, props and 3D scenes, which
+only the Canvas preview draws fully, can be arranged there directly.
 
 ### Onion skinning
 

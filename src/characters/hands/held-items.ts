@@ -5,7 +5,7 @@ import type { Pen } from '../look/pen'
 
 /**
  * Things a character holds: a mug, a phone, a book, bags, an umbrella, a
- * broom, a parcel. Each is plain data (`holding: { right: 'mug' }`) drawn at
+ * broom, a cane, a parcel. Each is plain data (`holding: { right: 'mug' }`) drawn at
  * the hand's grip, so it follows the hand through any pose, gait or turn, and
  * sorts with that arm (behind the body when the arm is). An item held in
  * `both` hands sits between them.
@@ -17,7 +17,7 @@ import type { Pen } from '../look/pen'
  * `handGrip` gives the grip for drawing anything else in a hand.
  */
 
-export type HeldItemName = 'mug' | 'phone' | 'book' | 'bag' | 'briefcase' | 'umbrella' | 'broom' | 'parcel'
+export type HeldItemName = 'mug' | 'phone' | 'book' | 'bag' | 'briefcase' | 'umbrella' | 'broom' | 'cane' | 'parcel'
 
 export interface HeldItem {
   item: HeldItemName
@@ -43,6 +43,7 @@ export const HELD_ITEMS = {
   briefcase: { color: '#6b4630', hands: 'one' },
   umbrella: { color: '#3c9a6e', hands: 'one' },
   broom: { color: '#c8963e', hands: 'one' },
+  cane: { color: '#6b4630', hands: 'one' },
   parcel: { color: '#c9a06a', hands: 'both' },
 } satisfies Record<HeldItemName, { color: string; hands: 'one' | 'both' | 'either' }>
 
@@ -181,6 +182,18 @@ export function drawHeldItem(pen: Pen, held: HeldItem, grip: Grip, H: number, ou
         { x: end.x + n.x * 16 * s + d.x * 34 * s, y: end.y + n.y * 16 * s + d.y * 34 * s },
       ]
       pen.shape(bristles, held.color, outline)
+      return
+    }
+    case 'cane': {
+      // A walking cane: a crook handle in the hand, the shaft straight down to the ground
+      // (drawing space y 0) while the hand hangs, lifting with the hand once it rises.
+      const length = Math.min(0.56 * H, Math.max(0.3 * H, -p.y))
+      const lean = 0.12 * Math.sign(facing || 1)
+      const d = { x: lean / Math.hypot(lean, 1), y: 1 / Math.hypot(lean, 1) }
+      const tip = { x: p.x + d.x * length, y: p.y + d.y * length }
+      const handle = arc({ x: p.x + 7 * s * Math.sign(facing || 1), y: p.y - 2 * s }, 7 * s, Math.PI, Math.PI * 2, 8).map((q) => ({ x: p.x + (q.x - p.x) * Math.sign(facing || 1), y: q.y }))
+      pen.line([...handle, { x: p.x, y: p.y + 2 * s }, tip], outline * 1.2)
+      pen.shape(box({ x: tip.x, y: tip.y - 3 * s }, 9 * s, 7 * s), held.color, 0)
       return
     }
     case 'parcel': {

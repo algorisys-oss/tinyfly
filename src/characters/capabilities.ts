@@ -5,7 +5,7 @@ import { GAITS } from './gaits'
 import { DANCE_STYLES, MUDRAS } from './dance'
 import { FLIPS } from './acrobatics'
 import { HAND_SHAPES } from './hands/hand-rig'
-import { HUMAN_POSES, HUMAN_EXPRESSIONS, HUMAN_BUILDS } from './species/human'
+import { HUMAN_POSES, HUMAN_EXPRESSIONS, HUMAN_BUILDS, FOOT_SHAPES } from './species/human'
 import { HAIR_STYLES, HAIR_COLORS } from './head/hair'
 import { FACIAL_HAIR_STYLES } from './head/facial-hair'
 import { GLASSES_STYLES } from './head/glasses'
@@ -102,6 +102,8 @@ export interface Capabilities {
     facialHair: string[]
     glasses: string[]
     hats: string[]
+    /** `feet` option */
+    feet: string[]
     /** `castMember(name, height)` */
     cast: string[]
     /** `holding: { left | right | both: item }`, and which hands each takes */
@@ -173,7 +175,7 @@ export function capabilities(version?: string, cast: Cast = {}): Capabilities {
         'songbird() · crow() · chicken()': 'birds (bird(spec) makes your own): hop, walk, peck, flap, fly and land (a chicken flutters), their calls; wings fold and beat in rhythm',
         "{ kind: 'prop', prop: 'car', position, rotation, values } with loadScene3D(scene, { kinds: [characterObjects, propObjects] })": 'props in 3D scenes, by preset name, seen in perspective by the scene camera; controls are tracks on the object',
         'characterScript3D(id, beats, { scene, position?, heading?, height?, pose? })': 'a v2 character in a 3D scene in world metres: gaits to [x, z] or through points (its walk phase keyed with the distance), face, hold, pose, gag; checkCharacterBeats3D checks the beats',
-        'propRide3D({ prop, propId, propTracks, scene, placement, anchor, riderId, pose, start, end, mount?, dismount? })': 'a character riding a prop in a 3D scene: hips on a seat anchor (saddle, seat) as it moves, hopping on and off; RIDING_POSES.astride / .seated',
+        'propRide3D({ prop, propId, propTracks, scene, placement, anchor, riderId, pose, start, end, mount?, dismount? })': 'a character riding a prop in a 3D scene: hips on a seat anchor (saddle, seat) as it moves, hopping on and off; RIDING_POSES.astride / .seated / .driving / .cycling / .wheeling (a wheelchair)',
         'propScript3D(id, prop, beats, { scene, position?, heading?, values? })': 'props scripted in world metres for 3D scenes: moves to [x, z] or through points (wheels and strides keyed with the distance), face, hold, and their actions; checkPropBeats3D checks the beats',
         'propPreset(name, options?)': 'a prop preset by name (did-you-mean on a wrong one)',
         "propTarget({ …, style: 'stick' })": 'line art to go with stick figures: tubes as single strokes, shapes outlined over paper',
@@ -227,6 +229,7 @@ export function capabilities(version?: string, cast: Cast = {}): Capabilities {
       facialHair: Object.keys(FACIAL_HAIR_STYLES),
       glasses: Object.keys(GLASSES_STYLES),
       hats: Object.keys(HAT_STYLES),
+      feet: [...FOOT_SHAPES],
       cast: Object.keys(CHARACTER_CAST),
       heldItems: Object.fromEntries(Object.entries(HELD_ITEMS).map(([name, item]) => [name, item.hands])),
       handMeetings: Object.keys(HAND_MEETINGS),
@@ -376,6 +379,8 @@ export function capabilitiesMarkdown(version?: string, cast: Cast = {}): string 
     '',
     `Prop beat fields: ${list(c.props.beatFields)}. Every prop has the controls ${Object.keys(c.props.commonControls).map((n) => `\`${n}\``).join(', ')} and the actions ${Object.keys(c.props.commonActions).map((n) => `\`${n}\``).join(', ')}.`,
     '',
+    'Scenery: `scenery({ x, y, width, height, kind: sky | room, hour, clouds, wind, rain, snow, horizon: hills | city | flat })` is a canvas target whose values `hour` (0–24), `clouds`, `rain`, `snow` (0–1) and `wind` (−1..1) are tracks (`set(prop, { at, value, duration })`, `tracks(id)`; `anchor(\'sun\' | \'moon\' | \'horizon\' | \'ground\', time)`); the same `wind` streams hair (`hairFollowTracks(…, { wind })`). `scenePreset(\'park\' | \'street\' | \'office\' | \'home\', { width, height })` lays out scenery and props as data; `buildScene` builds them into targets.',
+    '',
     '| Preset | Family | Actions (needs) | Controls | Anchors |',
     '|---|---|---|---|---|',
     ...Object.entries(c.props.presets).map(
@@ -392,13 +397,14 @@ export function capabilitiesMarkdown(version?: string, cast: Cast = {}): string 
     `- \`build\`: ${list(c.character.builds)}`,
     `- \`hair\`: ${list(c.character.hair)} (colours: ${list(Object.keys(c.character.hairColors))} in \`HAIR_COLORS\`)`,
     `- \`facialHair\`: ${list(c.character.facialHair)}`,
-    `- \`glasses\`: ${list(c.character.glasses)}; \`hat\`: ${list(c.character.hats)}; \`ears: true\``,
-    '- `outfit`: `{ shirt, trousers, sleeves: short | long | none, bottom: trousers | shorts | skirt, collar, tie: colour, over: apron | labCoat, overColor }`',
+    `- \`glasses\`: ${list(c.character.glasses)}; \`hat\`: ${list(c.character.hats)}; \`ears: true\`; \`face: { teeth, tongue }\` (shown when the mouth opens); \`feet\`: ${list(c.character.feet)}`,
+    '- `outfit`: `{ shirt, trousers, sleeves: short | long | none, bottom: trousers | shorts | skirt, collar, tie: colour, over: apron | labCoat | hoodie | cardigan | overalls | sari, overColor, shoes: boots, shoeColor }`',
     `- \`castMember(name, height)\`: ${list(c.character.cast)}`,
     '- Face marks (pose fields, 0–1): `blush`, `tears`, `sweat`',
     '- Hair in motion (pose fields): `hair.swing` (degrees round the head, + toward its left), `hair.trail` (head radii back), `hair.lift` (head radii up); key them with `hairFollowTracks(target, tracks, who)` after the character\'s tracks, or `hairFollow` + `hairMotionAt` when posing per frame',
     `- \`holding\`: ${Object.entries(c.character.heldItems).map(([name, hands]) => `\`${name}\` (${hands === 'both' ? 'both' : hands === 'either' ? 'one hand or both' : 'left or right'})`).join(', ')}; pose fields \`held.left\`, \`held.right\`, \`held.both\` (below 0.5 lets go); \`handGrip(joints, side)\``,
-    `- \`meetHands(kind, a, b)\` (stand them \`meetingSpacing(kind, a, b)\` apart): ${list(c.character.handMeetings)}`,
+    `- \`meetHands(kind, a, b)\` (stand them \`meetingSpacing(kind, a, b)\` apart): ${list(c.character.handMeetings)}; \`embrace(a, b)\` (a hug, \`embraceSpacing\` apart); \`helpUp(helper, sitter, progress)\` (0 on the floor, hand taken; 1 standing; \`helpUpSpacing\` apart)`,
+    '- Everyday cycles like a gait: `humanCyclePose(\'sweeping\' | \'brushing\', phase, base)` (0 → 1 is one stroke and back; sweeping with `holding: { right: \'broom\' }`)',
     '',
     '## Code panel',
     '',

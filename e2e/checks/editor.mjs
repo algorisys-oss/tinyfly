@@ -46,6 +46,32 @@ export default {
     }
     results.push({ label: 'switching and playing DOM, Canvas and SVG renderers', ok: rendered.length === 3 })
 
+    // On-stage editing in the Canvas and SVG previews: a transparent hit layer over the drawing
+    // carries the DOM preview's handlers, so a click selects and a drag moves the element.
+    for (const name of ['canvas', 'svg']) {
+      await renderer.selectOption(name)
+      await page.waitForTimeout(400)
+      const hit = page.locator('.preview-hit-layer [data-element-type="rect"]').first()
+      const box = await hit.boundingBox()
+      if (!box) {
+        results.push({ label: `${name}: hit layer over the drawing`, ok: false, detail: 'no hit box for the rectangle' })
+        continue
+      }
+      const before = await hit.evaluate((el) => `${el.style.left} ${el.style.top}`)
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+      await page.mouse.down()
+      await page.mouse.move(box.x + box.width / 2 + 20, box.y + box.height / 2 + 10, { steps: 6 })
+      await page.mouse.move(box.x + box.width / 2 + 30, box.y + box.height / 2 + 20, { steps: 6 })
+      await page.mouse.up()
+      await page.waitForTimeout(300)
+      const after = await hit.evaluate((el) => `${el.style.left} ${el.style.top}`)
+      const selected = await hit.evaluate((el) => el.classList.contains('selected'))
+      const handles = await page.locator('.preview-hit-layer .resize-handle').count()
+      results.push({ label: `${name}: click selects and drag moves on stage`, ok: selected && handles >= 8 && before !== after, detail: `selected=${selected} handles=${handles} ${before} -> ${after}` })
+    }
+    await renderer.selectOption('dom')
+    await page.waitForTimeout(300)
+
     // Persistence across reload.
     await page.locator('.toolbar-btn', { hasText: 'Save' }).first().click().catch(() => {})
     await page.waitForTimeout(1500)

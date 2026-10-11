@@ -26,6 +26,7 @@ const ELEMENT_TYPES: { type: ElementType; icon: string; label: string }[] = [
   { type: 'map', icon: '🗺', label: 'Map' },
   { type: 'scene3d', icon: '🧊', label: '3D Scene' },
   { type: 'code', icon: '⌨', label: 'Code' },
+  { type: 'chart', icon: '📊', label: 'Chart' },
 ]
 
 export const ElementPanel: Component<ElementPanelProps> = (props) => {
@@ -40,6 +41,13 @@ export const ElementPanel: Component<ElementPanelProps> = (props) => {
         height: canvas.height,
         view: { lon: 20, lat: 20, zoom: Math.max(0, Math.log2(canvas.width / 256)) },
       })
+      return
+    }
+    if (type === 'chart') {
+      // A chart near the top left, as wide as fits.
+      const canvas = props.projectStore.currentProject().canvas
+      const width = Math.min(420, Math.max(220, canvas.width - 80))
+      props.sceneStore.addElement('chart', { x: 40, y: 40, width, height: Math.min(280, Math.max(160, canvas.height - 80)) })
       return
     }
     if (type === 'code') {
@@ -300,6 +308,7 @@ export const ElementPanel: Component<ElementPanelProps> = (props) => {
                       {element.type === 'map' && '🗺'}
                       {element.type === 'scene3d' && '🧊'}
                       {element.type === 'code' && '⌨'}
+                      {element.type === 'chart' && '📊'}
                     </span>
                     <span class="element-name">
                       {element.name}

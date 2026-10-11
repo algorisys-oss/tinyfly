@@ -3,6 +3,7 @@ import { createSceneStore, type CharacterElement } from '../stores/scene-store'
 import { characterElementPose, characterElementTarget, characterOf } from './character-element'
 import { trackPropertyLabel } from './track-labels'
 import { sceneElementToCanvasTarget } from './scene-to-canvas'
+import { characterJoints, humanPose } from '../../characters'
 import { HUMAN_REST } from '../../characters'
 import type { AnimationState } from '../../engine/types'
 
@@ -55,6 +56,10 @@ describe('character elements', () => {
     expect([who.figure, who.look, who.height]).toEqual(['stick', 'pencil', 200])
     expect(who.layers.parts).toBeUndefined()
     expect(characterOf(aCharacter()).layers.parts?.spine).toBeDefined() // dressed by default
+    const shaped = characterOf(aCharacter({ teeth: true, feet: 'big' }))
+    expect(shaped.face).toEqual({ teeth: true, tongue: false })
+    const footLength = (who: ReturnType<typeof characterOf>) => Math.abs(characterJoints(who, humanPose({ turn: 1 })).points['toe.left'].x - characterJoints(who, humanPose({ turn: 1 })).points['ankle.left'].x)
+    expect(footLength(shaped)).toBeGreaterThan(footLength(characterOf(aCharacter())))
   })
 
   it('labels pose tracks in plain language and leaves other properties alone', () => {

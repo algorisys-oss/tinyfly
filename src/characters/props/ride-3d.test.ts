@@ -79,6 +79,11 @@ describe('rider poses', () => {
     expect(pedallingPose(1)['leg.left.swing']).toBeCloseTo(top['leg.left.swing'], 6)
   })
 
+  it('wheel a wheelchair: seated, the hands down at the rims', () => {
+    expect(RIDING_POSES.wheeling['leg.left.swing']).toBe(RIDING_POSES.seated['leg.left.swing'])
+    expect(RIDING_POSES.wheeling['arm.left.swing']).toBeLessThan(RIDING_POSES.seated['arm.left.swing']!)
+  })
+
   it('key a stretch of pedalling at a cadence, timed as written', () => {
     const keys = pedallingKeys({ start: 1000, end: 3000, cadence: 1 })
     expect(keys[0].time).toBe(1000)

@@ -111,6 +111,12 @@ export interface ScriptOptions extends ActingOptions, Cast {
   start?: StickPose
   /** Lip-sync energy (default 1) */
   energy?: number
+  /**
+   * How far the arm and leg reach, as a share of the stick figure's own (default 1):
+   * a body with other proportions (a v2 character) plans its steps to where its
+   * limbs reach
+   */
+  reach?: { arm?: number; leg?: number }
 }
 
 export interface ScriptResult {
@@ -329,7 +335,7 @@ export function scriptTracks(target: string, written: Beat[], options: ScriptOpt
     const joints = stickFigureJoints({ ...body, ...(arm ? { rightShoulder: 90, rightElbow: 0, rightWrist: 0 } : { rightHip: 90, rightKnee: 0 }) }, { height, facing })
     const root = arm ? joints.shoulders.right : joints.hip
     const end = arm ? { x: (joints.hands.right.x + joints.fingertips.right.x) / 2, y: (joints.hands.right.y + joints.fingertips.right.y) / 2 } : joints.feet.right
-    const length = Math.hypot(end.x - root.x, end.y - root.y)
+    const length = Math.hypot(end.x - root.x, end.y - root.y) * ((arm ? options.reach?.arm : options.reach?.leg) ?? 1)
     const dy = sceneY - (floor + root.y)
     const across = Math.abs(dy) < length ? Math.sqrt(length * length - dy * dy) : length * 0.1
     return sceneX - root.x - facing * across

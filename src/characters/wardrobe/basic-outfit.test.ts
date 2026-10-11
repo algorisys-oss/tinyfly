@@ -51,3 +51,28 @@ describe('outfits', () => {
     expect(count(render({ outfit: { tie: TIE } }, 2), TIE, chest.x, chest.y, 12)).toBe(0)
   })
 })
+
+describe('more wardrobe', () => {
+  const joints = characterJoints(character({ height: 300 }), HUMAN_REST)
+  const ankle = joints.points['ankle.left']
+  const base = render({ outfit: {} }).toBuffer('image/png')
+
+  for (const over of ['hoodie', 'cardigan', 'overalls', 'sari'] as const) {
+    it(`${over}: draws in every view, differently from the plain outfit`, () => {
+      for (const turn of [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5]) expect(() => render({ outfit: { over } }, turn)).not.toThrow()
+      expect(render({ outfit: { over } }).toBuffer('image/png').equals(base)).toBe(false)
+      expect(render({ outfit: { over } }, 2).toBuffer('image/png').equals(render({ outfit: {} }, 2).toBuffer('image/png'))).toBe(false)
+    })
+  }
+
+  it('boots cover the foot and the ankle in their colour, and a sari drapes to the ankles', () => {
+    const shod = render({ outfit: { shoes: 'boots', shoeColor: '#8b1a1a' } })
+    expect(count(shod, '#8b1a1a', ankle.x, ankle.y, 8)).toBeGreaterThan(10)
+    expect(count(render({ outfit: {} }), '#8b1a1a', ankle.x, ankle.y, 8)).toBe(0)
+    const saree = render({ outfit: { over: 'sari', overColor: '#16a34a' } })
+    expect(count(saree, '#16a34a', ankle.x, ankle.y - 14, 8)).toBeGreaterThan(10)
+    // Overalls keep the trousers whatever `bottom` says, in the trousers' colour on the chest.
+    const chest = { x: 0, y: -0.55 * 300 }
+    expect(count(render({ outfit: { over: 'overalls', bottom: 'skirt' } }), TROUSERS, chest.x, chest.y, 8)).toBeGreaterThan(10)
+  })
+})

@@ -204,7 +204,7 @@ with a GSAP-style call (durations are in seconds here):
 ```html
 <div class="box" style="width:60px;height:60px;background:#4a9eff"></div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.99.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.100.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -412,7 +412,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.99.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.100.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -2278,7 +2278,7 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.99.0/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.100.0/cdn/tinyfly-player.iife.js`.
 
 ---
 
@@ -5490,6 +5490,7 @@ Shapes, text, images, video, lines, arrows and paths are added from the
 | **🗺 Map** | An animated map: places, a route between them, and a camera (see [Maps](#maps)) |
 | **🧊 3D Scene** | A real 3D scene seen through its camera: meshes, lights, characters and props (see [3D Scenes](#3d-scenes)) |
 | **⌨ Code** | A code panel whose lines a Character's beats aim at and change (see [Code](#code)) |
+| **📊 Chart** | A bar, line, pie or donut chart from data, whose bars and slices beats aim at, change and ride (see [Charts](#charts-1)) |
 
 Polygon and star are **parametric** paths: change the sides/points/inner ratio in
 the Property Panel and the shape regenerates, and they rescale cleanly when you
@@ -5629,11 +5630,13 @@ Dances and flips are written as they are, and turn acting off.
   character's tracks and kept on the element (`beats` in the JSON). Write them
   as JSON (`[{ "do": "walk", "to": 320, "mood": "happy" }, { "do": "say",
   "say": "Hello!" }, { "do": "take" }]`) and click **🎬 Run beats**; the
-  timeline grows to fit. A beat can aim at a **⌨ Code** element's lines
+  timeline grows to fit. A beat can aim at a **⌨ Code** element's lines or a
+  **📊 Chart** element's bars, points and slices
   (`"target": { "surface": "Code 1", "anchor": "line:2" }`, also for `to`,
   `toward` and `onto`) and change them (`"then": { "surface": "Code 1",
   "edit": "highlight", "anchor": "line:2", "at": "contact" }`): the edits
-  become tracks on that element. Problems are named by beat (an unknown
+  become tracks on that element, and a figure standing on a bar or a line
+  rides it as it moves. Problems are named by beat (an unknown
   action, mood or place) before anything is written. The AI prompt bar writes
   beats this way too.
 
@@ -5717,6 +5720,28 @@ Its tracks are on the element, named `object.property` (`box.rotateY`,
 `character.arm.right.spread`, `activeCamera` for cuts). 3D scenes show in the
 DOM and Canvas previews and in GIF / WebP / MP4 export. See [3D
 Scenes](scene-3d.md) for the same from code.
+
+### Charts
+
+A **📊 Chart** element is a `chart()` from code: a bar, line, pie or donut
+chart drawn by code into its box. In the property panel: the **Kind**,
+**Title**, **Theme** (light or dark), **Max** (the top of the scale; blank
+for a round number above the data), **Value labels** (a prefix, a suffix,
+decimal places, and whether to show them), **Axis titles**, the **Data** as
+JSON (`[{ "id": "q1", "label": "Q1", "value": 45 }, …]`; `"hidden": true`
+starts a bar, point or slice out of sight) and, for several series, the
+**Series** (`[{ "id": "plan", "label": "Plan" }, …]`, each datum then with
+`"values": { "plan": 40, … }`). Bad data is named under the fields instead of
+breaking the stage.
+
+Its bars, points and slices are places. A Character's **Beats** aim at them
+(`{ "surface": "Chart 1", "anchor": "bar:q2" }`), change them (`set` to a
+value, `show` a hidden one, `highlight`, `pull` a slice out) and ride them:
+a figure that leaps `onto` a bar is carried up as the bar grows. The edits are
+tracks on the Chart element named `bar.q2.value`, `slice.a.pull` and so on,
+which you can also key by hand. Charts show in the DOM and Canvas previews and
+in GIF / WebP / MP4 export. See [Charts](acting.md#charts) for the same from
+code.
 
 ### Selecting Elements
 
@@ -6511,7 +6536,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.99.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.100.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed
@@ -6549,6 +6574,16 @@ The preview panel supports three rendering modes, switchable via the renderer se
 - **SVG** — Elements rendered as SVG shapes
 
 All three renderers play the same animation — switch between them to verify cross-renderer compatibility.
+
+Every renderer is editable on stage. The DOM preview's elements take the
+pointer themselves; the Canvas and SVG previews draw into one surface, so a
+transparent hit layer over the drawing carries the same boxes, handlers and
+selection chrome (resize and rotation handles, path points), placed by the
+animation and the camera exactly as the drawing is. Clicking selects (the
+topmost element first), dragging moves, handles resize and rotate, and the
+grid, snapping, rulers, guides, the pen tool and camera panning work the
+same whichever preview is on. Characters, charts, props and 3D scenes, which
+only the Canvas preview draws fully, can be arranged there directly.
 
 ### Onion skinning
 
@@ -7492,14 +7527,22 @@ one probably meant, and `propScript` throws on them.
 | `car()`, `truck()`, `bus()`, `tractor()`, `cart()`, `trainCar()`, `bike()`, `motorbike()` | `drive` (`to`), `brake` (`to`, a skid with locked wheels), `bump`, `honk`, `door` (`open`), `lights` (`on`) — doors and lights where it has them |
 | `tree()` | `sway` (`wind`, `for`), `shake`, `shedLeaves` |
 | `house()` | `door` (`open`), `lights` (`on`), `smoke` (`for`, runs in the background), `shake` |
+| `chair()` | `tip` (`for`: back on its rear legs, then settles), `fall` |
+| `desk()` | `drawer` (`open`) |
+| `bed()` | `bounce` (`for`: the mattress gives and springs back) |
+| `door()` | `open` (`open`, `for`), `slam`, `knock` (`for`) |
+| `wheelchair()` | `roll` (`to`; the wheels turn the distance), `brake` (`to`, wheels locked), `wheelie` (`for`) |
 | `helicopter()` | `takeOff` (`height`), `fly` (`to`, `height`), `hover`, `land` |
 | `airplane()` | `takeOff` (`to`, `height`), `fly` (`to`, `height`), `loop`, `land` (`to`) |
 | `horse()` | `walk`, `trot`, `canter`, `gallop` (`to`), `rear`, `buck`, `neigh`, `graze`, `sit`, `lie`, `jump`, `nod`, `swish` |
 | `dog()` | `walk`, `trot`, `run` (`to`), `bark`, `wag`, `sniff`, `sit`, `lie`, `jump`, `nod`, `swish` |
 | `cat()` | `walk`, `trot`, `run` (`to`), `meow`, `arch`, `pounce` (`to`), `sit`, `lie`, `jump`, `nod`, `swish` |
 | `cow()` | `walk`, `trot` (`to`), `moo`, `graze`, `sit`, `lie`, `jump`, `nod`, `swish` |
+| `goat()` | `walk`, `trot`, `gallop` (`to`), `bleat`, `graze`, `sit`, `lie`, `jump`, `nod`, `swish` |
+| `rabbit()`, `squirrel()` | `walk`, `gallop` (`to`: a hop, a scamper), `squeak` / `chatter`, `graze` (nibble), `sit`, `lie`, `jump`, `nod`, `swish` |
 | `songbird()`, `crow()` | `hop`, `walk` (`to`), `peck` (`for`), `flap` (`for`), `fly` (`to`, `height`), `glide` (`to`, `height`), `land` (`height`, `to`), `tweet` / `caw` |
 | `chicken()` | `walk` (`to`), `peck`, `flap`, `flutter`, `cluck` (it cannot fly) |
+| `pigeon()`, `duck()`, `owl()`, `parrot()` | As the songbird: `hop`, `walk`, `peck`, `flap`, `fly`, `glide`, `land`, and `coo` / `quack` / `hoot` / `squawk` |
 
 **Line art.** `propTarget({ …, style: 'stick' })` (or `drawSolvedProp(…, { style: 'stick' })`)
 draws a prop as line art to go with stick figures: tubes (legs, necks, tails,
@@ -7526,7 +7569,8 @@ neck stretches down to reach), and it walks with its head bobbing or hops.
 air) and flies to `height` metres; `glide` holds the wings out still and sinks
 gently toward `height` on the way to `to` (from the ground it flies the first
 stretch); `land` comes down to the ground or to a
-perch (`height`). Perch it with anchors:
+perch (`height`), and landing above the ground its toes curl round the perch
+(`grip`, cleared as it takes off). Perch it with anchors:
 
 ```js
 const branch = propAt(treeTarget, { time: 0 }, 'tree').anchor('branch')
@@ -7550,6 +7594,26 @@ Make your own from the family generators: `vehicle(spec)` takes:
 
 `tree(spec)` and `house(spec)` take sizes and colours.
 
+**Furniture.** `chair()`, `desk()`, `bed()` and `door()` stand on the ground
+facing the viewer, and their places are anchors a figure uses them at: a
+chair's `seat` (ride it with `propRide({ anchor: 'seat' })`, a `seated` pose
+and `offset: { y: seatHeight(height) }`), `back` and `front`; a desk's `top`,
+`edge`, `drawer` and the `chair` spot in front; a bed's `mattress`, `pillow`,
+`foot` and `side`; a door's `handle`, `doorway`, `front` and `beyond` (a figure
+goes through from `front` to `beyond`, and the door is drawn over it until it
+opens). Each takes sizes and colours (`chair({ seatHeight: 0.5 })`, `door({
+hinge: 'right' })`). As surfaces (`propSurface`), their controls are edits a
+beat makes: `set` or `switch` `control:open`, `control:drawer`, `control:tip`.
+
+A `wheelchair()` is furniture that moves: a seat and back on a frame, two big
+rimmed wheels, castors and footrests. It `roll`s to a place with its wheels
+turning exactly the distance (in 3D, its `roll` move does the same in
+metres), `brake`s with them locked, and tips back for a `wheelie`. Any
+character rides its `seat` in the `wheeling` pose (`RIDING_POSES.wheeling`:
+sitting up, hands down at the rims), and a pusher stands at `handles` in the
+`push` pose. It is an accessory, not an age or a build: who uses it is the
+story's choice, like a `cane` in a hand.
+
 ## Figures with props
 
 - **Riding.** `propRide({ prop, propId, propTracks, anchor: 'seat', figure, figureId, start, end, offset })`
@@ -7567,6 +7631,37 @@ Make your own from the family generators: `vehicle(spec)` takes:
 
 See the gallery cards **Road Trip**, **Windy Day**, **Helicopter**,
 **Traffic**, **Horse & Cart**, **Farmyard**, **Birds** and **3D Scene: Village**.
+
+## Scenery
+
+`scenery(options)` is the world behind the figures: a canvas target that draws
+a sky (the sun and moon on their arcs, stars at night, clouds drifting on the
+wind, rain that slants with it, snow that drifts, hills or a city on the
+horizon, the ground) or a room (a wall, a floor and a window on that sky). Its
+values are tracks, so a day passes and weather comes and goes as keyframes,
+and every frame is drawn from its time alone:
+
+```js
+const sky = scenery({ x: 0, y: 0, width: 720, height: 400, hour: 9, clouds: 0.4, horizon: 'hills' })
+sky.set('hour', { at: 0, value: 20, duration: 12000 })   // dawn to night
+sky.set('wind', { at: 3000, value: 0.8, duration: 1000 })
+sky.set('rain', { at: 5000, value: 0.8, duration: 1500 })
+const tracks = sky.tracks('sky')                           // hour, wind, rain keys on 'sky'
+sky.anchor('sun', 4000)                                    // where the sun is then
+```
+
+`hour` runs 0–24, `clouds`, `rain` and `snow` 0–1, `wind` −1 (from the right)
+to 1 (from the left). The same wind streams a character's hair:
+`hairFollowTracks(target, tracks, who, { wind })`. `kind: 'room'` draws a wall
+and a floor with a `window` on the sky; `horizon` is `hills`, `city` (lit
+windows at night) or `flat`; `colors` recolour any of it.
+
+`scenePreset(name, { width, height })` lays out a scene as plain data (the
+scenery and where the props stand) and `buildScene` builds it into targets:
+`park` (a late-morning sky over hills, two trees and a bench), `street` (the end
+of the afternoon against the city: houses, a car, a tree), `office` (a room
+with a desk, a chair and a door) and `home` (a room at night with a bed, a
+chair and a door). The Park Day card plays a day over the park.
 
 ## In 3D scenes
 
@@ -7624,10 +7719,16 @@ in `@algorisys/tinyfly/characters`.
 
 ## Props
 
-For objects in a story (vehicles, trees, houses, aircraft, animals, birds),
-use the presets (`car()`, `tree()`, `helicopter()`, `dog()`, `crow()`…) with
+For objects in a story (vehicles, trees, houses, furniture, aircraft,
+animals, birds), use the presets (`car()`, `tree()`, `chair()`, `door()`,
+`wheelchair()`, `helicopter()`, `dog()`, `goat()`, `owl()`…) with
 `propTarget` and `propScript`; the catalog lists each preset's actions,
-controls and anchors, and `checkPropBeats` checks prop beats. `style: 'stick'`
+controls and anchors, and `checkPropBeats` checks prop beats. Furniture has
+the places a figure uses it at as anchors (`seat`, `top`, `mattress`,
+`handle`, `doorway`): aim beats at them rather than guessing a spot. For a
+sky or a room behind everything use `scenery()` (or `scenePreset('park')`),
+whose `hour`, `clouds`, `wind`, `rain` and `snow` are tracks, not a drawing
+of your own. `style: 'stick'`
 draws any prop as line art to go with stick figures. A bird's `lift` is in
 metres: to perch it on a branch or a roof, work the height out from that
 prop's anchor (`propAt(tree, frame, 'tree').anchor('branch')`). In a 3D
@@ -7643,9 +7744,14 @@ seated with `propRide3D` and spliced into its script with `spliceTracks`. See `d
 
 A v2 character's appearance is plain options to `character()`, never drawing
 code: `build` (`child`, `tall`, `short`…), `hair` (a style name, or
-`{ style, color, length, … }`), `facialHair`, `glasses`, `hat`, `ears: true`
-and `outfit: { shirt, trousers }`. `castMember('grandpa', 300)` gives a whole
-ready-made character to start from. Expressions come from `HUMAN_EXPRESSIONS`
+`{ style, color, length, … }`), `facialHair`, `glasses`, `hat`, `ears: true`,
+`face: { teeth, tongue }` (shown when the mouth opens), `feet` (`round`,
+`flat`, `pointed`, `big`) and `outfit: { shirt, trousers, over: 'hoodie' |
+'cardigan' | 'overalls' | 'sari' | 'apron' | 'labCoat', shoes: 'boots' }`.
+`castMember('grandpa', 300)` gives a whole ready-made character to start
+from. Age is hair, glasses and clothes, never a stoop; a `cane` in a hand or
+a `wheelchair()` to ride (`RIDING_POSES.wheeling`) is an accessory any
+character can have. Expressions come from `HUMAN_EXPRESSIONS`
 and are pose fields, as are the face marks `blush`, `tears` and `sweat` (0–1),
 so any face goes with any action or view. Hair and hats turn with the head:
 don't draw a different hairstyle per view. Hanging hair swings on its own:
@@ -7654,7 +7760,9 @@ posing per frame, `hairFollow` once and `hairMotionAt(keys, t)` each frame)
 rather than keying `hair.swing` by hand. Put things in hands with `holding`
 (`{ right: 'mug' }`, `{ both: 'parcel' }`; the pose field `held.both` lets go),
 and for two characters touching use `meetHands('handshake', a, b)` with the
-two standing `meetingSpacing(…)` apart, never two separate clips. See
+two standing `meetingSpacing(…)` apart, `embrace(a, b)` for a hug at
+`embraceSpacing` and `helpUp(helper, sitter, progress)` for a help-up at
+`helpUpSpacing`, never two separate clips. See
 `docs/character-appearance.md`.
 
 ## Surfaces
@@ -7821,7 +7929,7 @@ path for all of that:
 </figure>
 
 <!-- once, anywhere on the page (a site-wide footer is fine) -->
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.99.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.100.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 Every `[data-tinyfly-embed]` mounts when the page is ready, with no per-post
@@ -8896,8 +9004,8 @@ On a page with no build step, load the maps add-on after the browser bundle; it
 adds to the same `tinyfly` global:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.99.0/cdn/tinyfly.iife.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.99.0/cdn/tinyfly-maps.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.100.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.100.0/cdn/tinyfly-maps.iife.js"></script>
 ```
 
 It is a separate script because the offline world map it carries adds about
@@ -9289,6 +9397,11 @@ Beards: `none`, `stubble`, `goatee`, `soulPatch`, `chinStrap`, `circle`,
   The crown sits over the hair; hair below the brim still shows.
 - `ears: true` adds ears: they stick out past the head from the front and
   behind, and sit on the head with a curl when turned toward the viewer.
+- `face: { teeth: true, tongue: true }` shows a row of upper teeth hanging
+  from the top of the mouth, and a tongue lying in the bottom of it, whenever
+  the mouth opens past 0.3 (a laugh, a shout, a wail). The mouth's shape is
+  still the pose's `mouth`, `smile` and `mouthWidth`; a closed or barely open
+  mouth shows neither. Default: neither, so a plain face draws as before.
 
 ## Builds
 
@@ -9305,9 +9418,16 @@ field can still be set on its own (`headSize`, `shoulderWidth`, `hipWidth`,
 | `broad`, `curvy`, `stocky` | Shoulder and hip widths (stocky: a larger head) |
 | `kid`, `child`, `toddler` | Larger head, shorter limbs |
 
+`feet` sets the feet's shape: `round` (the default blob), `flat` (a shoe,
+longer and even), `pointed` (a slipper, tapering to the toe) or `big` (clown's
+feet, half as long again and wide). The shape is clearest in profile, where
+the foot points along the ground; from the front it points at the viewer.
+
 Age, posture and accessories are separate choices: a child build is only
 proportions, and an older character is shown by hair and glasses, never by a
-stoop unless one is posed. The same poses, gaits and actions work on every
+stoop unless one is posed. A cane (`holding: { right: 'cane' }`) and a
+wheelchair (the `wheelchair()` prop, ridden in the `wheeling` pose) are
+accessories any character can have, not part of an age. The same poses, gaits and actions work on every
 build; `humanGaitStrideLength(gait, height, stride, legLength)` gives a build's
 stride so its feet stay planted.
 
@@ -9328,7 +9448,8 @@ character({ outfit: { over: 'labCoat' } })
 | `bottom` | `trousers` (default), `shorts`, `skirt` |
 | `collar` | `true` for a shirt collar |
 | `tie` | A colour, for a tie down the front |
-| `over`, `overColor` | `apron` or `labCoat`, and its colour |
+| `over`, `overColor` | `apron`, `labCoat`, `hoodie` (a loose top with a hood at the back, a front pocket and long sleeves), `cardigan` (open down the front, buttoned), `overalls` (a bib with straps, in the trousers' colour) or `sari` (a drape to the ankles with the pallu over the near shoulder), and its colour |
+| `shoes`, `shoeColor` | `boots` to above the ankle, and their colour |
 
 The front details (collar, tie, apron, the coat's opening) show from the
 front and turn away with the body; from behind an apron shows its ties.
@@ -9346,6 +9467,28 @@ family: `boy`, `girl`, `youngMan`, `youngWoman`, `man`, `woman`, `grandpa`,
 ```js
 const family = ['man', 'woman', 'girl', 'grandma'].map((name) => character(castMember(name, 280)))
 ```
+
+## Hugs, help-ups and everyday cycles
+
+Two people, more than hands: `embrace(a, b)` is a hug. Both turn toward each
+other, lean in and tilt their heads together, and each reaches its right arm
+over the other's shoulder and its left round the other's waist, exactly, from
+where the two stand (`embraceSpacing(a, b)` apart). `helpUp(helper, sitter,
+progress)` is one person helping another up off the floor as a function of how
+far along it is: at 0 the sitter sits on the floor and the helper bows to take
+its hand, at 1 both stand, and in between the hands stay joined at a point
+that rises with them (`helpUpSpacing(helper, sitter)` apart). Both return
+plain poses (`a`, `b`, or `helper`, `sitter`) and whether they `reached`.
+
+```js
+const hug = embrace({ character: cook, x: 300 }, { character: grandpa, x: 300 + embraceSpacing(cook, grandpa) })
+const rising = helpUp({ character: cook, x: 300 }, { character: grandpa, x: 300 + helpUpSpacing(cook, grandpa) }, 0.5)
+```
+
+Everyday actions as cycles, like a gait: `humanCyclePose('sweeping', phase,
+base)` sweeps a broom side to side (hold one: `holding: { right: 'broom' }`)
+and `'brushing'` works a hand across a surface in front at chest height; `phase`
+0 → 1 is one stroke and back. The Help Up card shows all three.
 
 ## Expressions and face marks
 
@@ -9377,11 +9520,14 @@ character({ holding: { left: 'bag', right: 'bag' } })    // carry
 character({ holding: { both: { item: 'parcel', color: '#c9a06a' } } })
 ```
 
-Items: `mug`, `phone`, `briefcase`, `bag`, `umbrella` and `broom` (one hand,
-`left` or `right`), `book` (one hand or `both`) and `parcel` (`both`). Each is
+Items: `mug`, `phone`, `briefcase`, `bag`, `umbrella`, `broom` and `cane` (one
+hand, `left` or `right`), `book` (one hand or `both`) and `parcel` (`both`). Each is
 drawn at the hand's grip, so it follows the hand through any pose, gait or
 turn, and sorts with that arm (a mug goes behind the body with the far arm).
-An umbrella's canopy sits just over the head. `handGrip(joints, side)` gives
+An umbrella's canopy sits just over the head. A cane's crook is in the hand
+and its shaft reaches the ground while the hand hangs, lifting with the hand
+once it rises; `HUMAN_POSES.cane` stands leaning on it (the arm straight, a
+little ahead), and any gait walks with it. `handGrip(joints, side)` gives
 the grip point and the forearm's direction for drawing anything else in a
 hand.
 
@@ -9409,8 +9555,8 @@ const give = meetHands('handOver', { character: courier, x: 300 }, { character: 
 
 Select a 🧍 Character and open **Head** in the properties: **Cast** dresses it
 as a cast member (build, hair, facial hair, glasses and clothes in one step),
-then **Hair**, **Hair colour**, **Facial hair**, **Glasses**, **Hat** and
-**Ears** change one thing at a time; **Right hand**, **Left hand** and **Both
+then **Hair**, **Hair colour**, **Facial hair**, **Glasses**, **Hat**,
+**Ears**, **Teeth**, **Tongue** and **Feet** change one thing at a time; **Right hand**, **Left hand** and **Both
 hands** put an item in them. **Build** lists the builds, with **Legs** and
 **Arms** sliders. The new expressions and everyday poses are in the **Face**
 and **Body** lists. All of it is saved as plain fields on the element and
@@ -9721,9 +9867,13 @@ overshoots and overlaps on this body, and the lines are lip-synced over its
 mouth. The walk phase is rekeyed to the character's own stride (its height and
 legs: a child takes shorter steps), so its feet stay planted. The `walk`,
 `walking` and `gait` tracks step the gait as the target draws
-(`characterPoseOf(props)` folds them into the pose, for drawing by hand). Hands
-reach in the stick figure's proportions, so a `grab` or a `point` lands near
-its target on the human body, not exactly on it. Your own gaits go in
+(`characterPoseOf(props)` folds them into the pose, for drawing by hand). Reaches
+are planned for the character's own arms and legs (`reach`, the share of the
+stick figure's reach its limbs have, so it steps to where they reach), and
+while a beat's hand or foot is on its target the limb is re-aimed on the
+human body: a `point` aims at the spot, a `grab`, `put` or `kick` lands on it
+(leaning down to a low one), and a `swipe`, `write` or `push` follows where
+the stick figure's palm went. Your own gaits go in
 `options.gaits` for the script and `gaits` on `characterTarget` so the drawing
 knows them too.
 
@@ -10195,9 +10345,9 @@ timeline plays: editor previews, players, embeds and exports.
 
 ## Not yet
 
-- A code panel in the editor (a Code element whose lines and words snap beats)
-- Beat scripts' hands reaching in the v2 character's own proportions (a `grab`
-  lands near its target, not on it)
+- Beat scripts for v2 characters acting on surfaces directly (`surfaceScript`
+  drives the stick figure; in the editor, a Character's Beats box resolves
+  surface places and cues for it)
 
 ---
 
@@ -13404,7 +13554,7 @@ magnet.addEventListener('pointerleave', () => {
 
 <!-- capabilities: generated from the library -->
 
-# tinyfly capabilities (v0.99.0)
+# tinyfly capabilities (v0.100.0)
 
 Generated from the library itself: every name below is accepted, and names not listed are rejected (beat scripts, code panels and `checkTracks` say which name was probably meant).
 
@@ -13628,7 +13778,7 @@ A prop is a 3D rig of simple parts drawn with the characters’ pens (clean, pen
 - `songbird() · crow() · chicken()`: birds (bird(spec) makes your own): hop, walk, peck, flap, fly and land (a chicken flutters), their calls; wings fold and beat in rhythm
 - `{ kind: 'prop', prop: 'car', position, rotation, values } with loadScene3D(scene, { kinds: [characterObjects, propObjects] })`: props in 3D scenes, by preset name, seen in perspective by the scene camera; controls are tracks on the object
 - `characterScript3D(id, beats, { scene, position?, heading?, height?, pose? })`: a v2 character in a 3D scene in world metres: gaits to [x, z] or through points (its walk phase keyed with the distance), face, hold, pose, gag; checkCharacterBeats3D checks the beats
-- `propRide3D({ prop, propId, propTracks, scene, placement, anchor, riderId, pose, start, end, mount?, dismount? })`: a character riding a prop in a 3D scene: hips on a seat anchor (saddle, seat) as it moves, hopping on and off; RIDING_POSES.astride / .seated
+- `propRide3D({ prop, propId, propTracks, scene, placement, anchor, riderId, pose, start, end, mount?, dismount? })`: a character riding a prop in a 3D scene: hips on a seat anchor (saddle, seat) as it moves, hopping on and off; RIDING_POSES.astride / .seated / .driving / .cycling / .wheeling (a wheelchair)
 - `propScript3D(id, prop, beats, { scene, position?, heading?, values? })`: props scripted in world metres for 3D scenes: moves to [x, z] or through points (wheels and strides keyed with the distance), face, hold, and their actions; checkPropBeats3D checks the beats
 - `propPreset(name, options?)`: a prop preset by name (did-you-mean on a wrong one)
 - `propTarget({ …, style: 'stick' })`: line art to go with stick figures: tubes as single strokes, shapes outlined over paper
@@ -13642,6 +13792,8 @@ A prop is a 3D rig of simple parts drawn with the characters’ pens (clean, pen
 
 Prop beat fields: `do`, `at`, `for`, `to`, `toward`, `speed`, `open`, `on`, `height`, `wind`. Every prop has the controls `turn`, `tilt`, `pitch`, `roll`, `squash`, `lift`, `lean`, `size` and the actions `hold`, `turn`, `pop`, `vanish`.
 
+Scenery: `scenery({ x, y, width, height, kind: sky | room, hour, clouds, wind, rain, snow, horizon: hills | city | flat })` is a canvas target whose values `hour` (0–24), `clouds`, `rain`, `snow` (0–1) and `wind` (−1..1) are tracks (`set(prop, { at, value, duration })`, `tracks(id)`; `anchor('sun' | 'moon' | 'horizon' | 'ground', time)`); the same `wind` streams hair (`hairFollowTracks(…, { wind })`). `scenePreset('park' | 'street' | 'office' | 'home', { width, height })` lays out scenery and props as data; `buildScene` builds them into targets.
+
 | Preset | Family | Actions (needs) | Controls | Anchors |
 |---|---|---|---|---|
 | `car()` | vehicle | `drive` (to), `brake` (to), `bump`, `honk`, `door` (open), `lights` (on) | `wheelSpin`, `door`, `lights`, `antenna` | seat, front, back, roof, door |
@@ -13654,32 +13806,45 @@ Prop beat fields: `do`, `at`, `for`, `to`, `toward`, `speed`, `open`, `on`, `hei
 | `motorbike()` | vehicle | `drive` (to), `brake` (to), `bump`, `honk`, `lights` (on) | `wheelSpin`, `lights` | seat, front, back, roof |
 | `tree()` | plant | `sway`, `shake`, `shedLeaves` | `sway`, `canopySway` | canopy, top, base, branch |
 | `house()` | building | `door` (open), `lights` (on), `shake`, `smoke` | `door`, `lights` | door, doorstep, ridge, chimney |
+| `chair()` | furniture | `tip`, `fall` | `tip` | seat, back, front |
+| `desk()` | furniture | `drawer` (open) | `drawer` | top, edge, drawer, chair |
+| `bed()` | furniture | `bounce` | `give` | mattress, pillow, foot, side |
+| `door()` | furniture | `open`, `slam`, `knock` | `open` | handle, doorway, front, beyond |
+| `wheelchair()` | furniture | `roll` (to), `brake` (to), `wheelie` | `wheelSpin`, `tip` | seat, handles, front, footrest |
 | `helicopter()` | aircraft | `takeOff`, `fly` (to), `hover`, `land` | `rotor`, `blur` | seat, door, rotor, skids, hook |
 | `airplane()` | aircraft | `takeOff` (to), `fly` (to), `loop`, `land` (to) | `rotor`, `blur` | seat, nose, tail, wingtip |
 | `horse()` | animal | `walk` (to), `trot` (to), `canter` (to), `gallop` (to), `neigh`, `sit`, `lie`, `jump`, `nod`, `swish`, `graze`, `rear`, `buck` | `walk`, `walking`, `gait`, `neck`, `tail`, `wag`, `ears`, `fl.swing`, `fl.knee`, `fl.ankle`, `fr.swing`, `fr.knee`, `fr.ankle`, `hl.swing`, `hl.knee`, `hl.ankle`, `hr.swing`, `hr.knee`, `hr.ankle` | back, head, mouth, front, hitch, saddle |
 | `dog()` | animal | `walk` (to), `trot` (to), `run` (to), `gallop` (to), `bark`, `sit`, `lie`, `jump`, `nod`, `swish`, `wag`, `sniff` | `walk`, `walking`, `gait`, `neck`, `tail`, `wag`, `ears`, `fl.swing`, `fl.knee`, `fl.ankle`, `fr.swing`, `fr.knee`, `fr.ankle`, `hl.swing`, `hl.knee`, `hl.ankle`, `hr.swing`, `hr.knee`, `hr.ankle` | back, head, mouth, front, leash |
 | `cat()` | animal | `walk` (to), `trot` (to), `run` (to), `gallop` (to), `meow`, `sit`, `lie`, `jump`, `nod`, `swish`, `arch`, `pounce` (to) | `walk`, `walking`, `gait`, `neck`, `tail`, `wag`, `ears`, `fl.swing`, `fl.knee`, `fl.ankle`, `fr.swing`, `fr.knee`, `fr.ankle`, `hl.swing`, `hl.knee`, `hl.ankle`, `hr.swing`, `hr.knee`, `hr.ankle` | back, head, mouth, front |
 | `cow()` | animal | `walk` (to), `trot` (to), `moo`, `sit`, `lie`, `jump`, `nod`, `swish`, `graze` | `walk`, `walking`, `gait`, `neck`, `tail`, `wag`, `ears`, `fl.swing`, `fl.knee`, `fl.ankle`, `fr.swing`, `fr.knee`, `fr.ankle`, `hl.swing`, `hl.knee`, `hl.ankle`, `hr.swing`, `hr.knee`, `hr.ankle` | back, head, mouth, front |
-| `songbird()` | bird | `hop` (to), `walk` (to), `peck`, `flap`, `tweet`, `fly` (to), `glide` (to), `land` | `spread`, `flap`, `wingbeat`, `flapping`, `peck`, `step`, `stepping`, `leg.left`, `leg.right` | beak, head, back, feet |
-| `crow()` | bird | `hop` (to), `walk` (to), `peck`, `flap`, `caw`, `fly` (to), `glide` (to), `land` | `spread`, `flap`, `wingbeat`, `flapping`, `peck`, `step`, `stepping`, `leg.left`, `leg.right` | beak, head, back, feet |
-| `chicken()` | bird | `hop` (to), `walk` (to), `peck`, `flap`, `cluck`, `flutter` | `spread`, `flap`, `wingbeat`, `flapping`, `peck`, `step`, `stepping`, `leg.left`, `leg.right` | beak, head, back, feet |
+| `goat()` | animal | `walk` (to), `trot` (to), `run` (to), `gallop` (to), `bleat`, `sit`, `lie`, `jump`, `nod`, `swish`, `graze` | `walk`, `walking`, `gait`, `neck`, `tail`, `wag`, `ears`, `fl.swing`, `fl.knee`, `fl.ankle`, `fr.swing`, `fr.knee`, `fr.ankle`, `hl.swing`, `hl.knee`, `hl.ankle`, `hr.swing`, `hr.knee`, `hr.ankle` | back, head, mouth, front |
+| `rabbit()` | animal | `walk` (to), `run` (to), `gallop` (to), `squeak`, `sit`, `lie`, `jump`, `nod`, `swish`, `graze` | `walk`, `walking`, `gait`, `neck`, `tail`, `wag`, `ears`, `fl.swing`, `fl.knee`, `fl.ankle`, `fr.swing`, `fr.knee`, `fr.ankle`, `hl.swing`, `hl.knee`, `hl.ankle`, `hr.swing`, `hr.knee`, `hr.ankle` | back, head, mouth, front |
+| `squirrel()` | animal | `walk` (to), `run` (to), `gallop` (to), `chatter`, `sit`, `lie`, `jump`, `nod`, `swish`, `graze` | `walk`, `walking`, `gait`, `neck`, `tail`, `wag`, `ears`, `fl.swing`, `fl.knee`, `fl.ankle`, `fr.swing`, `fr.knee`, `fr.ankle`, `hl.swing`, `hl.knee`, `hl.ankle`, `hr.swing`, `hr.knee`, `hr.ankle` | back, head, mouth, front |
+| `songbird()` | bird | `hop` (to), `walk` (to), `peck`, `flap`, `tweet`, `fly` (to), `glide` (to), `land` | `spread`, `flap`, `wingbeat`, `flapping`, `peck`, `step`, `stepping`, `leg.left`, `leg.right`, `grip` | beak, head, back, feet |
+| `crow()` | bird | `hop` (to), `walk` (to), `peck`, `flap`, `caw`, `fly` (to), `glide` (to), `land` | `spread`, `flap`, `wingbeat`, `flapping`, `peck`, `step`, `stepping`, `leg.left`, `leg.right`, `grip` | beak, head, back, feet |
+| `chicken()` | bird | `hop` (to), `walk` (to), `peck`, `flap`, `cluck`, `flutter` | `spread`, `flap`, `wingbeat`, `flapping`, `peck`, `step`, `stepping`, `leg.left`, `leg.right`, `grip` | beak, head, back, feet |
+| `pigeon()` | bird | `hop` (to), `walk` (to), `peck`, `flap`, `coo`, `fly` (to), `glide` (to), `land` | `spread`, `flap`, `wingbeat`, `flapping`, `peck`, `step`, `stepping`, `leg.left`, `leg.right`, `grip` | beak, head, back, feet |
+| `duck()` | bird | `hop` (to), `walk` (to), `peck`, `flap`, `quack`, `fly` (to), `glide` (to), `land` | `spread`, `flap`, `wingbeat`, `flapping`, `peck`, `step`, `stepping`, `leg.left`, `leg.right`, `grip` | beak, head, back, feet |
+| `owl()` | bird | `hop` (to), `walk` (to), `peck`, `flap`, `hoot`, `fly` (to), `glide` (to), `land` | `spread`, `flap`, `wingbeat`, `flapping`, `peck`, `step`, `stepping`, `leg.left`, `leg.right`, `grip` | beak, head, back, feet |
+| `parrot()` | bird | `hop` (to), `walk` (to), `peck`, `flap`, `squawk`, `fly` (to), `glide` (to), `land` | `spread`, `flap`, `wingbeat`, `flapping`, `peck`, `step`, `stepping`, `leg.left`, `leg.right`, `grip` | beak, head, back, feet |
 
 ## Character (v2 human)
 
-Poses: `rest`, `wave`, `cheer`, `point`, `handsOnHips`, `think`, `shrug`, `sit`, `kneel`, `crouch`, `crawl`, `lieDown`, `sleep`, `stretch`, `sitFloor`, `carry`, `lift`, `push`, `pull`, `drink`, `phone`, `read`, `type`. Expressions: `neutral`, `happy`, `joyful`, `sad`, `crying`, `surprised`, `shocked`, `angry`, `furious`, `worried`, `scared`, `confused`, `skeptical`, `thinking`, `sleepy`, `disgusted`, `smug`, `wink`, `laughing`, `afraid`, `bored`, `tired`, `embarrassed`, `proud`, `determined`, `affectionate`, `hurt`, `suspicious`, `relieved`, `excited`. Gags: `take`, `doubleTake`, `windUp`, `land`, `tremble`, `deflate`.
+Poses: `rest`, `wave`, `cheer`, `point`, `handsOnHips`, `think`, `shrug`, `sit`, `kneel`, `crouch`, `crawl`, `lieDown`, `sleep`, `stretch`, `sitFloor`, `carry`, `cane`, `lift`, `push`, `pull`, `drink`, `phone`, `read`, `type`. Expressions: `neutral`, `happy`, `joyful`, `sad`, `crying`, `surprised`, `shocked`, `angry`, `furious`, `worried`, `scared`, `confused`, `skeptical`, `thinking`, `sleepy`, `disgusted`, `smug`, `wink`, `laughing`, `afraid`, `bored`, `tired`, `embarrassed`, `proud`, `determined`, `affectionate`, `hurt`, `suspicious`, `relieved`, `excited`. Gags: `take`, `doubleTake`, `windUp`, `land`, `tremble`, `deflate`.
 
 Appearance options of `character({ … })`, all plain data that turns with the head (see docs/character-appearance.md):
 
 - `build`: `standard`, `slim`, `tall`, `short`, `broad`, `curvy`, `stocky`, `kid`, `child`, `toddler`
 - `hair`: `bald`, `buzzCut`, `crewCut`, `short`, `sidePart`, `sideSwept`, `slickBack`, `quiff`, `spiky`, `undercut`, `curlyCrop`, `afro`, `wavyCrop`, `shortLocs`, `flatTop`, `receding`, `thinning`, `pixie`, `bob`, `longBob`, `wavyBob`, `shoulderStraight`, `shoulderWaves`, `longStraight`, `longWaves`, `longCurls`, `longLocs`, `lowPonytail`, `highPonytail`, `ponytail`, `sidePonytail`, `topBun`, `lowBun`, `singleBraid`, `twinBraids`, `braids` (colours: `black`, `brown`, `chestnut`, `auburn`, `blond`, `ginger`, `gray`, `white` in `HAIR_COLORS`)
 - `facialHair`: `cleanShaven`, `stubble`, `pencilMoustache`, `shortMoustache`, `chevron`, `handlebar`, `walrus`, `goatee`, `vanDyke`, `circleBeard`, `shortBoxed`, `fullBeard`, `longBeard`, `roundedBeard`, `pointedBeard`, `chinStrap`, `soulPatch`, `sideburns`, `muttonChops`, `moustacheStubble`
-- `glasses`: `round`, `square`, `sunglasses`; `hat`: `cap`, `beanie`, `hardHat`, `sunHat`, `bowler`; `ears: true`
-- `outfit`: `{ shirt, trousers, sleeves: short | long | none, bottom: trousers | shorts | skirt, collar, tie: colour, over: apron | labCoat, overColor }`
+- `glasses`: `round`, `square`, `sunglasses`; `hat`: `cap`, `beanie`, `hardHat`, `sunHat`, `bowler`; `ears: true`; `face: { teeth, tongue }` (shown when the mouth opens); `feet`: `round`, `flat`, `pointed`, `big`
+- `outfit`: `{ shirt, trousers, sleeves: short | long | none, bottom: trousers | shorts | skirt, collar, tie: colour, over: apron | labCoat | hoodie | cardigan | overalls | sari, overColor, shoes: boots, shoeColor }`
 - `castMember(name, height)`: `boy`, `girl`, `youngMan`, `youngWoman`, `man`, `woman`, `grandpa`, `grandma`, `doctor`, `cook`, `builder`, `courier`, `teacher`, `farmer`
 - Face marks (pose fields, 0–1): `blush`, `tears`, `sweat`
 - Hair in motion (pose fields): `hair.swing` (degrees round the head, + toward its left), `hair.trail` (head radii back), `hair.lift` (head radii up); key them with `hairFollowTracks(target, tracks, who)` after the character's tracks, or `hairFollow` + `hairMotionAt` when posing per frame
-- `holding`: `mug` (left or right), `phone` (left or right), `book` (one hand or both), `bag` (left or right), `briefcase` (left or right), `umbrella` (left or right), `broom` (left or right), `parcel` (both); pose fields `held.left`, `held.right`, `held.both` (below 0.5 lets go); `handGrip(joints, side)`
-- `meetHands(kind, a, b)` (stand them `meetingSpacing(kind, a, b)` apart): `handshake`, `highFive`, `fistBump`, `handOver`
+- `holding`: `mug` (left or right), `phone` (left or right), `book` (one hand or both), `bag` (left or right), `briefcase` (left or right), `umbrella` (left or right), `broom` (left or right), `cane` (left or right), `parcel` (both); pose fields `held.left`, `held.right`, `held.both` (below 0.5 lets go); `handGrip(joints, side)`
+- `meetHands(kind, a, b)` (stand them `meetingSpacing(kind, a, b)` apart): `handshake`, `highFive`, `fistBump`, `handOver`; `embrace(a, b)` (a hug, `embraceSpacing` apart); `helpUp(helper, sitter, progress)` (0 on the floor, hand taken; 1 standing; `helpUpSpacing` apart)
+- Everyday cycles like a gait: `humanCyclePose('sweeping' | 'brushing', phase, base)` (0 → 1 is one stroke and back; sweeping with `holding: { right: 'broom' }`)
 
 ## Code panel
 

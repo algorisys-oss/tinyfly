@@ -127,9 +127,25 @@
 
 .preview-canvas-renderer,
 .preview-svg-renderer {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* The hit layer over the Canvas and SVG drawings: transparent boxes that take the pointer, with the DOM preview's chrome. */
+.preview-hit-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.preview-hit-layer .preview-element {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: transparent !important;
+  filter: none !important;
+  text-shadow: none !important;
+  opacity: 1 !important;
 }
 
 /* The artboard colour is set inline from the project canvas, so the renderer

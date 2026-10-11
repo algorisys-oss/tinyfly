@@ -2,7 +2,7 @@ import { createMemo, createSignal, createEffect, on, untrack, Show, For } from '
 import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
 import type { ProjectStore } from '../stores/project-store'
-import { isGradient, createLinearGradient, createRadialGradient, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type SymbolInstanceElement, type CharacterElement, type MapElement, type Scene3DElement, type CodeElement, type FillValue, type LinearGradient, type RadialGradient } from '../stores/scene-store'
+import { isGradient, createLinearGradient, createRadialGradient, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type SymbolInstanceElement, type CharacterElement, type MapElement, type Scene3DElement, type CodeElement, type ChartElement, type FillValue, type LinearGradient, type RadialGradient } from '../stores/scene-store'
 import type { EasingType, BuiltInEasingType, CubicBezierPoints, ParametricEasing, EaseMode } from '../../engine'
 import {
   isCubicBezierEasing,
@@ -27,11 +27,12 @@ import type { SketchStyle } from '../../adapters/canvas'
 import { HUMAN_POSES, HUMAN_EXPRESSIONS, HUMAN_REST } from '../../characters/species/human'
 import { CHARACTER_BUILDS, buildName, buildValue, castElementFields, isCharacterField, type CharacterBuildName } from '../utils/character-element'
 import { codeElementHeight } from '../utils/code-element'
+import { chartElementProblem } from '../utils/chart-element'
 import { CharacterActingPanel, keyActedPose } from './character-acting-panel'
 import { characterDanceTracks, characterFlipTracks, danceLength, facingOf, mergeKeyframes } from '../utils/character-dance'
 import { beatGridOf, detectAudioTempo, tapTempo } from '../utils/beat-grid'
 import { nearestBeat, nextBeat } from '../../engine'
-import { CODE_LANGUAGES, DANCE_STYLES, FLIPS, CHARACTER_CAST, HELD_ITEMS, FACIAL_HAIR_STYLES, GLASSES_STYLES, HAIR_STYLES, HAT_STYLES, resolveHair, type CastName, type DanceStyleName, type FlipName } from '../../characters'
+import { CHART_KINDS, CODE_LANGUAGES, DANCE_STYLES, FLIPS, CHARACTER_CAST, HELD_ITEMS, FACIAL_HAIR_STYLES, GLASSES_STYLES, HAIR_STYLES, HAT_STYLES, resolveHair, type CastName, type DanceStyleName, type FlipName, FOOT_SHAPES } from '../../characters'
 import { fitPlaces, mapElementProps, placeId, tripTracks } from '../utils/map-element'
 import { WORLD_CITIES } from '../../maps'
 import { Scene3DProperties } from './scene3d-properties'
@@ -1565,6 +1566,7 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
     ['stretch', 'Stretching'],
     ['sitFloor', 'Sitting cross-legged'],
     ['carry', 'Carrying (arms down)'],
+    ['cane', 'Standing with a cane'],
     ['lift', 'Lifting (at the chest)'],
     ['push', 'Pushing'],
     ['pull', 'Pulling'],
@@ -1829,6 +1831,17 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
             <option value="">Nothing</option>
             <option value="apron">Apron</option>
             <option value="labCoat">Lab coat</option>
+            <option value="hoodie">Hoodie</option>
+            <option value="cardigan">Cardigan</option>
+            <option value="overalls">Overalls</option>
+            <option value="sari">Sari</option>
+          </select>
+        </div>
+        <div class="property-row">
+          <label>Shoes</label>
+          <select value={element.shoes ?? 'none'} onChange={(e) => updateElement({ shoes: (e.target as HTMLSelectElement).value })}>
+            <option value="none">None</option>
+            <option value="boots">Boots</option>
           </select>
         </div>
         <div class="property-row">
@@ -1897,6 +1910,20 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
       <div class="property-row">
         <label>Ears</label>
         <input type="checkbox" checked={element.ears ?? false} onChange={(e) => updateElement({ ears: (e.target as HTMLInputElement).checked })} />
+      </div>
+      <div class="property-row">
+        <label>Teeth</label>
+        <input type="checkbox" checked={element.teeth ?? false} title="A row of upper teeth when the mouth opens" onChange={(e) => updateElement({ teeth: (e.target as HTMLInputElement).checked || undefined })} />
+      </div>
+      <div class="property-row">
+        <label>Tongue</label>
+        <input type="checkbox" checked={element.tongue ?? false} title="A tongue when the mouth opens" onChange={(e) => updateElement({ tongue: (e.target as HTMLInputElement).checked || undefined })} />
+      </div>
+      <div class="property-row">
+        <label>Feet</label>
+        <select value={element.feet ?? 'round'} onChange={(e) => updateElement({ feet: (e.target as HTMLSelectElement).value === 'round' ? undefined : (e.target as HTMLSelectElement).value })}>
+          <For each={FOOT_SHAPES}>{(name) => <option value={name}>{name}</option>}</For>
+        </select>
       </div>
       <For each={[['right', 'Right hand'], ['left', 'Left hand'], ['both', 'Both hands']] as const}>
         {([side, label]) => (
@@ -2075,6 +2102,74 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
     const duration = Math.max(500, tripSeconds() * 1000)
     updateElement({ view: fitPlaces(element) })
     props.store.replaceTracks(element.name, tripTracks(element, start, duration))
+  }
+
+  /** A chart: its kind, data and series as JSON, and its titles and scale. */
+  const renderChartProperties = (element: ChartElement) => {
+    const problem = chartElementProblem(element)
+    const json = (value: unknown) => JSON.stringify(value ?? [], null, 1)
+    const parsed = (text: string): unknown[] | null => {
+      try {
+        const value = JSON.parse(text)
+        return Array.isArray(value) ? value : null
+      } catch {
+        return null
+      }
+    }
+    return (
+      <div class="property-section">
+        <h4>Chart</h4>
+        <div class="property-row">
+          <label>Kind</label>
+          <select value={element.chartKind} onChange={(e) => updateElement({ chartKind: (e.target as HTMLSelectElement).value })}>
+            <For each={CHART_KINDS}>{(kind) => <option value={kind}>{kind}</option>}</For>
+          </select>
+        </div>
+        <div class="property-row">
+          <label>Title</label>
+          <input type="text" value={element.title ?? ''} onChange={(e) => updateElement({ title: (e.target as HTMLInputElement).value })} />
+        </div>
+        <div class="property-row">
+          <label>Theme</label>
+          <select value={element.theme} onChange={(e) => updateElement({ theme: (e.target as HTMLSelectElement).value })}>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </div>
+        <div class="property-row">
+          <label>Max</label>
+          <input type="number" placeholder="auto" value={element.max ?? ''} onChange={(e) => { const v = parseFloat((e.target as HTMLInputElement).value); updateElement({ max: Number.isFinite(v) && v > 0 ? v : undefined }) }} />
+        </div>
+        <div class="property-row">
+          <label>Value labels</label>
+          <input type="text" placeholder="prefix" style={{ width: '30%' }} value={element.prefix ?? ''} onChange={(e) => updateElement({ prefix: (e.target as HTMLInputElement).value })} />
+          <input type="text" placeholder="suffix" style={{ width: '30%' }} value={element.suffix ?? ''} onChange={(e) => updateElement({ suffix: (e.target as HTMLInputElement).value })} />
+          <input type="number" min="0" max="4" title="Decimal places" style={{ width: '20%' }} value={element.decimals ?? 0} onChange={(e) => updateElement({ decimals: Math.max(0, Math.min(4, parseInt((e.target as HTMLInputElement).value, 10) || 0)) })} />
+          <input type="checkbox" title="Show the values" checked={element.values !== false} onChange={(e) => updateElement({ values: (e.target as HTMLInputElement).checked })} />
+        </div>
+        <div class="property-row">
+          <label>Axis titles</label>
+          <input type="text" placeholder="x" style={{ width: '45%' }} value={element.axis?.x ?? ''} onChange={(e) => updateElement({ axis: { ...element.axis, x: (e.target as HTMLInputElement).value || undefined } })} />
+          <input type="text" placeholder="y" style={{ width: '45%' }} value={element.axis?.y ?? ''} onChange={(e) => updateElement({ axis: { ...element.axis, y: (e.target as HTMLInputElement).value || undefined } })} />
+        </div>
+        <div class="property-row property-row-stacked">
+          <label>Data</label>
+          <textarea rows="6" spellcheck={false} style={{ 'font-family': 'ui-monospace, Menlo, monospace', width: '100%' }} value={json(element.data)} onChange={(e) => { const value = parsed((e.target as HTMLTextAreaElement).value); if (value) updateElement({ data: value }) }} />
+        </div>
+        <div class="property-row property-row-stacked">
+          <label>Series</label>
+          <textarea rows="3" spellcheck={false} placeholder='[{ "id": "plan", "label": "Plan" }, …]; each datum then has "values": { "plan": 40, … }' style={{ 'font-family': 'ui-monospace, Menlo, monospace', width: '100%' }} value={element.series?.length ? json(element.series) : ''} onChange={(e) => { const text = (e.target as HTMLTextAreaElement).value.trim(); const value = text ? parsed(text) : []; if (value) updateElement({ series: value.length ? value : undefined }) }} />
+        </div>
+        <Show when={problem}>
+          <p class="property-hint" style={{ color: '#f87171' }}>{problem}</p>
+        </Show>
+        <p class="property-hint">
+          Data is a list of <code>{'{ "id", "label", "value" }'}</code> (a slice, a bar or a point each; <code>"hidden": true</code> starts one out of sight). Its bars, points and slices are
+          places a Character's beats aim at (<code>{`{ "surface": "${element.name}", "anchor": "bar:q2" }`}</code>) and change (<code>{'"then": { "edit": "set", "value": 80 }'}</code>, <code>show</code>, <code>highlight</code>, <code>pull</code>);
+          the edits become tracks on this element, and a figure that leaps onto a bar rides it as it grows.
+        </p>
+      </div>
+    )
   }
 
   /** A code panel: its listing, language and type; its height follows its lines. */
@@ -2275,6 +2370,7 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
       case 'character': return renderCharacterProperties(liveElement as CharacterElement)
       case 'map': return renderMapProperties(liveElement as MapElement)
       case 'code': return renderCodeProperties(liveElement as CodeElement)
+      case 'chart': return renderChartProperties(liveElement as ChartElement)
       case 'scene3d': return <Scene3DProperties element={liveElement as Scene3DElement} store={props.store} update={(changes) => updateElement(changes)} />
       default: return null
     }

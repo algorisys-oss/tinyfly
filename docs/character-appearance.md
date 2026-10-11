@@ -185,6 +185,11 @@ Beards: `none`, `stubble`, `goatee`, `soulPatch`, `chinStrap`, `circle`,
   The crown sits over the hair; hair below the brim still shows.
 - `ears: true` adds ears: they stick out past the head from the front and
   behind, and sit on the head with a curl when turned toward the viewer.
+- `face: { teeth: true, tongue: true }` shows a row of upper teeth hanging
+  from the top of the mouth, and a tongue lying in the bottom of it, whenever
+  the mouth opens past 0.3 (a laugh, a shout, a wail). The mouth's shape is
+  still the pose's `mouth`, `smile` and `mouthWidth`; a closed or barely open
+  mouth shows neither. Default: neither, so a plain face draws as before.
 
 ## Builds
 
@@ -201,9 +206,16 @@ field can still be set on its own (`headSize`, `shoulderWidth`, `hipWidth`,
 | `broad`, `curvy`, `stocky` | Shoulder and hip widths (stocky: a larger head) |
 | `kid`, `child`, `toddler` | Larger head, shorter limbs |
 
+`feet` sets the feet's shape: `round` (the default blob), `flat` (a shoe,
+longer and even), `pointed` (a slipper, tapering to the toe) or `big` (clown's
+feet, half as long again and wide). The shape is clearest in profile, where
+the foot points along the ground; from the front it points at the viewer.
+
 Age, posture and accessories are separate choices: a child build is only
 proportions, and an older character is shown by hair and glasses, never by a
-stoop unless one is posed. The same poses, gaits and actions work on every
+stoop unless one is posed. A cane (`holding: { right: 'cane' }`) and a
+wheelchair (the `wheelchair()` prop, ridden in the `wheeling` pose) are
+accessories any character can have, not part of an age. The same poses, gaits and actions work on every
 build; `humanGaitStrideLength(gait, height, stride, legLength)` gives a build's
 stride so its feet stay planted.
 
@@ -224,7 +236,8 @@ character({ outfit: { over: 'labCoat' } })
 | `bottom` | `trousers` (default), `shorts`, `skirt` |
 | `collar` | `true` for a shirt collar |
 | `tie` | A colour, for a tie down the front |
-| `over`, `overColor` | `apron` or `labCoat`, and its colour |
+| `over`, `overColor` | `apron`, `labCoat`, `hoodie` (a loose top with a hood at the back, a front pocket and long sleeves), `cardigan` (open down the front, buttoned), `overalls` (a bib with straps, in the trousers' colour) or `sari` (a drape to the ankles with the pallu over the near shoulder), and its colour |
+| `shoes`, `shoeColor` | `boots` to above the ankle, and their colour |
 
 The front details (collar, tie, apron, the coat's opening) show from the
 front and turn away with the body; from behind an apron shows its ties.
@@ -242,6 +255,28 @@ family: `boy`, `girl`, `youngMan`, `youngWoman`, `man`, `woman`, `grandpa`,
 ```js
 const family = ['man', 'woman', 'girl', 'grandma'].map((name) => character(castMember(name, 280)))
 ```
+
+## Hugs, help-ups and everyday cycles
+
+Two people, more than hands: `embrace(a, b)` is a hug. Both turn toward each
+other, lean in and tilt their heads together, and each reaches its right arm
+over the other's shoulder and its left round the other's waist, exactly, from
+where the two stand (`embraceSpacing(a, b)` apart). `helpUp(helper, sitter,
+progress)` is one person helping another up off the floor as a function of how
+far along it is: at 0 the sitter sits on the floor and the helper bows to take
+its hand, at 1 both stand, and in between the hands stay joined at a point
+that rises with them (`helpUpSpacing(helper, sitter)` apart). Both return
+plain poses (`a`, `b`, or `helper`, `sitter`) and whether they `reached`.
+
+```js
+const hug = embrace({ character: cook, x: 300 }, { character: grandpa, x: 300 + embraceSpacing(cook, grandpa) })
+const rising = helpUp({ character: cook, x: 300 }, { character: grandpa, x: 300 + helpUpSpacing(cook, grandpa) }, 0.5)
+```
+
+Everyday actions as cycles, like a gait: `humanCyclePose('sweeping', phase,
+base)` sweeps a broom side to side (hold one: `holding: { right: 'broom' }`)
+and `'brushing'` works a hand across a surface in front at chest height; `phase`
+0 → 1 is one stroke and back. The Help Up card shows all three.
 
 ## Expressions and face marks
 
@@ -273,11 +308,14 @@ character({ holding: { left: 'bag', right: 'bag' } })    // carry
 character({ holding: { both: { item: 'parcel', color: '#c9a06a' } } })
 ```
 
-Items: `mug`, `phone`, `briefcase`, `bag`, `umbrella` and `broom` (one hand,
-`left` or `right`), `book` (one hand or `both`) and `parcel` (`both`). Each is
+Items: `mug`, `phone`, `briefcase`, `bag`, `umbrella`, `broom` and `cane` (one
+hand, `left` or `right`), `book` (one hand or `both`) and `parcel` (`both`). Each is
 drawn at the hand's grip, so it follows the hand through any pose, gait or
 turn, and sorts with that arm (a mug goes behind the body with the far arm).
-An umbrella's canopy sits just over the head. `handGrip(joints, side)` gives
+An umbrella's canopy sits just over the head. A cane's crook is in the hand
+and its shaft reaches the ground while the hand hangs, lifting with the hand
+once it rises; `HUMAN_POSES.cane` stands leaning on it (the arm straight, a
+little ahead), and any gait walks with it. `handGrip(joints, side)` gives
 the grip point and the forearm's direction for drawing anything else in a
 hand.
 
@@ -305,8 +343,8 @@ const give = meetHands('handOver', { character: courier, x: 300 }, { character: 
 
 Select a 🧍 Character and open **Head** in the properties: **Cast** dresses it
 as a cast member (build, hair, facial hair, glasses and clothes in one step),
-then **Hair**, **Hair colour**, **Facial hair**, **Glasses**, **Hat** and
-**Ears** change one thing at a time; **Right hand**, **Left hand** and **Both
+then **Hair**, **Hair colour**, **Facial hair**, **Glasses**, **Hat**,
+**Ears**, **Teeth**, **Tongue** and **Feet** change one thing at a time; **Right hand**, **Left hand** and **Both
 hands** put an item in them. **Build** lists the builds, with **Legs** and
 **Arms** sliders. The new expressions and everyday poses are in the **Face**
 and **Body** lists. All of it is saved as plain fields on the element and

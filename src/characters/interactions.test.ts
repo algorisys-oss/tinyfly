@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest'
+import type { Pose } from './rig/body-plan'
 import { createCanvas, type Canvas } from '@napi-rs/canvas'
 import { character, characterJoints, drawCharacter } from './character'
 import { HUMAN_POSES, HUMAN_REST, humanPose } from './species/human'
-import { HAND_MEETINGS, meetHands, meetingSpacing, type HandMeeting } from './interactions'
+import { HAND_MEETINGS, embrace, embraceSpacing, helpUp, helpUpSpacing, meetHands, meetingSpacing, type HandMeeting } from './interactions'
 import { HELD_ITEMS, handGrip, resolveHolding, type HeldItemName } from './hands/held-items'
 
 /** How many pixels near `color` lie within `r` of (x, y). */
@@ -73,6 +74,27 @@ describe('held items', () => {
     expect(mugAt(bare)).toBe(0)
   })
 
+  it('a cane reaches the ground from a hanging hand and lifts with it', () => {
+    const who = character({ height: 300, holding: { right: 'cane' } })
+    const draw = (p: Pose) => {
+      const canvas = createCanvas(300, 340)
+      const ctx = canvas.getContext('2d') as unknown as CanvasRenderingContext2D
+      ctx.translate(150, 320)
+      drawCharacter(ctx, who, p)
+      return canvas
+    }
+    const standing = humanPose(HUMAN_POSES.cane)
+    const grip = handGrip(characterJoints(who, standing), 'right')
+    // The ferrule sits on the ground, a little ahead of the hand (the shaft leans 0.12 forward).
+    const length = Math.min(0.56 * 300, Math.max(0.3 * 300, -grip.point.y))
+    const tipX = grip.point.x + (0.12 / Math.hypot(0.12, 1)) * length
+    expect(pixelsOf(draw(standing), HELD_ITEMS.cane.color, 150 + tipX, 320 - 2, 10)).toBeGreaterThan(4)
+    // Raised overhead, the cane comes off the ground.
+    const raised = humanPose({ ...HUMAN_POSES.cane, 'arm.right.spread': 150, 'arm.right.swing': 0 })
+    expect(pixelsOf(draw(raised), HELD_ITEMS.cane.color, 150 + tipX, 320 - 2, 10)).toBe(0)
+    expect(characterJoints(who, standing).groundY).toBeCloseTo(0, 6)
+  })
+
   it('draw every item in every hand it takes, in every view', () => {
     for (const item of Object.keys(HELD_ITEMS) as HeldItemName[]) {
       const hands = HELD_ITEMS[item].hands
@@ -97,5 +119,68 @@ describe('everyday poses', () => {
   it('put the drinking hand up by the face', () => {
     const joints = characterJoints(character({ height: 300 }), { ...HUMAN_POSES.drink, turn: 1 })
     expect(joints.points['hand.right'].y).toBeLessThan(joints.points.neck.y)
+  })
+})
+
+describe('embrace', () => {
+  const a = character({ height: 300 })
+  const b = character({ height: 260 })
+
+  it('gets both pairs of arms round the other when they stand the spacing apart, in both views', () => {
+    const xA = 200
+    const xB = xA + embraceSpacing(a, b)
+    for (const view of ['threeQuarter', 'side'] as const) {
+      const hug = embrace({ character: a, x: xA }, { character: b, x: xB }, { view })
+      expect(hug.reached, view).toBe(true)
+      // a's right hand is over b's shoulder, near b's middle line; its left hand is at b's waist height.
+      const handsA = characterJoints(a, hug.a).points
+      expect(handsA['hand.right'].x + xA).toBeGreaterThan(xB - 0.08 * 260)
+      expect(handsA['hand.right'].y).toBeLessThan(-0.65 * 260)
+      expect(Math.abs(handsA['hand.left'].y + 0.5 * 260)).toBeLessThan(0.05 * 260)
+      // They face each other, lean in and tilt their heads together.
+      expect(hug.a.turn).toBeLessThan(1.5)
+      expect(hug.b.turn).toBeGreaterThan(2.5)
+      expect(hug.a.lean).toBeGreaterThan(5)
+      expect(Math.sign(hug.a['head.tilt'])).toBe(-Math.sign(hug.b['head.tilt']))
+    }
+  })
+
+  it('says when they stand too far apart, is the same either way round, and draws', () => {
+    expect(embrace({ character: a, x: 0 }, { character: b, x: 400 }).reached).toBe(false)
+    const ab = embrace({ character: a, x: 0 }, { character: b, x: 90 })
+    const ba = embrace({ character: b, x: 90 }, { character: a, x: 0 })
+    expect(ba.a).toEqual(ab.b)
+    expect(ba.b).toEqual(ab.a)
+    const canvas = createCanvas(400, 340)
+    const ctx = canvas.getContext('2d') as unknown as CanvasRenderingContext2D
+    ctx.translate(150, 320)
+    expect(() => drawCharacter(ctx, a, ab.a)).not.toThrow()
+  })
+})
+
+describe('helpUp', () => {
+  const helper = character({ height: 300 })
+  const sitter = character({ height: 280 })
+  const xH = 100
+  const xS = xH + helpUpSpacing(helper, sitter)
+
+  it('takes the hand on the floor, and both stand at the end, hands joined all the way', () => {
+    for (const progress of [0, 0.25, 0.5, 0.75, 1]) {
+      const up = helpUp({ character: helper, x: xH }, { character: sitter, x: xS }, progress)
+      expect(up.reached, `progress ${progress}`).toBe(true)
+      const handH = characterJoints(helper, up.helper).points['hand.right']
+      const handS = characterJoints(sitter, up.sitter).points['hand.right']
+      expect(Math.abs(handH.x + xH - (handS.x + xS))).toBeLessThan(0.08 * 280)
+      expect(Math.abs(handH.y - handS.y)).toBeLessThan(0.08 * 280)
+    }
+    const start = helpUp({ character: helper, x: xH }, { character: sitter, x: xS }, 0)
+    const end = helpUp({ character: helper, x: xH }, { character: sitter, x: xS }, 1)
+    // On the floor the sitter's head is low; standing, it is up; the helper bends down then straightens.
+    expect(characterJoints(sitter, start.sitter).head.center.y).toBeGreaterThan(characterJoints(sitter, end.sitter).head.center.y + 0.2 * 280)
+    expect(start.helper.lean).toBeGreaterThan(end.helper.lean + 15)
+    expect(end.point.y).toBeLessThan(start.point.y)
+    // The sitter faces the helper.
+    expect(start.sitter.turn).toBeGreaterThan(2.5)
+    expect(start.helper.turn).toBeLessThan(1.5)
   })
 })

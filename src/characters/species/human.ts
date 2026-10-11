@@ -41,6 +41,8 @@ export interface HumanBuild {
   legLength?: number
   /** Arm length, as a share of the standard (default 1) */
   armLength?: number
+  /** The feet's shape (default round) */
+  feet?: FootShape
 }
 
 /**
@@ -199,6 +201,7 @@ export const HUMAN_POSES = {
   stretch: humanPose({ side: -16, 'arm.left.spread': 165, 'arm.left.bend': 35, 'arm.left.elbow': 0, 'arm.right.spread': 40, 'arm.right.bend': -110, 'arm.right.elbow': 0, 'head.tilt': -10, 'eye.left': 0, 'eye.right': 0, smile: 0.4 }),
   sitFloor: humanPose({ ...both('leg', { swing: 80, spread: 22, rotate: 75, knee: 145 }), ...both('arm', { swing: 25, spread: 18, elbow: 30 }), lean: 5, smile: 0.5 }),
   carry: humanPose({ ...both('arm', { spread: 16, elbow: 4 }), lean: -3, smile: 0.4 }),
+  cane: humanPose({ 'arm.right.swing': 16, 'arm.right.spread': 10, 'arm.right.elbow': 0, 'arm.right.bend': 0, 'arm.left.swing': 2, side: -3, lean: 4, 'leg.right.swing': 4, smile: 0.3 }),
   lift: humanPose({ ...both('arm', { swing: 28, spread: 24, elbow: 85, bend: -45 }), ...both('leg', { swing: 12, knee: 22, spread: 6 }), lean: -4, smile: 0.2 }),
   push: humanPose({ lean: 28, ...both('arm', { swing: 82, spread: 12, elbow: 18 }), 'leg.left.swing': 28, 'leg.left.knee': 30, 'leg.right.swing': -28, 'leg.right.knee': 6, 'head.nod': -20, browTilt: -0.6, smile: -0.2 }),
   pull: humanPose({ lean: -22, ...both('arm', { swing: 70, spread: 6, elbow: 0 }), 'leg.left.swing': 32, 'leg.left.knee': 8, 'leg.right.swing': -8, 'leg.right.knee': 34, 'head.nod': 12, browTilt: -0.6, smile: -0.2 }),
@@ -211,12 +214,25 @@ export const HUMAN_POSES = {
 export type HumanPoseName = keyof typeof HUMAN_POSES
 
 /** A human body plan; the same pose fields work on every build. */
+/** The shape of the feet: round (the default), flat (a shoe), pointed (a slipper, an elf), or big (clown's feet). */
+export type FootShape = 'round' | 'flat' | 'pointed' | 'big'
+export const FOOT_SHAPES: readonly FootShape[] = ['round', 'flat', 'pointed', 'big']
+
+/** Each foot shape: its length (× the standard) and its width at the ankle and the toe. */
+const FEET: Record<FootShape, { length: number; width: [number, number] }> = {
+  round: { length: 1, width: [0.95, 0.7] },
+  flat: { length: 1.12, width: [0.85, 0.85] },
+  pointed: { length: 1.25, width: [1.0, 0.3] },
+  big: { length: 1.5, width: [1.25, 1.1] },
+}
+
 export function humanPlan(build: HumanBuild = {}): BodyPlan {
   const headSize = build.headSize ?? 0.3
   const shoulder = build.shoulderWidth ?? 0.06
   const hip = build.hipWidth ?? 0.022
   const legs = build.legLength ?? 1
   const arms = build.armLength ?? 1
+  const feet = FEET[build.feet ?? 'round']
   const spine = Math.max(0.12, 1 - headSize - NECK - (THIGH + SHIN) * legs)
 
   const arm = (side: 'left' | 'right'): ChainSpec => ({
@@ -239,7 +255,7 @@ export function humanPlan(build: HumanBuild = {}): BodyPlan {
     bones: [
       { length: THIGH * legs, width: [1.45, 1.05] },
       { length: SHIN * legs, width: [1.05, 0.85] },
-      { length: FOOT * Math.sqrt(legs), width: [0.95, 0.7] },
+      { length: FOOT * Math.sqrt(legs) * feet.length, width: feet.width },
     ],
   })
 

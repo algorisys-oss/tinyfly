@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { character, characterJoints } from '../character'
 import { GAITS, type GaitName } from '../gaits'
 import { HUMAN_REST, humanPose } from './human'
-import { HUMAN_GAGS, humanGag, humanGaitPose, humanGaitStrideLength, type HumanGagName } from './human-motion'
+import { HUMAN_CYCLES, HUMAN_GAGS, brushingPose, humanCyclePose, humanGag, humanGaitPose, humanGaitStrideLength, sweepingPose, type HumanGagName } from './human-motion'
 
 const who = character({ height: 200 })
 const joints = (pose: Record<string, number>) => characterJoints(who, pose)
@@ -93,5 +93,23 @@ describe('human gags', () => {
     const keys = humanGag('deflate', { at: 0, from, speed: 2 })
     expect(keys[0].pose).toEqual({ ...HUMAN_REST, ...from })
     expect(keys.at(-1)!.time).toBe(1800)
+  })
+})
+
+describe('everyday cycles', () => {
+  it('sweep and brush: a stroke and back over one phase, by name, built on a base, and read from every view', () => {
+    for (const name of Object.keys(HUMAN_CYCLES) as Array<keyof typeof HUMAN_CYCLES>) {
+      const at = (phase: number) => humanCyclePose(name, phase, humanPose({ turn: 0.5 }))
+      expect(at(0)).not.toEqual(at(0.25))
+      const rounded = (pose: Record<string, number>) => Object.fromEntries(Object.entries(pose).map(([k, v]) => [k, Math.round(v * 1e6) / 1e6 + 0]))
+      expect(rounded(at(1))).toEqual(rounded(at(0)))
+      expect(at(0).turn).toBe(0.5)
+      for (const turn of [0, 1, 2, 3]) expect(() => joints(humanCyclePose(name, 0.3, humanPose({ turn })))).not.toThrow()
+    }
+    // Sweeping bends down to the broom; brushing works at chest height in front.
+    expect(sweepingPose(0.1).lean).toBeGreaterThan(10)
+    const hand = joints(brushingPose(0.1)).points['hand.right']
+    expect(hand.y).toBeLessThan(-0.5 * 200)
+    expect(() => humanCyclePose('mopping', 0)).toThrow(/Unknown cycle "mopping"/)
   })
 })

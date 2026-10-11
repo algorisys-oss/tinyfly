@@ -2,7 +2,8 @@ import type { Keyframe, Track } from '../engine/types'
 import { Timeline } from '../engine/core/timeline'
 import { springFollow } from '../engine/authoring/spring-follow'
 import type { Pose } from './rig/body-plan'
-import { characterJoints, type Character } from './character'
+import { characterJoints, characterPoseOf, type Character } from './character'
+import type { Gait } from './gaits'
 import { HUMAN_REST } from './species/human'
 import { hairHangs } from './head/hair'
 
@@ -51,7 +52,12 @@ export interface HairFollowOptions {
   damping?: number
   /** How much the hair lags, 1 the default feel; 0 pins it to the head */
   amount?: number
+  /** The wind, −1 (from the right) to 1 (from the left): the hair streams downwind as if the head were moving against it */
+  wind?: number
 }
+
+/** How far a full wind carries the hair, head radii of lag. */
+const WIND_LAG = 0.7
 
 /** The hair's lag at one time. */
 export interface HairFollowKey {
@@ -114,7 +120,8 @@ export function hairFollow(sample: (time: number) => HairFollowSample, options: 
   return chaseTurn.map((key, i) => {
     const s = at(key.time)
     const turnLag = key.value - headDegrees(key.time)
-    const xLag = chaseX[i].value - s.x
+    // Downwind is where the hair would lag if the head moved into the wind.
+    const xLag = chaseX[i].value - s.x - (options.wind ?? 0) * WIND_LAG * radius
     const yLag = chaseY[i].value - s.y
     // Which way the character faces on screen (1 right, −1 left), and how much it faces the viewer or away (±1).
     const facing = Math.sin((s.turn * Math.PI) / 2)
@@ -157,40 +164,73 @@ export function hairMotionAt(keys: HairFollowKey[], time: number): Pose {
 
 const fields = (key: HairFollowKey): Pose => ({ 'hair.swing': key.swing, 'hair.trail': key.trail, 'hair.lift': key.lift })
 
-export interface HairFollowTrackOptions extends Pick<HairFollowOptions, 'step' | 'stiffness' | 'damping' | 'amount'> {
+export interface HairFollowTrackOptions extends Pick<HairFollowOptions, 'step' | 'stiffness' | 'damping' | 'amount' | 'wind'> {
   /** How long the hair keeps settling after the last key, ms (default 1500) */
   settle?: number
+  /** Your own gaits, by the names a `gait` track uses (built-in names need no entry) */
+  gaits?: Record<string, Gait>
 }
+
+/** How often the head's place in the pose is worked out, ms; between, it is interpolated. */
+const HEAD_STEP = 16
 
 /** How long follow-through keeps moving after the last key, ms. */
 const FOLLOW_SETTLE = 1500
 
 /**
- * Tracks that key a character target's hair lag from its own tracks: the
- * target's `x` and `y`, and the pose's `turn` and `head.turn`. Nothing is
- * added for hair that has nothing to swing (short hair, a bun, no hair).
- * Hair fields the tracks already key (a flick written by hand) keep their
- * values, with the lag added on.
+ * Tracks that key a character target's hair lag from its own tracks: where
+ * its head is (the target's `x` and `y`, plus the head's place in the pose,
+ * so a gait's bob, a crouch and a jump all move it), and the pose's `turn`
+ * and `head.turn`. Nothing is added for hair that has nothing to swing
+ * (short hair, a bun, no hair). Hair fields the tracks already key (a flick
+ * written by hand) keep their values, with the lag added on.
  */
 export function hairFollowTracks(target: string, tracks: Track[], who: Character, options: HairFollowTrackOptions = {}): Track[] {
   const hair = who.head.hair
   if (!hair || !hairHangs(hair)) return []
   const own = tracks.filter((track) => track.target === target)
   const duration = own.reduce((end, track) => track.keyframes.reduce((e, key) => Math.max(e, key.time), end), 0)
+  const rest = HUMAN_REST
+  // Every millisecond the springs read four values: sample those from a timeline of just their tracks.
   const followed = new Set(['x', 'y', 'turn', 'head.turn'])
   const sampler = new Timeline({ id: `${target}-hair-follow`, tracks: own.filter((track) => followed.has(track.property)) })
-  const rest = HUMAN_REST
   const valueOf = (time: number, property: string, fallback: number) => {
     const value = sampler.getStateAtTime(time).values.get(target)?.get(property)
     return typeof value === 'number' ? value : fallback
   }
+  // The whole pose is only needed every HEAD_STEP ms, for where the head is in it.
+  const poseSampler = new Timeline({ id: `${target}-hair-pose`, tracks: own })
+  const valuesAt = (time: number) => poseSampler.getStateAtTime(time).values.get(target)
+  // The head's place in the pose (drawing space, feet at the origin), every HEAD_STEP ms.
+  const heads = new Map<number, { x: number; y: number }>()
+  const headAt = (time: number) => {
+    const slot = Math.round(time / HEAD_STEP)
+    let head = heads.get(slot)
+    if (!head) {
+      const props: Record<string, unknown> = {}
+      for (const [property, value] of valuesAt(slot * HEAD_STEP) ?? []) props[property] = value
+      const centre = characterJoints(who, characterPoseOf(props, rest, options.gaits)).head.center
+      heads.set(slot, (head = { x: centre.x, y: centre.y }))
+    }
+    return head
+  }
+  const headBetween = (time: number) => {
+    const slot = Math.floor(time / HEAD_STEP)
+    const t = time / HEAD_STEP - slot
+    const a = headAt(slot * HEAD_STEP)
+    const b = headAt((slot + 1) * HEAD_STEP)
+    return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }
+  }
   const keys = hairFollow(
-    (time) => ({
-      x: valueOf(time, 'x', 0),
-      y: valueOf(time, 'y', 0),
-      turn: valueOf(time, 'turn', rest.turn ?? 0),
-      headTurn: valueOf(time, 'head.turn', rest['head.turn'] ?? 0),
-    }),
+    (time) => {
+      const head = headBetween(time)
+      return {
+        x: valueOf(time, 'x', 0) + head.x,
+        y: valueOf(time, 'y', 0) + head.y,
+        turn: valueOf(time, 'turn', rest.turn ?? 0),
+        headTurn: valueOf(time, 'head.turn', rest['head.turn'] ?? 0),
+      }
+    },
     {
       start: 0,
       end: duration + (options.settle ?? FOLLOW_SETTLE),
@@ -199,6 +239,7 @@ export function hairFollowTracks(target: string, tracks: Track[], who: Character
       stiffness: options.stiffness,
       damping: options.damping,
       amount: options.amount,
+      wind: options.wind,
     }
   )
   const out: Track[] = []

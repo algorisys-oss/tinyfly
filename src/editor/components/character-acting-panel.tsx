@@ -8,7 +8,8 @@ import { mergeKeyframes, type PropertyKeyframes } from '../utils/character-dance
 import { isCharacterField } from '../utils/character-element'
 import { beatProblems, compileCharacterBeats, SCRIPT_TAIL, type ElementBeat } from '../utils/character-beats'
 import { codeElementSurface } from '../utils/code-element'
-import type { CodeElement } from '../stores/scene-store'
+import { chartElementSurface } from '../utils/chart-element'
+import type { ChartElement, CodeElement } from '../stores/scene-store'
 
 /**
  * The Character element's Acting section: act the keyed poses in a style,
@@ -172,8 +173,21 @@ export function CharacterActingPanel(props: ActingPanelProps) {
 
   const drawingRate = () => props.store.state.timeline?.drawingRate ?? 0
 
-  /** The scene's surfaces beats can aim at: every Code element, by name. */
-  const surfaces = () => Object.fromEntries(props.sceneStore.elements().filter((e) => e.type === 'code').map((e) => [e.name, codeElementSurface(e as CodeElement)]))
+  /** The scene's surfaces beats can aim at: every Code and Chart element, by name (a chart with bad data is left out). */
+  const surfaces = () => {
+    const out: Record<string, ReturnType<typeof codeElementSurface> | ReturnType<typeof chartElementSurface>> = {}
+    for (const e of props.sceneStore.elements()) {
+      if (e.type === 'code') out[e.name] = codeElementSurface(e as CodeElement)
+      else if (e.type === 'chart') {
+        try {
+          out[e.name] = chartElementSurface(e as ChartElement)
+        } catch {
+          // Named in the property panel's hint; not a surface until it makes a chart.
+        }
+      }
+    }
+    return out
+  }
 
   /** Compile the beats written in the box into this character's tracks (and the surfaces' they change), and keep them on the element. */
   const runBeats = () => {

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { createCanvas } from '@napi-rs/canvas'
 import { Timeline } from '../../engine/core/timeline'
 import { characterScript, characterStrideLength } from './character-script'
-import { character, characterAt, characterPoseOf, characterTarget } from '../character'
+import { character, characterAt, characterJoints, characterPoseOf, characterTarget } from '../character'
 import { castMember } from '../cast'
 import { HUMAN_REST } from '../species/human'
 import { humanGaitStrideLength } from '../species/human-motion'
@@ -102,6 +102,35 @@ describe('characterScript', () => {
     const target = characterTarget({ x: 0, y: 0, character: who, gaits })
     const pose = characterPoseOf({ ...HUMAN_REST, walk: 0.25, walking: 1, gait: 'hop' }, HUMAN_REST, target.gaits)
     expect(pose['leg.left.knee']).toBeGreaterThan(0)
+  })
+
+  it('lands a point, a grab and a kick where the stick figure’s hand and foot landed, on its own body', () => {
+    const who = character({ height: H, build: 'tall' })
+    const target = { x: 420, y: 230 }
+    const low = { x: 420, y: 320 }
+    const result = characterScript('amy', who, [{ do: 'point', target }, { do: 'grab', target: low }, { do: 'kick', target: low }], { from: 100, ground: 330 })
+    const timeline = new Timeline({ id: 's', tracks: result.tracks })
+    // Feet placed at the scene's origin: characterAt's joints are then drawing space plus the x track.
+    const placed = characterTarget({ x: 0, y: 0, character: who })
+    for (const [index, limb] of [[0, 'hand'], [1, 'hand'], [2, 'toe']] as const) {
+      const span = result.beats[index]
+      const state = timeline.getStateAtTime(span.contact!)
+      const { pose, joints } = characterAt(placed, { time: span.contact!, state }, 'amy')
+      const side = pose.turn < 0 ? 'right' : 'left'
+      const landed = { x: joints.points[`${limb}.${side}`].x + 100, y: joints.points[`${limb}.${side}`].y + 330 }
+      const aim = index === 0 ? target : low
+      if (index === 0) {
+        // A point aims a straight arm at the target (the hand need not reach it).
+        const shoulder = { x: joints.points[`shoulder.${side}`].x + 100, y: joints.points[`shoulder.${side}`].y + 330 }
+        const toHand = Math.atan2(landed.y - shoulder.y, landed.x - shoulder.x)
+        const toTarget = Math.atan2(aim.y - shoulder.y, aim.x - shoulder.x)
+        expect(Math.abs(toHand - toTarget)).toBeLessThan(0.12)
+      } else {
+        // A grab and a kick arrive on it.
+        expect(Math.hypot(landed.x - aim.x, landed.y - aim.y)).toBeLessThan(8)
+      }
+    }
+    expect(characterJoints(who, result.keys[0].pose as Record<string, number>).points['hand.left']).toBeDefined()
   })
 
   it('zips off with dust, and leaves hair tracks to hairFollowTracks', () => {

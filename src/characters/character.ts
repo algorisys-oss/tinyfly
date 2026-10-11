@@ -8,9 +8,9 @@ import { headPoint, skeletonInView, solveSkeleton, type Skeleton, type SolvedHea
 import { reachPose as reachPlanPose } from './rig/reach'
 import { createPen, type Look, type Pen, type PencilOptions } from './look/pen'
 import { rubberLimb } from './look/curves'
-import { drawFace, faceToScreen } from './head/face'
+import { drawFace, faceToScreen, type FaceOptions } from './head/face'
 import { drawHeadBehind, drawHeadFront, drawHeadOver, resolveHeadLook, type HeadLook, type HeadLookOptions } from './head/head-look'
-import { HUMAN_BUILDS, HUMAN_POSES, HUMAN_REST, humanPlan, type HumanBuild, type HumanBuildName, type HumanPoseName } from './species/human'
+import { HUMAN_BUILDS, HUMAN_POSES, HUMAN_REST, humanPlan, type HumanBuild, type HumanBuildName, type HumanPoseName, type FootShape } from './species/human'
 import { humanGaitPose } from './species/human-motion'
 import type { Gait } from './gaits'
 import { basicOutfit, type BasicOutfitOptions } from './wardrobe/basic-outfit'
@@ -98,6 +98,10 @@ export interface CharacterOptions extends HeadLookOptions {
   handStyle?: 'glove' | 'natural'
   /** Cartoon hand length, wrist to fingertip, fraction of the height (default 0.17 for gloves, 0.14 natural) */
   handSize?: number
+  /** The feet's shape: `round` (default), `flat`, `pointed` or `big` */
+  feet?: FootShape
+  /** What an open mouth shows: `teeth` (a row of upper teeth) and a `tongue` (default neither) */
+  face?: FaceOptions
 }
 
 /** A character, with every option resolved. Plain data plus its plan. */
@@ -120,6 +124,8 @@ export interface Character {
   head: HeadLook
   /** What each hand holds (drawn by its layers) */
   holding: Holding
+  /** What an open mouth shows */
+  face: Required<FaceOptions>
 }
 
 /** Layers that draw `first`'s parts and then `second`'s. */
@@ -157,6 +163,7 @@ export function character(options: CharacterOptions = {}): Character {
         hipWidth: stick ? 0 : (options.hipWidth ?? build.hipWidth ?? 0.022),
         legLength: options.legLength ?? build.legLength ?? 1,
         armLength: options.armLength ?? build.armLength ?? 1,
+        feet: options.feet ?? build.feet,
       }),
     figure,
     look,
@@ -173,6 +180,7 @@ export function character(options: CharacterOptions = {}): Character {
     handStyle: options.handStyle ?? 'glove',
     handSize: options.handSize ?? (options.handStyle === 'natural' ? 0.14 : 0.17),
     head: resolveHeadLook(options),
+    face: { teeth: options.face?.teeth ?? false, tongue: options.face?.tongue ?? false },
   }
 }
 
@@ -299,7 +307,7 @@ function drawPart(ctx: CanvasRenderingContext2D, pen: Pen, character: Character,
     const fill = character.skin === 'none' ? null : character.skin
     pen.ellipse(head.center.x, head.center.y, head.rx, head.ry, head.angle, fill, lw)
     drawHeadFront(ctx, pen, character.head, head, pose, { lineWidth: lw, skin: character.skin }, () => {
-      if (pen.look !== 'silhouette') drawFace(pen, head, pose, lw)
+      if (pen.look !== 'silhouette') drawFace(pen, head, pose, lw, character.face)
     })
     return
   }

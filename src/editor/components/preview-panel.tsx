@@ -14,7 +14,7 @@ import { elementsBounds } from '../utils/element-bounds'
 import { buildPenPath, localizePenPath, mirrorHandle, type PenNode } from '../utils/pen-path'
 import type { EditorStore } from '../stores/editor-store'
 import type { ProjectStore } from '../stores/project-store'
-import { fillToCss, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type GroupElement, type SymbolInstanceElement, type CharacterElement, type MapElement, type Scene3DElement, type CodeElement } from '../stores/scene-store'
+import { fillToCss, type SceneStore, type SceneElement, type RectElement, type CircleElement, type TextElement, type LineElement, type ArrowElement, type PathElement, type ImageElement, type AudioElement, type VideoElement, type GroupElement, type SymbolInstanceElement, type CharacterElement, type MapElement, type Scene3DElement, type CodeElement, type ChartElement } from '../stores/scene-store'
 import { generateElementHtml } from '../utils/element-html'
 import { parsePathForEditing, buildPathString, updatePathPoint, getControlLines, type EditablePoint, type EditableCommand } from '../utils/path-editor'
 import { sceneElementToCanvasTarget } from '../utils/scene-to-canvas'
@@ -22,6 +22,7 @@ import { characterElementPose, paintCharacterCanvas, CHARACTER_OVERFLOW } from '
 import { paintScene3DCanvas, scene3dValues } from '../utils/scene3d-element'
 import { mapElementProps, onMapTile, paintMapCanvas } from '../utils/map-element'
 import { codeElementProps, paintCodeCanvas } from '../utils/code-element'
+import { chartElementProps, paintChartCanvas } from '../utils/chart-element'
 import { MediaSync, syncMediaElement } from '../../player/media-sync'
 import './preview-panel.css'
 
@@ -680,7 +681,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     const state = props.store.state.timeline?.getStateAtTime(time) ?? null
     const ratio = window.devicePixelRatio || 1
     for (const element of props.sceneStore.elements()) {
-      if (element.type !== 'character' && element.type !== 'map' && element.type !== 'scene3d' && element.type !== 'code') continue
+      if (element.type !== 'character' && element.type !== 'map' && element.type !== 'scene3d' && element.type !== 'code' && element.type !== 'chart') continue
       const canvas = canvasRef.querySelector<HTMLCanvasElement>(`canvas[data-drawn-id="${element.id}"]`)
       if (!canvas) continue
       if (element.type === 'scene3d') {
@@ -692,6 +693,15 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
       } else if (element.type === 'code') {
         const code = element as CodeElement
         paintCodeCanvas(canvas, code, codeElementProps(code, state), time, ratio)
+      } else if (element.type === 'chart') {
+        const made = element as ChartElement
+        let values: Record<string, number> = {}
+        try {
+          values = chartElementProps(made, state)
+        } catch {
+          values = {}
+        }
+        paintChartCanvas(canvas, made, values, time, ratio)
       } else {
         const map = element as MapElement
         paintMapCanvas(canvas, map, mapElementProps(map, state), time, ratio)
@@ -701,7 +711,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
 
   // Repaint characters and maps when one of them is edited (colour, pose, places…).
   createEffect(() => {
-    const drawn = props.sceneStore.elements().filter((element) => element.type === 'character' || element.type === 'map' || element.type === 'scene3d' || element.type === 'code')
+    const drawn = props.sceneStore.elements().filter((element) => element.type === 'character' || element.type === 'map' || element.type === 'scene3d' || element.type === 'code' || element.type === 'chart')
     JSON.stringify(drawn)
     rendererType()
     requestAnimationFrame(paintDrawnElements)
@@ -734,9 +744,12 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
         canvasAdapter.applyState(state)
         restoreUnanimatedText(state, renderer)
         renderCanvas()
+        // The hit layer's boxes move with the drawing.
+        adapter?.applyState(state)
       } else if (renderer === 'svg' && svgAdapter) {
         svgAdapter.applyState(state)
         restoreUnanimatedText(state, renderer)
+        adapter?.applyState(state)
       }
     } else if (renderer === 'canvas') {
       // No animation, but still render canvas elements
@@ -775,18 +788,18 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     if (renderer === 'canvas') {
       registerCanvasElements()
       applyStateToRenderer()
-    } else {
-      // DOM and SVG need to wait for DOM update before querying elements
-      requestAnimationFrame(() => {
-        if (renderer === 'dom') {
-          registerDOMElements()
-          rebuildInstanceAdapters()
-        } else if (renderer === 'svg') {
-          registerSVGElements()
-        }
-        applyStateToRenderer()
-      })
     }
+    // The DOM preview's elements, the SVG's nodes and the hit layer's boxes wait for the DOM to update before they are queried.
+    requestAnimationFrame(() => {
+      if (renderer === 'dom') {
+        registerDOMElements()
+        rebuildInstanceAdapters()
+      } else {
+        if (renderer === 'svg') registerSVGElements()
+        registerDOMElements()
+      }
+      applyStateToRenderer()
+    })
   })
 
   // Animation loop
@@ -1885,6 +1898,337 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
     }
   }
 
+  /**
+   * The selection chrome inside the camera layer: resize and rotation handles,
+   * and a free path's control points. Shared by every renderer: the DOM
+   * preview draws it among its elements, the Canvas and SVG previews in their
+   * hit layer, so the same handles work whichever renderer is on.
+   */
+  const chromeInCamera = () => (
+    <>
+      {/* Resize handles for selected element (free paths use control points;
+          parametric polygon/star paths get box handles). */}
+      <Show when={props.sceneStore.selectedElement() && !props.sceneStore.selectedElement()?.locked && (props.sceneStore.selectedElement()?.type !== 'path' || !!(props.sceneStore.selectedElement() as PathElement | undefined)?.shape)}>
+        {(() => {
+          const element = props.sceneStore.selectedElement()!
+          const handles = getResizeHandles(element)
+          const rotationHandle = getRotationHandle(element)
+          return (
+            <>
+              <For each={handles}>
+                {(h) => (
+                  <div
+                    class="resize-handle"
+                    classList={{
+                      'resize-handle-endpoint': element.type === 'line' || element.type === 'arrow',
+                    }}
+                    style={{
+                      position: 'absolute',
+                      left: `${h.x - 5}px`,
+                      top: `${h.y - 5}px`,
+                      width: '10px',
+                      height: '10px',
+                      cursor: h.cursor,
+                    }}
+                    onMouseDown={(e) => handleResizeStart(element.id, h.handle, e)}
+                  />
+                )}
+              </For>
+              {/* Rotation handle */}
+              <Show when={rotationHandle}>
+                {(() => {
+                  const rh = rotationHandle!
+                  const topCenter = { x: element.x + element.width / 2, y: element.y }
+                  return (
+                    <>
+                      {/* Line from element to rotation handle */}
+                      <div
+                        class="rotation-line"
+                        style={{
+                          position: 'absolute',
+                          left: `${topCenter.x}px`,
+                          top: `${rh.y + 5}px`,
+                          width: '1px',
+                          height: `${topCenter.y - rh.y - 5}px`,
+                          background: '#4a9eff',
+                        }}
+                      />
+                      {/* Rotation handle */}
+                      <div
+                        class="rotation-handle"
+                        style={{
+                          position: 'absolute',
+                          left: `${rh.x - 6}px`,
+                          top: `${rh.y - 6}px`,
+                          width: '12px',
+                          height: '12px',
+                          cursor: 'crosshair',
+                        }}
+                        onMouseDown={(e) => handleRotateStart(element.id, e)}
+                      />
+                    </>
+                  )
+                })()}
+              </Show>
+            </>
+          )
+        })()}
+      </Show>
+
+      {/* Path control points — free paths only (polygon/star resize as boxes). */}
+      <Show when={props.sceneStore.selectedElement()?.type === 'path' && !(props.sceneStore.selectedElement() as PathElement | undefined)?.shape && selectedPathData()}>
+        {(() => {
+          const element = props.sceneStore.selectedElement() as PathElement
+          const pathData = selectedPathData()!
+          const controlLines = getControlLines(pathData.commands, pathData.points)
+
+          return (
+            <svg
+              class="path-control-overlay"
+              style={{
+                position: 'absolute',
+                left: `${element.x}px`,
+                top: `${element.y}px`,
+                width: `${element.width}px`,
+                height: `${element.height}px`,
+                overflow: 'visible',
+                'pointer-events': 'none',
+              }}
+            >
+              {/* Control lines */}
+              <For each={controlLines}>
+                {(line) => (
+                  <line
+                    x1={line.x1}
+                    y1={line.y1}
+                    x2={line.x2}
+                    y2={line.y2}
+                    stroke="#4a9eff"
+                    stroke-width="1"
+                    stroke-dasharray="3,3"
+                  />
+                )}
+              </For>
+
+              {/* Control points */}
+              <For each={pathData.points}>
+                {(point) => (
+                  <circle
+                    cx={point.x}
+                    cy={point.y}
+                    r={point.type === 'anchor' ? 5 : 4}
+                    fill={point.type === 'anchor' ? '#4a9eff' : '#fff'}
+                    stroke={point.type === 'anchor' ? '#fff' : '#4a9eff'}
+                    stroke-width="2"
+                    style={{
+                      cursor: 'move',
+                      'pointer-events': 'all',
+                    }}
+                    onMouseDown={(e) =>
+                      handlePathPointDragStart(
+                        element.id,
+                        point.id,
+                        point,
+                        pathData.commands,
+                        pathData.points,
+                        e
+                      )
+                    }
+                  />
+                )}
+              </For>
+            </svg>
+          )
+        })()}
+      </Show>
+
+    </>
+  )
+
+  /**
+   * The stage overlays outside the camera layer: alignment guides, rulers and
+   * user guides, the camera pan overlay and the pen tool. Shared by every
+   * renderer, like the chrome.
+   */
+  const stageOverlays = () => (
+    <>
+      {/* Alignment guides shown while a snap catches during drag (artboard space). */}
+      <Show when={guideX() !== null}>
+        <div class="preview-guide preview-guide-v" style={{ left: `${guideX()}px` }} />
+      </Show>
+      <Show when={guideY() !== null}>
+        <div class="preview-guide preview-guide-h" style={{ top: `${guideY()}px` }} />
+      </Show>
+      {/* Rulers + persistent user guides (drag out of a ruler; drop off-stage to remove). */}
+      <Show when={showRulers()}>
+        <div class="preview-ruler preview-ruler-h" onMouseDown={(e) => createGuideFromRuler('x', e)} title="Drag down for a vertical guide" />
+        <div class="preview-ruler preview-ruler-v" onMouseDown={(e) => createGuideFromRuler('y', e)} title="Drag right for a horizontal guide" />
+        <For each={guidesX()}>
+          {(gx, i) => (
+            <div
+              class="preview-user-guide preview-user-guide-v"
+              style={{ left: `${gx}px` }}
+              onMouseDown={(e) => startGuideDrag('x', i(), e)}
+            />
+          )}
+        </For>
+        <For each={guidesY()}>
+          {(gy, i) => (
+            <div
+              class="preview-user-guide preview-user-guide-h"
+              style={{ top: `${gy}px` }}
+              onMouseDown={(e) => startGuideDrag('y', i(), e)}
+            />
+          )}
+        </For>
+      </Show>
+      {/* Camera pan overlay: covers the stage while "✋ Pan" is on, so dragging
+          pans the camera instead of hitting elements. Zoom/rotate stay numeric. */}
+      <Show when={cameraPanMode() && props.store.hasCamera()}>
+        <div
+          class="preview-camera-pan-overlay"
+          onMouseDown={handleCameraPanStart}
+          title="Drag to pan the camera"
+        >
+          <span class="preview-camera-pan-hint">✋ Drag to pan · keyframes at the playhead</span>
+        </div>
+      </Show>
+      {/* Pen tool: capture clicks and draw the in-progress path + handles. */}
+      <Show when={penMode()}>
+        <div
+          class="preview-pen-overlay"
+          onMouseDown={handlePenMouseDown}
+          onMouseMove={handlePenMouseMove}
+          onMouseUp={handlePenMouseUp}
+          onDblClick={() => finishPen(false)}
+        >
+          <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0, overflow: 'visible' }}>
+            {/* Committed path + rubber-band to the cursor. */}
+            <path
+              d={buildPenPath(penCursor() ? [...penNodes(), penCursor()!] : penNodes(), false)}
+              fill="none"
+              stroke="#4a9eff"
+              stroke-width={1.5}
+            />
+            {/* Bezier handle lines + dots. */}
+            <For each={penNodes()}>
+              {(n) => (
+                <>
+                  <Show when={n.hIn}>
+                    <line x1={n.x} y1={n.y} x2={n.hIn!.x} y2={n.hIn!.y} stroke="#888" stroke-width={1} />
+                    <circle cx={n.hIn!.x} cy={n.hIn!.y} r={2.5} fill="#888" />
+                  </Show>
+                  <Show when={n.hOut}>
+                    <line x1={n.x} y1={n.y} x2={n.hOut!.x} y2={n.hOut!.y} stroke="#888" stroke-width={1} />
+                    <circle cx={n.hOut!.x} cy={n.hOut!.y} r={2.5} fill="#888" />
+                  </Show>
+                </>
+              )}
+            </For>
+            {/* Anchor dots; first one highlights when the cursor can close it. */}
+            <For each={penNodes()}>
+              {(n, i) => (
+                <circle
+                  cx={n.x}
+                  cy={n.y}
+                  r={i() === 0 ? (penNearFirst() ? 6 : 4) : 3}
+                  fill={i() === 0 ? (penNearFirst() ? '#22d3ee' : '#4a9eff') : '#fff'}
+                  stroke="#4a9eff"
+                  stroke-width={1.5}
+                />
+              )}
+            </For>
+          </svg>
+          <span class="preview-pen-hint">
+            {penNearFirst()
+              ? '✒️ Click to close the path'
+              : '✒️ Click to add points · drag for curves (Alt = corner) · drag points/handles to adjust · Enter finish · Backspace undo · Esc cancel'}
+          </span>
+        </div>
+      </Show>
+    </>
+  )
+
+  /**
+   * The Canvas and SVG previews draw into one surface, so nothing in them takes
+   * the pointer. This layer sits over the drawing with a transparent box per
+   * element (and per group child), carrying the same handlers and `data-element-id`
+   * as the DOM preview's elements. It is registered with the DOM adapter as the
+   * stage, so the boxes follow the animation and the camera exactly as the
+   * drawing does, and the chrome and overlays are the DOM preview's own.
+   */
+  const hitLayer = () => (
+    <div
+      class="preview-hit-layer"
+      ref={(el) => {
+        canvasRef = el
+        // Register the boxes once mounted, and place them for the current frame.
+        setTimeout(() => {
+          registerDOMElements()
+          applyStateToRenderer()
+        }, 0)
+      }}
+      onClick={handleCanvasClick}
+    >
+      <Show when={showGrid()}>
+        <div class="preview-grid" style={{ 'background-size': `${GRID_SIZE}px ${GRID_SIZE}px` }} />
+      </Show>
+      <div class="preview-camera-layer" data-element-id="__camera__" data-tinyfly="Camera">
+        <For each={props.sceneStore.elements().filter((el) => !isGroupChild(el.id))}>
+          {(element) => (
+            <div
+              class="preview-element preview-hit"
+              classList={{
+                selected: (element.type !== 'path' || !!(element as PathElement).shape) && (props.sceneStore.state.selectedElementId === element.id || props.sceneStore.state.selectedElementIds.includes(element.id)),
+                locked: element.locked,
+                dragging: isDragging() && dragState()?.elementId === element.id,
+              }}
+              data-element-id={element.id}
+              data-element-type={element.type}
+              data-tinyfly={element.name}
+              style={getElementStyle(element)}
+              onMouseDown={(e) => !element.locked && handleDragStart(element.id, e)}
+              onClick={(e) => !element.locked && !isDragging() && handleElementClick(element.id, e)}
+              onDblClick={(e) => {
+                if (element.type === 'symbol' && props.onEditSymbol) {
+                  e.stopPropagation()
+                  props.onEditSymbol((element as SymbolInstanceElement).symbolId)
+                }
+              }}
+            >
+              <Show when={element.type === 'group'}>
+                <For each={getGroupChildren(element as GroupElement)}>
+                  {(child) => (
+                    <div
+                      class="preview-element preview-hit group-child"
+                      classList={{
+                        selected: props.sceneStore.state.selectedElementId === child.id,
+                        dragging: isDragging() && dragState()?.elementId === child.id,
+                      }}
+                      data-element-id={child.id}
+                      data-tinyfly={child.name}
+                      style={getElementStyle(child)}
+                      onMouseDown={(e) => {
+                        e.stopPropagation()
+                        if (!child.locked) handleDragStart(child.id, e)
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (!child.locked && !isDragging()) handleElementClick(child.id, e)
+                      }}
+                    />
+                  )}
+                </For>
+              </Show>
+            </div>
+          )}
+        </For>
+        {chromeInCamera()}
+      </div>
+      {stageOverlays()}
+    </div>
+  )
+
   return (
     <div
       class="preview-panel"
@@ -1923,7 +2267,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
         >
           🎥 Camera
         </button>
-        <Show when={props.store.hasCamera() && rendererType() === 'dom'}>
+        <Show when={props.store.hasCamera()}>
           <button
             class="preview-camera-btn"
             classList={{ active: cameraPanMode() }}
@@ -1943,7 +2287,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
             🧅 Onion
           </button>
         </Show>
-        <Show when={rendererType() === 'dom'}>
+        <Show when={true}>
           <button
             class="preview-camera-btn"
             classList={{ active: showGrid() }}
@@ -2040,6 +2384,14 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
                   {/* Drawn by code, clipped to its box. */}
                   <canvas
                     class="map-canvas"
+                    data-drawn-id={element.id}
+                    style={{ position: 'absolute', left: '0', top: '0', width: '100%', height: '100%', 'pointer-events': 'none' }}
+                  />
+                </Show>
+                <Show when={element.type === 'chart'}>
+                  {/* A chart, drawn by code into its box. */}
+                  <canvas
+                    class="chart-canvas"
                     data-drawn-id={element.id}
                     style={{ position: 'absolute', left: '0', top: '0', width: '100%', height: '100%', 'pointer-events': 'none' }}
                   />
@@ -2407,141 +2759,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
             )}
           </For>
 
-          {/* Resize handles for selected element (free paths use control points;
-              parametric polygon/star paths get box handles). */}
-          <Show when={props.sceneStore.selectedElement() && !props.sceneStore.selectedElement()?.locked && (props.sceneStore.selectedElement()?.type !== 'path' || !!(props.sceneStore.selectedElement() as PathElement | undefined)?.shape)}>
-            {(() => {
-              const element = props.sceneStore.selectedElement()!
-              const handles = getResizeHandles(element)
-              const rotationHandle = getRotationHandle(element)
-              return (
-                <>
-                  <For each={handles}>
-                    {(h) => (
-                      <div
-                        class="resize-handle"
-                        classList={{
-                          'resize-handle-endpoint': element.type === 'line' || element.type === 'arrow',
-                        }}
-                        style={{
-                          position: 'absolute',
-                          left: `${h.x - 5}px`,
-                          top: `${h.y - 5}px`,
-                          width: '10px',
-                          height: '10px',
-                          cursor: h.cursor,
-                        }}
-                        onMouseDown={(e) => handleResizeStart(element.id, h.handle, e)}
-                      />
-                    )}
-                  </For>
-                  {/* Rotation handle */}
-                  <Show when={rotationHandle}>
-                    {(() => {
-                      const rh = rotationHandle!
-                      const topCenter = { x: element.x + element.width / 2, y: element.y }
-                      return (
-                        <>
-                          {/* Line from element to rotation handle */}
-                          <div
-                            class="rotation-line"
-                            style={{
-                              position: 'absolute',
-                              left: `${topCenter.x}px`,
-                              top: `${rh.y + 5}px`,
-                              width: '1px',
-                              height: `${topCenter.y - rh.y - 5}px`,
-                              background: '#4a9eff',
-                            }}
-                          />
-                          {/* Rotation handle */}
-                          <div
-                            class="rotation-handle"
-                            style={{
-                              position: 'absolute',
-                              left: `${rh.x - 6}px`,
-                              top: `${rh.y - 6}px`,
-                              width: '12px',
-                              height: '12px',
-                              cursor: 'crosshair',
-                            }}
-                            onMouseDown={(e) => handleRotateStart(element.id, e)}
-                          />
-                        </>
-                      )
-                    })()}
-                  </Show>
-                </>
-              )
-            })()}
-          </Show>
-
-          {/* Path control points — free paths only (polygon/star resize as boxes). */}
-          <Show when={props.sceneStore.selectedElement()?.type === 'path' && !(props.sceneStore.selectedElement() as PathElement | undefined)?.shape && selectedPathData()}>
-            {(() => {
-              const element = props.sceneStore.selectedElement() as PathElement
-              const pathData = selectedPathData()!
-              const controlLines = getControlLines(pathData.commands, pathData.points)
-
-              return (
-                <svg
-                  class="path-control-overlay"
-                  style={{
-                    position: 'absolute',
-                    left: `${element.x}px`,
-                    top: `${element.y}px`,
-                    width: `${element.width}px`,
-                    height: `${element.height}px`,
-                    overflow: 'visible',
-                    'pointer-events': 'none',
-                  }}
-                >
-                  {/* Control lines */}
-                  <For each={controlLines}>
-                    {(line) => (
-                      <line
-                        x1={line.x1}
-                        y1={line.y1}
-                        x2={line.x2}
-                        y2={line.y2}
-                        stroke="#4a9eff"
-                        stroke-width="1"
-                        stroke-dasharray="3,3"
-                      />
-                    )}
-                  </For>
-
-                  {/* Control points */}
-                  <For each={pathData.points}>
-                    {(point) => (
-                      <circle
-                        cx={point.x}
-                        cy={point.y}
-                        r={point.type === 'anchor' ? 5 : 4}
-                        fill={point.type === 'anchor' ? '#4a9eff' : '#fff'}
-                        stroke={point.type === 'anchor' ? '#fff' : '#4a9eff'}
-                        stroke-width="2"
-                        style={{
-                          cursor: 'move',
-                          'pointer-events': 'all',
-                        }}
-                        onMouseDown={(e) =>
-                          handlePathPointDragStart(
-                            element.id,
-                            point.id,
-                            point,
-                            pathData.commands,
-                            pathData.points,
-                            e
-                          )
-                        }
-                      />
-                    )}
-                  </For>
-                </svg>
-              )
-            })()}
-          </Show>
+          {chromeInCamera()}
 
           {/* Show placeholder when no elements */}
           <Show when={props.sceneStore.elements().length === 0}>
@@ -2551,100 +2769,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
             </div>
           </Show>
           </div>{/* /preview-camera-layer */}
-          {/* Alignment guides shown while a snap catches during drag (artboard space). */}
-          <Show when={guideX() !== null}>
-            <div class="preview-guide preview-guide-v" style={{ left: `${guideX()}px` }} />
-          </Show>
-          <Show when={guideY() !== null}>
-            <div class="preview-guide preview-guide-h" style={{ top: `${guideY()}px` }} />
-          </Show>
-          {/* Rulers + persistent user guides (drag out of a ruler; drop off-stage to remove). */}
-          <Show when={showRulers()}>
-            <div class="preview-ruler preview-ruler-h" onMouseDown={(e) => createGuideFromRuler('x', e)} title="Drag down for a vertical guide" />
-            <div class="preview-ruler preview-ruler-v" onMouseDown={(e) => createGuideFromRuler('y', e)} title="Drag right for a horizontal guide" />
-            <For each={guidesX()}>
-              {(gx, i) => (
-                <div
-                  class="preview-user-guide preview-user-guide-v"
-                  style={{ left: `${gx}px` }}
-                  onMouseDown={(e) => startGuideDrag('x', i(), e)}
-                />
-              )}
-            </For>
-            <For each={guidesY()}>
-              {(gy, i) => (
-                <div
-                  class="preview-user-guide preview-user-guide-h"
-                  style={{ top: `${gy}px` }}
-                  onMouseDown={(e) => startGuideDrag('y', i(), e)}
-                />
-              )}
-            </For>
-          </Show>
-          {/* Camera pan overlay: covers the stage while "✋ Pan" is on, so dragging
-              pans the camera instead of hitting elements. Zoom/rotate stay numeric. */}
-          <Show when={cameraPanMode() && props.store.hasCamera()}>
-            <div
-              class="preview-camera-pan-overlay"
-              onMouseDown={handleCameraPanStart}
-              title="Drag to pan the camera"
-            >
-              <span class="preview-camera-pan-hint">✋ Drag to pan · keyframes at the playhead</span>
-            </div>
-          </Show>
-          {/* Pen tool: capture clicks and draw the in-progress path + handles. */}
-          <Show when={penMode()}>
-            <div
-              class="preview-pen-overlay"
-              onMouseDown={handlePenMouseDown}
-              onMouseMove={handlePenMouseMove}
-              onMouseUp={handlePenMouseUp}
-              onDblClick={() => finishPen(false)}
-            >
-              <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0, overflow: 'visible' }}>
-                {/* Committed path + rubber-band to the cursor. */}
-                <path
-                  d={buildPenPath(penCursor() ? [...penNodes(), penCursor()!] : penNodes(), false)}
-                  fill="none"
-                  stroke="#4a9eff"
-                  stroke-width={1.5}
-                />
-                {/* Bezier handle lines + dots. */}
-                <For each={penNodes()}>
-                  {(n) => (
-                    <>
-                      <Show when={n.hIn}>
-                        <line x1={n.x} y1={n.y} x2={n.hIn!.x} y2={n.hIn!.y} stroke="#888" stroke-width={1} />
-                        <circle cx={n.hIn!.x} cy={n.hIn!.y} r={2.5} fill="#888" />
-                      </Show>
-                      <Show when={n.hOut}>
-                        <line x1={n.x} y1={n.y} x2={n.hOut!.x} y2={n.hOut!.y} stroke="#888" stroke-width={1} />
-                        <circle cx={n.hOut!.x} cy={n.hOut!.y} r={2.5} fill="#888" />
-                      </Show>
-                    </>
-                  )}
-                </For>
-                {/* Anchor dots; first one highlights when the cursor can close it. */}
-                <For each={penNodes()}>
-                  {(n, i) => (
-                    <circle
-                      cx={n.x}
-                      cy={n.y}
-                      r={i() === 0 ? (penNearFirst() ? 6 : 4) : 3}
-                      fill={i() === 0 ? (penNearFirst() ? '#22d3ee' : '#4a9eff') : '#fff'}
-                      stroke="#4a9eff"
-                      stroke-width={1.5}
-                    />
-                  )}
-                </For>
-              </svg>
-              <span class="preview-pen-hint">
-                {penNearFirst()
-                  ? '✒️ Click to close the path'
-                  : '✒️ Click to add points · drag for curves (Alt = corner) · drag points/handles to adjust · Enter finish · Backspace undo · Esc cancel'}
-              </span>
-            </div>
-          </Show>
+          {stageOverlays()}
           </div>
         </Show>
 
@@ -2672,6 +2797,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
               </div>
             </Show>
             <div class="renderer-badge">Canvas</div>
+            {hitLayer()}
           </div>
         </Show>
 
@@ -2709,6 +2835,7 @@ export const PreviewPanel: Component<PreviewPanelProps> = (props) => {
               </div>
             </Show>
             <div class="renderer-badge">SVG</div>
+            {hitLayer()}
           </div>
         </Show>
 

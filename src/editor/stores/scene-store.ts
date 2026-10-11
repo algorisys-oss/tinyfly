@@ -1,5 +1,5 @@
 import { createSignal } from 'solid-js'
-import type { CodeLanguage } from '../../characters'
+import type { ChartDatum, ChartKind, ChartSeries, CodeLanguage } from '../../characters'
 import type { CharacterActing } from '../utils/character-acting'
 import { createStore } from 'solid-js/store'
 import { measureTextLetters } from '../utils/split-text'
@@ -9,7 +9,7 @@ import type { Scene3D } from '../../scene-3d'
 
 export type { PolyStarSpec }
 
-export type ElementType = 'rect' | 'circle' | 'text' | 'image' | 'audio' | 'video' | 'line' | 'arrow' | 'path' | 'group' | 'symbol' | 'character' | 'map' | 'scene3d' | 'code'
+export type ElementType = 'rect' | 'circle' | 'text' | 'image' | 'audio' | 'video' | 'line' | 'arrow' | 'path' | 'group' | 'symbol' | 'character' | 'map' | 'scene3d' | 'code' | 'chart'
 
 /** Device-frame preset silhouettes. */
 export type DeviceVariant = 'phone' | 'landscape' | 'tablet'
@@ -273,7 +273,9 @@ export interface CharacterElement extends BaseElement {
   bottom?: 'trousers' | 'shorts' | 'skirt'
   collar?: boolean
   tie?: string
-  over?: 'apron' | 'labCoat'
+  over?: 'apron' | 'labCoat' | 'hoodie' | 'cardigan' | 'overalls' | 'sari'
+  /** On the feet: boots, or nothing */
+  shoes?: 'none' | 'boots'
   /**
    * Hands: round (default), cartoon gloves, or natural five-fingered hands.
    * Gloves and natural hands take hand shapes (`hand.left.*` fields).
@@ -310,6 +312,11 @@ export interface CharacterElement extends BaseElement {
   hat?: string
   /** Draw ears */
   ears?: boolean
+  /** Show teeth, a tongue, when the mouth opens */
+  teeth?: boolean
+  tongue?: boolean
+  /** The feet's shape (`FOOT_SHAPES`; default round) */
+  feet?: string
   /** What each hand holds (`HELD_ITEMS` names); a `held.*` track lets go */
   holding?: { left?: string; right?: string; both?: string }
   /**
@@ -389,6 +396,31 @@ export interface CodeElement extends BaseElement {
 }
 
 /**
+ * A chart on the stage (`chart()`): a bar, line, pie or donut chart from data.
+ * Its bars, points and slices are places a Character's beats aim at and
+ * change (`set`, `show`, `highlight`, `pull`), and its edits are tracks on the
+ * element named `bar.ID.value`, `slice.ID.pull` and so on. A figure that
+ * leaps onto a bar rides it as it grows.
+ */
+export interface ChartElement extends BaseElement {
+  type: 'chart'
+  chartKind: ChartKind
+  data: ChartDatum[]
+  /** Several series (bar and line charts), each datum then with `values` by series id */
+  series?: ChartSeries[]
+  title?: string
+  theme: 'light' | 'dark'
+  /** The value at the top of the plot (default: a round number above the largest value) */
+  max?: number
+  axis?: { x?: string; y?: string }
+  decimals?: number
+  prefix?: string
+  suffix?: string
+  /** Show the values (default true) */
+  values?: boolean
+}
+
+/**
  * A 3D scene in a box on the stage: cameras, lights, meshes and characters
  * as `@algorisys/tinyfly/scene-3d` JSON, drawn through the scene's camera.
  * Its objects animate by tracks on the element named `<objectId>.<property>`
@@ -399,7 +431,7 @@ export interface Scene3DElement extends BaseElement {
   scene: Scene3D
 }
 
-export type SceneElement = RectElement | CircleElement | TextElement | ImageElement | AudioElement | VideoElement | LineElement | ArrowElement | PathElement | GroupElement | SymbolInstanceElement | CharacterElement | MapElement | Scene3DElement | CodeElement
+export type SceneElement = RectElement | CircleElement | TextElement | ImageElement | AudioElement | VideoElement | LineElement | ArrowElement | PathElement | GroupElement | SymbolInstanceElement | CharacterElement | MapElement | Scene3DElement | CodeElement | ChartElement
 
 export interface SceneState {
   elements: SceneElement[]
@@ -601,6 +633,28 @@ const DEFAULT_CODE: Omit<CodeElement, 'id' | 'name'> = {
   lineNumbers: true,
 }
 
+const DEFAULT_CHART: Omit<ChartElement, 'id' | 'name'> = {
+  type: 'chart',
+  x: 40,
+  y: 40,
+  width: 420,
+  height: 280,
+  rotation: 0,
+  opacity: 1,
+  visible: true,
+  locked: false,
+  chartKind: 'bar',
+  title: 'Sales',
+  theme: 'light',
+  suffix: 'k',
+  data: [
+    { id: 'q1', label: 'Q1', value: 45 },
+    { id: 'q2', label: 'Q2', value: 60 },
+    { id: 'q3', label: 'Q3', value: 30 },
+    { id: 'q4', label: 'Q4', value: 75 },
+  ],
+}
+
 /** A new 3D scene: a camera at three-quarters, a key light and ambient light, a floor and a box. */
 export function defaultScene3D(): Scene3D {
   return {
@@ -655,6 +709,7 @@ function generateName(type: ElementType, elements: SceneElement[]): string {
     map: 'Map',
     scene3d: '3D Scene',
     code: 'Code',
+    chart: 'Chart',
   }
   return `${names[type]} ${count}`
 }
@@ -784,6 +839,9 @@ export function createSceneStore() {
         break
       case 'code':
         element = { ...DEFAULT_CODE, ...overrides, id, name } as CodeElement
+        break
+      case 'chart':
+        element = { ...DEFAULT_CHART, data: DEFAULT_CHART.data.map((d) => ({ ...d })), ...overrides, id, name } as ChartElement
         break
       case 'group':
         // Groups are created via groupElements(), not addElement()

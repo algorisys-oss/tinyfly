@@ -2,15 +2,16 @@ import { unknownName } from '../../engine/authoring/did-you-mean'
 import type { Prop } from './target'
 import { car, truck, bus, tractor, cart, trainCar, bike, motorbike } from './families/vehicle'
 import { tree, house } from './families/environment'
+import { chair, desk, bed, door, wheelchair } from './families/furniture'
 import { helicopter, airplane } from './families/aircraft'
-import { horse, dog, cat, cow } from './families/animals'
-import { songbird, crow, chicken } from './families/birds'
+import { horse, dog, cat, cow, goat, rabbit, squirrel } from './families/animals'
+import { songbird, crow, chicken, pigeon, duck, owl, parrot } from './families/birds'
 
 /**
  * Every prop preset by name, so a prop can be named in plain data (a 3D
  * scene's `{ kind: 'prop', prop: 'car' }`, the catalog).
  */
-export const PROP_PRESETS = { car, truck, bus, tractor, cart, trainCar, bike, motorbike, tree, house, helicopter, airplane, horse, dog, cat, cow, songbird, crow, chicken }
+export const PROP_PRESETS = { car, truck, bus, tractor, cart, trainCar, bike, motorbike, tree, house, chair, desk, bed, door, wheelchair, helicopter, airplane, horse, dog, cat, cow, goat, rabbit, squirrel, songbird, crow, chicken, pigeon, duck, owl, parrot }
 
 export type PropPresetName = keyof typeof PROP_PRESETS
 

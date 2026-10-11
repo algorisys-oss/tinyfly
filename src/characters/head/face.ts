@@ -74,6 +74,13 @@ const quadratic = (from: Point, control: Point, to: Point, samples = 12): Point[
     return { x: u * u * from.x + 2 * u * t * control.x + t * t * to.x, y: u * u * from.y + 2 * u * t * control.y + t * t * to.y }
   })
 
+/** The height of a symmetric quadratic (its control above or below the middle) at an x between its ends. */
+const quadraticY = (from: Point, control: Point, to: Point, x: number): number => {
+  const t = Math.min(1, Math.max(0, (x - from.x) / (to.x - from.x)))
+  const u = 1 - t
+  return u * u * from.y + 2 * u * t * control.y + t * t * to.y
+}
+
 const ellipse = (cx: number, cy: number, rx: number, ry: number, samples = 16): Point[] =>
   Array.from({ length: samples }, (_, i) => {
     const a = (Math.PI * 2 * i) / samples
@@ -82,7 +89,17 @@ const ellipse = (cx: number, cy: number, rx: number, ry: number, samples = 16): 
 
 const SHOWN = 0.05
 
-export function drawFace(pen: Pen, head: SolvedHead, pose: Pose, lineWidth: number): void {
+/** What an open mouth shows: a row of upper teeth, and a tongue (default neither, as the plain face). */
+export interface FaceOptions {
+  teeth?: boolean
+  tongue?: boolean
+}
+
+/** An open mouth shows its teeth and tongue past this much open. */
+const SHOWS_INSIDE = 0.3
+const TONGUE = '#e06b7d'
+
+export function drawFace(pen: Pen, head: SolvedHead, pose: Pose, lineWidth: number, options: FaceOptions = {}): void {
   // Face lines are lighter than the body's, and capped by the head's size.
   const thin = Math.max(1, Math.min(lineWidth * 0.6, 0.14 * head.rx))
   const toScreen = (points: Point[], centre: Point) => faceToScreen(head, points, centre).points
@@ -133,17 +150,59 @@ export function drawFace(pen: Pen, head: SolvedHead, pose: Pose, lineWidth: numb
     return
   }
   const depth = 0.3 * open
+  // The opening's edges, face space (up is +y), as the height of its top and bottom at an x across it.
   let outline: Point[]
+  let yTop: (x: number) => number
+  let yBottom: (x: number) => number
+  // How much of the mouth's width the teeth fill.
+  let inside: number
   if (smile > 0.3) {
+    // A grin: a flat top, the bottom curving down.
     const top = MOUTH_Y + 0.05
-    outline = [...quadratic({ x: w, y: top }, { x: 0, y: MOUTH_Y - depth * 2 }, { x: -w, y: top })]
+    const control = { x: 0, y: MOUTH_Y - depth * 2 }
+    outline = [...quadratic({ x: w, y: top }, control, { x: -w, y: top })]
+    yTop = () => top
+    yBottom = (x) => quadraticY({ x: w, y: top }, control, { x: -w, y: top }, x)
+    inside = 0.85
   } else if (smile < -0.3) {
+    // A wail: a flat bottom, the top curving up.
     const bottom = MOUTH_Y - depth * 0.6
-    outline = [...quadratic({ x: w, y: bottom }, { x: 0, y: MOUTH_Y + depth * 1.4 }, { x: -w, y: bottom })]
+    const control = { x: 0, y: MOUTH_Y + depth * 1.4 }
+    outline = [...quadratic({ x: w, y: bottom }, control, { x: -w, y: bottom })]
+    yTop = (x) => quadraticY({ x: w, y: bottom }, control, { x: -w, y: bottom }, x)
+    yBottom = () => bottom
+    inside = 0.5
   } else {
-    outline = ellipse(0, MOUTH_Y, w * 0.8, depth)
+    const rx = w * 0.8
+    outline = ellipse(0, MOUTH_Y, rx, depth)
+    const rise = (x: number) => depth * Math.sqrt(Math.max(0, 1 - (x / rx) ** 2))
+    yTop = (x) => MOUTH_Y + rise(x)
+    yBottom = (x) => MOUTH_Y - rise(x)
+    inside = 0.5
   }
   pen.shape(toScreen(outline, mouthCentre), pen.ink, 0)
+  if (open < SHOWS_INSIDE) return
+  const gap = yTop(0) - yBottom(0)
+  const half = w * inside
+  const across = (from: number, to: number, samples = 8) => Array.from({ length: samples + 1 }, (_, i) => from + ((to - from) * i) / samples)
+  if (options.tongue) {
+    // A tongue lying along the bottom of the opening, its tip curving up in the middle.
+    const tw = half * 0.55
+    const floor = across(tw, -tw).map((x) => ({ x, y: yBottom(x) }))
+    const tip = quadratic({ x: -tw, y: yBottom(-tw) }, { x: 0, y: yBottom(0) + gap * 0.8 }, { x: tw, y: yBottom(tw) }, 8)
+    pen.shape(toScreen([...floor, ...tip.slice(1, -1)], mouthCentre), TONGUE, 0)
+  }
+  if (options.teeth) {
+    // A row of upper teeth hanging from the top of the opening, with the lines between them.
+    const t = Math.min(0.06, gap * 0.4)
+    const edge = across(-half, half).map((x) => ({ x, y: yTop(x) }))
+    const under = edge.map(({ x, y }) => ({ x: x * 0.92, y: y - t })).reverse()
+    pen.shape(toScreen([...edge, ...under], mouthCentre), '#ffffff', 0)
+    for (const k of [-0.5, 0, 0.5]) {
+      const x = half * k
+      pen.line(toScreen([{ x, y: yTop(x) }, { x: x * 0.92, y: yTop(x) - t }], mouthCentre), thin * 0.6)
+    }
+  }
 }
 
 const WATER = '#8fd0f5'

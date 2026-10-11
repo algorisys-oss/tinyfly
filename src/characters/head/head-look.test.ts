@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { createCanvas, type Canvas } from '@napi-rs/canvas'
 import { character, characterJoints, drawCharacter, type CharacterOptions } from '../character'
-import { HUMAN_BUILDS, HUMAN_EXPRESSIONS, HUMAN_REST, humanPose } from '../species/human'
+import { FOOT_SHAPES, HUMAN_BUILDS, HUMAN_EXPRESSIONS, HUMAN_REST, humanPose, type FootShape } from '../species/human'
 import { CHARACTER_CAST, castMember } from '../cast'
 import { HAIR_STYLES, hairRegion, resolveHair } from './hair'
 import { FACIAL_HAIR_STYLES, resolveFacialHair } from './facial-hair'
@@ -151,6 +151,34 @@ describe('builds, cast and expressions', () => {
     for (const face of Object.values(HUMAN_EXPRESSIONS)) expect(Object.keys(face).sort()).toEqual(fields)
     expect(HUMAN_EXPRESSIONS.crying.tears).toBe(1)
     expect(HUMAN_EXPRESSIONS.embarrassed.blush).toBe(1)
+  })
+
+  it('show teeth and a tongue in an open mouth, only when asked and only once it is open', () => {
+    const joints = characterJoints(character({ height: 300 }), HUMAN_REST)
+    // Just under the top of a laughing mouth (between two tooth lines), and in the bottom of it.
+    const teeth = { x: joints.head.center.x + joints.head.rx * 0.07, y: joints.head.center.y + joints.head.ry * 0.38 }
+    const tongue = { x: joints.head.center.x, y: joints.head.center.y + joints.head.ry * 0.58 }
+    const laughing = HUMAN_EXPRESSIONS.laughing
+    const both = { face: { teeth: true, tongue: true } }
+    // The band is a few pixels tall at this size, so the tooth lines soften its white a little.
+    expect(pixelAt(render(both, laughing), teeth.x, teeth.y).every((value) => value > 180)).toBe(true)
+    const [r, g] = pixelAt(render(both, laughing), tongue.x, tongue.y)
+    expect(r - g).toBeGreaterThan(60)
+    // Without the options the opening is plain ink; a nearly closed mouth shows nothing inside.
+    expect(near(pixelAt(render({}, laughing), teeth.x, teeth.y), hex('#1e2a3a'), 60)).toBe(true)
+    expect(render(both, { mouth: 0.2 }).toBuffer('image/png').equals(render({}, { mouth: 0.2 }).toBuffer('image/png'))).toBe(true)
+    expect(render(both).toBuffer('image/png').equals(render({}).toBuffer('image/png'))).toBe(true)
+  })
+
+  it('shape the feet: flat, pointed and big feet are longer than round ones', () => {
+    const toe = (feet: FootShape) => characterJoints(character({ height: 300, feet }), humanPose({ turn: 1 })).points['toe.left'].x
+    const ankle = characterJoints(character({ height: 300 }), humanPose({ turn: 1 })).points['ankle.left'].x
+    const length = (feet: FootShape) => Math.abs(toe(feet) - ankle)
+    expect(toe('round')).toBe(characterJoints(character({ height: 300 }), humanPose({ turn: 1 })).points['toe.left'].x)
+    expect(length('flat')).toBeGreaterThan(length('round'))
+    expect(length('pointed')).toBeGreaterThan(length('flat'))
+    expect(length('big')).toBeGreaterThan(length('pointed'))
+    expect(FOOT_SHAPES).toEqual(['round', 'flat', 'pointed', 'big'])
   })
 
   it('draw a blush on the cheeks', () => {

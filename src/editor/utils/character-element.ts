@@ -1,7 +1,7 @@
 import type { CustomTarget } from '../../adapters/canvas'
 import type { AnimationState } from '../../engine/types'
 import { hashSeed } from '../../engine/authoring/random'
-import { basicOutfit, character, characterPoseOf, drawCharacter, HAND_REST, HUMAN_REST, CHARACTER_CAST, type CastName, type Character, type CharacterPose, type FacialHairStyleName, type GlassesStyle, type HairStyleName, type HatStyle, type HoldingSpec } from '../../characters'
+import { basicOutfit, character, characterPoseOf, drawCharacter, HAND_REST, HUMAN_REST, CHARACTER_CAST, type CastName, type Character, type CharacterPose, type FacialHairStyleName, type GlassesStyle, type HairStyleName, type HatStyle, type HoldingSpec, type FootShape } from '../../characters'
 import type { CharacterBuild, CharacterElement } from '../stores/scene-store'
 import { HUMAN_BUILDS } from '../../characters/species/human'
 
@@ -23,7 +23,7 @@ export function characterOf(element: CharacterElement): Character {
     seed: hashSeed(element.id) % 1000,
     layers:
       element.outfit === 'basic'
-        ? basicOutfit({ shirt: element.shirt, trousers: element.trousers, sleeves: element.sleeves, bottom: element.bottom, collar: element.collar, tie: element.tie, over: element.over })
+        ? basicOutfit({ shirt: element.shirt, trousers: element.trousers, sleeves: element.sleeves, bottom: element.bottom, collar: element.collar, tie: element.tie, over: element.over, shoes: element.shoes })
         : undefined,
     hands: (element.hands ?? 'dot') === 'dot' ? 'dot' : 'cartoon',
     handStyle: element.hands === 'natural' ? 'natural' : 'glove',
@@ -33,6 +33,8 @@ export function characterOf(element: CharacterElement): Character {
     glasses: (element.glasses as GlassesStyle | undefined) ?? null,
     hat: (element.hat as HatStyle | undefined) ?? null,
     ears: element.ears ?? false,
+    face: { teeth: element.teeth ?? false, tongue: element.tongue ?? false },
+    feet: (element.feet as FootShape | undefined) ?? 'round',
     holding: element.holding ? (element.holding as HoldingSpec) : null,
   })
 }

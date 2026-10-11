@@ -30,10 +30,16 @@ in `@algorisys/tinyfly/characters`.
 
 ## Props
 
-For objects in a story (vehicles, trees, houses, aircraft, animals, birds),
-use the presets (`car()`, `tree()`, `helicopter()`, `dog()`, `crow()`…) with
+For objects in a story (vehicles, trees, houses, furniture, aircraft,
+animals, birds), use the presets (`car()`, `tree()`, `chair()`, `door()`,
+`wheelchair()`, `helicopter()`, `dog()`, `goat()`, `owl()`…) with
 `propTarget` and `propScript`; the catalog lists each preset's actions,
-controls and anchors, and `checkPropBeats` checks prop beats. `style: 'stick'`
+controls and anchors, and `checkPropBeats` checks prop beats. Furniture has
+the places a figure uses it at as anchors (`seat`, `top`, `mattress`,
+`handle`, `doorway`): aim beats at them rather than guessing a spot. For a
+sky or a room behind everything use `scenery()` (or `scenePreset('park')`),
+whose `hour`, `clouds`, `wind`, `rain` and `snow` are tracks, not a drawing
+of your own. `style: 'stick'`
 draws any prop as line art to go with stick figures. A bird's `lift` is in
 metres: to perch it on a branch or a roof, work the height out from that
 prop's anchor (`propAt(tree, frame, 'tree').anchor('branch')`). In a 3D
@@ -49,9 +55,14 @@ seated with `propRide3D` and spliced into its script with `spliceTracks`. See `d
 
 A v2 character's appearance is plain options to `character()`, never drawing
 code: `build` (`child`, `tall`, `short`…), `hair` (a style name, or
-`{ style, color, length, … }`), `facialHair`, `glasses`, `hat`, `ears: true`
-and `outfit: { shirt, trousers }`. `castMember('grandpa', 300)` gives a whole
-ready-made character to start from. Expressions come from `HUMAN_EXPRESSIONS`
+`{ style, color, length, … }`), `facialHair`, `glasses`, `hat`, `ears: true`,
+`face: { teeth, tongue }` (shown when the mouth opens), `feet` (`round`,
+`flat`, `pointed`, `big`) and `outfit: { shirt, trousers, over: 'hoodie' |
+'cardigan' | 'overalls' | 'sari' | 'apron' | 'labCoat', shoes: 'boots' }`.
+`castMember('grandpa', 300)` gives a whole ready-made character to start
+from. Age is hair, glasses and clothes, never a stoop; a `cane` in a hand or
+a `wheelchair()` to ride (`RIDING_POSES.wheeling`) is an accessory any
+character can have. Expressions come from `HUMAN_EXPRESSIONS`
 and are pose fields, as are the face marks `blush`, `tears` and `sweat` (0–1),
 so any face goes with any action or view. Hair and hats turn with the head:
 don't draw a different hairstyle per view. Hanging hair swings on its own:
@@ -60,7 +71,9 @@ posing per frame, `hairFollow` once and `hairMotionAt(keys, t)` each frame)
 rather than keying `hair.swing` by hand. Put things in hands with `holding`
 (`{ right: 'mug' }`, `{ both: 'parcel' }`; the pose field `held.both` lets go),
 and for two characters touching use `meetHands('handshake', a, b)` with the
-two standing `meetingSpacing(…)` apart, never two separate clips. See
+two standing `meetingSpacing(…)` apart, `embrace(a, b)` for a hug at
+`embraceSpacing` and `helpUp(helper, sitter, progress)` for a help-up at
+`helpUpSpacing`, never two separate clips. See
 `docs/character-appearance.md`.
 
 ## Surfaces

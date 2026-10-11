@@ -162,3 +162,19 @@ describe('hairFollowTracks', () => {
     expect(Number(swing.keyframes[0].value)).toBeCloseTo(20, 6)
   })
 })
+
+describe('hairFollowTracks follows the head', () => {
+  it('bobs with a bouncing gait that moves no x or y track', () => {
+    const amy = character({ height: 300, hair: 'longWaves' })
+    const tracks = [
+      { id: 'amy-turn', target: 'amy', property: 'turn', keyframes: [{ time: 0, value: 1 }, { time: 3000, value: 1 }] },
+      { id: 'amy-walk', target: 'amy', property: 'walk', keyframes: [{ time: 0, value: 0 }, { time: 3000, value: 3 }] },
+      { id: 'amy-walking', target: 'amy', property: 'walking', keyframes: [{ time: 0, value: 1 }, { time: 3000, value: 1 }] },
+      { id: 'amy-gait', target: 'amy', property: 'gait', keyframes: [{ time: 0, value: 'run' }] },
+    ]
+    const lift = hairFollowTracks('amy', tracks, amy).find((track) => track.property === 'hair.lift')
+    expect(lift).toBeDefined()
+    const values = lift!.keyframes.filter((key) => key.time > 500 && key.time < 3000).map((key) => Number(key.value))
+    expect(Math.max(...values) - Math.min(...values)).toBeGreaterThan(0.05)
+  })
+})

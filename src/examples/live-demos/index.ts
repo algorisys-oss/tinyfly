@@ -39,7 +39,9 @@ import { dressedFigures } from './dressed-figures'
 import { castTurnaround } from './cast-turnaround'
 import { hairAndHats } from './hair-and-hats'
 import { handOver } from './hand-over'
+import { helpUpCard } from './help-up'
 import { kickTheTyre } from './kick-the-tyre'
+import { parkDay } from './park-day'
 import { danceFloor } from './dance-floor'
 import { mapRoute } from './map-route'
 import { lineMaskReveal } from './line-mask-reveal'
@@ -105,7 +107,9 @@ import homeTimeSource from './home-time.js?raw'
 import castTurnaroundSource from './cast-turnaround.js?raw'
 import hairAndHatsSource from './hair-and-hats.js?raw'
 import handOverSource from './hand-over.js?raw'
+import helpUpSource from './help-up.js?raw'
 import kickTheTyreSource from './kick-the-tyre.js?raw'
+import parkDaySource from './park-day.js?raw'
 import codeReviewSource from './code-review.js?raw'
 import propCarSource from './prop-car.js?raw'
 import propSceneSource from './prop-scene.js?raw'
@@ -239,7 +243,9 @@ export const liveDemos: LiveDemoWithCode[] = [
   withCode(castTurnaround, castTurnaroundSource),
   withCode(hairAndHats, hairAndHatsSource),
   withCode(handOver, handOverSource),
+  withCode(helpUpCard, helpUpSource),
   withCode(kickTheTyre, kickTheTyreSource),
+  withCode(parkDay, parkDaySource),
   withCode(propCar, propCarSource),
   withCode(propScene, propSceneSource),
   withCode(propHelicopter, propHelicopterSource),

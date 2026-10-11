@@ -8,8 +8,9 @@ import { taperedOutline } from '../look/tapered-line'
  * body's parts through the character's pen (so they match the look). The
  * base is a top and trousers whose sleeves grow out of the shirt's shoulders
  * with no seam; the options change its cut (long or no sleeves, shorts, a
- * skirt) and add pieces worn over it (a collar, a tie, an apron, a lab coat).
- * The defaults are the original T-shirt and trousers, unchanged.
+ * skirt) and add pieces worn over it (a collar, a tie, an apron, a lab coat,
+ * a hoodie, a cardigan, overalls, a sari) and boots on the feet. The defaults
+ * are the original T-shirt and trousers, unchanged.
  */
 
 export interface BasicOutfitOptions {
@@ -25,11 +26,24 @@ export interface BasicOutfitOptions {
   collar?: boolean
   /** A tie down the front, in this colour */
   tie?: string | null
-  /** Worn over the clothes: an apron or a lab coat (default none) */
-  over?: 'apron' | 'labCoat' | null
-  /** The apron's or lab coat's colour (default: white coat, tan apron) */
+  /**
+   * Worn over the clothes (default none): an apron, a lab coat, a hoodie (a
+   * loose top with a hood at the back, a front pocket and long sleeves), a
+   * cardigan (open down the front, buttoned, long sleeves), overalls (a bib
+   * on the chest with straps over the shoulders, in the trousers' colour) or
+   * a sari (a drape to the ankles with the pallu over the near shoulder)
+   */
+  over?: 'apron' | 'labCoat' | 'hoodie' | 'cardigan' | 'overalls' | 'sari' | null
+  /** The colour of what is worn over (default: white coat, tan apron, grey hoodie, olive cardigan, green sari) */
   overColor?: string
+  /** On the feet: nothing (default), or boots to above the ankle */
+  shoes?: 'none' | 'boots'
+  /** The boots' colour (default dark brown) */
+  shoeColor?: string
 }
+
+/** What each thing worn over is coloured when nothing is said. */
+const OVER_COLORS = { apron: '#d8b48a', labCoat: '#f4f6f8', hoodie: '#6b7280', cardigan: '#6b8e4e', overalls: '', sari: '#16a34a' } as const
 
 /** The part of a polyline between fractions `from` and `to` of its points. */
 const along = (points: Point[], from: number, to: number) =>
@@ -62,18 +76,39 @@ export function basicOutfit(options: BasicOutfitOptions = {}): CharacterLayers {
   const sleeves = options.sleeves ?? 'short'
   const bottom = options.bottom ?? 'trousers'
   const coat = options.over === 'labCoat'
-  const overColor = options.overColor ?? (coat ? '#f4f6f8' : '#d8b48a')
+  const hoodie = options.over === 'hoodie'
+  const cardigan = options.over === 'cardigan'
+  const overalls = options.over === 'overalls'
+  const sari = options.over === 'sari'
+  const overColor = options.overColor ?? (options.over && options.over !== 'overalls' ? OVER_COLORS[options.over] : trouserColor)
+  const boots = options.shoes === 'boots'
+  const shoeColor = options.shoeColor ?? '#3b2a1e'
   const edge = (j: CharacterJoints) => j.lineWidth * 0.45
 
   const trouser = (j: CharacterJoints, pen: Pen, side: 'left' | 'right') => {
     const leg = j.parts[`leg.${side}`].points
-    if (bottom === 'skirt') return
-    if (bottom === 'shorts') {
+    if (bottom === 'skirt' && !overalls) return
+    if (bottom === 'shorts' && !overalls) {
       const short = along(leg, 0, 0.5)
       pen.shape(taperedOutline(short, j.height * 0.085, j.height * 0.07), trouserColor, edge(j))
       return
     }
     pen.shape(taperedOutline(leg, j.height * 0.08, j.height * 0.05), trouserColor, edge(j))
+  }
+
+  /** Boots: the foot and the shin above the ankle, in the boot's colour, with a line at the top. */
+  const boot = (j: CharacterJoints, pen: Pen, side: 'left' | 'right') => {
+    const leg = j.parts[`leg.${side}`].points
+    const shod = along(leg, 0.7, 1)
+    if (shod.length < 2) return
+    pen.shape(taperedOutline(shod, j.height * 0.075, j.height * 0.07), shoeColor, edge(j))
+    const top = shod[0]
+    const next = shod[1]
+    const dx = next.x - top.x
+    const dy = next.y - top.y
+    const l = Math.hypot(dx, dy) || 1
+    const w = j.height * 0.04
+    pen.line([{ x: top.x - (dy / l) * w, y: top.y + (dx / l) * w }, { x: top.x + (dy / l) * w, y: top.y - (dx / l) * w }], edge(j) * 0.9)
   }
 
   /** The spine from a little below the hips to the neck, so the shirt leans and bends with it. */
@@ -86,7 +121,174 @@ export function basicOutfit(options: BasicOutfitOptions = {}): CharacterLayers {
   }
 
   const shirt = (j: CharacterJoints, pen: Pen) => {
-    pen.shape(taperedOutline(torso(j).line, j.height * 0.15, j.height * 0.14), shirtColor, edge(j))
+    // A hoodie is loose: wider, in its own colour; a cardigan and a sari leave the shirt (a blouse) under them.
+    const color = hoodie ? overColor : shirtColor
+    const wide = hoodie ? 1.14 : 1
+    pen.shape(taperedOutline(torso(j).line, j.height * 0.15 * wide, j.height * 0.14 * wide), color, edge(j))
+  }
+
+  /** The hood: from the front, a bump behind the neck above the shoulders; from behind, hanging down the back. */
+  const hood = (j: CharacterJoints, pen: Pen) => {
+    const facing = frontFacing(j)
+    const { top, hip } = torso(j)
+    const w = j.height * 0.07
+    const up = { x: (top.x - hip.x) * 0.16, y: (top.y - hip.y) * 0.16 }
+    if (facing >= 0) {
+      // Behind the neck: the head covers its middle.
+      pen.shape(
+        [
+          { x: top.x - w, y: top.y + up.y * 0.25 },
+          { x: top.x - w * 0.8 + up.x, y: top.y + up.y },
+          { x: top.x + up.x * 1.2, y: top.y + up.y * 1.35 },
+          { x: top.x + w * 0.8 + up.x, y: top.y + up.y },
+          { x: top.x + w, y: top.y + up.y * 0.25 },
+        ],
+        overColor,
+        edge(j)
+      )
+      return
+    }
+    // Down the back, to the shoulder blades.
+    const down = lerp(top, hip, 0.42)
+    pen.shape(
+      [
+        { x: top.x - w * 0.9, y: top.y },
+        { x: top.x + w * 0.9, y: top.y },
+        { x: down.x + w * 0.7, y: down.y },
+        { x: down.x, y: down.y + j.height * 0.02 },
+        { x: down.x - w * 0.7, y: down.y },
+      ],
+      overColor,
+      edge(j)
+    )
+  }
+
+  /** A hoodie's front: the kangaroo pocket and the drawstrings. */
+  const hoodieFront = (j: CharacterJoints, pen: Pen) => {
+    const facing = frontFacing(j)
+    if (facing < 0.2) return
+    const { top, hip } = torso(j)
+    const shift = Math.sin((j.turn * Math.PI) / 2) * j.height * 0.03
+    const w = j.height * 0.06 * facing
+    const pocketTop = lerp(top, hip, 0.62)
+    const pocketBottom = lerp(top, hip, 0.9)
+    pen.line([{ x: pocketTop.x + shift - w, y: pocketTop.y }, { x: pocketBottom.x + shift - w * 1.1, y: pocketBottom.y }], edge(j) * 0.7)
+    pen.line([{ x: pocketTop.x + shift + w, y: pocketTop.y }, { x: pocketBottom.x + shift + w * 1.1, y: pocketBottom.y }], edge(j) * 0.7)
+    const neck = lerp(top, hip, 0.1)
+    for (const side of [-1, 1]) pen.line([{ x: neck.x + shift + side * w * 0.2, y: neck.y }, { x: neck.x + shift + side * w * 0.35, y: neck.y + j.height * 0.07 }], edge(j) * 0.6)
+  }
+
+  /** A cardigan: over the torso to the hips, open down the front over the shirt, with buttons. */
+  const cardiganBody = (j: CharacterJoints, pen: Pen) => {
+    const { top, hip } = torso(j)
+    const facing = frontFacing(j)
+    pen.shape(taperedOutline([top, lerp(top, hip, 0.5), lerp(top, hip, 1.08)], j.height * 0.155, j.height * 0.15), overColor, edge(j))
+    if (facing < 0.2) return
+    // The opening: a strip of the shirt, the edges lined, and buttons down one side.
+    const shift = Math.sin((j.turn * Math.PI) / 2) * j.height * 0.03
+    const w = j.height * 0.02 * facing
+    const from = lerp(top, hip, 0.12)
+    const to = lerp(top, hip, 1.05)
+    pen.shape([{ x: from.x + shift - w, y: from.y }, { x: from.x + shift + w, y: from.y }, { x: to.x + shift + w * 1.3, y: to.y }, { x: to.x + shift - w * 1.3, y: to.y }], shirtColor, edge(j) * 0.7)
+    for (const t of [0.35, 0.55, 0.75]) {
+      const at = lerp(top, hip, t)
+      pen.dot(at.x + shift + w * 1.6, at.y, edge(j) * 1.2)
+    }
+  }
+
+  /** Overalls: a bib on the chest in the trousers' colour, straps over the shoulders, a pocket. */
+  const bib = (j: CharacterJoints, pen: Pen) => {
+    const facing = frontFacing(j)
+    const { top, hip } = torso(j)
+    const shift = Math.sin((j.turn * Math.PI) / 2) * j.height * 0.04
+    const waist = lerp(hip, top, 0.12)
+    const chest = lerp(hip, top, 0.74)
+    if (facing < 0.15) {
+      // From behind: the straps crossing the back.
+      if (facing < -0.3) {
+        const shoulderL = j.points['shoulder.left']
+        const shoulderR = j.points['shoulder.right']
+        pen.line([shoulderL, { x: waist.x + j.height * 0.03, y: waist.y }], edge(j) * 0.8)
+        pen.line([shoulderR, { x: waist.x - j.height * 0.03, y: waist.y }], edge(j) * 0.8)
+      }
+      return
+    }
+    const w = j.height * 0.07 * facing
+    pen.shape(
+      [
+        { x: chest.x + shift - w * 0.75, y: chest.y },
+        { x: chest.x + shift + w * 0.75, y: chest.y },
+        { x: waist.x + shift + w * 1.1, y: waist.y },
+        { x: waist.x + shift - w * 1.1, y: waist.y },
+      ],
+      trouserColor,
+      edge(j)
+    )
+    // The straps up over the shoulders, and a pocket on the bib.
+    for (const side of ['left', 'right'] as const) {
+      const shoulder = j.points[`shoulder.${side}`]
+      const corner = { x: chest.x + shift + (shoulder.x > chest.x + shift ? 1 : -1) * w * 0.55, y: chest.y }
+      pen.line([corner, { x: shoulder.x + (corner.x - shoulder.x) * 0.15, y: shoulder.y + (corner.y - shoulder.y) * 0.15 }], edge(j) * 1.6)
+    }
+    const pocket = lerp(chest, waist, 0.3)
+    const pw = w * 0.4
+    pen.line([{ x: pocket.x + shift - pw, y: pocket.y }, { x: pocket.x + shift - pw, y: pocket.y + pw * 1.4 }, { x: pocket.x + shift + pw, y: pocket.y + pw * 1.4 }, { x: pocket.x + shift + pw, y: pocket.y }], edge(j) * 0.6)
+  }
+
+  /** A sari: a drape from the waist to the ankles over both legs, flaring, with a fold line. */
+  const drape = (j: CharacterJoints, pen: Pen) => {
+    const { hip, top } = torso(j)
+    const waist = lerp(hip, top, 0.2)
+    const ankles = [j.points['ankle.left'], j.points['ankle.right']]
+    const hem = lerp(hip, { x: (ankles[0].x + ankles[1].x) / 2, y: (ankles[0].y + ankles[1].y) / 2 }, 0.98)
+    const halfWaist = j.height * 0.075
+    const halfHem = Math.max(j.height * 0.12, Math.abs(ankles[0].x - ankles[1].x) / 2 + j.height * 0.07)
+    const dx = hem.x - waist.x
+    const dy = hem.y - waist.y
+    const l = Math.hypot(dx, dy) || 1
+    const n = { x: -dy / l, y: dx / l }
+    pen.shape(
+      [
+        { x: waist.x + n.x * halfWaist, y: waist.y + n.y * halfWaist },
+        { x: hem.x + n.x * halfHem, y: hem.y + n.y * halfHem },
+        { x: hem.x - n.x * halfHem, y: hem.y - n.y * halfHem },
+        { x: waist.x - n.x * halfWaist, y: waist.y - n.y * halfWaist },
+      ],
+      overColor,
+      edge(j)
+    )
+    // Pleats: a few folds down the front.
+    const facing = frontFacing(j)
+    if (facing > 0.2) {
+      const shift = Math.sin((j.turn * Math.PI) / 2) * j.height * 0.03
+      for (const k of [-0.35, 0, 0.35]) {
+        const w0 = halfWaist * 0.5 * k
+        const w1 = halfHem * 0.45 * k
+        pen.line([{ x: waist.x + shift + n.x * w0, y: waist.y + n.y * w0 + j.height * 0.02 }, { x: hem.x + shift + n.x * w1, y: hem.y + n.y * w1 }], edge(j) * 0.5)
+      }
+    }
+  }
+
+  /** The pallu: a band from the far hip across the chest and over the near shoulder; from behind, down the back. */
+  const pallu = (j: CharacterJoints, pen: Pen) => {
+    const facing = frontFacing(j)
+    const { top, hip } = torso(j)
+    const toward = Math.sin((j.turn * Math.PI) / 2)
+    const near = toward >= 0 ? 'left' : 'right'
+    const far = near === 'left' ? 'right' : 'left'
+    const shoulder = j.points[`shoulder.${near}`]
+    const w = j.height * 0.035
+    if (facing < 0.15) {
+      // Down the back from the shoulder.
+      const down = lerp(top, hip, 0.9)
+      pen.shape(taperedOutline([shoulder, { x: down.x + (shoulder.x - top.x) * 0.5, y: down.y }], w * 2.2, w * 2.6), overColor, edge(j))
+      return
+    }
+    const farHip = { x: hip.x + (j.points[`hip.${far}`].x - hip.x) * 1.2, y: lerp(hip, top, 0.08).y }
+    pen.shape(taperedOutline([farHip, lerp(farHip, shoulder, 0.5), shoulder], w * 2.4, w * 2), overColor, edge(j))
+    // Over the shoulder and hanging behind it.
+    const behind = { x: shoulder.x - (hip.x - shoulder.x) * 0.05 - toward * j.height * 0.03, y: shoulder.y + j.height * 0.16 }
+    pen.shape(taperedOutline([shoulder, behind], w * 2, w * 1.6), overColor, edge(j))
   }
 
   /** A skirt from the waist to the knees, flaring out, over both legs. */
@@ -228,21 +430,24 @@ export function basicOutfit(options: BasicOutfitOptions = {}): CharacterLayers {
     pen.line([left[n - 1], right[n - 1]], edge(j))
   }
 
-  // A lab coat's sleeves are the coat's, and long.
-  const sleeveColor = coat ? overColor : shirtColor
-  const sleeveLength = coat || sleeves === 'long' ? 0.95 : 0.45
-  const hasSleeves = coat || sleeves !== 'none'
+  // A lab coat's, a hoodie's and a cardigan's sleeves are their own, and long.
+  const longOver = coat || hoodie || cardigan
+  const sleeveColor = longOver ? overColor : shirtColor
+  const sleeveLength = longOver || sleeves === 'long' ? 0.95 : 0.45
+  const hasSleeves = longOver || sleeves !== 'none'
 
   /** What covers both legs: drawn after both legs and the shirt, whichever comes last. */
   const overLegs = (j: CharacterJoints, pen: Pen) => {
-    if (bottom === 'skirt') skirt(j, pen)
+    if (bottom === 'skirt' && !overalls && !sari) skirt(j, pen)
+    if (sari) drape(j, pen)
     if (coat) labCoat(j, pen, true)
     if (options.over === 'apron') apron(j, pen)
   }
 
-  /** A leg's trousers, and, when the legs come after the body, what covers both. */
+  /** A leg's trousers and boots, and, when the legs come after the body, what covers both. */
   const leg = (side: 'left' | 'right') => (_ctx: CanvasRenderingContext2D, j: CharacterJoints, pen: Pen) => {
     trouser(j, pen, side)
+    if (boots) boot(j, pen, side)
     if (lastLeg(j) === side && legsAfterBody(j)) overLegs(j, pen)
   }
 
@@ -252,10 +457,18 @@ export function basicOutfit(options: BasicOutfitOptions = {}): CharacterLayers {
       'leg.right': { over: leg('right') },
       spine: {
         over: (_ctx, j, pen) => {
+          if (hoodie && frontFacing(j) >= 0) hood(j, pen)
           shirt(j, pen)
-          if (options.collar) collar(j, pen)
-          if (options.tie) tie(j, pen, options.tie)
+          if (options.collar && !hoodie) collar(j, pen)
+          if (options.tie && !hoodie) tie(j, pen, options.tie)
           if (coat) labCoat(j, pen, false)
+          if (cardigan) cardiganBody(j, pen)
+          if (hoodie) {
+            if (frontFacing(j) < 0) hood(j, pen)
+            hoodieFront(j, pen)
+          }
+          if (overalls) bib(j, pen)
+          if (sari) pallu(j, pen)
           if (!legsAfterBody(j)) overLegs(j, pen)
         },
       },

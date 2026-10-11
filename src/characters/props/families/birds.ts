@@ -158,6 +158,8 @@ export function bird(spec: BirdSpec): Prop {
     stepping: { description: 'How much of the walk is applied', unit: '0..1', min: 0, max: 1 },
     'leg.left': { description: 'Left leg swung forward (+)', unit: 'degrees', bind: [{ parts: ['leg-left'], rotate: { axis: 'x', degrees: -1 } }] },
     'leg.right': { description: 'Right leg swung forward (+)', unit: 'degrees', bind: [{ parts: ['leg-right'], rotate: { axis: 'x', degrees: -1 } }] },
+    // Perch contact: the toes curl down round a branch (set as it lands above the ground, cleared as it takes off).
+    grip: { description: 'The toes curled down round a perch: 0 flat on the ground, 1 gripping', unit: '0..1', min: 0, max: 1, bind: [{ parts: ['toes-left', 'toes-right'], rotate: { axis: 'x', degrees: 55 } }] },
   }
   const rig: PropRig = {
     parts,
@@ -324,6 +326,8 @@ function birdActions(spec: BirdSpec): Record<string, PropAction> {
       uses: ['height', 'for'],
       run(context, beat, start) {
         const e = context.exaggeration
+        // Letting go of a perch.
+        context.key(start + 60, { grip: 0 }, { act: false })
         const t = face(context, start, beat.to!)
         const height = beat.height ?? 2
         const travel = beat.for ?? Math.max(700, Math.abs(beat.to! - context.x) / 0.35)
@@ -380,7 +384,8 @@ function birdActions(spec: BirdSpec): Record<string, PropAction> {
         context.set('flapping', start + length, 0, 'ease-in')
         beatWings(context, start, start + length)
         context.key(start + length * 0.6, { pitch: 14 }, { act: false, easing: 'ease-out' })
-        context.key(start + length, { lift: down, pitch: 0, squash: 0.85 }, { act: false, easing: 'ease-in' })
+        // Toes round a perch when it lands above the ground; flat on the ground otherwise.
+        context.key(start + length, { lift: down, pitch: 0, squash: 0.85, grip: down > 0 ? 1 : 0 }, { act: false, easing: 'ease-in' })
         if (beat.to !== undefined) context.move(start, start + length, beat.to, { easing: 'ease-out' })
         context.key(start + length + 160, { squash: 1, spread: 0, flap: 0 })
         return { end: start + length + 200, contact: start + length }
@@ -460,5 +465,78 @@ export function chicken(options: { colors?: Partial<BirdSpec['colors']> } = {}):
     colors: { body: '#f4ede0', wing: '#e6dccb', beak: '#e7a43a', legs: '#e7a43a', comb: '#d9372e', ...options.colors },
     call: 'cluck',
     flies: false,
+  })
+}
+
+/** A pigeon: plump and grey with a green and purple sheen at the neck; walks with a bobbing head, pecks, coos, flies and lands. */
+export function pigeon(options: { colors?: Partial<BirdSpec['colors']> } = {}): Prop {
+  return bird({
+    kind: 'pigeon',
+    summary: 'A pigeon: walks with a bobbing head, pecks at crumbs, coos, flaps, flies and lands (on the ground, a ledge or a branch).',
+    body: { radii: [0.08, 0.075, 0.14], height: 0.14 },
+    head: { at: [0, 0.24, 0.12], radius: 0.045 },
+    beak: { length: 0.035, thickness: 0.014 },
+    wing: { shoulder: [0.065, 0.17, 0.05], span: 0.24, chord: 0.11 },
+    tail: { at: [0, 0.13, -0.13], length: 0.12, width: 0.08, raised: 8 },
+    legs: { length: 0.06, across: 0.03 },
+    colors: { body: '#8d93a3', wing: '#6f7586', beak: '#5a5a66', legs: '#d9627a', belly: '#b9bdc8', ...options.colors },
+    call: 'coo',
+    beatsPerSecond: 6,
+    stoop: 16,
+  })
+}
+
+/** A duck: a low body on orange legs, a broad flat bill; waddles, dabbles, quacks, flies and lands. */
+export function duck(options: { colors?: Partial<BirdSpec['colors']> } = {}): Prop {
+  return bird({
+    kind: 'duck',
+    summary: 'A duck: waddles, dabbles with its bill (peck), quacks, flaps, flies and lands (on the ground or the water’s edge).',
+    body: { radii: [0.11, 0.1, 0.2], height: 0.16 },
+    head: { at: [0, 0.33, 0.15], radius: 0.055 },
+    beak: { length: 0.075, thickness: 0.028 },
+    wing: { shoulder: [0.09, 0.22, 0.06], span: 0.28, chord: 0.13 },
+    tail: { at: [0, 0.17, -0.19], length: 0.1, width: 0.09, raised: 30 },
+    legs: { length: 0.07, across: 0.045 },
+    colors: { body: '#c9b48b', wing: '#8f7a55', beak: '#f2a71b', legs: '#f2a71b', belly: '#e8dcc0', ...options.colors },
+    call: 'quack',
+    beatsPerSecond: 7,
+    stoop: 22,
+    neckReach: 0.04,
+  })
+}
+
+/** An owl: a big round head on a round body, a short hooked beak, soft slow wingbeats; hoots, flies and lands (a branch at night). */
+export function owl(options: { colors?: Partial<BirdSpec['colors']> } = {}): Prop {
+  return bird({
+    kind: 'owl',
+    summary: 'An owl: a big round head, slow silent wingbeats; hoots, turns its head, flies and lands on a branch.',
+    body: { radii: [0.1, 0.12, 0.13], height: 0.19 },
+    head: { at: [0, 0.37, 0.07], radius: 0.085 },
+    beak: { length: 0.025, thickness: 0.02 },
+    wing: { shoulder: [0.085, 0.27, 0.03], span: 0.34, chord: 0.18 },
+    tail: { at: [0, 0.14, -0.12], length: 0.1, width: 0.1, raised: -10 },
+    legs: { length: 0.07, across: 0.04 },
+    colors: { body: '#9c7a55', wing: '#6e5538', beak: '#3d3028', legs: '#c9a76a', belly: '#e3cda8', ...options.colors },
+    call: 'hoot',
+    beatsPerSecond: 3,
+    stoop: 6,
+  })
+}
+
+/** A parrot: bright green with a red head, a big hooked beak and a long tail; squawks, flies and lands on a perch. */
+export function parrot(options: { colors?: Partial<BirdSpec['colors']> } = {}): Prop {
+  return bird({
+    kind: 'parrot',
+    summary: 'A parrot: bright, with a big hooked beak and a long tail; squawks, bobs, flies and lands on a perch, gripping it.',
+    body: { radii: [0.07, 0.08, 0.13], height: 0.15 },
+    head: { at: [0, 0.29, 0.1], radius: 0.055 },
+    beak: { length: 0.045, thickness: 0.03 },
+    wing: { shoulder: [0.06, 0.2, 0.05], span: 0.26, chord: 0.11 },
+    tail: { at: [0, 0.12, -0.12], length: 0.22, width: 0.06, raised: -20 },
+    legs: { length: 0.06, across: 0.03 },
+    colors: { body: '#4caf50', wing: '#2e7d32', beak: '#5a5a66', legs: '#8d8d8d', belly: '#a5d66f', comb: '#d9372e', ...options.colors },
+    call: 'squawk',
+    beatsPerSecond: 6,
+    stoop: 10,
   })
 }

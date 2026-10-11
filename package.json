@@ -1,6 +1,6 @@
 {
   "name": "@algorisys/tinyfly",
-  "version": "0.99.0",
+  "version": "0.100.0",
   "type": "module",
   "description": "Lightweight, API-driven animation engine and editor. The engine is framework-agnostic and runs in browsers, Web Workers, and Node.",
   "license": "MIT",
@@ -35,7 +35,7 @@
   "unpkg": "./lib/browser/tinyfly.iife.js",
   "jsdelivr": "./lib/browser/tinyfly.iife.js",
   "bin": {
-    "tinyfly": "./bin/tinyfly.mjs"
+    "tinyfly": "bin/tinyfly.mjs"
   },
   "exports": {
     ".": {

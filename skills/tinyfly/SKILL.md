@@ -61,9 +61,13 @@ names.
   or `part:ID`). Walk figures on a prop's front line (a house's
   `anchor:doorstep` y), not on the prop's own `y`, or they pass through its
   walls.
-- For objects in the scene (vehicles, trees, houses, aircraft, animals,
-  birds) use the prop presets with `propScript()`; seat figures with
-  `propRide()`, tow with `propTow()`. Aim figure beats at prop anchors
+- For objects in the scene (vehicles, trees, houses, furniture, aircraft,
+  animals, birds) use the prop presets with `propScript()`; seat figures with
+  `propRide()`, tow with `propTow()`. Furniture's anchors are where a figure
+  uses it (`seat`, `top`, `mattress`, `handle`, `doorway`); a `wheelchair()`
+  is ridden on its `seat` in `RIDING_POSES.wheeling`. A sky or a room is
+  `scenery()` / `scenePreset('park')` with `hour`, `wind`, `rain`, `snow` as
+  tracks. Aim figure beats at prop anchors
   (`propAt(...).anchor('door')`), and perch birds at them (`branch`, `ridge`).
   `style: 'stick'` draws props as line art. In a 3D scene, place props with
   `rotation: [0, deg, 0]` (`rotateY` is a track) and script them with
@@ -71,15 +75,18 @@ names.
   characters there with `characterScript3D`, riders with `propRide3D`.
 - Give a v2 `character()` its look as options, not drawing code: `build`,
   `hair` (`'bob'` or `{ style, color, length }`), `facialHair`, `glasses`,
-  `hat`, `ears: true`, `outfit: { shirt, trousers }`; or start from
-  `castMember('grandma', height)`. Hair and hats turn with the head, so one
+  `hat`, `ears: true`, `face: { teeth, tongue }`, `feet: 'flat' | 'pointed' |
+  'big'`, `outfit: { shirt, trousers, over, shoes }`; or start from
+  `castMember('grandma', height)`. A `cane` in a hand or a wheelchair is an
+  accessory, not an age. Hair and hats turn with the head, so one
   description serves every view; hanging hair swings after a turn or a run when
   you add `hairFollowTracks(target, tracks, who)` after the character's tracks
   (per-frame code: `hairFollow` once, `hairMotionAt(keys, t)` each frame).
   Faces are `HUMAN_EXPRESSIONS` plus the pose
   fields `blush`, `tears`, `sweat` (0–1). Items in hands: `holding`
   (`held.<side>` lets go); hands that meet: `meetHands(kind, a, b)` at
-  `meetingSpacing`. See `docs/character-appearance.md`.
+  `meetingSpacing`; a hug: `embrace(a, b)` at `embraceSpacing`; a help-up:
+  `helpUp(helper, sitter, progress)` at `helpUpSpacing`. See `docs/character-appearance.md`.
 - For recurring characters, make a `persona()` (look, acting, gait, mood,
   stance) and use `persona.script()`; for a move the catalog lacks, write it
   with `defineAction()` rather than hand-keying joints in many places.

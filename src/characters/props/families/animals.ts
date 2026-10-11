@@ -761,3 +761,76 @@ export function cow(options: AnimalOptions = {}): Prop {
 export function horseStrideLength(gait: HorseGait): number {
   return animalStrideLength(1.0, gait)
 }
+
+/** A goat: a shaggy coat, short horns, a beard and a stubby tail; walks, trots, gallops, bleats, grazes, butts. */
+export function goat(options: AnimalOptions = {}): Prop {
+  return quadruped({
+    kind: options.kind ?? 'goat',
+    summary: options.summary ?? 'A goat: walks, trots and gallops, bleats, grazes, sits, lies, jumps, and swishes its stubby tail.',
+    legs: { upper: 0.22, lower: 0.2, foot: 0.05, footSize: [0.07, 0.09], front: 0.26, hind: -0.26, across: 0.1, thickness: [0.045, 0.05], lowerThickness: 0.03 },
+    body: { radii: [0.15, 0.17, 0.38], rise: 0.1 },
+    neck: { at: [0, 0.62, 0.3], points: [[0, 0, 0], [0, 0.16, 0.1]], radius: 0.07 },
+    head: { at: [0, 0.16, 0.1], radii: [0.09, 0.1, 0.15], rotate: [-20, 0, 0] },
+    muzzle: { at: [0, -0.05, 0.13], radii: [0.055, 0.05, 0.07] },
+    // Ears out sideways, a little down.
+    ears: { at: [0.1, 0.03, -0.02], radii: [0.06, 0.025, 0.03], rotate: [0, 0, -20] },
+    eyes: { at: [0.065, 0.05, 0.09], size: 0.022 },
+    tail: { at: [0, 0.64, -0.37], points: [[0, 0, 0], [0, 0.06, -0.05]], radius: 0.025 },
+    extras: (c) => [
+      // Two short horns curving back, and a beard under the chin.
+      { id: 'horn-left', parent: 'head', shape: { type: 'tube', points: [[0, 0, 0], [0.01, 0.07, -0.03], [0.015, 0.12, -0.08]], radius: 0.014, segments: 6 }, at: [0.045, 0.08, -0.02], fill: c.dark },
+      { id: 'horn-right', parent: 'head', shape: { type: 'tube', points: [[0, 0, 0], [-0.01, 0.07, -0.03], [-0.015, 0.12, -0.08]], radius: 0.014, segments: 6 }, at: [-0.045, 0.08, -0.02], fill: c.dark },
+      { id: 'beard', parent: 'head', shape: { type: 'ellipsoid', radii: [0.025, 0.05, 0.02], segments: 8 }, at: [0, -0.12, 0.06], fill: c.accent, outline: 0.5 },
+    ],
+    colors: { coat: '#e9e2d3', dark: '#8c7b66', foot: '#4f4339', muzzle: '#d8cdb8', accent: '#cfc4b0', ...options.colors },
+    gaits: ['walk', 'trot', 'gallop'],
+    cycleScale: 0.8,
+    call: 'bleat',
+    grazes: true,
+  })
+}
+
+/** A rabbit: long ears, a round body low to the ground, a puff of a tail; hops (its gallop), nibbles, squeaks, sits up. */
+export function rabbit(options: AnimalOptions = {}): Prop {
+  return quadruped({
+    kind: options.kind ?? 'rabbit',
+    summary: options.summary ?? 'A rabbit: walks and hops (gallop), squeaks, nibbles the ground (graze), sits, lies and jumps; long ears and a puff of a tail.',
+    legs: { upper: 0.07, lower: 0.07, foot: 0.03, footSize: [0.04, 0.07], front: 0.11, hind: -0.12, across: 0.06, thickness: [0.028, 0.04], lowerThickness: 0.02 },
+    body: { radii: [0.1, 0.11, 0.19], rise: 0.05 },
+    neck: { at: [0, 0.22, 0.14], points: [[0, 0, 0], [0, 0.06, 0.04]], radius: 0.05 },
+    head: { at: [0, 0.07, 0.04], radii: [0.08, 0.075, 0.09] },
+    muzzle: { at: [0, -0.02, 0.07], radii: [0.035, 0.028, 0.03] },
+    // Tall ears standing up, tipped back a little.
+    ears: { at: [0.035, 0.08, -0.02], radii: [0.022, 0.1, 0.03], rotate: [-15, 0, -8] },
+    eyes: { at: [0.045, 0.015, 0.06], size: 0.02 },
+    tail: { at: [0, 0.2, -0.18], points: [[0, 0, 0], [0, 0.03, -0.02]], radius: 0.03 },
+    extras: () => [{ id: 'nose', parent: 'muzzle', shape: { type: 'ellipsoid', radii: [0.012, 0.009, 0.009], segments: 8 }, at: [0, 0.012, 0.03], fill: '#e48a9a', outline: 0.4 }],
+    colors: { coat: '#c9b8a6', dark: '#9a8574', foot: '#b5a493', muzzle: '#eadfd2', accent: '#f4ece2', ...options.colors },
+    gaits: ['walk', 'gallop'],
+    cycleScale: 0.4,
+    call: 'squeak',
+    grazes: true,
+  })
+}
+
+/** A squirrel: tiny, with a great bushy tail curled up over its back; scampers (gallop), chatters, sits up to nibble. */
+export function squirrel(options: AnimalOptions = {}): Prop {
+  return quadruped({
+    kind: options.kind ?? 'squirrel',
+    summary: options.summary ?? 'A squirrel: scampers (gallop) and walks, chatters, sits up, nibbles (graze), with a bushy tail curled over its back.',
+    legs: { upper: 0.05, lower: 0.05, foot: 0.02, footSize: [0.025, 0.04], front: 0.08, hind: -0.08, across: 0.04, thickness: [0.02, 0.025], lowerThickness: 0.014 },
+    body: { radii: [0.065, 0.07, 0.14], rise: 0.03 },
+    neck: { at: [0, 0.16, 0.1], points: [[0, 0, 0], [0, 0.04, 0.03]], radius: 0.035 },
+    head: { at: [0, 0.05, 0.03], radii: [0.055, 0.05, 0.06] },
+    muzzle: { at: [0, -0.015, 0.05], radii: [0.025, 0.02, 0.02] },
+    ears: { at: [0.03, 0.05, -0.01], radii: [0.015, 0.03, 0.012], rotate: [0, 0, -5] },
+    eyes: { at: [0.035, 0.012, 0.04], size: 0.015 },
+    // The tail sweeps up and over the back, thick and bushy.
+    tail: { at: [0, 0.14, -0.13], points: [[0, 0, 0], [0, 0.08, -0.06], [0, 0.2, -0.04], [0, 0.26, 0.04]], radius: 0.045 },
+    colors: { coat: '#a9663a', dark: '#7a4523', foot: '#7a4523', muzzle: '#e9c9a8', accent: '#f0dcc4', ...options.colors },
+    gaits: ['walk', 'gallop'],
+    cycleScale: 0.3,
+    call: 'chatter',
+    grazes: true,
+  })
+}

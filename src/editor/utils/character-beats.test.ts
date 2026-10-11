@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { createSceneStore, type CharacterElement, type CodeElement } from '../stores/scene-store'
+import { createSceneStore, type ChartElement, type CharacterElement, type CodeElement } from '../stores/scene-store'
 import { beatProblems, compileCharacterBeats, type ElementBeat } from './character-beats'
 import { codeElementSurface } from './code-element'
+import { chartElementSurface } from './chart-element'
+import { Timeline } from '../../engine/core/timeline'
 
 function scene() {
   const store = createSceneStore()
@@ -28,10 +30,11 @@ describe('character beats in the editor', () => {
     expect(highlight).toBeDefined()
     expect(strike).toBeDefined()
     expect(Number(strike.keyframes[0].time)).toBeGreaterThan(Number(highlight.keyframes[0].time))
-    // The walk goes to the line's x, measured from the feet.
+    // The walk goes to the line's x, measured from the feet (the swipe steps in further after it).
     const x = tracks.find((track) => track.target === amy.name && track.property === 'x')!
     const line = surfaces[code.name].anchor('line:2')
-    expect(Math.max(...x.keyframes.map((key) => Number(key.value)))).toBeCloseTo(line.left + line.width / 2 - (amy.x + amy.width / 2), 6)
+    const walkEnd = x.keyframes.find((key) => key.time > 0 && Math.abs(Number(key.value) - (line.left + line.width / 2 - (amy.x + amy.width / 2))) < 1e-6)
+    expect(walkEnd).toBeDefined()
     expect(tracks.some((track) => track.target === amy.name && track.property === 'hair.swing')).toBe(true)
   })
 
@@ -42,5 +45,34 @@ describe('character beats in the editor', () => {
     expect(beatProblems([{ do: 'hold', then: { surface: code.name, edit: 'explode', anchor: 'line:1' } }], surfaces)[0]).toMatch(/has no edit "explode"/)
     expect(beatProblems([{ do: 'moonwalk' }], surfaces)[0]).toMatch(/^beat 1: /)
     expect(beatProblems('walk', surfaces)[0]).toMatch(/Beats are a list/)
+  })
+})
+
+describe('character beats on a chart', () => {
+  it('leap onto a bar, set it, and ride it up as it grows', () => {
+    const store = createSceneStore()
+    store.addElement('character', { x: 40, y: 150, width: 100, height: 120 })
+    store.addElement('chart', { x: 260, y: 20, width: 360, height: 260, max: 100 })
+    const amy = store.elements()[0] as CharacterElement
+    const made = store.elements()[1] as ChartElement
+    const surfaces = { [made.name]: chartElementSurface(made) }
+    const beats = [
+      { do: 'leap', to: { surface: made.name, anchor: 'bar:q3' }, onto: { surface: made.name, anchor: 'bar:q3' } },
+      { do: 'cheer', for: 1200, then: { surface: made.name, edit: 'set', anchor: 'bar:q3', value: 90, at: 'start', duration: 1000 } },
+    ]
+    expect(beatProblems(beats, surfaces)).toEqual([])
+    const { tracks } = compileCharacterBeats(amy, beats as never, { surfaces })
+    const timeline = new Timeline({ id: 'c', tracks })
+    const y = (time: number) => Number(timeline.getStateAtTime(time).values.get(amy.name)?.get('y') ?? 0)
+    const value = (time: number) => Number(timeline.getStateAtTime(time).values.get(made.name)?.get('bar.q3.value') ?? 0)
+    const ground = amy.y + amy.height
+    const before = surfaces[made.name].anchor('bar:q3', 0).top
+    const after = surfaces[made.name].anchor('bar:q3').top
+    expect(after).toBeLessThan(before - 20)
+    const landed = tracks.find((track) => track.target === amy.name && track.property === 'y')!
+    const end = Math.max(...landed.keyframes.map((key) => key.time))
+    expect(value(end)).toBe(90)
+    // Standing on the bar's top before it grows, and carried up with it after.
+    expect(ground + y(end)).toBeCloseTo(after, 0)
   })
 })

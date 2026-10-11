@@ -64,12 +64,15 @@ const HOP = 0.35
 /**
  * Riding poses for a human: on a seat, astride a saddle (legs apart round a
  * horse's barrel), driving (hands forward on a wheel) and on a bike's saddle
- * (leaning to the handlebars; the legs cycle with `pedallingPose`).
+ * (leaning to the handlebars; the legs cycle with `pedallingPose`), and
+ * wheeling a wheelchair (sitting up, the arms down at the sides to the hand
+ * rims).
  */
 export const RIDING_POSES = {
   seated: HUMAN_POSES.sit,
   astride: { ...HUMAN_POSES.sit, 'leg.left.spread': 26, 'leg.right.spread': 26, 'leg.left.swing': 40, 'leg.right.swing': 40, 'leg.left.knee': 70, 'leg.right.knee': 70 } as Pose,
   driving: { ...HUMAN_POSES.sit, 'arm.left.swing': 52, 'arm.right.swing': 52, 'arm.left.spread': 8, 'arm.right.spread': 8, 'arm.left.elbow': 38, 'arm.right.elbow': 38, lean: 4 } as Pose,
+  wheeling: { ...HUMAN_POSES.sit, 'arm.left.swing': -6, 'arm.right.swing': -6, 'arm.left.spread': 16, 'arm.right.spread': 16, 'arm.left.elbow': 28, 'arm.right.elbow': 28, 'leg.left.knee': 80, 'leg.right.knee': 80 } as Pose,
   cycling: { ...HUMAN_POSES.sit, lean: 22, bend: 10, 'head.nod': -14, 'arm.left.swing': 58, 'arm.right.swing': 58, 'arm.left.spread': 10, 'arm.right.spread': 10, 'arm.left.elbow': 22, 'arm.right.elbow': 22, 'leg.left.spread': 6, 'leg.right.spread': 6 } as Pose,
 } satisfies Record<string, Pose>
 

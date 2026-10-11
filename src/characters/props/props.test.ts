@@ -496,3 +496,109 @@ describe('birds', () => {
     expect(checkPropBeats([{ do: 'fly', to: 100 }], chicken())[0].message).toMatch(/Unknown chicken action "fly"/)
   })
 })
+
+describe('furniture props', () => {
+  it('a chair has a seat to sit on and tips back on its rear legs, then settles', async () => {
+    const { chair } = await import('./families/furniture')
+    const prop = chair()
+    for (const turn of [0, 0.5, 1, 2, 3]) expect(() => solveAt(prop, { turn, tilt: 12 }, 60)).not.toThrow()
+    const seat = solveAt(prop, { turn: 0, tilt: 0 }, 100).anchors.seat.point
+    expect(seat.y).toBeCloseTo(-46, 0)
+    const tipped = propScript('chair', prop, [{ do: 'tip', for: 1000 }], { scale: 60 })
+    const tipAt = (time: number) => new Timeline({ id: 'c', tracks: tipped.tracks }).getStateAtTime(time).values.get('chair')?.get('tip') as number
+    expect(tipAt(tipped.beats[0].contact!)).toBeGreaterThan(12)
+    // Settled a little after the end (the acting pass rocks it past its keys).
+    expect(Math.abs(tipAt(tipped.duration + 400))).toBeLessThan(1)
+    const fallen = propScript('chair', prop, [{ do: 'fall' }], { scale: 60 })
+    expect(new Timeline({ id: 'f', tracks: fallen.tracks }).getStateAtTime(fallen.duration + 300).values.get('chair')?.get('tip')).toBeCloseTo(90, 0)
+    expect(fallen.effects.some((e) => e.kind === 'dust')).toBe(true)
+  })
+
+  it('a desk opens its drawer, a bed gives and springs back, and a door opens, knocks and slams', async () => {
+    const { desk, bed, door } = await import('./families/furniture')
+    const d = propScript('desk', desk(), [{ do: 'drawer', open: true }], { scale: 60 })
+    expect(new Timeline({ id: 'd', tracks: d.tracks }).getStateAtTime(d.duration).values.get('desk')?.get('drawer')).toBeCloseTo(1, 1)
+    // The drawer's knob comes forward (toward the viewer: its depth grows) as it opens.
+    const shut = solveAt(desk(), { turn: 0, tilt: 12 }, 60)
+    const open = solveAt(desk(), { turn: 0, tilt: 12, drawer: 1 }, 60)
+    const knobDepth = (solved: typeof shut) => [...solved.under, ...solved.over].find((p) => p.part.id === 'knob')!.depth
+    expect(knobDepth(open)).toBeGreaterThan(knobDepth(shut))
+    expect(solveAt(desk(), { turn: 0, tilt: 0 }, 100).anchors.top.point.y).toBeCloseTo(-75, 0)
+
+    const b = propScript('bed', bed(), [{ do: 'bounce', for: 600 }], { scale: 60 })
+    const giveAt = (time: number) => new Timeline({ id: 'b', tracks: b.tracks }).getStateAtTime(time).values.get('bed')?.get('give') as number
+    expect(giveAt(b.beats[0].contact!)).toBeLessThan(0.9)
+    expect(Math.abs(giveAt(b.duration + 400) - 1)).toBeLessThan(0.1)
+    expect(solveAt(bed(), { turn: 0, tilt: 0 }, 100).anchors.mattress.point.y).toBeLessThan(-50)
+
+    const prop = door()
+    const o = propScript('door', prop, [{ do: 'knock' }, { do: 'open' }, { do: 'slam' }], { scale: 60 })
+    const timeline = new Timeline({ id: 'o', tracks: o.tracks })
+    const openAt = (time: number) => timeline.getStateAtTime(time).values.get('door')?.get('open') as number
+    expect(openAt(o.beats[0].contact!)).toBeGreaterThan(0)
+    expect(openAt(o.beats[1].contact!)).toBeGreaterThan(0.9)
+    expect(openAt(o.duration)).toBeCloseTo(0, 1)
+    expect(o.effects.some((e) => e.kind === 'dust')).toBe(true)
+    // Open, the doorway behind shows from the front.
+    const ids = [...solveAt(prop, { turn: 0, open: 1 }, 60).under, ...solveAt(prop, { turn: 0, open: 1 }, 60).over].map((p) => p.part.id)
+    expect(ids).toContain('beyond')
+    expect(ids).toContain('handle')
+  })
+
+  it('a wheelchair rolls with its wheels turning the distance, brakes with them locked, and does a wheelie', async () => {
+    const { wheelchair } = await import('./families/furniture')
+    const prop = wheelchair()
+    for (const turn of [0, 0.5, 1, 2, 3]) expect(() => solveAt(prop, { turn, tilt: 12, wheelSpin: 40, tip: 20 }, 60)).not.toThrow()
+    expect(solveAt(prop, { turn: 0, tilt: 0 }, 100).anchors.seat.point.y).toBeCloseTo(-50, 0)
+    expect(Object.keys(prop.rig.anchors ?? {})).toEqual(['seat', 'handles', 'front', 'footrest'])
+    // Rolling 2 wheel radii turns the wheels 2 radians.
+    const rolled = propScript('w', prop, [{ do: 'roll', to: 100 + 2 * 0.3 * 60 }], { from: 100, ground: 300, scale: 60, start: { turn: 1 } })
+    const at = (time: number, control: string) => new Timeline({ id: 'w', tracks: rolled.tracks }).getStateAtTime(time).values.get('w')?.get(control) as number
+    // The x track is an offset from where it started.
+    expect(at(rolled.duration, 'x')).toBeCloseTo(36, 0)
+    expect(at(rolled.duration, 'wheelSpin')).toBeCloseTo(2 * (180 / Math.PI), 0)
+    expect(prop.moves?.roll.perMetre?.wheelSpin).toBeCloseTo(180 / (Math.PI * 0.3), 5)
+    const braked = propScript('w', prop, [{ do: 'brake', to: 200 }], { from: 100, ground: 300, scale: 60, start: { turn: 1 } })
+    expect(new Timeline({ id: 'b', tracks: braked.tracks }).getStateAtTime(braked.duration).values.get('w')?.get('wheelSpin') ?? 0).toBeCloseTo(0, 5)
+    expect(braked.effects.some((e) => e.kind === 'dust')).toBe(true)
+    const wheelie = propScript('w', prop, [{ do: 'wheelie', for: 1000 }], { scale: 60 })
+    const tipAt = (time: number) => new Timeline({ id: 't', tracks: wheelie.tracks }).getStateAtTime(time).values.get('w')?.get('tip') as number
+    expect(tipAt(300 + 500)).toBeGreaterThan(15)
+    expect(Math.abs(tipAt(wheelie.duration + 400))).toBeLessThan(1)
+  })
+
+  it('are in the catalog of presets', async () => {
+    const { PROP_PRESETS } = await import('./presets')
+    for (const name of ['chair', 'desk', 'bed', 'door', 'wheelchair']) expect(name in PROP_PRESETS).toBe(true)
+  })
+})
+
+describe('more animals', () => {
+  it('goat, rabbit and squirrel solve in every view, walk, call and graze', async () => {
+    const { goat, rabbit, squirrel } = await import('./families/animals')
+    for (const [make, call] of [[goat, 'bleat'], [rabbit, 'squeak'], [squirrel, 'chatter']] as const) {
+      const prop = make()
+      for (const turn of [0, 0.5, 1, 2]) expect(() => solveAt(prop, { turn, tilt: 12 }, 80)).not.toThrow()
+      expect(prop.actions[call]).toBeDefined()
+      expect(prop.actions.graze).toBeDefined()
+      const script = propScript('a', prop, [{ do: 'gallop', to: 400 }, { do: call }], { from: 100, ground: 300, scale: 80, start: { turn: 1 } })
+      expect(script.duration).toBeGreaterThan(500)
+      expect(script.tracks.some((track) => track.property === 'ears')).toBe(true)
+    }
+  })
+
+  it('pigeon, duck, owl and parrot fly, call and land; landing on a perch grips it', async () => {
+    const { pigeon, duck, owl, parrot } = await import('./families/birds')
+    for (const [make, call] of [[pigeon, 'coo'], [duck, 'quack'], [owl, 'hoot'], [parrot, 'squawk']] as const) {
+      const prop = make()
+      for (const turn of [0, 0.5, 1]) expect(() => solveAt(prop, { turn, tilt: 12 }, 120)).not.toThrow()
+      const script = propScript('b', prop, [{ do: 'fly', to: 500, height: 1.5 }, { do: 'land', height: 0.8 }, { do: call }, { do: 'fly', to: 200, height: 1 }, { do: 'land' }], { from: 100, ground: 300, scale: 120, start: { turn: 1 } })
+      const timeline = new Timeline({ id: 'b', tracks: script.tracks })
+      const grip = (time: number) => timeline.getStateAtTime(time).values.get('b')?.get('grip') as number
+      expect(grip(script.beats[1].contact!)).toBeCloseTo(1, 1)
+      expect(grip(script.beats[3].start + 200)).toBeCloseTo(0, 1)
+      expect(grip(script.duration)).toBeCloseTo(0, 1)
+      expect(prop.rig.controls.grip).toBeDefined()
+    }
+  })
+})

@@ -146,6 +146,9 @@ export function compileCharacterBeats(element: CharacterElement, beats: ElementB
       used.add(cue.surface)
     }
   })
-  const tracks = [...script.tracks, ...hairFollowTracks(element.name, script.tracks, who), ...[...used].flatMap((name) => surfaces[name].tracks(name))]
+  // Floors the figure stands on carry it: a chart's bar as it grows, a prop's roof as it lifts, a line of code as the ones above go.
+  let ridden = script.tracks
+  for (const name of Object.keys(surfaces)) ridden = surfaces[name].ride(ridden, element.name, { ground: element.y + element.height })
+  const tracks = [...ridden, ...hairFollowTracks(element.name, ridden, who), ...[...used].flatMap((name) => surfaces[name].tracks(name))]
   return { tracks, duration: script.duration }
 }

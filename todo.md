@@ -104,33 +104,21 @@
 - [x] Drag elements on canvas to reposition
 - [x] Resize handles on selected elements (8 handles for shapes, 2 endpoints for line/arrow)
 - [x] Rotation handle for elements (hold Shift to snap to 15° increments)
-- [ ] **Stage hit testing in the Canvas and SVG renderers (planned).** Today
-  select / drag / resize / rotate, group-child selection, path-point drags,
-  the pen tool, guides and camera pan all live on the DOM renderer, which gets
-  hit testing for free from per-element `<div>`s (`preview-panel.tsx`). The
-  Canvas and SVG previews are playback-only: no element takes the pointer, so
-  editing there goes through the Layers and Properties panels.
-  Where the content is (survey, Oct 2026): of 72 live demos 31 are DOM, 32 are
-  Canvas 2D (every character, prop, chart, map and scene-3d card) and 9 are
-  inline SVG; the 53 editable samples and the learn course are DOM; the 18
-  headless-video scenes are Canvas 2D in Node. So Canvas is where the stage
-  tools are missing for real projects, and goes first.
-  - [ ] Canvas first: an editor-side hit test over the registered targets (the
-    same list `registerCanvasElements` feeds the adapter), topmost-first, using
-    each element's axis-aligned bounds under its current transform and the
-    camera. Paths and lines hit-test by stroke distance, not by bounding box.
-    Selection chrome is an HTML overlay on top of the `<canvas>`, not drawn
-    into it, so exports stay clean.
-  - [ ] SVG second: elements are already individually addressable
-    (`data-element-id` on each node), so wire the existing drag / resize /
-    rotate handlers to them and draw the selection chrome in a sibling `<g>`.
-    Account for `viewBox` scaling and the camera `<g>` transform when mapping
-    pointer to artboard coordinates.
-  - [ ] Share one pointer-to-artboard mapping and one selection-chrome
-    component across the three renderers so snapping, alignment guides and
-    rulers behave identically whichever preview is active.
-  - [ ] Note in the editor guide's Renderer Preview section which on-stage
-    tools each renderer supports until this lands.
+- [x] **Stage hit testing in the Canvas and SVG renderers.** Both previews draw into one surface,
+  so a transparent hit layer (`hitLayer()` in `preview-panel.tsx`) sits over the drawing with a
+  box per element and per group child, carrying the DOM preview's own handlers and
+  `data-element-id`; it is registered with the DOM adapter as the stage, so the boxes follow the
+  animation and the camera exactly as the drawing does. The selection chrome (`chromeInCamera()`)
+  and the stage overlays (`stageOverlays()`: alignment guides, rulers and guides, camera pan, the
+  pen tool) are shared by all three renderers, as is the pointer-to-artboard mapping
+  (`clientToStage` over the active stage). The toolbar's Grid, Snap, Rulers, Pen and Pan buttons
+  show in every renderer. Checked headless in both (click selects topmost-first, drag moves,
+  handles resize); `e2e/checks/editor.mjs` covers it. Survey (Oct 2026) that set the order: of 72
+  live demos 31 are DOM, 32 Canvas 2D (every character, prop, chart, map and scene-3d card) and 9
+  inline SVG; the 53 editable samples and the learn course are DOM; the 18 headless-video scenes
+  are Canvas 2D in Node.
+  - [ ] Paths and lines still hit-test by bounding box, as in the DOM preview; stroke-distance
+    hit testing would help thin diagonal lines in every renderer.
 - [ ] **Adapter coverage gaps found by the same survey.** `SVGAdapter` is used
   only by the editor preview; no example, demo or lesson renders through it
   (the 9 SVG demos drive inline `<svg>` with `live.to()`). `WebGLAdapter` is
@@ -2744,8 +2732,9 @@ biggest gap was the head (sheets 2 and 12–16), so that came first.
       trails the motion on a spring in every `propScript`, beside the tail
 - [x] Cast Turnaround card: ponytails and waves swing round after each step of the turn; guide
       section, LLM guide, skill, capabilities text and README
-- [ ] Still to do: the gait's own bob feeding `hair.lift` (today only the target's `y` does), a
-      swing on the cap for spiky and quiff styles, hair in the wind
+- [x] `hairFollowTracks` follows the head's place in the pose (worked out every 16 ms from the
+      target's tracks through `characterPoseOf`), so a gait's bob, a crouch and a jump move the hair
+- [ ] Still to do: a swing on the cap for spiky and quiff styles, hair in the wind
 
 ### 37F — Beat scripts for v2 characters ✓
 - [x] `characterScript(target, who, beats, options)` (`acting/character-script.ts`): the stick-figure
@@ -2758,8 +2747,13 @@ biggest gap was the head (sheets 2 and 12–16), so that came first.
       option for the cast's own gaits
 - [x] Character Acting card: the Cartoon Acting story on any cast member, with hair follow-through;
       acting guide section, LLM guide, skill, README
-- [ ] Still to do: hands reaching in the character's own proportions (a `grab` lands near, not on,
-      its target); the editor's beat script panel driving a Character element
+- [x] Hands in the character's own proportions: `reach` on `ScriptOptions` scales the stick script's
+      measured arm and leg reach (`reachOf(who)` gives the v2 share), so the figure steps to where the
+      human limb reaches; while a beat's hand or foot is on its target the limb is re-aimed with
+      `reachCharacter`: a point at the spot, a grab / put / kick on it (`leanToReach` bends the body
+      down to a low one; the leg solver lands the ankle, so the kick aims it a foot short of the toe's
+      spot), a swipe / write / push following the stick figure's palm
+- [x] The editor's Beats box drives a Character element (37J)
 
 ### 37G — AI generator emits beat scripts ✓
 - [x] The system prompt gains a Characters section built from the library's own names (cast,
@@ -2785,8 +2779,12 @@ biggest gap was the head (sheets 2 and 12–16), so that came first.
       single-series charts keep their names and geometry
 - [x] Axis titles `axis: { x, y }` (the plot makes room); theme palettes for slices and series
 - [x] Pies & Series card; acting guide, skill, capabilities (from `CHART_SURFACE`)
-- [ ] Still to do: stacked bars, a slice's label leader line when it is pulled far, a chart element
-      in the editor
+- [x] 📊 Chart element in the editor (`ChartElement`, `utils/chart-element.ts`): kind, data and series
+      as JSON, title, theme, max, value labels and axis titles in the property panel, bad data named;
+      drawn in both previews and the exporters; a surface for a Character's Beats (aim, set, show,
+      highlight, pull), and `compileCharacterBeats` rides every surface, so a figure on a bar is
+      carried as it grows
+- [ ] Still to do: stacked bars, a slice's label leader line when it is pulled far
 
 ### 37I — Props: floors and loose parts ✓
 - [x] `propSurface().piece('part:ID')`: a part comes loose as a piece; `fling` / `follow` / `move`
@@ -2814,16 +2812,27 @@ biggest gap was the head (sheets 2 and 12–16), so that came first.
       (ruled paper with a margin), arrows that bend round texts they would cross and `bend`
 
 ### 37D — Next, from the same pack
-- [ ] Hug and help-up (two people, more than hands), sweeping and brushing as cycles
-- [ ] More wardrobe: overalls, boots, a hoodie, a cardigan, a sari (the dressed-figures demo's)
-- [ ] Furniture and scenery with targets (seat height, desk, bed, door), sky, sun, moon, clouds,
-      rain, snow, wind; office, street, park and home scene presets
+- [x] Hug and help-up (two people, more than hands), sweeping and brushing as cycles: `embrace`,
+      `helpUp(helper, sitter, progress)`, `humanCyclePose('sweeping' | 'brushing', phase)`; Help Up card
+- [x] More wardrobe: overalls, boots, a hoodie, a cardigan, a sari, as `outfit` data (`over`, `shoes`); editor Over and Shoes pickers
+- [x] Furniture with targets: `chair` (seat, back, front; tips, falls), `desk` (top, edge, drawer,
+      chair spot; drawer opens), `bed` (mattress, pillow, foot, side; bounces), `door` (handle,
+      doorway, front, beyond; opens, slams, knocks), as prop presets in the catalog and the 3D palette
+- [x] Scenery: `scenery()` (a sky with the sun and moon on their arcs, stars, clouds on the wind, rain
+      and snow, hills or a city; or a room with a window on it; hour, clouds, wind, rain, snow as
+      tracks; wind streams hair), `scenePreset` / `buildScene` for park, street, office and home;
+      Park Day card
 - [x] Animals: `lie` for every four-legged animal (head up, front paws forward; `lyingPose`), `glide`
       for birds (wings held out still, sinking toward `height`)
-- [ ] Animals: perch contact, more species (goat, rabbit, squirrel, pigeon, duck, owl, parrot)
+- [x] Animals: perch contact (a bird's `grip`: toes round a perch as it lands above the ground), more
+      species: goat, rabbit, squirrel (quadrupeds), pigeon, duck, owl, parrot (birds)
 - [x] Hair follow-through (swing with a turn or a run): see 37E
-- [ ] A mouth with teeth and a tongue, foot shapes
-- [ ] Wheelchair and cane as accessories, not part of an age
+- [x] A mouth with teeth and a tongue (`face: { teeth, tongue }`, shown once the mouth opens past
+      0.3, hanging from and lying in the opening's real edges), foot shapes (`feet`: round, flat,
+      pointed, big); editor Teeth, Tongue and Feet controls
+- [x] Wheelchair and cane as accessories, not part of an age: `wheelchair()` prop (rolls with its wheels
+      turning the distance, brakes, wheelies; `seat` ridden in `RIDING_POSES.wheeling`, a pusher at
+      `handles`), `cane` held item (reaches the ground from a hanging hand) and `HUMAN_POSES.cane`
 
 ---
 

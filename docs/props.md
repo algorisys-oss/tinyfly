@@ -107,14 +107,22 @@ one probably meant, and `propScript` throws on them.
 | `car()`, `truck()`, `bus()`, `tractor()`, `cart()`, `trainCar()`, `bike()`, `motorbike()` | `drive` (`to`), `brake` (`to`, a skid with locked wheels), `bump`, `honk`, `door` (`open`), `lights` (`on`) — doors and lights where it has them |
 | `tree()` | `sway` (`wind`, `for`), `shake`, `shedLeaves` |
 | `house()` | `door` (`open`), `lights` (`on`), `smoke` (`for`, runs in the background), `shake` |
+| `chair()` | `tip` (`for`: back on its rear legs, then settles), `fall` |
+| `desk()` | `drawer` (`open`) |
+| `bed()` | `bounce` (`for`: the mattress gives and springs back) |
+| `door()` | `open` (`open`, `for`), `slam`, `knock` (`for`) |
+| `wheelchair()` | `roll` (`to`; the wheels turn the distance), `brake` (`to`, wheels locked), `wheelie` (`for`) |
 | `helicopter()` | `takeOff` (`height`), `fly` (`to`, `height`), `hover`, `land` |
 | `airplane()` | `takeOff` (`to`, `height`), `fly` (`to`, `height`), `loop`, `land` (`to`) |
 | `horse()` | `walk`, `trot`, `canter`, `gallop` (`to`), `rear`, `buck`, `neigh`, `graze`, `sit`, `lie`, `jump`, `nod`, `swish` |
 | `dog()` | `walk`, `trot`, `run` (`to`), `bark`, `wag`, `sniff`, `sit`, `lie`, `jump`, `nod`, `swish` |
 | `cat()` | `walk`, `trot`, `run` (`to`), `meow`, `arch`, `pounce` (`to`), `sit`, `lie`, `jump`, `nod`, `swish` |
 | `cow()` | `walk`, `trot` (`to`), `moo`, `graze`, `sit`, `lie`, `jump`, `nod`, `swish` |
+| `goat()` | `walk`, `trot`, `gallop` (`to`), `bleat`, `graze`, `sit`, `lie`, `jump`, `nod`, `swish` |
+| `rabbit()`, `squirrel()` | `walk`, `gallop` (`to`: a hop, a scamper), `squeak` / `chatter`, `graze` (nibble), `sit`, `lie`, `jump`, `nod`, `swish` |
 | `songbird()`, `crow()` | `hop`, `walk` (`to`), `peck` (`for`), `flap` (`for`), `fly` (`to`, `height`), `glide` (`to`, `height`), `land` (`height`, `to`), `tweet` / `caw` |
 | `chicken()` | `walk` (`to`), `peck`, `flap`, `flutter`, `cluck` (it cannot fly) |
+| `pigeon()`, `duck()`, `owl()`, `parrot()` | As the songbird: `hop`, `walk`, `peck`, `flap`, `fly`, `glide`, `land`, and `coo` / `quack` / `hoot` / `squawk` |
 
 **Line art.** `propTarget({ …, style: 'stick' })` (or `drawSolvedProp(…, { style: 'stick' })`)
 draws a prop as line art to go with stick figures: tubes (legs, necks, tails,
@@ -141,7 +149,8 @@ neck stretches down to reach), and it walks with its head bobbing or hops.
 air) and flies to `height` metres; `glide` holds the wings out still and sinks
 gently toward `height` on the way to `to` (from the ground it flies the first
 stretch); `land` comes down to the ground or to a
-perch (`height`). Perch it with anchors:
+perch (`height`), and landing above the ground its toes curl round the perch
+(`grip`, cleared as it takes off). Perch it with anchors:
 
 ```js
 const branch = propAt(treeTarget, { time: 0 }, 'tree').anchor('branch')
@@ -165,6 +174,26 @@ Make your own from the family generators: `vehicle(spec)` takes:
 
 `tree(spec)` and `house(spec)` take sizes and colours.
 
+**Furniture.** `chair()`, `desk()`, `bed()` and `door()` stand on the ground
+facing the viewer, and their places are anchors a figure uses them at: a
+chair's `seat` (ride it with `propRide({ anchor: 'seat' })`, a `seated` pose
+and `offset: { y: seatHeight(height) }`), `back` and `front`; a desk's `top`,
+`edge`, `drawer` and the `chair` spot in front; a bed's `mattress`, `pillow`,
+`foot` and `side`; a door's `handle`, `doorway`, `front` and `beyond` (a figure
+goes through from `front` to `beyond`, and the door is drawn over it until it
+opens). Each takes sizes and colours (`chair({ seatHeight: 0.5 })`, `door({
+hinge: 'right' })`). As surfaces (`propSurface`), their controls are edits a
+beat makes: `set` or `switch` `control:open`, `control:drawer`, `control:tip`.
+
+A `wheelchair()` is furniture that moves: a seat and back on a frame, two big
+rimmed wheels, castors and footrests. It `roll`s to a place with its wheels
+turning exactly the distance (in 3D, its `roll` move does the same in
+metres), `brake`s with them locked, and tips back for a `wheelie`. Any
+character rides its `seat` in the `wheeling` pose (`RIDING_POSES.wheeling`:
+sitting up, hands down at the rims), and a pusher stands at `handles` in the
+`push` pose. It is an accessory, not an age or a build: who uses it is the
+story's choice, like a `cane` in a hand.
+
 ## Figures with props
 
 - **Riding.** `propRide({ prop, propId, propTracks, anchor: 'seat', figure, figureId, start, end, offset })`
@@ -182,6 +211,37 @@ Make your own from the family generators: `vehicle(spec)` takes:
 
 See the gallery cards **Road Trip**, **Windy Day**, **Helicopter**,
 **Traffic**, **Horse & Cart**, **Farmyard**, **Birds** and **3D Scene: Village**.
+
+## Scenery
+
+`scenery(options)` is the world behind the figures: a canvas target that draws
+a sky (the sun and moon on their arcs, stars at night, clouds drifting on the
+wind, rain that slants with it, snow that drifts, hills or a city on the
+horizon, the ground) or a room (a wall, a floor and a window on that sky). Its
+values are tracks, so a day passes and weather comes and goes as keyframes,
+and every frame is drawn from its time alone:
+
+```js
+const sky = scenery({ x: 0, y: 0, width: 720, height: 400, hour: 9, clouds: 0.4, horizon: 'hills' })
+sky.set('hour', { at: 0, value: 20, duration: 12000 })   // dawn to night
+sky.set('wind', { at: 3000, value: 0.8, duration: 1000 })
+sky.set('rain', { at: 5000, value: 0.8, duration: 1500 })
+const tracks = sky.tracks('sky')                           // hour, wind, rain keys on 'sky'
+sky.anchor('sun', 4000)                                    // where the sun is then
+```
+
+`hour` runs 0–24, `clouds`, `rain` and `snow` 0–1, `wind` −1 (from the right)
+to 1 (from the left). The same wind streams a character's hair:
+`hairFollowTracks(target, tracks, who, { wind })`. `kind: 'room'` draws a wall
+and a floor with a `window` on the sky; `horizon` is `hills`, `city` (lit
+windows at night) or `flat`; `colors` recolour any of it.
+
+`scenePreset(name, { width, height })` lays out a scene as plain data (the
+scenery and where the props stand) and `buildScene` builds it into targets:
+`park` (a late-morning sky over hills, two trees and a bench), `street` (the end
+of the afternoon against the city: houses, a car, a tree), `office` (a room
+with a desk, a chair and a door) and `home` (a room at night with a bed, a
+chair and a door). The Park Day card plays a day over the park.
 
 ## In 3D scenes
 
