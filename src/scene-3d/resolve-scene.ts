@@ -2,7 +2,7 @@ import { mat4, quat, vec3, type Mat4, type Quat, type Vec3 } from '../engine/mat
 import type { AnimatableValue } from '../engine/types'
 import type { LoadedScene3D, PreparedMesh } from './load-scene'
 import type { CameraObject, LightObject, LineObject3D, Material3D, Object3D, Scene3D, TrailObject3D } from './scene-types'
-import { lookAtView, projectionMatrix } from './camera'
+import { lookAtView, projectionMatrix, rollView } from './camera'
 import type { Drawable } from './object-kind'
 import { strokeDrawables, type StrokeLook } from './strokes'
 import { trailSamples } from '../engine/path/trail'
@@ -78,8 +78,10 @@ export interface DrawTriangle {
   color?: string
   /** The object's opacity times the material's */
   opacity: number
-  /** Edges to ink on top of this triangle (silhouettes, creases, open rims), when the material has an outline */
+  /** Edges to ink on top of this triangle (silhouettes, creases, open rims), when it has an `ink` */
   outline: Array<[ScreenPoint, ScreenPoint]>
+  /** The outline's look: the material's, with the object's `outlineWidth` and `outlineColor` over it */
+  ink?: { width: number; color: string }
 }
 
 /**
@@ -166,7 +168,8 @@ const translationOf = (m: Mat4): Vec3 => [m[12], m[13], m[14]]
 function resolveCamera(camera: CameraObject, world: Mat4, values: ReadonlyMap<string, AnimatableValue>, aspect: number): ResolvedCamera {
   const position = translationOf(world)
   const lookAt = (vec(values.get('lookAt'), 3) as Vec3 | undefined) ?? camera.lookAt
-  const view = lookAt ? lookAtView(position, lookAt) : (mat4.invert(world) ?? mat4.identity())
+  const roll = num(values.get('roll')) ?? camera.roll ?? 0
+  const view = lookAt ? lookAtView(position, lookAt, { up: camera.up, roll }) : rollView(mat4.invert(world) ?? mat4.identity(), roll)
   const projection =
     camera.projection === 'perspective'
       ? projectionMatrix({ ...camera, fov: num(values.get('fov')) ?? camera.fov }, aspect)
@@ -219,12 +222,31 @@ export interface ResolveOptions {
    * trails ask where what they follow was. Without it, trails draw nothing.
    */
   valuesAt?: (time: number) => SceneValues
+  /** A looping video's period, ms: trails without their own `period` wrap at it */
+  period?: number
+  /** Over the scene's `nearFade`: geometry nearer than `to` fades, gone at `from` (metres in front of the camera) */
+  nearFade?: { from: number; to: number }
+}
+
+/** The outline an object draws: the material's, with the object's own `outlineWidth` and `outlineColor` over it. */
+function inkOf(material: Material3D, own: ReadonlyMap<string, AnimatableValue>): { width: number; color: string } | undefined {
+  const width = num(own.get('outlineWidth')) ?? material.outline?.width
+  const colorValue = own.get('outlineColor')
+  const color = (typeof colorValue === 'string' ? colorValue : undefined) ?? material.outline?.color ?? '#000000'
+  return width !== undefined && width > 0 ? { width, color } : undefined
+}
+
+/** How much of a triangle shows at a depth, under a near fade: 0 at `from` or nearer, 1 at `to` or further. */
+function nearFadeAt(fade: { from: number; to: number } | undefined, depth: number): number {
+  if (!fade || fade.to <= fade.from) return 1
+  return Math.min(1, Math.max(0, (depth - fade.from) / (fade.to - fade.from)))
 }
 
 /** The frame at these animated values (an `AnimationState`'s `values`, or none for the scene as authored). */
 export function resolveScene3D(loaded: LoadedScene3D, values: SceneValues = new Map(), options: ResolveOptions): ResolvedScene3D {
   const { scene } = loaded
   const valuesOf = (id: string) => values.get(`${scene.id}/${id}`) ?? EMPTY
+  const nearFade = options.nearFade ?? scene.nearFade
 
   // World matrices, parents first.
   const worlds = new Map<string, Mat4>()
@@ -280,13 +302,17 @@ export function resolveScene3D(loaded: LoadedScene3D, values: SceneValues = new 
     const color = own.get('color')
     const opacity = (num(own.get('opacity')) ?? 1) * (material.opacity ?? 1)
     if (opacity <= 0) return
-    meshes.push({ objectId: object.id, objectIndex, mesh, world, material, color: typeof color === 'string' ? color : undefined, opacity })
-    triangles.push(...meshTriangles(mesh, world, normals, camera, toScreen, material, {
+    const ink = inkOf(material, own)
+    const look = ink === material.outline || (ink && material.outline && ink.width === material.outline.width && ink.color === material.outline.color) ? material : { ...material, outline: ink }
+    meshes.push({ objectId: object.id, objectIndex, mesh, world, material: look, color: typeof color === 'string' ? color : undefined, opacity })
+    triangles.push(...meshTriangles(mesh, world, normals, camera, toScreen, look, {
       objectId: object.id,
       objectIndex,
       layer: object.layer ?? 0,
       color: typeof color === 'string' ? color : undefined,
       opacity,
+      ink,
+      nearFade,
     }))
   })
 
@@ -317,6 +343,8 @@ export function resolveScene3D(loaded: LoadedScene3D, values: SceneValues = new 
         objectIndex,
         layer,
         opacity: placed.material.opacity ?? 1,
+        ink: placed.material.outline,
+        nearFade,
       }))
     }
   })
@@ -381,7 +409,7 @@ function trailPoints(trail: TrailObject3D, scene: Scene3D, values: SceneValues, 
   const samples = trailSamples(
     (at) => translationOf(worldOf(scene, trail.follow, at === time ? values : options.valuesAt!(at))),
     time,
-    { length, samples: trail.samples ?? 32, period: trail.period }
+    { length, samples: trail.samples ?? 32, period: trail.period ?? options.period }
   )
   return samples.length >= 2 ? { points: samples.map((s) => s.at), ages: samples.map((s) => s.age) } : null
 }
@@ -401,7 +429,7 @@ function meshTriangles(
   camera: ResolvedCamera,
   toScreen: (view: Vec3) => ScreenPoint,
   material: Material3D,
-  owner: { objectId: string; objectIndex: number; layer: number; color?: string; opacity: number }
+  owner: { objectId: string; objectIndex: number; layer: number; color?: string; opacity: number; ink?: { width: number; color: string }; nearFade?: { from: number; to: number } }
 ): Array<DrawTriangle & { part: number }> {
   const count = mesh.positions.length / 3
   const worldPoints: Vec3[] = []
@@ -439,7 +467,7 @@ function meshTriangles(
 
     // Ink: open rims, silhouettes (the face across turns away) and creases, each edge once.
     const outline: Array<[ScreenPoint, ScreenPoint]> = []
-    if (material.outline && front) {
+    if (owner.ink && front) {
       for (const edge of mesh.faceEdges[f]) {
         const across = edge.across
         const silhouette = across === -1 || !facing[across]
@@ -448,6 +476,8 @@ function meshTriangles(
       }
     }
 
+    const faded = owner.opacity * nearFadeAt(owner.nearFade, depth)
+    if (faded <= 0) continue
     const screen = clipped.map(toScreen)
     for (let k = 1; k + 1 < screen.length; k++) {
       out.push({
@@ -462,9 +492,10 @@ function meshTriangles(
         normal,
         vertexNormals,
         material,
-        color: owner.color,
-        opacity: owner.opacity,
+        color: owner.color ?? mesh.faceColors?.[f],
+        opacity: faded,
         outline: k === 1 ? outline : [],
+        ink: owner.ink,
       })
     }
   }

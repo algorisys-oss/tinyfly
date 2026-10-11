@@ -3,6 +3,7 @@ import { createCanvas } from '@napi-rs/canvas'
 import { quat } from '../engine/math'
 import type { AnimatableValue } from '../engine/types'
 import { Timeline } from '../engine/core/timeline'
+import { inkColor } from './shading'
 import {
   drawScene3D,
   loadScene3D,
@@ -172,6 +173,54 @@ describe('resolveScene3D', () => {
     const edges = frame.triangles.flatMap((t) => t.outline)
     // Three faces show: 6 silhouette edges plus 3 creases where they meet.
     expect(edges).toHaveLength(9)
+  })
+
+  it('animates an object’s outline width and colour, and inks fade into the fog', () => {
+    const own = values({ 'stage/box': { rotateY: 30, rotateX: 20, outlineWidth: 5, outlineColor: '#00ff00' } })
+    const frame = resolveScene3D(loaded, own, SIZE)
+    expect(frame.triangles[0].ink).toEqual({ width: 5, color: '#00ff00' })
+    expect(frame.meshes[0].material.outline).toEqual({ width: 5, color: '#00ff00' })
+    // Width 0 switches the outline off; a material without one gains one from the tracks.
+    expect(resolveScene3D(loaded, values({ 'stage/box': { outlineWidth: 0 } }), SIZE).triangles[0].ink).toBeUndefined()
+    const plain = loadScene3D(scene({ materials: { red: { color: '#ff0000' }, floor: { color: '#888' } } }))
+    expect(resolveScene3D(plain, values({ 'stage/box': { outlineWidth: 3 } }), SIZE).triangles[0].ink).toEqual({ width: 3, color: '#000000' })
+    expect(inkColor('#000000', { color: '#ffffff', near: 0, far: 10 }, 5)).toBe('rgb(128, 128, 128)')
+    expect(inkColor('#000000', { color: '#ffffff', near: 0, far: 10 }, 0)).toBe('#000000')
+    expect(inkColor('#000000', undefined, 5)).toBe('#000000')
+  })
+
+  it('takes a raw mesh with colours per face or per vertex, and names a bad one', () => {
+    const triangle = { type: 'mesh' as const, positions: [-1, -1, 0, 1, -1, 0, 0, 1, 0, 0, 2, 0], indices: [0, 1, 2, 1, 3, 2] }
+    const raw = loadScene3D(scene({ objects: [{ id: 'front', kind: 'camera', projection: 'perspective', fov: 60, near: 0.1, far: 100, position: [0, 0, 5] }, { id: 'fan', kind: 'mesh', geometry: { ...triangle, colors: ['#00ff00', '#0000ff'] }, material: 'red' }] }))
+    const frame = resolveScene3D(raw, new Map(), SIZE)
+    expect(frame.triangles.map((t) => t.color)).toEqual(['#00ff00', '#0000ff'])
+    expect(frame.triangles[0].normal[2]).toBeCloseTo(1, 6)
+    const perVertex = loadScene3D(scene({ objects: [{ id: 'front', kind: 'camera', projection: 'perspective', fov: 60, near: 0.1, far: 100, position: [0, 0, 5] }, { id: 'fan', kind: 'mesh', geometry: { ...triangle, colors: ['#ff0000', '#00ff00', '#0000ff', '#ffffff'] }, material: 'red' }] }))
+    expect(resolveScene3D(perVertex, new Map(), SIZE).triangles[0].color).toBe('#555555')
+    const bad = validateScene3D(scene({ objects: [{ id: 'front', kind: 'camera', projection: 'perspective', fov: 60, near: 0.1, far: 100, position: [0, 0, 5] }, { id: 'fan', kind: 'mesh', geometry: { type: 'mesh', positions: [0, 0, 0, 1, 0, 0, 0, 1, 0], indices: [0, 1, 5] }, material: 'red' }] }))
+    expect(bad).toEqual(['"fan": a mesh index is out of range'])
+  })
+
+  it('rolls the camera about its view axis, and fades geometry at the lens', () => {
+    const tall = loadScene3D(scene({ objects: [{ id: 'front', kind: 'camera', projection: 'perspective', fov: 60, near: 0.1, far: 100, position: [0, 0, 5], lookAt: [0, 0, 0] }, { id: 'box', kind: 'mesh', geometry: { type: 'box', size: [0.2, 0.2, 0.2] }, material: 'red', position: [0, 1, 0] }] }))
+    const centre = (frame: ReturnType<typeof resolveScene3D>) => { const b = screenBox(frame, 'box'); return { x: (b.left + b.right) / 2, y: (b.top + b.bottom) / 2 } }
+    const level = centre(resolveScene3D(tall, new Map(), SIZE))
+    expect(level.x).toBeCloseTo(SIZE.width / 2, 6)
+    expect(level.y).toBeLessThan(SIZE.height / 2)
+    // Rolled 90° clockwise, what was above the centre is now to its right.
+    const rolled = centre(resolveScene3D(tall, values({ 'stage/front': { roll: 90 } }), SIZE))
+    expect(rolled.x).toBeGreaterThan(SIZE.width / 2 + 50)
+    expect(rolled.y).toBeCloseTo(SIZE.height / 2, 4)
+    // The same from the camera's own roll field, and the lookAt's up vector flips the picture.
+    const byField = loadScene3D(scene({ objects: [{ id: 'front', kind: 'camera', projection: 'perspective', fov: 60, near: 0.1, far: 100, position: [0, 0, 5], lookAt: [0, 0, 0], roll: 90 }, { id: 'box', kind: 'mesh', geometry: { type: 'box', size: [0.2, 0.2, 0.2] }, material: 'red', position: [0, 1, 0] }] }))
+    expect(centre(resolveScene3D(byField, new Map(), SIZE)).x).toBeCloseTo(rolled.x, 6)
+    const upsideDown = loadScene3D(scene({ objects: [{ id: 'front', kind: 'camera', projection: 'perspective', fov: 60, near: 0.1, far: 100, position: [0, 0, 5], lookAt: [0, 0, 0], up: [0, -1, 0] }, { id: 'box', kind: 'mesh', geometry: { type: 'box', size: [0.2, 0.2, 0.2] }, material: 'red', position: [0, 1, 0] }] }))
+    expect(centre(resolveScene3D(upsideDown, new Map(), SIZE)).y).toBeGreaterThan(SIZE.height / 2)
+    // Near fade: the box 4.9 m away is half faded between 4 and 6 m, gone at 4.
+    const fading = resolveScene3D(loaded, new Map(), { ...SIZE, nearFade: { from: 4, to: 6 } })
+    expect(fading.triangles[0].opacity).toBeCloseTo((4.5 - 4) / 2, 6)
+    expect(resolveScene3D(loaded, new Map(), { ...SIZE, nearFade: { from: 5, to: 6 } }).triangles).toHaveLength(0)
+    expect(resolveScene3D(loadScene3D(scene({ nearFade: { from: 4, to: 6 } })), new Map(), SIZE).triangles[0].opacity).toBeCloseTo(0.25, 6)
   })
 })
 

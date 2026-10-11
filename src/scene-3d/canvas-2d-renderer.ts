@@ -1,5 +1,6 @@
 import type { ResolvedScene3D } from './resolve-scene'
-import { shadeTriangle } from './shading'
+import { inkColor, shadeTriangle } from './shading'
+import { vec3 } from '../engine/math'
 
 /** What renders a resolved frame: synchronous, it never loads anything. */
 export interface Renderer3D {
@@ -58,7 +59,7 @@ export function drawResolvedScene(ctx: CanvasRenderingContext2D, frame: Resolved
     for (const ink of pending) {
       const near = before && before.objectId === ink.objectId && before.layer === ink.layer && ink.depth - before.depth <= INK_HOLD * ink.depth
       if (near) keep.push(ink)
-      else drawInk(ctx, ink.triangle)
+      else drawInk(ctx, ink.triangle, frame)
     }
     pending = keep
   }
@@ -82,7 +83,7 @@ export function drawResolvedScene(ctx: CanvasRenderingContext2D, frame: Resolved
       ctx.lineWidth = 0.75
       ctx.stroke()
     }
-    if (triangle.material.outline && triangle.outline.length > 0) {
+    if (triangle.ink && triangle.outline.length > 0) {
       pending.push({ objectId: triangle.objectId, layer: triangle.layer, depth: triangle.depth, triangle })
     }
   }
@@ -94,10 +95,10 @@ export function drawResolvedScene(ctx: CanvasRenderingContext2D, frame: Resolved
 /** How far nearer (as a share of its own depth) a face of the same object may be and still be painted before an edge's ink. */
 const INK_HOLD = 0.04
 
-function drawInk(ctx: CanvasRenderingContext2D, triangle: ResolvedScene3D['triangles'][number]): void {
-  const ink = triangle.material.outline!
+function drawInk(ctx: CanvasRenderingContext2D, triangle: ResolvedScene3D['triangles'][number], frame: Pick<ResolvedScene3D, 'fog' | 'camera'>): void {
+  const ink = triangle.ink!
   ctx.globalAlpha = triangle.opacity
-  ctx.strokeStyle = ink.color
+  ctx.strokeStyle = inkColor(ink.color, frame.fog, vec3.distance(triangle.centroid, frame.camera.position))
   ctx.lineWidth = ink.width
   ctx.beginPath()
   for (const [p, q] of triangle.outline) {

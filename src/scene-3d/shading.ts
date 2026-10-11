@@ -81,6 +81,16 @@ export function fogAmount(fog: ResolvedScene3D['fog'], distance: number): number
   return Math.min(1, Math.max(0, (distance - fog.near) / (fog.far - fog.near)))
 }
 
+/** An outline's colour at a distance: faded toward the fog's colour like the surfaces it edges. */
+export function inkColor(color: string, fog: ResolvedScene3D['fog'], distance: number): string {
+  const amount = fogAmount(fog, distance)
+  if (!fog || amount <= 0) return color
+  const c = parseColor(color)
+  const f = parseColor(fog.color)
+  const channel = (v: number) => Math.round(Math.min(1, Math.max(0, v)) * 255)
+  return `rgb(${channel(c[0] + (f[0] - c[0]) * amount)}, ${channel(c[1] + (f[1] - c[1]) * amount)}, ${channel(c[2] + (f[2] - c[2]) * amount)})`
+}
+
 /** The fill of one triangle: a CSS colour and its opacity. */
 export function shadeTriangle(
   triangle: DrawTriangle,

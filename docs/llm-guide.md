@@ -63,8 +63,11 @@ code: `build` (`child`, `tall`, `short`…), `hair` (a style name, or
 from. Age is hair, glasses and clothes, never a stoop; a `cane` in a hand or
 a `wheelchair()` to ride (`RIDING_POSES.wheeling`) is an accessory any
 character can have. Expressions come from `HUMAN_EXPRESSIONS`
-and are pose fields, as are the face marks `blush`, `tears` and `sweat` (0–1),
-so any face goes with any action or view. Hair and hats turn with the head:
+and are pose fields, as are the face marks `blush`, `tears` and `sweat` (0–1)
+and the close-up fields `pupil`, `lid` and `bulge`, so any face goes with any
+action or view; `drawCharacterHead(ctx, who, pose, { x, y, radius })` draws
+just the head big, and `face: { nose, inPupil }` adds a nose and a drawing in
+the pupils. Hair and hats turn with the head:
 don't draw a different hairstyle per view. Hanging hair swings on its own:
 after the character's tracks add `hairFollowTracks(target, tracks, who)` (or,
 posing per frame, `hairFollow` once and `hairMotionAt(keys, t)` each frame)
@@ -145,11 +148,20 @@ them before calling it done:
 
 ```bash
 npx @algorisys/tinyfly video scene.mjs --stills frames --times 0,800,1600,2400
+npx @algorisys/tinyfly video scene.mjs --loop-check   # a looping video: does the frame at the duration match the first?
 ```
 
 A model that can read images should look at the PNGs: is the hand on the
 word, does the figure stand on the line, does the text land where it should?
 Fix, render again.
+
+**A video that loops** (Shorts, Reels): say `loop: true` on the scene and
+make every motion a function of `frame.time / frame.period` that repeats
+exactly: `wobble`, `loopEase`, `loopNoise` for motion, `nestedZoom` for a
+zoom that steps one level per loop, `bubblePath` with `period`, `beatPulse`
+on a tempo from `loopBeats`, and `cutAudioToLoop` for the sound. Whole
+numbers of turns and cycles only; `--loop-check` must say "closes". See the
+Loops chapter of `docs/video-rendering.md`.
 
 ## The rules that trip models up
 

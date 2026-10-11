@@ -114,3 +114,10 @@ npx @algorisys/tinyfly video scene.mjs --stills frames --times 0,800,1600
 Check that hands meet what they touch, figures face and point the right
 way, stand on their floors (and ride bars as they grow), text lands where it
 should and nothing leaves the frame. Fix and render again.
+
+For a video that loops, set `loop: true` on the scene and drive every motion
+from `frame.time / frame.period` with helpers that repeat exactly (`wobble`,
+`loopEase`, `loopNoise`, `nestedZoom`, `beatPulse` on `loopBeats`,
+`bubblePath` with `period`; sound via `cutAudioToLoop`), whole turns and
+cycles only; then `npx @algorisys/tinyfly video scene.mjs --loop-check` must
+say "closes".

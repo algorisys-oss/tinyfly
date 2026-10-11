@@ -39,6 +39,13 @@ export interface VideoScene {
   camera?: boolean | string
   /** Length in ms (default: the timeline's duration) */
   duration?: number
+  /**
+   * The video loops: its duration is the period every motion repeats over.
+   * Frames carry it as `period` (for `wobble`, `loopNoise`, `nestedZoom`…),
+   * 3D trails wrap at it, and `tinyfly video` checks the loop closes before
+   * it renders.
+   */
+  loop?: boolean
   /** Animation data; its markers drive stills and captions */
   timeline?: TimelineDefinition
   /** Canvas targets by id, drawn in insertion order; tracks address them by id */
@@ -78,6 +85,8 @@ export interface FrameInfo {
   index: number
   /** Time in ms */
   time: number
+  /** The loop's period, ms (the duration), when the scene has `loop: true` */
+  period?: number
   /** Timeline state at `time`, when the scene has a timeline */
   state?: AnimationState
   /** Timeline state at any other time (trails ask where things were), when the scene has a timeline */

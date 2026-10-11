@@ -8,6 +8,8 @@ export interface Mesh {
   /** Per vertex, unit length: what smooth (lambert) shading reads */
   normals: number[]
   indices: number[]
+  /** A colour per triangle, over the material's (a raw mesh's `colors`) */
+  faceColors?: string[]
 }
 
 /** A mesh edge: two vertex indices and the one or two triangles that share it. */

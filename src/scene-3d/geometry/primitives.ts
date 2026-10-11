@@ -175,5 +175,62 @@ export function geometryMesh(geometry: Geometry3D): Mesh {
       return torusMesh(geometry.radius, geometry.tube, geometry.segments)
     case 'extrude':
       return extrudeMesh(geometry.path, { depth: geometry.depth, width: geometry.width, curveSegments: geometry.curveSegments })
+    case 'mesh':
+      return rawMesh(geometry)
   }
+}
+
+/** A mesh from raw arrays: normals computed flat (each vertex gets the average of its faces') when not given; colours per face. */
+export function rawMesh(geometry: { positions: number[]; indices: number[]; normals?: number[]; colors?: string[] }): Mesh {
+  const positions = [...geometry.positions]
+  const indices = [...geometry.indices]
+  const vertices = positions.length / 3
+  const faces = indices.length / 3
+  let normals: number[]
+  if (geometry.normals && geometry.normals.length === positions.length) {
+    normals = [...geometry.normals]
+  } else {
+    normals = new Array<number>(positions.length).fill(0)
+    for (let f = 0; f < faces; f++) {
+      const [a, b, c] = [indices[f * 3], indices[f * 3 + 1], indices[f * 3 + 2]]
+      const p = (i: number) => [positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]]
+      const [ax, ay, az] = p(a)
+      const [bx, by, bz] = p(b)
+      const [cx, cy, cz] = p(c)
+      const ux = bx - ax, uy = by - ay, uz = bz - az
+      const vx = cx - ax, vy = cy - ay, vz = cz - az
+      const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx
+      for (const i of [a, b, c]) {
+        normals[i * 3] += nx
+        normals[i * 3 + 1] += ny
+        normals[i * 3 + 2] += nz
+      }
+    }
+    for (let i = 0; i < vertices; i++) {
+      const l = Math.hypot(normals[i * 3], normals[i * 3 + 1], normals[i * 3 + 2]) || 1
+      normals[i * 3] /= l
+      normals[i * 3 + 1] /= l
+      normals[i * 3 + 2] /= l
+    }
+  }
+  let faceColors: string[] | undefined
+  if (geometry.colors && geometry.colors.length === faces) faceColors = [...geometry.colors]
+  else if (geometry.colors && geometry.colors.length === vertices) {
+    // One per vertex: a face takes the mix of its three corners'.
+    faceColors = []
+    for (let f = 0; f < faces; f++) {
+      const corners = [0, 1, 2].map((k) => parseHex(geometry.colors![indices[f * 3 + k]]))
+      const mix = [0, 1, 2].map((c) => Math.round((corners[0][c] + corners[1][c] + corners[2][c]) / 3))
+      faceColors.push(`#${mix.map((v) => v.toString(16).padStart(2, '0')).join('')}`)
+    }
+  }
+  return faceColors ? { positions, normals, indices, faceColors } : { positions, normals, indices }
+}
+
+/** `#rgb` or `#rrggbb` to 0..255 channels (anything else is black). */
+function parseHex(color: string): [number, number, number] {
+  const hex = color.trim().replace('#', '')
+  const full = hex.length === 3 ? hex.split('').map((c) => c + c).join('') : hex
+  const n = parseInt(full, 16)
+  return Number.isFinite(n) && full.length === 6 ? [(n >> 16) & 255, (n >> 8) & 255, n & 255] : [0, 0, 0]
 }

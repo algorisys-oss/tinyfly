@@ -12,7 +12,9 @@ import type { Pen } from '../look/pen'
  *
  * The face fields are the v1 stick figure's: `mouth`, `smile`, `mouthWidth`,
  * `blink`, `eye.left`, `eye.right`, `brow.left`, `brow.right`, `browTilt`,
- * `lookX` (toward the character's left +), `lookY` (down +). Marks fade in
+ * `lookX` (toward the character's left +), `lookY` (down +), and for
+ * close-ups `pupil` (size, 1 the usual), `lid` (the upper lids lowered, 0..1)
+ * and `bulge` (the eyes bulging out of the head, 0..1). Marks fade in
  * from 0 to 1: `blush` (rosy cheeks with a few hatch lines), `tears` (a drop
  * under each eye, running down at full strength) and `sweat` (a bead at the
  * temple).
@@ -89,17 +91,35 @@ const ellipse = (cx: number, cy: number, rx: number, ry: number, samples = 16): 
 
 const SHOWN = 0.05
 
-/** What an open mouth shows: a row of upper teeth, and a tongue (default neither, as the plain face). */
+/** The pupil's circle on the screen, for drawing inside it. */
+export interface PupilCircle {
+  x: number
+  y: number
+  r: number
+  side: 'left' | 'right'
+}
+
+/** What an open mouth shows: a row of upper teeth, and a tongue (default neither, as the plain face); a nose; what is in the pupils. */
 export interface FaceOptions {
   teeth?: boolean
   tongue?: boolean
+  /** A small nose between the eyes and the mouth (default none) */
+  nose?: boolean
+  /** The head's fill, for lids that cover the eye (default white) */
+  skin?: string
+  /**
+   * Draw inside each pupil: the context is clipped to the pupil's circle and
+   * the hook draws there in screen space (another scene, the same head again
+   * for a Droste face). Needs the context passed to `drawFace`.
+   */
+  inPupil?: (ctx: CanvasRenderingContext2D, pupil: PupilCircle) => void
 }
 
 /** An open mouth shows its teeth and tongue past this much open. */
 const SHOWS_INSIDE = 0.3
 const TONGUE = '#e06b7d'
 
-export function drawFace(pen: Pen, head: SolvedHead, pose: Pose, lineWidth: number, options: FaceOptions = {}): void {
+export function drawFace(pen: Pen, head: SolvedHead, pose: Pose, lineWidth: number, options: FaceOptions = {}, ctx?: CanvasRenderingContext2D): void {
   // Face lines are lighter than the body's, and capped by the head's size.
   const thin = Math.max(1, Math.min(lineWidth * 0.6, 0.14 * head.rx))
   const toScreen = (points: Point[], centre: Point) => faceToScreen(head, points, centre).points
@@ -109,6 +129,9 @@ export function drawFace(pen: Pen, head: SolvedHead, pose: Pose, lineWidth: numb
   const lookX = field(pose, 'lookX', 0)
   const lookY = field(pose, 'lookY', 0)
   const browTilt = field(pose, 'browTilt', 0)
+  const pupilSize = Math.max(0.2, field(pose, 'pupil', 1))
+  const lid = Math.min(1, Math.max(0, field(pose, 'lid', 0)))
+  const bulge = Math.min(1, Math.max(0, field(pose, 'bulge', 0)))
 
   for (const side of [1, -1]) {
     const name = side === 1 ? 'left' : 'right'
@@ -121,15 +144,38 @@ export function drawFace(pen: Pen, head: SolvedHead, pose: Pose, lineWidth: numb
       const arch = smile > 0.5 ? 0.12 : -0.06
       pen.line(toScreen(quadratic({ x: ex - 0.12, y: EYE_Y }, { x: ex, y: EYE_Y + arch }, { x: ex + 0.12, y: EYE_Y }), eye), thin)
     } else {
-      if (open > 1.2) {
-        // Wide open: the whites show around the pupil.
-        const white = 0.13 * open
-        pen.shape(toScreen(ellipse(ex, EYE_Y, white * 0.85, white), eye), '#ffffff', thin)
-      }
-      const pupil = open > 1.2 ? 0.075 : 0.1
+      // Wide open or bulging: the whites show around the pupil.
+      const whites = open > 1.2 || bulge > 0.02
+      const white = 0.13 * Math.max(open, 1) * (1 + bulge * 0.7)
+      if (whites) pen.shape(toScreen(ellipse(ex, EYE_Y, white * 0.85, white), eye), '#ffffff', thin)
+      const pupil = (open > 1.2 ? 0.075 : 0.1) * pupilSize * (1 + bulge * 0.3)
       const px = ex + lookX * 0.08
       const py = EYE_Y - lookY * 0.07
-      pen.shape(toScreen(ellipse(px, py, pupil, pupil * 1.1 * Math.min(open, 1)), eye), pen.ink, 0)
+      const circle = ellipse(px, py, pupil, pupil * 1.1 * Math.min(open, 1))
+      pen.shape(toScreen(circle, eye), pen.ink, 0)
+      if (options.inPupil && ctx) {
+        // The pupil's circle on screen: its centre, and the nearest edge as the radius, so the drawing stays inside.
+        const [centre] = toScreen([{ x: px, y: py }], eye)
+        const edge = toScreen(circle, eye)
+        const r = Math.min(...edge.map((p) => Math.hypot(p.x - centre.x, p.y - centre.y)))
+        if (r > 0.5) {
+          ctx.save()
+          ctx.beginPath()
+          ctx.arc(centre.x, centre.y, r, 0, Math.PI * 2)
+          ctx.clip()
+          options.inPupil(ctx, { x: centre.x, y: centre.y, r, side: name })
+          ctx.restore()
+        }
+      }
+      if (lid > 0.02) {
+        // The upper lid lowered: the head's fill covers the top of the eye, with the lid's edge drawn.
+        const reach = whites ? white * 1.15 : pupil * 1.4
+        const top = EYE_Y + reach
+        const edge = top - reach * 2 * lid
+        const half = reach * 1.1
+        pen.shape(toScreen([{ x: ex - half, y: top + 0.02 }, { x: ex + half, y: top + 0.02 }, { x: ex + half, y: edge }, { x: ex - half, y: edge }], eye), options.skin ?? '#ffffff', 0)
+        pen.line(toScreen([{ x: ex - half, y: edge }, { x: ex + half, y: edge }], eye), thin)
+      }
     }
     // Brow: raised or lowered, and slanted (its inner end is toward the middle).
     const brow = EYE_Y + 0.3 + field(pose, `brow.${name}`, 0) * 0.14 + Math.max(0, open - 1) * 0.12
@@ -143,6 +189,10 @@ export function drawFace(pen: Pen, head: SolvedHead, pose: Pose, lineWidth: numb
   // Mouth: closed is a curve; open is an O, a grin (flat top) or a wail (flat bottom).
   const mouthCentre = { x: 0, y: MOUTH_Y }
   if (facingAt(0, MOUTH_Y) < -SHOWN) return
+  if (options.nose && facingAt(0, EYE_Y - 0.15) >= SHOWN) {
+    // A small nose: down from between the eyes, hooking toward the character's right.
+    pen.line(toScreen([{ x: 0.01, y: EYE_Y - 0.1 }, { x: 0.03, y: MOUTH_Y + 0.2 }, { x: -0.05, y: MOUTH_Y + 0.17 }], { x: 0, y: MOUTH_Y + 0.22 }), thin)
+  }
   const w = 0.25 * Math.max(0.3, field(pose, 'mouthWidth', 1))
   const open = Math.min(1, Math.max(0, field(pose, 'mouth', 0)))
   if (open <= 0.05) {

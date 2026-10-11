@@ -120,6 +120,9 @@ export const HUMAN_REST: Pose = {
   blink: 0,
   'eye.left': 1,
   'eye.right': 1,
+  pupil: 1,
+  lid: 0,
+  bulge: 0,
   'brow.left': 0,
   'brow.right': 0,
   browTilt: 0,
@@ -422,6 +425,9 @@ export function humanFieldLabel(field: string): string {
     blink: 'Blink',
     'eye.left': 'Left eye open',
     'eye.right': 'Right eye open',
+    pupil: 'Pupil size',
+    lid: 'Eyelids lowered',
+    bulge: 'Eyes bulging',
     'brow.left': 'Left brow',
     'brow.right': 'Right brow',
     browTilt: 'Brow slant',
@@ -448,8 +454,8 @@ const FACE_FIELDS: Record<string, string> = {
   rightBrow: 'brow.right',
 }
 
-/** The face marks, cleared by every expression that does not set them. */
-const NO_MARKS = { blush: 0, tears: 0, sweat: 0 }
+/** The face marks, cleared by every expression that does not set them, and the close-up fields at their usual values. */
+const NO_MARKS = { blush: 0, tears: 0, sweat: 0, pupil: 1, lid: 0, bulge: 0 }
 
 /** The stick figure's faces as human pose fields, with the marks some of them call for. */
 const SHARED_EXPRESSIONS = Object.fromEntries(
@@ -460,6 +466,8 @@ const SHARED_EXPRESSIONS = Object.fromEntries(
 ) as Record<ExpressionName, Pose>
 SHARED_EXPRESSIONS.crying.tears = 1
 SHARED_EXPRESSIONS.scared.sweat = 0.8
+SHARED_EXPRESSIONS.scared.bulge = 0.4
+SHARED_EXPRESSIONS.sleepy.lid = 0.5
 SHARED_EXPRESSIONS.worried.sweat = 0.6
 
 /** A face from the neutral one: the fields that change. */
@@ -474,7 +482,7 @@ const humanFace = (changes: Pose): Pose => ({ ...SHARED_EXPRESSIONS.neutral, ...
 export const HUMAN_EXPRESSIONS = {
   ...SHARED_EXPRESSIONS,
   laughing: humanFace({ mouth: 0.75, smile: 1, mouthWidth: 1.25, 'eye.left': 0, 'eye.right': 0, 'brow.left': 0.5, 'brow.right': 0.5 }),
-  afraid: humanFace({ mouth: 0.4, smile: -0.6, mouthWidth: 0.9, 'eye.left': 1.3, 'eye.right': 1.3, 'brow.left': 0.6, 'brow.right': 0.6, browTilt: 1, sweat: 1 }),
+  afraid: humanFace({ mouth: 0.4, smile: -0.6, mouthWidth: 0.9, 'eye.left': 1.3, 'eye.right': 1.3, 'brow.left': 0.6, 'brow.right': 0.6, browTilt: 1, sweat: 1, pupil: 0.8, bulge: 0.5 }),
   bored: humanFace({ smile: -0.05, mouthWidth: 0.6, 'eye.left': 0.45, 'eye.right': 0.45, 'brow.left': -0.4, 'brow.right': -0.4, lookX: 0.5 }),
   tired: humanFace({ mouth: 0.2, smile: -0.3, mouthWidth: 0.7, 'eye.left': 0.3, 'eye.right': 0.3, 'brow.left': -0.1, 'brow.right': -0.1, browTilt: 0.6, lookY: 0.6 }),
   embarrassed: humanFace({ smile: 0.4, mouthWidth: 0.7, 'eye.left': 0.9, 'eye.right': 0.9, browTilt: 0.7, 'brow.left': 0.2, 'brow.right': 0.2, lookX: -0.6, lookY: 0.5, blush: 1 }),
@@ -482,9 +490,9 @@ export const HUMAN_EXPRESSIONS = {
   determined: humanFace({ smile: 0.35, mouthWidth: 0.8, 'eye.left': 0.85, 'eye.right': 0.85, 'brow.left': -0.5, 'brow.right': -0.5, browTilt: -0.9 }),
   affectionate: humanFace({ smile: 0.85, 'eye.left': 0, 'eye.right': 0, 'brow.left': 0.3, 'brow.right': 0.3, blush: 0.8 }),
   hurt: humanFace({ smile: -0.7, mouthWidth: 0.8, 'eye.left': 1.1, 'eye.right': 1.1, 'brow.left': 0.2, 'brow.right': 0.2, browTilt: 1, lookY: 0.3, tears: 0.35 }),
-  suspicious: humanFace({ smile: -0.25, mouthWidth: 0.7, 'eye.left': 0.5, 'eye.right': 0.85, 'brow.left': -0.6, 'brow.right': 0.4, browTilt: -0.3, lookX: 0.8 }),
+  suspicious: humanFace({ smile: -0.25, mouthWidth: 0.7, 'eye.left': 0.5, 'eye.right': 0.85, 'brow.left': -0.6, 'brow.right': 0.4, browTilt: -0.3, lookX: 0.8, lid: 0.3 }),
   relieved: humanFace({ smile: 0.7, 'eye.left': 0, 'eye.right': 0, 'brow.left': 0.4, 'brow.right': 0.4, browTilt: 0.4 }),
-  excited: humanFace({ mouth: 0.6, smile: 1, mouthWidth: 1.1, 'eye.left': 1.4, 'eye.right': 1.4, 'brow.left': 0.9, 'brow.right': 0.9, blush: 0.4 }),
+  excited: humanFace({ mouth: 0.6, smile: 1, mouthWidth: 1.1, 'eye.left': 1.4, 'eye.right': 1.4, 'brow.left': 0.9, 'brow.right': 0.9, blush: 0.4, pupil: 1.3 }),
 } satisfies Record<string, Pose>
 
 export type HumanExpressionName = keyof typeof HUMAN_EXPRESSIONS

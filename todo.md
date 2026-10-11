@@ -2363,24 +2363,31 @@ triangles) and "Droste Head" (a cartoon head whose pupil holds the same head, fo
       PSNR; closes / seamless / does not loop (exit 1); `checkLoop(scene)`, `psnr`, `loopReport` in
       `@algorisys/tinyfly/headless`
 - [x] `--frames 0,79,88` and `--times 0,2640` for stills at chosen frames or times
-- [ ] A `loop: true` scene flag: the duration is the period; helpers below default to it
-- [ ] Periodic motion helpers guaranteed to repeat over a duration: `wobble(t, { period, cycles })`,
-      seeded looping noise (noise on a circle / torus), periodic easing
+- [x] A `loop: true` scene flag: the duration is the period; frames carry `period`, 3D trails wrap at
+      it, and `tinyfly video` runs the loop check before it renders (exit 1 when it does not close)
+- [x] Periodic motion helpers guaranteed to repeat over a duration (`engine/authoring/periodic.ts`):
+      `wobble(t, { period, cycles, amplitude, shape })`, `loopEase` (eased there-and-back), `loopNoise`
+      (seeded value noise round a circle) and `torusNoise` (periodic in time and along a length),
+      `phaseOf`, `pingPong`
 
 ### 35B — Nested zooms (Droste)
-- [ ] A similarity-transform helper (scale, turn, move as one value: `compose`, `pow` for a fraction
-      of a step, the fixed point, `apply` to a canvas context), so a self-similar zoom is a few lines
-      instead of hand-rolled complex-number maths
-- [ ] `nestedZoom({ factor, turn, levels, draw(ctx, level) })`: draws only the levels on screen
-      (sub-pixel ones and those hidden behind a full-screen child are skipped) and closes the loop
-      after one step per period
+- [x] A similarity-transform helper (`engine/path/similarity.ts`: `similarity`, `similarityAbout`,
+      `composeSimilarity`, `powSimilarity` for a fraction of a step, `invertSimilarity`,
+      `similarityFixedPoint`, `similarityMatrix` for a canvas context)
+- [x] `nestedZoom(ctx, { step, phase, extent, coversAbove, levels, draw(ctx, level, scale) })`
+      (`adapters/canvas/nested-zoom.ts`): draws only the levels on screen (sub-pixel ones and those
+      behind a level that fills the frame are skipped) and closes after one step per period;
+      `nestedZoomTransform`; `examples/headless-video/nested-zoom.mjs`
 
 ### 35C — Faces and characters for close-ups
-- [ ] A cartoon head with a full face (bulging eyes, lids, brows, nose, mouth, teeth) driven by
-      the existing expression set (`HUMAN_EXPRESSIONS`, lid openness, pupil size), drawable big
-- [ ] A hook to draw anything inside the pupil (another scene, the same head), for Droste faces
-- [ ] Keyframe curves over any input, not just time: `curve(keys)(x)` reusing keyframes and
-      easings (a face driven by its size on screen, a colour by depth)
+- [x] A cartoon head with a full face drawable big: `drawCharacterHead(ctx, who, pose, { x, y,
+      radius })` (just the head, line weight scaled); pose fields `pupil` (size), `lid` (upper lids
+      lowered), `bulge` (eyes out of the head, whites and all) on top of the brows, mouth, teeth and
+      tongue; `face: { nose: true }`; scared, afraid, sleepy, suspicious and excited use them
+- [x] A hook to draw anything inside the pupil: `face: { inPupil(ctx, { x, y, r, side }) }`, the
+      context clipped to the pupil's circle (a Droste head holds itself)
+- [x] Keyframe curves over any input, not just time: `curve(keys)(x)` (`engine/authoring/curve.ts`)
+      reusing keyframes, easings and colour blending, holding beyond its ends
 
 ### 35D — Neon and glow
 - [x] A bloom / glow post-effect for headless video (and the Canvas renderer): threshold, blur,
@@ -2393,9 +2400,15 @@ triangles) and "Droste Head" (a cartoon head whose pupil holds the same head, fo
       `period` for loops), `ribbon` / `ribbonHeadCap`, `drawTrail` (seamless additive strip, round
       head, comet glow, `normal` / `add` blend); `FrameInfo.stateAt`; demos Light Trails and
       3D Scene: Comet Trails; `examples/headless-video/comet-trails.mjs` (loops)
-- [ ] A radial / zoom blur and speed lines for dives
-- [ ] Impossible-object helpers: Penrose triangle and staircase geometry (2D isometric and the
-      3D "aligns from one viewpoint" construction)
+- [x] A radial / zoom blur and speed lines for dives: `applyZoomBlur(ctx, { centre, strength, samples,
+      blend })` (a fixed set of scaled copies, averaged or added) and `drawDiveLines` (seeded radial
+      streaks; `phase` loops them) in `adapters/canvas/zoom-blur.ts`
+- [x] Impossible-object helpers (`engine/path/impossible.ts`): the isometric view (`projectIsometric`,
+      `isometricBoxFaces`, `isometricFaces` far to near), `penroseTriangle` (three beams, the loop closing
+      one diagonal on; the first beam drawn again over the third's end) and `penroseStairs` (four flights
+      round a ring, the rise nudged so the last step meets the first), `drawIsometricFaces`;
+      `penroseTriangle3D` (`scene-3d/impossible-3d.ts`): the beams and an orthographic camera down the
+      diagonal (the third corner shows the beams' ends, as a sculpture's does)
 
 ### 35G — 3D scenes for loops (from "Impossible Descent 3D", a real 3D Penrose flight)
 - [x] Fix: the Canvas 2D renderer inked each triangle right after its fill, so on subdivided meshes
@@ -2403,24 +2416,36 @@ triangles) and "Droste Head" (a cartoon head whose pupil holds the same head, fo
       each edge's ink waits until the faces of the same object at about its depth are painted (before
       anything of another object or clearly nearer, which may still cover it); test measures ink
       coverage along every edge (90% → over 99.5%); scene-3d goldens updated
-- [ ] A raw mesh geometry in scene JSON (`{ type: 'mesh', positions, indices }`) with per-face or
-      per-vertex colours, so custom shapes (warped beams) need no ObjectKind code
-- [ ] Per-object, animatable outline colour and width, and fog on outlines (distant levels fade
-      their edges)
+- [x] A raw mesh geometry in scene JSON (`{ type: 'mesh', positions, indices, normals?, colors? }`,
+      `rawMesh`): normals computed flat when left out, colours per face or per vertex (blended per
+      face) over the material's; validated (index range, array lengths)
+- [x] Per-object, animatable outline colour and width (`outlineWidth`, `outlineColor` tracks over the
+      material's outline; `DrawTriangle.ink`; the WebGL hull reads the same), and fog on outlines
+      (`inkColor`: the ink fades toward the fog colour with distance in the Canvas 2D path)
 - [x] Lines, polylines and trails in 3D, depth-sorted with meshes (grids, comet trails, dust
       streaks), near-clipped: `line` and `trail` scene objects, one drawable per segment, fog,
       animatable `color` / `width` / `opacity` / `length`, `valuesAt` for trails (WebGL2: on the overlay)
 - [ ] A depth buffer for headless video: a software z-buffer in the Canvas 2D path, or WebGL2 through
       a headless GL
-- [ ] Camera `up` / roll alongside `lookAt`; a near-camera fade so geometry turns to glass at the lens
+- [x] Camera `up` / `roll` alongside `lookAt` (`roll` is a track too; `rollView`); a near-camera fade
+      (`nearFade: { from, to }` on the scene or `resolveScene3D` options) so geometry turns to glass
+      at the lens
 
 ### 35E — Satisfying matter
-- [ ] Gooey shapes: drips, smooth metaball blobs, bubbles that grow, wobble and pop
-- [ ] Squash and stretch helpers for blobs (volume-keeping)
+- [x] Gooey shapes (`engine/path/goo.ts`): `metaballContours` (marching squares over the balls' field,
+      corners rounded; blobs merge through necks and split), `dripPath` (a neck thinning to a thread,
+      a head swelling with `progress`), `bubblePath` (grows from nothing with a swell, quivers with the
+      time, repeats over a `period`) and `bubblePop` (rim arcs flying out)
+- [x] Squash and stretch helpers for blobs: `squashStretch(amount, { keep: 'area' | 'volume' })` and
+      `scalePoints` about the landing point
 
 ### 35F — Sound
-- [ ] Audio-reactive and beat-synced timing for loops (reuse `detectTempo`, `BeatGrid`): a drone or
-      riser cut to the loop length
+- [x] Audio-reactive and beat-synced timing for loops (`engine/authoring/beat-loop.ts`): `loopBeats`
+      (a tempo cut to the period in whole beats), `beatPeriod`, `beatPulse` (spikes on every beat,
+      decays, a bar accent), `audioEnvelope` (a level per frame from samples, rising at once and
+      letting go slowly) and `envelopeAt` (wrapped for a loop); a drone or riser cut to the loop
+      length: `cutAudioToLoop` (Node, decode → trim with the tail blended into the head → WAV) and
+      `loopSamples` (pure; `headless/loop-audio.ts`)
 
 ---
 

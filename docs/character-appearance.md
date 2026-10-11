@@ -293,6 +293,32 @@ tracks animate them): `blush` (rosy cheeks, with hatch lines past 0.5),
 `tears` (a drop under each eye, running down past 0.6) and `sweat` (a bead at
 the temple).
 
+## Close-ups
+
+For a face filling the frame there are three more pose fields and a bigger
+drawing:
+
+- `pupil` (1 the usual size): bigger for excitement or a dive into it,
+  smaller for fear. `lid` (0..1) lowers the upper lids over the eye (sleepy,
+  suspicious, bored). `bulge` (0..1) pops the eyes out of the head, whites and
+  all. `scared`, `afraid`, `sleepy`, `suspicious` and `excited` use them.
+- `face: { nose: true }` adds a small nose; `face: { teeth, tongue }` are
+  above.
+- `drawCharacterHead(ctx, who, pose, { x, y, radius, time })` draws just the
+  head (hair, hat, glasses, ears, the face), its centre at `x`, `y` and its
+  radius `radius` px, in the character's look with the line weight scaled to
+  the size. The pose turns and nods it and sets the face.
+- `face: { inPupil(ctx, pupil) }` draws inside each pupil, the context
+  clipped to its circle on screen (`{ x, y, r, side }`): another scene, or the
+  same head again for a Droste face:
+
+```js
+function head(ctx, x, y, r, depth = 0) {
+  const who = character({ hair: 'spiky', face: { nose: true, inPupil: depth < 4 ? (c, p) => head(c, p.x, p.y, p.r, depth + 1) : undefined } })
+  drawCharacterHead(ctx, who, humanPose({ bulge: 0.9, pupil: 1.5 }), { x, y, radius: r })
+}
+```
+
 ## Everyday actions, held items and meeting hands
 
 The motion and everyday-life sheets add poses to `HUMAN_POSES`: `sleep`,

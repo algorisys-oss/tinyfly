@@ -557,6 +557,141 @@ The numbers are PSNR (higher is more alike; fast or trembling motion makes
 every step lower). From code: `checkLoop(scene)` returns the same report, and
 `psnr(a, b)` / `loopReport(frames)` work on any RGBA frames.
 
+### A scene that loops
+
+Say so with `loop: true`: the duration is the period. `tinyfly video` then
+runs the loop check before it encodes anything and stops (exit 1) if the loop
+does not close; every frame carries `period`, which the periodic helpers and
+3D trails without a `period` of their own use.
+
+```js
+import { wobble, loopNoise, loopEase } from '@algorisys/tinyfly'
+
+export default {
+  width: 1280, height: 720, duration: 4000, loop: true,
+  draw(ctx, frame) {
+    const sway = wobble(frame.time, { period: frame.period, cycles: 2, amplitude: 12 })   // a sine, two whole cycles
+    const drift = loopNoise(frame.time, { period: frame.period, seed: 'tree' }) * 30    // smooth noise round a circle
+    const breathe = loopEase(frame.time, { period: frame.period, easing: 'ease-in-out' }) // 0 → 1 → 0, eased
+  },
+}
+```
+
+| Helper | Repeats exactly every `period` |
+|---|---|
+| `wobble(t, { period, cycles, amplitude, phase, shape })` | A sine (or `triangle`, `square`) with a whole number of cycles |
+| `loopEase(t, { period, cycles, easing, phase })` | 0 → 1 → 0, the easing on the way up and mirrored down |
+| `loopNoise(t, { period, seed, cycles, octaves, phase })` | Seeded value noise read round a circle, about −1..1: the end meets the start |
+| `torusNoise(t, along, { period, periodAlong, seed, … })` | Noise periodic in time and along a length (ripples, grass, a flag) |
+| `phaseOf(t, period, cycles)`, `pingPong(u)` | The building blocks: where in the cycle, and there-and-back |
+
+Each is a pure function of time, so frames render in any order and the loop
+check reports "closes", not "seamless".
+
+### Sound for a loop
+
+A loop's sound must come round with its picture. `cutAudioToLoop(file, {
+output, period, crossfade, fadeIn, fadeOut })` (Node) decodes a drone, a
+riser or a beat, trims it to the period with its end blended into its start
+(tiling it first if it is shorter) and writes the WAV to pass as the scene's
+`audio`; `loopSamples` is the pure step on samples. For motion on the beat,
+`loopBeats(period, grid)` cuts a tempo to the loop (the nearest whole number
+of beats, the bpm nudged to fit exactly), `beatPulse(time, grid, { attack,
+decay, barAccent })` spikes to 1 on every beat and decays, and
+`beatPeriod(grid, beats)` is the length of so many beats. For motion that
+follows the sound itself, `audioEnvelope(samples, sampleRate, { fps,
+smoothing })` gives a level per frame (rising at once, letting go slowly,
+loudest 1) and `envelopeAt(levels, time, fps, period)` reads it at any time,
+wrapped for the loop:
+
+```js
+import { decodeAudio, cutAudioToLoop } from '@algorisys/tinyfly/headless'
+import { audioEnvelope, envelopeAt, loopBeats, beatPulse, detectTempo } from '@algorisys/tinyfly'
+
+const PERIOD = 4000
+const audio = await cutAudioToLoop('drone.wav', { output: 'build/drone-loop.wav', period: PERIOD, baseDir: here })
+const samples = await decodeAudio(audio, { sampleRate: 48000 })
+const levels = audioEnvelope(samples, 48000, { fps: 30 })
+const { grid } = loopBeats(PERIOD, detectTempo(samples, 48000))
+export default {
+  width: 1280, height: 720, duration: PERIOD, loop: true, audio,
+  draw(ctx, frame) {
+    const level = envelopeAt(levels, frame.time, 30, frame.period)   // 0..1 with the sound
+    const pulse = beatPulse(frame.time, grid)                         // 1 on each beat, decaying
+  },
+}
+```
+
+### Nested zooms (Droste)
+
+A picture inside itself, the camera diving in: after one step every level is
+where the next one was, so a video one step long loops. `similarityAbout(
+scale, turn, centre)` is the step (a scale, a turn and a move as one value;
+`powSimilarity(step, k)` is a fraction of it, `composeSimilarity` chains
+them, `similarityFixedPoint` is the centre everything converges on), and
+`nestedZoom` draws the levels:
+
+```js
+import { similarityAbout } from '@algorisys/tinyfly'
+import { nestedZoom } from '@algorisys/tinyfly/adapters'
+
+const step = similarityAbout(0.5, 12, { x: 640, y: 360 })
+export default {
+  width: 1280, height: 720, duration: 3000, loop: true, background: '#05030c',
+  draw(ctx, frame) {
+    nestedZoom(ctx, {
+      step,
+      phase: frame.time / frame.period,   // 0..1: how far into one step
+      extent: 1600,                       // how far a level's drawing reaches at level 0, px
+      coversAbove: 1.1,                   // a level this big fills the frame: nothing behind it is drawn
+      draw(ctx, level, scale) { drawFrame(ctx, level) },  // in level-0 coordinates
+    })
+  },
+}
+```
+
+Levels smaller than `minSize` px (default 1) are skipped, and so is
+everything behind a level at or above `coversAbove`, so a zoom of twenty
+levels draws the five or six that show. `draw` gets the level number (0 is
+the one at natural size at phase 0, 1 the one inside it) and its screen
+scale, to keep line widths readable; colour or detail that should travel with
+the zoom is a function of `level - phase`. `examples/headless-video/nested-zoom.mjs`
+is a looping neon zoom built this way; `nestedZoomTransform(step, level,
+phase)` gives a level's similarity for drawing it some other way.
+
+A Droste *face*: `drawCharacterHead` draws a character's head big, and its
+`face.inPupil` hook draws inside each pupil, clipped to it, so the head can
+hold itself (see [Close-ups](character-appearance.md#close-ups)). Anything
+that should change with a level's size on screen rather than with time (the
+eyes opening as a head grows, a colour cooling with depth) is a `curve`:
+`curve([{ at: 20, value: 0 }, { at: 300, value: 1, easing: 'ease-out' }])(radius)`
+reads keyframes and easings at any input, holding beyond its ends.
+
+### Dives and impossible objects
+
+Two post-effects for a dive, both deterministic. `applyZoomBlur(ctx, { centre,
+strength, samples, blend })` streaks the finished frame out from a point (a
+fixed set of scaled copies, averaged, or added with `blend: 'add'` for neon);
+`drawDiveLines(ctx, { centre, count, inner, outer, length, phase, seed, color,
+blend })` streams seeded lines past the camera, and `phase: phaseOf(time,
+period)` moves them one line along per loop so they repeat exactly.
+
+The impossible objects are built the way the sculptures are: real boxes that
+line up from one viewpoint. `penroseTriangle({ size, thickness, centre, scale })`
+and `penroseStairs({ steps, tread, rise, width, base, centre, scale })` give
+boxes and their visible faces in drawing order for the isometric view (along
+the (1, 1, 1) diagonal, z up); `drawIsometricFaces(ctx, faces, { top, left,
+right, fill, outline })` fills them. The triangle's third beam ends one
+diagonal from where the first began, so on screen the loop closes (the first
+beam is drawn again over the third's end); the stairs climb all the way round
+and the last step meets the first. `projectIsometric`, `isometricBoxFaces`
+and `isometricFaces` are the building blocks for your own. In a 3D scene,
+`penroseTriangle3D({ length, thickness, material })` returns the three beams
+and an orthographic camera down the diagonal: from it the loop closes, from
+anywhere else it is three beams (its third corner shows the beams' ends,
+as a real sculpture's does; a `rotateY` track on a group round it breaks and
+remakes the illusion).
+
 ## Bloom
 
 `bloom: true` (or options) adds a glow around everything bright, after each
@@ -632,6 +767,25 @@ beads where segments overlap and no seams between them. `ribbon(points)` and
 `ribbonHeadCap(points)` give its geometry for other renderers. 3D scenes have
 `line` and `trail` objects, sorted by depth among the meshes (see
 [3D Scenes](scene-3d.md#lines-and-trails)).
+
+## Satisfying matter
+
+Goo as geometry, every shape a pure function of its inputs:
+
+| Helper | Gives |
+|---|---|
+| `metaballContours(balls, { threshold, cell, smooth })` | The outlines of balls (`{ x, y, r }`) that merge through necks as they near and split as they part, as closed polygons; `metaballField` is the field itself |
+| `dripPath({ x, y, length, width, progress })` | A drip under a surface: a neck thinning to a thread and a head swelling as `progress` runs 0 → 1 |
+| `bubblePath({ x, y, r, grow, time, period, wobble })` | A bubble growing from nothing (with a little swell on the way) whose surface quivers with the time; with `period` the quiver repeats exactly |
+| `bubblePop({ x, y, r, progress, pieces })` | The pop: arcs of the rim flying out and shrinking, gone at 1 |
+| `squashStretch(amount, { keep })`, `scalePoints(points, scale, about)` | Stretch taller (or squash, negative) with the width giving way so the area (or the `volume`) stays; apply it about the point a blob lands on |
+
+```js
+draw(ctx, frame) {
+  const balls = [{ x: 400, y: 300, r: 60 }, { x: 400 + wobble(frame.time, { period: frame.period, amplitude: 90 }), y: 300, r: 40 }]
+  for (const loop of metaballContours(balls, { cell: 3 })) fillPolygon(ctx, loop, '#b6ff3b')
+}
+```
 
 ## Camera, overlay and drawing on twos
 

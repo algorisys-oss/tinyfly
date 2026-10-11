@@ -73,11 +73,13 @@ export function drawScene3D(
     width: number
     height: number
     time?: number
+    /** A looping video's period (a frame's `period`): trails wrap at it */
+    period?: number
     valuesAt?: (time: number) => SceneValues
     stateAt?: (time: number) => { values: SceneValues }
   }
 ): void {
   const stateAt = size.stateAt
   const valuesAt = size.valuesAt ?? (stateAt && ((time: number) => stateAt(time).values))
-  drawResolvedScene(ctx, resolveScene3D(scene, values ?? new Map(), { width: size.width, height: size.height, time: size.time, valuesAt }))
+  drawResolvedScene(ctx, resolveScene3D(scene, values ?? new Map(), { width: size.width, height: size.height, time: size.time, period: size.period, valuesAt }))
 }

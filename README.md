@@ -97,7 +97,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Camera** - Animate a pan/zoom/rotate over the whole stage (a reserved `Camera` layer driven by ordinary tracks). One-click add, a **🎥 Camera inspector** (Pan/Zoom/Rotation keyframed at the playhead), on-stage **✋ Pan** dragging, and a dedicated 🎥 lane at the top of the timeline; applies in every preview, export, and embed. Ready-made Push In / Pan Across / Orbit Reveal samples
 - **Polygon & star shapes** - ⬡ Polygon and ★ Star elements are parametric paths — edit sides / points / inner ratio in Properties and they regenerate and rescale; they render and export like any path
 - **Pen tool** - ✒️ Draw custom bezier paths: click for corners, click-drag for curves (Alt for a cusp), drag existing anchors/handles to adjust, snap points to grid/guides, click the first point or Enter to finish
-- **Loop check** - `tinyfly video scene.mjs --loop-check` renders five frames and says whether a video loops: whether the frame at the duration matches the first, and whether the last → first seam looks like any other step (exit 1 when it does not). `--frames 0,79,88` renders stills at chosen frames. See [docs/video-rendering.md](docs/video-rendering.md#loops)
+- **Loop check** - `tinyfly video scene.mjs --loop-check` renders five frames and says whether a video loops: whether the frame at the duration matches the first, and whether the last → first seam looks like any other step (exit 1 when it does not). `--frames 0,79,88` renders stills at chosen frames. See [docs/video-rendering.md](docs/video-rendering.md#loops) A scene with `loop: true` is checked before it renders, its frames carry the `period`, and periodic helpers repeat exactly over it: `wobble`, `loopEase`, `loopNoise` (seeded noise round a circle), `torusNoise`; `nestedZoom` draws a Droste picture (a `similarityAbout` step, one level per loop, only the visible levels); `applyZoomBlur` and `drawDiveLines` for dives; the Penrose triangle and stairs as boxes that line up from one viewpoint (`penroseTriangle`, `penroseStairs`, `penroseTriangle3D`); goo as geometry: metaballs that merge and split (`metaballContours`), drips (`dripPath`), bubbles that grow, wobble and pop (`bubblePath`, `bubblePop`) and area-keeping squash and stretch (`squashStretch`)
 - **Bloom** - `bloom: true` on a video scene adds a deterministic glow around bright things (bright pass, blur, add; no `ctx.filter`), and 3D materials take `emissive` light that shines in the dark and feeds it. `applyBloom(ctx)` works on any 2D canvas. See [docs/video-rendering.md](docs/video-rendering.md#bloom)
 - **Light trails** - `trailSamples` + `drawTrail` draw comets and light streaks on any 2D canvas: a tapering, fading band with a round head, smooth at any speed, and deterministic (the trail is where the thing was, asked of the timeline, not a frame history). 3D scenes get `line` and `trail` objects whose segments sort by depth among the meshes. See [docs/video-rendering.md](docs/video-rendering.md#light-trails) and [docs/scene-3d.md](docs/scene-3d.md#lines-and-trails)
 - **3D scenes** - `@algorisys/tinyfly/scene-3d`: cameras, lights, meshes (box, sphere, cylinder, cone, torus, floor, any SVG path extruded) and props from the catalog (also from the editor's 3D Scene palette) as JSON in metres, animated by ordinary tracks (`stage/box`), cut between cameras with one keyframe, drawn on a plain canvas with flat, smooth or toon shading, ink outlines and fog: in the browser, in Workers, and to MP4 in Node. Characters stand in scenes and dance, seen by any camera, in their pen looks (clean, pencil) or as solid figures (`characterObjects`); props (cars, houses, trees, animals, birds) stand in them by preset name (`propObjects`), sorted a column at a time so figures walk round them rightly, and lit by the scene's lights (a sunset, a night with lit windows). Both are scripted in world metres (`propScript3D`, `characterScript3D`): drive or walk to a point or along a path, wheels and feet keeping pace with the ground. In the editor, a 🧊 3D Scene element builds them without code: add shapes, characters and lights, key them, dance from the playhead, cut between cameras. No WebGL needed (about 7 KB gzipped, its own entry and CDN script); for big or tangled scenes the optional WebGL2 renderer (`@algorisys/tinyfly/scene-3d/webgl`) adds a depth buffer and light per pixel. See [docs/scene-3d.md](docs/scene-3d.md)
@@ -237,7 +237,7 @@ GSAP-shaped functions at the top level. Teaching embeds are included: add
 itself.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.100.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.101.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -273,7 +273,7 @@ A teaching figure needs no code at all:
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON with markers… }</script>
   <figcaption>Appending to a full slice</figcaption>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.100.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.101.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
 ```
 
 See [Teaching Animations](docs/teaching.md).
@@ -372,7 +372,7 @@ Without a build step, the player bundle puts the same functions on a `tinyfly` g
   <div data-tinyfly="box" style="width: 60px; height: 60px; background: #4a9eff;"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.100.0/cdn/tinyfly-player.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.101.0/cdn/tinyfly-player.iife.js"></script>
 <script>
   tinyfly.play('#animation', './animation.json', { loop: -1 })
 </script>
@@ -481,7 +481,7 @@ Or skip the code entirely with declarative embeds (see [Teaching Animations](doc
   <svg viewBox="0 0 720 200">…</svg>
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON… }</script>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.100.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.101.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 ### Audio / Video Sync

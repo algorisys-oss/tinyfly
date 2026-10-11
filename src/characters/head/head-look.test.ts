@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { createCanvas, type Canvas } from '@napi-rs/canvas'
-import { character, characterJoints, drawCharacter, type CharacterOptions } from '../character'
+import { character, characterJoints, drawCharacter, drawCharacterHead, type CharacterOptions } from '../character'
 import { FOOT_SHAPES, HUMAN_BUILDS, HUMAN_EXPRESSIONS, HUMAN_REST, humanPose, type FootShape } from '../species/human'
 import { CHARACTER_CAST, castMember } from '../cast'
 import { HAIR_STYLES, hairRegion, resolveHair } from './hair'
@@ -151,6 +151,53 @@ describe('builds, cast and expressions', () => {
     for (const face of Object.values(HUMAN_EXPRESSIONS)) expect(Object.keys(face).sort()).toEqual(fields)
     expect(HUMAN_EXPRESSIONS.crying.tears).toBe(1)
     expect(HUMAN_EXPRESSIONS.embarrassed.blush).toBe(1)
+    expect(fields).toEqual(expect.arrayContaining(['pupil', 'lid', 'bulge']))
+    expect(HUMAN_EXPRESSIONS.sleepy.lid).toBe(0.5)
+  })
+
+  it('draw close-up faces: a bigger pupil, lowered lids, bulging whites, a nose, and a drawing in the pupil', () => {
+    const joints = characterJoints(character({ height: 300 }), HUMAN_REST)
+    const head = joints.head
+    const eye = { x: head.center.x + head.rx * 0.33, y: head.center.y - head.ry * 0.12 }
+    const inkAround = (canvas: Canvas, at: { x: number; y: number }, r: number) => {
+      let count = 0
+      for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) if (pixelAt(canvas, at.x + dx, at.y + dy)[0] < 80) count++
+      return count
+    }
+    expect(inkAround(render({}, { pupil: 1.6 }), eye, 10)).toBeGreaterThan(inkAround(render({}, {}), eye, 10) * 1.6)
+    expect(inkAround(render({}, { pupil: 0.5 }), eye, 10)).toBeLessThan(inkAround(render({}, {}), eye, 10) * 0.5)
+    // Lids: lowered all the way, the head's fill covers the pupil (the lid's edge is drawn below it).
+    expect(pixelAt(render({}, {}), eye.x, eye.y)[0]).toBeLessThan(80)
+    expect(pixelAt(render({}, { lid: 1 }), eye.x, eye.y)).toEqual([255, 255, 255])
+    expect(pixelAt(render({}, { lid: 1 }), eye.x, eye.y + head.ry * 0.14)[0]).toBeLessThan(80)
+    // Bulging: an outlined white round the pupil, where the head's fill was: much more ink round the eye.
+    expect(inkAround(render({}, { bulge: 1 }), eye, 14)).toBeGreaterThan(inkAround(render({}, {}), eye, 14) * 1.5)
+    // A nose draws ink between the eyes and the mouth.
+    const noseAt = { x: head.center.x + head.rx * 0.02, y: head.center.y + head.ry * 0.05 }
+    expect(pixelAt(render({}, {}), noseAt.x, noseAt.y)).toEqual([255, 255, 255])
+    expect(pixelAt(render({ face: { nose: true } }, {}), noseAt.x, noseAt.y)[0]).toBeLessThan(80)
+    // The hook draws inside the pupil, clipped to it.
+    const seen: Array<{ r: number; side: string }> = []
+    const hooked = render({ face: { inPupil: (ctx, pupil) => { seen.push({ r: pupil.r, side: pupil.side }); ctx.fillStyle = '#ff0000'; ctx.fillRect(pupil.x - 50, pupil.y - 50, 100, 100) } } }, { pupil: 1.5 })
+    expect(seen.map((p) => p.side).sort()).toEqual(['left', 'right'])
+    expect(seen.every((p) => p.r > 3 && p.r < head.rx * 0.2)).toBe(true)
+    expect(pixelAt(hooked, eye.x, eye.y)).toEqual([255, 0, 0])
+    expect(pixelAt(hooked, eye.x, eye.y - head.ry * 0.3)).not.toEqual([255, 0, 0])
+  })
+
+  it('draw a head close-up at a size and place, without the body', () => {
+    const canvas = createCanvas(400, 400)
+    const ctx = canvas.getContext('2d') as unknown as CanvasRenderingContext2D
+    ctx.fillStyle = '#fbf6ec'
+    ctx.fillRect(0, 0, 400, 400)
+    drawCharacterHead(ctx, character({ height: 300, hair: 'bob' }), humanPose({ smile: 1 }), { x: 200, y: 180, radius: 120 })
+    const at = (x: number, y: number) => Array.from(ctx.getImageData(x, y, 1, 1).data.slice(0, 3))
+    // Ink at the head's outline left and right, the face white inside, nothing below the head.
+    expect(at(200 - 118, 190)[0]).toBeLessThan(80)
+    expect(at(200 + 118, 190)[0]).toBeLessThan(80)
+    expect(at(200, 200)).toEqual([255, 255, 255])
+    expect(at(200, 180 + 150)).toEqual([251, 246, 236])
+    expect(at(200, 390)).toEqual([251, 246, 236])
   })
 
   it('show teeth and a tongue in an open mouth, only when asked and only once it is open', () => {

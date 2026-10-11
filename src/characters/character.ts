@@ -100,7 +100,7 @@ export interface CharacterOptions extends HeadLookOptions {
   handSize?: number
   /** The feet's shape: `round` (default), `flat`, `pointed` or `big` */
   feet?: FootShape
-  /** What an open mouth shows: `teeth` (a row of upper teeth) and a `tongue` (default neither) */
+  /** The face's extras: `teeth` and a `tongue` in an open mouth, a `nose`, and `inPupil` to draw inside the pupils (default none) */
   face?: FaceOptions
 }
 
@@ -124,8 +124,8 @@ export interface Character {
   head: HeadLook
   /** What each hand holds (drawn by its layers) */
   holding: Holding
-  /** What an open mouth shows */
-  face: Required<FaceOptions>
+  /** The face's extras (see `FaceOptions`) */
+  face: FaceOptions & { teeth: boolean; tongue: boolean }
 }
 
 /** Layers that draw `first`'s parts and then `second`'s. */
@@ -180,7 +180,7 @@ export function character(options: CharacterOptions = {}): Character {
     handStyle: options.handStyle ?? 'glove',
     handSize: options.handSize ?? (options.handStyle === 'natural' ? 0.14 : 0.17),
     head: resolveHeadLook(options),
-    face: { teeth: options.face?.teeth ?? false, tongue: options.face?.tongue ?? false },
+    face: { ...options.face, teeth: options.face?.teeth ?? false, tongue: options.face?.tongue ?? false },
   }
 }
 
@@ -307,7 +307,7 @@ function drawPart(ctx: CanvasRenderingContext2D, pen: Pen, character: Character,
     const fill = character.skin === 'none' ? null : character.skin
     pen.ellipse(head.center.x, head.center.y, head.rx, head.ry, head.angle, fill, lw)
     drawHeadFront(ctx, pen, character.head, head, pose, { lineWidth: lw, skin: character.skin }, () => {
-      if (pen.look !== 'silhouette') drawFace(pen, head, pose, lw, character.face)
+      if (pen.look !== 'silhouette') drawFace(pen, head, pose, lw, { ...character.face, skin: character.skin === 'none' ? '#ffffff' : character.skin }, ctx)
     })
     return
   }
@@ -496,8 +496,9 @@ export function characterPartsInView(character: Character, pose: Pose, projectio
   }))
 }
 
-function drawSolved(ctx: CanvasRenderingContext2D, character: Character, full: Pose, solved: Solved, time: number): void {
-  const { joints, order } = solved
+function drawSolved(ctx: CanvasRenderingContext2D, character: Character, full: Pose, solved: Solved, time: number, only?: ReadonlySet<string>): void {
+  const { joints } = solved
+  const order = only ? solved.order.filter((id) => only.has(id)) : solved.order
   const pen = createPen(ctx, {
     look: character.look,
     ink: character.ink,
@@ -515,8 +516,8 @@ function drawSolved(ctx: CanvasRenderingContext2D, character: Character, full: P
   ctx.save()
   ctx.lineCap = 'round'
   ctx.lineJoin = 'round'
-  if (character.look === 'pencil' && character.pencil.construction !== false) drawConstruction(pen, character, joints)
-  hook(character.layers.behind)
+  if (!only && character.look === 'pencil' && character.pencil.construction !== false) drawConstruction(pen, character, joints)
+  if (!only) hook(character.layers.behind)
   drawHeadBehind(ctx, pen, character.head, joints.head, full, { lineWidth: character.lineWidth, skin: character.skin })
   for (const id of order) {
     const layers = character.layers.parts?.[id]
@@ -525,7 +526,35 @@ function drawSolved(ctx: CanvasRenderingContext2D, character: Character, full: P
     hook(layers?.over)
   }
   drawHeadOver(ctx, pen, character.head, joints.head, full, { lineWidth: character.lineWidth, skin: character.skin })
-  hook(character.layers.front)
+  if (!only) hook(character.layers.front)
+  ctx.restore()
+}
+
+export interface HeadCloseUpOptions {
+  /** Where the head's centre goes, px */
+  x: number
+  y: number
+  /** The head's radius on screen, px */
+  radius: number
+  /** ms: the pencil's boil frame and layer hooks */
+  time?: number
+}
+
+/**
+ * A head close-up: just the head (hair, hat, glasses, ears, the face) drawn
+ * big, its centre at `x`, `y` and its radius `radius` px, in the character's
+ * own look with its line weight scaled to the size. The pose turns and nods
+ * it and sets the face; the body is not drawn. With `face.inPupil` the pupils
+ * hold another drawing (the same head again, for a Droste face).
+ */
+export function drawCharacterHead(ctx: CanvasRenderingContext2D, character: Character, pose: Pose, options: HeadCloseUpOptions): void {
+  const full = character.plan.id === 'human' ? { ...HUMAN_REST, ...pose } : pose
+  const own = solve(character, full).joints.head.rx
+  const seen = seenAt(character, (character.height * options.radius) / Math.max(1e-6, own))
+  const solved = solve(seen, full)
+  ctx.save()
+  ctx.translate(options.x - solved.joints.head.center.x, options.y - solved.joints.head.center.y)
+  drawSolved(ctx, seen, full, solved, options.time ?? 0, new Set(['head']))
   ctx.restore()
 }
 

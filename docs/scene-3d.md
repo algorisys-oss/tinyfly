@@ -57,7 +57,7 @@ number or three), `parent` (an earlier object it moves with), `visible`, and
 |---|---|
 | `group` | (just a transform: move several objects together, or carry a camera) |
 | `mesh` | `geometry`, `material` (a key of `materials`) |
-| `camera` | `projection: 'perspective'` with `fov` (vertical, degrees), or `'orthographic'` with `height` (metres); `near`, `far`; optional `lookAt: [x, y, z]` |
+| `camera` | `projection: 'perspective'` with `fov` (vertical, degrees), or `'orthographic'` with `height` (metres); `near`, `far`; optional `lookAt: [x, y, z]`, `up` (which way is up for it, default +y) and `roll` (degrees about the view axis, clockwise on screen) |
 | `light` | `light: 'ambient' \| 'directional' \| 'point' \| 'spot'`, `color`, `intensity` (1 is full light); directional and spot shine from their position toward `target` (default the origin); point and spot fade to nothing at `range`; spot's cone is `angle` (half-angle, default 30°) |
 
 **Geometry**: `box` (`size: [w, h, d]`), `sphere` (`radius`, `segments`),
@@ -67,7 +67,11 @@ facing up, `segments` per side), and `extrude`: any SVG `path` made solid,
 `depth` metres thick and scaled to `width` metres wide (default 1), with
 `curveSegments` points per curve (default 12). Subpaths inside others are
 holes (an "o", a ring); outlines inside holes are solid again. The path's y
-(down) is flipped to 3D's y (up). All centred on the origin.
+(down) is flipped to 3D's y (up). All centred on the origin. A raw `mesh`
+takes `positions` (flat x, y, z runs), `indices` (triples, counter-clockwise
+from outside), optional `normals` per vertex (flat ones are computed) and
+`colors`, one per face or one per vertex (blended per face), over the
+material's colour: warped beams, terrain, anything exported from a tool.
 
 ```js
 { id: 'star', kind: 'mesh', material: 'gold',
@@ -93,7 +97,9 @@ milestone); the stylized renderers ignore them, so one material serves both.
 
 The scene can have `background` and `fog: { color, near, far }` (metres from
 the camera). A scene with no lights gets a soft default (ambient plus a key
-light from upper right).
+light from upper right). Outlines fade into the fog too. `nearFade: { from, to }` fades geometry
+nearer the camera than `to` metres, gone at `from`, so a dive passes through
+things as if they were glass (also an option of `resolveScene3D`).
 
 ## Animating it
 
@@ -108,8 +114,9 @@ live in the same timeline as everything else.
 | `visible` | any object | 0 or 1 (children hide with their parent) |
 | `opacity` | meshes | 0..1, times the material's |
 | `color` | meshes, lights | a colour, over the material's or light's |
+| `outlineWidth`, `outlineColor` | meshes | px and a colour, over the material's outline (0 switches it off) |
 | `intensity`, `target` | lights | |
-| `fov` / `height`, `lookAt` | cameras | |
+| `fov` / `height`, `lookAt`, `roll` | cameras | |
 | `color`, `width`, `opacity` | lines, trails | |
 | `length` | trails | ms |
 | `activeCamera` | the scene, target `<sceneId>` | a camera's id: **a cut is one keyframe** |
@@ -393,6 +400,18 @@ WebGL2 renderer.
 objects, prepares them once, and each frame returns meshes (shaded and sorted
 with the scene's) and drawables (drawn whole at their depth). Pass it in
 `loadScene3D(scene, { kinds })`.
+
+## Impossible objects
+
+`penroseTriangle3D({ length, thickness, material, id, position, distance })`
+returns three box objects (beams along x, up y and along z, each starting
+where the last ends) and an orthographic camera on the (1, 1, 1) diagonal
+from which the third beam's end meets the first's start on screen. Add the
+objects with a material of that name and the camera, or place your own camera
+along the diagonal; from anywhere else the loop is open. The third corner
+shows the beams' ends as a real sculpture's does. For a clean drawing see the
+2D `penroseTriangle` and `penroseStairs` in
+[Video from code](video-rendering.md#dives-and-impossible-objects).
 
 ## The WebGL2 renderer
 

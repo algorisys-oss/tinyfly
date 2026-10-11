@@ -25,14 +25,23 @@ export function validateScene3D(scene: Scene3D, tracks: ReadonlyArray<{ target: 
     if (object.kind === 'mesh') {
       if (!scene.materials?.[object.material]) errors.push(`"${object.id}" uses material "${object.material}", which is not in materials`)
       const g = object.geometry
-      const sizes =
-        g.type === 'box' || g.type === 'plane' ? g.size
-        : g.type === 'torus' ? [g.radius, g.tube]
-        : g.type === 'sphere' ? [g.radius]
-        : g.type === 'extrude' ? [g.depth, g.width ?? 1]
-        : [g.radius, g.height]
-      if (g.type === 'extrude' && !(typeof g.path === 'string' && /^\s*[Mm]/.test(g.path))) errors.push(`"${object.id}": an extrude needs a path that starts with M`)
-      if (!sizes.every((size) => Number.isFinite(size) && size > 0)) errors.push(`"${object.id}": a ${g.type}'s sizes must be positive`)
+      if (g.type === 'mesh') {
+        const vertices = (g.positions?.length ?? 0) / 3
+        if (!Array.isArray(g.positions) || g.positions.length % 3 !== 0 || vertices < 3) errors.push(`"${object.id}": a mesh needs positions as x, y, z runs for at least three vertices`)
+        if (!Array.isArray(g.indices) || g.indices.length % 3 !== 0 || g.indices.length < 3) errors.push(`"${object.id}": a mesh needs indices in triples`)
+        else if (!g.indices.every((i) => Number.isInteger(i) && i >= 0 && i < vertices)) errors.push(`"${object.id}": a mesh index is out of range`)
+        if (g.normals && g.normals.length !== (g.positions?.length ?? 0)) errors.push(`"${object.id}": a mesh's normals must match its positions`)
+        if (g.colors && g.colors.length !== (g.indices?.length ?? 0) / 3 && g.colors.length !== vertices) errors.push(`"${object.id}": a mesh's colors are one per face or one per vertex`)
+      } else {
+        const sizes =
+          g.type === 'box' || g.type === 'plane' ? g.size
+          : g.type === 'torus' ? [g.radius, g.tube]
+          : g.type === 'sphere' ? [g.radius]
+          : g.type === 'extrude' ? [g.depth, g.width ?? 1]
+          : [g.radius, g.height]
+        if (g.type === 'extrude' && !(typeof g.path === 'string' && /^\s*[Mm]/.test(g.path))) errors.push(`"${object.id}": an extrude needs a path that starts with M`)
+        if (!sizes.every((size) => Number.isFinite(size) && size > 0)) errors.push(`"${object.id}": a ${g.type}'s sizes must be positive`)
+      }
     }
     if (object.kind === 'line' || object.kind === 'trail') {
       if (object.width !== undefined && !(object.width > 0)) errors.push(`"${object.id}": width must be positive`)

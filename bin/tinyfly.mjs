@@ -190,15 +190,19 @@ async function video() {
       if (vttFile) writeFileSync(vttFile, headless.toWebVTT(cues))
       console.error(`captions: ${cues.length} cue(s)`)
     }
-    if (loopCheck) {
+    if (loopCheck || (scene.loop && !stillsDir)) {
+      // A scene that says it loops is checked before any frame is encoded.
       const report = await headless.checkLoop(scene, { baseDir, scale, fps })
       const db = (value) => (Number.isFinite(value) ? `${value.toFixed(2)} dB` : 'identical')
       console.error(`frame at the duration vs the first: ${db(report.closure)}`)
       console.error(`last → first (the seam):           ${db(report.seam)}`)
       console.error(`ordinary steps:                    ${db(report.steps[0])}, ${db(report.steps[1])}`)
       console.error(`${report.loops ? '✓' : '✗'} ${report.verdict}`)
-      if (!report.loops) process.exit(1)
-      return
+      if (!report.loops) {
+        if (!loopCheck) console.error('the scene has `loop: true`; fix the motion (or drop the flag) and render again')
+        process.exit(1)
+      }
+      if (loopCheck) return
     }
     if (stillsDir) {
       // Stills at chosen frames or times, else one per marker step.

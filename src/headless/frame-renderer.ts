@@ -92,6 +92,7 @@ export class FrameRenderer {
     const timeline = this.timeline
     const stateAt = timeline && ((at: number) => timeline.getStateAtTime(heldTime(at, drawingRate)))
     const frame: FrameInfo = { index, time, state, stateAt, width: this.scene.width, height: this.scene.height }
+    if (this.scene.loop) frame.period = this.duration
     const background = this.scene.background ?? '#ffffff'
     if (typeof background !== 'function' && background !== 'transparent') {
       ctx.fillStyle = background

@@ -23,8 +23,10 @@ export interface Scene3D {
   materials?: Record<string, Material3D>
   /** Background colour, or 'transparent' (default) */
   background?: string
-  /** Fog from `near` to `far` metres from the camera, toward `color` */
+  /** Fog from `near` to `far` metres from the camera, toward `color` (outlines fade with it too) */
   fog?: { color: string; near: number; far: number }
+  /** Geometry nearer the camera than `to` metres fades out, gone at `from`: a dive passes through things as if they were glass */
+  nearFade?: { from: number; to: number }
   /** Realistic mode: an equirectangular HDR asset for light and reflections (stylized ignores it) */
   environment?: string
 }
@@ -66,8 +68,15 @@ export interface MeshObject extends ObjectBase {
   material: string
 }
 
-export interface PerspectiveCamera extends ObjectBase {
+interface CameraBase extends ObjectBase {
   kind: 'camera'
+  /** Roll about the view axis, degrees, clockwise on screen (a `roll` track animates it) */
+  roll?: number
+  /** Which way is up for `lookAt` (default +y) */
+  up?: Vec3Tuple
+}
+
+export interface PerspectiveCamera extends CameraBase {
   projection: 'perspective'
   /** Vertical field of view, degrees */
   fov: number
@@ -78,8 +87,7 @@ export interface PerspectiveCamera extends ObjectBase {
   lookAt?: Vec3Tuple
 }
 
-export interface OrthographicCamera extends ObjectBase {
-  kind: 'camera'
+export interface OrthographicCamera extends CameraBase {
   projection: 'orthographic'
   /** Height of the view, metres */
   height: number
@@ -226,6 +234,14 @@ export type Geometry3D =
   | { type: 'torus'; radius: number; tube: number; segments?: number }
   /** An SVG path made solid, `depth` thick, scaled to `width` metres wide (default 1); subpaths inside others are holes */
   | { type: 'extrude'; path: string; depth: number; width?: number; curveSegments?: number }
+  /**
+   * A raw triangle mesh: `positions` as flat x, y, z runs, `indices` as
+   * triples winding counter-clockwise seen from outside, `normals` per
+   * vertex (computed flat when left out), and `colors` per face or per
+   * vertex (one per triangle, or one per vertex blended per face), over the
+   * material's colour. Warped beams, terrain, anything a tool exported.
+   */
+  | { type: 'mesh'; positions: number[]; indices: number[]; normals?: number[]; colors?: string[] }
 
 export interface Material3D {
   // Both modes

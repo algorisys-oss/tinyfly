@@ -9,6 +9,7 @@ import {
   type NarrationPlan,
 } from '../engine/authoring/narration'
 import { assembleNarration, encodeWav } from './narration-audio'
+import { loopSamples } from './loop-audio'
 import { ffmpegDecodeArgs, ffmpegExitError, ffmpegStartError } from './ffmpeg-args'
 
 /**
@@ -77,6 +78,38 @@ export async function voiceNarration(scenes: VoicedScene[], options: VoiceNarrat
   await mkdir(dirname(output), { recursive: true })
   await writeFile(output, encodeWav(assembleNarration(plan, clips, sampleRate), sampleRate))
   return { plan, audio: output }
+}
+
+export interface CutAudioToLoopOptions {
+  /** WAV file to write, relative to `baseDir` */
+  output: string
+  /** The loop's length, ms (a looping scene's duration) */
+  period: number
+  /** The tail blends into the head over this long, ms (default 2% of the period) */
+  crossfade?: number
+  /** Fade in and out, ms (default none): a riser from nothing */
+  fadeIn?: number
+  fadeOut?: number
+  baseDir?: string
+  sampleRate?: number
+  ffmpeg?: string
+}
+
+/**
+ * A drone, a riser or a beat cut to a loop: decode the file, trim it to the
+ * period with its end blended into its start (tiling it first if it is
+ * shorter), and write the WAV to pass as the scene's `audio`.
+ */
+export async function cutAudioToLoop(file: string, options: CutAudioToLoopOptions): Promise<string> {
+  const baseDir = options.baseDir ?? process.cwd()
+  const sampleRate = options.sampleRate ?? 48000
+  const samples = await decodeAudio(resolve(baseDir, file), { sampleRate, ffmpeg: options.ffmpeg ?? 'ffmpeg' })
+  const ms = (value: number | undefined) => (value === undefined ? undefined : Math.round((value * sampleRate) / 1000))
+  const looped = loopSamples(samples, { length: (options.period * sampleRate) / 1000, crossfade: ms(options.crossfade), fadeIn: ms(options.fadeIn), fadeOut: ms(options.fadeOut) })
+  const output = resolve(baseDir, options.output)
+  await mkdir(dirname(output), { recursive: true })
+  await writeFile(output, encodeWav(looped, sampleRate))
+  return output
 }
 
 /** Decode an audio file to mono float samples with ffmpeg. */

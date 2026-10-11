@@ -178,6 +178,15 @@ describe('FrameRenderer', () => {
     expect(pixel(ctx, 17, 2)).toEqual([255, 0, 0])
   })
 
+  it('tells frames the period of a looping scene', () => {
+    const periods: Array<number | undefined> = []
+    const draw = (_ctx: CanvasRenderingContext2D, frame: { period?: number }) => { periods.push(frame.period) }
+    const ctx = createCanvas(20, 20).getContext('2d') as unknown as CanvasRenderingContext2D
+    new FrameRenderer({ width: 20, height: 20, duration: 800, loop: true, draw }).render(ctx, 100)
+    new FrameRenderer({ width: 20, height: 20, duration: 800, draw }).render(ctx, 100)
+    expect(periods).toEqual([800, undefined])
+  })
+
   it('counts frames, times and stills', () => {
     const renderer = new FrameRenderer(scene())
     expect(renderer.frameCount).toBe(10)

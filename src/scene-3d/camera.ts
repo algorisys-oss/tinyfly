@@ -1,15 +1,26 @@
-import { mat4, vec3, type Mat4, type Vec3 } from '../engine/math'
+import { mat4, quat, vec3, type Mat4, type Vec3 } from '../engine/math'
 
 /**
  * Camera matrices and camera moves, as pure functions. A camera looks down
  * its own -z with +y up, as in WebGL and glTF.
  */
 
-/** A view matrix looking from `eye` at `target`, level (when looking straight up or down, -z is "up" instead). */
-export function lookAtView(eye: Vec3, target: Vec3): Mat4 {
+/**
+ * A view matrix looking from `eye` at `target`, level (when looking straight
+ * up or down, -z is "up" instead), with `up` as which way is up and `roll`
+ * degrees of roll about the view axis, clockwise on screen.
+ */
+export function lookAtView(eye: Vec3, target: Vec3, options: { up?: Vec3; roll?: number } = {}): Mat4 {
   const forward = vec3.normalize(vec3.subtract(target, eye))
-  const up: Vec3 = Math.abs(forward[1]) > 0.9999 ? [0, 0, -1] : [0, 1, 0]
-  return mat4.lookAt(eye, target, up)
+  const up: Vec3 = options.up ?? (Math.abs(forward[1]) > 0.9999 ? [0, 0, -1] : [0, 1, 0])
+  return rollView(mat4.lookAt(eye, target, up), options.roll ?? 0)
+}
+
+/** A view matrix rolled about its own axis: `roll` degrees clockwise on screen. */
+export function rollView(view: Mat4, roll: number): Mat4 {
+  if (!roll) return view
+  // Rolling the camera clockwise turns the picture anticlockwise: turn view space the other way.
+  return mat4.multiply(mat4.fromQuat(quat.fromAxisAngle([0, 0, 1], -roll)), view)
 }
 
 /**
