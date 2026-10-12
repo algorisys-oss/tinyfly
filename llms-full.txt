@@ -204,7 +204,7 @@ with a GSAP-style call (durations are in seconds here):
 ```html
 <div class="box" style="width:60px;height:60px;background:#4a9eff"></div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.103.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.104.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -412,7 +412,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.103.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.104.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -1586,6 +1586,15 @@ quickPlay({
 
 Practical examples for common animation patterns using the tinyfly API.
 
+## Colour Anime Cast
+
+Open [Colour Anime Cast](https://tinyfly.app/examples/live-anime-cast) to inspect
+eight male and female characters across children, young adults, adults and
+older adults. Switch expressions, cycle moods, show face close-ups or enable
+a full turnaround. `ANIME_CAST` and `castMember` supply editable JSON options;
+`face.style: 'anime'` uses the same blink, gaze, brow and mouth fields as the
+original face. See [Character Appearance](character-appearance.md#colour-anime-cast).
+
 ## Festive Garba and Dandiya
 
 The [Navratri example](https://tinyfly.app/examples/live-festive-dandiya)
@@ -2299,7 +2308,7 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.103.0/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.104.0/cdn/tinyfly-player.iife.js`.
 
 ---
 
@@ -5658,6 +5667,11 @@ its box; resize the box to change its height. In the property panel:
   Poses that rest on a knee, the hands or the back are set down on the ground.
 - **Face**: an expression (happy, sad, surprised, angry, embarrassed with a
   blush, crying with tears, afraid with a bead of sweat…), or the pose's own.
+  **Face style** switches between Simple and Colour anime. Anime faces have an
+  **Iris colour** and **Eyelashes** toggle; **Age creases** adds subtle facial
+  lines. The Cast picker includes eight colour anime presets for boys, girls,
+  young adults, adults and older adults. The 3D Scene character's Cast picker
+  uses the same presets.
 
 To animate a character, pick a view, a pose and a face, and click
 **◆ Keyframe pose at playhead**. Move the playhead, pick the next pose, and
@@ -6625,7 +6639,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.103.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.104.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed
@@ -7873,7 +7887,13 @@ code: `build` (`child`, `tall`, `short`…), `hair` (a style name, or
 `flat`, `pointed`, `big`) and `outfit: { shirt, trousers, over: 'hoodie' |
 'cardigan' | 'overalls' | 'sari' | 'apron' | 'labCoat', shoes: 'boots' }`.
 `castMember('grandpa', 300)` gives a whole ready-made character to start
-from. Age is hair, glasses and clothes, never a stoop; a `cane` in a hand or
+from. The eight presets in `ANIME_CAST` (`animeBoy`, `animeGirl`,
+`animeYoungMan`, `animeYoungWoman`, `animeMan`, `animeWoman`,
+`animeOlderMan`, `animeOlderWoman`) work through `castMember` too.
+Use `face: { style: 'anime', iris: '#4b7fce', lashes: true, ageLines: 0.6 }`
+for coloured expressive eyes and optional creases; this is a face style,
+not a `look` value. It uses the same expressions, blink, gaze and turn fields.
+Age is proportions, hair, creases and clothes, never a stoop; a `cane` in a hand or
 a `wheelchair()` to ride (`RIDING_POSES.wheeling`) is an accessory any
 character can have. Expressions come from `HUMAN_EXPRESSIONS`
 and are pose fields, as are the face marks `blush`, `tears` and `sweat` (0–1)
@@ -8065,7 +8085,7 @@ path for all of that:
 </figure>
 
 <!-- once, anywhere on the page (a site-wide footer is fine) -->
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.103.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.104.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 Every `[data-tinyfly-embed]` mounts when the page is ready, with no per-post
@@ -9337,8 +9357,8 @@ On a page with no build step, load the maps add-on after the browser bundle; it
 adds to the same `tinyfly` global:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.103.0/cdn/tinyfly.iife.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.103.0/cdn/tinyfly-maps.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.104.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.104.0/cdn/tinyfly-maps.iife.js"></script>
 ```
 
 It is a separate script because the offline world map it carries adds about
@@ -9795,11 +9815,48 @@ cast member at an adult `height` (each stands at their own scale of it). The
 family: `boy`, `girl`, `youngMan`, `youngWoman`, `man`, `woman`, `grandpa`,
 `grandma`; at work (from the occupations sheet): `doctor`, `cook`, `builder`,
 `courier`, `teacher`, `farmer`. `CHARACTER_CAST` has each one's `label`,
-`group` (`family` or `work`), `scale` and `options`.
+`group` (`family`, `work` or `anime`), `scale` and `options`.
 
 ```js
 const family = ['man', 'woman', 'girl', 'grandma'].map((name) => character(castMember(name, 280)))
 ```
+
+### Colour anime cast
+
+`ANIME_CAST` contains eight editable presets, also included in `CHARACTER_CAST`:
+`animeBoy`, `animeGirl`, `animeYoungMan`, `animeYoungWoman`, `animeMan`,
+`animeWoman`, `animeOlderMan`, and `animeOlderWoman`. Children use shorter
+limbs and a larger head; older adults use grey hair and subtle face creases.
+All presets use the same human rig, so existing expressions, acting,
+hand gestures, gaits, dance, and full head/body turns work with them.
+The looks are starting points: any hair, outfit, iris colour or build can be changed.
+
+```js
+const young = character(castMember('animeYoungWoman', 300))
+drawCharacter(ctx, young, humanPose({ ...HUMAN_EXPRESSIONS.surprised, turn: 0.5 }))
+const older = character(castMember('animeOlderMan', 300, {
+  face: { style: 'anime', iris: '#94713e', lashes: false, ageLines: 0.6 }
+}))
+```
+
+For any character, `face: { style: 'anime' }` draws almond-shaped eyes with
+coloured irises and highlights. `iris` sets their colour (default `#4b7fce`),
+`lashes` enables outer lashes (default true), and `ageLines` sets subtle eye
+and smile creases from 0 to 1 (default 0). `style: 'simple'` is the original
+face and remains the default. Face style is separate from the pen's `look`
+(`clean`, `pencil`, or `silhouette`); `look: 'anime'` is not a pen style.
+
+The existing `eye.left`, `eye.right`, `blink`, `lookX`, `lookY`, `pupil`, `lid`,
+`bulge`, brows and mouth fields animate both styles. The coloured eye opening
+narrows with the lids; blink or a fully lowered lid closes it. Far-side eyes
+hide in profile and all face features hide from behind. The style and colours
+are plain JSON; `face.inPupil` remains an optional drawing hook for custom content.
+`castMember` changes replace option objects such as `face` or `outfit` as a whole.
+
+The **Colour Anime Cast** example shows all eight presets, expressions,
+face close-ups and a complete turnaround. Both the Character and 3D Scene
+editors offer these presets in their Cast picker. The Character editor also
+has Face style, Iris colour, Eyelashes and Age creases controls, saved in project JSON.
 
 ## Hugs, help-ups and everyday cycles
 
@@ -14215,7 +14272,7 @@ magnet.addEventListener('pointerleave', () => {
 
 <!-- capabilities: generated from the library -->
 
-# tinyfly capabilities (v0.103.0)
+# tinyfly capabilities (v0.104.0)
 
 Generated from the library itself: every name below is accepted, and names not listed are rejected (beat scripts, code panels and `checkTracks` say which name was probably meant).
 
@@ -14501,8 +14558,9 @@ Appearance options of `character({ … })`, all plain data that turns with the h
 - `facialHair`: `cleanShaven`, `stubble`, `pencilMoustache`, `shortMoustache`, `chevron`, `handlebar`, `walrus`, `goatee`, `vanDyke`, `circleBeard`, `shortBoxed`, `fullBeard`, `longBeard`, `roundedBeard`, `pointedBeard`, `chinStrap`, `soulPatch`, `sideburns`, `muttonChops`, `moustacheStubble`
 - `glasses`: `round`, `square`, `sunglasses`; `hat`: `cap`, `beanie`, `hardHat`, `sunHat`, `bowler`; `ears: true`; `face: { teeth, tongue }` (shown when the mouth opens); `feet`: `round`, `flat`, `pointed`, `big`
 - `outfit`: `{ shirt, trousers, sleeves: short | long | none, bottom: trousers | shorts | skirt, collar, tie: colour, over: apron | labCoat | hoodie | cardigan | overalls | sari, overColor, shoes: boots, shoeColor }`
-- `castMember(name, height)`: `boy`, `girl`, `youngMan`, `youngWoman`, `man`, `woman`, `grandpa`, `grandma`, `doctor`, `cook`, `builder`, `courier`, `teacher`, `farmer`
+- `castMember(name, height)`: `boy`, `girl`, `youngMan`, `youngWoman`, `man`, `woman`, `grandpa`, `grandma`, `doctor`, `cook`, `builder`, `courier`, `teacher`, `farmer`, `animeBoy`, `animeGirl`, `animeYoungMan`, `animeYoungWoman`, `animeMan`, `animeWoman`, `animeOlderMan`, `animeOlderWoman`
 - Face marks (pose fields, 0–1): `blush`, `tears`, `sweat`; close-up fields `pupil` (size, 1 usual), `lid` (upper lids lowered, 0–1), `bulge` (eyes out of the head, 0–1); `face: { nose: true, inPupil(ctx, pupil) }`; `drawCharacterHead(ctx, who, pose, { x, y, radius })` draws just the head big
+- Face styles: `simple`, `anime`; `face: { style: 'anime', iris: '#4b7fce', lashes: true, ageLines: 0.8 }` uses coloured eyes and the same expressions, blinks and gaze. `ANIME_CAST` contains eight age presets, also available through `castMember`.
 - Hair in motion (pose fields): `hair.swing` (degrees round the head, + toward its left), `hair.trail` (head radii back), `hair.lift` (head radii up); key them with `hairFollowTracks(target, tracks, who)` after the character's tracks, or `hairFollow` + `hairMotionAt` when posing per frame
 - `holding`: `mug` (left or right), `phone` (left or right), `book` (one hand or both), `bag` (left or right), `briefcase` (left or right), `umbrella` (left or right), `broom` (left or right), `cane` (left or right), `parcel` (both); pose fields `held.left`, `held.right`, `held.both` (below 0.5 lets go); `handGrip(joints, side)`
 - `meetHands(kind, a, b)` (stand them `meetingSpacing(kind, a, b)` apart): `handshake`, `highFive`, `fistBump`, `handOver`; `embrace(a, b)` (a hug, `embraceSpacing` apart); `helpUp(helper, sitter, progress)` (0 on the floor, hand taken; 1 standing; `helpUpSpacing` apart)

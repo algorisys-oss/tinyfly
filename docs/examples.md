@@ -2,6 +2,15 @@
 
 Practical examples for common animation patterns using the tinyfly API.
 
+## Colour Anime Cast
+
+Open [Colour Anime Cast](https://tinyfly.app/examples/live-anime-cast) to inspect
+eight male and female characters across children, young adults, adults and
+older adults. Switch expressions, cycle moods, show face close-ups or enable
+a full turnaround. `ANIME_CAST` and `castMember` supply editable JSON options;
+`face.style: 'anime'` uses the same blink, gaze, brow and mouth fields as the
+original face. See [Character Appearance](character-appearance.md#colour-anime-cast).
+
 ## Festive Garba and Dandiya
 
 The [Navratri example](https://tinyfly.app/examples/live-festive-dandiya)
@@ -715,7 +724,7 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.103.0/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.104.0/cdn/tinyfly-player.iife.js`.
 
 ---
 

@@ -250,11 +250,48 @@ cast member at an adult `height` (each stands at their own scale of it). The
 family: `boy`, `girl`, `youngMan`, `youngWoman`, `man`, `woman`, `grandpa`,
 `grandma`; at work (from the occupations sheet): `doctor`, `cook`, `builder`,
 `courier`, `teacher`, `farmer`. `CHARACTER_CAST` has each one's `label`,
-`group` (`family` or `work`), `scale` and `options`.
+`group` (`family`, `work` or `anime`), `scale` and `options`.
 
 ```js
 const family = ['man', 'woman', 'girl', 'grandma'].map((name) => character(castMember(name, 280)))
 ```
+
+### Colour anime cast
+
+`ANIME_CAST` contains eight editable presets, also included in `CHARACTER_CAST`:
+`animeBoy`, `animeGirl`, `animeYoungMan`, `animeYoungWoman`, `animeMan`,
+`animeWoman`, `animeOlderMan`, and `animeOlderWoman`. Children use shorter
+limbs and a larger head; older adults use grey hair and subtle face creases.
+All presets use the same human rig, so existing expressions, acting,
+hand gestures, gaits, dance, and full head/body turns work with them.
+The looks are starting points: any hair, outfit, iris colour or build can be changed.
+
+```js
+const young = character(castMember('animeYoungWoman', 300))
+drawCharacter(ctx, young, humanPose({ ...HUMAN_EXPRESSIONS.surprised, turn: 0.5 }))
+const older = character(castMember('animeOlderMan', 300, {
+  face: { style: 'anime', iris: '#94713e', lashes: false, ageLines: 0.6 }
+}))
+```
+
+For any character, `face: { style: 'anime' }` draws almond-shaped eyes with
+coloured irises and highlights. `iris` sets their colour (default `#4b7fce`),
+`lashes` enables outer lashes (default true), and `ageLines` sets subtle eye
+and smile creases from 0 to 1 (default 0). `style: 'simple'` is the original
+face and remains the default. Face style is separate from the pen's `look`
+(`clean`, `pencil`, or `silhouette`); `look: 'anime'` is not a pen style.
+
+The existing `eye.left`, `eye.right`, `blink`, `lookX`, `lookY`, `pupil`, `lid`,
+`bulge`, brows and mouth fields animate both styles. The coloured eye opening
+narrows with the lids; blink or a fully lowered lid closes it. Far-side eyes
+hide in profile and all face features hide from behind. The style and colours
+are plain JSON; `face.inPupil` remains an optional drawing hook for custom content.
+`castMember` changes replace option objects such as `face` or `outfit` as a whole.
+
+The **Colour Anime Cast** example shows all eight presets, expressions,
+face close-ups and a complete turnaround. Both the Character and 3D Scene
+editors offer these presets in their Cast picker. The Character editor also
+has Face style, Iris colour, Eyelashes and Age creases controls, saved in project JSON.
 
 ## Hugs, help-ups and everyday cycles
 

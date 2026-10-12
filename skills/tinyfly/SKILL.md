@@ -16,7 +16,7 @@ before writing anything. It is generated from the installed library: easings,
 track kinds, every canvas property with units and ranges, the stick figure's
 joints, poses, expressions (moods), gags, gaits, beat actions (and the fields
 each needs), dances, flips, hand shapes, the v2 character's builds, hairstyles,
-facial hair, glasses, hats, cast and expressions, the code panel's languages, every surface's
+facial hair, glasses, hats, cast, face styles and expressions, the code panel's languages, every surface's
 anchors and edits (code, board, chart), camera shots, teaching helpers.
 
 For the how-to, read the docs shipped with the package, at the installed
@@ -30,6 +30,12 @@ current values) and what it can do; `animatableProperties(target)` gives the
 names.
 
 ## 2. Write
+
+- Colour anime characters: use `castMember('animeYoungWoman', height)` or any
+  of the eight age presets in `ANIME_CAST`. For a custom character use
+  `face: { style: 'anime', iris: '#4b7fce', lashes: true, ageLines: 0.6 }`.
+  Keep `look` as `clean`, `pencil` or `silhouette`; anime is a face style.
+  The same `HUMAN_EXPRESSIONS`, blink, gaze, turn, acting and dance fields apply.
 
 - Prefer the high-level builders: `scriptTracks()` beats for characters
   (`characterScript(target, who, beats)` for the same beats on a v2

@@ -101,6 +101,14 @@ export interface PupilCircle {
 
 /** What an open mouth shows: a row of upper teeth, and a tongue (default neither, as the plain face); a nose; what is in the pupils. */
 export interface FaceOptions {
+  /** `simple` (default) or colour anime eyes with irises, highlights and expressive lids. Uses the same pose fields. */
+  style?: 'simple' | 'anime'
+  /** Anime iris colour (default blue); plain data, including in scene JSON. */
+  iris?: string
+  /** Anime outer lashes (default true). */
+  lashes?: boolean
+  /** Subtle eye and smile creases, 0..1 (default 0); independent of expression and posture. */
+  ageLines?: number
   teeth?: boolean
   tongue?: boolean
   /** A small nose between the eyes and the mouth (default none) */
@@ -139,10 +147,12 @@ export function drawFace(pen: Pen, head: SolvedHead, pose: Pose, lineWidth: numb
     if (facingAt(ex, EYE_Y) < SHOWN) continue
     const eye = { x: ex, y: EYE_Y }
     const open = eyeOpenness(field(pose, `eye.${name}`, 1), blink)
-    if (open < 0.2) {
+    if (open < 0.2 || (options.style === 'anime' && lid >= 0.98)) {
       // Shut: a lid line, arched up when smiling (a laugh), curved down otherwise.
       const arch = smile > 0.5 ? 0.12 : -0.06
       pen.line(toScreen(quadratic({ x: ex - 0.12, y: EYE_Y }, { x: ex, y: EYE_Y + arch }, { x: ex + 0.12, y: EYE_Y }), eye), thin)
+    } else if (options.style === 'anime') {
+      drawAnimeEye(pen, head, eye, side, open, lid, bulge, pupilSize, lookX, lookY, thin, options, ctx)
     } else {
       // Wide open or bulging: the whites show around the pupil.
       const whites = open > 1.2 || bulge > 0.02
@@ -178,13 +188,14 @@ export function drawFace(pen: Pen, head: SolvedHead, pose: Pose, lineWidth: numb
       }
     }
     // Brow: raised or lowered, and slanted (its inner end is toward the middle).
-    const brow = EYE_Y + 0.3 + field(pose, `brow.${name}`, 0) * 0.14 + Math.max(0, open - 1) * 0.12
+    const brow = EYE_Y + (options.style === 'anime' ? 0.38 : 0.3) + field(pose, `brow.${name}`, 0) * 0.14 + Math.max(0, open - 1) * 0.12
     const outer = { x: ex + side * 0.13, y: brow }
     const inner = { x: ex - side * 0.13, y: brow + browTilt * 0.1 }
     pen.line(toScreen([outer, { x: (outer.x + inner.x) / 2, y: (outer.y + inner.y) / 2 }, inner], { x: ex, y: brow }), thin)
   }
 
   drawMarks(pen, head, pose, thin)
+  drawAgeLines(pen, head, options.ageLines ?? 0, thin)
 
   // Mouth: closed is a curve; open is an O, a grin (flat top) or a wail (flat bottom).
   const mouthCentre = { x: 0, y: MOUTH_Y }
@@ -252,6 +263,76 @@ export function drawFace(pen: Pen, head: SolvedHead, pose: Pose, lineWidth: numb
       const x = half * k
       pen.line(toScreen([{ x, y: yTop(x) }, { x: x * 0.92, y: yTop(x) - t }], mouthCentre), thin * 0.6)
     }
+  }
+}
+
+/** Almond eyes in head coordinates: every feature follows the same turn/nod projection as the plain face. */
+function drawAnimeEye(
+  pen: Pen, head: SolvedHead, eye: Point, side: number, open: number, lid: number, bulge: number,
+  pupilSize: number, lookX: number, lookY: number, thin: number, options: FaceOptions, ctx?: CanvasRenderingContext2D
+): void {
+  const { x: ex, y: ey } = eye
+  const width = 0.21 * (1 + bulge * 0.15)
+  const height = 0.25 * Math.min(open, 1.6) * (1 - lid) * (1 + bulge * 0.3)
+  const left = { x: ex - width, y: ey }
+  const right = { x: ex + width, y: ey }
+  const top = { x: ex, y: ey + height * 1.9 }
+  const bottom = { x: ex, y: ey - height * 1.35 }
+  const upper = quadratic(left, top, right)
+  const lower = quadratic(right, bottom, left)
+  const screen = (points: Point[]) => faceToScreen(head, points, eye).points
+  // Clamp coloured features to the eye opening, also when drawFace is used without a canvas context.
+  const inside = (points: Point[]) => points.map((p) => {
+    const x = Math.min(right.x, Math.max(left.x, p.x))
+    return { x, y: Math.min(quadraticY(left, top, right, x), Math.max(quadraticY(right, bottom, left, x), p.y)) }
+  })
+  pen.shape(screen([...upper, ...lower.slice(1, -1)]), '#ffffff', thin * 0.5)
+  const px = ex + Math.max(-1, Math.min(1, lookX)) * 0.07
+  const py = ey - Math.max(-1, Math.min(1, lookY)) * 0.055
+  const irisX = 0.115
+  const irisY = 0.185
+  pen.shape(screen(inside(ellipse(px, py, irisX, irisY, 24))), options.iris ?? '#4b7fce', thin * 0.4)
+  pen.shape(screen(inside(ellipse(px, py - 0.075, irisX * 0.7, irisY * 0.35))), 'rgba(255,255,255,0.25)', 0)
+  const radius = Math.min(0.085, 0.042 * pupilSize)
+  const pupil = inside(ellipse(px, py, radius, radius * 1.35))
+  pen.shape(screen(pupil), pen.ink, 0)
+  if (options.inPupil && ctx) {
+    const [centre] = screen([{ x: px, y: py }])
+    const r = Math.min(...screen(pupil).map((p) => Math.hypot(p.x - centre.x, p.y - centre.y)))
+    if (r > 0.5) {
+      ctx.save()
+      ctx.beginPath()
+      ctx.arc(centre.x, centre.y, r, 0, Math.PI * 2)
+      ctx.clip()
+      options.inPupil(ctx, { ...centre, r, side: side === 1 ? 'left' : 'right' })
+      ctx.restore()
+    }
+  }
+  pen.shape(screen(inside(ellipse(px - 0.038, py + 0.075, 0.035, 0.045))), '#ffffff', 0)
+  pen.shape(screen(inside(ellipse(px + 0.04, py - 0.04, 0.014, 0.02))), '#ffffff', 0)
+  pen.line(screen(upper), thin * 1.1)
+  if (options.lashes !== false) {
+    for (const offset of [0, 0.035]) {
+      const x = ex + side * (width - offset)
+      const y = quadraticY(left, top, right, x)
+      pen.line(screen([{ x, y }, { x: x + side * 0.055, y: y + 0.07 }]), thin * 0.75)
+    }
+  }
+}
+
+function drawAgeLines(pen: Pen, head: SolvedHead, amount: number, thin: number): void {
+  const strength = Math.min(1, Math.max(0, amount))
+  if (strength <= 0) return
+  for (const side of [-1, 1]) {
+    const centre = { x: side * 0.59, y: EYE_Y }
+    if (faceToScreen(head, [], centre).facing < SHOWN) continue
+    for (const slope of [-0.06, 0.035]) {
+      const points = [{ x: centre.x, y: centre.y }, { x: centre.x + side * 0.1, y: centre.y + slope }]
+      pen.line(faceToScreen(head, points, centre).points, thin * 0.45 * strength)
+    }
+    const cheek = { x: side * 0.3, y: -0.38 }
+    const crease = quadratic({ x: cheek.x, y: -0.31 }, { x: cheek.x + side * 0.07, y: -0.4 }, { x: cheek.x + side * 0.035, y: -0.49 })
+    pen.line(faceToScreen(head, crease, cheek).points, thin * 0.35 * strength)
   }
 }
 

@@ -315,6 +315,12 @@ export interface CharacterElement extends BaseElement {
   /** Show teeth, a tongue, when the mouth opens */
   teeth?: boolean
   tongue?: boolean
+  /** Face drawing style; expressions still use the normal pose fields. */
+  faceStyle?: 'simple' | 'anime'
+  irisColor?: string
+  eyeLashes?: boolean
+  /** Subtle age creases, 0..1. */
+  ageLines?: number
   /** The feet's shape (`FOOT_SHAPES`; default round) */
   feet?: string
   /** What each hand holds (`HELD_ITEMS` names); a `held.*` track lets go */

@@ -95,7 +95,13 @@ code: `build` (`child`, `tall`, `short`…), `hair` (a style name, or
 `flat`, `pointed`, `big`) and `outfit: { shirt, trousers, over: 'hoodie' |
 'cardigan' | 'overalls' | 'sari' | 'apron' | 'labCoat', shoes: 'boots' }`.
 `castMember('grandpa', 300)` gives a whole ready-made character to start
-from. Age is hair, glasses and clothes, never a stoop; a `cane` in a hand or
+from. The eight presets in `ANIME_CAST` (`animeBoy`, `animeGirl`,
+`animeYoungMan`, `animeYoungWoman`, `animeMan`, `animeWoman`,
+`animeOlderMan`, `animeOlderWoman`) work through `castMember` too.
+Use `face: { style: 'anime', iris: '#4b7fce', lashes: true, ageLines: 0.6 }`
+for coloured expressive eyes and optional creases; this is a face style,
+not a `look` value. It uses the same expressions, blink, gaze and turn fields.
+Age is proportions, hair, creases and clothes, never a stoop; a `cane` in a hand or
 a `wheelchair()` to ride (`RIDING_POSES.wheeling`) is an accessory any
 character can have. Expressions come from `HUMAN_EXPRESSIONS`
 and are pose fields, as are the face marks `blush`, `tears` and `sweat` (0–1)

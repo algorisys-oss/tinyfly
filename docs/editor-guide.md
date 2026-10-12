@@ -168,6 +168,11 @@ its box; resize the box to change its height. In the property panel:
   Poses that rest on a knee, the hands or the back are set down on the ground.
 - **Face**: an expression (happy, sad, surprised, angry, embarrassed with a
   blush, crying with tears, afraid with a bead of sweat…), or the pose's own.
+  **Face style** switches between Simple and Colour anime. Anime faces have an
+  **Iris colour** and **Eyelashes** toggle; **Age creases** adds subtle facial
+  lines. The Cast picker includes eight colour anime presets for boys, girls,
+  young adults, adults and older adults. The 3D Scene character's Cast picker
+  uses the same presets.
 
 To animate a character, pick a view, a pose and a face, and click
 **◆ Keyframe pose at playhead**. Move the playhead, pick the next pose, and
@@ -1135,7 +1140,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.103.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.104.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed

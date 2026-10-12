@@ -1,5 +1,13 @@
 # tinyfly Development Progress
 
+## Colour anime characters
+
+- [x] Eight editable anime cast presets: children, young adults, adults and older adults, male and female
+- [x] Native coloured anime eyes, irises, highlights, lashes and subtle age creases
+- [x] Shared expressions, gaze, blink, lids and full turnarounds; original simple face preserved
+- [x] Character and 3D Scene cast pickers; serializable Character face controls
+- [x] Colour Anime Cast example with expressions, close-ups and turnarounds
+
 ## Phase 1: Core Engine ✓
 
 - [x] Set up Vite + SolidJS + TypeScript project

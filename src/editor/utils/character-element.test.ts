@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { createSceneStore, type CharacterElement } from '../stores/scene-store'
-import { characterElementPose, characterElementTarget, characterOf } from './character-element'
+import { characterElementPose, characterElementTarget, characterOf, castElementFields } from './character-element'
 import { trackPropertyLabel } from './track-labels'
 import { sceneElementToCanvasTarget } from './scene-to-canvas'
 import { characterJoints, humanPose } from '../../characters'
@@ -22,6 +22,20 @@ const stateWith = (target: string, values: Record<string, number>): AnimationSta
 })
 
 describe('character elements', () => {
+  it('preserves anime cast appearance through saved editor JSON and clears it for a regular cast', () => {
+    const store = createSceneStore()
+    store.addElement('character', { ...castElementFields('animeOlderWoman'), x: 0, y: 0, width: 150, height: 250 })
+    const saved = JSON.parse(JSON.stringify(store.exportElements()))
+    const restored = createSceneStore()
+    restored.loadElements(saved)
+    const element = restored.elements()[0] as CharacterElement
+    expect(characterOf(element).face).toMatchObject({ style: 'anime', iris: '#7a6998', ageLines: 0.8 })
+    expect(element.build).toMatchObject({ headSize: 0.25, proportions: 'thin' })
+    expect(element.hands).toBe('natural')
+    expect(element.shoes).toBe('boots')
+    expect(characterOf({ ...element, ...castElementFields('boy') }).face.style).toBeUndefined()
+  })
+
   it('pose: rest, then the element pose, then animated values by name or id', () => {
     const element = aCharacter({ pose: { turn: 1, 'arm.right.spread': 90 } })
     expect(characterElementPose(element)).toMatchObject({ ...HUMAN_REST, turn: 1, 'arm.right.spread': 90 })

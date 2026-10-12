@@ -94,6 +94,8 @@ export interface Capabilities {
     poses: string[]
     dances: string[]
     expressions: string[]
+    /** `face.style`, independent of the pen's `look`. */
+    faceStyles: string[]
     gags: string[]
     /** `build` option */
     builds: string[]
@@ -225,6 +227,7 @@ export function capabilities(version?: string, cast: Cast = {}): Capabilities {
       poses: Object.keys(HUMAN_POSES),
       dances: Object.keys(HUMAN_DANCES),
       expressions: Object.keys(HUMAN_EXPRESSIONS),
+      faceStyles: ['simple', 'anime'],
       gags: Object.keys(HUMAN_GAGS),
       builds: Object.keys(HUMAN_BUILDS),
       hair: Object.keys(HAIR_STYLES),
@@ -405,6 +408,7 @@ export function capabilitiesMarkdown(version?: string, cast: Cast = {}): string 
     '- `outfit`: `{ shirt, trousers, sleeves: short | long | none, bottom: trousers | shorts | skirt, collar, tie: colour, over: apron | labCoat | hoodie | cardigan | overalls | sari, overColor, shoes: boots, shoeColor }`',
     `- \`castMember(name, height)\`: ${list(c.character.cast)}`,
     '- Face marks (pose fields, 0–1): `blush`, `tears`, `sweat`; close-up fields `pupil` (size, 1 usual), `lid` (upper lids lowered, 0–1), `bulge` (eyes out of the head, 0–1); `face: { nose: true, inPupil(ctx, pupil) }`; `drawCharacterHead(ctx, who, pose, { x, y, radius })` draws just the head big',
+    `- Face styles: ${list(c.character.faceStyles)}; \`face: { style: 'anime', iris: '#4b7fce', lashes: true, ageLines: 0.8 }\` uses coloured eyes and the same expressions, blinks and gaze. \`ANIME_CAST\` contains eight age presets, also available through \`castMember\`.`,
     '- Hair in motion (pose fields): `hair.swing` (degrees round the head, + toward its left), `hair.trail` (head radii back), `hair.lift` (head radii up); key them with `hairFollowTracks(target, tracks, who)` after the character\'s tracks, or `hairFollow` + `hairMotionAt` when posing per frame',
     `- \`holding\`: ${Object.entries(c.character.heldItems).map(([name, hands]) => `\`${name}\` (${hands === 'both' ? 'both' : hands === 'either' ? 'one hand or both' : 'left or right'})`).join(', ')}; pose fields \`held.left\`, \`held.right\`, \`held.both\` (below 0.5 lets go); \`handGrip(joints, side)\``,
     `- \`meetHands(kind, a, b)\` (stand them \`meetingSpacing(kind, a, b)\` apart): ${list(c.character.handMeetings)}; \`embrace(a, b)\` (a hug, \`embraceSpacing\` apart); \`helpUp(helper, sitter, progress)\` (0 on the floor, hand taken; 1 standing; \`helpUpSpacing\` apart)`,

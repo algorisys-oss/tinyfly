@@ -15,13 +15,67 @@ import { HAIR_COLORS } from './head/hair'
 export interface CastMember {
   /** What to call them in a picker */
   label: string
-  /** `family` (ages and looks) or `work` (dressed for a job, from the occupations sheet) */
-  group: 'family' | 'work'
+  /** A family, occupation, or colour anime preset. */
+  group: 'family' | 'work' | 'anime'
   /** Height next to an adult (1) */
   scale: number
   /** Everything else about them */
   options: Omit<CharacterOptions, 'height'>
 }
+
+/** Colour anime starting points, using the same human rig, face fields, clothes and head turns as the original cast. */
+export const ANIME_CAST = {
+  animeBoy: {
+    label: 'Anime boy', group: 'anime', scale: 0.68,
+    options: { figure: 'fluid', look: 'clean', proportions: 'thin', build: 'child', headSize: 0.34, skin: '#f2c7a5', ink: '#302c48', ears: true, hands: 'cartoon', handStyle: 'natural',
+      hair: { style: 'spiky', color: '#263c68' }, face: { style: 'anime', iris: '#318fa5', lashes: false },
+      outfit: { shirt: '#efac45', trousers: '#375a91', bottom: 'shorts', shoes: 'boots' } },
+  },
+  animeGirl: {
+    label: 'Anime girl', group: 'anime', scale: 0.68,
+    options: { figure: 'fluid', look: 'clean', proportions: 'thin', build: 'child', headSize: 0.34, skin: '#e8ad8c', ink: '#302c48', ears: true, hands: 'cartoon', handStyle: 'natural',
+      hair: { style: 'bob', color: '#4f304e' }, face: { style: 'anime', iris: '#9d5f32' },
+      outfit: { shirt: '#e9779f', trousers: '#5c4c86', bottom: 'shorts', shoes: 'boots' } },
+  },
+  animeYoungMan: {
+    label: 'Anime young man', group: 'anime', scale: 1,
+    options: { figure: 'fluid', look: 'clean', proportions: 'thin', build: 'tall', headSize: 0.23, skin: '#efbf9c', ink: '#302c48', ears: true, hands: 'cartoon', handStyle: 'natural',
+      hair: { style: 'spiky', color: '#243552' }, face: { style: 'anime', iris: '#507bcc', lashes: false },
+      outfit: { shirt: '#57bbc0', trousers: '#334967', sleeves: 'long', over: 'hoodie', overColor: '#57bbc0', shoes: 'boots' } },
+  },
+  animeYoungWoman: {
+    label: 'Anime young woman', group: 'anime', scale: 1,
+    options: { figure: 'fluid', look: 'clean', proportions: 'thin', build: 'slim', headSize: 0.23, skin: '#f3cbb4', ink: '#302c48', ears: true, hands: 'cartoon', handStyle: 'natural',
+      hair: { style: 'highPonytail', color: '#773853' }, face: { style: 'anime', iris: '#9163c4' },
+      outfit: { shirt: '#ae7cda', trousers: '#35456c', sleeves: 'long', shoes: 'boots' } },
+  },
+  animeMan: {
+    label: 'Anime man', group: 'anime', scale: 1,
+    options: { figure: 'fluid', look: 'clean', proportions: 'thin', build: 'broad', headSize: 0.23, skin: '#b67f62', ink: '#302c48', ears: true, hands: 'cartoon', handStyle: 'natural',
+      hair: { style: 'sidePart', color: '#302839' }, face: { style: 'anime', iris: '#9b713b', lashes: false },
+      outfit: { shirt: '#677aab', trousers: '#343848', sleeves: 'long', collar: true, shoes: 'boots' } },
+  },
+  animeWoman: {
+    label: 'Anime woman', group: 'anime', scale: 1,
+    options: { figure: 'fluid', look: 'clean', proportions: 'thin', build: 'standard', headSize: 0.23, skin: '#d59a73', ink: '#302c48', ears: true, hands: 'cartoon', handStyle: 'natural',
+      hair: { style: 'shoulderWaves', color: '#382c4c' }, face: { style: 'anime', iris: '#2b8f82' },
+      outfit: { shirt: '#df6c79', trousers: '#46506c', sleeves: 'long', bottom: 'skirt', shoes: 'boots' } },
+  },
+  animeOlderMan: {
+    label: 'Anime older man', group: 'anime', scale: 1,
+    options: { figure: 'fluid', look: 'clean', proportions: 'thin', build: 'stocky', headSize: 0.25, skin: '#e0b291', ink: '#302c48', ears: true, hands: 'cartoon', handStyle: 'natural',
+      hair: { style: 'receding', color: '#b8c4d1' }, facialHair: { style: 'shortBoxed', color: '#dae0e8' }, face: { style: 'anime', iris: '#557c8b', lashes: false, ageLines: 0.8 },
+      outfit: { shirt: '#9c846c', trousers: '#46505c', sleeves: 'long', collar: true, shoes: 'boots' } },
+  },
+  animeOlderWoman: {
+    label: 'Anime older woman', group: 'anime', scale: 1,
+    options: { figure: 'fluid', look: 'clean', proportions: 'thin', build: 'standard', headSize: 0.25, skin: '#c4947b', ink: '#302c48', ears: true, hands: 'cartoon', handStyle: 'natural',
+      hair: { style: 'topBun', color: '#d1d3df' }, face: { style: 'anime', iris: '#7a6998', ageLines: 0.8 },
+      outfit: { shirt: '#6d9b93', trousers: '#66597a', sleeves: 'long', over: 'cardigan', overColor: '#6d9b93', shoes: 'boots' } },
+  },
+} satisfies Record<string, CastMember>
+
+export type AnimeCastName = keyof typeof ANIME_CAST
 
 export const CHARACTER_CAST = {
   boy: {
@@ -115,6 +169,7 @@ export const CHARACTER_CAST = {
     scale: 0.97,
     options: { build: 'stocky', hair: { style: 'shoulderStraight', color: HAIR_COLORS.blond }, hat: 'sunHat', ears: true, outfit: { shirt: '#d64535', trousers: '#4f6b3a', sleeves: 'long' } },
   },
+  ...ANIME_CAST,
 } satisfies Record<string, CastMember>
 
 export type CastName = keyof typeof CHARACTER_CAST

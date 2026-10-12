@@ -1860,6 +1860,27 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
 
       <h4>Head</h4>
       <div class="property-row">
+        <label>Face style</label>
+        <select value={element.faceStyle ?? 'simple'} onChange={(e) => updateElement({ faceStyle: e.currentTarget.value as CharacterElement['faceStyle'] })}>
+          <option value="simple">Simple</option>
+          <option value="anime">Colour anime</option>
+        </select>
+      </div>
+      <Show when={element.faceStyle === 'anime'}>
+        <div class="property-row">
+          <label>Iris colour</label>
+          <input type="color" value={element.irisColor ?? '#4b7fce'} onInput={handleColorChange('irisColor')} />
+        </div>
+        <div class="property-row">
+          <label>Eyelashes</label>
+          <input type="checkbox" checked={element.eyeLashes ?? true} onChange={(e) => updateElement({ eyeLashes: e.currentTarget.checked })} />
+        </div>
+      </Show>
+      <div class="property-row">
+        <label>Age creases</label>
+        <input type="range" min="0" max="1" step="0.05" value={element.ageLines ?? 0} onInput={(e) => updateElement({ ageLines: Number(e.currentTarget.value) })} />
+      </div>
+      <div class="property-row">
         <label>Cast</label>
         <select
           value=""

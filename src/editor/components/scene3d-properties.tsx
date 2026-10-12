@@ -3,7 +3,7 @@ import type { Component } from 'solid-js'
 import type { EditorStore } from '../stores/editor-store'
 import type { Scene3DElement } from '../stores/scene-store'
 import type { CameraObject, CharacterObject3D, LightObject, Material3D, MeshObject, Object3D, PropObject3D, Scene3D } from '../../scene-3d'
-import { PROP_PRESETS } from '../../characters'
+import { PROP_PRESETS, CHARACTER_CAST, type CastName } from '../../characters'
 import { orbitPosition } from '../../scene-3d'
 import { CHARACTER_DANCES, characterDanceTracks, mergeKeyframes, type CharacterDanceName } from '../utils/character-dance'
 import { freeObjectId } from '../utils/scene3d-element'
@@ -274,6 +274,24 @@ export const Scene3DProperties: Component<Props> = (props) => {
             </Show>
 
             <Show when={current().kind === 'character'}>
+              <div class="property-row">
+                <label>Cast</label>
+                <select value="" onChange={(e) => {
+                  const name = e.currentTarget.value as CastName
+                  if (!name) return
+                  const member = CHARACTER_CAST[name]
+                  const c = current() as CharacterObject3D
+                  const options = member.options as Record<string, unknown>
+                  replaceObject(c.id, { ...c, look: 'pen', height: 1.7 * member.scale, character: {
+                    ...c.character, ...options, face: options.face ?? {},
+                    facialHair: options.facialHair ?? null, glasses: options.glasses ?? null, hat: options.hat ?? null,
+                  } })
+                  e.currentTarget.value = ''
+                }}>
+                  <option value="">Dress as…</option>
+                  <For each={Object.entries(CHARACTER_CAST)}>{([name, member]) => <option value={name}>{member.label}</option>}</For>
+                </select>
+              </div>
               <div class="property-row">
                 <label>Look</label>
                 <select
