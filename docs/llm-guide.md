@@ -274,3 +274,11 @@ The solid mesh head and contact bounds retain their existing geometry.
 For the original stick figure use `style.armLength` (positive finite, default 1)
 in `drawStickFigure`, `stickFigureJoints` or `stickFigureTarget`; it changes
 both arm segments, with hands and the rest of the body keeping their sizes.
+
+### Full-page example previews
+
+Catalog cards offer **Open full page** at `/examples/<id>/full`: a shareable
+new-tab player using the same standalone HTML as Copy code. Live demos,
+timeline examples and editable sample scenes play with their own controls
+and scrolling, without the gallery panels. Use these URLs when sharing an
+example for visual review.

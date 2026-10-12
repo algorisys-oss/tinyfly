@@ -7,6 +7,7 @@ import { Splash } from './splash'
 // front page does not download the editor, the exporters or the docs.
 const Editor = lazy(() => import('./editor').then((m) => ({ default: m.Editor })))
 const ExamplesPage = lazy(() => import('./examples/examples-page').then((m) => ({ default: m.ExamplesPage })))
+const FullExamplePage = lazy(() => import('./examples/full-example-page'))
 const ExamplePage = lazy(() => import('./examples/example-page').then((m) => ({ default: m.ExamplePage })))
 const ShowcasePage = lazy(() => import('./examples/showcase-page').then((m) => ({ default: m.ShowcasePage })))
 const DocsViewer = lazy(() => import('./docs').then((m) => ({ default: m.DocsViewer })))
@@ -31,6 +32,7 @@ function App() {
           {/* The editor was at /app in v0.56–v0.58; keep those links (and ?example=) working. */}
           <Route path="/app" component={() => <Navigate href={`/studio${window.location.search}`} />} />
           <Route path="/examples" component={ExamplesPage} />
+          <Route path="/examples/:id/full" component={FullExamplePage} />
           <Route path="/examples/:id" component={ExamplePage} />
           <Route path="/showcase/:id" component={ShowcasePage} />
           {/* The gallery and the editor's Samples dialog merged into /examples. */}

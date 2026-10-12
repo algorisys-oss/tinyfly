@@ -1,3 +1,10 @@
+## Full-page example views
+
+- [x] Open full page action on live, timeline and editable catalog cards and individual example pages.
+- [x] Shareable `/examples/<id>/full` player with controls, independent scrolling and a full viewport.
+- [x] Reuse existing standalone HTML and release-pinned bundles; friendly missing-example state.
+- [x] Verify new-tab navigation, animation, controls, all example kinds and mobile fit in Chromium.
+
 ## Young adult manga cast and original stick-figure proportions
 
 - [x] Four original editable young adult manga presets with angular jaws, tapered chins and narrower expressive eyes.

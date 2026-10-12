@@ -84,6 +84,13 @@ const CardHeader: Component<{ example: Example }> = (props) => {
   )
 }
 
+/** A shareable full-viewport player, opened independently of the gallery. */
+const FullPageLink: Component<{ example: Example }> = (props) => (
+  <A class="secondary-btn open-full-page-btn" href={`/examples/${props.example.id}/full`} target="_blank" rel="noopener" title="Open the example with all its controls in a full page">
+    Open full page ↗
+  </A>
+)
+
 /**
  * An example made in the editor. Shows a still frame; plays while hovered (or
  * after Play, for touch screens). "Open in editor" loads it into a new project.
@@ -171,6 +178,7 @@ const EditableExampleCard: Component<{ example: EditableExample } & CardProps> =
           {isPlaying() ? 'Stop' : 'Play'}
         </button>
         <div class="example-controls-right">
+          <FullPageLink example={props.example} />
           <CopyCodeButton getCode={() => editableExamplePage(props.example.sample)} />
           <button class="open-btn" onClick={() => navigate(`/studio?example=${encodeURIComponent(props.example.id)}`)}>
             Open in editor
@@ -271,6 +279,7 @@ const CodeExampleCard: Component<{ example: CodeCatalogExample } & CardProps> = 
           </button>
         </div>
         <div class="example-controls-right">
+          <FullPageLink example={props.example} />
           <CopyCodeButton getCode={() => timelineExamplePage(code, markupCss)} />
           <button class="play-btn" onClick={togglePlay}>
             {isPlaying() ? 'Stop' : 'Play'}
@@ -351,6 +360,7 @@ const LiveExampleCard: Component<{ example: LiveCatalogExample } & CardProps> = 
         <button class="secondary-btn" onClick={() => (isRunning() ? stop() : start())}>
           {isRunning() ? 'Stop' : 'Run'}
         </button>
+        <FullPageLink example={props.example} />
         <CopyCodeButton getCode={() => liveDemoPage(demo)} />
       </div>
 

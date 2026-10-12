@@ -2,6 +2,15 @@
 
 Practical examples for common animation patterns using the tinyfly API.
 
+## Open examples full page
+
+Click **Open full page** on any live, timeline or editable example card,
+including its individual example page. It opens a separate tab at the
+shareable URL `/examples/<id>/full`. The example plays immediately, with
+its own controls and scrolling in a full viewport; gallery panels and code
+sections remain in the original tab. **Copy code** exports the same standalone
+HTML. [Try the manga example](https://tinyfly.app/examples/live-manga-cast/full).
+
 ## Young Adult Manga Cast
 
 [Young Adult Manga Cast](https://tinyfly.app/examples/live-manga-cast) shows
@@ -734,7 +743,7 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.105.0/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.106.0/cdn/tinyfly-player.iife.js`.
 
 ---
 

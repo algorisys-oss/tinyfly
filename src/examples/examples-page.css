@@ -748,3 +748,7 @@
     padding: 16px;
   }
 }
+
+/* Full-page links share the card actions' button appearance. */
+.open-full-page-btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; white-space: nowrap; }
+.example-controls, .example-controls-right { flex-wrap: wrap; }
