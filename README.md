@@ -55,7 +55,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Immediate mode too** - A scene's `background` and `draw(ctx, { time })` functions paint each frame directly, Cairo/Processing-style, and mix freely with timeline targets
 - **Timing from narration** - `planNarration()` lays spoken lines out from their clip lengths (lead, gap, tail) into cues, scene spans and markers; `voiceNarration()` measures recorded clips with ffmpeg and writes the sample-aligned narration WAV
 - **Characters** - A poseable stick figure (`@algorisys/tinyfly/characters`): named poses, facial expressions (brows, eyes that widen, close and look around, mouth shapes), squash and stretch, rubber-hose limbs, blending, walk cycles and talking, all driven by timeline tracks. **Characters v2**: one skeleton in 3D drawn flat, turning front to side to back, resting on whatever touches the ground, reaching for points, in clean, pencil or silhouette looks, and a 🧍 Character element in the editor you pose and keyframe. **Character appearance**: 34 hairstyles, 20 facial-hair styles, glasses, hats and ears as plain data on the head (they turn with it through all eight views), builds from toddler to tall, a recurring cast (`castMember`), 30 expressions with blush, tears and sweat, and hair that swings after a turn or a run and settles (`hairFollowTracks` keys the lag from the character's own tracks, so drawing stays stateless); four-legged animals' ears lay back on a run the way their tails already trail. Clothes are data too (`outfit.over`: an apron, a lab coat, a hoodie, a cardigan, overalls, a sari; boots), a mouth opens on teeth and a tongue, feet come in shapes, two people hug and help each other up (`embrace`, `helpUp`), and a cane in the hand or a wheelchair to ride are accessories any character can have, not part of an age ([guide](docs/character-appearance.md))
-- **Dance and flips** - The stick figure dances disco, hip hop, breaking toprock, jazz, K-pop, Bollywood, Bhangra, Bharatanatyam (with mudras), the Charleston, tap (foot strikes as data, for tap sounds) and popping (side glide, moonwalk, forward glide, which travel with the planted foot staying put), and does front, back, layout, scissor and side flips, cartwheels, back handsprings, split leaps, toe touches and full splits. Wrists, ankles, foot turn-out, whole-body `spin` and `rise` are pose fields; moves are keyed in beats, so any tempo plays them; styles, grooves and routines are plain JSON (`danceFrame()`, `danceTracks()`, `flipPose()`, `flipTracks()`). In the editor a 🧍 Character dances from the playhead, in time with the music: an Audio element's tempo is detected (`detectTempo()`) or tapped, the timeline shows its beats and bars, and keyframes snap to them. See [docs/dance.md](docs/dance.md)
+- **Dance and flips** - The stick figure dances disco, hip hop, breaking toprock, jazz, K-pop, Bollywood, Bhangra, Bharatanatyam (with mudras), the Charleston, tap (foot strikes as data, for tap sounds) and popping (side glide, moonwalk, forward glide, which travel with the planted foot staying put), and does front, back, layout, scissor and side flips, cartwheels, back handsprings, split leaps, toe touches and full splits. Wrists, ankles, foot turn-out, whole-body `spin` and `rise` are pose fields; moves are keyed in beats, so any tempo plays them; styles, grooves and routines are plain JSON (`danceFrame()`, `danceTracks()`, `flipPose()`, `flipTracks()`). In the editor a 🧍 Character dances from the playhead, in time with the music: an Audio element's tempo is detected (`detectTempo()`) or tapped, the timeline shows its beats and bars, and keyframes snap to them. Native v2 garba (two/three clap) and dandiya add body-local poses, circle formations with planted toes, paired stick-tip contacts, and timed full spins (`humanDanceFrame`, `danceCircleTracks`, `meetDandiya`, `characterScript3D`). Sparse custom keys keep numeric hand and pose values through JSON playback; rolled circles preserve native yaw-before-roll and foot grounding. Foot IK preserves authored hip turn-out for ankle and toe plants. Scripted dance entry preserves relaxed or explicitly posed hands through preceding holds. Script action boundaries retain preceding easing; festive examples solve contacts with their rendered body options. See [docs/dance.md](docs/dance.md)
 - **Maps** - Animated maps on OpenStreetMap tiles or an offline world outline (also in pencil): the camera flies in, pins drop, routes draw themselves while a marker travels them; a 🗺 Map element in the editor with a one-click trip
 - **Pencil sketch style** - Hand-drawn strokes with line boil (`sketch` style, `sketchPen`) for a pencil-test, Pencilmation-like look, on the stick figure and on canvas rect / circle / line / path shapes (also from the editor's Properties panel); a `drawOn` track draws any of those shapes on; the wobble is seeded by time, so renders stay deterministic
 - **The drawing hand** - `drawnPathTarget()` draws a sketched stroke on from a `draw` track while a cartoon hand holds the pencil at its end in a writing grip; the same hand can hold the eraser. `handAt()` gives one hand for a whole scene: it follows each stroke, lifts and glides to the next, and enters and leaves the page
@@ -136,6 +136,11 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Landing page** - `/` introduces tinyfly with tinyfly itself: a masked headline, a pointer-led canvas, a live code playground that shows the JSON its code compiles to, a pinned feature story, a gallery and a copyable script tag, with a reduced-motion mode. It loads without the editor, which lives at `/studio` (lazy-loaded, as are Examples, Showcase and Docs)
 - **Learn** - An interactive course at `/learn`: short steps with live code, a preview you can scrub, and checks that read what your code compiled to. Nine modules, 28 lessons, 67 steps: Foundations (animation as JSON), the GSAP-style API, the Editor (build in the studio, Copy JSON, compare with code), Motion craft (timing, anticipation, springs), Text and SVG, Interaction (hover, quickTo, drag and throw, Flip, canvas), Scroll (reveals, scrub, pinning, velocity, smooth scrolling with parallax), Accessibility and performance (a real reduced-motion mode, keyboard parity, transforms, pausing off-screen work), and a Capstone that rebuilds the Agency Landing Page section by section, from the pointer-lit hero canvas to the magnetic button. Mistakes that would fail silently (a selector that matches nothing, `drawSVG` on a non-shape, a spring on a colour) show as plain-language warnings beside the code, and the last step of each module offers **Copy as page** and, for JSON lessons, **Open in editor**. The course is also in `llms-full.txt`
 - **Examples** - One page (`/examples`, the **Examples** toolbar button), and a shareable page for every example at `/examples/<id>` for every ready-made animation: editable examples open in the editor as a new project, code examples show their timeline JSON and HTML to copy. Includes a full-page **Agency Landing Page** showcase and a **GSAP-style** section of 41 runnable `live.to()` demos (Flip layouts and shared elements, pinned horizontal scroll, line mask reveals, spring release, canvas from object tweens, motion paths, orbits, shape and menu morphs, scramble text, draggable throws, swipe cards, 3D card flips, magnetic button, proximity grid, marquee, split text, SVG draw…), and every card has **Copy code** for a complete standalone HTML page. Hover-to-play previews, search, and filters for kind and category (GSAP-style, Showcase, Basics, Motion, Text, UI, Loaders, Effects, Data, Camera, Scroll, and **Algorisys** product demos)
+
+Try [Navratri: Festive Garba & Dandiya](https://tinyfly.app/examples/live-festive-dandiya):
+six dancers circle with decorated clothes and sticks, partner strikes and
+half/full spins. Its [headless scene](examples/headless-video/festive-dandiya.mjs)
+renders the same 24-second loop to video, without bundled audio.
 
 ## Documentation
 
@@ -237,7 +242,7 @@ GSAP-shaped functions at the top level. Teaching embeds are included: add
 itself.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.102.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.103.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -273,7 +278,7 @@ A teaching figure needs no code at all:
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON with markers… }</script>
   <figcaption>Appending to a full slice</figcaption>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.102.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.103.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
 ```
 
 See [Teaching Animations](docs/teaching.md).
@@ -372,7 +377,7 @@ Without a build step, the player bundle puts the same functions on a `tinyfly` g
   <div data-tinyfly="box" style="width: 60px; height: 60px; background: #4a9eff;"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.102.0/cdn/tinyfly-player.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.103.0/cdn/tinyfly-player.iife.js"></script>
 <script>
   tinyfly.play('#animation', './animation.json', { loop: -1 })
 </script>
@@ -481,7 +486,7 @@ Or skip the code entirely with declarative embeds (see [Teaching Animations](doc
   <svg viewBox="0 0 720 200">…</svg>
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON… }</script>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.102.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.103.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 ### Audio / Video Sync
@@ -723,6 +728,12 @@ npm run e2e
 # Build for production
 npm run build
 ```
+
+The private repository's `.no-mistakes.yaml` selects the Codex reviewer and
+uses `npm run test:run -- --maxWorkers 2` for tests and
+`npx tsc -p tsconfig.app.json --noEmit` for its lint/type check.
+It is excluded from the OSS mirror; the project needs no runtime configuration
+for this validation.
 
 ### Publishing to npm
 

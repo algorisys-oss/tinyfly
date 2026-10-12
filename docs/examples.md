@@ -2,8 +2,29 @@
 
 Practical examples for common animation patterns using the tinyfly API.
 
+## Festive Garba and Dandiya
+
+The [Navratri example](https://tinyfly.app/examples/live-festive-dandiya)
+appears under 3D, Showcase, Video and Algorisys. Six festively dressed dancers
+circle, strike larger decorated sticks with partners, and alternate half
+and full spins. Its code uses native character dance, world foot contacts,
+partner IK and the 3D canvas renderer. It loops every 24 seconds.
+
+From this repository, build the libraries first with `npm run build:libs`.
+Video rendering needs `ffmpeg` on PATH and `@napi-rs/canvas`; see
+[Rendering Video from Code](video-rendering.md).
+
+```sh
+tinyfly video examples/headless-video/festive-dandiya.mjs --loop-check
+tinyfly video examples/headless-video/festive-dandiya.mjs -o festive-dandiya.mp4
+```
+
+Add an `audio` path to the headless scene to use your own music. The browser
+example runs without bundled audio.
+
 ## Table of Contents
 
+- [Festive Garba and Dandiya](#festive-garba-and-dandiya)
 - [Basic: Fade In](#basic-fade-in)
 - [Multi-Property Animation](#multi-property-animation)
 - [Infinite Looping](#infinite-looping)
@@ -694,7 +715,7 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.102.0/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.103.0/cdn/tinyfly-player.iife.js`.
 
 ---
 

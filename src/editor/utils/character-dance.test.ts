@@ -4,6 +4,20 @@ import { DANCE_STYLES, FLIPS, HUMAN_REST, routineBeats } from '../../characters'
 import { isCharacterField } from './character-element'
 
 describe('character dances in the editor', () => {
+  it('keys native hand shapes only for characters with a hand rig', () => {
+    const options = { style: 'dandiya' as const, bpm: 120, start: 0 }
+    expect(characterDanceTracks(options).some((t) => t.property.startsWith('hand.'))).toBe(false)
+    expect(characterDanceTracks({ ...options, hands: true }).some((t) => t.property.startsWith('hand.'))).toBe(true)
+  })
+  it('native garba keeps heading tracks independent and uses the audio tempo', () => {
+    const tracks = characterDanceTracks({ style: 'garba', bpm: 100, start: 1200, pose: { turn: 2.5 } })
+    expect(tracks.some((track) => track.property === 'turn' || track.property === 'roll')).toBe(false)
+    expect(tracks.some((track) => track.property === 'arm.left.swing')).toBe(true)
+    expect(tracks[0].keyframes[0].time).toBe(1200)
+    expect(tracks[0].keyframes.at(-1)!.time).toBe(6000)
+    expect(danceLength('garba', 100)).toBe(4800)
+  })
+
   it('samples a dance into character pose tracks from the playhead', () => {
     const tracks = characterDanceTracks({ style: 'disco', move: 'point', bpm: 120, start: 1000 })
     expect(tracks.length).toBeGreaterThan(3)

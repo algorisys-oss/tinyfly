@@ -3,6 +3,7 @@ import { CANVAS_PROPERTIES, type PropertyInfo } from '../adapters/canvas/target-
 import { EXPRESSIONS, POSES } from './stick-figure'
 import { GAITS } from './gaits'
 import { DANCE_STYLES, MUDRAS } from './dance'
+import { HUMAN_DANCES } from './human-dance'
 import { FLIPS } from './acrobatics'
 import { HAND_SHAPES } from './hands/hand-rig'
 import { HUMAN_POSES, HUMAN_EXPRESSIONS, HUMAN_BUILDS, FOOT_SHAPES } from './species/human'
@@ -91,6 +92,7 @@ export interface Capabilities {
   custom: { api: Record<string, string>; actions: Record<string, { summary: string; needs?: string[] }>; gaits: Record<string, string> }
   character: {
     poses: string[]
+    dances: string[]
     expressions: string[]
     gags: string[]
     /** `build` option */
@@ -174,7 +176,7 @@ export function capabilities(version?: string, cast: Cast = {}): Capabilities {
         'horse() · dog() · cat() · cow()': 'animals (quadruped(spec) makes your own): gaits with footfall patterns keyed in step with the distance, sit, jump, their calls, species actions',
         'songbird() · crow() · chicken()': 'birds (bird(spec) makes your own): hop, walk, peck, flap, fly and land (a chicken flutters), their calls; wings fold and beat in rhythm',
         "{ kind: 'prop', prop: 'car', position, rotation, values } with loadScene3D(scene, { kinds: [characterObjects, propObjects] })": 'props in 3D scenes, by preset name, seen in perspective by the scene camera; controls are tracks on the object',
-        'characterScript3D(id, beats, { scene, position?, heading?, height?, pose? })': 'a v2 character in a 3D scene in world metres: gaits to [x, z] or through points (its walk phase keyed with the distance), face, hold, pose, gag; checkCharacterBeats3D checks the beats',
+        'characterScript3D(id, beats, { scene, position?, heading?, height?, pose? })': 'a v2 character in world metres: gaits, face (shortest turn), spin (signed turns and duration), dance (native style, bpm, beats), hold, pose, gag; checkCharacterBeats3D checks the beats',
         'propRide3D({ prop, propId, propTracks, scene, placement, anchor, riderId, pose, start, end, mount?, dismount? })': 'a character riding a prop in a 3D scene: hips on a seat anchor (saddle, seat) as it moves, hopping on and off; RIDING_POSES.astride / .seated / .driving / .cycling / .wheeling (a wheelchair)',
         'propScript3D(id, prop, beats, { scene, position?, heading?, values? })': 'props scripted in world metres for 3D scenes: moves to [x, z] or through points (wheels and strides keyed with the distance), face, hold, and their actions; checkPropBeats3D checks the beats',
         'propPreset(name, options?)': 'a prop preset by name (did-you-mean on a wrong one)',
@@ -221,6 +223,7 @@ export function capabilities(version?: string, cast: Cast = {}): Capabilities {
     },
     character: {
       poses: Object.keys(HUMAN_POSES),
+      dances: Object.keys(HUMAN_DANCES),
       expressions: Object.keys(HUMAN_EXPRESSIONS),
       gags: Object.keys(HUMAN_GAGS),
       builds: Object.keys(HUMAN_BUILDS),
@@ -391,6 +394,7 @@ export function capabilitiesMarkdown(version?: string, cast: Cast = {}): string 
     '## Character (v2 human)',
     '',
     `Poses: ${list(c.character.poses)}. Expressions: ${list(c.character.expressions)}. Gags: ${list(c.character.gags)}.`,
+    `Native dances: ${list(c.character.dances)}; \`humanDanceFrame(style, beat, base)\` keeps body heading independent; \`humanDanceTracks(target, options)\` bakes JSON pose tracks. \`danceCircleAt(beat, { radius, count, beatsPerTurn, facing, spins })\` gives a formation with planted toes; \`danceCircleTracks(targets, options)\` bakes scene tracks. \`plantDanceFoot(partner, side, worldPoint)\` returns pose AND position; \`meetDandiya(a, b)\` solves both stick tips to one shared world point and reports unreachable contacts.`,
     '',
     'Appearance options of `character({ … })`, all plain data that turns with the head (see docs/character-appearance.md):',
     '',

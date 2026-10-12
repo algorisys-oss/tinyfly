@@ -5,8 +5,7 @@ import type { Scene3DElement } from '../stores/scene-store'
 import type { CameraObject, CharacterObject3D, LightObject, Material3D, MeshObject, Object3D, PropObject3D, Scene3D } from '../../scene-3d'
 import { PROP_PRESETS } from '../../characters'
 import { orbitPosition } from '../../scene-3d'
-import { DANCE_STYLES, type DanceStyleName } from '../../characters'
-import { characterDanceTracks, mergeKeyframes } from '../utils/character-dance'
+import { CHARACTER_DANCES, characterDanceTracks, mergeKeyframes, type CharacterDanceName } from '../utils/character-dance'
 import { freeObjectId } from '../utils/scene3d-element'
 
 /**
@@ -83,7 +82,7 @@ function freeSpot(objects: Object3D[]): [number, number, number] {
 
 export const Scene3DProperties: Component<Props> = (props) => {
   const [picked, setPicked] = createSignal<string>('')
-  const [danceStyle, setDanceStyle] = createSignal<DanceStyleName>('disco')
+  const [danceStyle, setDanceStyle] = createSignal<CharacterDanceName>('disco')
 
   const scene = () => props.element.scene
   const object = () => scene().objects.find((o) => o.id === picked()) ?? scene().objects.find((o) => o.kind === 'mesh' || o.kind === 'character') ?? scene().objects[0]
@@ -171,9 +170,9 @@ export const Scene3DProperties: Component<Props> = (props) => {
   }
 
   const danceFromPlayhead = (o: CharacterObject3D) => {
-    const style = DANCE_STYLES[danceStyle()]
+    const style = CHARACTER_DANCES[danceStyle()]
     const start = Math.round(props.store.currentTime())
-    const tracks = characterDanceTracks({ style: danceStyle(), bpm: style.bpm, start, hands: false, height: o.height ?? 1.7, x: o.position?.[0] ?? 0 })
+    const tracks = characterDanceTracks({ style: danceStyle(), bpm: style.bpm, start, hands: false, height: o.height ?? 1.7, x: o.position?.[0] ?? 0, pose: o.pose })
     const prefixed = tracks.map((t) => ({ property: `${o.id}.${t.property}`, keyframes: t.keyframes }))
     props.store.replaceTracks(props.element.name, mergeKeyframes(props.store.state.timeline?.tracks ?? [], props.element.name, prefixed))
   }
@@ -293,8 +292,8 @@ export const Scene3DProperties: Component<Props> = (props) => {
               </div>
               <div class="property-row">
                 <label>Dance</label>
-                <select value={danceStyle()} onChange={(e) => setDanceStyle(e.currentTarget.value as DanceStyleName)}>
-                  <For each={Object.entries(DANCE_STYLES)}>{([name, style]) => <option value={name}>{style.label}</option>}</For>
+                <select value={danceStyle()} onChange={(e) => setDanceStyle(e.currentTarget.value as CharacterDanceName)}>
+                  <For each={Object.entries(CHARACTER_DANCES)}>{([name, style]) => <option value={name}>{style.label}</option>}</For>
                 </select>
               </div>
               <button class="secondary-button" onClick={() => danceFromPlayhead(current() as CharacterObject3D)}>🕺 Dance from playhead</button>

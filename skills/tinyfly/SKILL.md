@@ -56,6 +56,34 @@ names.
   surfaces). Places name items by id: declare them first (`items`, `data`).
 - A figure that starts on the right walking left needs `facing: -1` in the
   script options.
+- For native garba or dandiya, use `humanDanceFrame(style, beat, base)` or
+  `humanDanceTracks(target, { style, bpm, beats })`; heading stays independent
+  of local limb motion. `danceCircleAt` / `danceCircleTracks` coordinate a
+  circle's travel, facing, spins and foot plants. Sparse custom keys use base,
+  human/hand rest or zero defaults across the loop. Contacts always alternate
+  left/right each integer beat, starting left, with stance through 0.6;
+  custom keys do not change this. Use `plantFeet: false` and your own
+  `plantDanceFoot` contacts for different footwork. Circle bakes require
+  `beats`, default to 120 BPM and reject `count` different from target count.
+  Render with the same base pose and build: unchanged pose fields are omitted.
+  Close whole orbits/routines with whole extra body revolutions too.
+  Zero-roll circle bakes
+  use `rotateY`; nonzero `pose.roll` keeps heading in pose `turn` (quarter-turns),
+  includes roll, and sets `rotateY: 0`, preserving yaw before roll and grounding.
+  Supply roll when baking and apply all tracks without adding heading twice.
+  Apply both pose and position
+  from `plantDanceFoot`; ankle/toe IK preserves authored `leg.*.rotate` hip turn-out.
+  `meetDandiya` gives paired strike poses and world-space
+  grip/tip segments, with unreachable contacts reported. Construct contact
+  characters from the rendered dancers' options to match proportions,
+  line width and hands. Scripted dance entry and hand pose transitions use
+  `HAND_REST` for missing hand fields, preserving relaxed hands through holds
+  and explicit zero values. In a 3D script use
+  `{ do: 'spin', turns: 2, for: 1500 }` for full revolutions: `face` takes the
+  shortest route, so facing 360° does not spin. A scripted dance stays in
+  place; `for` alone derives beats at the BPM, while `beats` with `for` fits
+  those beats into the duration. Stick drawing and paired IK are separate
+  from native frames and circle bakes. See `docs/dance.md`.
 - A figure changes a prop's state through `propSurface(propTarget(…))`
   (`switch` / `set` on `control:door`, `control:lights`; aim at `anchor:NAME`
   or `part:ID`). Walk figures on a prop's front line (a house's

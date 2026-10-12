@@ -27,14 +27,17 @@ function hangingFrame(d: Vec3): { swing: number; spread: number } {
 }
 
 export interface ReachOptions {
-  /** Height in px the character is drawn at */
+  /** Character height in the same units as target (pixels or scene metres). */
   height: number
 }
 
 /**
  * The pose with chain `chainId` reaching for `target`, a point in the
- * character's 3D space in px (+x its left, +y up from the ground under its
- * hips, +z forward). The chain must hang down at rest (arms, legs).
+ * character's unplaced 3D space, in the same units as height (+x its left,
+ * +y up, +z forward). Body turn, roll, lift and grounding are excluded from
+ * the solve. The chain must hang down at rest (arms, legs). Authored bone
+ * yaw, including human hip turn-out, is retained; reaching the existing
+ * endpoint returns the original pose, including a straight limb at full reach.
  */
 export function reachPose(plan: BodyPlan, pose: Pose, chainId: string, target: Vec3, options: ReachOptions): Pose {
   const chain = plan.chains.find((c) => c.id === chainId)
@@ -44,6 +47,7 @@ export function reachPose(plan: BodyPlan, pose: Pose, chainId: string, target: V
   // Solve without placing or rolling the figure: character space as built.
   const skeleton = solveSkeleton(plan, { ...pose, turn: 0, roll: 0, lift: 0 }, { height: options.height, contact: 'none' })
   const solved = skeleton.chains[chainId]
+  if (length(sub(target, solved.joints3[2])) < options.height * 1e-12) return pose
   const start = solved.joints3[0]
   const a = length(sub(solved.joints3[1], solved.joints3[0]))
   const b = length(sub(solved.joints3[2], solved.joints3[1]))
@@ -52,13 +56,15 @@ export function reachPose(plan: BodyPlan, pose: Pose, chainId: string, target: V
     : { swing: 0, spread: 0 }
 
   const toTarget = sub(target, start)
+  const authoredAngles = plan.angles(pose, chain)
+  const yaw = (i: number) => (authoredAngles[i]?.yaw ?? 0) * Math.PI / 180
   const d = Math.min(a + b - 1e-6, Math.max(Math.abs(a - b) + 1e-6, length(toTarget)))
   const u = unit(toTarget)
   // The pole: which way the middle joint bends, turned with the parent bone.
   const isArm = chain.parent !== null
-  const pole = orient(chain.pole ?? (isArm ? [0, -0.35, -1] : [0, 0, 1]), parentFrame)
+  const pole = rotY(orient(chain.pole ?? (isArm ? [0, -0.35, -1] : [0, 0, 1]), parentFrame), yaw(0))
   let p = sub(pole, [u[0] * dot(pole, u), u[1] * dot(pole, u), u[2] * dot(pole, u)])
-  if (length(p) < 1e-6) p = rotY([1, 0, 0], 0) // pole along the limb: bend sideways
+  if (length(p) < 1e-6) p = rotY([1, 0, 0], yaw(0)) // pole along the limb: bend sideways
   p = unit(p)
   const cosA = (a * a + d * d - b * b) / (2 * a * d)
   const sinA = Math.sqrt(Math.max(0, 1 - cosA * cosA))
@@ -70,8 +76,8 @@ export function reachPose(plan: BodyPlan, pose: Pose, chainId: string, target: V
   const end: Vec3 = [start[0] + u[0] * d, start[1] + u[1] * d, start[2] + u[2] * d]
 
   const side = chain.side ?? 1
-  const upper = hangingFrame(sub(joint, start))
-  const lower = hangingFrame(sub(end, joint))
+  const upper = hangingFrame(rotY(sub(joint, start), -yaw(0)))
+  const lower = hangingFrame(rotY(sub(end, joint), -yaw(1)))
   const angles = [
     { swing: deg(wrap(upper.swing - parentFrame.swing)), spread: deg(wrap(upper.spread - parentFrame.spread)) * side },
     { swing: deg(wrap(lower.swing - upper.swing)), spread: deg(wrap(lower.spread - upper.spread)) * side },

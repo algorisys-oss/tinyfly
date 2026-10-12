@@ -2188,12 +2188,40 @@ deterministically.
       for a character facing left are the mirror image (`mirrorHumanPose()`, pixel-checked against a
       flipped drawing) and glide the other way, turned between 3 and 4 like flips
 - [ ] Beats: a beat grid in the curve view; snapping step markers; detecting changing tempos
-- [ ] More styles: salsa, tap with wings and pullbacks, garba / dandiya,
+- [ ] More styles: salsa, tap with wings and pullbacks,
       Kathak (chakkar spins with `turn`), locking, shuffle, popping hits and the robot
 - [ ] More acrobatics: aerial, butterfly kick, 540, round-off, kip-up, flips in a sequence
 - [ ] Floor work and body rolls (windmill, headspin, freezes on the hands, body wave) need
       Characters v2's bendable spine, hand contact and IK — port dance and flips to v2 body plans
 - [ ] A headless music-video example (dance + flips to a beat, rendered to MP4)
+
+### Native garba / dandiya choreography
+
+- [x] Public API/options, script timing, contact limits, editor behavior and
+      headless examples documented; LLM docs and shipped skill synchronized
+- [x] `HUMAN_DANCES`, `humanDanceFrame`, `humanDanceTracks`: native body-local
+      garba (two/three clap) and dandiya, beat timing, weight shifts, recovery,
+      hand shapes, independent full-turn heading; editor Character/3D menus
+- [x] `characterScript3D`: timed signed `spin`, native `dance`, explicit `face` duration
+- [x] Scripted dance entry and hand pose transitions use `HAND_REST` defaults;
+      preceding holds, explicit zeros, entry blending and rendered JSON seeks tested
+- [x] `danceCircleAt` / `danceCircleTracks`: equal spacing, inward/outward/tangent/fixed
+      facing, independent spins, world toe plants and serializable scene tracks
+- [x] `plantDanceFoot` / `meetDandiya`: deterministic world-space foot/pivot and paired
+      stick-tip contacts, with unreachable targets reported
+- [x] Regression tests for full-turn views, fixed toes, claps, pair strikes, tempo,
+      JSON seeking and loops; `examples/headless-video/garba-circle.mjs`
+- [x] Sparse custom clip field unions with numeric base/rest/zero fallbacks,
+      including late-authored hands in both bakers and JSON random seeks
+- [x] Rolled circle bakes retain native yaw-before-roll and grounding through
+      pose turn/roll with zero object yaw; rendered world joints and toes tested
+- [x] Unchanged script anchors preserve prior endpoint easing; standalone/chained
+      face and pose transitions and following actions tested with JSON random seeks,
+      including consecutive walk stops
+- [x] Festive live/headless contact solvers use rendered body options; actual
+      scene wrists, stick grips and partner tips verified across strikes and spins
+- [x] Foot IK accounts for authored hip turn-out and preserves existing contacts;
+      straight/bent left/right ankle/toe plants and all native routines tested
 
 ## Phase 33: 3D support (planned)
 
@@ -3038,3 +3066,5 @@ biggest gap was the head (sheets 2 and 12–16), so that came first.
 - Scene thumbnail render guards: 4 tests
 - Curve-math (numeric detection, padded range, eased sampling, easing→bezier): 14 tests
 - Symbol Library (create/clone/rename/count-guard/persist): 7 tests
+
+- [x] Festive Navratri dandiya example on the Examples page: decorated clothing, partner strikes, circle travel, half/full spins and larger sticks.

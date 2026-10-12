@@ -36,7 +36,7 @@ export const DOCS: DocEntry[] = [
   {
     id: 'examples',
     title: 'Code Examples',
-    summary: 'Recipes with the engine API: fades, loops, colour and bezier easing, loading JSON, canvas and SVG rendering, multi-scene sequences, motion paths and script-tag embeds.',
+    summary: 'Recipes with the engine API: fades, loops, colour and bezier easing, loading JSON, canvas and SVG rendering, multi-scene sequences, motion paths and script-tag embeds; a festive garba/dandiya scene with partner contacts, circle travel and spins, also rendered to video.',
     section: 'Start here',
   },
   {
@@ -150,13 +150,13 @@ export const DOCS: DocEntry[] = [
   {
     id: 'dance',
     title: 'Dance and Flips',
-    summary: 'The stick figure dances disco, hip hop, breaking, jazz, K-pop, Bollywood, Bhangra, Bharatanatyam (with mudras), the Charleston, tap (with tap sounds) and popping (side glide, moonwalk), and does front, back, layout and scissor flips, cartwheels, handsprings, split leaps and full splits: wrists, ankles, turn-out, spin and rise as pose fields; moves keyed in beats; styles, grooves and routines as plain data.',
+    summary: 'The stick figure dances disco, hip hop, breaking, jazz, K-pop, Bollywood, Bhangra, Bharatanatyam (with mudras), the Charleston, tap and popping, and does flips, leaps and splits; native v2 garba (two/three clap) and dandiya add body-local routines, circle formations, world foot plants, paired stick-tip contacts and signed spins; JSON bakes, timing, contact limits and editor menus.',
     section: 'Guides',
   },
   {
     id: 'scene-3d',
     title: '3D Scenes',
-    summary: '@algorisys/tinyfly/scene-3d: cameras, lights and meshes as JSON, in metres, animated by tracks at <scene>/<object> (cuts with activeCamera), drawn on a 2D canvas with flat, smooth or toon shading, ink outlines and fog, in browsers, Workers and Node (MP4 with tinyfly video); v2 characters in scenes, dancing, in their pen looks or as solid figures, seen by any camera.',
+    summary: '@algorisys/tinyfly/scene-3d: cameras, lights and meshes as JSON, in metres, animated by tracks at <scene>/<object> (cuts with activeCamera), drawn on a 2D canvas with flat, smooth or toon shading, ink outlines and fog, in browsers, Workers and Node (MP4 with tinyfly video); v2 characters in pen or solid looks, scripted native dances, timed signed spins and circle formations with foot contacts.',
     section: 'Guides',
   },
   {

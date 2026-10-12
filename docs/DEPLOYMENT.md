@@ -45,6 +45,8 @@ The project uses a separate OSS (Open Source Software) repository for public rel
 Files listed in `.ossignore` are excluded from OSS publishing:
 - `scripts/` - Internal publishing scripts
 - `CLAUDE.md` - Internal AI instructions
+- `.no-mistakes.yaml` - Internal release validation configuration (Codex reviewer,
+  tests with two workers, and the TypeScript check)
 
 ### Publishing Process
 

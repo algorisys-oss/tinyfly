@@ -6,6 +6,9 @@
  */
 export * from './stick-figure'
 export * from './dance'
+export * from './human-dance'
+export * from './dance-circle'
+export * from './dance-contact'
 export * from './gaits'
 export * from './acrobatics'
 export { stickToHuman } from './stick-to-human'

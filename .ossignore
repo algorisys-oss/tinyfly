@@ -14,3 +14,6 @@ media/
 # IDE and editor configs (optional - uncomment if needed)
 # .vscode/
 # .idea/
+
+# Internal release validation
+.no-mistakes.yaml

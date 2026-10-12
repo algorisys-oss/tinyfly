@@ -29,10 +29,10 @@ import { CHARACTER_BUILDS, buildName, buildValue, castElementFields, isCharacter
 import { codeElementHeight } from '../utils/code-element'
 import { chartElementProblem } from '../utils/chart-element'
 import { CharacterActingPanel, keyActedPose } from './character-acting-panel'
-import { characterDanceTracks, characterFlipTracks, danceLength, facingOf, mergeKeyframes } from '../utils/character-dance'
+import { CHARACTER_DANCES, characterDanceTracks, characterFlipTracks, danceLength, facingOf, mergeKeyframes, type CharacterDanceName } from '../utils/character-dance'
 import { beatGridOf, detectAudioTempo, tapTempo } from '../utils/beat-grid'
 import { nearestBeat, nextBeat } from '../../engine'
-import { CHART_KINDS, CODE_LANGUAGES, DANCE_STYLES, FLIPS, CHARACTER_CAST, HELD_ITEMS, FACIAL_HAIR_STYLES, GLASSES_STYLES, HAIR_STYLES, HAT_STYLES, resolveHair, type CastName, type DanceStyleName, type FlipName, FOOT_SHAPES } from '../../characters'
+import { CHART_KINDS, CODE_LANGUAGES, FLIPS, CHARACTER_CAST, HELD_ITEMS, FACIAL_HAIR_STYLES, GLASSES_STYLES, HAIR_STYLES, HAT_STYLES, resolveHair, type CastName, type FlipName, FOOT_SHAPES } from '../../characters'
 import { fitPlaces, mapElementProps, placeId, tripTracks } from '../utils/map-element'
 import { WORLD_CITIES } from '../../maps'
 import { Scene3DProperties } from './scene3d-properties'
@@ -1640,9 +1640,9 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
     )
   }
 
-  const [danceStyle, setDanceStyle] = createSignal<DanceStyleName>('disco')
+  const [danceStyle, setDanceStyle] = createSignal<CharacterDanceName>('disco')
   const [danceMove, setDanceMove] = createSignal('')
-  const [danceBpm, setDanceBpm] = createSignal(DANCE_STYLES.disco.bpm)
+  const [danceBpm, setDanceBpm] = createSignal(CHARACTER_DANCES.disco.bpm)
   const [flipName, setFlipName] = createSignal<FlipName>('backFlip')
   const [followMusic, setFollowMusic] = createSignal(true)
   /** The music's beat grid, when an audio element has a tempo. */
@@ -1659,10 +1659,10 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
   }
   const danceTempo = () => onBeat()?.bpm ?? danceBpm()
 
-  const pickDanceStyle = (name: DanceStyleName) => {
+  const pickDanceStyle = (name: CharacterDanceName) => {
     setDanceStyle(name)
     setDanceMove('')
-    setDanceBpm(DANCE_STYLES[name].bpm)
+    setDanceBpm(CHARACTER_DANCES[name].bpm)
   }
 
   /** Write tracks from the playhead on, keeping the character's keys before and after them. */
@@ -1702,6 +1702,7 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
         height: element.height,
         x: xAt(element, start),
         facing: facingAt(element, start),
+        pose: characterPose(element),
       })
     )
   }
@@ -2001,15 +2002,15 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
       <h4>Dance</h4>
       <div class="property-row">
         <label>Style</label>
-        <select value={danceStyle()} onChange={(e) => pickDanceStyle((e.target as HTMLSelectElement).value as DanceStyleName)}>
-          <For each={Object.entries(DANCE_STYLES)}>{([name, style]) => <option value={name}>{style.label}</option>}</For>
+        <select value={danceStyle()} onChange={(e) => pickDanceStyle((e.target as HTMLSelectElement).value as CharacterDanceName)}>
+          <For each={Object.entries(CHARACTER_DANCES)}>{([name, style]) => <option value={name}>{style.label}</option>}</For>
         </select>
       </div>
       <div class="property-row">
         <label>Move</label>
         <select value={danceMove()} onChange={(e) => setDanceMove((e.target as HTMLSelectElement).value)}>
           <option value="">Whole routine</option>
-          <For each={Object.entries(DANCE_STYLES[danceStyle()].moves)}>{([name, move]) => <option value={name}>{move.label}</option>}</For>
+          <For each={Object.entries(('moves' in CHARACTER_DANCES[danceStyle()] ? (CHARACTER_DANCES[danceStyle()] as typeof CHARACTER_DANCES.disco).moves : {}))}>{([name, move]) => <option value={name}>{move.label}</option>}</For>
         </select>
       </div>
       <Show when={beatGrid()}>

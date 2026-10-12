@@ -7,12 +7,15 @@ import { GAITS } from './gaits'
 import { HUMAN_POSES, HUMAN_REST, type HumanPoseName } from './species/human'
 import { HUMAN_GAGS, humanGag, humanGaitStrideLength, type HumanGagName } from './species/human-motion'
 import { along, groundPath, headingOf, inverse, isGroundPoint, tidy, turnBetween, type GroundPoint } from './ground-path'
+import { HUMAN_DANCES, humanDanceFrame, type HumanDanceName } from './human-dance'
+import { HAND_REST } from './hands/hand-rig'
 
 /**
  * Characters in world metres, for 3D scenes: a v2 character walks to a point
  * or along a path through points, turning to face the way first, its gait's
  * phase keyed with the distance so its feet stay planted; it faces things,
- * strikes poses and plays gags. It writes the scene object's tracks: `x`,
+ * spins full signed turns, dances native routines, strikes poses and plays
+ * gags. It writes the scene object's tracks: `x`,
  * `z`, `rotateY`, its walk (`walk`, `walking`, `gait`, which the character
  * object turns into the stepping pose as it draws) and pose fields.
  *
@@ -28,11 +31,19 @@ import { along, groundPath, headingOf, inverse, isGroundPoint, tidy, turnBetween
  */
 
 export interface CharacterBeat3D {
-  /** A gait to move in (`walk`, `run`, `sneak`, `strut`, `tired`, `bouncy`, `doubleBounce`, `shove`), `face`, `hold`, `pose`, `gag`, or `place` (put it at `to` at once, facing `toward`: where a ride left it) */
+  /** A gait, `face` (shortest turn), `spin` (signed/fractional turns), `dance`, `hold`, `pose`, `gag`, `place`, `say`, or `look`. */
   do: string
+  /** `spin`: signed revolutions, default 1. Positive turns toward +x. */
+  turns?: number
+  /** `dance`: a native human routine. */
+  dance?: HumanDanceName
+  /** `dance`: tempo, beats per minute (default the style's tempo). */
+  bpm?: number
+  /** `dance`: length in beats; defaults to one routine, or for * bpm / 60000 when for is given. With both, beats are fitted into for ms. */
+  beats?: number
   /** When it starts, ms (default: when the beat before ends) */
   at?: number
-  /** How long it takes, ms (a move: default the distance at the gait's pace; a pose: default 500) */
+  /** Positive finite duration, ms: move defaults to distance at gait pace, pose to 500, spin to 1000. face consumes it even without turning. */
   for?: number
   /** A move: where to, [x, z] metres */
   to?: GroundPoint
@@ -55,7 +66,7 @@ export interface CharacterBeat3D {
 /** The talking head nods on this beat, ms. */
 const TALK_BEAT = 520
 
-export const CHARACTER_BEAT_3D_FIELDS = ['do', 'at', 'for', 'to', 'through', 'toward', 'speed', 'pose', 'gag', 'say', 'look'] as const satisfies ReadonlyArray<keyof CharacterBeat3D>
+export const CHARACTER_BEAT_3D_FIELDS = ['do', 'at', 'for', 'to', 'through', 'toward', 'speed', 'pose', 'gag', 'say', 'look', 'turns', 'dance', 'bpm', 'beats'] as const satisfies ReadonlyArray<keyof CharacterBeat3D>
 
 /** How long a line takes to say, ms: by its length, never shorter than a beat. */
 export const speechLength = (text: string): number => Math.max(700, Array.from(text).length * 65)
@@ -136,7 +147,7 @@ const EASE_IN_OUT = 300
 /** Problems in 3D character beats, naming what was probably meant. */
 export function checkCharacterBeats3D(beats: unknown): Array<{ beat: number; message: string }> {
   if (!Array.isArray(beats)) return [{ beat: -1, message: `Beats must be an array of { do: … } objects (got ${typeof beats}).` }]
-  const names = [...GAIT_NAMES, 'face', 'hold', 'pose', 'gag', 'place', 'say', 'look']
+  const names = [...GAIT_NAMES, 'face', 'spin', 'dance', 'hold', 'pose', 'gag', 'place', 'say', 'look']
   const problems: Array<{ beat: number; message: string }> = []
   beats.forEach((beat: unknown, index) => {
     const error = (message: string) => problems.push({ beat: index, message })
@@ -147,13 +158,18 @@ export function checkCharacterBeats3D(beats: unknown): Array<{ beat: number; mes
     // A pose or gag named as the beat itself is what was probably meant.
     const doHint = typeof fields.do === 'string' ? (POSE_NAMES.includes(fields.do) ? 'pose' : GAG_NAMES.includes(fields.do) ? 'gag' : fields.do === 'turn' ? 'face' : undefined) : undefined
     if (typeof fields.do !== 'string' || !names.includes(fields.do)) return error(unknownName('character 3D beat', fields.do, names, doHint))
+    for (const field of ['at', 'for', 'turns', 'bpm', 'beats'] as const) {
+      const value = fields[field]
+      if (value !== undefined && (typeof value !== 'number' || !Number.isFinite(value) || (field === 'at' ? value < 0 : field !== 'turns' && value <= 0))) error(`\`${field}\` must be finite${field === 'turns' ? '' : field === 'at' ? ' and non-negative' : ' and positive'}.`)
+    }
+    if (fields.do === 'dance' && !(typeof fields.dance === 'string' && Object.hasOwn(HUMAN_DANCES, fields.dance))) error(unknownName('native dance', fields.dance, Object.keys(HUMAN_DANCES)))
     if (GAIT_NAMES.includes(fields.do)) {
       if (fields.to === undefined && fields.through === undefined) error(`\`${fields.do}\` needs \`to\` ([x, z] metres) or \`through\` (a list of them).`)
       if (fields.to !== undefined && !isGroundPoint(fields.to)) error(`\`to\` is a point on the ground, [x, z] metres (got ${JSON.stringify(fields.to)}).`)
       if (fields.through !== undefined && !(Array.isArray(fields.through) && fields.through.length > 0 && fields.through.every(isGroundPoint))) error('`through` is a list of points on the ground, each [x, z] metres.')
     }
     if (fields.do === 'place' && !isGroundPoint(fields.to)) error('`place` needs `to`: a point on the ground, [x, z] metres.')
-    if (fields.do === 'face' && !(isGroundPoint(fields.toward) || typeof fields.toward === 'number')) error('`face` needs `toward`: a point [x, z] or a heading in degrees.')
+    if (fields.do === 'face' && !(isGroundPoint(fields.toward) || (typeof fields.toward === 'number' && Number.isFinite(fields.toward)))) error('`face` needs `toward`: a point [x, z] or a finite heading in degrees.')
     if (fields.do === 'say' && !(typeof fields.say === 'string' && fields.say.trim().length > 0)) error('`say` needs `say`: the line spoken.')
     if (fields.do === 'look') {
       const at = fields.look ?? fields.toward
@@ -172,6 +188,10 @@ export function characterScript3D(id: string, beats: CharacterBeat3D[], options:
   if (problems.length > 0) throw new Error(`characterScript3D: ${problems.length} problem(s) in the beats:\n${problems.map((p) => `  beat ${p.beat}: ${p.message}`).join('\n')}`)
   const height = options.height ?? 1.7
   const pose: Pose = { ...HUMAN_REST, ...options.pose }
+  const poseValue = (field: string, source: Pose = pose): number => {
+    const handField = field.match(/^hand\.(?:left|right)\.(.+)$/)?.[1]
+    return source[field] ?? HUMAN_REST[field] ?? (handField ? HAND_REST[handField] : undefined) ?? 0
+  }
   let [x, z] = options.position ?? [0, 0]
   let heading = options.heading ?? 0
   let phase = 0
@@ -182,15 +202,30 @@ export function characterScript3D(id: string, beats: CharacterBeat3D[], options:
     list.push({ time, value, easing })
     keys.set(property, list)
   }
+  const anchor = (property: string, time: number, value: number) => {
+    const list = keys.get(property) ?? []
+    for (let i = list.length - 1; i >= 0; i--) {
+      if (list[i].time !== time) continue
+      if (list[i].value === value) return
+      break
+    }
+    key(property, time, value)
+  }
   key('x', 0, x)
   key('z', 0, z)
   key('rotateY', 0, heading)
 
-  const turnTo = (start: number, toward: number): number => {
+  const turnTo = (start: number, toward: number, duration?: number): number => {
     const delta = turnBetween(heading, toward)
-    if (Math.abs(delta) < 1) return start
-    const length = Math.max(TURN_LEAST, Math.abs(delta) * TURN_PER_DEGREE)
-    key('rotateY', start, heading)
+    if (Math.abs(delta) < 1) {
+      if (duration !== undefined) {
+        anchor('rotateY', start, heading)
+        key('rotateY', start + duration, heading)
+      }
+      return start + (duration ?? 0)
+    }
+    const length = duration ?? Math.max(TURN_LEAST, Math.abs(delta) * TURN_PER_DEGREE)
+    anchor('rotateY', start, heading)
     heading += delta
     key('rotateY', start + length, heading, 'ease-in-out')
     return start + length
@@ -199,8 +234,8 @@ export function characterScript3D(id: string, beats: CharacterBeat3D[], options:
   /** Changes pose fields from `start` to `end`, easing into them. */
   const poseTo = (start: number, end: number, changes: Pose, easing: EasingType = 'ease-in-out') => {
     for (const [field, value] of Object.entries(changes)) {
-      if (pose[field] === value) continue
-      key(field, start, pose[field] ?? 0)
+      if (poseValue(field) === value) continue
+      anchor(field, start, poseValue(field))
       key(field, end, value, easing)
       pose[field] = value
     }
@@ -218,7 +253,7 @@ export function characterScript3D(id: string, beats: CharacterBeat3D[], options:
     const ease = getEasingFunction('ease-in-out')
     const ramp = Math.min(EASE_IN_OUT, travel / 4)
     gaitKeys.push({ time: t, value: gait })
-    key('walking', t, 0)
+    anchor('walking', t, 0)
     key('walking', t + ramp, 1, 'ease-out')
     key('walking', t + travel - ramp, 1)
     key('walking', t + travel, 0, 'ease-in')
@@ -230,10 +265,11 @@ export function characterScript3D(id: string, beats: CharacterBeat3D[], options:
       const time = t + inverse(ease, s / length) * travel
       const { point, direction } = along(path, s)
       facing += turnBetween(facing, headingOf([0, 0], direction))
-      key('x', time, point[0])
-      key('z', time, point[1])
-      key('rotateY', time, facing)
-      key('walk', time, from + s / stride)
+      const sampleKey = s === 0 ? anchor : key
+      sampleKey('x', time, point[0])
+      sampleKey('z', time, point[1])
+      sampleKey('rotateY', time, facing)
+      sampleKey('walk', time, from + s / stride)
       if (s >= length) break
     }
     phase = from + length / stride
@@ -249,17 +285,44 @@ export function characterScript3D(id: string, beats: CharacterBeat3D[], options:
     const start = beat.at ?? time
     let end = start
     if (GAIT_NAMES.includes(beat.do)) end = move(beat.do, beat, start)
-    else if (beat.do === 'face') end = turnTo(start, typeof beat.toward === 'number' ? beat.toward : headingOf([x, z], beat.toward!))
+    else if (beat.do === 'face') end = turnTo(start, typeof beat.toward === 'number' ? beat.toward : headingOf([x, z], beat.toward!), beat.for)
+    else if (beat.do === 'spin') {
+      end = start + (beat.for ?? 1000)
+      anchor('rotateY', start, heading)
+      heading += (beat.turns ?? 1) * 360
+      key('rotateY', end, heading, 'linear')
+    } else if (beat.do === 'dance') {
+      const style = HUMAN_DANCES[beat.dance!]
+      const bpm = beat.bpm ?? style.bpm
+      const length = beat.beats ?? (beat.for !== undefined ? beat.for * bpm / 60000 : style.beats)
+      end = start + (beat.for ?? length * 60000 / bpm)
+      const base = { ...pose }
+      const count = Math.max(1, Math.ceil(length * 16))
+      const frames = Array.from({ length: count + 1 }, (_, i) => humanDanceFrame(beat.dance!, length * i / count, base).pose)
+      const entry = Math.min(150, (end - start) / 4)
+      for (const field of Object.keys(frames[0])) {
+        const from = poseValue(field, base)
+        if (field === 'turn' || field === 'roll' || frames.every((frame) => frame[field] === from)) continue
+        anchor(field, start, from)
+        frames.slice(1).forEach((frame, index) => {
+          const at = start + (end - start) * (index + 1) / count
+          const t = Math.min(1, (at - start) / entry)
+          const weight = t * t * (3 - 2 * t)
+          key(field, at, from + (frame[field] - from) * weight)
+        })
+        pose[field] = frames[count][field]
+      }
+    }
     else if (beat.do === 'hold') end = start + (beat.for ?? 1000)
     else if (beat.do === 'place') {
       // At once: one ms from where it was to where it is put.
-      key('x', start, x)
-      key('z', start, z)
+      anchor('x', start, x)
+      anchor('z', start, z)
       ;[x, z] = beat.to!
       key('x', start + 1, x)
       key('z', start + 1, z)
       if (typeof beat.toward === 'number') {
-        key('rotateY', start, heading)
+        anchor('rotateY', start, heading)
         heading = beat.toward
         key('rotateY', start + 1, heading)
       }

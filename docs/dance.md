@@ -11,6 +11,154 @@ renders to video and syncs to music exactly.
 
 Try it on the Examples page: **Dance Floor (Characters)**.
 
+## Native character dances, circles and spins
+
+For v2 characters use `humanDanceFrame(style, beat, basePose)`, with
+`style` set to `garba`, `garbaThreeClap` or `dandiya`, or a custom `HumanDanceStyle`.
+These stylised eight-beat routines author limbs in the body's own 3D space,
+including weight shifts, knee lifts, clap preparation and recovery. `turn`
+and `roll` stay with the caller, so the same steps work from the front, back
+or either side. `HUMAN_DANCES` is plain JSON: copy a routine's `keys`,
+`strikes`, `beats`, `bpm` and `label` to customise it. Keys are ordered by beat,
+within `[0, beats)`, and loop back to the first key. Sparse keys use the full
+clip's field union at every beat: a missing value uses the caller's base pose,
+then the human or hand rest value, then zero for other fields. Both bakers
+preserve these numeric fields even when first authored at a later key.
+The frame also contains `contact: { side, start, weight }`: the support side,
+the absolute integer planting beat, and a weight that is 1 through stance
+and fades smoothly to 0 before the next beat. `strike` is 1 at a clap or
+stick-strike beat and fades linearly to 0 a quarter beat either side. Foot plants
+assume left/right alternation at each integer beat, starting with the left
+foot, and stance through 0.6 of each beat. Custom keys do not change this
+contact pattern. For hops, longer stances or reversed support, set
+`plantFeet: false` and supply your own contacts with `plantDanceFoot`.
+
+```js
+import { character, drawCharacter, humanDanceFrame, humanDanceTracks, danceCircleAt, danceCircleTracks } from '@algorisys/tinyfly/characters'
+
+const who = character({ height: 220, hands: 'cartoon', handStyle: 'natural' })
+const frame = humanDanceFrame('garba', time * 120 / 60000, { turn: 2 })
+drawCharacter(ctx, who, frame.pose) // back view, without mirroring the step
+
+const tracks = humanDanceTracks('dancer', { style: 'garba', bpm: 120, beats: 8 })
+// Ordinary JSON keyframes; turn/roll tracks can animate independently.
+
+const members = danceCircleAt(time * 120 / 60000, {
+  radius: 1.8, count: 8, beatsPerTurn: 32, facing: 'inward', style: 'garba',
+})
+// Each member: character, pose, position [x,y,z], heading (degrees), strike,
+// planted. Heading is already included in pose.turn for direct drawing.
+
+const circleTracks = danceCircleTracks(['stage/a', 'stage/b'], {
+  radius: 1.8, beatsPerTurn: 32, beats: 32, bpm: 120,
+})
+// Scene tracks: x/y/z, rotateY, and local pose fields; no doubled pose.turn.
+```
+
+`humanDanceTracks(target, { style, bpm?, beats?, start?, pose?, samplesPerBeat? })`
+defaults to the style's tempo and beat count, `start: 0` ms, `HUMAN_REST`
+and 16 samples per beat. It samples from beat 0 through `beats`, with
+linear JSON keys at `start + beat * 60000 / bpm`; between samples playback
+approximates the smoothly interpolated frame. It omits `turn`, `roll` and
+fields that stay at the supplied base/rest value. Give the target the same
+base pose, since omitted fields are not reset. Hand fields are included;
+use a hand rig to display them or filter `hand.*` tracks for dot hands.
+
+Circle positions use `center: [x,z]`, `radius`, initial `angle` (degrees),
+`direction: 1 | -1`, and equal spacing. Facing can be `inward`, `outward`,
+`tangent`, or a fixed numeric heading. `spins` adds independent body turns
+per orbit, including negative or fractional turns. Defaults are
+`center: [0,0]`, `count: 8`, `beatsPerTurn: 32`, `angle: 0`, `direction: 1`
+(clockwise viewed from above), `facing: 'inward'`, `spins: 0`, `style: 'garba'`
+and `plantFeet: true`; `radius` must be positive. At angle 0 the first
+dancer stands along +z; heading 0 faces +z, 90 faces +x.
+Height and placement use the same units (default 1.7 metres).
+`danceCircleTracks(targets, options)` requires `beats`, takes its member
+count from `targets.length`, and defaults to 120 BPM, `start: 0` ms and
+16 samples per beat, even when a custom style has a different tempo.
+Its linear keys omit unchanged base/rest pose fields but always include
+world placement; give the rendered characters the same base pose and build.
+With zero roll, circle bakes put heading in object `rotateY` (degrees) and
+omit pose `turn`; start with neutral object rotation and pose `turn: 0`.
+With a nonzero `pose.roll`, they instead bake heading into pose `turn`
+(quarter-turns), include the supplied `roll`, and write `rotateY: 0`. This
+keeps native yaw before roll, including its grounding and foot contacts.
+Apply these tracks together and do not add the same heading as object yaw.
+Set roll in the bake options so the contact solver uses that roll too.
+Use `character: who` for a custom build. Support toes are held at their
+planting point through the first 0.6 beat, then released smoothly;
+`plantFeet: false` disables this. `planted: false` also reports an unreachable
+plant, a releasing stance, or disabled planting. Keep travel per step within
+leg reach. To close a loop, use complete orbits and routines, an even number
+of beats for the alternating contacts, and a whole number of extra body
+revolutions (`spins * orbits`). Fractional spins can require multiple orbits
+to close. Run the video loop check for the whole scene.
+
+For a custom path or pivot, `plantDanceFoot({ character, pose, position },
+side, worldPoint, 'toe' | 'ankle')` returns the adjusted **pose and position**
+and a `reached` flag. Apply both outputs: the vertical position correction
+transfers weight to the supporting leg. It does not translate sideways to
+hide an unreachable target. The default point is `toe`; `reached` means
+the joint is within 0.002 times the character height of the target.
+`danceJoint(partner, chain, joint)` reads a world-space joint with pose yaw,
+roll, grounding and position applied: arm index 2 is the wrist, leg index 2
+the ankle, and leg index 3 the toe. Include heading in `pose.turn`
+(quarter-turns); these contact helpers do not read scene object rotations.
+Foot IK preserves authored `leg.left.rotate` and
+`leg.right.rotate` hip turn-out when placing either ankle or toe, including
+straight-leg contacts at full reach.
+
+For partner dandiya use `meetDandiya(a, b, { sideA, sideB, point, length })`,
+where each partner has `{ character, pose, position: [x,y,z] }`. Both grips
+and stick tips are solved in world space. It returns `a`/`b` poses, two
+`sticks` (`grip` → `tip` segments), the shared `point`, and `reached`. Defaults:
+right hands, chest-height contact, stick length 0.22 of the shorter height.
+The default point is halfway between the partners in x/z and at the higher
+position y plus 0.62 times the shorter height. `reached` means both tips
+are within 0.002 times that height of the point; inspect it before applying
+an unreachable solve. Neither partner's position changes. The returned
+poses set the selected hands to the `hold` shape. Dandiya frames and circle
+bakes supply choreography, not stick geometry or automatic partner IK;
+call `meetDandiya` and draw its segments yourself.
+Blend strike poses with `humanDanceFrame('dandiya', beat).pose` between hits,
+using its `strike` envelope; draw the returned sticks at each arm's depth.
+Construct the contact character from the same options as the rendered dancers,
+including height, head size, figure, limb proportions, line width and hands.
+The festive live and headless examples use `character(people[0])` so their
+solver and displayed bodies share the same geometry.
+
+In a 3D beat script, use `{ do: 'dance', dance: 'garba', bpm: 120, beats: 8 }`
+and `{ do: 'spin', turns: 2, for: 1500 }`. Spin preserves the full signed
+rotation, unlike `face`, which deliberately chooses the shortest route.
+`spin` starts from the current heading, defaults to one positive revolution
+over 1000 ms, and turns at constant angular speed; negative and fractional
+`turns` are allowed. `dance` defaults to the style's BPM and one routine.
+With only `for`, its beat count is `for * bpm / 60000`; with both `beats`
+and `for`, that many beats are fitted into `for` ms, overriding the tempo.
+The script dances in place: use circle helpers for travel and foot plants.
+`at` must be finite and non-negative; `for`, `bpm` and `beats` must be
+finite and positive, and `turns` must be finite. Invalid beats are reported
+by `checkCharacterBeats3D` and rejected by `characterScript3D`.
+`face` honors an explicit `for` duration even when already facing the target.
+Scripted dances blend in for up to 150 ms within their duration, preserving
+a preceding hold, including relaxed hands. Missing hand fields use `HAND_REST`
+for both the start anchor and entry blend; explicit values, including zero,
+are preserved. Hand pose transitions use the same rest fallback.
+Unchanged action-start anchors preserve the preceding
+transition's endpoint easing; the next action keeps its own easing.
+Circle track `count`, when given, must match the target count.
+Garba, three-clap garba and dandiya are also in the editor's Character and
+3D Scene dance menus. The Character menu follows the audio's beat grid.
+Native styles offer a whole routine, without individual moves; their tracks
+do not replace existing view or spin tracks. The Character menu keys hands
+only with Cartoon gloves or Natural hands. The 3D Scene menu uses the style's
+default tempo and omits hand tracks.
+
+See `examples/headless-video/garba-circle.mjs` for a complete looping scene.
+The Examples page also includes **Navratri: Festive Garba & Dandiya**, with
+festive clothing, larger decorated sticks, partner strikes and half/full
+spins. Render `examples/headless-video/festive-dandiya.mjs` for its video.
+
 ![Every dance style's moves and every flip](model-sheet/dance-and-flips.png)
 
 The sheet is `examples/headless-video/dance-sheet.mjs`.
@@ -246,7 +394,8 @@ move (or the whole routine) and a tempo, then **🕺 Dance from playhead**. Or
 pick a flip and **🤸 Flip at playhead**. Both write ordinary keyframes, a few
 a beat, and keep the character's keys before and after. Glides and the
 moonwalk also write an `x` track from where the character stands. A character
-facing left (the *Side (left)* view) dances the mirror image (`mirrorHumanPose()`:
+using a converted stick-figure style and facing left (the *Side (left)* view)
+dances the mirror image (`mirrorHumanPose()`:
 sides swap, it turns, tips and rolls the other way) and glides the other way;
 it turns between 3 (side-on, facing left) and 4 (front-on), never round the
 back. With **Hands:

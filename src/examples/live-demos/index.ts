@@ -66,6 +66,8 @@ import { orbits } from './orbits'
 import { swipeCards } from './swipe-cards'
 import { cardFlip3d } from './card-flip-3d'
 import { quaternionCube } from './quaternion-cube'
+import { festiveDandiya } from './festive-dandiya'
+import festiveDandiyaSource from './festive-dandiya.js?raw'
 import { scene3dOrbit } from './scene-3d-orbit'
 import { characters3d } from './characters-3d'
 import { props3d } from './props-3d'
@@ -202,6 +204,7 @@ export const liveDemos: LiveDemoWithCode[] = [
   withCode(cardFlip3d, cardFlip3dSource),
   withCode(quaternionCube, quaternionCubeSource),
   withCode(scene3dOrbit, scene3dOrbitSource),
+  withCode(festiveDandiya, festiveDandiyaSource),
   withCode(characters3d, characters3dSource),
   withCode(props3d, props3dSource),
   withCode(cometTrails3d, cometTrails3dSource),

@@ -181,11 +181,16 @@ tempo, then click **🕺 Dance from playhead**. Or pick a flip (front, back,
 layout, scissor, side flip, cartwheel, back handspring, split leap, toe touch)
 and click **🤸 Flip at playhead**. Both write ordinary keyframes from the
 playhead, a few a beat, keeping the character's keys before and after, so
-every step can be edited afterwards. With cartoon gloves, dances key the hand
+every step can be edited afterwards. Native **Garba · two clap**, **Garba ·
+three clap** and **Dandiya · partner strikes** are also available as eight-beat
+whole routines. Their body-local steps keep the character's current view
+and existing turn/roll tracks, without mirroring the steps when facing left.
+Circle travel, planted-foot formations and paired stick contacts use the
+code APIs; the menu keys the dance on the spot. With cartoon gloves or natural hands, dances key the hand
 shapes too. When an audio element has a tempo, **Follow beat** (on by default)
 dances at the music's tempo and starts on the beat nearest the playhead. Popping's glides
 and moonwalk travel from where the character stands (an x track, the planted foot staying put); facing
-left, a character dances the mirror image and glides the other way. Flips travel from where the character is (an x track), the way it
+left, converted stick-figure dances are mirrored and glide the other way. Flips travel from where the character is (an x track), the way it
 faces: pick the *Side* or *Side (left)* view first. Facing left, a front-on
 flip (a cartwheel, a side flip) is the mirror image: it steps off on the other
 foot and wheels left. See [Dance and Flips](dance.md).
@@ -296,7 +301,9 @@ red box. In the property panel:
   outline. **Lights**: colour and intensity.
 - **Characters**: a look (*Clean*, *Pencil*, *Silhouette* drawn by their pens
   in perspective, or *Solid*) and **🕺 Dance from playhead** with any dance
-  style.
+  style, including native garba (two/three clap) and dandiya whole routines.
+  The 3D Scene menu uses the style's default tempo and omits hand tracks;
+  native styles keep the object's heading and pose turn/roll independent.
 - **Props**: which prop from the catalog (car, truck, bus, tractor, cart, train
   car, bike, motorbike, tree, house, helicopter, airplane, horse, dog, cat, cow,
   songbird, crow, chicken), its look (*Clean*, *Pencil*, *Silhouette*, or
@@ -1128,7 +1135,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.102.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.103.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed

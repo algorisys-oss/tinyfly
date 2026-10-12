@@ -18,7 +18,7 @@ npx @algorisys/tinyfly capabilities --json   # the same as data
 It lists the easings, track kinds, every property each canvas shape can
 animate (with units and ranges), the stick figure's joints, poses,
 expressions, gags, gaits, beat actions, dances, flips and hand shapes, the v2
-character's poses, expressions, builds, hairstyles, facial hair, glasses,
+character's poses, native dances, expressions, builds, hairstyles, facial hair, glasses,
 hats and cast, the code panel's languages, every surface's anchors and
 edits (code panel, whiteboard, chart), camera shots and the teaching
 helpers. It is generated from the code, so it can't
@@ -56,6 +56,35 @@ tracks (`cameraMoveTracks`, `cameraHandheldTracks`), a mood from
 `lightingPreset('dusk')` with `ground()` and `shadow: true` on meshes, and
 sound from `renderMix`; draw it with `depthBuffer: true` when shapes cross.
 See `docs/props.md` and `docs/scene-3d.md`.
+
+Native garba/dandiya use `humanDanceFrame(style, beat, base)` or
+`humanDanceTracks(target, { style, bpm, beats })`, keeping heading independent
+of local limb motion. `danceCircleAt` / `danceCircleTracks` coordinate a
+formation's x/z travel, facing and foot plants. Sparse clip fields use base,
+human/hand rest or zero defaults throughout the loop and JSON bakes.
+Contacts alternate left/right each integer beat, starting left, with stance
+through 0.6 of the beat; custom keys do not change this. For different
+footwork use `plantFeet: false` and your own `plantDanceFoot` contacts.
+Circle bakes require `beats` and default to 120 BPM (not the custom style's
+tempo); explicit `count` must match the targets. Render with the bake's base
+pose and build, since unchanged pose fields are omitted. Whole orbits and
+routines close only when the extra body spins also total whole revolutions.
+Zero-roll circle bakes use `rotateY`; with nonzero `pose.roll`, they use
+pose `turn` (quarter-turns), include roll, and set `rotateY: 0` to preserve
+yaw before roll and grounding. Supply roll when baking; apply all tracks
+together without adding heading twice. Apply both `pose` and
+`position` from `plantDanceFoot`; ankle/toe IK preserves authored `leg.*.rotate`
+hip turn-out. `meetDandiya` gives paired poses and 3D
+grip/tip segments with a `reached` flag. Build contact characters from the
+rendered dancers' options so body proportions, line width and hands match.
+Scripted dance entry and hand pose transitions use `HAND_REST` for missing
+hand fields, preserving relaxed hands during preceding holds and explicit zeros.
+Use `{ do: 'spin', turns: 2,
+for: 1500 }` for full rotations: `face` takes the shortest route, so facing
+360° does not spin. A script dance stays in place; `for` alone derives its
+beat count at the BPM, and `beats` with `for` fits the beats into that duration.
+Stick geometry and paired IK are separate from native frames and circle
+bakes. See `docs/dance.md`.
 
 ## Characters with a look
 

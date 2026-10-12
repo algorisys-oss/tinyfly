@@ -326,13 +326,33 @@ A character faces +z before any turn and stands on its object's ground: its
 lowest point at the object's y, so at y 0 it stands on a floor at y 0. Its
 pose fields are tracks on its object, next to `x`, `rotateY` and the rest:
 `stage/tum` `arm.right.spread`, `stage/tum` `turn`. Every dance and flip
-plays in 3D: `stickToHuman(danceFrame(style, beat))` gives the pose, and
+plays in 3D: `const frame = danceFrame(style, beat)` followed by
+`stickToHuman(frame.pose, frame.hands)` gives the pose, and
 `mirrorHumanPose()` its mirror image for a partner. Its `turn`, `roll`,
 `lift` and ground contact behave as they do front-on; seen front-on through a
 flat camera, a character is exactly the 2D figure.
 
 **Walking in metres.** `characterScript3D(id, beats, { scene, position, heading, height })`
 scripts a character in world metres, as `propScript3D` does props:
+
+It also accepts `{ do: 'spin', turns: 2, for: 1500 }` (signed full turns,
+linear angular motion) and `{ do: 'dance', dance: 'garba', bpm: 120, beats: 8 }`.
+`face` still takes the shortest turn and can use `for` to set its duration.
+An explicit duration is consumed even when no turn is needed. `spin`
+defaults to one revolution over 1000 ms; negative or fractional `turns`
+are allowed. A native `dance` stays in place, using the style's tempo and
+beat count by default. With only `for`, beats follow the BPM; with both
+`beats` and `for`, those beats are fitted into that duration.
+For circle formations with planted toes and independent facing/spins use
+`danceCircleTracks(['stage/a', 'stage/b'], { radius: 1.8, beatsPerTurn: 32,
+beats: 32, bpm: 120 })`. These write ordinary world-position, `rotateY` and
+native pose tracks. For nonzero `pose.roll`, heading uses pose `turn`
+(quarter-turns) with `rotateY: 0`, preserving native yaw before roll and
+grounding. Supply roll when baking and apply all returned tracks together.
+Use the same character build and base pose for baking and rendering; omitted
+base/rest fields are not reset. Partner stick contacts require `meetDandiya`
+and drawing its returned segments separately.
+See [Native character dances](dance.md#native-character-dances-circles-and-spins).
 
 ```js
 import { characterScript3D } from '@algorisys/tinyfly/characters'

@@ -1653,6 +1653,67 @@ Dance and flips (see [Dance and Flips](dance.md)): the pose fields `leftWrist`/`
 `DANCE_STYLES`, `DanceStyle`, `DanceMove`, `DanceKey`, `Groove`, `RoutineStep`, `MUDRAS`, `danceFrame()`, `dancePose()`, `danceTaps()`, `danceTravel()`, `danceTravelTrack()`, `stickToHuman()`, `mirrorHumanPose()`, `handProp()`, `DanceTap`, `TapName`, `routineBeats()`, `beatAt()`, `mirrorPose()`, `applyGroove()`, `danceStance()`, `dancer()`, `danceTracks()`, `bakeDanceTracks()`, `stickFigureTarget({ dance })` with the `beat` and `dancing` props, `resolveStickFrame()`;
 `FLIPS`, `Flip`, `FlipKey`, `flipPose()`, `flipTravel()`, `flipTracks()`; `POSES.sideSplit` and `POSES.frontSplit`.
 
+Native v2 dance APIs (also from `@algorisys/tinyfly/characters`):
+
+| API | Result / options |
+|---|---|
+| `HUMAN_DANCES` | JSON routines: `garba`, `garbaThreeClap`, `dandiya`, each eight beats at 120 BPM |
+| `humanDanceFrame(style, beat, base?)` | `HumanDanceFrame`: `{ pose, contact: { side, start, weight }, strike }`; `style` is a `HumanDanceName` or custom `HumanDanceStyle`; `base` defaults to `HUMAN_REST` |
+| `humanDanceTracks(target, options)` | `Track[]`; `HumanDanceTrackOptions`: required `style`, optional `bpm`, `beats`, `start` (ms), `pose`, `samplesPerBeat` (default 16); tempo and length default to the style |
+| `danceCircleAt(beat, options)` | `DanceCircleMember[]`: `{ character, pose, position, heading, strike, planted }`; absolute beat, world position and heading in degrees |
+| `danceCircleTracks(targets, options)` | Scene `Track[]` on targets such as `stage/dancer`; requires `beats`, defaults to 120 BPM, `start: 0` ms and 16 samples per beat; an explicit `count` must equal `targets.length` |
+| `danceJoint(partner, chain, joint)` | World `Vec3` with grounding, yaw, roll and placement; wrist/ankle index 2, toe index 3 |
+| `plantDanceFoot(partner, side, worldPoint, point = 'toe')` | `DanceFootPlant`: partner with adjusted `pose`, `position` and `reached`; `point` is `toe` or `ankle`; apply both pose and position |
+| `meetDandiya(a, b, options?)` | `DandiyaMeeting`: `{ a, b, sticks, point, reached }`; `a`/`b` are poses, `sticks` a pair of `DandiyaStick` (`{ grip, tip }`); options `sideA`, `sideB` (default right), `point`, `length` (default 0.22 of the shorter height) |
+
+`HumanDanceStyle` is `{ label, bpm, beats, keys: [{ beat, pose }], strikes }`.
+Keys must be nonempty, strictly ordered within `[0, beats)`, with finite pose
+values; strike beats must lie in that interval. Frames interpolate smoothly
+and wrap the beat into the loop. Missing fields fall back to base, human/hand
+rest, then zero. `turn` and `roll` are controlled by the caller. The contact
+pattern alternates left/right at each integer beat, starting left, with full
+stance through 0.6 of a beat and smooth release; custom keys do not change it.
+`strike` peaks at 1 and fades to 0 a quarter beat either side of a hit.
+
+`DanceCircleOptions` requires a positive `radius`; other fields are `center`
+([x,z], default [0,0]), `count` (default 8 in direct sampling), `beatsPerTurn`
+(32), `angle` (0 degrees, first dancer along +z), `direction` (1 clockwise
+viewed from above, or -1), `facing` (`inward` by default, `outward`, `tangent`
+or numeric degrees), `spins` (extra signed revolutions per orbit, default 0),
+`style` (`garba`), `character` (default height 1.7), `pose`, `plantFeet` (true).
+`DancePartner` is `{ character, pose, position: [x,y,z] }`, with placement,
+stick lengths and character height in the same units. Include world heading
+in `pose.turn` (quarter-turns) for contacts; object rotations are not read.
+`reached` uses a tolerance of 0.002 times the character height for foot plants
+or the shorter partner height for both stick tips.
+
+The bakers return linear JSON keyframes and omit unchanged base/rest pose
+fields, so rendered targets need the same base pose. Pose tracks omit
+`turn`/`roll`; zero-roll circle tracks use `rotateY`, while rolled circles
+use pose `turn`/`roll` and `rotateY: 0`. Core bakers include hand fields;
+the editor filters them when hands are disabled. Partner IK and stick
+drawing are separate from the routines and circle bakes.
+See [Dance and Flips](dance.md#native-character-dances-circles-and-spins)
+for loop closure, contact handling and examples.
+
+`characterScript3D(id, beats, options)` and `checkCharacterBeats3D(beats)`
+accept the `CharacterBeat3D` actions `spin` and `dance`:
+
+| Action | Timing and behavior |
+|---|---|
+| `{ do: 'spin', turns?, for?, at? }` | Linear rotation from the current heading; signed/fractional `turns`, default 1, duration `for` in ms, default 1000 |
+| `{ do: 'dance', dance, bpm?, beats?, for?, at? }` | Named native routine, in place; defaults to style tempo and length; `for` alone derives beats at the BPM, while `beats` with `for` fits those beats into that duration |
+| `{ do: 'face', toward, for?, at? }` | Shortest turn to a heading (degrees) or [x,z]; explicit duration applies even without a turn |
+
+Dance entry blends for `min(150 ms, duration / 4)` within the action,
+preserving prior holds and heading/roll. Missing hand fields start at
+`HAND_REST`; explicit zeros are retained. `at` must be finite and non-negative;
+`for`, `bpm`, `beats` must be finite and positive, and `turns` finite.
+See [3D Scenes](scene-3d.md#characters) for script options and result tracks.
+`capabilities().character.dances` lists native human dance names;
+`capabilities().stickFigure.dances` continues to map stick-figure styles to
+their move names.
+
 ### Beats
 
 In the engine (`@algorisys/tinyfly`), pure:

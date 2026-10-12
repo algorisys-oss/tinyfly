@@ -1,11 +1,15 @@
 import type { Keyframe } from '../../engine/types'
 import { DANCE_STYLES, FLIPS, danceFrame, danceTravel, flipPose, flipTravel, mirrorHumanPose, routineBeats, stickToHuman, HUMAN_REST, type DanceStyleName, type FlipName } from '../../characters'
 import type { CharacterPose, DanceFrame } from '../../characters'
+import { HUMAN_DANCES, humanDanceTracks, type HumanDanceName } from '../../characters'
+
+export const CHARACTER_DANCES = { ...DANCE_STYLES, ...HUMAN_DANCES }
+export type CharacterDanceName = DanceStyleName | HumanDanceName
 
 /**
  * Dances and flips for the editor's Character element: the stick figure's
- * dances, sampled a few times a beat, turned into v2 character pose fields
- * (`stickToHuman`) and written as ordinary keyframe tracks, so they save,
+ * dances converted with stickToHuman, and native human routines sampled in
+ * body-local space, written as ordinary keyframe tracks, so they save,
  * scrub, export and can be edited key by key like any other animation.
  */
 
@@ -27,15 +31,15 @@ function tracksFromPoses(samples: Array<{ time: number; pose: CharacterPose }>):
 const onCharacter = (frame: DanceFrame, hands: boolean): CharacterPose => stickToHuman(frame.pose, hands ? frame.hands : undefined)
 
 export interface CharacterDanceOptions {
-  style: DanceStyleName
-  /** One move on a loop; omit for the style's whole routine */
+  style: CharacterDanceName
+  /** One stick-style move on a loop; omit for the whole routine. Ignored by native styles. */
   move?: string
   bpm: number
   /** How many beats (default: the routine, or one loop of the move) */
   beats?: number
   /** Playhead, ms */
   start: number
-  /** Keyframes per beat (default 4: enough for snaps and hits) */
+  /** Keyframes per beat (default 4 for stick styles, 16 for native styles). */
   samplesPerBeat?: number
   /** Key the hand shapes too (for a character with cartoon hands) */
   hands?: boolean
@@ -43,8 +47,10 @@ export interface CharacterDanceOptions {
   height?: number
   /** The `x` offset the character is at when the dance starts (default 0) */
   x?: number
-  /** -1 for a character facing left: it dances the mirror image, and glides travel the other way */
+  /** Stick styles: -1 mirrors a left-facing character and its glide travel. Native styles ignore this. */
   facing?: number
+  /** Native dances keep this body's view; their tracks never key turn/roll. */
+  pose?: CharacterPose
 }
 
 /** -1 when a character's `turn` faces it screen-left (between the back and the front, going round), else 1. */
@@ -57,10 +63,15 @@ export function facingOf(turn: number): number {
  * A dance as character keyframe tracks from `start`, travelling (glides,
  * moonwalks) with `height`. Facing left, it is the mirror image, turned
  * between 3 (side-on, facing left, as the Side (left) view) and 4 (front-on),
- * the way flips face left too, and the travel goes the other way.
+ * the way flips face left too, and the travel goes the other way. Native
+ * styles stay body-local, omit turn/roll, and ignore move/facing/travel;
+ * hand tracks are included only when hands is enabled.
  */
 export function characterDanceTracks(options: CharacterDanceOptions): PropertyKeyframes[] {
-  const style = DANCE_STYLES[options.style]
+  if (Object.hasOwn(HUMAN_DANCES, options.style)) return humanDanceTracks('character', { ...options, style: options.style as HumanDanceName })
+    .filter(({ property }) => options.hands || !property.startsWith('hand.'))
+    .map(({ property, keyframes }) => ({ property, keyframes }))
+  const style = DANCE_STYLES[options.style as DanceStyleName]
   const beats = options.beats ?? (options.move ? style.moves[options.move].beats : routineBeats(style))
   const perBeat = options.samplesPerBeat ?? 4
   const msPerBeat = 60000 / options.bpm
@@ -157,8 +168,9 @@ export function mergeKeyframes(
 }
 
 /** Length of a dance in ms, for the panel's readout. */
-export function danceLength(style: DanceStyleName, bpm: number, move?: string, beats?: number): number {
-  const dance = DANCE_STYLES[style]
+export function danceLength(style: CharacterDanceName, bpm: number, move?: string, beats?: number): number {
+  if (Object.hasOwn(HUMAN_DANCES, style)) return (beats ?? HUMAN_DANCES[style as HumanDanceName].beats) * 60000 / bpm
+  const dance = DANCE_STYLES[style as DanceStyleName]
   const count = beats ?? (move ? dance.moves[move].beats : routineBeats(dance))
   return (count * 60000) / bpm
 }

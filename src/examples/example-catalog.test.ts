@@ -12,6 +12,17 @@ import { liveDemos } from './live-demos'
  */
 
 describe('example catalog', () => {
+  it('includes the festive Navratri demo with runnable code and 3D/showcase categories', () => {
+    const demo = getExample('live-festive-dandiya')
+    expect(demo?.name).toMatch(/Dandiya/)
+    expect(filterExamples(examples, { category: '3d', query: 'navratri' }).map((e) => e.id)).toContain('live-festive-dandiya')
+    expect(filterExamples(examples, { category: 'showcase', query: 'garba' }).map((e) => e.id)).toContain('live-festive-dandiya')
+    if (demo?.kind === 'code' && demo.format === 'live') {
+      expect(demo.demo.code).toContain('meetDandiya')
+      expect(demo.demo.code).toContain('spinDegrees')
+      expect(demo.demo.code).toContain('festiveLayers')
+    } else throw new Error('festive demo must be a live example')
+  })
   it('includes every editor sample and every code example', () => {
     expect(examples).toHaveLength(sampleDefinitions.length + codeExamples.length + liveDemos.length)
   })
