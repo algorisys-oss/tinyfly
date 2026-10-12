@@ -115,8 +115,10 @@ names.
   `hat`, `ears: true`, `face: { teeth, tongue }`, `feet: 'flat' | 'pointed' |
   'big'`, `outfit: { shirt, trousers, over, shoes }`; or start from
   `castMember('grandma', height)`. A `cane` in a hand or a wheelchair is an
-  accessory, not an age. Hair and hats turn with the head, so one
-  description serves every view; hanging hair swings after a turn or a run when
+  accessory, not an age. Built-in tops keep thighs behind their hem through turns.
+  Custom `layers.parts[id].clip` clips the bare body only, before `over`;
+  use `joints.parts[id].order` for garments spanning several parts. Hair and hats
+  turn with the head, so one description serves every view; hanging hair swings after a turn or a run when
   you add `hairFollowTracks(target, tracks, who)` after the character's tracks
   (per-frame code: `hairFollow` once, `hairMotionAt(keys, t)` each frame).
   Faces are `HUMAN_EXPRESSIONS` plus the pose

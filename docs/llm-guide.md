@@ -94,6 +94,10 @@ code: `build` (`child`, `tall`, `short`…), `hair` (a style name, or
 `face: { teeth, tongue }` (shown when the mouth opens), `feet` (`round`,
 `flat`, `pointed`, `big`) and `outfit: { shirt, trousers, over: 'hoodie' |
 'cardigan' | 'overalls' | 'sari' | 'apron' | 'labCoat', shoes: 'boots' }`.
+Built-in tops hide thighs and trouser roots under their hem during turns;
+garments spanning both legs use the resolved body order in camera views too.
+For custom clothes, `layers.parts[id].clip` clips only the bare body before
+`over` draws, and `joints.parts[id].order` gives the drawing index.
 `castMember('grandpa', 300)` gives a whole ready-made character to start
 from. The eight presets in `ANIME_CAST` (`animeBoy`, `animeGirl`,
 `animeYoungMan`, `animeYoungWoman`, `animeMan`, `animeWoman`,

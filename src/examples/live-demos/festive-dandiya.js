@@ -34,14 +34,20 @@ export function run(live, root) {
         }
       }
     };
+    const garment = (c, j) => {
+      const hip = j.points.hip, w = j.height * .065;
+      if (female) skirt(c, j);
+      else {
+        const hem = { x: hip.x, y: hip.y + j.height * .12 };
+        shape(c, [{ x: hip.x - w, y: hip.y - j.height * .04 }, { x: hip.x + w, y: hip.y - j.height * .04 }, { x: hem.x + w * 1.5, y: hem.y }, { x: hem.x - w * 1.5, y: hem.y }], color);
+        line(c, { x: hem.x - w * 1.5, y: hem.y }, { x: hem.x + w * 1.5, y: hem.y }, GOLD, j.height * .01);
+      }
+      line(c, { x: hip.x - w, y: hip.y }, { x: hip.x + w, y: hip.y }, GOLD, j.height * .012);
+    };
     const parts = {
       spine: { over(c, j) {
           const hip = j.points.hip, neck = j.points.neck, w = j.height * .065;
-          if (!female) {
-            const hem = { x: hip.x, y: hip.y + j.height * .12 };
-            shape(c, [{ x: hip.x - w, y: hip.y - j.height * .04 }, { x: hip.x + w, y: hip.y - j.height * .04 }, { x: hem.x + w * 1.5, y: hem.y }, { x: hem.x - w * 1.5, y: hem.y }], color);
-            line(c, { x: hem.x - w * 1.5, y: hem.y }, { x: hem.x + w * 1.5, y: hem.y }, GOLD, j.height * .01);
-          }
+          if (j.parts.spine.order > Math.max(j.parts['leg.left'].order, j.parts['leg.right'].order)) garment(c, j);
           for (let row = 1; row <= 3; row++)
             for (let col = -1; col <= 1; col++) {
               const t = row / 4;
@@ -81,9 +87,10 @@ export function run(live, root) {
         } },
     };
     for (const side of ['left', 'right']) {
-      if (female)
-        parts[`leg.${side}`] = { over(c, j) { const a = j.parts['leg.left'].depth, b = j.parts['leg.right'].depth; if ((a > b ? 'left' : 'right') === side)
-            skirt(c, j); } };
+      parts[`leg.${side}`] = { over(c, j) {
+        const last = j.parts['leg.left'].order > j.parts['leg.right'].order ? 'left' : 'right';
+        if (last === side && j.parts[`leg.${side}`].order > j.parts.spine.order) garment(c, j);
+      } };
       parts[`arm.${side}`] = { over(c, j) { const wrist = j.chains[`arm.${side}`][2], elbow = j.chains[`arm.${side}`][1], d = { x: elbow.x - wrist.x, y: elbow.y - wrist.y }, n = Math.hypot(d.x, d.y) || 1, w = j.height * .02; for (const t of [.03, .09]) {
           const p = { x: wrist.x + d.x * t, y: wrist.y + d.y * t };
           line(c, { x: p.x - d.y / n * w, y: p.y + d.x / n * w }, { x: p.x + d.y / n * w, y: p.y - d.x / n * w }, GOLD, j.height * .006);

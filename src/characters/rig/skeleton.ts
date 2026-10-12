@@ -79,6 +79,8 @@ export interface Skeleton {
   head: SolvedHead
   /** The hips on screen */
   hip: Point
+  /** Root depth in the same px units as the chains, for relative part ordering. */
+  hipDepth: number
   /** Every contact point on screen, and which one is lowest */
   contacts: Array<{ spec: ContactSpec; point: Point }>
   /** Screen y of the lowest contact point (0 when the figure stands on the ground) */
@@ -224,6 +226,7 @@ export function solveSkeleton(plan: BodyPlan, pose: Pose, options: SolveOptions)
     chains,
     head,
     hip: place(rollPoint(hipScreen)),
+    hipDepth: project(root, view).depth,
     contacts,
     groundY: Math.max(...contacts.map((c) => c.point.y)),
   }
@@ -358,6 +361,7 @@ export function skeletonInView(plan: BodyPlan, pose: Pose, options: SolveOptions
     chains,
     head,
     hip: hipScreen,
+    hipDepth: hipView[2] * pxPerUnit,
     contacts,
     groundY: Math.max(...contacts.map((c) => c.point.y)),
   }

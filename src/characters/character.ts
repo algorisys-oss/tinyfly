@@ -42,7 +42,12 @@ export interface CharacterLayers {
   /** Before anything (a shadow, a cape) */
   behind?: CharacterLayer
   /** Around a part ('leg.left', 'spine', 'neck', 'arm.right', 'head'…): drawn at that part's depth */
-  parts?: Record<string, { under?: CharacterLayer; over?: CharacterLayer }>
+  parts?: Record<string, {
+    under?: CharacterLayer
+    /** Clips the bare body part only; clothing and other `over` layers draw afterward. */
+    clip?: CharacterLayer
+    over?: CharacterLayer
+  }>
   /** After everything (a prop in front) */
   front?: CharacterLayer
 }
@@ -137,7 +142,7 @@ function stackLayers(first: CharacterLayers, second: CharacterLayers): Character
   for (const id of new Set([...Object.keys(first.parts ?? {}), ...Object.keys(second.parts ?? {})])) {
     const a = first.parts?.[id]
     const b = second.parts?.[id]
-    parts[id] = { under: both(a?.under, b?.under), over: both(a?.over, b?.over) }
+    parts[id] = { under: both(a?.under, b?.under), clip: both(a?.clip, b?.clip), over: both(a?.over, b?.over) }
   }
   return { behind: both(first.behind, second.behind), parts, front: both(first.front, second.front) }
 }
@@ -195,7 +200,7 @@ export interface CharacterJoints {
   /** Every chain's joints */
   chains: Record<string, Point[]>
   /** Every part's centre line as drawn, and its depth toward the viewer (px) */
-  parts: Record<string, { points: Point[]; depth: number }>
+  parts: Record<string, { points: Point[]; depth: number; order: number }>
   /** The head: centre, radii, screen angle and its own axes (use `pointOnHead`) */
   head: SolvedHead
   /** Screen y of the lowest contact point: the ground, 0 when standing */
@@ -247,15 +252,16 @@ function solveFrom(character: Character, full: Pose, skeleton: Skeleton): Solved
     // A part's depth for ordering is measured from where it hangs, so leaning
     // or bending the body never reorders it; small differences are ties.
     const parent = chain.parent ? skeleton.chains[chain.parent] : undefined
-    const anchor = parent ? parent.depths[chain.at ?? parent.depths.length - 1] : 0
+    const anchor = parent ? parent.depths[chain.at ?? parent.depths.length - 1] : skeleton.hipDepth
     const key = depth - anchor
     keys[chain.id] = Math.abs(key) < tie ? 0 : key
-    parts[chain.id] = { points: partLine(character, chain, solved.points), depth }
+    parts[chain.id] = { points: partLine(character, chain, solved.points), depth, order: 0 }
   })
-  parts.head = { points: [skeleton.head.center], depth: skeleton.head.depth }
+  parts.head = { points: [skeleton.head.center], depth: skeleton.head.depth, order: 0 }
   keys.head = 0
   const planOrder = [...character.plan.chains.map((c) => c.id), 'head']
   const order = [...planOrder].sort((a, b) => keys[a] - keys[b] || planOrder.indexOf(a) - planOrder.indexOf(b))
+  order.forEach((id, index) => { parts[id].order = index })
 
   const points: Record<string, Point> = { hip: skeleton.hip }
   for (const [name, [chainId, joint]] of Object.entries(character.plan.landmarks ?? {})) {
@@ -487,7 +493,10 @@ export function characterPartsInView(character: Character, pose: Pose, projectio
       }
       const layers = seen.layers.parts?.[id]
       hook(layers?.under)
+      ctx.save()
+      layers?.clip?.(ctx, joints, pen, time, full)
       drawPart(ctx, pen, seen, joints, id, full)
+      ctx.restore()
       hook(layers?.over)
       if (index === order.length - 1) {
         drawHeadOver(ctx, pen, seen.head, joints.head, full, { lineWidth: seen.lineWidth, skin: seen.skin })
@@ -524,7 +533,10 @@ function drawSolved(ctx: CanvasRenderingContext2D, character: Character, full: P
   for (const id of order) {
     const layers = character.layers.parts?.[id]
     hook(layers?.under)
+    ctx.save()
+    layers?.clip?.(ctx, joints, pen, time, full)
     drawPart(ctx, pen, character, joints, id, full)
+    ctx.restore()
     hook(layers?.over)
   }
   drawHeadOver(ctx, pen, character.head, joints.head, full, { lineWidth: character.lineWidth, skin: character.skin })

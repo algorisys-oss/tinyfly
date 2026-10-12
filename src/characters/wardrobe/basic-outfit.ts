@@ -52,20 +52,15 @@ const along = (points: Point[], from: number, to: number) =>
 const lerp = (a: Point, b: Point, t: number): Point => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t })
 
 /**
- * Which leg is drawn last: the nearer one (the body orders parts by how far
- * each stands toward the viewer from where it hangs, small differences being
- * ties, which fall to the right leg). Garments that cover both legs (a skirt,
- * an apron, a coat's skirts) draw with it, so neither leg crosses over them.
+ * Garments covering both legs follow the body's actual resolved order,
+ * including its relative-depth keys and ties, through any camera.
  */
 function lastLeg(j: CharacterJoints): 'left' | 'right' {
-  return orderKey(j, j.parts['leg.left'].depth) > orderKey(j, j.parts['leg.right'].depth) ? 'left' : 'right'
+  return j.parts['leg.left'].order > j.parts['leg.right'].order ? 'left' : 'right'
 }
 
-/** A part's place in the drawing order, as the body works it out (ties count as 0). */
-const orderKey = (j: CharacterJoints, depth: number) => (Math.abs(depth) < 0.01 * j.height ? 0 : depth)
-
 /** Whether the legs are drawn after the body (seen from the front) or before it (from behind). */
-const legsAfterBody = (j: CharacterJoints) => orderKey(j, Math.max(j.parts['leg.left'].depth, j.parts['leg.right'].depth)) > 0
+const legsAfterBody = (j: CharacterJoints) => Math.max(j.parts['leg.left'].order, j.parts['leg.right'].order) > j.parts.spine.order
 
 /** How much the character's front faces the viewer: 1 front-on, 0 side-on, negative from behind. */
 const frontFacing = (j: CharacterJoints) => Math.cos((j.turn * Math.PI) / 2)
@@ -120,11 +115,41 @@ export function basicOutfit(options: BasicOutfitOptions = {}): CharacterLayers {
     return { hip, top, below, line: [below, ...j.parts.spine.points] }
   }
 
+  const shirtOutline = (j: CharacterJoints) => {
+    const wide = hoodie ? 1.14 : 1
+    // Wide-hipped builds need room for the trouser roots and thigh thickness.
+    const hips = Math.hypot(j.points['hip.left'].x - j.points['hip.right'].x, j.points['hip.left'].y - j.points['hip.right'].y)
+    const waist = Math.max(j.height * 0.15 * wide, hips + Math.max(j.height * 0.08, j.lineWidth * 1.45) + edge(j))
+    return taperedOutline(torso(j).line, waist, j.height * 0.14 * wide)
+  }
+
+  /** Tops cover the thighs at the waist even when a swinging leg sorts in front. */
+  const clipTop = (ctx: CanvasRenderingContext2D, j: CharacterJoints) => {
+    const outlines = [shirtOutline(j)]
+    const { top, hip } = torso(j)
+    if (cardigan) outlines.push(taperedOutline([top, lerp(top, hip, 0.5), lerp(top, hip, 1.08)], j.height * 0.155, j.height * 0.15))
+    if (coat) outlines.push(taperedOutline([top, lerp(top, hip, 0.5), hip], j.height * 0.14, j.height * 0.15))
+    // Intersect separate exclusions: overlapping garments must not cancel
+    // one another as they would in a single even-odd path.
+    const points = Object.values(j.points)
+    const minX = Math.min(...points.map(p => p.x)) - j.height
+    const minY = Math.min(...points.map(p => p.y)) - j.height
+    const maxX = Math.max(...points.map(p => p.x)) + j.height
+    const maxY = Math.max(...points.map(p => p.y)) + j.height
+    for (const outline of outlines) {
+      ctx.beginPath()
+      ctx.rect(minX, minY, maxX - minX, maxY - minY)
+      ctx.moveTo(outline[0].x, outline[0].y)
+      for (const point of outline.slice(1)) ctx.lineTo(point.x, point.y)
+      ctx.closePath()
+      ctx.clip('evenodd')
+    }
+  }
+
   const shirt = (j: CharacterJoints, pen: Pen) => {
     // A hoodie is loose: wider, in its own colour; a cardigan and a sari leave the shirt (a blouse) under them.
     const color = hoodie ? overColor : shirtColor
-    const wide = hoodie ? 1.14 : 1
-    pen.shape(taperedOutline(torso(j).line, j.height * 0.15 * wide, j.height * 0.14 * wide), color, edge(j))
+    pen.shape(shirtOutline(j), color, edge(j))
   }
 
   /** The hood: from the front, a bump behind the neck above the shoulders; from behind, hanging down the back. */
@@ -445,16 +470,19 @@ export function basicOutfit(options: BasicOutfitOptions = {}): CharacterLayers {
   }
 
   /** A leg's trousers and boots, and, when the legs come after the body, what covers both. */
-  const leg = (side: 'left' | 'right') => (_ctx: CanvasRenderingContext2D, j: CharacterJoints, pen: Pen) => {
+  const leg = (side: 'left' | 'right') => (ctx: CanvasRenderingContext2D, j: CharacterJoints, pen: Pen) => {
+    ctx.save()
+    clipTop(ctx, j)
     trouser(j, pen, side)
     if (boots) boot(j, pen, side)
+    ctx.restore()
     if (lastLeg(j) === side && legsAfterBody(j)) overLegs(j, pen)
   }
 
   return {
     parts: {
-      'leg.left': { over: leg('left') },
-      'leg.right': { over: leg('right') },
+      'leg.left': { clip: clipTop, over: leg('left') },
+      'leg.right': { clip: clipTop, over: leg('right') },
       spine: {
         over: (_ctx, j, pen) => {
           if (hoodie && frontFacing(j) >= 0) hood(j, pen)

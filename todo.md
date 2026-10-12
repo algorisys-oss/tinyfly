@@ -1,3 +1,11 @@
+## Clothing coverage during turnarounds
+
+- [x] Keep bare thighs and trouser roots behind tops, including wider-hipped builds.
+- [x] Share resolved body drawing order with skirts, sari drapes, aprons and coat skirts.
+- [x] Keep festive dandiya tunics and decorated skirts over both legs in the live and headless scenes.
+- [x] Anchor camera-view part ordering at the character's root depth.
+- [x] Verify every cast preset, wardrobe cuts, complete turns, exposed lower legs and split-part camera rendering.
+
 ## Full-page example views
 
 - [x] Open full page action on live, timeline and editable catalog cards and individual example pages.

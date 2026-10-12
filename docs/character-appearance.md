@@ -243,6 +243,17 @@ The front details (collar, tie, apron, the coat's opening) show from the
 front and turn away with the body; from behind an apron shows its ties.
 `basicOutfit(options)` gives the same clothes as layers.
 
+Tops keep the upper thighs and trouser roots behind their hem through turns
+and moving poses. The waist makes room for wider hips. Skirts, sari drapes,
+aprons and coat skirts follow the body's resolved drawing order, including
+camera views and rendering the character part by part.
+
+Custom `layers.parts[id].clip(ctx, joints, pen, time, pose)` can clip the bare
+body part before it draws. Set the canvas clipping path in this hook; it is
+restored before the part's `over` layers and the next part. The built-in outfit
+uses this to hide thighs under tops. `joints.parts[id].order` is the resolved
+far-to-near drawing index; use it when a garment spans several parts.
+
 ## The cast
 
 `castMember(name, height, changes?)` returns character options for a recurring
