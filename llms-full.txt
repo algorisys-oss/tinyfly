@@ -204,7 +204,7 @@ with a GSAP-style call (durations are in seconds here):
 ```html
 <div class="box" style="width:60px;height:60px;background:#4a9eff"></div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.104.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.105.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -412,7 +412,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.104.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.105.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -1586,6 +1586,16 @@ quickPlay({
 
 Practical examples for common animation patterns using the tinyfly API.
 
+## Young Adult Manga Cast
+
+[Young Adult Manga Cast](https://tinyfly.app/examples/live-manga-cast) shows
+four original presets with angular jaws, tapered chins, narrower eyes and
+pointed hair. Change hair, face shape, jaw/chin widths, eye height and expression,
+view the whole body or close-up, and enable a complete turnaround. The controls
+use the public `MANGA_CAST`, `castMember` and face/hair options; Copy as page
+exports the same working example. The original Stick Figure example also
+has an arm-length slider.
+
 ## Colour Anime Cast
 
 Open [Colour Anime Cast](https://tinyfly.app/examples/live-anime-cast) to inspect
@@ -2308,7 +2318,7 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.104.0/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.105.0/cdn/tinyfly-player.iife.js`.
 
 ---
 
@@ -2387,6 +2397,7 @@ Complete reference for the tinyfly animation engine, player, and adapters.
 
 ## Table of Contents
 
+- [Character Cast and Proportions](#character-cast-and-proportions)
 - [Core Types](#core-types)
 - [Timeline](#timeline)
 - [Track](#track)
@@ -4798,6 +4809,24 @@ another is running takes over each element from where it appears.
 `Stage` and `quickPlay`, with `to`, `from`, `fromTo`, `set`, `timeline`,
 `ticker` and `splitText` at the top level bound to `live`.
 
+## Character Cast and Proportions
+
+Import these APIs from `@algorisys/tinyfly/characters` (or the browser bundle's
+`tinyfly` global).
+
+| API | Purpose |
+|---|---|
+| `ANIME_CAST`, `MANGA_CAST`, `CHARACTER_CAST` | Editable character option presets and their labels, groups and height scales |
+| `castMember(name, height, changes)` | Resolve a preset, scaled to the adult height, with optional option overrides |
+| `character(options)` | Create the native human rig with editable face, hair, build and clothing |
+| `FaceOptions` | Simple/anime style, iris, lashes, age creases; round/angular shape, jaw/chin widths, eye scale/aspect, nose and mouth extras |
+| `HairSpec`, `HairSpike` | Editable hair fields and pointed tufts that follow the head's turn |
+| `StickStyle.armLength` | Positive finite multiplier of both original stick-figure arm bones, default 1; used by draw, target and joints APIs |
+
+See [Character Appearance](character-appearance.md#young-adult-manga-cast)
+for parameter ranges, examples and JSON semantics. `AnimeCastName` and
+`MangaCastName` type the preset names.
+
 ---
 
 <!-- docs/file-format.md -->
@@ -5671,7 +5700,10 @@ its box; resize the box to change its height. In the property panel:
   **Iris colour** and **Eyelashes** toggle; **Age creases** adds subtle facial
   lines. The Cast picker includes eight colour anime presets for boys, girls,
   young adults, adults and older adults. The 3D Scene character's Cast picker
-  uses the same presets.
+  uses the same presets. The manga presets add angular faces and pointed hair;
+  **Face shape**, **Jaw width**, **Chin width**, **Eye size** and **Eye height**
+  edit those features. **Nose** and **Line width** control the remaining details.
+  Picking another hairstyle keeps the face and clears custom hair overrides.
 
 To animate a character, pick a view, a pose and a face, and click
 **◆ Keyframe pose at playhead**. Move the playhead, pick the next pose, and
@@ -6639,7 +6671,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.104.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.105.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed
@@ -8054,6 +8086,19 @@ When writing tinyfly animations, follow node_modules/@algorisys/tinyfly/skills/t
 **A chat window**: paste the output of `npx @algorisys/tinyfly capabilities`,
 or link `llms-full.txt`.
 
+### Manga faces and original stick-figure proportions
+
+`MANGA_CAST` supplies four original young adult presets through `castMember`.
+`face.shape: 'angular'`, `jawWidth` and `chinWidth` shape the projected pen head;
+`eyeScale` and `eyeAspect` shape anime eyes. Hair and outfit overrides remain
+independent; spread the preset's face when changing one nested field.
+`mangaSpikes` / `mangaSweep` contain editable `hair.spikes` tufts as JSON
+(`around` degrees, `up` scalp height, `length` and `width` head radii).
+The solid mesh head and contact bounds retain their existing geometry.
+For the original stick figure use `style.armLength` (positive finite, default 1)
+in `drawStickFigure`, `stickFigureJoints` or `stickFigureTarget`; it changes
+both arm segments, with hands and the rest of the body keeping their sizes.
+
 ---
 
 <!-- docs/teaching.md -->
@@ -8085,7 +8130,7 @@ path for all of that:
 </figure>
 
 <!-- once, anywhere on the page (a site-wide footer is fine) -->
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.104.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.105.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 Every `[data-tinyfly-embed]` mounts when the page is ready, with no per-post
@@ -9357,8 +9402,8 @@ On a page with no build step, load the maps add-on after the browser bundle; it
 adds to the same `tinyfly` global:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.104.0/cdn/tinyfly.iife.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.104.0/cdn/tinyfly-maps.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.105.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.105.0/cdn/tinyfly-maps.iife.js"></script>
 ```
 
 It is a separate script because the offline world map it carries adds about
@@ -9815,7 +9860,7 @@ cast member at an adult `height` (each stands at their own scale of it). The
 family: `boy`, `girl`, `youngMan`, `youngWoman`, `man`, `woman`, `grandpa`,
 `grandma`; at work (from the occupations sheet): `doctor`, `cook`, `builder`,
 `courier`, `teacher`, `farmer`. `CHARACTER_CAST` has each one's `label`,
-`group` (`family`, `work` or `anime`), `scale` and `options`.
+`group` (`family`, `work`, `anime` or `manga`), `scale` and `options`.
 
 ```js
 const family = ['man', 'woman', 'girl', 'grandma'].map((name) => character(castMember(name, 280)))
@@ -9857,6 +9902,70 @@ The **Colour Anime Cast** example shows all eight presets, expressions,
 face close-ups and a complete turnaround. Both the Character and 3D Scene
 editors offer these presets in their Cast picker. The Character editor also
 has Face style, Iris colour, Eyelashes and Age creases controls, saved in project JSON.
+
+### Young adult manga cast
+
+`MANGA_CAST` supplies four original archetypes: `mangaYoungMan`,
+`mangaYoungWoman`, `mangaRival`, and `mangaHeroine`. They also belong to
+`CHARACTER_CAST` and use the shared expression, pose, dance and turnaround APIs.
+These presets use lighter line widths, angular jaws and smaller, narrower eyes.
+Hair, skin, clothing and every face option remain editable.
+
+```js
+const preset = MANGA_CAST.mangaYoungMan.options
+const hero = character(castMember('mangaYoungMan', 300, {
+  hair: { style: 'bob', color: '#446688' },
+  face: { ...preset.face, jawWidth: 0.8, chinWidth: 0.12, iris: '#987546' }
+}))
+```
+
+`face.shape: 'angular'` changes the pen character's head outline into a
+projected 3D tapered head, following yaw, nod and roll. `jawWidth` is the
+half-width at the jaw (clamped to 0.55–0.95 head radii, default 0.74);
+`chinWidth` is the half-width just above the chin (0.03–0.35, default 0.14).
+`shape: 'round'` is the original default. The underlying rig and contact
+geometry retain their original head bounds; solid mesh characters retain
+their existing mesh head.
+
+Anime `eyeScale` changes eye size (0.5–1.2, default 1), and `eyeAspect`
+changes eye height relative to width (0.45–1.2, default 1). Smaller aspect
+values produce narrower manga eyes; expressions, blink, lids and gaze still
+animate them. These face options are independent of the hairstyle.
+
+`mangaSpikes` and `mangaSweep` are editable hair presets with pointed 3D
+tufts. A `hair.spikes` array contains `{ around, up, length, width }`:
+`around` is degrees from the front, `up` the scalp height from -1 to 1,
+and `length` and `width` are tuft length and base radius in head radii.
+Use `spikes: []` to remove the tufts, or choose any other hairstyle.
+The editor retains custom hair fields in saved JSON; picking a different
+hairstyle clears the preceding preset's hair overrides.
+
+The [Young Adult Manga Cast](https://tinyfly.app/examples/live-manga-cast)
+example lets you change hair, jaw, chin and eye height while expressions and
+turnarounds animate. The Character editor offers matching face controls,
+nose and line width; both editor Cast pickers include these presets.
+
+### Original stick-figure arm proportions
+
+The original stick-figure API now accepts `StickStyle.armLength`: a positive
+finite multiplier, default 1, of both upper-arm and forearm lengths.
+Hands keep their size; torso, shoulder positions, legs and head stay unchanged.
+It composes with squash/stretch, mirroring, wrist bends and rubber limbs.
+This is an appearance option, rather than a pose track.
+
+```js
+const person = stickFigureTarget({
+  x: 200, y: 400,
+  style: { height: 300, armLength: 0.85 }
+})
+const joints = stickFigureJoints(POSES.wave, { height: 300, armLength: 1.2 })
+drawStickFigure(ctx, POSES.wave, { height: 300, armLength: 1.2 })
+```
+
+`stickFigureAt` and costume/prop drawing hooks see the adjusted wrists.
+The [Stick Figure example](https://tinyfly.app/examples/live-stick-figure)
+includes an arm-length slider. The newer human rig keeps its existing
+`CharacterOptions.armLength` setting.
 
 ## Hugs, help-ups and everyday cycles
 
@@ -14272,7 +14381,7 @@ magnet.addEventListener('pointerleave', () => {
 
 <!-- capabilities: generated from the library -->
 
-# tinyfly capabilities (v0.104.0)
+# tinyfly capabilities (v0.105.0)
 
 Generated from the library itself: every name below is accepted, and names not listed are rejected (beat scripts, code panels and `checkTracks` say which name was probably meant).
 
@@ -14350,6 +14459,8 @@ Types: `rect`, `circle`, `text`, `line`, `path`, `image`, `custom`. `describeTar
 ## Stick figure (`@algorisys/tinyfly/characters`)
 
 `stickFigureTarget({ x, y, style })` is a custom canvas target; its props are the pose fields and the props below. Pose it with tracks (`poseTracks`), or write beats (`scriptTracks`).
+
+Style proportions: `headSize` is a fraction of height; `armLength` multiplies both upper arm and forearm lengths (default 1, positive finite). Hands, shoulders, torso and legs retain their sizes.
 
 ### Pose fields
 
@@ -14554,13 +14665,14 @@ Native dances: `garba`, `garbaThreeClap`, `dandiya`; `humanDanceFrame(style, bea
 Appearance options of `character({ … })`, all plain data that turns with the head (see docs/character-appearance.md):
 
 - `build`: `standard`, `slim`, `tall`, `short`, `broad`, `curvy`, `stocky`, `kid`, `child`, `toddler`
-- `hair`: `bald`, `buzzCut`, `crewCut`, `short`, `sidePart`, `sideSwept`, `slickBack`, `quiff`, `spiky`, `undercut`, `curlyCrop`, `afro`, `wavyCrop`, `shortLocs`, `flatTop`, `receding`, `thinning`, `pixie`, `bob`, `longBob`, `wavyBob`, `shoulderStraight`, `shoulderWaves`, `longStraight`, `longWaves`, `longCurls`, `longLocs`, `lowPonytail`, `highPonytail`, `ponytail`, `sidePonytail`, `topBun`, `lowBun`, `singleBraid`, `twinBraids`, `braids` (colours: `black`, `brown`, `chestnut`, `auburn`, `blond`, `ginger`, `gray`, `white` in `HAIR_COLORS`)
+- `hair`: `bald`, `buzzCut`, `crewCut`, `short`, `sidePart`, `sideSwept`, `slickBack`, `quiff`, `spiky`, `mangaSpikes`, `mangaSweep`, `undercut`, `curlyCrop`, `afro`, `wavyCrop`, `shortLocs`, `flatTop`, `receding`, `thinning`, `pixie`, `bob`, `longBob`, `wavyBob`, `shoulderStraight`, `shoulderWaves`, `longStraight`, `longWaves`, `longCurls`, `longLocs`, `lowPonytail`, `highPonytail`, `ponytail`, `sidePonytail`, `topBun`, `lowBun`, `singleBraid`, `twinBraids`, `braids` (colours: `black`, `brown`, `chestnut`, `auburn`, `blond`, `ginger`, `gray`, `white` in `HAIR_COLORS`)
 - `facialHair`: `cleanShaven`, `stubble`, `pencilMoustache`, `shortMoustache`, `chevron`, `handlebar`, `walrus`, `goatee`, `vanDyke`, `circleBeard`, `shortBoxed`, `fullBeard`, `longBeard`, `roundedBeard`, `pointedBeard`, `chinStrap`, `soulPatch`, `sideburns`, `muttonChops`, `moustacheStubble`
 - `glasses`: `round`, `square`, `sunglasses`; `hat`: `cap`, `beanie`, `hardHat`, `sunHat`, `bowler`; `ears: true`; `face: { teeth, tongue }` (shown when the mouth opens); `feet`: `round`, `flat`, `pointed`, `big`
 - `outfit`: `{ shirt, trousers, sleeves: short | long | none, bottom: trousers | shorts | skirt, collar, tie: colour, over: apron | labCoat | hoodie | cardigan | overalls | sari, overColor, shoes: boots, shoeColor }`
-- `castMember(name, height)`: `boy`, `girl`, `youngMan`, `youngWoman`, `man`, `woman`, `grandpa`, `grandma`, `doctor`, `cook`, `builder`, `courier`, `teacher`, `farmer`, `animeBoy`, `animeGirl`, `animeYoungMan`, `animeYoungWoman`, `animeMan`, `animeWoman`, `animeOlderMan`, `animeOlderWoman`
+- `castMember(name, height)`: `boy`, `girl`, `youngMan`, `youngWoman`, `man`, `woman`, `grandpa`, `grandma`, `doctor`, `cook`, `builder`, `courier`, `teacher`, `farmer`, `animeBoy`, `animeGirl`, `animeYoungMan`, `animeYoungWoman`, `animeMan`, `animeWoman`, `animeOlderMan`, `animeOlderWoman`, `mangaYoungMan`, `mangaYoungWoman`, `mangaRival`, `mangaHeroine`
 - Face marks (pose fields, 0–1): `blush`, `tears`, `sweat`; close-up fields `pupil` (size, 1 usual), `lid` (upper lids lowered, 0–1), `bulge` (eyes out of the head, 0–1); `face: { nose: true, inPupil(ctx, pupil) }`; `drawCharacterHead(ctx, who, pose, { x, y, radius })` draws just the head big
 - Face styles: `simple`, `anime`; `face: { style: 'anime', iris: '#4b7fce', lashes: true, ageLines: 0.8 }` uses coloured eyes and the same expressions, blinks and gaze. `ANIME_CAST` contains eight age presets, also available through `castMember`.
+- Face shapes: `round`, `angular`; `face: { shape: 'angular', jawWidth: 0.74, chinWidth: 0.14, eyeScale: 0.8, eyeAspect: 0.65 }` sets a tapered 3D jaw and narrower anime eyes. `MANGA_CAST` contains four original young adult presets; hair styles `mangaSpikes` and `mangaSweep` remain editable.
 - Hair in motion (pose fields): `hair.swing` (degrees round the head, + toward its left), `hair.trail` (head radii back), `hair.lift` (head radii up); key them with `hairFollowTracks(target, tracks, who)` after the character's tracks, or `hairFollow` + `hairMotionAt` when posing per frame
 - `holding`: `mug` (left or right), `phone` (left or right), `book` (one hand or both), `bag` (left or right), `briefcase` (left or right), `umbrella` (left or right), `broom` (left or right), `cane` (left or right), `parcel` (both); pose fields `held.left`, `held.right`, `held.both` (below 0.5 lets go); `handGrip(joints, side)`
 - `meetHands(kind, a, b)` (stand them `meetingSpacing(kind, a, b)` apart): `handshake`, `highFive`, `fistBump`, `handOver`; `embrace(a, b)` (a hug, `embraceSpacing` apart); `helpUp(helper, sitter, progress)` (0 on the floor, hand taken; 1 standing; `helpUpSpacing` apart)

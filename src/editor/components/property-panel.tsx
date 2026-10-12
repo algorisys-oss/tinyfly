@@ -1859,6 +1859,7 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
       </Show>
 
       <h4>Head</h4>
+      <div class="property-row"><label>Line width</label><input type="number" min="0.5" step="0.1" value={element.lineWidth ?? element.height * (element.build?.proportions === 'thin' ? 0.022 : 0.045)} onChange={(e) => updateElement({ lineWidth: Math.max(0.5, Number(e.currentTarget.value)) })} /></div>
       <div class="property-row">
         <label>Face style</label>
         <select value={element.faceStyle ?? 'simple'} onChange={(e) => updateElement({ faceStyle: e.currentTarget.value as CharacterElement['faceStyle'] })}>
@@ -1866,7 +1867,19 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
           <option value="anime">Colour anime</option>
         </select>
       </div>
+      <div class="property-row">
+        <label>Face shape</label>
+        <select value={element.faceShape ?? 'round'} onChange={(e) => updateElement({ faceShape: e.currentTarget.value as CharacterElement['faceShape'] })}>
+          <option value="round">Round</option><option value="angular">Angular jaw</option>
+        </select>
+      </div>
+      <Show when={element.faceShape === 'angular'}>
+        <div class="property-row"><label>Jaw width</label><input type="range" min="0.55" max="0.95" step="0.01" value={element.jawWidth ?? 0.74} onInput={(e) => updateElement({ jawWidth: Number(e.currentTarget.value) })} /></div>
+        <div class="property-row"><label>Chin width</label><input type="range" min="0.03" max="0.35" step="0.01" value={element.chinWidth ?? 0.14} onInput={(e) => updateElement({ chinWidth: Number(e.currentTarget.value) })} /></div>
+      </Show>
       <Show when={element.faceStyle === 'anime'}>
+        <div class="property-row"><label>Eye size</label><input type="range" min="0.5" max="1.2" step="0.01" value={element.eyeScale ?? 1} onInput={(e) => updateElement({ eyeScale: Number(e.currentTarget.value) })} /></div>
+        <div class="property-row"><label>Eye height</label><input type="range" min="0.45" max="1.2" step="0.01" value={element.eyeAspect ?? 1} onInput={(e) => updateElement({ eyeAspect: Number(e.currentTarget.value) })} /></div>
         <div class="property-row">
           <label>Iris colour</label>
           <input type="color" value={element.irisColor ?? '#4b7fce'} onInput={handleColorChange('irisColor')} />
@@ -1897,7 +1910,7 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
       </div>
       <div class="property-row">
         <label>Hair</label>
-        <select value={element.hair ?? ''} onChange={(e) => updateElement({ hair: (e.target as HTMLSelectElement).value || undefined })}>
+        <select value={element.hair ?? ''} onChange={(e) => updateElement({ hair: (e.target as HTMLSelectElement).value || undefined, hairDetails: undefined })}>
           <option value="">None</option>
           <For each={Object.keys(HAIR_STYLES)}>{(name) => <option value={name}>{name}</option>}</For>
         </select>
@@ -1933,6 +1946,7 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
         <label>Ears</label>
         <input type="checkbox" checked={element.ears ?? false} onChange={(e) => updateElement({ ears: (e.target as HTMLInputElement).checked })} />
       </div>
+      <div class="property-row"><label>Nose</label><input type="checkbox" checked={element.faceNose ?? false} onChange={(e) => updateElement({ faceNose: e.currentTarget.checked })} /></div>
       <div class="property-row">
         <label>Teeth</label>
         <input type="checkbox" checked={element.teeth ?? false} title="A row of upper teeth when the mouth opens" onChange={(e) => updateElement({ teeth: (e.target as HTMLInputElement).checked || undefined })} />

@@ -8,6 +8,7 @@ import { headPoint, skeletonInView, solveSkeleton, type Skeleton, type SolvedHea
 import { reachPose as reachPlanPose } from './rig/reach'
 import { createPen, type Look, type Pen, type PencilOptions } from './look/pen'
 import { rubberLimb } from './look/curves'
+import { angularHeadOutline } from './head/head-shape'
 import { drawFace, faceToScreen, type FaceOptions } from './head/face'
 import { drawHeadBehind, drawHeadFront, drawHeadOver, resolveHeadLook, type HeadLook, type HeadLookOptions } from './head/head-look'
 import { HUMAN_BUILDS, HUMAN_POSES, HUMAN_REST, humanPlan, type HumanBuild, type HumanBuildName, type HumanPoseName, type FootShape } from './species/human'
@@ -305,7 +306,8 @@ function drawPart(ctx: CanvasRenderingContext2D, pen: Pen, character: Character,
   if (id === 'head') {
     const { head } = joints
     const fill = character.skin === 'none' ? null : character.skin
-    pen.ellipse(head.center.x, head.center.y, head.rx, head.ry, head.angle, fill, lw)
+    if (character.face.shape === 'angular') pen.shape(angularHeadOutline(head, character.face), fill, lw)
+    else pen.ellipse(head.center.x, head.center.y, head.rx, head.ry, head.angle, fill, lw)
     drawHeadFront(ctx, pen, character.head, head, pose, { lineWidth: lw, skin: character.skin }, () => {
       if (pen.look !== 'silhouette') drawFace(pen, head, pose, lw, { ...character.face, skin: character.skin === 'none' ? '#ffffff' : character.skin }, ctx)
     })

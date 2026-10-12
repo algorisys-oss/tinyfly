@@ -4,6 +4,7 @@ Complete reference for the tinyfly animation engine, player, and adapters.
 
 ## Table of Contents
 
+- [Character Cast and Proportions](#character-cast-and-proportions)
 - [Core Types](#core-types)
 - [Timeline](#timeline)
 - [Track](#track)
@@ -2414,3 +2415,21 @@ another is running takes over each element from where it appears.
 `tinyfly`) re-exports the engine, player, drivers, interaction, `tf`, `live`,
 `Stage` and `quickPlay`, with `to`, `from`, `fromTo`, `set`, `timeline`,
 `ticker` and `splitText` at the top level bound to `live`.
+
+## Character Cast and Proportions
+
+Import these APIs from `@algorisys/tinyfly/characters` (or the browser bundle's
+`tinyfly` global).
+
+| API | Purpose |
+|---|---|
+| `ANIME_CAST`, `MANGA_CAST`, `CHARACTER_CAST` | Editable character option presets and their labels, groups and height scales |
+| `castMember(name, height, changes)` | Resolve a preset, scaled to the adult height, with optional option overrides |
+| `character(options)` | Create the native human rig with editable face, hair, build and clothing |
+| `FaceOptions` | Simple/anime style, iris, lashes, age creases; round/angular shape, jaw/chin widths, eye scale/aspect, nose and mouth extras |
+| `HairSpec`, `HairSpike` | Editable hair fields and pointed tufts that follow the head's turn |
+| `StickStyle.armLength` | Positive finite multiplier of both original stick-figure arm bones, default 1; used by draw, target and joints APIs |
+
+See [Character Appearance](character-appearance.md#young-adult-manga-cast)
+for parameter ranges, examples and JSON semantics. `AnimeCastName` and
+`MangaCastName` type the preset names.

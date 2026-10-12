@@ -2,6 +2,16 @@
 
 Practical examples for common animation patterns using the tinyfly API.
 
+## Young Adult Manga Cast
+
+[Young Adult Manga Cast](https://tinyfly.app/examples/live-manga-cast) shows
+four original presets with angular jaws, tapered chins, narrower eyes and
+pointed hair. Change hair, face shape, jaw/chin widths, eye height and expression,
+view the whole body or close-up, and enable a complete turnaround. The controls
+use the public `MANGA_CAST`, `castMember` and face/hair options; Copy as page
+exports the same working example. The original Stick Figure example also
+has an arm-length slider.
+
 ## Colour Anime Cast
 
 Open [Colour Anime Cast](https://tinyfly.app/examples/live-anime-cast) to inspect
@@ -724,7 +734,7 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.104.0/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.105.0/cdn/tinyfly-player.iife.js`.
 
 ---
 

@@ -2,6 +2,7 @@ import type { Point } from '../../adapters/canvas/sketch'
 import type { Pose, Vec3 } from '../rig/body-plan'
 import type { SolvedHead } from '../rig/skeleton'
 import type { Pen } from '../look/pen'
+import { convexHull } from './head-shape'
 import { taperedOutline } from '../look/tapered-line'
 import { aroundDistance, behindHead, cachedOutlines, facingOf, onScreen, shellOutlines, spherePoint, visibleRuns, type ShellOutlines, type ShellRegion } from './shell'
 
@@ -69,6 +70,17 @@ export type HairTexture = 'smooth' | 'spiky' | 'curly' | 'wavy' | 'locs'
 /** Detail lines drawn on the hair: none, a parting, strands swept from a parting, combed back, hanging strands, a few thin strands */
 export type HairStrands = 'none' | 'part' | 'sweep' | 'combed' | 'hanging' | 'thin'
 
+/** A pointed 3D tuft anchored on the scalp. All dimensions are head radii. */
+export interface HairSpike {
+  /** Degrees around the head from the face. */
+  around: number
+  /** Height on the scalp, -1..1. */
+  up: number
+  /** Length beyond the scalp and base radius. */
+  length: number
+  width: number
+}
+
 export interface HairTie {
   kind: 'ponytail' | 'bun' | 'braid'
   /** Where it is tied: on top, high at the back, low at the back, or over one ear (the character's left or right) */
@@ -108,6 +120,8 @@ export interface Hair {
   /** `solid` filled hair; `stipple` close-cropped hair drawn as dots on the scalp */
   fill: 'solid' | 'stipple'
   ties: HairTie[]
+  /** Optional pointed tufts; their silhouette follows every head turn. */
+  spikes?: HairSpike[]
   /** Hair falls over the ears, so the ears are hidden */
   coversEars: boolean
 }
@@ -155,6 +169,16 @@ export const HAIR_STYLES = {
   slickBack: { volume: 0.12, strands: 'combed', hairline: { front: 0.62, side: 0.15, back: -0.8 } },
   quiff: { volume: 0.12, quiff: 0.42, strands: 'combed', hairline: { front: 0.6, side: 0.15, back: -0.8 } },
   spiky: { volume: 0.12, texture: 'spiky', textureAmount: 0.34, hairline: { front: 0.5, side: 0.12, back: -0.8 } },
+  mangaSpikes: { volume: 0.12, texture: 'spiky', textureAmount: 0.08, hairline: { front: 0.55, side: 0.12, back: -0.7 }, spikes: [
+    { around: -100, up: 0.4, length: 0.55, width: 0.24 }, { around: -65, up: 0.7, length: 0.6, width: 0.25 },
+    { around: -25, up: 0.93, length: 0.6, width: 0.24 }, { around: 40, up: 0.87, length: 0.7, width: 0.25 },
+    { around: 85, up: 0.55, length: 0.55, width: 0.24 }, { around: 160, up: 0.8, length: 0.5, width: 0.24 },
+    { around: -160, up: 0.65, length: 0.55, width: 0.24 },
+  ] },
+  mangaSweep: { volume: 0.14, texture: 'spiky', textureAmount: 0.1, sweep: -0.35, hairline: { front: 0.5, side: 0.08, back: -0.8 }, spikes: [
+    { around: -95, up: 0.45, length: 0.35, width: 0.2 }, { around: -60, up: 0.8, length: 0.4, width: 0.24 },
+    { around: 75, up: 0.55, length: 0.4, width: 0.23 }, { around: 150, up: 0.75, length: 0.35, width: 0.2 },
+  ] },
   undercut: { volume: 0.16, quiff: 0.18, part: 40, strands: 'sweep', sweep: -0.15, hairline: { front: 0.55, side: 0.42, back: -0.3 } },
   curlyCrop: { volume: 0.14, texture: 'curly', textureAmount: 0.12, hairline: { front: 0.5, side: 0.1, back: -0.8 } },
   afro: { volume: 0.5, texture: 'curly', textureAmount: 0.12, hairline: { front: 0.5, side: -0.1, back: -0.85 }, coversEars: true },
@@ -211,6 +235,7 @@ export function resolveHair(spec: HairSpec | HairStyleName): Hair {
     ...fields,
     hairline: { ...DEFAULT_HAIR.hairline, ...preset.hairline, ...hairline },
     ties: (fields.ties ?? preset.ties ?? []).map((tie) => ({ ...tie })),
+    ...((fields.spikes ?? preset.spikes) ? { spikes: (fields.spikes ?? preset.spikes)!.map((spike) => ({ ...spike })) } : {}),
   } as Hair
 }
 
@@ -530,6 +555,7 @@ export function drawHairBehind(pen: Pen, ctx: CanvasRenderingContext2D, head: So
   const { far } = hairOutlines(head, hair, hairRegion(hair, pad, motion), motion)
   behindHead(ctx, head, () => {
     for (const tie of hair.ties) if (tieIsFar(head, tie)) drawTie(pen, head, hair, tie, options.lineWidth, motion)
+    drawSpikes(pen, head, hair, options.lineWidth, pad, false)
     for (const loop of far) pen.shape(loop, hair.color, outlineOf(options.lineWidth))
   })
 }
@@ -557,6 +583,7 @@ export function drawHairFront(pen: Pen, head: SolvedHead, hair: Hair, options: H
   }
   const { near } = hairOutlines(head, hair, region, motion)
   const outline = outlineOf(options.lineWidth)
+  drawSpikes(pen, head, hair, options.lineWidth, pad, true)
   for (const loop of near) pen.shape(loop, hair.color, outline)
   // Detail lines: on the hair, just inside its surface.
   for (const strand of strandCurves(hair)) {
@@ -568,4 +595,24 @@ export function drawHairFront(pen: Pen, head: SolvedHead, hair: Hair, options: H
     for (const run of visibleRuns(head, points, normals, 0.12)) pen.line(run, detail)
   }
   for (const tie of hair.ties) if (!tieIsFar(head, tie)) drawTie(pen, head, hair, tie, options.lineWidth, motion)
+}
+
+/** Cone silhouettes in head space, drawn before the cap so it hides their roots. */
+function drawSpikes(pen: Pen, head: SolvedHead, hair: Hair, lineWidth: number, pad: number, near: boolean): void {
+  for (const spike of hair.spikes ?? []) {
+    const n = spherePoint(rad(spike.around), Math.max(-1, Math.min(1, spike.up)))
+    if ((facingOf(head, n) >= 0) !== near) continue
+    const across: Vec3 = [Math.cos(rad(spike.around)), 0, -Math.sin(rad(spike.around))]
+    const along: Vec3 = [n[1] * across[2], n[2] * across[0] - n[0] * across[2], -n[1] * across[0]]
+    const radius = 1 + hair.volume + pad
+    const width = Math.max(0, spike.width)
+    const length = Math.max(0, spike.length)
+    const points = [onScreen(head, n.map(v => v * (radius + length)) as Vec3)]
+    for (let i = 0; i < 8; i++) {
+      const angle = i * Math.PI / 4
+      const base = n.map((v, axis) => v * radius + width * (across[axis] * Math.cos(angle) + along[axis] * Math.sin(angle))) as Vec3
+      points.push(onScreen(head, base))
+    }
+    pen.shape(convexHull(points), hair.color, outlineOf(lineWidth))
+  }
 }

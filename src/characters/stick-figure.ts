@@ -330,6 +330,8 @@ export interface StickStyle {
    * takes its room from the torso: the feet and hips stay where they are.
    */
   headSize?: number
+  /** Both upper arms and forearms, as a multiplier of the usual length (default 1). Hands keep their size. */
+  armLength?: number
   /** Head fill; `none` leaves it see-through (default white) */
   headFill?: string
   /** 1 faces right, -1 faces left: mirrors the figure and turns the eyes */
@@ -718,6 +720,8 @@ function rigFigure(figure: StickPose, style: StickStyle): Rig {
   // Poses written before `stretch` existed leave it undefined.
   const stretch = Math.min(3, Math.max(0.3, figure.stretch ?? 1))
   const armStretch = Math.sqrt(stretch)
+  const armLength = style.armLength ?? 1
+  if (!Number.isFinite(armLength) || armLength <= 0) throw new Error('stick figure: armLength must be a positive finite multiplier')
   // A bigger head takes its height from the body: the neck sits lower, the hips stay put.
   const head = (style.headSize ?? 2 * HEAD) / 2
   const neck = style.headSize === undefined ? NECK : 1 - 2 * head
@@ -799,8 +803,8 @@ function rigFigure(figure: StickPose, style: StickStyle): Rig {
   }
   const arm = (side: number, shoulder: number, elbow: number): Bones => {
     const root = { x: side * shoulderX, y: shoulderY }
-    const joint = segment(root.x, root.y, shoulder, side, UPPER_ARM * armStretch)
-    return { root, joint, end: segment(joint.x, joint.y, shoulder + elbow, side, FOREARM * armStretch) }
+    const joint = segment(root.x, root.y, shoulder, side, UPPER_ARM * armStretch * armLength)
+    return { root, joint, end: segment(joint.x, joint.y, shoulder + elbow, side, FOREARM * armStretch * armLength) }
   }
 
   const legs = { left: leg(-1, leftHip, leftKnee), right: leg(1, rightHip, rightKnee) }

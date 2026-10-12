@@ -158,3 +158,10 @@ from `frame.time / frame.period` with helpers that repeat exactly (`wobble`,
 `bubblePath` with `period`; sound via `cutAudioToLoop`), whole turns and
 cycles only; then `npx @algorisys/tinyfly video scene.mjs --loop-check` must
 say "closes".
+
+### Manga cast and stick-figure arm proportions
+
+- `MANGA_CAST` / `castMember('mangaYoungMan', height)` supply four original young adult presets. `face.shape: 'angular'`, `jawWidth`, `chinWidth`, `eyeScale` and `eyeAspect` customise them; keep expressions as pose fields.
+- Hair styles `mangaSpikes` and `mangaSweep` use editable `spikes: [{ around, up, length, width }]` in head radii (around in degrees). Hair and clothes can be replaced independently of the face. Spread nested preset face options before changing one field.
+- Pen head outlines follow yaw/nod/roll; contact bounds and the solid mesh head remain unchanged.
+- The original stick figure takes `style.armLength` as a positive finite multiplier (default 1) in its draw, joints and target APIs. Both arm bones scale; hands and other body proportions retain their sizes. The newer human rig retains its `CharacterOptions.armLength`.

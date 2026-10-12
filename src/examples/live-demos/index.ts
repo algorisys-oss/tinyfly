@@ -38,6 +38,7 @@ import { propBirds } from './prop-birds'
 import { dressedFigures } from './dressed-figures'
 import { castTurnaround } from './cast-turnaround'
 import { animeCast } from './anime-cast'
+import { mangaCast } from './manga-cast'
 import { hairAndHats } from './hair-and-hats'
 import { handOver } from './hand-over'
 import { helpUpCard } from './help-up'
@@ -109,6 +110,7 @@ import chartKindsSource from './chart-kinds.js?raw'
 import homeTimeSource from './home-time.js?raw'
 import castTurnaroundSource from './cast-turnaround.js?raw'
 import animeCastSource from './anime-cast.js?raw'
+import mangaCastSource from './manga-cast.js?raw'
 import hairAndHatsSource from './hair-and-hats.js?raw'
 import handOverSource from './hand-over.js?raw'
 import helpUpSource from './help-up.js?raw'
@@ -247,6 +249,7 @@ export const liveDemos: LiveDemoWithCode[] = [
   withCode(homeTime, homeTimeSource),
   withCode(castTurnaround, castTurnaroundSource),
   withCode(animeCast, animeCastSource),
+  withCode(mangaCast, mangaCastSource),
   withCode(hairAndHats, hairAndHatsSource),
   withCode(handOver, handOverSource),
   withCode(helpUpCard, helpUpSource),

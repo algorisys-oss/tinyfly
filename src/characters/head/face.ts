@@ -105,6 +105,16 @@ export interface FaceOptions {
   style?: 'simple' | 'anime'
   /** Anime iris colour (default blue); plain data, including in scene JSON. */
   iris?: string
+  /** Head outline: round (default) or angular cheeks, jaw and chin. */
+  shape?: 'round' | 'angular'
+  /** Angular jaw half-width in head radii, 0.55..0.95 (default 0.74). */
+  jawWidth?: number
+  /** Angular chin half-width in head radii, 0.03..0.35 (default 0.14). */
+  chinWidth?: number
+  /** Anime eye size, 0.5..1.2 (default 1). */
+  eyeScale?: number
+  /** Anime eye height relative to width, 0.45..1.2 (default 1). */
+  eyeAspect?: number
   /** Anime outer lashes (default true). */
   lashes?: boolean
   /** Subtle eye and smile creases, 0..1 (default 0); independent of expression and posture. */
@@ -272,8 +282,10 @@ function drawAnimeEye(
   pupilSize: number, lookX: number, lookY: number, thin: number, options: FaceOptions, ctx?: CanvasRenderingContext2D
 ): void {
   const { x: ex, y: ey } = eye
-  const width = 0.21 * (1 + bulge * 0.15)
-  const height = 0.25 * Math.min(open, 1.6) * (1 - lid) * (1 + bulge * 0.3)
+  const scale = Math.min(1.2, Math.max(0.5, options.eyeScale ?? 1))
+  const aspect = Math.min(1.2, Math.max(0.45, options.eyeAspect ?? 1))
+  const width = 0.21 * scale * (1 + bulge * 0.15)
+  const height = 0.25 * scale * aspect * Math.min(open, 1.6) * (1 - lid) * (1 + bulge * 0.3)
   const left = { x: ex - width, y: ey }
   const right = { x: ex + width, y: ey }
   const top = { x: ex, y: ey + height * 1.9 }
@@ -287,13 +299,13 @@ function drawAnimeEye(
     return { x, y: Math.min(quadraticY(left, top, right, x), Math.max(quadraticY(right, bottom, left, x), p.y)) }
   })
   pen.shape(screen([...upper, ...lower.slice(1, -1)]), '#ffffff', thin * 0.5)
-  const px = ex + Math.max(-1, Math.min(1, lookX)) * 0.07
-  const py = ey - Math.max(-1, Math.min(1, lookY)) * 0.055
-  const irisX = 0.115
-  const irisY = 0.185
+  const px = ex + Math.max(-1, Math.min(1, lookX)) * 0.07 * scale
+  const py = ey - Math.max(-1, Math.min(1, lookY)) * 0.055 * scale
+  const irisX = 0.115 * scale
+  const irisY = 0.185 * scale
   pen.shape(screen(inside(ellipse(px, py, irisX, irisY, 24))), options.iris ?? '#4b7fce', thin * 0.4)
-  pen.shape(screen(inside(ellipse(px, py - 0.075, irisX * 0.7, irisY * 0.35))), 'rgba(255,255,255,0.25)', 0)
-  const radius = Math.min(0.085, 0.042 * pupilSize)
+  pen.shape(screen(inside(ellipse(px, py - 0.075 * scale, irisX * 0.7, irisY * 0.35))), 'rgba(255,255,255,0.25)', 0)
+  const radius = Math.min(0.085, 0.042 * pupilSize) * scale
   const pupil = inside(ellipse(px, py, radius, radius * 1.35))
   pen.shape(screen(pupil), pen.ink, 0)
   if (options.inPupil && ctx) {
@@ -308,8 +320,8 @@ function drawAnimeEye(
       ctx.restore()
     }
   }
-  pen.shape(screen(inside(ellipse(px - 0.038, py + 0.075, 0.035, 0.045))), '#ffffff', 0)
-  pen.shape(screen(inside(ellipse(px + 0.04, py - 0.04, 0.014, 0.02))), '#ffffff', 0)
+  pen.shape(screen(inside(ellipse(px - 0.038 * scale, py + 0.075 * scale, 0.035 * scale, 0.045 * scale))), '#ffffff', 0)
+  pen.shape(screen(inside(ellipse(px + 0.04 * scale, py - 0.04 * scale, 0.014 * scale, 0.02 * scale))), '#ffffff', 0)
   pen.line(screen(upper), thin * 1.1)
   if (options.lashes !== false) {
     for (const offset of [0, 0.035]) {

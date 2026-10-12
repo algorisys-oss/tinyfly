@@ -1,7 +1,7 @@
 import type { CustomTarget } from '../../adapters/canvas'
 import type { AnimationState } from '../../engine/types'
 import { hashSeed } from '../../engine/authoring/random'
-import { basicOutfit, character, characterPoseOf, drawCharacter, HAND_REST, HUMAN_REST, CHARACTER_CAST, type CastName, type Character, type CharacterPose, type FacialHairStyleName, type GlassesStyle, type HairStyleName, type HatStyle, type HoldingSpec, type FootShape } from '../../characters'
+import { basicOutfit, character, characterPoseOf, drawCharacter, HAND_REST, HUMAN_REST, CHARACTER_CAST, type FaceOptions, type HairSpec, type CastName, type Character, type CharacterPose, type FacialHairStyleName, type GlassesStyle, type HairStyleName, type HatStyle, type HoldingSpec, type FootShape } from '../../characters'
 import type { CharacterBuild, CharacterElement } from '../stores/scene-store'
 import { HUMAN_BUILDS } from '../../characters/species/human'
 
@@ -19,6 +19,7 @@ export function characterOf(element: CharacterElement): Character {
     height: Math.max(1, element.height),
     ink: element.ink,
     skin: element.skin,
+    lineWidth: element.lineWidth,
     // Each character boils on its own: the seed comes from its id.
     seed: hashSeed(element.id) % 1000,
     layers:
@@ -28,7 +29,7 @@ export function characterOf(element: CharacterElement): Character {
     hands: (element.hands ?? 'dot') === 'dot' ? 'dot' : 'cartoon',
     handStyle: element.hands === 'natural' ? 'natural' : 'glove',
     ...element.build,
-    hair: element.hair ? { style: element.hair as HairStyleName, ...(element.hairColor ? { color: element.hairColor } : {}) } : null,
+    hair: element.hair ? { ...element.hairDetails, style: element.hair as HairStyleName, ...(element.hairColor ? { color: element.hairColor } : {}) } : null,
     facialHair: element.facialHair ? { style: element.facialHair as FacialHairStyleName, ...(element.hairColor ? { color: element.hairColor } : {}) } : null,
     glasses: (element.glasses as GlassesStyle | undefined) ?? null,
     hat: (element.hat as HatStyle | undefined) ?? null,
@@ -36,6 +37,12 @@ export function characterOf(element: CharacterElement): Character {
     face: {
       teeth: element.teeth ?? false, tongue: element.tongue ?? false,
       ...(element.faceStyle !== undefined ? { style: element.faceStyle } : {}),
+      ...(element.faceShape !== undefined ? { shape: element.faceShape } : {}),
+      ...(element.jawWidth !== undefined ? { jawWidth: element.jawWidth } : {}),
+      ...(element.chinWidth !== undefined ? { chinWidth: element.chinWidth } : {}),
+      ...(element.eyeScale !== undefined ? { eyeScale: element.eyeScale } : {}),
+      ...(element.eyeAspect !== undefined ? { eyeAspect: element.eyeAspect } : {}),
+      ...(element.faceNose !== undefined ? { nose: element.faceNose } : {}),
       ...(element.irisColor !== undefined ? { iris: element.irisColor } : {}),
       ...(element.eyeLashes !== undefined ? { lashes: element.eyeLashes } : {}),
       ...(element.ageLines !== undefined ? { ageLines: element.ageLines } : {}),
@@ -61,15 +68,25 @@ export function castElementFields(name: CastName): Partial<CharacterElement> {
     if (typeof options[field] === 'number') shape[field] = options[field] as number
   }
   if (options.proportions) shape.proportions = options.proportions as CharacterBuild['proportions']
-  const face = options.face as { style?: CharacterElement['faceStyle']; iris?: string; lashes?: boolean; ageLines?: number; teeth?: boolean; tongue?: boolean } | undefined
+  const face = options.face as FaceOptions | undefined
+  const hairDetails = typeof options.hair === 'object' && options.hair ? { ...options.hair } as HairSpec : undefined
+  if (hairDetails) { delete hairDetails.style; delete hairDetails.color }
   return {
     build: shape,
+    lineWidth: options.lineWidth as number | undefined,
     ...(options.figure ? { figure: options.figure as CharacterElement['figure'] } : {}),
     ...(options.look ? { look: options.look as CharacterElement['look'] } : {}),
     ...(options.skin ? { skin: options.skin as string } : {}),
     ...(options.ink ? { ink: options.ink as string } : {}),
     ...(options.hands ? { hands: options.hands === 'cartoon' && options.handStyle === 'natural' ? 'natural' as const : options.hands as CharacterElement['hands'] } : {}),
     faceStyle: face?.style,
+    faceShape: face?.shape,
+    jawWidth: face?.jawWidth,
+    chinWidth: face?.chinWidth,
+    eyeScale: face?.eyeScale,
+    eyeAspect: face?.eyeAspect,
+    faceNose: face?.nose,
+    hairDetails,
     irisColor: face?.iris,
     eyeLashes: face?.lashes,
     ageLines: face?.ageLines,

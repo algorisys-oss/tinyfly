@@ -172,7 +172,10 @@ its box; resize the box to change its height. In the property panel:
   **Iris colour** and **Eyelashes** toggle; **Age creases** adds subtle facial
   lines. The Cast picker includes eight colour anime presets for boys, girls,
   young adults, adults and older adults. The 3D Scene character's Cast picker
-  uses the same presets.
+  uses the same presets. The manga presets add angular faces and pointed hair;
+  **Face shape**, **Jaw width**, **Chin width**, **Eye size** and **Eye height**
+  edit those features. **Nose** and **Line width** control the remaining details.
+  Picking another hairstyle keeps the face and clears custom hair overrides.
 
 To animate a character, pick a view, a pose and a face, and click
 **◆ Keyframe pose at playhead**. Move the playhead, pick the next pose, and
@@ -1140,7 +1143,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.104.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.105.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed

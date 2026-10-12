@@ -96,6 +96,7 @@ export interface Capabilities {
     expressions: string[]
     /** `face.style`, independent of the pen's `look`. */
     faceStyles: string[]
+    faceShapes: string[]
     gags: string[]
     /** `build` option */
     builds: string[]
@@ -228,6 +229,7 @@ export function capabilities(version?: string, cast: Cast = {}): Capabilities {
       dances: Object.keys(HUMAN_DANCES),
       expressions: Object.keys(HUMAN_EXPRESSIONS),
       faceStyles: ['simple', 'anime'],
+      faceShapes: ['round', 'angular'],
       gags: Object.keys(HUMAN_GAGS),
       builds: Object.keys(HUMAN_BUILDS),
       hair: Object.keys(HAIR_STYLES),
@@ -322,6 +324,8 @@ export function capabilitiesMarkdown(version?: string, cast: Cast = {}): string 
     '',
     '`stickFigureTarget({ x, y, style })` is a custom canvas target; its props are the pose fields and the props below. Pose it with tracks (`poseTracks`), or write beats (`scriptTracks`).',
     '',
+    'Style proportions: `headSize` is a fraction of height; `armLength` multiplies both upper arm and forearm lengths (default 1, positive finite). Hands, shoulders, torso and legs retain their sizes.',
+    '',
     '### Pose fields',
     '',
     '| Field | Unit | What it does |',
@@ -409,6 +413,7 @@ export function capabilitiesMarkdown(version?: string, cast: Cast = {}): string 
     `- \`castMember(name, height)\`: ${list(c.character.cast)}`,
     '- Face marks (pose fields, 0–1): `blush`, `tears`, `sweat`; close-up fields `pupil` (size, 1 usual), `lid` (upper lids lowered, 0–1), `bulge` (eyes out of the head, 0–1); `face: { nose: true, inPupil(ctx, pupil) }`; `drawCharacterHead(ctx, who, pose, { x, y, radius })` draws just the head big',
     `- Face styles: ${list(c.character.faceStyles)}; \`face: { style: 'anime', iris: '#4b7fce', lashes: true, ageLines: 0.8 }\` uses coloured eyes and the same expressions, blinks and gaze. \`ANIME_CAST\` contains eight age presets, also available through \`castMember\`.`,
+    `- Face shapes: ${list(c.character.faceShapes)}; \`face: { shape: 'angular', jawWidth: 0.74, chinWidth: 0.14, eyeScale: 0.8, eyeAspect: 0.65 }\` sets a tapered 3D jaw and narrower anime eyes. \`MANGA_CAST\` contains four original young adult presets; hair styles \`mangaSpikes\` and \`mangaSweep\` remain editable.`,
     '- Hair in motion (pose fields): `hair.swing` (degrees round the head, + toward its left), `hair.trail` (head radii back), `hair.lift` (head radii up); key them with `hairFollowTracks(target, tracks, who)` after the character\'s tracks, or `hairFollow` + `hairMotionAt` when posing per frame',
     `- \`holding\`: ${Object.entries(c.character.heldItems).map(([name, hands]) => `\`${name}\` (${hands === 'both' ? 'both' : hands === 'either' ? 'one hand or both' : 'left or right'})`).join(', ')}; pose fields \`held.left\`, \`held.right\`, \`held.both\` (below 0.5 lets go); \`handGrip(joints, side)\``,
     `- \`meetHands(kind, a, b)\` (stand them \`meetingSpacing(kind, a, b)\` apart): ${list(c.character.handMeetings)}; \`embrace(a, b)\` (a hug, \`embraceSpacing\` apart); \`helpUp(helper, sitter, progress)\` (0 on the floor, hand taken; 1 standing; \`helpUpSpacing\` apart)`,

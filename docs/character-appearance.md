@@ -250,7 +250,7 @@ cast member at an adult `height` (each stands at their own scale of it). The
 family: `boy`, `girl`, `youngMan`, `youngWoman`, `man`, `woman`, `grandpa`,
 `grandma`; at work (from the occupations sheet): `doctor`, `cook`, `builder`,
 `courier`, `teacher`, `farmer`. `CHARACTER_CAST` has each one's `label`,
-`group` (`family`, `work` or `anime`), `scale` and `options`.
+`group` (`family`, `work`, `anime` or `manga`), `scale` and `options`.
 
 ```js
 const family = ['man', 'woman', 'girl', 'grandma'].map((name) => character(castMember(name, 280)))
@@ -292,6 +292,70 @@ The **Colour Anime Cast** example shows all eight presets, expressions,
 face close-ups and a complete turnaround. Both the Character and 3D Scene
 editors offer these presets in their Cast picker. The Character editor also
 has Face style, Iris colour, Eyelashes and Age creases controls, saved in project JSON.
+
+### Young adult manga cast
+
+`MANGA_CAST` supplies four original archetypes: `mangaYoungMan`,
+`mangaYoungWoman`, `mangaRival`, and `mangaHeroine`. They also belong to
+`CHARACTER_CAST` and use the shared expression, pose, dance and turnaround APIs.
+These presets use lighter line widths, angular jaws and smaller, narrower eyes.
+Hair, skin, clothing and every face option remain editable.
+
+```js
+const preset = MANGA_CAST.mangaYoungMan.options
+const hero = character(castMember('mangaYoungMan', 300, {
+  hair: { style: 'bob', color: '#446688' },
+  face: { ...preset.face, jawWidth: 0.8, chinWidth: 0.12, iris: '#987546' }
+}))
+```
+
+`face.shape: 'angular'` changes the pen character's head outline into a
+projected 3D tapered head, following yaw, nod and roll. `jawWidth` is the
+half-width at the jaw (clamped to 0.55–0.95 head radii, default 0.74);
+`chinWidth` is the half-width just above the chin (0.03–0.35, default 0.14).
+`shape: 'round'` is the original default. The underlying rig and contact
+geometry retain their original head bounds; solid mesh characters retain
+their existing mesh head.
+
+Anime `eyeScale` changes eye size (0.5–1.2, default 1), and `eyeAspect`
+changes eye height relative to width (0.45–1.2, default 1). Smaller aspect
+values produce narrower manga eyes; expressions, blink, lids and gaze still
+animate them. These face options are independent of the hairstyle.
+
+`mangaSpikes` and `mangaSweep` are editable hair presets with pointed 3D
+tufts. A `hair.spikes` array contains `{ around, up, length, width }`:
+`around` is degrees from the front, `up` the scalp height from -1 to 1,
+and `length` and `width` are tuft length and base radius in head radii.
+Use `spikes: []` to remove the tufts, or choose any other hairstyle.
+The editor retains custom hair fields in saved JSON; picking a different
+hairstyle clears the preceding preset's hair overrides.
+
+The [Young Adult Manga Cast](https://tinyfly.app/examples/live-manga-cast)
+example lets you change hair, jaw, chin and eye height while expressions and
+turnarounds animate. The Character editor offers matching face controls,
+nose and line width; both editor Cast pickers include these presets.
+
+### Original stick-figure arm proportions
+
+The original stick-figure API now accepts `StickStyle.armLength`: a positive
+finite multiplier, default 1, of both upper-arm and forearm lengths.
+Hands keep their size; torso, shoulder positions, legs and head stay unchanged.
+It composes with squash/stretch, mirroring, wrist bends and rubber limbs.
+This is an appearance option, rather than a pose track.
+
+```js
+const person = stickFigureTarget({
+  x: 200, y: 400,
+  style: { height: 300, armLength: 0.85 }
+})
+const joints = stickFigureJoints(POSES.wave, { height: 300, armLength: 1.2 })
+drawStickFigure(ctx, POSES.wave, { height: 300, armLength: 1.2 })
+```
+
+`stickFigureAt` and costume/prop drawing hooks see the adjusted wrists.
+The [Stick Figure example](https://tinyfly.app/examples/live-stick-figure)
+includes an arm-length slider. The newer human rig keeps its existing
+`CharacterOptions.armLength` setting.
 
 ## Hugs, help-ups and everyday cycles
 

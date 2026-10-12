@@ -15,8 +15,8 @@ import { HAIR_COLORS } from './head/hair'
 export interface CastMember {
   /** What to call them in a picker */
   label: string
-  /** A family, occupation, or colour anime preset. */
-  group: 'family' | 'work' | 'anime'
+  /** A family, occupation, colour anime or young adult manga preset. */
+  group: 'family' | 'work' | 'anime' | 'manga'
   /** Height next to an adult (1) */
   scale: number
   /** Everything else about them */
@@ -76,6 +76,40 @@ export const ANIME_CAST = {
 } satisfies Record<string, CastMember>
 
 export type AnimeCastName = keyof typeof ANIME_CAST
+
+/** Original young adult manga archetypes; every feature remains plain editable character options. */
+export const MANGA_CAST = {
+  mangaYoungMan: {
+    label: 'Manga young man', group: 'manga', scale: 1,
+    options: { figure: 'fluid', look: 'clean', proportions: 'thin', build: 'tall', headSize: 0.21, lineWidth: 2.8, skin: '#edbf9b', ink: '#252536', ears: true, hands: 'cartoon', handStyle: 'natural',
+      hair: { style: 'mangaSpikes', color: '#27354c' },
+      face: { style: 'anime', shape: 'angular', jawWidth: 0.78, chinWidth: 0.16, eyeScale: 0.8, eyeAspect: 0.63, iris: '#3a9baa', lashes: false, nose: true },
+      outfit: { shirt: '#c65a49', trousers: '#293c56', sleeves: 'long', collar: true, shoes: 'boots' } },
+  },
+  mangaYoungWoman: {
+    label: 'Manga young woman', group: 'manga', scale: 1,
+    options: { figure: 'fluid', look: 'clean', proportions: 'thin', build: 'slim', headSize: 0.21, lineWidth: 2.8, skin: '#e2a482', ink: '#252536', ears: true, hands: 'cartoon', handStyle: 'natural',
+      hair: { style: 'mangaSweep', color: '#683e64' },
+      face: { style: 'anime', shape: 'angular', jawWidth: 0.69, chinWidth: 0.1, eyeScale: 0.85, eyeAspect: 0.72, iris: '#8462b7', nose: true },
+      outfit: { shirt: '#518c96', trousers: '#364361', sleeves: 'long', shoes: 'boots' } },
+  },
+  mangaRival: {
+    label: 'Manga rival', group: 'manga', scale: 1,
+    options: { figure: 'fluid', look: 'clean', proportions: 'thin', build: 'broad', headSize: 0.21, lineWidth: 2.8, skin: '#b77e5f', ink: '#252536', ears: true, hands: 'cartoon', handStyle: 'natural',
+      hair: { style: 'mangaSpikes', color: '#e6e0cc', volume: 0.16 },
+      face: { style: 'anime', shape: 'angular', jawWidth: 0.9, chinWidth: 0.25, eyeScale: 0.75, eyeAspect: 0.55, iris: '#ba8445', lashes: false, nose: true },
+      outfit: { shirt: '#4c4b75', trousers: '#303348', sleeves: 'long', over: 'hoodie', shoes: 'boots' } },
+  },
+  mangaHeroine: {
+    label: 'Manga heroine', group: 'manga', scale: 1,
+    options: { figure: 'fluid', look: 'clean', proportions: 'thin', build: 'tall', headSize: 0.21, lineWidth: 2.8, skin: '#f0c5aa', ink: '#252536', ears: true, hands: 'cartoon', handStyle: 'natural',
+      hair: { style: 'highPonytail', color: '#263647', texture: 'spiky', textureAmount: 0.35 },
+      face: { style: 'anime', shape: 'angular', jawWidth: 0.73, chinWidth: 0.12, eyeScale: 0.83, eyeAspect: 0.65, iris: '#427e9b', nose: true },
+      outfit: { shirt: '#b65e7c', trousers: '#31405b', sleeves: 'long', collar: true, shoes: 'boots' } },
+  },
+} satisfies Record<string, CastMember>
+
+export type MangaCastName = keyof typeof MANGA_CAST
 
 export const CHARACTER_CAST = {
   boy: {
@@ -170,6 +204,7 @@ export const CHARACTER_CAST = {
     options: { build: 'stocky', hair: { style: 'shoulderStraight', color: HAIR_COLORS.blond }, hat: 'sunHat', ears: true, outfit: { shirt: '#d64535', trousers: '#4f6b3a', sleeves: 'long' } },
   },
   ...ANIME_CAST,
+  ...MANGA_CAST,
 } satisfies Record<string, CastMember>
 
 export type CastName = keyof typeof CHARACTER_CAST

@@ -1,5 +1,5 @@
 import { createSignal } from 'solid-js'
-import type { ChartDatum, ChartKind, ChartSeries, CodeLanguage } from '../../characters'
+import type { ChartDatum, ChartKind, ChartSeries, CodeLanguage, HairSpec } from '../../characters'
 import type { CharacterActing } from '../utils/character-acting'
 import { createStore } from 'solid-js/store'
 import { measureTextLetters } from '../utils/split-text'
@@ -304,6 +304,8 @@ export interface CharacterElement extends BaseElement {
   hair?: string
   /** Hair colour (default the style's brown) */
   hairColor?: string
+  /** Editable preset hair overrides; a new hairstyle selection clears these. */
+  hairDetails?: Omit<HairSpec, 'style' | 'color'>
   /** Facial hair preset (`FACIAL_HAIR_STYLES`); none when left out */
   facialHair?: string
   /** Glasses (`round`, `square`, `sunglasses`); none when left out */
@@ -317,6 +319,14 @@ export interface CharacterElement extends BaseElement {
   tongue?: boolean
   /** Face drawing style; expressions still use the normal pose fields. */
   faceStyle?: 'simple' | 'anime'
+  /** Optional character stroke width in pixels. */
+  lineWidth?: number
+  faceShape?: 'round' | 'angular'
+  jawWidth?: number
+  chinWidth?: number
+  eyeScale?: number
+  eyeAspect?: number
+  faceNose?: boolean
   irisColor?: string
   eyeLashes?: boolean
   /** Subtle age creases, 0..1. */

@@ -1,3 +1,13 @@
+## Young adult manga cast and original stick-figure proportions
+
+- [x] Four original editable young adult manga presets with angular jaws, tapered chins and narrower expressive eyes.
+- [x] Adjustable projected head silhouettes through yaw, nod and roll; default round faces unchanged.
+- [x] Pointed 3D hair tufts, editable styles, editor appearance controls and JSON preservation.
+- [x] Website example with hair, face proportions, expressions, whole figures, close-ups and turnarounds.
+- [x] Public cast, face and hair types; documentation and capability discovery.
+- [x] Original stick-figure arm-length multiplier with unchanged default proportions and hands.
+- [x] Arm-length slider in the existing Stick Figure example.
+
 # tinyfly Development Progress
 
 ## Colour anime characters

@@ -91,6 +91,26 @@ describe('character hands', () => {
     expect([natural.hands, natural.handStyle]).toEqual(['cartoon', 'natural'])
   })
 
+  it('preserves manga face and custom hair options through editor JSON and resets them for ordinary casts', () => {
+    const fields = castElementFields('mangaRival')
+    const store = createSceneStore()
+    store.addElement('character', { ...fields, height: 300 })
+    const saved = JSON.parse(JSON.stringify(store.exportElements()))
+    const loaded = createSceneStore()
+    loaded.loadElements(saved)
+    const who = characterOf(loaded.elements()[0] as CharacterElement)
+    expect(who.face).toMatchObject({ style: 'anime', shape: 'angular', jawWidth: 0.9, chinWidth: 0.25, eyeScale: 0.75, eyeAspect: 0.55, nose: true })
+    expect(who.head.hair).toMatchObject({ color: '#e6e0cc', volume: 0.16 })
+    expect(who.head.hair?.spikes?.length).toBeGreaterThan(0)
+    const reset = characterOf(aCharacter({ ...fields, ...castElementFields('man') }))
+    expect(reset.face.shape).toBeUndefined()
+    expect(reset.face.jawWidth).toBeUndefined()
+    expect(reset.head.hair?.spikes).toBeUndefined()
+    const changed = characterOf(aCharacter({ ...fields, hair: 'bob', hairDetails: undefined }))
+    expect(changed.face).toEqual(who.face)
+    expect(changed.head.hair?.spikes).toBeUndefined()
+  })
+
   it('applies animated hand fields to the pose', () => {
     const element = aCharacter({ hands: 'natural' })
     const state = { values: new Map([[element.name, new Map([['hand.right.index.curl', 0.9]])]]) } as unknown as AnimationState

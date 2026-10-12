@@ -261,3 +261,16 @@ When writing tinyfly animations, follow node_modules/@algorisys/tinyfly/skills/t
 
 **A chat window**: paste the output of `npx @algorisys/tinyfly capabilities`,
 or link `llms-full.txt`.
+
+### Manga faces and original stick-figure proportions
+
+`MANGA_CAST` supplies four original young adult presets through `castMember`.
+`face.shape: 'angular'`, `jawWidth` and `chinWidth` shape the projected pen head;
+`eyeScale` and `eyeAspect` shape anime eyes. Hair and outfit overrides remain
+independent; spread the preset's face when changing one nested field.
+`mangaSpikes` / `mangaSweep` contain editable `hair.spikes` tufts as JSON
+(`around` degrees, `up` scalp height, `length` and `width` head radii).
+The solid mesh head and contact bounds retain their existing geometry.
+For the original stick figure use `style.armLength` (positive finite, default 1)
+in `drawStickFigure`, `stickFigureJoints` or `stickFigureTarget`; it changes
+both arm segments, with hands and the rest of the body keeping their sizes.

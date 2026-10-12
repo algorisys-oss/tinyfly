@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.105.0](v0.105.0.md) | 2026-10-12 | Young adult manga cast, angular jaws and adjustable eyes, pointed 3D hair tufts, editor and gallery controls; original stick-figure arm proportions |
 | [v0.104.0](v0.104.0.md) | 2026-10-12 | Eight colour anime cast presets across ages, expressive iris eyes, editable facial details, editor controls and an animated gallery example |
 | [v0.103.0](v0.103.0.md) | 2026-10-12 | Native garba (two/three clap) and dandiya, circle formations with planted toes and independent facing/spins, paired stick-tip contacts, timed signed full spins and dance actions in 3D scripts, native dances in both editor menus |
 | [v0.102.0](v0.102.0.md) | 2026-10-11 | A film from a 3D scene as data: a software depth buffer; shots with cuts, crossfades, dips and wipes, camera moves as tracks, a handheld shake, letterbox and safe areas; skies, blob shadows, a ground and lighting presets with mood tracks; characters that speak and look at each other, staging spots; a sound mix with ducking; motion blur, supersampling and ProRes output |

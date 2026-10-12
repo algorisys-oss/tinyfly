@@ -7,7 +7,7 @@ const tinyfly = { POSES, EXPRESSIONS, withExpression, blendPose, walkPose, talki
 export const html = `<style>
   .sf-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
   .sf-canvas { width: 232px; height: 116px; border-radius: 8px; background: #fdf0d5; }
-  .sf-row { display: flex; align-items: center; gap: 8px; font: 12px system-ui, sans-serif; color: #cbd5e1; }
+  .sf-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font: 12px system-ui, sans-serif; color: #cbd5e1; }
   .sf-row select { font: 12px system-ui, sans-serif; padding: 2px 4px; border-radius: 6px;
     border: 1px solid #475569; background: #1e293b; color: #e2e8f0; }
   .sf-readout { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; color: #9bb4c7; }
@@ -19,6 +19,7 @@ export const html = `<style>
     <select class="sf-face" aria-label="Expression"><option value="">pose's face</option></select>
     <label><input type="checkbox" class="sf-walk" /> walk</label>
     <label><input type="checkbox" class="sf-talk" /> talk</label>
+    <label>Arm length <input class="sf-arm" type="range" min="0.6" max="1.4" step="0.05" value="1" /></label>
   </div>
   <div class="sf-readout">rest</div>
 </div>`
@@ -34,6 +35,7 @@ export function run(live, root) {
   const faceSelect = root.querySelector('.sf-face')
   const walk = root.querySelector('.sf-walk')
   const talk = root.querySelector('.sf-talk')
+  const arm = root.querySelector('.sf-arm')
   const readout = root.querySelector('.sf-readout')
   const ctx = canvas.getContext('2d')
 
@@ -75,7 +77,7 @@ export function run(live, root) {
   let step = 0
 
   const drawFigure = (figure) =>
-    tinyfly.drawStickFigure(ctx, figure, { height: 250, color: '#1e3a8a', headFill: '#f2c49b' })
+    tinyfly.drawStickFigure(ctx, figure, { height: 250, armLength: Number(arm.value), color: '#1e3a8a', headFill: '#f2c49b' })
 
   const draw = () => {
     // Until something is picked, step through the poses, each with its own face.
@@ -124,7 +126,7 @@ export const stickFigure = {
   id: 'live-stick-figure',
   name: 'Stick Figure (Characters)',
   description:
-    'The poseable figure from tinyfly/characters, with a close-up of its face. Poses and expressions (brows, eyes, mouth) are plain numbers, so any two blend. Pick them, or let it walk and talk. In a timeline, poseTracks() turns the same poses and expressions into keyframes.',
+    'The poseable figure from tinyfly/characters, with a close-up of its face. Poses and expressions (brows, eyes, mouth) are plain numbers, so any two blend. Pick them, adjust the arm-length multiplier, or let it walk and talk. In a timeline, poseTracks() turns the same poses and expressions into keyframes.',
   category: 'video',
   tags: ['canvas', 'character', 'stick figure', 'poses', 'expressions', 'blend', 'video'],
   html,
