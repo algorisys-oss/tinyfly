@@ -358,6 +358,10 @@ const hero = character(castMember('mangaYoungMan', 300, {
 projected 3D tapered head, following yaw, nod and roll. `jawWidth` is the
 half-width at the jaw (clamped to 0.55–0.95 head radii, default 0.74);
 `chinWidth` is the half-width just above the chin (0.03–0.35, default 0.14).
+`jawRoundness` softens angular cheek and chin corners (0–1, default 0 keeps
+the sharp outline). The Flowing Cartoon Hair demo's soft angular face uses
+`jawWidth: 0.8`, `chinWidth: 0.28` and `jawRoundness: 1` for a fuller,
+rounded chin. Behind-head hair, ears and beards clip to this same outline.
 `shape: 'round'` is the original default. The underlying rig and contact
 geometry retain their original head bounds; solid mesh characters retain
 their existing mesh head.

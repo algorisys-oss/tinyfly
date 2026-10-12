@@ -1,4 +1,5 @@
 import type { Vec3 } from '../rig/body-plan'
+import type { Point } from '../../adapters/canvas/sketch'
 import type { SolvedHead } from '../rig/skeleton'
 import type { Pen } from '../look/pen'
 import { behindHead, facingOf, onScreen } from './shell'
@@ -16,6 +17,7 @@ const ON_HEAD = 0.35
 const earOf = (side: 1 | -1) => ({ centre: [side * 0.98, -0.02, -0.08] as Vec3, out: [side, 0, -0.12] as Vec3 })
 
 export interface EarDrawOptions {
+  headOutline?: Point[]
   lineWidth: number
   skin: string
 }
@@ -51,7 +53,7 @@ function drawEar(pen: Pen, head: SolvedHead, side: 1 | -1, options: EarDrawOptio
 export function drawEarsBehind(pen: Pen, ctx: CanvasRenderingContext2D, head: SolvedHead, options: EarDrawOptions): void {
   behindHead(ctx, head, () => {
     for (const side of [1, -1] as const) if (facingOf(head, earOf(side).out) < ON_HEAD) drawEar(pen, head, side, options, false)
-  })
+  }, options.headOutline)
 }
 
 /** Ears turned toward the viewer: on the head. */

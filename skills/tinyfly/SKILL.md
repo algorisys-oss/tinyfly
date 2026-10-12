@@ -163,7 +163,7 @@ say "closes".
 
 ### Manga cast and stick-figure arm proportions
 
-- `MANGA_CAST` / `castMember('mangaYoungMan', height)` supply four original young adult presets. `face.shape: 'angular'`, `jawWidth`, `chinWidth`, `eyeScale` and `eyeAspect` customise them; keep expressions as pose fields.
+- `MANGA_CAST` / `castMember('mangaYoungMan', height)` supply four original young adult presets. `face.shape: 'angular'`, `jawWidth`, `chinWidth`, `jawRoundness`, `eyeScale` and `eyeAspect` customise them; `jawRoundness: 1` softens corners while its default `0` preserves sharp jaws. Keep expressions as pose fields.
 - Hair styles `mangaSpikes` and `mangaSweep` use editable `spikes: [{ around, up, length, width }]` in head radii (around in degrees). Hair and clothes can be replaced independently of the face. Spread nested preset face options before changing one field.
 - Flowing cartoon styles: `softSweep`, `flowingBob`, `cascadingWaves`. `locks: [{ path, width, follow? }]` are cubic curves: a root plus groups of three `{ around, up, lift? }` points. Around is degrees; up, lift and width are head radii; the root has up 0..1 and lift 0. Edit paths for lock lengths; `length` controls the supporting mass. `follow: 0` pins a lock; `hairFollowTracks` drives flexible locks, including short sweeps, after the same acting/story tracks. `fall: { taper, wave }` softens the hanging mass and `shine` (0..1) adds clean-look highlights.
 - Pen head outlines follow yaw/nod/roll; contact bounds and the solid mesh head remain unchanged.

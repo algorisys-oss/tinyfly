@@ -1,4 +1,4 @@
-function Hd(t) {
+function Cd(t) {
   return typeof t == "object" && t !== null && t.type === "cubic-bezier";
 }
 function io(t) {
@@ -23,7 +23,7 @@ function _h(t) {
 function tM(t) {
   return typeof t == "object" && t !== null && "x" in t && "y" in t && "angle" in t;
 }
-function Cd(t) {
+function Rd(t) {
   return "keyframes" in t;
 }
 class eM {
@@ -99,7 +99,7 @@ class nM {
     }
   }
 }
-function Rd(t, e) {
+function Ld(t, e) {
   if (!(e > 0)) return t;
   const n = 1e3 / e;
   return Math.floor(t / n + 1e-9) * n;
@@ -233,7 +233,7 @@ class Co {
 function sM(t, e) {
   return new Co(t).valueAt(e);
 }
-function Ld(t) {
+function Fd(t) {
   return new Co(t).settleTime();
 }
 function oM(t) {
@@ -244,7 +244,7 @@ function iM(t) {
   const e = t.stiffness ?? oe.stiffness, n = t.mass ?? oe.mass;
   return 2 * Math.sqrt(e * n);
 }
-const Ba = 4, Fd = 2e-3, Wd = 1e-4, Nd = 6e4;
+const Ba = 4, Wd = 2e-3, Nd = 1e-4, Dd = 6e4;
 function Ro(t) {
   const e = t.friction ?? Ba;
   return e > 0 ? e : Ba;
@@ -252,7 +252,7 @@ function Ro(t) {
 function ro(t) {
   return t.from + t.velocity / Ro(t);
 }
-function Dd(t, e) {
+function Bd(t, e) {
   if (e === void 0) return t;
   if (typeof e == "number")
     return e > 0 ? Math.round(t / e) * e : t;
@@ -263,16 +263,16 @@ function Dd(t, e) {
   return n;
 }
 function xs(t) {
-  let e = Dd(ro(t), t.end);
+  let e = Bd(ro(t), t.end);
   return t.min !== void 0 && (e = Math.max(t.min, e)), t.max !== void 0 && (e = Math.min(t.max, e)), e;
 }
 function Ss(t) {
   const e = Math.abs(xs(t) - t.from);
   if (e === 0) return 0;
-  const n = t.restDelta ?? Math.max(Wd, e * Fd);
+  const n = t.restDelta ?? Math.max(Nd, e * Wd);
   if (n >= e) return 0;
   const s = Math.log(e / n) / Ro(t);
-  return Math.min(Nd, s * 1e3);
+  return Math.min(Dd, s * 1e3);
 }
 function tr(t, e) {
   if (e <= 0) return t.from;
@@ -285,19 +285,19 @@ function rM(t, e) {
   const n = Ro(t), s = xs(t);
   return e >= Ss(t) ? 0 : (s - t.from) * n * Math.exp(-n * Math.max(0, e) / 1e3);
 }
-const er = (t) => t, Bd = (t) => t * t, zd = (t) => 1 - (1 - t) * (1 - t), qd = (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2, Lh = (t) => t * t * t, Fh = (t) => 1 - Math.pow(1 - t, 3), Lo = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2, Yd = Lh, jd = Fh, Kd = Lo, Xd = {
+const er = (t) => t, zd = (t) => t * t, qd = (t) => 1 - (1 - t) * (1 - t), Yd = (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2, Lh = (t) => t * t * t, Fh = (t) => 1 - Math.pow(1 - t, 3), Lo = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2, jd = Lh, Kd = Fh, Xd = Lo, Ud = {
   linear: er,
-  "ease-in": Yd,
-  "ease-out": jd,
-  "ease-in-out": Kd,
-  "ease-in-quad": Bd,
-  "ease-out-quad": zd,
-  "ease-in-out-quad": qd,
+  "ease-in": jd,
+  "ease-out": Kd,
+  "ease-in-out": Xd,
+  "ease-in-quad": zd,
+  "ease-out-quad": qd,
+  "ease-in-out-quad": Yd,
   "ease-in-cubic": Lh,
   "ease-out-cubic": Fh,
   "ease-in-out-cubic": Lo
 };
-function Ud(t) {
+function Gd(t) {
   const [e, n, s, o] = t, i = 3 * e, r = 3 * (s - e) - i, a = 1 - i - r, l = 3 * n, c = 3 * (o - n) - l, h = 1 - l - c, u = (p) => ((a * p + r) * p + i) * p, d = (p) => ((h * p + c) * p + l) * p, f = (p) => (3 * a * p + 2 * r) * p + i, g = (p) => {
     let m = p;
     for (let w = 0; w < 8; w++) {
@@ -330,11 +330,11 @@ function hi(t, e = "out") {
   const n = (s) => 1 - t(1 - s);
   return e === "in" ? n : (s) => s < 0.5 ? n(s * 2) / 2 : t(s * 2 - 1) / 2 + 0.5;
 }
-function Gd(t = 1, e = 0.3) {
+function Vd(t = 1, e = 0.3) {
   const n = Math.max(1, t), s = e / (2 * Math.PI) * Math.asin(1 / n);
   return (o) => o <= 0 ? 0 : o >= 1 ? 1 : n * Math.pow(2, -10 * o) * Math.sin((o - s) * (2 * Math.PI) / e) + 1;
 }
-const Vd = (t) => {
+const Jd = (t) => {
   if (t <= 0) return 0;
   if (t >= 1) return 1;
   if (t < 1 / 2.75) return 7.5625 * t * t;
@@ -349,7 +349,7 @@ const Vd = (t) => {
   const s = t - 2.625 / 2.75;
   return 7.5625 * s * s + 0.984375;
 };
-function Jd(t = 1.70158) {
+function Zd(t = 1.70158) {
   return (e) => {
     if (e <= 0) return 0;
     if (e >= 1) return 1;
@@ -357,7 +357,7 @@ function Jd(t = 1.70158) {
     return n * n * ((t + 1) * n + t) + 1;
   };
 }
-function Zd(t, e = "end") {
+function Qd(t, e = "end") {
   const n = Math.max(1, Math.floor(t));
   return (s) => {
     if (s >= 1) return 1;
@@ -375,22 +375,22 @@ function Zd(t, e = "end") {
     }
   };
 }
-function Qd(t) {
+function tf(t) {
   switch (t.type) {
     case "steps":
-      return Zd(t.count, t.position);
+      return Qd(t.count, t.position);
     case "elastic":
-      return hi(Gd(t.amplitude, t.period), t.mode);
+      return hi(Vd(t.amplitude, t.period), t.mode);
     case "bounce":
-      return hi(Vd, t.mode);
+      return hi(Jd, t.mode);
     case "back":
-      return hi(Jd(t.overshoot), t.mode);
+      return hi(Zd(t.overshoot), t.mode);
   }
 }
 function Wt(t) {
-  return t === void 0 ? er : Hd(t) ? Ud(t.points) : io(t) ? Qd(t) : Xd[t] ?? er;
+  return t === void 0 ? er : Cd(t) ? Gd(t.points) : io(t) ? tf(t) : Ud[t] ?? er;
 }
-const za = 32, tf = 256, yn = /* @__PURE__ */ new Map(), ef = /[MmLlHhVvCcSsQqTtAaZz]/, nf = /^[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/, sf = {
+const za = 32, ef = 256, yn = /* @__PURE__ */ new Map(), nf = /[MmLlHhVvCcSsQqTtAaZz]/, sf = /^[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/, of = {
   M: 2,
   L: 2,
   H: 1,
@@ -402,7 +402,7 @@ const za = 32, tf = 256, yn = /* @__PURE__ */ new Map(), ef = /[MmLlHhVvCcSsQqTt
   A: 7,
   Z: 0
 };
-function of(t) {
+function rf(t) {
   const e = [];
   let n = 0, s = null;
   const o = () => {
@@ -410,7 +410,7 @@ function of(t) {
   };
   for (; n < t.length && (o(), !(n >= t.length)); ) {
     const i = t[n];
-    if (ef.test(i)) {
+    if (nf.test(i)) {
       s = { type: i, args: [] }, e.push(s), n++;
       continue;
     }
@@ -421,13 +421,13 @@ function of(t) {
       s.args.push(i === "1" ? 1 : 0), n++;
       continue;
     }
-    const l = nf.exec(t.slice(n));
+    const l = sf.exec(t.slice(n));
     if (!l) break;
     s.args.push(parseFloat(l[0])), n += l[0].length;
   }
   return e;
 }
-function rf(t, e, n, s, o, i, r, a, l) {
+function af(t, e, n, s, o, i, r, a, l) {
   if (t === a && e === l) return [];
   let c = Math.abs(n), h = Math.abs(s);
   if (c === 0 || h === 0) return [[t, e, a, l, a, l]];
@@ -502,8 +502,8 @@ function Hn(t) {
   const h = /* @__PURE__ */ new Set(), u = (p) => {
     c < 0 && (c = 0), p.subpath = c, n.push(p);
   };
-  for (const { type: p, args: m } of of(t)) {
-    const b = p.toUpperCase(), k = p !== b, w = sf[b];
+  for (const { type: p, args: m } of rf(t)) {
+    const b = p.toUpperCase(), k = p !== b, w = of[b];
     if (b === "Z") {
       (s !== i || o !== r) && u(Yn(s, o, i, r)), c >= 0 && h.add(c), s = i, o = r, a = l = null;
       continue;
@@ -554,7 +554,7 @@ function Hn(t) {
         case "A": {
           const x = T[5] + $, P = T[6] + M;
           let E = s, O = o;
-          for (const _ of rf(s, o, T[0], T[1], T[2], T[3], T[4], x, P))
+          for (const _ of af(s, o, T[0], T[1], T[2], T[3], T[4], x, P))
             u(Os(E, O, _)), E = _[4], O = _[5];
           s = x, o = P;
           break;
@@ -572,9 +572,9 @@ function Hn(t) {
     f.push({ start: p, end: b, length: k, closed: T }), p = b;
   }
   const g = { segments: n, totalLength: d, subpaths: f };
-  return yn.size >= tf && yn.delete(yn.keys().next().value), yn.set(t, g), g;
+  return yn.size >= ef && yn.delete(yn.keys().next().value), yn.set(t, g), g;
 }
-function af(t, e) {
+function lf(t, e) {
   const n = t.lengths;
   if (e <= 0) return 0;
   if (e >= t.length) return 1;
@@ -586,7 +586,7 @@ function af(t, e) {
   const i = n[o] - n[s], r = i > 0 ? (e - n[s]) / i : 0;
   return (s + r) / (n.length - 1);
 }
-function lf(t, e) {
+function cf(t, e) {
   if (t.type === "L") {
     const u = t.length > 0 ? Math.max(0, Math.min(1, e / t.length)) : 0;
     return {
@@ -595,7 +595,7 @@ function lf(t, e) {
       angle: Math.atan2(t.endY - t.startY, t.endX - t.startX) * 180 / Math.PI
     };
   }
-  const [n, s, o, i, r, a] = t.points, l = af(t, e);
+  const [n, s, o, i, r, a] = t.points, l = lf(t, e);
   let c = qa(t.startX, n, o, r, l), h = qa(t.startY, s, i, a, l);
   if (Math.hypot(c, h) < 1e-9) {
     const u = l < 0.5 ? Math.min(1, l + 1e-3) : Math.max(0, l - 1e-3), d = Te(t.startX, n, o, r, u), f = Te(t.startY, s, i, a, u), g = Te(t.startX, n, o, r, l), p = Te(t.startY, s, i, a, l);
@@ -613,12 +613,12 @@ function Wh(t, e, n = 0, s = t.length) {
   for (let i = n; i < s; i++) {
     const r = t[i];
     if (o + r.length >= e || i === s - 1)
-      return lf(r, e - o);
+      return cf(r, e - o);
     o += r.length;
   }
   return { x: 0, y: 0, angle: 0 };
 }
-function cf(t, e) {
+function hf(t, e) {
   const { segments: n, totalLength: s } = Hn(t);
   return Wh(n, Math.max(0, Math.min(1, e)) * s);
 }
@@ -628,7 +628,7 @@ function aM() {
 function lM(t) {
   return Hn(t).totalLength;
 }
-const hf = 24, uf = 320, df = 2.5, jn = 72, cM = 64, ff = 0.2, pf = 128, es = /* @__PURE__ */ new Map();
+const uf = 24, df = 320, ff = 2.5, jn = 72, cM = 64, pf = 0.2, gf = 128, es = /* @__PURE__ */ new Map();
 let Us = 0, xe;
 const Ya = (t) => Math.round(t * 100) / 100;
 function ja(t, e) {
@@ -663,7 +663,7 @@ function Ua(t) {
     e += s, n += o;
   return e /= t.length, n /= t.length, t.map(([s, o]) => [s - e, o - n]);
 }
-function gf(t, e, n) {
+function mf(t, e, n) {
   const s = t.closed && e.closed;
   if (n !== void 0)
     return { offset: s ? Math.abs(n) % jn / jn : 0, reversed: n < 0 };
@@ -682,28 +682,28 @@ function gf(t, e, n) {
   }
   return a;
 }
-function mf(t, e, n) {
+function yf(t, e, n) {
   return n ? ((e.reversed ? e.offset - t : t + e.offset) % 1 + 1) % 1 : e.reversed ? 1 - t : t;
 }
-function yf(t, e, n) {
+function bf(t, e, n) {
   return n ? ((e.reversed ? e.offset - t : t - e.offset) % 1 + 1) % 1 : e.reversed ? 1 - t : t;
 }
-function bf(t, e, n) {
-  const s = t.closed && e.closed, o = gf(t, e, n.shapeIndex), i = Math.max(
-    hf,
-    Math.min(uf, Math.ceil(Math.max(t.length, e.length) / df))
+function wf(t, e, n) {
+  const s = t.closed && e.closed, o = mf(t, e, n.shapeIndex), i = Math.max(
+    uf,
+    Math.min(df, Math.ceil(Math.max(t.length, e.length) / ff))
   ), r = /* @__PURE__ */ new Set(), a = (u) => r.add(Math.round(u * 1e7) / 1e7);
   for (let u = 0; u <= i; u++) a(u / i);
   for (const u of Ka(t)) a(u);
-  for (const u of Ka(e)) a(yf(u, o, s));
+  for (const u of Ka(e)) a(bf(u, o, s));
   let l = [...r].sort((u, d) => u - d);
   s && (l = l.filter((u) => u < 1));
   const c = [], h = [];
   for (const u of l)
-    c.push(...nr(t, u)), h.push(...nr(e, mf(u, o, s)));
-  return wf({ from: c, to: h, closed: s });
+    c.push(...nr(t, u)), h.push(...nr(e, yf(u, o, s)));
+  return kf({ from: c, to: h, closed: s });
 }
-function wf(t) {
+function kf(t) {
   const e = t.from.length / 2;
   if (e <= 3) return t;
   const n = new Uint8Array(e);
@@ -711,7 +711,7 @@ function wf(t) {
   const s = [[0, e - 1]];
   for (; s.length > 0; ) {
     const [r, a] = s.pop();
-    let l = -1, c = ff;
+    let l = -1, c = pf;
     for (let h = r + 1; h < a; h++) {
       const u = Math.max(Ga(t.from, r, a, h), Ga(t.to, r, a, h));
       u > c && (c = u, l = h);
@@ -727,28 +727,28 @@ function Ga(t, e, n, s) {
   const o = t[e * 2], i = t[e * 2 + 1], r = t[n * 2] - o, a = t[n * 2 + 1] - i, l = t[s * 2] - o, c = t[s * 2 + 1] - i, h = r * r + a * a, u = h === 0 ? 0 : Math.max(0, Math.min(1, (l * r + c * a) / h));
   return Math.hypot(l - u * r, c - u * a);
 }
-function kf(t, e, n) {
+function vf(t, e, n) {
   const s = n.shapeIndex;
   if (xe && xe.from === t && xe.to === e && xe.shapeIndex === s) return xe.plan;
   const i = es.get(String(s ?? "auto"))?.get(t)?.get(e);
   if (i)
     return xe = { from: t, to: e, shapeIndex: s, plan: i }, i;
   const r = Hn(t).subpaths.filter((f) => f.length > 0).length === Hn(e).subpaths.filter((f) => f.length > 0).length, a = ja(t, !r), l = ja(e, !r), c = {
-    pairs: a.map((f, g) => bf(f, l[g], n))
+    pairs: a.map((f, g) => wf(f, l[g], n))
   };
-  Us >= pf && (es.clear(), Us = 0);
+  Us >= gf && (es.clear(), Us = 0);
   const h = String(s ?? "auto"), u = es.get(h) ?? /* @__PURE__ */ new Map();
   es.set(h, u);
   const d = u.get(t) ?? /* @__PURE__ */ new Map();
   return u.set(t, d), d.set(e, c), Us++, xe = { from: t, to: e, shapeIndex: s, plan: c }, c;
 }
-function vf(t, e, n, s = {}) {
+function Mf(t, e, n, s = {}) {
   if (!t) return e;
   if (!e) return t;
   const o = Math.max(0, Math.min(1, n));
   if (o === 0) return t;
   if (o === 1) return e;
-  const i = kf(t, e, s);
+  const i = vf(t, e, s);
   if (i.pairs.length === 0) return o < 0.5 ? t : e;
   let r = "";
   for (const a of i.pairs) {
@@ -766,7 +766,7 @@ function hM() {
 function Ts(t) {
   return /^\s*[Mm]\s*[-+]?(?:\d|\.\d)/.test(t);
 }
-const bn = Math.PI / 180, Mf = 0.9995;
+const bn = Math.PI / 180, xf = 0.9995;
 function Yr() {
   return [0, 0, 0, 1];
 }
@@ -776,10 +776,10 @@ function Zt(t, e) {
   const s = e * bn / 2, o = Math.sin(s) / n;
   return [t[0] * o, t[1] * o, t[2] * o, Math.cos(s)];
 }
-function xf(t, e, n) {
+function Sf(t, e, n) {
   return sr(sr(Zt([0, 1, 0], e), Zt([1, 0, 0], t)), Zt([0, 0, 1], n));
 }
-function Sf(t) {
+function Tf(t) {
   const [e, n, s, o] = Ie(t), i = 2 * (e * s + n * o), r = 2 * (e * n + s * o), a = 1 - 2 * (e * e + s * s), l = 2 * (n * s - e * o), c = 1 - 2 * (n * n + s * s), h = 2 * (e * s - n * o), u = 1 - 2 * (e * e + n * n), d = Math.asin(Math.max(-1, Math.min(1, -l)));
   return Math.abs(l) < 0.9999999 ? [d / bn, Math.atan2(i, u) / bn, Math.atan2(r, a) / bn] : [d / bn, Math.atan2(-h, c) / bn, 0];
 }
@@ -802,13 +802,13 @@ function Ie(t) {
   const e = Dh(t);
   return e === 0 ? Yr() : [t[0] / e, t[1] / e, t[2] / e, t[3] / e];
 }
-function Tf(t) {
+function Ef(t) {
   return [-t[0], -t[1], -t[2], t[3]];
 }
 function Bh(t, e, n) {
   const s = Ie(t);
   let o = Ie(e), i = Nh(s, o);
-  if (i < 0 && (o = [-o[0], -o[1], -o[2], -o[3]], i = -i), i > Mf)
+  if (i < 0 && (o = [-o[0], -o[1], -o[2], -o[3]], i = -i), i > xf)
     return Ie([
       s[0] + (o[0] - s[0]) * n,
       s[1] + (o[1] - s[1]) * n,
@@ -823,23 +823,23 @@ function Bh(t, e, n) {
     s[3] * l + o[3] * c
   ]);
 }
-function Ef(t, e) {
+function Af(t, e) {
   const [n, s, o, i] = Ie(t), r = 2 * (s * e[2] - o * e[1]), a = 2 * (o * e[0] - n * e[2]), l = 2 * (n * e[1] - s * e[0]);
   return [e[0] + i * r + (s * l - o * a), e[1] + i * a + (o * r - n * l), e[2] + i * l + (n * a - s * r)];
 }
 const uM = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  conjugate: Tf,
+  conjugate: Ef,
   dot: Nh,
   fromAxisAngle: Zt,
-  fromEuler: xf,
+  fromEuler: Sf,
   identity: Yr,
   length: Dh,
   multiply: sr,
   normalize: Ie,
-  rotateVec3: Ef,
+  rotateVec3: Af,
   slerp: Bh,
-  toEuler: Sf
+  toEuler: Tf
 }, Symbol.toStringTag, { value: "Module" })), we = (t, e, n) => t + (e - t) * n, zh = 512, ui = /* @__PURE__ */ new Map(), di = /* @__PURE__ */ new Map();
 function Va(t) {
   const e = ui.get(t);
@@ -851,23 +851,23 @@ function Va(t) {
   ];
   return ui.size < zh && ui.set(t, s), s;
 }
-const Ja = (t) => t.charCodeAt(0) === 35, Za = (t) => t.startsWith("rgb"), Qa = (t) => t.startsWith("rgba"), Af = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+))?\s*\)/, fi = (t) => Math.round(t).toString(16).padStart(2, "0");
-function $f(t, e, n) {
+const Ja = (t) => t.charCodeAt(0) === 35, Za = (t) => t.startsWith("rgb"), Qa = (t) => t.startsWith("rgba"), $f = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+))?\s*\)/, fi = (t) => Math.round(t).toString(16).padStart(2, "0");
+function Pf(t, e, n) {
   return `#${fi(t)}${fi(e)}${fi(n)}`;
 }
 function tl(t) {
   const e = di.get(t);
   if (e) return e;
-  const n = t.match(Af);
+  const n = t.match($f);
   if (!n)
     throw new Error(`Invalid rgb color: ${t}`);
   const s = parseInt(n[1], 10), o = parseInt(n[2], 10), i = parseInt(n[3], 10), r = n[4] !== void 0 ? [s, o, i, parseFloat(n[4])] : [s, o, i];
   return di.size < zh && di.set(t, r), r;
 }
-const Pf = (t, e, n) => {
+const If = (t, e, n) => {
   if (Ja(t) && Ja(e)) {
     const [s, o, i] = Va(t), [r, a, l] = Va(e), c = we(s, r, n), h = we(o, a, n), u = we(i, l, n);
-    return $f(c, h, u);
+    return Pf(c, h, u);
   }
   if ((Za(t) || Qa(t)) && (Za(e) || Qa(e))) {
     const s = tl(t), o = tl(e), i = Math.round(we(s[0], o[0], n)), r = Math.round(we(s[1], o[1], n)), a = Math.round(we(s[2], o[2], n));
@@ -878,14 +878,14 @@ const Pf = (t, e, n) => {
     return `rgb(${i}, ${r}, ${a})`;
   }
   return n < 1 ? t : e;
-}, If = (t, e, n) => {
+}, Of = (t, e, n) => {
   const s = Math.min(t.length, e.length), o = [];
   for (let i = 0; i < s; i++)
     o.push(we(t[i], e[i], n));
   return o;
-}, Of = (t, e, n) => Bh(t, e, n), el = (t, e, n) => n < 1 ? t : e, _f = (t, e, n) => vf(t, e, n);
+}, _f = (t, e, n) => Bh(t, e, n), el = (t, e, n) => n < 1 ? t : e, Hf = (t, e, n) => Mf(t, e, n);
 function ao(t, e) {
-  return e === "slerp" ? Of : typeof t == "number" ? we : Array.isArray(t) ? If : typeof t == "string" ? t.startsWith("#") || t.startsWith("rgb") ? Pf : Ts(t) ? _f : el : el;
+  return e === "slerp" ? _f : typeof t == "number" ? we : Array.isArray(t) ? Of : typeof t == "string" ? t.startsWith("#") || t.startsWith("rgb") ? If : Ts(t) ? Hf : el : el;
 }
 const qh = 1e3 / 60;
 function Yh(t, e = {}) {
@@ -916,7 +916,7 @@ function Kh(t, e, n, s, o, i) {
     id: t.id,
     target: t.target,
     property: t.property,
-    keyframes: a > 0 ? Cf(c, a) : c,
+    keyframes: a > 0 ? Rf(c, a) : c,
     ...t.targets && { targets: [...t.targets] },
     ...t.stagger && { stagger: { ...t.stagger } }
   };
@@ -939,7 +939,7 @@ function Xh(t, e, n, s = {}) {
 function dM(t, e) {
   return tn(t) ? Yh(t, e) : Qe(t) ? jh(t, e) : t;
 }
-function Hf(t, e = {}) {
+function Cf(t, e = {}) {
   const n = t.keyframes;
   if (!n.some((i) => io(i.easing))) return t;
   const s = n.length > 0 ? [n[0]] : [], o = { ...e, interpolation: t.interpolation ?? e.interpolation };
@@ -950,12 +950,12 @@ function Hf(t, e = {}) {
   return { ...t, keyframes: s };
 }
 function fM(t, e) {
-  return t.filter(Cd).map((n) => Hf(n, e)).concat(
+  return t.filter(Rd).map((n) => Cf(n, e)).concat(
     t.filter(tn).map((n) => Yh(n, e)),
     t.filter(Qe).map((n) => jh(n, e))
   );
 }
-function Cf(t, e) {
+function Rf(t, e) {
   if (t.length <= 2) return t;
   const n = [t[0]];
   for (let s = 1; s < t.length - 1; s++) {
@@ -1054,7 +1054,7 @@ class Gs {
     return { from: null, to: null };
   }
 }
-class Rf {
+class Lf {
   track;
   targets;
   sampler;
@@ -1081,7 +1081,7 @@ class Rf {
     return this.track;
   }
 }
-class Lf {
+class Ff {
   track;
   targets;
   duration;
@@ -1109,7 +1109,7 @@ class Lf {
   }
 }
 function Uh(t, e) {
-  const n = { ...cf(t.pathData, e) };
+  const n = { ...hf(t.pathData, e) };
   if (t.matrix) {
     const [s, o, i, r, a, l] = t.matrix, { x: c, y: h } = n;
     n.x = s * c + i * h + a, n.y = o * c + r * h + l;
@@ -1127,16 +1127,16 @@ const pi = {
   lowerCase: "abcdefghijklmnopqrstuvwxyz",
   upperAndLowerCase: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
   numbers: "0123456789"
-}, Ff = 20;
-function Wf(t) {
+}, Wf = 20;
+function Nf(t) {
   const e = pi[t ?? "upperCase"] ?? t ?? pi.upperCase, n = Array.from(e);
   return n.length > 0 ? n : Array.from(pi.upperCase);
 }
-function Nf(t, e, n) {
+function Df(t, e, n) {
   let s = (t | 0) ^ Math.imul(e + 1, 2654435761) ^ Math.imul(n + 1, 2246822507);
   return s = Math.imul(s ^ s >>> 16, 2146121005), s = Math.imul(s ^ s >>> 15, 2221713035), (s ^ s >>> 16) >>> 0;
 }
-function Df(t, e, n = 0) {
+function Bf(t, e, n = 0) {
   const s = t.from ?? "", o = t.to, i = Math.max(0, Math.min(1, e));
   if (i <= 0) return s;
   if (i >= 1) return o;
@@ -1145,12 +1145,12 @@ function Df(t, e, n = 0) {
     const k = Math.round(i * Math.max(r.length, a.length));
     return l ? r.slice(0, Math.max(0, r.length - k)).join("") + a.slice(Math.max(0, a.length - k)).join("") : a.slice(0, k).join("") + r.slice(k).join("");
   }
-  const c = Math.max(0, Math.min(0.999, t.revealDelay ?? 0)), h = Math.max(0, (i - c) / (1 - c)), u = Math.floor(h * a.length), d = t.tweenLength === !1 ? a.length : Math.round(r.length + (a.length - r.length) * i), f = Wf(t.chars), g = t.refreshRate ?? Ff, p = g > 0 ? Math.floor(n * g / 1e3) : 0, m = t.seed ?? 1;
+  const c = Math.max(0, Math.min(0.999, t.revealDelay ?? 0)), h = Math.max(0, (i - c) / (1 - c)), u = Math.floor(h * a.length), d = t.tweenLength === !1 ? a.length : Math.round(r.length + (a.length - r.length) * i), f = Nf(t.chars), g = t.refreshRate ?? Wf, p = g > 0 ? Math.floor(n * g / 1e3) : 0, m = t.seed ?? 1;
   let b = "";
   for (let k = 0; k < d; k++) {
     const w = l ? k >= d - u : k < u, y = l ? a[a.length - (d - k)] : a[k];
     w && y !== void 0 || y === " " || y === `
-` ? b += y : b += f[Nf(m, k, p) % f.length];
+` ? b += y : b += f[Df(m, k, p) % f.length];
   }
   return b;
 }
@@ -1309,7 +1309,7 @@ class _t {
    */
   getStateAtTime(e) {
     const n = /* @__PURE__ */ new Map();
-    if (e = Rd(e, this._config.drawingRate ?? 0), this._hasSharedWrites())
+    if (e = Ld(e, this._config.drawingRate ?? 0), this._hasSharedWrites())
       this._resolveShared(e, n);
     else
       for (const [s, o] of this._trackPlayers) {
@@ -1361,7 +1361,7 @@ class _t {
     a || (a = /* @__PURE__ */ new Map(), e.set(s, a));
     const l = this._textTracks.get(n);
     if (l && typeof i == "number") {
-      a.set("text", Df(l.textConfig, i, Math.max(0, r)));
+      a.set("text", Bf(l.textConfig, i, Math.max(0, r)));
       return;
     }
     const c = this._motionPathTracks.get(n);
@@ -1394,11 +1394,11 @@ class _t {
    */
   addTrack(e) {
     if (this._tracks.push(e), this._sharedWrites = null, Qe(e)) {
-      this._trackPlayers.set(e.id, new Lf(e));
+      this._trackPlayers.set(e.id, new Ff(e));
       return;
     }
     if (tn(e)) {
-      this._trackPlayers.set(e.id, new Rf(e)), this._springTracks.set(e.id, e);
+      this._trackPlayers.set(e.id, new Lf(e)), this._springTracks.set(e.id, e);
       return;
     }
     if (zr(e))
@@ -1576,7 +1576,7 @@ class _t {
     return this._config.alternate && (e === -1 || this._loopIteration < e) ? (this._loopIteration++, this._armRepeatDelay(), this._direction = "forward", this._repeatDelayRemaining === 0) : (this._playbackState = "idle", this.onComplete?.(), !1);
   }
 }
-const Bf = 100;
+const zf = 100;
 function Gh(t, e, n, s) {
   const o = [], i = [], { duration: r, alternate: a } = s, l = (f, g, p, m) => {
     i.push([f, g]);
@@ -1587,14 +1587,14 @@ function Gh(t, e, n, s) {
     for (const k of b) o.push({ kind: "event", index: k, direction: p });
   };
   let c = e.time, h = e.direction, u = e.fresh === !0;
-  const d = Math.min(Bf, Math.max(0, n.iteration - e.iteration));
+  const d = Math.min(zf, Math.max(0, n.iteration - e.iteration));
   for (let f = 0; f < d; f++) {
     const g = h === "forward" ? r : 0;
     l(c, g, h, u), o.push({ kind: "repeat" }), a ? (h = h === "forward" ? "reverse" : "forward", c = g, u = !1) : (c = h === "forward" ? 0 : r, u = !0);
   }
   return d > 0 && s.holding && !a ? { crossings: o, passes: i } : (l(c, n.time, h, u), { crossings: o, passes: i });
 }
-function zf(t) {
+function qf(t) {
   return Qe(t) ? {
     id: t.id,
     target: t.target,
@@ -1651,7 +1651,7 @@ function ue(t) {
     ...t.stagger !== void 0 && { stagger: { ...t.stagger } }
   };
 }
-function qf(t) {
+function Yf(t) {
   if (Qe(t)) {
     const e = t;
     return {
@@ -1705,7 +1705,7 @@ function qf(t) {
     ...ue(t)
   });
 }
-function Yf(t) {
+function jf(t) {
   const e = t._config.markers;
   return {
     formatVersion: Oh(t.tracks),
@@ -1720,7 +1720,7 @@ function Yf(t) {
       ...t._config.drawingRate ? { drawingRate: t._config.drawingRate } : {},
       ...e && { markers: e.map((n) => ({ ...n })) }
     },
-    tracks: t.tracks.map(zf),
+    tracks: t.tracks.map(qf),
     ...t.captions && { captions: JSON.parse(JSON.stringify(t.captions)) }
   };
 }
@@ -1734,12 +1734,12 @@ function us(t) {
     id: t.id,
     name: t.name,
     config: t.config,
-    tracks: t.tracks.map(qf),
+    tracks: t.tracks.map(Yf),
     captions: t.captions
   });
 }
 function gM(t) {
-  return JSON.stringify(Yf(t));
+  return JSON.stringify(jf(t));
 }
 function mM(t) {
   const e = JSON.parse(t);
@@ -1763,7 +1763,7 @@ function sn(t) {
 function Jh(t, e, n) {
   return e + t.next() * (n - e);
 }
-function jf(t, e, n, s) {
+function Kf(t, e, n, s) {
   if (s <= 0) return Jh(t, e, n);
   const o = Math.floor((n - e) / s), i = Math.round(t.next() * o);
   return e + i * s;
@@ -1799,11 +1799,11 @@ function t0(t, e = {}) {
         `resolveValue: "${n}" needs a random source — pass one via context.random`
       );
     const i = Number.parseFloat(o[1]), r = Number.parseFloat(o[2]), a = o[3] !== void 0 ? Number.parseFloat(o[3]) : void 0;
-    return a !== void 0 ? jf(e.random, i, r, a) : Jh(e.random, i, r);
+    return a !== void 0 ? Kf(e.random, i, r, a) : Jh(e.random, i, r);
   }
   return t;
 }
-function Kf(t, e = 0, n) {
+function Xf(t, e = 0, n) {
   const s = [];
   let o = e;
   for (const i of t) {
@@ -1825,11 +1825,11 @@ class wM {
     return t0(e, { base: n, random: this.random });
   }
   resolveSequence(e, n = 0) {
-    return Kf(e, n, this.random);
+    return Xf(e, n, this.random);
   }
 }
-const Xf = 600;
-function Uf(t) {
+const Uf = 600;
+function Gf(t) {
   if (Array.isArray(t)) {
     const [d, f, g, p] = t;
     return { fn: nl(d, f, g, p), bezier: [d, f, g, p] };
@@ -1843,15 +1843,15 @@ function Uf(t) {
     const [d, f, g, p] = o.points, m = [a(d), l(f), a(g), l(p)];
     return { fn: nl(...m), bezier: m };
   }
-  const c = [], h = [], u = Math.max(8, Math.ceil(Xf / e.length));
+  const c = [], h = [], u = Math.max(8, Math.ceil(Uf / e.length));
   for (const d of e)
     for (let f = c.length === 0 ? 0 : 1; f <= u; f++) {
-      const [g, p] = Jf(d, f / u);
+      const [g, p] = Zf(d, f / u);
       c.push(a(g)), h.push(l(p));
     }
-  return { fn: Zf(c, h) };
+  return { fn: Qf(c, h) };
 }
-function Gf(t = {}) {
+function Vf(t = {}) {
   const n = 0.1 + Math.max(0, Math.min(1, t.strength ?? 0.7)) * 0.7, s = [1];
   for (let i = n; i > 2e-3; i *= n) s.push(2 * Math.sqrt(i));
   const o = s.reduce((i, r) => i + r, 0);
@@ -1870,11 +1870,11 @@ function Gf(t = {}) {
     return 1;
   };
 }
-function Vf(t = {}) {
+function Jf(t = {}) {
   const e = Math.max(1, t.wiggles ?? 10), n = t.type ?? "easeOut", s = (o) => n === "uniform" ? 1 : n === "easeInOut" ? Math.sin(Math.PI * o) : (1 - o) ** 2;
   return (o) => o <= 0 || o >= 1 ? 0 : Math.sin(o * e * Math.PI * 2) * s(o);
 }
-function Jf(t, e) {
+function Zf(t, e) {
   if (t.type === "L") {
     const [c, h] = t.points;
     return [t.startX + (c - t.startX) * e, t.startY + (h - t.startY) * e];
@@ -1885,7 +1885,7 @@ function Jf(t, e) {
     l * l * l * t.startY + 3 * l * l * e * s + 3 * l * e * e * i + e * e * e * a
   ];
 }
-function Zf(t, e) {
+function Qf(t, e) {
   return (n) => {
     if (n <= t[0]) return e[0];
     if (n >= t[t.length - 1]) return e[e.length - 1];
@@ -1917,9 +1917,9 @@ function nl(t, e, n, s) {
     return o(a, e, s);
   };
 }
-const Qf = 350, tp = 300, ep = 550;
+const tp = 350, ep = 300, np = 550;
 function kM(t, e = {}) {
-  const n = e.lead ?? Qf, s = e.gap ?? tp, o = e.tail ?? ep, i = [];
+  const n = e.lead ?? tp, s = e.gap ?? ep, o = e.tail ?? np, i = [];
   let r = 0;
   return t.forEach((a, l) => {
     const c = [];
@@ -2020,7 +2020,7 @@ function EM(t, e, n = {}) {
   const $ = 60 * cn / w, M = g > 0 ? Math.max(0, Math.min(1, f(p) / g)) : 0, S = (y + 0.5) * 1e3 / cn;
   return { bpm: Math.round($ * 100) / 100, offset: Math.round(S % (6e4 / $)), confidence: M };
 }
-const np = 600, sp = 250, sl = 1;
+const sp = 600, op = 250, sl = 1;
 function AM(t, e) {
   const n = e.target ?? "Camera", s = { x: e.stage.width / 2, y: e.stage.height / 2 }, o = {}, i = (u, d, f, g) => {
     const p = o[u] ??= [];
@@ -2043,7 +2043,7 @@ function AM(t, e) {
   h.length > 0 && a(0, l);
   for (const u of h)
     if ("frame" in u) {
-      const d = Math.max(sl, u.duration ?? np);
+      const d = Math.max(sl, u.duration ?? sp);
       a(u.at, l), l = {
         focusX: u.frame.focus?.x ?? s.x,
         focusY: u.frame.focus?.y ?? s.y,
@@ -2051,7 +2051,7 @@ function AM(t, e) {
         rotate: u.frame.rotate ?? 0
       }, a(u.at + d, l, u.easing ?? (d > sl ? "ease-in-out" : void 0));
     } else {
-      const { follow: d } = u, f = d.lag ?? sp, g = new _t({ id: "follow", tracks: [{ id: "x", target: "s", property: "x", keyframes: d.x }] }), p = (k) => g.getStateAtTime(k).values.get("s")?.get("x") ?? l.focusX, m = [u.at, ...d.x.map((k) => k.time).filter((k) => k > u.at && k < u.until), u.until];
+      const { follow: d } = u, f = d.lag ?? op, g = new _t({ id: "follow", tracks: [{ id: "x", target: "s", property: "x", keyframes: d.x }] }), p = (k) => g.getStateAtTime(k).values.get("s")?.get("x") ?? l.focusX, m = [u.at, ...d.x.map((k) => k.time).filter((k) => k > u.at && k < u.until), u.until];
       a(u.at, l);
       const b = (k) => ({
         focusX: p(k) + (d.lead ?? 0),
@@ -2076,7 +2076,7 @@ function AM(t, e) {
   }
   return Object.entries(o).map(([u, d]) => ({ id: `${n}-${u}`, target: n, property: u, keyframes: d }));
 }
-function op(t, e) {
+function ip(t, e) {
   const n = t.toLowerCase(), s = e.toLowerCase();
   let o = Array.from({ length: s.length + 1 }, (i, r) => r);
   for (let i = 1; i <= n.length; i++) {
@@ -2092,7 +2092,7 @@ function lo(t, e) {
   if (s && Math.min(t.length, s.length) >= 3) return s;
   let o, i = 1 / 0;
   for (const r of e) {
-    const a = op(t, r);
+    const a = ip(t, r);
     a < i && (i = a, o = r);
   }
   return o !== void 0 && i <= Math.max(2, Math.floor(t.length / 3)) ? o : void 0;
@@ -2150,11 +2150,11 @@ function s0(t, e, n) {
   let o = 0, i = 1, r = 0;
   for (let a = 0; a < s; a++) {
     const l = 2 ** a;
-    o += i * ip(t.map((c) => c * l), e + a * 1013), r += i, i *= 0.5;
+    o += i * rp(t.map((c) => c * l), e + a * 1013), r += i, i *= 0.5;
   }
   return o / r;
 }
-function ip(t, e) {
+function rp(t, e) {
   const n = t.length, s = t.map(Math.floor), i = t.map((a, l) => a - s[l]).map((a) => a * a * (3 - 2 * a));
   let r = 0;
   for (let a = 0; a < 1 << n; a++) {
@@ -2164,11 +2164,11 @@ function ip(t, e) {
       const u = a >> h & 1;
       l *= u ? i[h] : 1 - i[h], c.push(s[h] + u);
     }
-    l !== 0 && (r += l * rp(c, e));
+    l !== 0 && (r += l * ap(c, e));
   }
   return r;
 }
-function rp(t, e) {
+function ap(t, e) {
   let n = (e ^ 2654435769) >>> 0;
   for (const s of t)
     n = Math.imul(n ^ (s | 0), 2246822507) >>> 0, n = (n ^ n >>> 13) >>> 0, n = Math.imul(n, 3266489909) >>> 0, n = (n ^ n >>> 16) >>> 0;
@@ -2210,14 +2210,14 @@ function FM(t, e, n = 30, s) {
   const i = (s ? Rn(e, s) * s : e) * n / 1e3, r = Math.floor(i), a = t[Math.min(t.length - 1, Math.max(0, r))], l = t[Math.min(t.length - 1, Math.max(0, r + 1))];
   return a + (l - a) * (i - r);
 }
-const ap = {
+const lp = {
   "16:9": 16 / 9,
   "2.39:1": 2.39,
   "4:3": 4 / 3,
   "1:1": 1,
   "9:16": 9 / 16,
   "4:5": 4 / 5
-}, o0 = (t) => typeof t == "number" ? t : ap[t];
+}, o0 = (t) => typeof t == "number" ? t : lp[t];
 function WM(t, e) {
   const n = o0(e), s = t.width / t.height;
   if (n >= s) {
@@ -2241,7 +2241,7 @@ function DM(t, e = {}) {
   return { action: n(e.action ?? 0.9), title: n(e.title ?? 0.8) };
 }
 const le = (t) => Math.round(t * 1e3) / 1e3;
-function lp(t, e = {}) {
+function cp(t, e = {}) {
   if (t.length === 0) return "";
   const n = e.curviness ?? 1, s = e.closed ?? !1, o = t.length;
   let i = `M${le(t[0].x)} ${le(t[0].y)}`;
@@ -2262,7 +2262,7 @@ const Ct = (t, e = 0) => {
   const n = parseFloat(t ?? "");
   return Number.isFinite(n) ? n : e;
 };
-function cp(t) {
+function hp(t) {
   const e = (t ?? "").trim().split(/[\s,]+/).filter(Boolean).map(Number), n = [];
   for (let s = 0; s + 1 < e.length; s += 2) n.push({ x: e[s], y: e[s + 1] });
   return n;
@@ -2286,7 +2286,7 @@ function Kr(t) {
       return `M${Ct(e.x1)} ${Ct(e.y1)} L${Ct(e.x2)} ${Ct(e.y2)}`;
     case "polyline":
     case "polygon": {
-      const n = cp(e.points);
+      const n = hp(e.points);
       if (n.length === 0) return null;
       const s = n.map((o, i) => `${i === 0 ? "M" : "L"}${o.x} ${o.y}`).join(" ");
       return t.tag.toLowerCase() === "polygon" ? `${s} Z` : s;
@@ -2305,8 +2305,8 @@ function BM(t, e, n) {
   }
   return a;
 }
-const hp = 2.5;
-function up(t) {
+const up = 2.5;
+function dp(t) {
   const e = [], n = [], s = t.length, o = (i, r) => {
     for (let a = i + r; a >= 0 && a < s; a += r) {
       const l = (t[a].x - t[i].x) * r, c = (t[a].y - t[i].y) * r, h = Math.hypot(l, c);
@@ -2319,12 +2319,12 @@ function up(t) {
     let u = c[0] + h[0], d = c[1] + h[1];
     const f = Math.hypot(u, d);
     f < 1e-9 ? (u = c[0], d = c[1]) : (u /= f, d /= f);
-    const g = u * c[0] + d * c[1], p = Math.min(hp, 1 / Math.max(g, 1e-6)), m = r.width / 2 * p;
+    const g = u * c[0] + d * c[1], p = Math.min(up, 1 / Math.max(g, 1e-6)), m = r.width / 2 * p;
     e.push({ x: r.x - d * m, y: r.y + u * m }), n.push({ x: r.x + d * m, y: r.y - u * m });
   }
   return { left: e, right: n };
 }
-function dp(t) {
+function fp(t) {
   const e = t.length;
   if (e < 2) return null;
   const n = t[e - 1];
@@ -2339,7 +2339,7 @@ const zM = { scale: 1, turn: 0, x: 0, y: 0 };
 function qM(t = {}) {
   return { scale: t.scale ?? 1, turn: t.turn ?? 0, x: t.x ?? 0, y: t.y ?? 0 };
 }
-function fp(t, e, n) {
+function pp(t, e, n) {
   const { ax: s, ay: o } = No(t, e);
   return { scale: t, turn: e, x: n.x - (s * n.x - o * n.y), y: n.y - (o * n.x + s * n.y) };
 }
@@ -2356,14 +2356,14 @@ function jM(t) {
   const e = { scale: 1 / t.scale, turn: -t.turn, x: 0, y: 0 }, n = i0(e, { x: t.x, y: t.y });
   return { ...e, x: -n.x, y: -n.y };
 }
-function pp(t) {
+function gp(t) {
   const { ax: e, ay: n } = No(t.scale, t.turn), s = 1 - e, o = -n, i = s * s + o * o;
   return i < 1e-18 ? null : { x: (t.x * s + t.y * o) / i, y: (t.y * s - t.x * o) / i };
 }
 function KM(t, e) {
   if (t.scale <= 0) throw new Error("powSimilarity: the scale must be positive");
-  const n = Math.pow(t.scale, e), s = t.turn * e, o = pp(t);
-  return o ? fp(n, s, o) : { scale: n, turn: s, x: t.x * e, y: t.y * e };
+  const n = Math.pow(t.scale, e), s = t.turn * e, o = gp(t);
+  return o ? pp(n, s, o) : { scale: n, turn: s, x: t.x * e, y: t.y * e };
 }
 function XM(t) {
   const { ax: e, ay: n } = No(t.scale, t.turn);
@@ -2419,7 +2419,7 @@ function GM(t = {}) {
   const f = a * l, g = t.centre ?? { x: 0, y: 0 }, p = Xr([e * n / 2, e * n / 2, f / 2 + i], { scale: t.scale }), m = { centre: { x: g.x - p.x, y: g.y - p.y }, scale: t.scale };
   return { boxes: h, faces: l0(h, m), rise: l };
 }
-function gp(t, e, n) {
+function mp(t, e, n) {
   let s = 0;
   for (const o of t) {
     const i = (e - o.x) ** 2 + (n - o.y) ** 2;
@@ -2435,7 +2435,7 @@ function VM(t, e = {}) {
     width: Math.max(...t.map((f) => f.x + f.r * o)) - Math.min(...t.map((f) => f.x - f.r * o)),
     height: Math.max(...t.map((f) => f.y + f.r * o)) - Math.min(...t.map((f) => f.y - f.r * o))
   }, r = Math.max(2, Math.ceil(i.width / s) + 1), a = Math.max(2, Math.ceil(i.height / s) + 1), l = new Float64Array(r * a);
-  for (let f = 0; f < a; f++) for (let g = 0; g < r; g++) l[f * r + g] = gp(t, i.x + g * s, i.y + f * s) - n;
+  for (let f = 0; f < a; f++) for (let g = 0; g < r; g++) l[f * r + g] = mp(t, i.x + g * s, i.y + f * s) - n;
   const c = (f, g) => l[g * r + f], h = (f, g, p, m, b, k) => {
     const w = p === k ? 0.5 : p / (p - k);
     return { x: f + (m - f) * w, y: g + (b - g) * w };
@@ -2478,10 +2478,10 @@ function VM(t, e = {}) {
           break;
       }
     }
-  const d = mp(u);
+  const d = yp(u);
   return e.smooth === !1 ? d : d.map((f) => ol(ol(f)));
 }
-function mp(t) {
+function yp(t) {
   const e = (i) => `${Math.round(i.x * 1e3)},${Math.round(i.y * 1e3)}`, n = /* @__PURE__ */ new Map();
   t.forEach(([i, r], a) => {
     for (const l of [i, r]) {
@@ -2600,7 +2600,7 @@ const nx = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   normalize: en,
   scale: $n,
   subtract: zn
-}, Symbol.toStringTag, { value: "Module" })), yp = Math.PI / 180;
+}, Symbol.toStringTag, { value: "Module" })), bp = Math.PI / 180;
 function Bo() {
   return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 }
@@ -2647,7 +2647,7 @@ function Gr(t, e, n) {
     s[o] *= n[0], s[4 + o] *= n[1], s[8 + o] *= n[2];
   return s[12] = t[0], s[13] = t[1], s[14] = t[2], s;
 }
-function bp(t) {
+function wp(t) {
   const e = new Array(16);
   for (let n = 0; n < 4; n++) for (let s = 0; s < 4; s++) e[s * 4 + n] = t[n * 4 + s];
   return e;
@@ -2675,15 +2675,15 @@ function Vr(t) {
     (c * y - h * k + u * b) * _
   ];
 }
-function wp(t, e, n, s) {
-  const o = 1 / Math.tan(t * yp / 2), i = 1 / (n - s);
+function kp(t, e, n, s) {
+  const o = 1 / Math.tan(t * bp / 2), i = 1 / (n - s);
   return [o / e, 0, 0, 0, 0, o, 0, 0, 0, 0, (s + n) * i, -1, 0, 0, 2 * s * n * i, 0];
 }
-function kp(t, e, n, s, o, i) {
+function vp(t, e, n, s, o, i) {
   const r = 1 / (e - t), a = 1 / (s - n), l = 1 / (i - o);
   return [2 * r, 0, 0, 0, 0, 2 * a, 0, 0, 0, 0, -2 * l, 0, -(e + t) * r, -(s + n) * a, -(i + o) * l, 1];
 }
-function vp(t, e, n = [0, 1, 0]) {
+function Mp(t, e, n = [0, 1, 0]) {
   const s = en(zn(t, e)), o = en(co(n, s)), i = co(s, o);
   return [
     o[0],
@@ -2714,14 +2714,14 @@ const sx = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   fromQuat: re,
   identity: Bo,
   invert: Vr,
-  lookAt: vp,
+  lookAt: Mp,
   multiply: Pt,
-  orthographic: kp,
-  perspective: wp,
+  orthographic: vp,
+  perspective: kp,
   scaling: Xe,
   transformPoint: Xt,
   translation: De,
-  transpose: bp
+  transpose: wp
 }, Symbol.toStringTag, { value: "Module" })), _s = {
   "power1.in": [0.55, 0.085, 0.68, 0.53],
   "power1.out": [0.25, 0.46, 0.45, 0.94],
@@ -2759,7 +2759,7 @@ const sx = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   "power2.out": "ease-out-cubic",
   "power2.inout": "ease-in-out-cubic"
 };
-function Mp(t) {
+function xp(t) {
   let e = t.trim().toLowerCase();
   e = e.replace(/\.ease(in|out|inout)$/, ".$1");
   const n = /^([a-z]+\d?)(\(.*\))?$/.exec(e);
@@ -2770,7 +2770,7 @@ Wt({ type: "bounce", mode: "in-out" });
 function ho(t) {
   const e = h0.get(t.trim().toLowerCase());
   if (e) return e;
-  const n = Mp(t), s = /^steps\(\s*(\d+)\s*\)$/.exec(n);
+  const n = xp(t), s = /^steps\(\s*(\d+)\s*\)$/.exec(n);
   if (s) {
     const r = { type: "steps", count: Math.max(1, Number.parseInt(s[1], 10)) + 1, position: "none" };
     return { easing: r, fn: Wt(r) };
@@ -2804,7 +2804,7 @@ const u0 = /^\s*random\(\s*(\[.*\]|[^)]*)\s*\)\s*$/;
 function d0(t) {
   return typeof t == "string" && u0.test(t);
 }
-function xp(t = 1) {
+function Sp(t = 1) {
   let e = ir(t);
   const n = (l, c) => ((...h) => h.length >= l ? c(...h) : (u) => c(...h, u)), s = (l, c, h) => Math.min(Math.max(h, Math.min(l, c)), Math.max(l, c)), o = (l, c, h, u, d) => c === l ? h : h + (d - l) / (c - l) * (u - h), i = (l, c) => {
     if (typeof l == "number") return l === 0 ? c : Math.round(c / l) * l;
@@ -2864,7 +2864,7 @@ function xp(t = 1) {
       return l + y;
     },
     pipe: (...l) => (c) => l.reduce((h, u) => u(h), c),
-    splitColor: (l) => Sp(l),
+    splitColor: (l) => Tp(l),
     getUnit: (l) => typeof l == "number" ? "" : /^-?[\d.]+(?:e[-+]?\d+)?([a-z%]*)$/i.exec(l.trim())?.[1] ?? "",
     seed: (l) => {
       e = ir(l);
@@ -2888,7 +2888,7 @@ function rl(t, e, n) {
   }
   return o <= n ? s : e;
 }
-function Sp(t) {
+function Tp(t) {
   const e = t.trim(), n = /^#([0-9a-f]{3,8})$/i.exec(e)?.[1];
   if (n) {
     const i = (n.length <= 4 ? [...n].map((r) => r + r).join("") : n).match(/../g).map((r) => Number.parseInt(r, 16));
@@ -2897,19 +2897,19 @@ function Sp(t) {
   const s = (/rgba?\(([^)]+)\)/i.exec(e)?.[1] ?? "0,0,0").split(/[\s,/]+/).filter(Boolean).map((o) => Number.parseFloat(o));
   return s.length >= 4 ? [s[0], s[1], s[2], s[3]] : [s[0] ?? 0, s[1] ?? 0, s[2] ?? 0];
 }
-const Tp = /^([+-])=\s*(-?[\d.]+)$/, Ep = /^([<>])\s*(?:([+-])?=?\s*(-?[\d.]+))?$/;
+const Ep = /^([+-])=\s*(-?[\d.]+)$/, Ap = /^([<>])\s*(?:([+-])?=?\s*(-?[\d.]+))?$/;
 function Kn(t, e) {
   const n = e.scale ?? 1, s = (c) => Number.parseFloat(c) * n;
   if (t === void 0) return e.cursor;
   if (typeof t == "number") return t * n;
   const o = t.trim();
   if (o === "") return e.cursor;
-  const i = Tp.exec(o);
+  const i = Ep.exec(o);
   if (i) {
     const c = s(i[2]);
     return e.cursor + (i[1] === "-" ? -c : c);
   }
-  const r = Ep.exec(o);
+  const r = Ap.exec(o);
   if (r) {
     const c = r[1] === "<" ? e.previousStart : e.previousEnd;
     if (r[3] === void 0) return c;
@@ -2927,12 +2927,12 @@ function Kn(t, e) {
   const l = e.labels.get(o);
   return l !== void 0 ? l : /^-?[\d.]+$/.test(o) ? s(o) : e.cursor;
 }
-function Ap(t) {
+function $p(t) {
   if (typeof t != "object" || t === null) return !1;
   const e = t;
   return e.grid !== void 0 || e.from === "random" || Array.isArray(e.from) || e.ease !== void 0 || e.axis !== void 0;
 }
-function $p(t, e, n = {}) {
+function Pp(t, e, n = {}) {
   if (t === 0) return [];
   const s = e.grid === "auto" ? Math.max(1, Math.min(t, n.columnsFromLayout?.() ?? t)) : Array.isArray(e.grid) ? Math.max(1, e.grid[1]) : t, o = Array.isArray(e.grid) ? Math.max(1, e.grid[0]) : Math.ceil(t / s), i = (g) => ({ x: g % s, y: Math.floor(g / s) }), r = e.from ?? "start", a = Array.isArray(r) ? { x: r[0] * (s - 1), y: r[1] * (o - 1) } : typeof r == "number" ? i(Math.max(0, Math.min(t - 1, r))) : r === "end" ? i(t - 1) : r === "center" || r === "edges" ? { x: (s - 1) / 2, y: (o - 1) / 2 } : { x: 0, y: 0 }, l = (g) => {
     const { x: p, y: m } = i(g), b = Math.abs(p - a.x), k = Math.abs(m - a.y);
@@ -2973,7 +2973,7 @@ const Zr = /* @__PURE__ */ new Set([
   "paused",
   "scrollTrigger",
   "spring"
-]), Pp = {
+]), Ip = {
   rotation: "rotate",
   rotationZ: "rotate",
   rotationX: "rotateX",
@@ -2984,7 +2984,7 @@ const Zr = /* @__PURE__ */ new Set([
 function Zs(t) {
   const e = {}, n = {};
   for (const [s, o] of Object.entries(t))
-    Zr.has(s) ? e[s] = o : n[Pp[s] ?? s] = o;
+    Zr.has(s) ? e[s] = o : n[Ip[s] ?? s] = o;
   return { config: e, properties: n };
 }
 function uo(t, e) {
@@ -2992,13 +2992,13 @@ function uo(t, e) {
 }
 function rr(t, e) {
   if (t !== void 0)
-    return typeof t == "number" ? { each: t * 1e3 } : Ap(t) ? { offsets: $p(e?.count ?? 0, t, e ?? {}).map((s) => s * 1e3) } : {
+    return typeof t == "number" ? { each: t * 1e3 } : $p(t) ? { offsets: Pp(e?.count ?? 0, t, e ?? {}).map((s) => s * 1e3) } : {
       ...t.each !== void 0 && { each: t.each * 1e3 },
       ...t.amount !== void 0 && { amount: t.amount * 1e3 },
       ...t.from !== void 0 && { from: t.from }
     };
 }
-const Ip = {
+const Op = {
   opacity: 1,
   x: 0,
   y: 0,
@@ -3024,15 +3024,15 @@ const Ip = {
   clipLeft: 0
 };
 function f0(t) {
-  return Ip[t];
+  return Op[t];
 }
-function Op(t) {
+function _p(t) {
   const e = typeof t == "string" || Array.isArray(t) ? { path: t } : t;
   if (!e || typeof e.path != "string" && !Array.isArray(e.path))
     throw new Error("gsap-compat: motionPath needs a path — SVG path data or an array of { x, y } points.");
   let n;
   if (Array.isArray(e.path))
-    n = lp(e.path, { curviness: e.curviness });
+    n = cp(e.path, { curviness: e.curviness });
   else if (Ts(e.path))
     n = e.path;
   else
@@ -3042,14 +3042,14 @@ function Op(t) {
   const s = { pathData: n };
   return e.autoRotate !== void 0 && e.autoRotate !== !1 && (s.autoRotate = !0, typeof e.autoRotate == "number" && (s.rotateOffset = e.autoRotate)), e.matrix && (s.matrix = e.matrix), { config: s, start: e.start ?? 0, end: e.end ?? 1 };
 }
-function _p(t) {
+function Hp(t) {
   const e = typeof t == "string" || Array.isArray(t) ? { path: t } : { ...t };
   return { ...e, start: e.end ?? 1, end: e.start ?? 0 };
 }
 function p0(t) {
   return typeof t == "object" && t !== null && "shape" in t ? t.shape : t;
 }
-function Hp(t) {
+function Cp(t) {
   if (t.morphSVG === void 0) return t;
   const { morphSVG: e, ...n } = t, s = p0(e);
   if (typeof s != "string" || !Ts(s))
@@ -3058,7 +3058,7 @@ function Hp(t) {
     );
   return { ...n, d: s };
 }
-function Cp(t, e) {
+function Rp(t, e) {
   if (t === !0) return [0, e];
   if (t === !1) return [0, 0];
   if (typeof t == "number") return [0, al(t, e)];
@@ -3072,16 +3072,16 @@ function Cp(t, e) {
   const o = s(n[0]), i = s(n[1]);
   return o <= i ? [o, i] : [i, o];
 }
-function Rp(t, e) {
-  const [n, s] = Cp(t, e);
+function Lp(t, e) {
+  const [n, s] = Rp(t, e);
   return { strokeDasharray: [s - n, e], strokeDashoffset: -n };
 }
-function Lp(t, e) {
+function Fp(t, e) {
   if (t.drawSVG === void 0) return t;
   const { drawSVG: n, ...s } = t;
-  return { ...s, ...Rp(n, e) };
+  return { ...s, ...Lp(n, e) };
 }
-function Fp(t) {
+function Wp(t) {
   if (t.drawSVG !== void 0)
     throw new Error(
       "gsap-compat: drawSVG needs the stroke length from the page. Use live.to(), or animate strokeDasharray / strokeDashoffset directly (see drawSvgProperties)."
@@ -3091,12 +3091,12 @@ function Fp(t) {
 function al(t, e) {
   return Math.max(0, Math.min(e, t));
 }
-function Wp(t) {
+function Np(t) {
   let e = 2166136261;
   for (let n = 0; n < t.length; n++) e = Math.imul(e ^ t.charCodeAt(n), 16777619);
   return e >>> 0;
 }
-function Np(t, e, n) {
+function Dp(t, e, n) {
   if (t.scrambleText !== void 0) {
     const s = t.scrambleText, o = typeof s == "string" ? { text: s } : s;
     if (typeof o?.text != "string")
@@ -3110,7 +3110,7 @@ function Np(t, e, n) {
       ...i !== void 0 && { revealDelay: Math.min(i, 0.999) },
       ...o.tweenLength !== void 0 && { tweenLength: o.tweenLength },
       ...o.rightToLeft !== void 0 && { rightToLeft: o.rightToLeft },
-      seed: o.seed ?? Wp(`${e}|${o.text}`)
+      seed: o.seed ?? Np(`${e}|${o.text}`)
     };
   }
   if (t.text !== void 0) {
@@ -3127,7 +3127,7 @@ function Np(t, e, n) {
 function Qr(t) {
   return Math.max(0.1, t / 25);
 }
-function Dp(t, e) {
+function Bp(t, e) {
   const n = typeof e == "number" ? { velocity: e } : e;
   if (typeof n?.velocity != "number" || !Number.isFinite(n.velocity))
     throw new Error("gsap-compat: inertia needs a velocity for each property — a number, or { velocity }.");
@@ -3140,7 +3140,7 @@ function Dp(t, e) {
   };
   return typeof n.end == "function" ? o.end = [n.end(ro(o))] : n.end !== void 0 && (o.end = Array.isArray(n.end) ? [...n.end] : n.end), o;
 }
-function Bp(t) {
+function zp(t) {
   const e = t === !0 ? {} : typeof t == "string" ? { preset: t } : t;
   if (e.preset !== void 0 && !(e.preset in ci))
     throw new Error(
@@ -3154,7 +3154,7 @@ function Bp(t) {
     ...e.restDelta !== void 0 && { restDelta: e.restDelta }
   };
 }
-function zp(t, e) {
+function qp(t, e) {
   if (t === !0 || typeof t == "string") return;
   const n = t.velocity;
   return typeof n == "number" ? n : n?.[e];
@@ -3196,7 +3196,7 @@ class Sn {
     const { config: o, properties: i } = Zs(Xn(n)), { motionPath: r, text: a, scrambleText: l, ...c } = i, h = this.targetsOf(e)[0], u = { ...o };
     for (const g of Object.keys(c))
       u[g] = this.resolveStart(h, g);
-    r !== void 0 && (u.motionPath = _p(r));
+    r !== void 0 && (u.motionPath = Hp(r));
     const d = {}, f = String(this.resolveStart(h, "text"));
     return a !== void 0 && (d.text = mi(a), u.text = typeof a == "object" ? { ...a, value: f } : f), l !== void 0 && (d.text = mi(l), u.scrambleText = typeof l == "object" ? { ...l, text: f } : f), this.build(e, { ...c, ...d }, u, s);
   }
@@ -3336,10 +3336,10 @@ class Sn {
         `no usable start value for "${P}" on "${d[0]}" — it will snap to ${String(O)}. Use fromTo() to animate it.`
       ), _ = O), w !== void 0 && (typeof _ != "number" || typeof O != "number") && this.warn(`spring works on numbers, so "${P}" on "${d[0]}" eases instead`), w !== void 0 && typeof _ == "number" && typeof O == "number") {
         const X = {
-          ...Bp(w),
+          ...zp(w),
           from: _,
           to: O,
-          velocity: zp(w, P) ?? this.options.startVelocity?.(d[0], P) ?? 0
+          velocity: qp(w, P) ?? this.options.startVelocity?.(d[0], P) ?? 0
         }, J = this.nextTrackId(`${d[0]}-${P}-spring`), q = {
           id: J,
           target: d[0],
@@ -3350,7 +3350,7 @@ class Sn {
           spring: X,
           delay: f + g
         };
-        this.timeline.addTrack(q), k.push(J), y = Math.max(y, Ld(X));
+        this.timeline.addTrack(q), k.push(J), y = Math.max(y, Fd(X));
         for (const R of d) this.lastValues.set(`${R}|${P}`, O);
         continue;
       }
@@ -3371,7 +3371,7 @@ class Sn {
       ), k.push(D);
       for (const X of d) this.lastValues.set(`${X}|${P}`, O);
     }
-    const $ = Np({ text: l, scrambleText: c }, d[0], p);
+    const $ = Dp({ text: l, scrambleText: c }, d[0], p);
     if ($) {
       const P = n?.text ?? n?.scrambleText, E = P !== void 0 ? mi(P) : this.resolveStart(d[0], "text"), O = this.nextTrackId(`${d[0]}-text`), _ = {
         id: O,
@@ -3387,7 +3387,7 @@ class Sn {
       for (const L of d) this.lastValues.set(`${L}|text`, $.to);
     }
     if (a !== void 0) {
-      const { config: P, start: E, end: O } = Op(a), _ = this.nextTrackId(`${d[0]}-motionPath`), L = {
+      const { config: P, start: E, end: O } = _p(a), _ = this.nextTrackId(`${d[0]}-motionPath`), L = {
         id: _,
         target: d[0],
         ...d.length > 1 && { targets: d },
@@ -3406,7 +3406,7 @@ class Sn {
           this.warn(`inertia on "${P}" needs a numeric start value; skipped`);
           continue;
         }
-        const _ = Dp(O, E), L = this.nextTrackId(`${d[0]}-${P}-inertia`), D = {
+        const _ = Bp(O, E), L = this.nextTrackId(`${d[0]}-${P}-inertia`), D = {
           id: L,
           target: d[0],
           ...d.length > 1 && { targets: d },
@@ -3500,16 +3500,16 @@ function mi(t) {
   }
   return String(t ?? "");
 }
-function qp(t) {
+function Yp(t) {
   return new Sn(t);
 }
 function Xn(t) {
-  return Fp(Hp(t));
+  return Wp(Cp(t));
 }
-function Yp(t) {
+function jp(t) {
   return !Array.isArray(t) || t.length !== 4 ? null : `matrix3d(${re(Ie(t)).map((n) => Math.round(n * 1e6) / 1e6 + 0).join(", ")})`;
 }
-const jp = /* @__PURE__ */ new Set([
+const Kp = /* @__PURE__ */ new Set([
   "blur",
   "brightness",
   "glow",
@@ -3518,16 +3518,16 @@ const jp = /* @__PURE__ */ new Set([
   "shadowY",
   "shadowBlur",
   "shadowColor"
-]), Kp = "#ffffff", Xp = "rgba(0, 0, 0, 0.5)";
-function Up(t) {
+]), Xp = "#ffffff", Up = "rgba(0, 0, 0, 0.5)";
+function Gp(t) {
   const e = [];
-  if (t.blur !== void 0 && e.push(`blur(${Math.max(0, t.blur)}px)`), t.brightness !== void 0 && e.push(`brightness(${Math.max(0, t.brightness)})`), t.glow !== void 0 && e.push(`drop-shadow(0 0 ${Math.max(0, t.glow)}px ${t.glowColor ?? Kp})`), t.shadowX !== void 0 || t.shadowY !== void 0 || t.shadowBlur !== void 0) {
+  if (t.blur !== void 0 && e.push(`blur(${Math.max(0, t.blur)}px)`), t.brightness !== void 0 && e.push(`brightness(${Math.max(0, t.brightness)})`), t.glow !== void 0 && e.push(`drop-shadow(0 0 ${Math.max(0, t.glow)}px ${t.glowColor ?? Xp})`), t.shadowX !== void 0 || t.shadowY !== void 0 || t.shadowBlur !== void 0) {
     const n = t.shadowX ?? 0, s = t.shadowY ?? 0, o = Math.max(0, t.shadowBlur ?? 0);
-    e.push(`drop-shadow(${n}px ${s}px ${o}px ${t.shadowColor ?? Xp})`);
+    e.push(`drop-shadow(${n}px ${s}px ${o}px ${t.shadowColor ?? Up})`);
   }
   return e.length > 0 ? e.join(" ") : null;
 }
-function Gp(t, e) {
+function Vp(t, e) {
   const n = t.childNodes.length === 1 ? t.firstChild : null;
   if (n && n.nodeType === 3) {
     const s = n;
@@ -3536,7 +3536,7 @@ function Gp(t, e) {
   }
   t.textContent !== e && (t.textContent = e);
 }
-function Vp(t) {
+function Jp(t) {
   if (!("ownerSVGElement" in t)) return;
   const e = t.style;
   !e || e.transformBox || (e.transformBox = "fill-box", e.transformOrigin || (e.transformOrigin = "50% 50%"));
@@ -3567,7 +3567,7 @@ const ll = /* @__PURE__ */ new Set([
   "gap",
   "rowGap",
   "columnGap"
-]), Jp = /* @__PURE__ */ new Set([
+]), Zp = /* @__PURE__ */ new Set([
   "x",
   "y",
   "z",
@@ -3587,7 +3587,7 @@ const ll = /* @__PURE__ */ new Set([
   "motionPathX",
   "motionPathY",
   "motionPathRotate"
-]), Zp = [
+]), Qp = [
   "x",
   "motionPathX",
   "y",
@@ -3605,7 +3605,7 @@ const ll = /* @__PURE__ */ new Set([
   "scaleZ",
   "skewX",
   "skewY"
-], Qp = /* @__PURE__ */ new Set(["childPerspective", "perspectiveOriginX", "perspectiveOriginY"]), tg = /* @__PURE__ */ new Set(["originX", "originY"]), eg = /* @__PURE__ */ new Set(["clipTop", "clipRight", "clipBottom", "clipLeft"]), ng = /* @__PURE__ */ new Set(["drawOn"]), sg = {
+], tg = /* @__PURE__ */ new Set(["childPerspective", "perspectiveOriginX", "perspectiveOriginY"]), eg = /* @__PURE__ */ new Set(["originX", "originY"]), ng = /* @__PURE__ */ new Set(["clipTop", "clipRight", "clipBottom", "clipLeft"]), sg = /* @__PURE__ */ new Set(["drawOn"]), og = {
   fill: "backgroundColor",
   stroke: "borderColor",
   strokeWidth: "borderWidth",
@@ -3620,7 +3620,7 @@ const ll = /* @__PURE__ */ new Set([
   strokeDashoffset: "strokeDashoffset",
   fillOpacity: "fillOpacity",
   strokeOpacity: "strokeOpacity"
-}, og = "http://www.w3.org/2000/svg";
+}, ig = "http://www.w3.org/2000/svg";
 class Ue {
   targets = /* @__PURE__ */ new Map();
   /**
@@ -3663,20 +3663,20 @@ class Ue {
     let s = null, o = null, i = null, r = null, a = null;
     const l = n.has("motionPathX"), c = n.has("motionPathY"), h = n.has("motionPathRotate");
     for (const [g, p] of n)
-      if (!(g === "x" && l) && !(g === "y" && c) && !((g === "rotate" || g === "rotateZ") && h) && !ng.has(g)) {
-        if (Jp.has(g))
+      if (!(g === "x" && l) && !(g === "y" && c) && !((g === "rotate" || g === "rotateZ") && h) && !sg.has(g)) {
+        if (Zp.has(g))
           (s ??= {})[g] = p;
-        else if (Qp.has(g))
-          typeof p == "number" && ((o ??= {})[g] = p);
         else if (tg.has(g))
-          typeof p == "number" && ((i ??= {})[g] = p);
+          typeof p == "number" && ((o ??= {})[g] = p);
         else if (eg.has(g))
+          typeof p == "number" && ((i ??= {})[g] = p);
+        else if (ng.has(g))
           typeof p == "number" && ((r ??= {})[g] = p);
-        else if (jp.has(g))
+        else if (Kp.has(g))
           (a ??= {})[g] = p;
         else if (g !== "perspective") {
           if (g !== "shine") if (g === "text" && typeof p == "string")
-            Gp(e, p);
+            Vp(e, p);
           else if (g === "d" && typeof p == "string") {
             const m = e;
             (m.tagName?.toLowerCase() === "path" ? m : m.querySelector?.("path"))?.setAttribute?.("d", p);
@@ -3688,13 +3688,13 @@ class Ue {
     typeof u == "number" && this.applyShine(e, u);
     const d = [], f = n.get("perspective");
     if (typeof f == "number" && f > 0 && d.push(`perspective(${f}px)`), s)
-      for (const g of Zp) {
+      for (const g of Qp) {
         const p = s[g];
         if (p === void 0) continue;
         const m = this.buildTransformPart(g, p);
         m && d.push(m);
       }
-    if (d.length > 0 && (e.style.transform = d.join(" "), Vp(e)), o && (o.childPerspective !== void 0 && (e.style.perspective = `${o.childPerspective}px`), (o.perspectiveOriginX !== void 0 || o.perspectiveOriginY !== void 0) && (e.style.perspectiveOrigin = `${o.perspectiveOriginX ?? 50}% ${o.perspectiveOriginY ?? 50}%`)), i) {
+    if (d.length > 0 && (e.style.transform = d.join(" "), Jp(e)), o && (o.childPerspective !== void 0 && (e.style.perspective = `${o.childPerspective}px`), (o.perspectiveOriginX !== void 0 || o.perspectiveOriginY !== void 0) && (e.style.perspectiveOrigin = `${o.perspectiveOriginX ?? 50}% ${o.perspectiveOriginY ?? 50}%`)), i) {
       const g = i.originX ?? 50, p = i.originY ?? 50;
       e.style.transformOrigin = `${g}% ${p}%`;
     }
@@ -3703,7 +3703,7 @@ class Ue {
       e.style.clipPath = `inset(${g}% ${p}% ${m}% ${b}%)`;
     }
     if (a) {
-      const g = Up(a);
+      const g = Gp(a);
       g && (e.style.filter = g);
     }
   }
@@ -3711,7 +3711,7 @@ class Ue {
    * Build a transform function string for a property.
    */
   buildTransformPart(e, n) {
-    if (e === "quaternion") return Yp(n);
+    if (e === "quaternion") return jp(n);
     if (typeof n != "number") return null;
     switch (e) {
       case "x":
@@ -3764,20 +3764,20 @@ class Ue {
    */
   applyStyleProperty(e, n, s) {
     let o;
-    if (e.namespaceURI === og && n in cl) {
+    if (e.namespaceURI === ig && n in cl) {
       const a = Array.isArray(s) ? s.join(", ") : String(s);
       e.style[cl[n]] = a;
       return;
-    } else n === "fill" && e.dataset?.elementType === "text" ? o = "color" : o = sg[n] ?? n;
+    } else n === "fill" && e.dataset?.elementType === "text" ? o = "color" : o = og[n] ?? n;
     let r;
     typeof s == "number" ? ll.has(n) || ll.has(o) ? r = `${s}px` : r = String(s) : Array.isArray(s) ? r = s.join(", ") : r = s, e.style[o] = r;
   }
 }
-const ig = {
+const rg = {
   request: (t) => requestAnimationFrame(t),
   cancel: (t) => cancelAnimationFrame(t)
 };
-class rg {
+class ag {
   adapter = new Ue();
   scheduler;
   rootOption;
@@ -3802,7 +3802,7 @@ class rg {
    */
   liveTimelines = /* @__PURE__ */ new Set();
   /** GSAP-style utilities, with this stage's seeded random sequence (`live.utils`). */
-  utils = xp();
+  utils = Sp();
   /** Playing timelines, in activation order. */
   active = /* @__PURE__ */ new Map();
   /** Last applied value per target name and property. */
@@ -3813,7 +3813,7 @@ class rg {
   lastTimestamp = null;
   destroyed = !1;
   constructor(e = {}) {
-    this.scheduler = e.scheduler ?? ig, this.rootOption = e.root, this.onWarning = e.onWarning;
+    this.scheduler = e.scheduler ?? rg, this.rootOption = e.root, this.onWarning = e.onWarning;
   }
   // --- targets ------------------------------------------------------------
   /**
@@ -4010,7 +4010,7 @@ class rg {
     if (typeof e == "string")
       return Array.from(this.selectorRoot.querySelectorAll(e));
     if (yi(e)) return [e];
-    if (!ag(e)) return [e];
+    if (!lg(e)) return [e];
     const n = [];
     for (const s of Array.from(e))
       n.push(...this.targetsOf(s));
@@ -4042,7 +4042,7 @@ class rg {
 function yi(t) {
   return typeof t == "object" && t !== null && t.nodeType === 1;
 }
-function ag(t) {
+function lg(t) {
   if (Array.isArray(t)) return !0;
   const e = t;
   return typeof e.length == "number" && typeof e.item == "function";
@@ -4056,18 +4056,18 @@ function fo(t) {
   return e.transform = n, s;
 }
 const hl = (t) => typeof t == "object" && t !== null && t.nodeType === 1;
-function lg(t) {
+function cg(t) {
   const e = {};
   for (const n of Array.from(t.attributes)) e[n.name] = n.value;
   return e;
 }
-function cg(t) {
+function hg(t) {
   const e = t.getScreenCTM?.();
   if (e) return [e.a, e.b, e.c, e.d, e.e, e.f];
   const n = t.getBoundingClientRect();
   return [1, 0, 0, 1, n.left, n.top];
 }
-function hg(t, e) {
+function ug(t, e) {
   const n = typeof t == "string" || Array.isArray(t) || hl(t) ? { path: t } : t, { align: s, alignOrigin: o, path: i, ...r } = n, a = ($) => {
     const M = hl($) ? $ : e.query($);
     return M || e.warn(`gsap-compat: motionPath could not find "${String($)}"`), M;
@@ -4077,7 +4077,7 @@ function hg(t, e) {
     c = i;
   else {
     l = a(i);
-    const $ = l && Kr({ tag: l.localName, attributes: lg(l) });
+    const $ = l && Kr({ tag: l.localName, attributes: cg(l) });
     l && !$ && e.warn(`gsap-compat: motionPath element <${l.localName}> has no path geometry`), c = $ ?? "";
   }
   const h = { ...r, path: c };
@@ -4087,7 +4087,7 @@ function hg(t, e) {
     return s === !0 && e.warn("gsap-compat: motionPath align: true needs the path to be an element"), h;
   const d = e.targets[0];
   if (!d) return h;
-  const [f, g, p, m, b, k] = cg(u), w = fo(d), [y, T] = o ?? [0.5, 0.5];
+  const [f, g, p, m, b, k] = hg(u), w = fo(d), [y, T] = o ?? [0.5, 0.5];
   for (const $ of e.targets.slice(1)) {
     const M = fo($);
     if (Math.abs(M.left - w.left) > 0.5 || Math.abs(M.top - w.top) > 0.5) {
@@ -4108,26 +4108,26 @@ function y0(t) {
   const e = Kr({ tag: t.localName, attributes: m0(t) });
   return e || (t.querySelector("path")?.getAttribute("d") ?? null);
 }
-function ug(t, e, n) {
+function dg(t, e, n) {
   const s = p0(t);
   if (typeof s == "string" && Ts(s)) return s;
   const o = g0(s) ? s : typeof s == "string" ? e(s) : null, i = y0(o);
   return i || (n(`gsap-compat: morphSVG could not find a shape for "${String(s)}"`), "");
 }
-const dg = /* @__PURE__ */ new Set(["cx", "cy", "r", "rx", "ry", "x", "y", "width", "height", "x1", "y1", "x2", "y2", "points"]);
-function fg(t, e = document) {
+const fg = /* @__PURE__ */ new Set(["cx", "cy", "r", "rx", "ry", "x", "y", "width", "height", "x1", "y1", "x2", "y2", "points"]);
+function pg(t, e = document) {
   return (typeof t == "string" ? Array.from(e.querySelectorAll(t)) : g0(t) ? [t] : Array.from(t)).map((s) => {
     if (s.localName === "path") return s;
     const o = Kr({ tag: s.localName, attributes: m0(s) });
     if (!o || !s.parentNode) return s;
     const i = s.ownerDocument.createElementNS("http://www.w3.org/2000/svg", "path");
     for (const r of Array.from(s.attributes))
-      dg.has(r.name) || i.setAttribute(r.name, r.value);
+      fg.has(r.name) || i.setAttribute(r.name, r.value);
     return i.setAttribute("d", o), s.parentNode.replaceChild(i, s), i;
   });
 }
 const ul = 0.3;
-class pg {
+class gg {
   options;
   target;
   running = !1;
@@ -4236,7 +4236,7 @@ class pg {
 function dl() {
   return typeof performance < "u" ? performance.now() : Date.now();
 }
-function gg(t, e, n) {
+function mg(t, e, n) {
   let s = { delta: 0, line: null }, o = n;
   for (const i of t)
     for (const r of e) {
@@ -4245,7 +4245,7 @@ function gg(t, e, n) {
     }
   return s;
 }
-function mg(t, e) {
+function yg(t, e) {
   return e <= 0 ? [] : t.map((n) => Math.round(n / e) * e);
 }
 class b0 {
@@ -4260,7 +4260,7 @@ class b0 {
   snappedX = null;
   snappedY = null;
   constructor(e) {
-    this.options = e, this.x = e.initialX ?? 0, this.y = e.initialY ?? 0, this.observer = new pg({
+    this.options = e, this.x = e.initialX ?? 0, this.y = e.initialY ?? 0, this.observer = new gg({
       target: e.target,
       onPress: (n) => {
         const s = e.getPosition?.();
@@ -4313,7 +4313,7 @@ class b0 {
     if (n <= 0) return;
     const s = this.options.scrubDistance ?? 500;
     if (s === 0) return;
-    const o = (this.options.axis ?? "both") === "y" ? this.y : this.x, i = yg(o / s);
+    const o = (this.options.axis ?? "both") === "y" ? this.y : this.x, i = bg(o / s);
     e.pause(), e.seek(i * n);
   }
   /**
@@ -4326,9 +4326,9 @@ class b0 {
   applyConstraints(e, n) {
     let s = e;
     const o = [
-      ...mg([s], this.options.snap ?? 0),
+      ...yg([s], this.options.snap ?? 0),
       ...(n === "x" ? this.options.snapLinesX : this.options.snapLinesY) ?? []
-    ], i = gg([s], o, this.snapThreshold());
+    ], i = mg([s], o, this.snapThreshold());
     s += i.delta, n === "x" ? this.snappedX = i.line : this.snappedY = i.line;
     const r = this.options.bounds;
     if (r) {
@@ -4338,14 +4338,14 @@ class b0 {
     return s;
   }
 }
-function yg(t) {
+function bg(t) {
   return t < 0 ? 0 : t > 1 ? 1 : t;
 }
 function ox(t) {
   const e = new b0(t);
   return e.start(), e;
 }
-const bg = { x: "x", y: "y", "x,y": "both" }, ar = (t) => typeof t == "object" && t !== null && t.nodeType === 1;
+const wg = { x: "x", y: "y", "x,y": "both" }, ar = (t) => typeof t == "object" && t !== null && t.nodeType === 1;
 function fl(t, e) {
   const n = fo(t), s = e.getBoundingClientRect();
   return {
@@ -4358,12 +4358,12 @@ function fl(t, e) {
 function pl(t) {
   return Array.isArray(t) ? [...t] : t;
 }
-function wg(t, e, n, s = {}) {
+function kg(t, e, n, s = {}) {
   const [o] = e.resolveTargets(n), i = o ? e.elementFor(o) : void 0;
   if (!o || !i)
     throw new Error(`gsap-compat: live.draggable could not find ${String(n)}`);
-  if (s.type === "rotation") return kg(t, e, o, i, s);
-  const r = bg[s.type ?? "x,y"], a = () => {
+  if (s.type === "rotation") return vg(t, e, o, i, s);
+  const r = wg[s.type ?? "x,y"], a = () => {
     const p = e.appliedValue(o, "x"), m = e.appliedValue(o, "y");
     return { x: typeof p == "number" ? p : 0, y: typeof m == "number" ? m : 0 };
   }, l = typeof s.bounds == "string" ? e.query(s.bounds) : ar(s.bounds) ? s.bounds : null, h = { bounds: (!l && s.bounds && !ar(s.bounds) ? s.bounds : void 0) ?? (l ? fl(i, l) : void 0) };
@@ -4416,7 +4416,7 @@ function wg(t, e, n, s = {}) {
     }
   };
 }
-function kg(t, e, n, s, o) {
+function vg(t, e, n, s, o) {
   const i = typeof o.bounds == "object" && o.bounds !== null && !ar(o.bounds) ? o.bounds : {}, r = () => {
     const w = e.appliedValue(n, "rotate");
     return typeof w == "number" ? w : 0;
@@ -4468,8 +4468,8 @@ function kg(t, e, n, s, o) {
     }
   };
 }
-const vg = { opacity: 0, scale: 0.6 };
-function Mg(t) {
+const Mg = { opacity: 0, scale: 0.6 };
+function xg(t) {
   const e = t.getBoundingClientRect();
   return e.width === 0 && e.height === 0 ? null : { cx: e.left + e.width / 2, cy: e.top + e.height / 2, width: e.width, height: e.height };
 }
@@ -4480,7 +4480,7 @@ function gl(t) {
 function lr(t, e) {
   const s = t.resolveTargets(e).map((r) => t.elementFor(r)).filter((r) => !!r), o = /* @__PURE__ */ new Map(), i = /* @__PURE__ */ new Map();
   for (const r of s) {
-    const a = Mg(r);
+    const a = xg(r);
     o.set(r, a);
     const l = w0(r);
     a && l !== void 0 && !i.has(l) && i.set(l, { element: r, box: a });
@@ -4489,7 +4489,7 @@ function lr(t, e) {
 }
 const bi = /* @__PURE__ */ new WeakMap();
 function cr(t, e, n, s = {}) {
-  const o = s.duration ?? 0.6, i = s.ease ?? "power2.inOut", r = s.stagger ?? 0, a = s.scale !== !1, l = s.enter === void 0 ? vg : s.enter, c = new Set(n.elements);
+  const o = s.duration ?? 0.6, i = s.ease ?? "power2.inOut", r = s.stagger ?? 0, a = s.scale !== !1, l = s.enter === void 0 ? Mg : s.enter, c = new Set(n.elements);
   if (s.targets !== void 0)
     for (const f of t.resolveTargets(s.targets)) {
       const g = t.elementFor(f);
@@ -4541,7 +4541,7 @@ function k0(t) {
     e[n] = n === "opacity" || n.startsWith("scale") ? 1 : 0;
   return e;
 }
-function xg(t, e = {}) {
+function Sg(t, e = {}) {
   const n = new Set((e.type ?? "chars,words,lines").split(",").map((p) => p.trim())), s = {
     chars: e.charsClass ?? "char",
     words: e.wordsClass ?? "word",
@@ -4560,7 +4560,7 @@ function xg(t, e = {}) {
   }, d = () => {
     const p = { chars: [], words: [], lines: [], masks: [] };
     for (const { element: m } of i) {
-      const b = (m.textContent ?? "").replace(/\s+/g, " ").trim(), k = Sg(m, s.words), w = n.has("chars") ? k.flatMap(($) => Tg($, s.chars)) : [], y = n.has("lines") ? Ag(m, k, s.lines) : [];
+      const b = (m.textContent ?? "").replace(/\s+/g, " ").trim(), k = Tg(m, s.words), w = n.has("chars") ? k.flatMap(($) => Eg($, s.chars)) : [], y = n.has("lines") ? $g(m, k, s.lines) : [];
       if (o) {
         !m.hasAttribute("aria-label") && b && m.setAttribute("aria-label", b);
         for (const $ of k) $.setAttribute("aria-hidden", "true");
@@ -4569,7 +4569,7 @@ function xg(t, e = {}) {
       else for (const $ of k) $.removeAttribute("class");
       p.chars.push(...w), p.lines.push(...y);
       const T = e.mask === "lines" ? y : e.mask === "words" ? k : e.mask === "chars" ? w : [];
-      for (const $ of T) p.masks.push($g($, `${s[e.mask]}-mask`));
+      for (const $ of T) p.masks.push(Pg($, `${s[e.mask]}-mask`));
     }
     r = p;
   }, f = {
@@ -4621,7 +4621,7 @@ function xg(t, e = {}) {
   }
   return f;
 }
-function Sg(t, e) {
+function Tg(t, e) {
   const n = t.ownerDocument, s = [], o = n.createTreeWalker(
     t,
     4
@@ -4644,18 +4644,18 @@ function Sg(t, e) {
   }
   return s;
 }
-function Tg(t, e) {
-  const n = t.ownerDocument, s = Eg(t.textContent ?? "").map((o) => {
+function Eg(t, e) {
+  const n = t.ownerDocument, s = Ag(t.textContent ?? "").map((o) => {
     const i = n.createElement("span");
     return i.className = e, i.style.display = "inline-block", i.textContent = o, i;
   });
   return t.replaceChildren(...s), s;
 }
-function Eg(t) {
+function Ag(t) {
   const e = Intl.Segmenter;
   return e ? Array.from(new e(void 0, { granularity: "grapheme" }).segment(t), (n) => n.segment) : Array.from(t);
 }
-function Ag(t, e, n) {
+function $g(t, e, n) {
   const s = t.ownerDocument, o = new Map(e.map((g) => [g, g.getBoundingClientRect()])), i = [], r = (g) => {
     for (const p of Array.from(g.childNodes))
       p.nodeType === 3 || o.has(p) || p.tagName === "BR" ? i.push(p) : r(p);
@@ -4687,7 +4687,7 @@ function Ag(t, e, n) {
   }
   return t.replaceChildren(...a), a;
 }
-function $g(t, e) {
+function Pg(t, e) {
   const n = t.ownerDocument.createElement("span");
   return n.className = e, n.style.display = t.style.display === "block" ? "block" : "inline-block", n.style.overflow = "clip", n.style.paddingBottom = "0.12em", n.style.marginBottom = "-0.12em", t.replaceWith(n), n.appendChild(t), n;
 }
@@ -4740,7 +4740,7 @@ function ix(t, e, n, s) {
 function M0(t) {
   return t < 0 ? 0 : t > 1 ? 1 : t === 0 ? 0 : t;
 }
-function Pg(t, e, n, s) {
+function Ig(t, e, n, s) {
   if (n <= 0) return e;
   const o = 1 - Math.exp(-(s / 1e3) / n);
   return t + (e - t) * o;
@@ -4756,7 +4756,7 @@ function bl(t, e, n, s, o) {
   }
   return (l + c) / 2;
 }
-class Ig {
+class Og {
   timeline;
   trigger;
   behaviour;
@@ -4804,10 +4804,10 @@ class Ig {
   }
 }
 function rx(t) {
-  const e = new Ig(t);
+  const e = new Og(t);
   return e.start(), e;
 }
-class Og {
+class _g {
   element;
   spacer;
   saved;
@@ -4836,12 +4836,12 @@ class Og {
     this.element.style.position = this.saved.position, this.element.style.top = this.saved.top, this.element.style.left = this.saved.left, this.spacer.parentNode && this.spacer.replaceWith(this.element);
   }
 }
-const _g = 0.15;
-function Hg(t) {
+const Hg = 0.15;
+function Cg(t) {
   return typeof t == "object" && !Array.isArray(t) ? t : { snapTo: t };
 }
-function Cg(t, e, n) {
-  const s = Hs(t + e * _g);
+function Rg(t, e, n) {
+  const s = Hs(t + e * Hg);
   if (typeof n == "function") return Hs(n(s));
   if (typeof n == "number")
     return n <= 0 ? t : Hs(Math.round(s / n) * n);
@@ -4851,13 +4851,13 @@ function Cg(t, e, n) {
     Math.abs(i - s) < Math.abs(o - s) && (o = i);
   return Hs(o);
 }
-function Rg(t, e, n) {
+function Lg(t, e, n) {
   const s = t.duration ?? { min: 0.2, max: 0.8 };
   if (typeof s == "number") return s;
   const o = Math.min(1, Math.abs(e) / Math.max(1, n));
   return s.min + (s.max - s.min) * o;
 }
-class Lg {
+class Fg {
   rafId = null;
   cancelEvents = ["wheel", "touchstart", "pointerdown", "keydown"];
   onInterrupt = () => this.cancel();
@@ -4893,7 +4893,7 @@ class Lg {
 function Hs(t) {
   return Math.max(0, Math.min(1, t));
 }
-class Fg {
+class Wg {
   options;
   scroller;
   nodes = [];
@@ -4934,9 +4934,9 @@ class Fg {
     for (const e of this.nodes.splice(0)) e.remove();
   }
 }
-const Wg = 120, wn = [], Ln = /* @__PURE__ */ new Set();
+const Ng = 120, wn = [], Ln = /* @__PURE__ */ new Set();
 let wi = !1;
-const Ng = () => {
+const Dg = () => {
   wi || Ln.size === 0 || (wi = !0, queueMicrotask(() => {
     wi = !1;
     for (const t of Ln) t.afterRefresh();
@@ -4981,13 +4981,13 @@ class zo {
   markers = null;
   markerGeometry = null;
   constructor(e) {
-    this.timeline = e.timeline, this.options = e, this.snapper = new Lg((n) => this.scrollTo(n), typeof window < "u" ? window : null);
+    this.timeline = e.timeline, this.options = e, this.snapper = new Fg((n) => this.scrollTo(n), typeof window < "u" ? window : null);
   }
   start() {
     if (this.running) return;
     this.running = !0, this.timeline?.pause();
     const e = this.options.pin === !0 ? this.options.trigger : this.options.pin || null;
-    e && !this.options.container && (this.pin = new Og(e, { axis: this.options.horizontal ? "x" : "y", spacing: this.options.pinSpacing !== !1 })), this.options.markers && !this.options.horizontal && typeof document < "u" && (this.markers = new Fg(document, this.options.scroller ?? null, this.options.markers)), this.scrollTarget()?.addEventListener("scroll", this.onScroll, { passive: !0 }), wn.length === 0 && typeof window < "u" && (kn = { width: window.innerWidth, height: window.innerHeight }, window.addEventListener("resize", wl, { passive: !0 })), wn.push(this), this.refresh();
+    e && !this.options.container && (this.pin = new _g(e, { axis: this.options.horizontal ? "x" : "y", spacing: this.options.pinSpacing !== !1 })), this.options.markers && !this.options.horizontal && typeof document < "u" && (this.markers = new Wg(document, this.options.scroller ?? null, this.options.markers)), this.scrollTarget()?.addEventListener("scroll", this.onScroll, { passive: !0 }), wn.length === 0 && typeof window < "u" && (kn = { width: window.innerWidth, height: window.innerHeight }, window.addEventListener("resize", wl, { passive: !0 })), wn.push(this), this.refresh();
   }
   stop() {
     this.running && (this.running = !1, this.scrollTarget()?.removeEventListener("scroll", this.onScroll), wn.splice(wn.indexOf(this), 1), wn.length === 0 && typeof window < "u" && window.removeEventListener("resize", wl), this.stopSmoothing(), this.idleTimer !== null && clearTimeout(this.idleTimer), this.idleTimer = null, this.snapTimer !== null && clearTimeout(this.snapTimer), this.snapTimer = null, this.snapper.cancel());
@@ -5044,7 +5044,7 @@ class zo {
       }
       this.markerGeometry = this.markers ? this.markersFor(s) : null;
     }
-    this.markers && this.markerGeometry && this.markers.place(this.markerGeometry, e), this.lastScroll = null, this.updateFrom(e, !this.measured), this.measured = !0, Ng();
+    this.markers && this.markerGeometry && this.markers.place(this.markerGeometry, e), this.lastScroll = null, this.updateFrom(e, !this.measured), this.measured = !0, Dg();
   }
   /** Same as `refresh()`. */
   sample() {
@@ -5090,7 +5090,7 @@ class zo {
     const n = typeof performance < "u" ? performance.now() : Date.now();
     this.lastScroll !== null && n > this.lastScrollTime && e !== this.lastScroll && (this.velocityPxPerSecond = (e - this.lastScroll) / (n - this.lastScrollTime) * 1e3), (this.lastScroll === null || e !== this.lastScroll) && (this.lastScroll = e, this.lastScrollTime = n), !(this.velocityPxPerSecond === 0 || typeof setTimeout > "u") && (this.idleTimer !== null && clearTimeout(this.idleTimer), this.idleTimer = setTimeout(() => {
       this.idleTimer = null, this.releaseVelocity = this.velocityPxPerSecond, this.velocityPxPerSecond = 0, this.emitUpdate(), this.scheduleSnap();
-    }, Wg));
+    }, Ng));
   }
   /**
    * Emit enter/leave callbacks as the scroll position moves between zones. A jump
@@ -5106,12 +5106,12 @@ class zo {
   scheduleSnap() {
     const e = this.options.snap;
     if (e === void 0 || this.snapper.active) return;
-    const n = Hg(e), s = () => {
+    const n = Cg(e), s = () => {
       this.snapTimer = null;
       const o = this.endPx - this.startPx, i = this.scrollPosition();
       if (!this.running || o <= 0 || i <= this.startPx || i >= this.endPx) return;
-      const r = (i - this.startPx) / o, a = this.startPx + Cg(r, this.releaseVelocity / o, n.snapTo) * o;
-      Math.abs(a - i) < 1 || this.snapper.animate(i, a, Rg(n, a - i, this.viewportHeight()), n.ease);
+      const r = (i - this.startPx) / o, a = this.startPx + Rg(r, this.releaseVelocity / o, n.snapTo) * o;
+      Math.abs(a - i) < 1 || this.snapper.animate(i, a, Lg(n, a - i, this.viewportHeight()), n.ease);
     };
     n.delay ? this.snapTimer = setTimeout(s, n.delay * 1e3) : s();
   }
@@ -5153,7 +5153,7 @@ class zo {
     const e = (n) => {
       if (this.rafId = null, !this.running) return;
       const s = this.lastFrameTime === null ? 16.67 : n - this.lastFrameTime;
-      this.lastFrameTime = n, this.displayProgress = Pg(this.displayProgress, this.targetProgress, this.smoothing(), s);
+      this.lastFrameTime = n, this.displayProgress = Ig(this.displayProgress, this.targetProgress, this.smoothing(), s);
       const o = Math.abs(this.targetProgress - this.displayProgress) < 1e-4;
       o && (this.displayProgress = this.targetProgress), this.applyProgress(), o ? this.lastFrameTime = null : this.rafId = requestAnimationFrame(e);
     };
@@ -5198,7 +5198,7 @@ function ax(t) {
   const e = new zo(t);
   return e.start(), e;
 }
-const ki = /* @__PURE__ */ new Set(), Dg = 16, kl = 0.5, Bg = 2;
+const ki = /* @__PURE__ */ new Set(), Bg = 16, kl = 0.5, zg = 2;
 class vl {
   options;
   frames;
@@ -5301,13 +5301,13 @@ class vl {
   // --- input ----------------------------------------------------------------
   wheel(e) {
     if (this.pausedState || this.reduced || (this.options.smooth ?? 0.8) <= 0 || e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY) || this.nestedScrollerTakes(e)) return;
-    const n = e.deltaMode === 1 ? Dg : e.deltaMode === 2 ? this.viewportHeight() : 1, s = e.deltaY * n * (this.options.wheelMultiplier ?? 1), o = this.clamp(this.target + s);
+    const n = e.deltaMode === 1 ? Bg : e.deltaMode === 2 ? this.viewportHeight() : 1, s = e.deltaY * n * (this.options.wheelMultiplier ?? 1), o = this.clamp(this.target + s);
     o === this.target && o === this.current || (e.preventDefault(), this.journey = null, this.target = o, this.requestFrame());
   }
   /** A scroll that this smoother did not write: follow it. */
   nativeScroll() {
     const e = this.position();
-    this.written !== null && Math.abs(e - this.written) <= Bg || (this.written = null, this.journey = null, this.cancelFrame(), this.current = this.target = e, this.requestFrame());
+    this.written !== null && Math.abs(e - this.written) <= zg || (this.written = null, this.journey = null, this.cancelFrame(), this.current = this.target = e, this.requestFrame());
   }
   nestedScrollerTakes(e) {
     const n = this.options.scroller ?? document.documentElement;
@@ -5354,7 +5354,7 @@ class vl {
         const r = o.lag * 1e3 / 3;
         o.lagged = e === 0 ? s : o.lagged + (s - o.lagged) * (1 - Math.exp(-e / r)), Math.abs(s - o.lagged) < kl ? o.lagged = s : n = !0, i += s - o.lagged;
       }
-      vi(o.element, i === 0 ? o.saved : `0 ${zg(i)}px`), o.shift = i;
+      vi(o.element, i === 0 ? o.saved : `0 ${qg(i)}px`), o.shift = i;
     }
     return n;
   }
@@ -5391,10 +5391,10 @@ class vl {
 function vi(t, e) {
   e ? t.style.setProperty("translate", e) : t.style.removeProperty("translate");
 }
-function zg(t) {
+function qg(t) {
   return Math.round(t * 100) / 100;
 }
-function qg(t, e) {
+function Yg(t, e) {
   switch (e) {
     // Play forward from wherever it is; reverse() flips a reversed timeline and plays.
     // Neither restarts an animation that is already at that end.
@@ -5433,8 +5433,8 @@ function ta(t, e, n, s, o = () => {
   const a = e.scrub === void 0 || e.scrub === !1 ? !1 : e.scrub, l = (e.toggleActions ?? "play none none none").trim().split(/\s+/);
   let c = 0, h;
   const u = (f, g) => () => {
-    g?.(), n && !a && qg(n, l[f] ?? "none"), e.once && f === 0 && queueMicrotask(() => h.destroy());
-  }, d = e.containerAnimation ? Kg(t, e.containerAnimation, r, o) : void 0;
+    g?.(), n && !a && Yg(n, l[f] ?? "none"), e.once && f === 0 && queueMicrotask(() => h.destroy());
+  }, d = e.containerAnimation ? Xg(t, e.containerAnimation, r, o) : void 0;
   return h = new zo({
     trigger: r,
     start: e.start,
@@ -5445,7 +5445,7 @@ function ta(t, e, n, s, o = () => {
     horizontal: e.horizontal,
     pinSpacing: e.pinSpacing,
     onRefresh: e.invalidateOnRefresh && n?.invalidate ? () => n.invalidate() : void 0,
-    snap: e.snap === void 0 ? void 0 : Yg(e.snap, n),
+    snap: e.snap === void 0 ? void 0 : jg(e.snap, n),
     markers: e.markers,
     container: d,
     onUpdate: (f, g) => {
@@ -5461,8 +5461,8 @@ function ta(t, e, n, s, o = () => {
     onLeaveBack: u(3, e.onLeaveBack)
   }), n && a === !1 && n.progress(0), h.start(), t.own(h);
 }
-function Yg(t, e) {
-  const n = (o) => o === "labels" ? (i) => jg(i, e?.labelProgresses?.() ?? []) : o;
+function jg(t, e) {
+  const n = (o) => o === "labels" ? (i) => Kg(i, e?.labelProgresses?.() ?? []) : o;
   if (typeof t != "object" || Array.isArray(t)) return n(t);
   const s = t.ease ? ho(t.ease) : void 0;
   return {
@@ -5472,10 +5472,10 @@ function Yg(t, e) {
     ease: s ? s.fn ?? Wt(s.easing) : void 0
   };
 }
-function jg(t, e) {
+function Kg(t, e) {
   return e.reduce((n, s) => Math.abs(s - t) < Math.abs(n - t) ? s : n, e[0] ?? t);
 }
-function Kg(t, e, n, s) {
+function Xg(t, e, n, s) {
   const o = () => e.timeline.getTracks({ property: "x" }).map((i) => i.target).filter((i) => {
     const r = t.elementFor(i);
     return !!r && r !== n && r.contains(n);
@@ -5540,7 +5540,7 @@ class S0 {
     this.revert();
   }
 }
-class Xg {
+class Ug {
   host;
   scope;
   entries = [];
@@ -5584,7 +5584,7 @@ class Xg {
     i.conditions = n, i.add(() => e.setup(i)), e.context = i;
   }
 }
-class Ug {
+class Gg {
   frames;
   canvas;
   context;
@@ -5658,22 +5658,22 @@ class Ug {
     n.onload = () => s(!0), n.onerror = () => s(!1), n.src = this.options.url(e);
   }
 }
-const Gg = { opacity: 0, y: -16 }, Vg = { opacity: 0, y: 16 };
-async function Jg(t, e, n, s) {
+const Vg = { opacity: 0, y: -16 }, Jg = { opacity: 0, y: 16 };
+async function Zg(t, e, n, s) {
   const o = e.collector?.scope ?? e.root, i = o.ownerDocument ?? o, r = () => s.shared ? [...o.querySelectorAll(s.shared)] : [];
   if (s.native && typeof i.startViewTransition == "function")
-    return Zg(i, s, r);
+    return Qg(i, s, r);
   const a = s.duration ?? 0.35, l = s.ease ?? "power2.inOut", c = (m) => new Promise((b) => {
     m(b) || b();
   }), h = r(), u = h.length ? lr(e, h) : void 0, d = s.from !== void 0 ? Ml(e, s.from, s.shared) : [];
   if (d.length && s.leave !== !1) {
-    const m = s.leave ?? Gg;
+    const m = s.leave ?? Vg;
     await c((b) => t.to(d, { ...m, duration: a, ease: l, onComplete: b }));
   }
   await s.update();
   const f = [], g = typeof s.to == "function" ? s.to() : s.to, p = g !== void 0 ? Ml(e, g, s.shared) : [];
   if (p.length && s.enter !== !1) {
-    const m = s.enter ?? Vg;
+    const m = s.enter ?? Jg;
     f.push(c((b) => t.fromTo(p, m, { ...k0(m), duration: a, ease: l, onComplete: b })));
   }
   if (u) {
@@ -5696,7 +5696,7 @@ function Ml(t, e, n) {
   const s = t.resolveTargets(e).map((o) => t.elementFor(o)).filter((o) => !!o);
   return n ? s.flatMap((o) => !o.querySelector(n) && !o.matches(n) ? [o] : [...o.children].filter((i) => !i.matches(n) && !i.querySelector(n))) : s;
 }
-async function Zg(t, e, n) {
+async function Qg(t, e, n) {
   const s = (a, l) => {
     const c = a.dataset?.flipId;
     c && a.style.setProperty("view-transition-name", l ? `tf-${c.replace(/[^\w-]/g, "-")}` : "");
@@ -5707,16 +5707,16 @@ async function Zg(t, e, n) {
     o.forEach((a) => s(a, !1)), await e.update(), i = n(), i.forEach((a) => s(a, !0));
   }).finished, i.forEach((a) => s(a, !1));
 }
-const Qg = {
+const tm = {
   /** Register a curve from SVG path data or bezier points. Returns the name. */
-  create: (t, e) => Jr(t, Uf(e))
-}, tm = {
-  /** Register a bouncing ease that lands and settles on the end value. Returns the name. */
-  create: (t, e) => Jr(t, { fn: Gf(e) })
+  create: (t, e) => Jr(t, Gf(e))
 }, em = {
-  /** Register a wiggle that swings around the start value and returns to it. Returns the name. */
+  /** Register a bouncing ease that lands and settles on the end value. Returns the name. */
   create: (t, e) => Jr(t, { fn: Vf(e) })
-}, nm = /* @__PURE__ */ new Set([
+}, nm = {
+  /** Register a wiggle that swings around the start value and returns to it. Returns the name. */
+  create: (t, e) => Jr(t, { fn: Jf(e) })
+}, sm = /* @__PURE__ */ new Set([
   "keyframes",
   "duration",
   "delay",
@@ -5735,20 +5735,20 @@ const Qg = {
   "onRepeat",
   "onReverseComplete",
   "scrollTrigger"
-]), xl = 0.5, sm = "power1.inOut";
-function om(t) {
+]), xl = 0.5, om = "power1.inOut";
+function im(t) {
   return t.keyframes !== void 0 && t.keyframes !== null;
 }
-function im(t) {
+function rm(t) {
   const e = t.keyframes, n = {};
-  for (const [c, h] of Object.entries(t)) nm.has(c) || (n[c] = h);
+  for (const [c, h] of Object.entries(t)) sm.has(c) || (n[c] = h);
   if (Array.isArray(e))
     return e.map((c) => ({
       ...n,
       ...c,
       duration: c.duration ?? t.duration ?? xl
     }));
-  const s = Object.entries(e), o = t.duration ?? xl, i = e.easeEach ?? t.easeEach ?? sm;
+  const s = Object.entries(e), o = t.duration ?? xl, i = e.easeEach ?? t.easeEach ?? om;
   if (s.length > 0 && s.every(([c]) => /^\s*-?\d+(\.\d+)?\s*%\s*$/.test(c) || c === "easeEach")) {
     const c = s.filter(([d]) => d !== "easeEach").map(([d, f]) => ({ at: Number.parseFloat(d) / 100, step: f })).sort((d, f) => d.at - f.at), h = [];
     let u = 0;
@@ -5804,7 +5804,7 @@ function Sl(t, e, n, s = {}) {
   if (s.autoKill !== !1) for (const k of f) g.addEventListener(k, p, { passive: !0 });
   return b;
 }
-function rm(t, e, n) {
+function am(t, e, n) {
   const s = t.collector?.scope ?? t.root, o = typeof e == "string" ? [...s.querySelectorAll(e)] : "nodeType" in e ? [e] : Array.from(e), { interval: i = 0.1, batchMax: r, onEnter: a, onLeave: l, onEnterBack: c, onLeaveBack: h, ...u } = n, d = { onEnter: a, onLeave: l, onEnterBack: c, onLeaveBack: h }, f = { onEnter: [], onLeave: [], onEnterBack: [], onLeaveBack: [] }, g = {}, p = (b) => {
     g[b] !== void 0 && clearTimeout(g[b]), g[b] = void 0;
     const k = f[b].splice(0);
@@ -5858,7 +5858,7 @@ class ke {
       ...s,
       startValue: (o, i) => {
         const r = e.objectFor(o);
-        if (r) return hm(r[i]);
+        if (r) return um(r[i]);
         const a = e.appliedValue(o, i);
         if (a !== void 0) return a;
         if (i === "d") return y0(e.elementFor(o)) ?? void 0;
@@ -5893,7 +5893,7 @@ class ke {
   }
   // --- building -----------------------------------------------------------
   to(e, n, s) {
-    return om(n) ? this.record(() => this.keyframed(e, n, s)) : this.record(() => this.tween(e, [n], s, ([o], i, r) => this.compat.to(i, o, r)));
+    return im(n) ? this.record(() => this.keyframed(e, n, s)) : this.record(() => this.tween(e, [n], s, ([o], i, r) => this.compat.to(i, o, r)));
   }
   from(e, n, s) {
     return this.record(() => this.tween(e, [n], s, ([o], i, r) => this.compat.from(i, o, r)));
@@ -6150,7 +6150,7 @@ class ke {
   keyframed(e, n, s) {
     const o = this.resolve(e);
     if (!o) return;
-    const i = im(n);
+    const i = rm(n);
     if (i.length === 0) return;
     const r = o.length > 1 ? rr(n.stagger, this.staggerContext(o)) : void 0, a = o.map((m) => this.targetFor(m)).filter((m) => m !== void 0), l = r ? a.map((m) => [m]) : [a], c = r ? Qi(o.length, r).map((m) => m / 1e3) : [0], h = this.compat.timeOf(s) / 1e3 + uo(n.delay, 0) / 1e3;
     let u = 1 / 0, d = -1 / 0;
@@ -6172,7 +6172,7 @@ class ke {
   }
   buildTween(e, n, s, o) {
     const i = e.map((d) => this.targetFor(d));
-    if (!(e.length > 1 && (n.some(cm) || e.some((d) => this.stage.objectFor(d) !== void 0)))) {
+    if (!(e.length > 1 && (n.some(hm) || e.some((d) => this.stage.objectFor(d) !== void 0)))) {
       const d = this.targetFor(e[0]);
       o(n.map((f) => this.prepare(Tl(f, 0, d, this.stage.utils, i), e)), e, s);
       return;
@@ -6195,7 +6195,7 @@ class ke {
     const s = (r) => this.options.onWarning?.(r), o = (r) => this.stage.query(r);
     let i = e;
     if (e.motionPath !== void 0) {
-      const r = hg(e.motionPath, {
+      const r = ug(e.motionPath, {
         query: o,
         targets: n.map((a) => this.stage.elementFor(a)).filter((a) => !!a),
         warn: s
@@ -6203,7 +6203,7 @@ class ke {
       i = { ...i, motionPath: r };
     }
     if (e.morphSVG !== void 0) {
-      const r = ug(e.morphSVG, o, s), { morphSVG: a, ...l } = i;
+      const r = dg(e.morphSVG, o, s), { morphSVG: a, ...l } = i;
       i = r ? { ...i, morphSVG: r } : l;
     }
     if (e.drawSVG !== void 0) {
@@ -6213,20 +6213,20 @@ class ke {
         const { drawSVG: a, ...l } = i;
         i = l;
       } else
-        i = Lp(i, r);
+        i = Fp(i, r);
     }
     return i;
   }
   resolve(e) {
     const n = this.stage.resolveTargets(e);
     if (n.length === 0) {
-      this.options.onWarning?.(`gsap-compat: no elements found for target ${um(e)}`);
+      this.options.onWarning?.(`gsap-compat: no elements found for target ${dm(e)}`);
       return;
     }
     return this.firstElement ??= n.map((s) => this.stage.elementFor(s)).find((s) => s !== void 0), n;
   }
 }
-function am(t = new rg()) {
+function lm(t = new ag()) {
   const e = (i) => {
     const { config: r } = Zs(i);
     return new ke(t, {
@@ -6256,7 +6256,7 @@ function am(t = new rg()) {
       return l ? l[r] : t.appliedValue(a, r) ?? f0(r);
     },
     scrollTrigger: (i) => s(ta(t, i)),
-    scrollBatch: (i, r) => rm(t, i, r).map((a) => s(a)),
+    scrollBatch: (i, r) => am(t, i, r).map((a) => s(a)),
     scrollTo: (i, r) => Sl(o, t, i, r),
     refreshScroll: () => {
       zo.refreshAll(), vl.refreshAll();
@@ -6269,15 +6269,15 @@ function am(t = new rg()) {
       const a = new S0(t, r);
       return i && a.add(() => i(a)), a;
     },
-    matchMedia: (i) => new Xg(t, i),
-    customEase: Qg.create,
-    customBounce: tm.create,
-    customWiggle: em.create,
-    pageTransition: (i) => Jg(o, t, (r) => new ke(t, r), i),
+    matchMedia: (i) => new Ug(t, i),
+    customEase: tm.create,
+    customBounce: em.create,
+    customWiggle: nm.create,
+    pageTransition: (i) => Zg(o, t, (r) => new ke(t, r), i),
     imageSequence: (i, r) => {
       const a = typeof i == "string" ? (t.collector?.scope ?? t.root).querySelector(i) : i;
       if (!(a instanceof HTMLCanvasElement)) throw new Error(`gsap-compat: imageSequence needs a <canvas>, got ${String(i)}`);
-      return s(new Ug(a, r));
+      return s(new Gg(a, r));
     },
     quickTo: (i, r, a = {}) => {
       const l = new ke(t, { paused: !0 }), [c] = t.resolveTargets(i);
@@ -6288,7 +6288,7 @@ function am(t = new rg()) {
           [r]: u,
           duration: a.duration ?? 0.4,
           ease: a.ease ?? "power3.out",
-          ...a.spring !== void 0 && { spring: lm(a.spring, r, d) }
+          ...a.spring !== void 0 && { spring: cm(a.spring, r, d) }
         }), l.timeline.stop(), l.timeline.play(), t.activate(l.timeline);
       }, { tween: l, kill: () => l.kill() });
     },
@@ -6314,12 +6314,12 @@ function am(t = new rg()) {
       const a = t.resolveTargets(i), l = typeof r == "string" ? r.split(",").map((c) => c.trim()).filter(Boolean) : r;
       for (const c of [...t.liveTimelines]) c.killTweensOf(a, l);
     },
-    convertToPath: (i) => fg(i, t.root),
+    convertToPath: (i) => pg(i, t.root),
     splitText: (i, r) => {
       const a = t.collector?.scope ?? t.root, l = typeof i == "string" ? Array.from(a.querySelectorAll(i)) : "nodeType" in i ? [i] : Array.from(i);
-      return s(xg(l, r));
+      return s(Sg(l, r));
     },
-    draggable: (i, r) => s(wg(o, t, i, r)),
+    draggable: (i, r) => s(kg(o, t, i, r)),
     getFlipState: (i) => lr(t, i),
     flipFrom: (i, r) => cr(t, (a) => new ke(t, a), i, r),
     flip: (i, r, a) => {
@@ -6329,11 +6329,11 @@ function am(t = new rg()) {
   };
   return o;
 }
-const ne = /* @__PURE__ */ am();
-function lm(t, e, n) {
+const ne = /* @__PURE__ */ lm();
+function cm(t, e, n) {
   return t === !0 ? { velocity: { [e]: n } } : typeof t == "string" ? { preset: t, velocity: { [e]: n } } : { ...t, velocity: { [e]: n } };
 }
-function cm(t) {
+function hm(t) {
   return t.morphSVG !== void 0 || t.drawSVG !== void 0 || t.text !== void 0 || t.scrambleText !== void 0 || T0(t);
 }
 function T0(t) {
@@ -6361,10 +6361,10 @@ function Al(t) {
   if (typeof e?.getTotalLength == "function")
     return e.getTotalLength();
 }
-function hm(t) {
+function um(t) {
   if (typeof t == "number" || typeof t == "string" || Array.isArray(t) && t.every((e) => typeof e == "number")) return t;
 }
-function um(t) {
+function dm(t) {
   return typeof t == "string" ? `"${t}"` : String(t);
 }
 class $l {
@@ -6406,7 +6406,7 @@ class $l {
     });
   }
 }
-function dm(t, e, n, s, o) {
+function fm(t, e, n, s, o) {
   const i = n - o;
   if (i < 0) {
     e.paused || e.pause(), e.currentTime = 0;
@@ -6652,7 +6652,7 @@ class ea {
   /** Sync all discovered media targets to a timeline time. */
   syncAllMedia(e, n) {
     for (const s of this.mediaTargets)
-      dm(s.sync, s.el, e, n, s.startTime);
+      fm(s.sync, s.el, e, n, s.startTime);
   }
   /**
    * Load animation from inline JSON string.
@@ -6850,7 +6850,7 @@ async function lx(t, e, n = {}) {
 function cx(t, e = {}) {
   return new ea(t, e);
 }
-const fm = {
+const pm = {
   play: "Play",
   pause: "Pause",
   prev: "Previous step",
@@ -6865,7 +6865,7 @@ const fm = {
   scenario: "Scenario",
   fullscreen: "Full screen",
   exitFullscreen: "Exit full screen"
-}, Pl = "tinyfly-controls-style", pm = `
+}, Pl = "tinyfly-controls-style", gm = `
 .tf-ctl { --tf-ctl-fg: #1d1d1f; --tf-ctl-bg: #f4f2ee; --tf-ctl-accent: #c2410c; --tf-ctl-radius: 8px;
   font: 14px/1.4 var(--tf-ctl-font, system-ui, sans-serif); color: var(--tf-ctl-fg); margin-top: 8px; }
 .tf-ctl-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px; border-radius: var(--tf-ctl-radius); background: var(--tf-ctl-bg); }
@@ -6914,16 +6914,16 @@ const fm = {
   .tf-fullscreen > :not(svg):not(canvas) { grid-column: 2; }
 }
 `;
-let gm = 0;
-function mm(t) {
+let mm = 0;
+function ym(t) {
   if (t.getElementById(Pl)) return;
   const e = t.createElement("style");
-  e.id = Pl, e.textContent = pm, t.head.appendChild(e);
+  e.id = Pl, e.textContent = gm, t.head.appendChild(e);
 }
-function ym(t, e, n = {}) {
+function bm(t, e, n = {}) {
   const s = e.ownerDocument;
-  mm(s);
-  const o = { ...fm, ...n.labels }, i = n.speeds ?? [0.5, 1, 2], r = () => t.markers.length > 0, a = () => t.markers.some((L) => L.label !== void 0 || t.caption(L.id) !== void 0), l = s.createElement("div");
+  ym(s);
+  const o = { ...pm, ...n.labels }, i = n.speeds ?? [0.5, 1, 2], r = () => t.markers.length > 0, a = () => t.markers.some((L) => L.label !== void 0 || t.caption(L.id) !== void 0), l = s.createElement("div");
   l.className = "tf-ctl";
   const c = s.createElement("div");
   c.className = "tf-ctl-bar", c.setAttribute("role", "group");
@@ -6947,7 +6947,7 @@ function ym(t, e, n = {}) {
     D.value = String(L), D.textContent = `${L}×`, L === 1 && (D.selected = !0), k.appendChild(D);
   }
   k.addEventListener("change", () => t.setSpeed(Number(k.value))), c.append(u, d, f, g, m, b), i.length > 0 && c.append(k), l.append(c);
-  const w = n.fullscreen ? vm(e, s, o) : void 0;
+  const w = n.fullscreen ? Mm(e, s, o) : void 0;
   w && c.append(w.button);
   const y = s.createElement("p");
   y.className = "tf-ctl-caption", y.setAttribute("aria-live", "polite"), n.captions !== !1 && l.append(y);
@@ -6955,7 +6955,7 @@ function ym(t, e, n = {}) {
   T.className = "tf-ctl-question", T.hidden = !0;
   const $ = s.createElement("span"), M = h(o.reveal, o.reveal, () => t.play(), "tf-ctl-primary");
   T.append($, M), l.append(T);
-  const S = bm(t, s, o.scenario, n.scenarioControl ?? "buttons");
+  const S = wm(t, s, o.scenario, n.scenarioControl ?? "buttons");
   S && l.append(S.element);
   const v = n.mount;
   v ? v.appendChild(l) : e.insertAdjacentElement("afterend", l);
@@ -7019,7 +7019,7 @@ function ym(t, e, n = {}) {
     }
   };
 }
-function bm(t, e, n, s) {
+function wm(t, e, n, s) {
   const o = t.scenarios;
   if (o.length < 2) return;
   if (s === "slider") {
@@ -7044,7 +7044,7 @@ function bm(t, e, n, s) {
   i.className = "tf-ctl-choices";
   const r = e.createElement("legend");
   r.textContent = n, i.append(r);
-  const a = `tf-ctl-scenario-${++gm}`, l = o.map((h) => {
+  const a = `tf-ctl-scenario-${++mm}`, l = o.map((h) => {
     const u = e.createElement("label");
     u.className = "tf-ctl-choice";
     const d = e.createElement("input");
@@ -7061,14 +7061,14 @@ function bm(t, e, n, s) {
     }
   } };
 }
-const wm = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>', km = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
-function vm(t, e, n) {
+const km = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>', vm = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
+function Mm(t, e, n) {
   const s = e, o = t, i = e.createElement("button");
   i.type = "button", i.className = "tf-ctl-btn tf-ctl-fullscreen";
   let r, a = "";
   const l = () => {
     const p = r !== void 0;
-    i.innerHTML = p ? km : wm;
+    i.innerHTML = p ? vm : km;
     const m = p ? n.exitFullscreen : n.fullscreen;
     i.setAttribute("aria-label", m), i.title = m, i.setAttribute("aria-pressed", String(p)), t.classList.toggle("tf-fullscreen", p), t.classList.toggle("tf-fullscreen-overlay", r === "overlay");
   }, c = () => s.fullscreenElement ?? s.webkitFullscreenElement ?? null, h = () => {
@@ -7114,20 +7114,20 @@ function vm(t, e, n) {
     }
   };
 }
-const Il = "tinyfly-choices-style", Mm = `
+const Il = "tinyfly-choices-style", xm = `
 [data-tinyfly-choose] { cursor: pointer; }
 [data-tinyfly-choose]:focus-visible { outline: 2px solid var(--tf-ctl-accent, #c2410c); outline-offset: 2px; }
 `;
-function xm(t) {
+function Sm(t) {
   if (t.getElementById(Il)) return;
   const e = t.createElement("style");
-  e.id = Il, e.textContent = Mm, t.head.appendChild(e);
+  e.id = Il, e.textContent = xm, t.head.appendChild(e);
 }
-function Sm(t, e) {
+function Tm(t, e) {
   const n = Array.from(e.querySelectorAll("[data-tinyfly-choose]"));
   if (n.length === 0) return () => {
   };
-  xm(e.ownerDocument);
+  Sm(e.ownerDocument);
   const s = [], o = [];
   for (const a of n) {
     const l = a.getAttribute("data-tinyfly-choose") ?? "", c = [], h = (g, p) => {
@@ -7155,7 +7155,7 @@ function Sm(t, e) {
   };
 }
 const po = /* @__PURE__ */ new WeakMap(), hr = /* @__PURE__ */ new WeakMap();
-let Tm = 0;
+let Em = 0;
 function ns(t, e, n) {
   if (t)
     try {
@@ -7165,10 +7165,10 @@ function ns(t, e, n) {
       return;
     }
 }
-async function Em(t, e = {}) {
+async function Am(t, e = {}) {
   const n = po.get(t);
   if (n) return n;
-  const s = Array.from(t.querySelectorAll("script[data-tinyfly-timeline]")), o = s[0], i = t.getAttribute("data-src"), r = $m(t.getAttribute("data-markers")), a = s.length > 1 || o?.hasAttribute("data-scenario") ? Am(s, r, t) : void 0;
+  const s = Array.from(t.querySelectorAll("script[data-tinyfly-timeline]")), o = s[0], i = t.getAttribute("data-src"), r = Pm(t.getAttribute("data-markers")), a = s.length > 1 || o?.hasAttribute("data-scenario") ? $m(s, r, t) : void 0;
   if (a && a.length === 0) return;
   let l = o && !a ? ns(o.textContent, "timeline", t) : void 0;
   if (!l && i && r) {
@@ -7185,16 +7185,16 @@ async function Em(t, e = {}) {
     ...c && { captions: c },
     ...ns(t.getAttribute("data-options"), "data-options", t)
   };
-  Im(t);
+  Om(t);
   const u = new ea(t, h), d = { element: t, player: u };
   if (po.set(t, d), t.setAttribute("data-tinyfly-mounted", ""), a) {
     const f = t.getAttribute("data-scenario") ?? void 0;
-    await u.loadScenarios(a, { initial: a.some((g) => g.id === f) ? f : void 0 }), hr.set(t, Sm(u, t));
+    await u.loadScenarios(a, { initial: a.some((g) => g.id === f) ? f : void 0 }), hr.set(t, Tm(u, t));
   } else
     await u.load(l ?? i);
   if (t.getAttribute("data-controls") !== "false") {
     const f = ns(t.getAttribute("data-labels"), "data-labels", t), g = t.querySelector("figcaption"), p = t.getAttribute("data-scenario-legend"), m = t.getAttribute("data-scenario-control");
-    d.controls = ym(u, t, {
+    d.controls = bm(u, t, {
       ...e.controls,
       ...t.getAttribute("data-fullscreen") === "true" ? { fullscreen: !0 } : {},
       ...m === "slider" || m === "buttons" ? { scenarioControl: m } : {},
@@ -7205,7 +7205,7 @@ async function Em(t, e = {}) {
   }
   return d;
 }
-function Am(t, e, n) {
+function $m(t, e, n) {
   const s = [];
   return t.forEach((o, i) => {
     const r = ns(o.textContent, "timeline", n);
@@ -7222,33 +7222,33 @@ function Am(t, e, n) {
 function E0(t, e) {
   return t.config.markers?.length ? t : { ...t, config: { ...t.config, markers: e.map((n, s) => ({ id: `step-${s + 1}`, time: n })) } };
 }
-function $m(t) {
+function Pm(t) {
   if (!t) return;
   const e = t.split(/[\s,]+/).filter(Boolean).map(Number).filter((n) => Number.isFinite(n) && n >= 0).sort((n, s) => n - s);
   return e.length > 0 ? e : void 0;
 }
-async function Pm(t = document, e = {}) {
+async function Im(t = document, e = {}) {
   const n = Array.from(t.querySelectorAll("[data-tinyfly-embed]"));
-  return (await Promise.all(n.map((o) => Em(o, e)))).filter((o) => o !== void 0);
+  return (await Promise.all(n.map((o) => Am(o, e)))).filter((o) => o !== void 0);
 }
 function hx(t) {
   const e = po.get(t);
   e && (hr.get(t)?.(), hr.delete(t), e.controls?.destroy(), e.player.destroy(), po.delete(t), t.removeAttribute("data-tinyfly-mounted"));
 }
-function Im(t) {
+function Om(t) {
   const e = t.querySelector("svg");
   if (!e || e.hasAttribute("role") || e.hasAttribute("aria-hidden")) return;
   const n = t.getAttribute("data-alt"), s = t.querySelector("figcaption");
-  e.setAttribute("role", "img"), n ? e.setAttribute("aria-label", n) : s && (s.id ||= `tinyfly-caption-${++Tm}`, e.setAttribute("aria-labelledby", s.id));
+  e.setAttribute("role", "img"), n ? e.setAttribute("aria-label", n) : s && (s.id ||= `tinyfly-caption-${++Em}`, e.setAttribute("aria-labelledby", s.id));
 }
-function Om() {
+function _m() {
   if (!(typeof document < "u" ? document.currentScript : null)?.hasAttribute("data-tinyfly-auto")) return;
   const e = () => {
-    Pm();
+    Im();
   };
   document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", e, { once: !0 }) : e();
 }
-class _m {
+class Hm {
   container;
   containerA;
   containerB;
@@ -7518,7 +7518,7 @@ class _m {
   }
 }
 async function ux(t, e, n = {}) {
-  const s = new _m(t, { ...n, autoplay: !0 });
+  const s = new Hm(t, { ...n, autoplay: !0 });
   return await s.load(e), s;
 }
 const dx = { type: "none", duration: 0 }, $t = (t) => ({ description: t, unit: "degrees" }), St = (t, e = 0, n = 1) => ({ description: t, unit: `${e}..${n}`, min: e, max: n }), A0 = {
@@ -7578,13 +7578,13 @@ const dx = { type: "none", duration: 0 }, $t = (t) => ({ description: t, unit: "
   roll: $t("Hand rolled to show the back or the palm")
 };
 let I0;
-function Hm(t) {
+function Cm(t) {
   I0 = t;
 }
-function Cm(t) {
+function Rm(t) {
   return I0?.(t) ?? {};
 }
-function Rm(t) {
+function Lm(t) {
   let e = 0;
   for (let n = 1; n < t.length; n++) e += Math.hypot(t[n].x - t[n - 1].x, t[n].y - t[n - 1].y);
   return e;
@@ -7593,7 +7593,7 @@ function fs(t, e) {
   const n = Math.min(1, Math.max(0, e));
   if (t.length < 2 || n === 1) return t.slice();
   if (n === 0) return t.slice(0, 1);
-  let s = Rm(t) * n;
+  let s = Lm(t) * n;
   const o = [t[0]];
   for (let i = 1; i < t.length; i++) {
     const r = t[i - 1], a = t[i], l = Math.hypot(a.x - r.x, a.y - r.y);
@@ -7634,12 +7634,12 @@ function ur(t, e, n) {
       t.beginPath(), t.moveTo(b[0].x, b[0].y);
       let w = 0;
       for (let y = 1; y < b.length; y++) {
-        const T = Lm(b[y - 1], b[y], s, k[y - 1]), $ = g[y - 1];
+        const T = Fm(b[y - 1], b[y], s, k[y - 1]), $ = g[y - 1];
         if (w + $ <= p) {
           t.bezierCurveTo(T[1].x, T[1].y, T[2].x, T[2].y, T[3].x, T[3].y), w += $;
           continue;
         }
-        const M = Fm(T, $ === 0 ? 1 : (p - w) / $);
+        const M = Wm(T, $ === 0 ? 1 : (p - w) / $);
         t.bezierCurveTo(M[1].x, M[1].y, M[2].x, M[2].y, M[3].x, M[3].y);
         break;
       }
@@ -7682,7 +7682,7 @@ function ur(t, e, n) {
     }
   };
 }
-function Lm(t, e, n, s) {
+function Fm(t, e, n, s) {
   const o = e.x - t.x, i = e.y - t.y, r = Math.hypot(o, i) || 1, a = n * Math.min(1.5, Math.max(0.3, r / 80)), l = -i / r, c = o / r;
   return [
     t,
@@ -7691,7 +7691,7 @@ function Lm(t, e, n, s) {
     e
   ];
 }
-function Fm([t, e, n, s], o) {
+function Wm([t, e, n, s], o) {
   const i = (u, d) => ({ x: u.x + (d.x - u.x) * o, y: u.y + (d.y - u.y) * o }), r = i(t, e), a = i(e, n), l = i(n, s), c = i(r, a), h = i(a, l);
   return [t, r, c, i(c, h)];
 }
@@ -7742,14 +7742,14 @@ function _l(t, e, n, s, o, i = 0, r = 1, a = 40) {
   });
 }
 function qo(t, e) {
-  return e.look === "pencil" ? Bm(t, e) : Wm(t, e.ink, e.look);
+  return e.look === "pencil" ? zm(t, e) : Nm(t, e.ink, e.look);
 }
 function go(t, e, n = !1) {
   t.beginPath(), t.moveTo(e[0].x, e[0].y);
   for (const s of e.slice(1)) t.lineTo(s.x, s.y);
   n && t.closePath();
 }
-function Wm(t, e, n) {
+function Nm(t, e, n) {
   const s = n === "silhouette", o = s ? 1.25 : 1;
   return {
     look: n,
@@ -7775,7 +7775,7 @@ function Wm(t, e, n) {
     }
   };
 }
-function Nm(t, e) {
+function Dm(t, e) {
   const n = [t[0]];
   let s = 0;
   for (let r = 1; r < t.length; r++) {
@@ -7790,7 +7790,7 @@ function Nm(t, e) {
   const o = t[t.length - 1], i = n[n.length - 1];
   return Math.hypot(o.x - i.x, o.y - i.y) > e * 0.25 ? n.push(o) : n[n.length - 1] = o, n;
 }
-function Dm(t, e) {
+function Bm(t, e) {
   const n = t.length;
   return t.map((s, o) => {
     const i = t[Math.max(0, o - 1)], r = t[Math.min(n - 1, o + 1)], a = Math.hypot(r.x - i.x, r.y - i.y) || 1, l = e(n === 1 ? 0 : o / (n - 1));
@@ -7805,13 +7805,13 @@ function Hl(t) {
   })), n = e.reduce((s, o) => s + o.amount, 0);
   return (s) => e.reduce((o, i) => o + i.amount * Math.sin(Math.PI * 2 * i.frequency * s + i.phase), 0) / n;
 }
-function Bm(t, e) {
+function zm(t, e) {
   const n = e.pencil ?? {}, s = e.ink, o = n.roughness ?? Math.max(1, e.lineWidth * 0.12), i = Math.max(1, Math.round(n.passes ?? 2)), r = Math.min(1, Math.max(0, n.pressure ?? 0.25)), a = Math.min(1, Math.max(0, n.rubbedOut ?? 0.15)), l = O0(e.time, n.boil ?? 8);
   let c = 0;
   const h = (g, p, m = !1) => sn(ee(`${e.seed}:${m ? "paper" : l}:${g}:${p}`)), u = (g, p, m, b, k, w = 0) => {
     if (g.length < 2) return;
     const y = g.slice(1).reduce((P, E, O) => P + Math.hypot(E.x - g[O].x, E.y - g[O].y), 0);
-    let T = Nm(g, Math.max(1.5, Math.min(e.lineWidth * 0.8, y / 24)));
+    let T = Dm(g, Math.max(1.5, Math.min(e.lineWidth * 0.8, y / 24)));
     if (w > 0 && T.length >= 2) {
       const [P, E] = [T[T.length - 2], T[T.length - 1]], O = Math.hypot(E.x - P.x, E.y - P.y) || 1;
       T = [...T, { x: E.x + (E.x - P.x) / O * w, y: E.y + (E.y - P.y) / O * w }];
@@ -7831,7 +7831,7 @@ function Bm(t, e) {
     for (let T = 0; T < i; T++) {
       const $ = T === 0;
       y.forEach((M, S) => {
-        const v = h(m, T * 10 + S), x = M === 0 ? g : Dm(g, (E) => p(E) * M * Math.sqrt(Math.sin(Math.PI * E))), P = !$ && M === 0 ? e.lineWidth * (0.3 + v.next() * 0.8) : 0;
+        const v = h(m, T * 10 + S), x = M === 0 ? g : Bm(g, (E) => p(E) * M * Math.sqrt(Math.sin(Math.PI * E))), P = !$ && M === 0 ? e.lineWidth * (0.3 + v.next() * 0.8) : 0;
         u(x, (E) => p(E) * (w ? 0.5 : 1) * ($ ? 1 : 0.6), v, $ ? 0.85 : 0.45, o * ($ ? 0.6 : 1), P);
       });
     }
@@ -7869,7 +7869,7 @@ function Bm(t, e) {
     }
   };
 }
-const zm = ["thumb", "index", "middle", "ring", "pinky"], It = {
+const qm = ["thumb", "index", "middle", "ring", "pinky"], It = {
   "thumb.curl": 0.15,
   "thumb.across": 0.15,
   "index.curl": 0.12,
@@ -7918,12 +7918,12 @@ function ps(t, e, n) {
   }
   return s;
 }
-const qm = {
+const Ym = {
   index: { knuckle: [-0.16, 0.47, -0.02], bones: [0.2, 0.125, 0.1], width: 0.125, fan: -1 },
   middle: { knuckle: [-0.055, 0.49, -0.02], bones: [0.22, 0.135, 0.1], width: 0.13, fan: -0.2 },
   ring: { knuckle: [0.05, 0.475, -0.02], bones: [0.2, 0.125, 0.1], width: 0.122, fan: 0.55 },
   pinky: { knuckle: [0.15, 0.43, -0.02], bones: [0.16, 0.1, 0.085], width: 0.108, fan: 1.25 }
-}, Ym = {
+}, jm = {
   index: { knuckle: [-0.14, 0.47, -0.02], bones: [0.2, 0.125, 0.1], width: 0.15, fan: -1 },
   middle: { knuckle: [0, 0.49, -0.02], bones: [0.22, 0.135, 0.1], width: 0.155, fan: 0 },
   pinky: { knuckle: [0.14, 0.45, -0.02], bones: [0.19, 0.115, 0.095], width: 0.145, fan: 1 }
@@ -7934,7 +7934,7 @@ const qm = {
   /** Where the thumb points with `across` 0 and 1 */
   out: [-0.7, 0.68, -0.22],
   across: [0.35, 0.5, -0.8]
-}, jm = [82, 100, 62], Km = [48, 72], Xm = 3, Um = 13, Gm = 0.035, Vm = -0.075, Jm = [
+}, Km = [82, 100, 62], Xm = [48, 72], Um = 3, Gm = 13, Vm = 0.035, Jm = -0.075, Zm = [
   [-0.17, 0],
   [-0.215, 0.12],
   [-0.235, 0.26],
@@ -7960,20 +7960,20 @@ function Ge(t, e, n) {
   ];
 }
 const Cl = [1, 0, 0], Rl = [0, 1, 0], is = [0, 0, 1];
-function Zm(t, e, n) {
-  const s = $e(t.fan * (Xm + Um * n)), o = [Math.sin(s), Math.cos(s), 0], i = [Math.cos(s), -Math.sin(s), 0], r = [t.knuckle];
+function Qm(t, e, n) {
+  const s = $e(t.fan * (Um + Gm * n)), o = [Math.sin(s), Math.cos(s), 0], i = [Math.cos(s), -Math.sin(s), 0], r = [t.knuckle];
   let a = 0;
   t.bones.forEach((h, u) => {
-    a += $e(jm[u] * e), r.push(dr(r[u], Qs(Ge(o, i, -a), h)));
+    a += $e(Km[u] * e), r.push(dr(r[u], Qs(Ge(o, i, -a), h)));
   });
   const l = Ge(is, i, -a), c = r.map((h, u) => t.width * (1 - 0.14 * (u / (r.length - 1))));
   return { joints: r, back: l, widths: c };
 }
-function Qm(t, e, n = 1, s = 1) {
+function t1(t, e, n = 1, s = 1) {
   const o = Math.min(1, Math.max(0, e)), i = Gn(dr(Qs(Gn(ge.out), 1 - o), Qs(Gn(ge.across), o))), r = Gn(fr(is, i)), a = Gn(fr(i, r)), l = [[ge.base[0] * s, ge.base[1], ge.base[2]]];
   let c = 0;
   ge.bones.forEach((d, f) => {
-    f > 0 && (c += $e(Km[f - 1] * t)), l.push(dr(l[f], Qs(Ge(i, r, c), d)));
+    f > 0 && (c += $e(Xm[f - 1] * t)), l.push(dr(l[f], Qs(Ge(i, r, c), d)));
   });
   const h = Ge(a, r, c), u = [...ge.widths, ge.widths[ge.widths.length - 1] * 0.92].map((d) => d * n);
   return { joints: l, back: h, widths: u };
@@ -7990,11 +7990,11 @@ function pr(t, e = {}) {
     const O = y(E), _ = Math.hypot(O.x, O.y);
     return _ > 1e-6 * s ? { x: O.x / _, y: O.y / _ } : { x: 0, y: 0 };
   }, $ = {
-    thumb: Qm(n["thumb.curl"] ?? 0, n["thumb.across"] ?? 0, l, c)
-  }, M = a ? Ym : qm;
-  for (const E of zm) {
+    thumb: t1(n["thumb.curl"] ?? 0, n["thumb.across"] ?? 0, l, c)
+  }, M = a ? jm : Ym;
+  for (const E of qm) {
     const O = M[E];
-    O && ($[E] = Zm(h(O), n[`${E}.curl`] ?? 0, n.spread ?? 0));
+    O && ($[E] = Qm(h(O), n[`${E}.curl`] ?? 0, n.spread ?? 0));
   }
   const S = {};
   for (const [E, O] of Object.entries($)) {
@@ -8007,7 +8007,7 @@ function pr(t, e = {}) {
       back: T(L)
     };
   }
-  const v = Jm.flatMap(([E, O]) => [g([E * c, O, Gm]), g([E * c, O, Vm])]), x = e1(v.map(y)), P = v.reduce((E, O) => E + O[2], 0) / v.length * s;
+  const v = Zm.flatMap(([E, O]) => [g([E * c, O, Vm]), g([E * c, O, Jm])]), x = n1(v.map(y)), P = v.reduce((E, O) => E + O[2], 0) / v.length * s;
   return {
     size: s,
     side: o,
@@ -8020,13 +8020,13 @@ function pr(t, e = {}) {
     curls: Object.fromEntries(Object.keys(S).map((E) => [E, n[`${E}.curl`] ?? 0]))
   };
 }
-function t1(t, e) {
+function e1(t, e) {
   const n = (o) => ({ x: o.x + e.x - t.wrist.x, y: o.y + e.y - t.wrist.y }), s = {};
   for (const [o, i] of Object.entries(t.fingers))
     s[o] = { ...i, points: i.points.map(n) };
   return { ...t, wrist: n(t.wrist), palm: t.palm.map(n), fingers: s };
 }
-function e1(t) {
+function n1(t) {
   const e = [...t].sort((i, r) => i.x - r.x || i.y - r.y);
   if (e.length < 3) return e;
   const n = (i, r, a) => (r.x - i.x) * (a.y - i.y) - (r.y - i.y) * (a.x - i.x), s = [];
@@ -8041,26 +8041,26 @@ function e1(t) {
   }
   return [...s.slice(0, -1), ...o.slice(0, -1)];
 }
-const n1 = "#f1c9a5", s1 = "#2f2f33";
+const s1 = "#f1c9a5", o1 = "#2f2f33";
 function oa(t, e, n, s = {}, o = 0) {
-  const i = t1(pr(n, s), e), r = s.ink ?? s1, a = s.lineWidth ?? i.size * 0.035, l = s.pen ?? qo(t, {
+  const i = e1(pr(n, s), e), r = s.ink ?? o1, a = s.lineWidth ?? i.size * 0.035, l = s.pen ?? qo(t, {
     look: s.look ?? "clean",
     ink: r,
     lineWidth: a,
     seed: s.seed ?? 1,
     time: o,
     pencil: { construction: !1, ...s.pencil }
-  }), c = s.skin ?? n1, h = s.nails ?? !0, u = [
+  }), c = s.skin ?? s1, h = s.nails ?? !0, u = [
     {
       depth: i.palmDepth,
-      draw: () => o1(l, i, c, a)
+      draw: () => i1(l, i, c, a)
     }
   ];
   for (const d of Object.values(i.fingers)) {
     const f = d.depths.reduce((g, p) => g + p, 0) / d.depths.length;
     u.push({
       depth: f,
-      draw: () => i1(t, l, d, c, a, h)
+      draw: () => r1(t, l, d, c, a, h)
     });
   }
   if (s.prop) {
@@ -8071,7 +8071,7 @@ function oa(t, e, n, s = {}, o = 0) {
   for (const d of [...u].sort((f, g) => f.depth - g.depth)) d.draw();
   return t.restore(), i;
 }
-function o1(t, e, n, s) {
+function i1(t, e, n, s) {
   if (t.shape(e.palm, n, s), e.palmFacing < -0.3 && t.look !== "silhouette") {
     const { up: o } = e.axes;
     for (const [i, r] of Object.entries(e.fingers)) {
@@ -8092,15 +8092,15 @@ function o1(t, e, n, s) {
     t.line([l(-0.15 * c, 0.36), l(-0.04 * c, 0.3), l(0.1 * c, 0.33)], s * 0.5);
   }
 }
-function i1(t, e, n, s, o, i) {
-  const { widths: r } = n, a = r1(n.points, 2), l = n.points[0], c = a[a.length - 1], h = r[0], u = r[r.length - 1];
+function r1(t, e, n, s, o, i) {
+  const { widths: r } = n, a = a1(n.points, 2), l = n.points[0], c = a[a.length - 1], h = r[0], u = r[r.length - 1];
   if (t.save(), e.look !== "silhouette") {
     t.beginPath(), t.rect(l.x - 1e5, l.y - 1e5, 2e5, 2e5);
     const p = h / 2 + o * 1.6;
     t.moveTo(l.x + p, l.y), t.arc(l.x, l.y, p, 0, Math.PI * 2), t.clip("evenodd");
   }
   if (e.limb(a, h + 2 * o, u + 2 * o), t.restore(), e.look !== "silhouette" && (t.fillStyle = s, sa(t, a, h, u)), e.look === "silhouette" || !i || n.nail < 0.25) return;
-  const d = a[a.length - 2], f = a1({ x: c.x - d.x, y: c.y - d.y }) ?? {
+  const d = a[a.length - 2], f = l1({ x: c.x - d.x, y: c.y - d.y }) ?? {
     x: 0,
     y: -1
   }, g = {
@@ -8109,7 +8109,7 @@ function i1(t, e, n, s, o, i) {
   };
   e.ellipse(g.x, g.y, u * 0.24 * Math.max(0.35, n.nail), u * 0.19, Math.atan2(f.y, f.x), "#f8e3d3", o * 0.45);
 }
-function r1(t, e) {
+function a1(t, e) {
   let n = t;
   for (let s = 0; s < e; s++) {
     if (n.length < 3) return n;
@@ -8122,7 +8122,7 @@ function r1(t, e) {
   }
   return n;
 }
-const a1 = (t) => {
+const l1 = (t) => {
   const e = Math.hypot(t.x, t.y);
   return e > 1e-6 ? { x: t.x / e, y: t.y / e } : null;
 }, qt = {
@@ -8134,14 +8134,14 @@ const a1 = (t) => {
   tired: { swing: 14, knee: 14, arm: 6, elbow: 6, lean: 10, bend: 16, headTilt: 12 },
   run: { swing: 40, knee: 95, arm: 45, elbow: 0, forearm: 90, lean: 16, bend: 6, bounce: 0.05, squash: 0.06 },
   shove: { swing: 18, knee: 28, arm: 0, elbow: 0, lean: 0 }
-}, l1 = 40;
+}, c1 = 40;
 function Yo(t) {
   return t === void 0 ? qt.walk : typeof t == "string" ? qt[t] ?? qt.walk : t;
 }
-function c1(t, e, n = lt, s = 1) {
+function h1(t, e, n = lt, s = 1) {
   const o = Yo(t);
-  if (o === qt.walk) return u1(e, n, s);
-  const i = e * Math.PI * 2, r = Math.sin(i) * s, a = Math.cos(i) * s, l = (b) => Math.abs(b) <= l1, c = o.shoulder ?? 0, h = (b, k) => l(b) ? k * c + o.arm * r : b, u = o.forearm ?? 0, d = l(n.leftShoulder) ? n.leftElbow - u - o.elbow * Math.max(0, -r) : n.leftElbow, f = l(n.rightShoulder) ? n.rightElbow + u + o.elbow * Math.max(0, r) : n.rightElbow, g = o.bounces ?? 1, p = (1 + Math.cos(i * 2 * g)) / 2, m = o.crouch ?? 0;
+  if (o === qt.walk) return d1(e, n, s);
+  const i = e * Math.PI * 2, r = Math.sin(i) * s, a = Math.cos(i) * s, l = (b) => Math.abs(b) <= c1, c = o.shoulder ?? 0, h = (b, k) => l(b) ? k * c + o.arm * r : b, u = o.forearm ?? 0, d = l(n.leftShoulder) ? n.leftElbow - u - o.elbow * Math.max(0, -r) : n.leftElbow, f = l(n.rightShoulder) ? n.rightElbow + u + o.elbow * Math.max(0, r) : n.rightElbow, g = o.bounces ?? 1, p = (1 + Math.cos(i * 2 * g)) / 2, m = o.crouch ?? 0;
   return {
     ...n,
     lean: n.lean + o.lean * s + (o.sway ?? 0) * Math.sin(i) * (1 - (n.turn ?? 0)),
@@ -8166,7 +8166,7 @@ function c1(t, e, n = lt, s = 1) {
 }
 function gr(t, e, n = 1) {
   const s = Yo(t), o = qt.walk.swing, i = (r) => Math.sin(r * Math.PI / 180);
-  return d1(e, n) * i(s.swing * n) / i(o * n);
+  return f1(e, n) * i(s.swing * n) / i(o * n);
 }
 const lt = {
   lean: 0,
@@ -8272,9 +8272,9 @@ function gs(t, e, n) {
   for (const o of H0) s[o] = t[o] + (e[o] - t[o]) * n;
   return s;
 }
-const mr = 24, Ll = 4, Fl = 28, h1 = 40;
-function u1(t, e = lt, n = 1) {
-  const s = Math.sin(t * Math.PI * 2) * n, o = Math.cos(t * Math.PI * 2) * n, i = (c) => Math.abs(c) <= h1, r = (c) => i(c) ? 22 * s : c, a = i(e.leftShoulder) ? e.leftElbow - Fl * Math.max(0, -s) : e.leftElbow, l = i(e.rightShoulder) ? e.rightElbow + Fl * Math.max(0, s) : e.rightElbow;
+const mr = 24, Ll = 4, Fl = 28, u1 = 40;
+function d1(t, e = lt, n = 1) {
+  const s = Math.sin(t * Math.PI * 2) * n, o = Math.cos(t * Math.PI * 2) * n, i = (c) => Math.abs(c) <= u1, r = (c) => i(c) ? 22 * s : c, a = i(e.leftShoulder) ? e.leftElbow - Fl * Math.max(0, -s) : e.leftElbow, l = i(e.rightShoulder) ? e.rightElbow + Fl * Math.max(0, s) : e.rightElbow;
   return {
     ...e,
     // Lean into the walk, and keep the head a little more level than the body.
@@ -8294,20 +8294,20 @@ function u1(t, e = lt, n = 1) {
     rightShoulder: r(e.rightShoulder)
   };
 }
-function d1(t, e = 1) {
+function f1(t, e = 1) {
   return 4 * ((yr + mo) * t) * Math.sin(mr * e * Math.PI / 180);
 }
-function f1(t) {
+function p1(t) {
   const e = Math.abs(Math.sin(t / 65)), n = 0.55 + 0.45 * Math.sin(t / 310);
   return e * n;
 }
-const C0 = 0.12, Wl = 0.46, p1 = 1 - 2 * C0, g1 = 0.1, m1 = 0.21, y1 = 0.19, yr = 0.24, mo = 0.22, R0 = 0.12, b1 = 0.14, L0 = 0.33, Nl = 0.7, Dl = 0.3, w1 = 0.35, k1 = [1.7, 1.05], v1 = [1.3, 0.75], Bl = [1.45, 0.85], M1 = [1.15, 0.75], zl = 0.06, x1 = 0.7, S1 = 0.65, F0 = 0.075, T1 = 0.3, E1 = 0.02, A1 = 0.012, $1 = 12, P1 = 0.25, Cs = 90, I1 = 0.25, O1 = 0.04, W0 = 0.01, ze = (t) => Math.min(1, Math.max(0, t ?? 0));
+const C0 = 0.12, Wl = 0.46, g1 = 1 - 2 * C0, m1 = 0.1, y1 = 0.21, b1 = 0.19, yr = 0.24, mo = 0.22, R0 = 0.12, w1 = 0.14, L0 = 0.33, Nl = 0.7, Dl = 0.3, k1 = 0.35, v1 = [1.7, 1.05], M1 = [1.3, 0.75], Bl = [1.45, 0.85], x1 = [1.15, 0.75], zl = 0.06, S1 = 0.7, T1 = 0.65, F0 = 0.075, E1 = 0.3, A1 = 0.02, $1 = 0.012, P1 = 12, I1 = 0.25, Cs = 90, O1 = 0.25, _1 = 0.04, W0 = 0.01, ze = (t) => Math.min(1, Math.max(0, t ?? 0));
 function fx(t, e = 1) {
   return mo * t * e;
 }
-const br = -0.12, N0 = 0.4, Jt = (t) => t * Math.PI / 180, _1 = (t, e) => ({ x: e * Math.sin(Jt(t)), y: Math.cos(Jt(t)) }), D0 = (t, e) => Math.max(0, t) * (1 - Math.min(1, Math.max(0, e))), B0 = (t, e, n, s) => t - 0.3 * e - n * 0.14 * e - Math.max(0, s - 1) * 0.12 * e;
-function H1(t, e, n, s, o, i) {
-  const r = Math.max(1, Math.min(i * 0.6, b1 * n)), a = ze(e.turn), l = (R0 + L0 * a) * n, c = s + br * n, h = l + e.lookX * 0.08 * n, u = e.lookY * 0.07 * n, d = [
+const br = -0.12, N0 = 0.4, Jt = (t) => t * Math.PI / 180, H1 = (t, e) => ({ x: e * Math.sin(Jt(t)), y: Math.cos(Jt(t)) }), D0 = (t, e) => Math.max(0, t) * (1 - Math.min(1, Math.max(0, e))), B0 = (t, e, n, s) => t - 0.3 * e - n * 0.14 * e - Math.max(0, s - 1) * 0.12 * e;
+function C1(t, e, n, s, o, i) {
+  const r = Math.max(1, Math.min(i * 0.6, w1 * n)), a = ze(e.turn), l = (R0 + L0 * a) * n, c = s + br * n, h = l + e.lookX * 0.08 * n, u = e.lookY * 0.07 * n, d = [
     // The left eye is on the far side; turning closes it up more than the near one.
     { x: -0.34 * n * (1 - Nl * a), squeeze: 1 - Nl * a, open: e.leftEye, brow: e.leftBrow, side: -1 },
     { x: 0.34 * n * (1 - Dl * a), squeeze: 1 - Dl * a, open: e.rightEye, brow: e.rightBrow, side: 1 }
@@ -8329,7 +8329,7 @@ function H1(t, e, n, s, o, i) {
     const w = B0(c, n, b.brow, k), y = b.x + l - b.side * 0.13 * n * b.squeeze, T = b.x + l + b.side * 0.13 * n * b.squeeze;
     t.beginPath(), t.moveTo(T, w), t.lineTo(y, w - e.browTilt * 0.1 * n), t.stroke();
   }
-  const f = s + N0 * n, g = 0.25 * n * Math.max(0.3, e.mouthWidth) * (1 - w1 * a), p = Math.min(1, Math.max(0, e.mouth));
+  const f = s + N0 * n, g = 0.25 * n * Math.max(0.3, e.mouthWidth) * (1 - k1 * a), p = Math.min(1, Math.max(0, e.mouth));
   if (t.beginPath(), p <= 0.05) {
     t.moveTo(l - g, f), t.quadraticCurveTo(l, f + e.smile * 0.25 * n, l + g, f), t.stroke();
     return;
@@ -8340,8 +8340,8 @@ function H1(t, e, n, s, o, i) {
 function z0(t, e) {
   const n = e.height ?? 300, s = Math.min(3, Math.max(0.3, t.stretch ?? 1)), o = Math.sqrt(s), i = e.armLength ?? 1;
   if (!Number.isFinite(i) || i <= 0) throw new Error("stick figure: armLength must be a positive finite multiplier");
-  const r = (e.headSize ?? 2 * C0) / 2, a = e.headSize === void 0 ? p1 : 1 - 2 * r, l = r * n, c = ze(t.sit), h = t.leftHip + (-Cs - t.leftHip) * c, u = t.leftKnee + (-Cs - t.leftKnee) * c, d = t.rightHip + (Cs - t.rightHip) * c, f = t.rightKnee + (Cs - t.rightKnee) * c, g = e.classic === !0, p = ze(t.turn), m = (q, R, B, I, A) => {
-    const H = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, Math.abs(Jt(R - B) / 2) + Jt(I))), N = Math.max(-1, Math.min(1, x1 + A)), z = p + (1 - p) * q * N;
+  const r = (e.headSize ?? 2 * C0) / 2, a = e.headSize === void 0 ? g1 : 1 - 2 * r, l = r * n, c = ze(t.sit), h = t.leftHip + (-Cs - t.leftHip) * c, u = t.leftKnee + (-Cs - t.leftKnee) * c, d = t.rightHip + (Cs - t.rightHip) * c, f = t.rightKnee + (Cs - t.rightKnee) * c, g = e.classic === !0, p = ze(t.turn), m = (q, R, B, I, A) => {
+    const H = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, Math.abs(Jt(R - B) / 2) + Jt(I))), N = Math.max(-1, Math.min(1, S1 + A)), z = p + (1 - p) * q * N;
     return g ? { x: 0, y: 0 } : { x: Math.cos(H) * zl * z, y: Math.sin(H) * zl };
   }, b = { left: t.leftAnkle ?? 0, right: t.rightAnkle ?? 0 }, k = { left: t.leftFootOut ?? 0, right: t.rightFootOut ?? 0 };
   let w = 0;
@@ -8349,10 +8349,10 @@ function z0(t, e) {
     const q = (A, H, N, z, W) => yr * Math.cos(Jt(H)) + mo * Math.cos(Jt(H - N)) + Math.max(0, m(A, H, N, z, W).y), R = Math.max(
       q(-1, h, u, b.left, k.left),
       q(1, d, f, b.right, k.right)
-    ), B = 1 - ze((t.rise ?? 0) / O1), I = (g ? Math.min(1, c / I1) : 1) * B;
+    ), B = 1 - ze((t.rise ?? 0) / _1), I = (g ? Math.min(1, c / O1) : 1) * B;
     w = (Wl - R) * I * n * s;
   }
-  const y = -Wl * n * s + w, T = -a * n * s + w, $ = g ? 0 : (E1 * ze(t.turn) + A1 * c) * n * s, M = Jt(t.bend ?? 0), S = { end: Yl(y, T, M, 1), bend: M };
+  const y = -Wl * n * s + w, T = -a * n * s + w, $ = g ? 0 : (A1 * ze(t.turn) + $1 * c) * n * s, M = Jt(t.bend ?? 0), S = { end: Yl(y, T, M, 1), bend: M };
   let v;
   if (M !== 0) {
     v = [];
@@ -8362,15 +8362,15 @@ function z0(t, e) {
     }
   } else
     v = $ === 0 ? [{ x: 0, y }, { x: 0, y: T }] : Fn({ x: 0, y }, { x: -$, y: (y + T) / 2 }, { x: 0, y: T }, 1, 8);
-  const x = T + g1 * n * s, P = (e.shoulderWidth ?? 0) * n * Math.cos(p * Math.PI / 2), E = (q, R, B, I, A) => {
-    const H = _1(B, I);
+  const x = T + m1 * n * s, P = (e.shoulderWidth ?? 0) * n * Math.cos(p * Math.PI / 2), E = (q, R, B, I, A) => {
+    const H = H1(B, I);
     return { x: q + H.x * A * n, y: R + H.y * A * n };
   }, O = (q, R, B) => {
     const I = E(0, y, R, q, yr * s);
     return { root: { x: 0, y }, joint: I, end: E(I.x, I.y, R - B, q, mo * s) };
   }, _ = (q, R, B) => {
-    const I = { x: q * P, y: x }, A = E(I.x, I.y, R, q, m1 * o * i);
-    return { root: I, joint: A, end: E(A.x, A.y, R + B, q, y1 * o * i) };
+    const I = { x: q * P, y: x }, A = E(I.x, I.y, R, q, y1 * o * i);
+    return { root: I, joint: A, end: E(A.x, A.y, R + B, q, b1 * o * i) };
   }, L = { left: O(-1, h, u), right: O(1, d, f) }, D = (q, R, B, I, A, H) => {
     const N = m(q, B, I, A, H);
     return { x: R.end.x + N.x * n * s, y: R.end.y + N.y * n * s };
@@ -8383,7 +8383,7 @@ function z0(t, e) {
     facing: (e.facing ?? 1) < 0 ? -1 : 1,
     stretch: s,
     lineWidth: e.lineWidth ?? n * 0.025,
-    rubber: Math.min(1, Math.max(g ? 0 : T1, e.rubber ?? 0)),
+    rubber: Math.min(1, Math.max(g ? 0 : E1, e.rubber ?? 0)),
     r: l,
     // The head keeps its area: taller and narrower when stretched.
     headRx: l / Math.sqrt(s),
@@ -8391,7 +8391,7 @@ function z0(t, e) {
     hipY: y,
     neckY: T,
     drop: w,
-    lean: g ? t.lean : t.lean + $1 * Math.sin(Math.PI * c),
+    lean: g ? t.lean : t.lean + P1 * Math.sin(Math.PI * c),
     classic: g,
     legs: L,
     toes: {
@@ -8414,7 +8414,7 @@ function Yl(t, e, n, s) {
   const r = o / n;
   return { x: r * (1 - Math.cos(i)), y: t - r * Math.sin(i) };
 }
-function C1(t, e) {
+function R1(t, e) {
   if (t.chest.bend === 0) return e;
   const n = ms(e, { x: 0, y: t.neckY }, t.chest.bend);
   return { x: n.x + t.chest.end.x, y: n.y + t.chest.end.y - t.neckY };
@@ -8425,13 +8425,13 @@ function ms(t, e, n) {
   return { x: e.x + i * s - r * o, y: e.y + i * o + r * s };
 }
 function q0(t, e, n = !0) {
-  const s = L1(t, e), o = e.spin ?? 0, i = e.rise ?? 0;
-  return n && (o !== 0 || i !== 0) ? R1(s, t, o, i) : s;
+  const s = F1(t, e), o = e.spin ?? 0, i = e.rise ?? 0;
+  return n && (o !== 0 || i !== 0) ? L1(s, t, o, i) : s;
 }
 function Y0(t, e, n) {
   return { pivot: { x: 0, y: t.hipY }, angle: t.facing * Jt(e), lift: n * t.height };
 }
-function R1(t, e, n, s) {
+function L1(t, e, n, s) {
   const { pivot: o, angle: i, lift: r } = Y0(e, n, s), a = (d) => {
     const f = ms(d, o, i);
     return { x: f.x, y: f.y - r };
@@ -8460,8 +8460,8 @@ function R1(t, e, n, s) {
     head: { ...t.head, center: a(t.head.center), angle: t.head.angle + i }
   };
 }
-function L1(t, e) {
-  const n = Jt(t.lean), s = Jt(e.headTilt), o = { x: 0, y: t.hipY }, i = (y) => ({ x: t.facing * y.x, y: y.y }), r = (y) => i(ms(y, o, n)), a = (y) => r(C1(t, y)), l = (y) => a(ms({ x: y.x, y: y.y + t.neckY }, { x: 0, y: t.neckY }, s)), c = ss(t.arms.left, t.rubber).map(a), h = ss(t.arms.right, t.rubber).map(a), u = (y, T) => Math.atan2(T.y - y.y, T.x - y.x), d = { left: a(t.handTips.left), right: a(t.handTips.right) }, f = (y, T) => {
+function F1(t, e) {
+  const n = Jt(t.lean), s = Jt(e.headTilt), o = { x: 0, y: t.hipY }, i = (y) => ({ x: t.facing * y.x, y: y.y }), r = (y) => i(ms(y, o, n)), a = (y) => r(R1(t, y)), l = (y) => a(ms({ x: y.x, y: y.y + t.neckY }, { x: 0, y: t.neckY }, s)), c = ss(t.arms.left, t.rubber).map(a), h = ss(t.arms.right, t.rubber).map(a), u = (y, T) => Math.atan2(T.y - y.y, T.x - y.x), d = { left: a(t.handTips.left), right: a(t.handTips.right) }, f = (y, T) => {
     const [$, M] = y.slice(-2), S = t.arms[T], v = u(a(S.end), d[T]) - u(a(S.joint), a(S.end));
     return u($, M) + v;
   };
@@ -8517,7 +8517,7 @@ function he(t, e = {}) {
 function px(t, e, n) {
   return ms({ x: t.center.x + e * t.rx, y: t.center.y + n * t.ry }, t.center, t.angle);
 }
-function F1(t, e, n) {
+function W1(t, e, n) {
   const s = (i) => ({ x: i.x + e, y: i.y + n }), o = (i) => ({ left: s(i.left), right: s(i.right) });
   return {
     ...t,
@@ -8543,7 +8543,7 @@ function F1(t, e, n) {
     head: { ...t.head, center: s(t.head.center) }
   };
 }
-function W1(t, e, n = {}, s = 0) {
+function N1(t, e, n = {}, s = 0) {
   const o = z0(e, n), i = n.color ?? "#1e293b", r = n.layers ?? {}, a = n.layers ? q0(o, e, !1) : void 0, l = n.sketch ? ur(t, n.sketch, s) : void 0, c = n.sketch && n.layers ? ur(t, n.sketch, s) : void 0, h = (M) => {
     t.save(), M(), t.restore();
   }, u = (M) => {
@@ -8562,12 +8562,12 @@ function W1(t, e, n = {}, s = 0) {
     }
     sa(t, M, v[0] * o.lineWidth, v[1] * o.lineWidth);
   }, m = (M, S) => p(ss(M, o.rubber), o.rubber > 0, S), b = (M) => {
-    o.classic || p([o.legs[M].end, o.toes[M]], !1, M1);
+    o.classic || p([o.legs[M].end, o.toes[M]], !1, x1);
   }, k = (M) => {
     if (n.hands && !o.classic) return y(M);
     if (o.classic || l) return;
     const S = o.arms[M].end;
-    t.beginPath(), t.arc(S.x, S.y, S1 * o.lineWidth, 0, Math.PI * 2), t.fill();
+    t.beginPath(), t.arc(S.x, S.y, T1 * o.lineWidth, 0, Math.PI * 2), t.fill();
   };
   t.save(), t.strokeStyle = i, t.fillStyle = i, t.lineWidth = o.lineWidth, t.lineCap = "round", t.lineJoin = "round";
   const w = Y0(o, e.spin ?? 0, e.rise ?? 0);
@@ -8590,15 +8590,15 @@ function W1(t, e, n = {}, s = 0) {
   }
   const T = (M) => {
     h(() => {
-      g(), m(o.arms[M], v1), k(M);
+      g(), m(o.arms[M], M1), k(M);
     });
     const S = r.sleeve;
     S && a && h(() => S(t, a, M, s, c));
-  }, $ = ze(e.turn) > P1;
+  }, $ = ze(e.turn) > I1;
   u(r.behind), h(() => {
     d(), m(o.legs.left, Bl), b("left"), m(o.legs.right, Bl), b("right");
   }), $ && T("left"), h(() => {
-    f(), p(o.spine, o.spine.length > 2, k1);
+    f(), p(o.spine, o.spine.length > 2, v1);
   }), h(() => {
     g();
     const { left: M, right: S } = { left: o.arms.left.root, right: o.arms.right.root };
@@ -8619,12 +8619,12 @@ function W1(t, e, n = {}, s = 0) {
       t.translate(v.x, v.y);
     } else
       t.stroke();
-    t.translate(0, M), t.scale(o.headRx / o.r, o.headRy / o.r), H1(t, e, o.r, 0, i, o.lineWidth);
+    t.translate(0, M), t.scale(o.headRx / o.r, o.headRy / o.r), C1(t, e, o.r, 0, i, o.lineWidth);
   }), u(r.overHead), u(r.front), t.restore(), n.label && (t.save(), t.fillStyle = i, t.font = n.labelFont ?? `700 ${Math.round(o.height * 0.11)}px sans-serif`, t.textAlign = "center", t.textBaseline = "bottom", t.fillText(n.label, 0, -o.height * o.stretch - 0.04 * o.height + o.drop), t.restore());
 }
 function j0(t, e, n, s) {
   const o = { ...t }, i = t.gait && s?.[t.gait] || t.gait;
-  let r = t.walking > 0 ? gs(o, c1(i, t.walk, o), t.walking) : o, a = D1(t);
+  let r = t.walking > 0 ? gs(o, h1(i, t.walk, o), t.walking) : o, a = B1(t);
   const l = t.dancing ?? 0;
   if (n && l > 0) {
     const c = n(t.beat ?? 0);
@@ -8633,20 +8633,20 @@ function j0(t, e, n, s) {
       a = { left: h(a?.left, c.hands.left), right: h(a?.right, c.hands.right) };
     }
   }
-  return t.talk > 0 && (r = { ...r, mouth: Math.max(r.mouth, t.talk * f1(e)) }), { pose: r, hands: a };
+  return t.talk > 0 && (r = { ...r, mouth: Math.max(r.mouth, t.talk * p1(e)) }), { pose: r, hands: a };
 }
-function N1(t, e, n, s) {
+function D1(t, e, n, s) {
   return j0(t, e, n, s).pose;
 }
 const K0 = (t, e) => (t.facing ?? e.facing ?? 1) < 0 ? -1 : 1, yo = (t, e) => `hand.${t}.${e}`;
-function D1(t) {
+function B1(t) {
   const e = (o) => {
     if (typeof t[yo(o, "spread")] == "number")
       return Object.fromEntries(Object.keys(It).map((i) => [i, t[yo(o, i)]]));
   }, n = e("left"), s = e("right");
   return n || s ? { left: n, right: s } : void 0;
 }
-function B1(t, e) {
+function z1(t, e) {
   return !e || !t.hands ? t : { ...t, hands: { ...t.hands, left: e.left ?? t.hands.left, right: e.right ?? t.hands.right } };
 }
 function X0(t) {
@@ -8663,17 +8663,17 @@ function X0(t) {
     width: s,
     height: n,
     props: { ...o, ...i },
-    about: z1(Object.keys(i), t.cast),
+    about: q1(Object.keys(i), t.cast),
     figureStyle: e,
     figureDance: t.dance,
     figureGaits: t.cast?.gaits,
     draw(r, a, l) {
       const c = a.props, h = j0(c, l, t.dance, t.cast?.gaits);
-      r.translate(s / 2, n), W1(r, h.pose, B1({ ...e, rubber: c.rubber, facing: K0(c, e) }, h.hands), l);
+      r.translate(s / 2, n), N1(r, h.pose, z1({ ...e, rubber: c.rubber, facing: K0(c, e) }, h.hands), l);
     }
   };
 }
-function z1(t, e) {
+function q1(t, e) {
   const n = { ...A0, ...$0 };
   for (const s of t) {
     const [, o, ...i] = s.split("."), r = P0[i.join(".")];
@@ -8685,7 +8685,7 @@ function z1(t, e) {
     props: n,
     // Read when asked: the list is registered by the acting module (see figure-actions).
     get actions() {
-      return Cm(e);
+      return Rm(e);
     }
   };
 }
@@ -8696,8 +8696,8 @@ function U0(t, e, n) {
   let i = 0, r = 0;
   for (const [c, h] of e.state?.values.get(n) ?? [])
     c === "gait" && typeof h == "string" && (o.gait = h), typeof h == "number" && (c === "x" || c === "motionPathX" ? i = h : c === "y" || c === "motionPathY" ? r = h : c in o && (o[c] = h));
-  const a = N1(o, e.time, t.figureDance, t.figureGaits), l = he(a, { ...s, rubber: o.rubber, facing: K0(o, s) });
-  return { pose: a, joints: F1(l, t.x + i + t.width / 2, t.y + r + t.height) };
+  const a = D1(o, e.time, t.figureDance, t.figureGaits), l = he(a, { ...s, rubber: o.rubber, facing: K0(o, s) });
+  return { pose: a, joints: W1(l, t.x + i + t.width / 2, t.y + r + t.height) };
 }
 function ia(t) {
   const e = [];
@@ -8753,7 +8753,7 @@ function G0(t, e, n) {
   return s;
 }
 const ra = (t, e) => (t % e + e) % e;
-function q1(t, e, n, s) {
+function Y1(t, e, n, s) {
   const o = G0(t, n, s);
   if (o.length === 0) return { pose: n, hands: s };
   const i = ra(e, t.beats);
@@ -8765,7 +8765,7 @@ function q1(t, e, n, s) {
     hands: { left: ps(a.left, l.left, d), right: ps(a.right, l.right, d) }
   };
 }
-const Y1 = [
+const j1 = [
   ["leftShoulder", "rightShoulder"],
   ["leftElbow", "rightElbow"],
   ["leftWrist", "rightWrist"],
@@ -8775,19 +8775,19 @@ const Y1 = [
   ["leftFootOut", "rightFootOut"],
   ["leftEye", "rightEye"],
   ["leftBrow", "rightBrow"]
-], j1 = ["lean", "headTilt", "lookX", "spin"], K1 = /* @__PURE__ */ new Set(["leftShoulder", "rightShoulder", "leftElbow", "rightElbow", "leftWrist", "rightWrist", "leftHip", "rightHip", "leftKnee", "rightKnee"]);
-function X1(t) {
+], K1 = ["lean", "headTilt", "lookX", "spin"], X1 = /* @__PURE__ */ new Set(["leftShoulder", "rightShoulder", "leftElbow", "rightElbow", "leftWrist", "rightWrist", "leftHip", "rightHip", "leftKnee", "rightKnee"]);
+function U1(t) {
   const e = { ...t }, n = (t.turn ?? 0) >= 0.5;
-  for (const [s, o] of Y1) {
-    const i = n && K1.has(s) ? -1 : 1;
+  for (const [s, o] of j1) {
+    const i = n && X1.has(s) ? -1 : 1;
     e[s] = i * t[o], e[o] = i * t[s];
   }
-  if (!n) for (const s of j1) e[s] = -t[s];
+  if (!n) for (const s of K1) e[s] = -t[s];
   return e;
 }
-const U1 = (t) => Math.min(1, Math.max(-1, (0.5 - t) * 4));
-function G1(t, e, n) {
-  const s = ra(n, 1), o = (1 + Math.cos(2 * Math.PI * s)) / 2, i = e.bounce * (e.accent === "up" ? 1 - o : o), r = Math.min(1, Math.max(0, t.turn ?? 0)), a = U1(r);
+const G1 = (t) => Math.min(1, Math.max(-1, (0.5 - t) * 4));
+function V1(t, e, n) {
+  const s = ra(n, 1), o = (1 + Math.cos(2 * Math.PI * s)) / 2, i = e.bounce * (e.accent === "up" ? 1 - o : o), r = Math.min(1, Math.max(0, t.turn ?? 0)), a = G1(r);
   return {
     ...t,
     leftHip: t.leftHip + a * i / 2,
@@ -8810,8 +8810,8 @@ function V0(t) {
 function xi(t, e, n) {
   const s = t.moves[e.move];
   if (!s) throw new Error(`dance: "${t.label}" has no move "${e.move}"`);
-  const o = q1(s, n, kr(t), V0(t));
-  return e.mirror ? { pose: X1(o.pose), hands: { left: o.hands?.right, right: o.hands?.left } } : o;
+  const o = Y1(s, n, kr(t), V0(t));
+  return e.mirror ? { pose: U1(o.pose), hands: { left: o.hands?.right, right: o.hands?.left } } : o;
 }
 function aa(t, e, n = {}) {
   const s = typeof t == "string" ? on[t] : t;
@@ -8831,7 +8831,7 @@ function aa(t, e, n = {}) {
       };
     }
   }
-  return { ...o, pose: G1(o.pose, s.groove, e) };
+  return { ...o, pose: V1(o.pose, s.groove, e) };
 }
 function mx(t, e, n = {}) {
   return aa(t, e, n).pose;
@@ -8839,13 +8839,13 @@ function mx(t, e, n = {}) {
 function la(t) {
   return (typeof t == "string" ? on[t] : t).routine.reduce((n, s) => n + s.beats, 0);
 }
-const V1 = { leftToe: "rightToe", rightToe: "leftToe", leftHeel: "rightHeel", rightHeel: "leftHeel" };
+const J1 = { leftToe: "rightToe", rightToe: "leftToe", leftHeel: "rightHeel", rightHeel: "leftHeel" };
 function jl(t, e, n, s, o, i, r) {
   for (let a = 0; a * t.beats < n; a++)
     for (const l of t.keys) {
       const c = a * t.beats + l.beat, h = e + c;
       if (!(c >= n || h < i || h >= r))
-        for (const u of l.taps ?? []) o.push({ beat: h, tap: s ? V1[u] : u });
+        for (const u of l.taps ?? []) o.push({ beat: h, tap: s ? J1[u] : u });
     }
 }
 function yx(t, e, n, s = {}) {
@@ -8882,18 +8882,18 @@ function Si(t, e, n = {}) {
   }
   return l;
 }
-function J1(t, e, n) {
+function Z1(t, e, n) {
   const s = J0(t, n), o = [0];
   let i = 0;
   for (let r = 0; i < e; r = (r + 1) % s.length)
     i += s[r].beats, o.push(Math.min(i, e));
   return o;
 }
-const Z1 = 8;
-function Q1(t, e, n) {
-  const s = typeof e == "string" ? on[e] : e, o = n.bpm ?? s.bpm, i = n.beats ?? (n.move ? s.moves[n.move].beats : la(s)), r = J1(s, i, n);
+const Q1 = 8;
+function ty(t, e, n) {
+  const s = typeof e == "string" ? on[e] : e, o = n.bpm ?? s.bpm, i = n.beats ?? (n.move ? s.moves[n.move].beats : la(s)), r = Z1(s, i, n);
   if (r.every((b) => Si(s, b, n) === 0)) return;
-  const a = Math.min(n.fade ?? 1, i / 2), l = Wt("ease-in-out"), c = (b) => a <= 0 ? 1 : Math.min(l(Math.min(1, b / a)), l(Math.min(1, (i - b) / a))), h = Math.ceil(a * Z1), u = a <= 0 ? [] : Array.from({ length: h + 1 }, (b, k) => [k / h * a, i - k / h * a]).flat(), d = [.../* @__PURE__ */ new Set([...r, ...u])].sort((b, k) => b - k);
+  const a = Math.min(n.fade ?? 1, i / 2), l = Wt("ease-in-out"), c = (b) => a <= 0 ? 1 : Math.min(l(Math.min(1, b / a)), l(Math.min(1, (i - b) / a))), h = Math.ceil(a * Q1), u = a <= 0 ? [] : Array.from({ length: h + 1 }, (b, k) => [k / h * a, i - k / h * a]).flat(), d = [.../* @__PURE__ */ new Set([...r, ...u])].sort((b, k) => b - k);
   let f = 0;
   const g = d.map((b, k) => {
     if (k > 0) {
@@ -8952,7 +8952,7 @@ function vx(t, e, n = {}) {
     target: t,
     property: p,
     keyframes: c.map((b) => ({ time: b.time, value: m(b.frame) }))
-  }), d = Object.keys(lt).filter((p) => c.some((m) => m.frame.pose[p] !== c[0].frame.pose[p]) || c[0].frame.pose[p] !== lt[p]).map((p) => h(p, (m) => m.pose[p])), f = n.height === void 0 ? void 0 : Q1(t, s, { ...n, bpm: o, beats: i, start: a, height: n.height, fade: 0 });
+  }), d = Object.keys(lt).filter((p) => c.some((m) => m.frame.pose[p] !== c[0].frame.pose[p]) || c[0].frame.pose[p] !== lt[p]).map((p) => h(p, (m) => m.pose[p])), f = n.height === void 0 ? void 0 : ty(t, s, { ...n, bpm: o, beats: i, start: a, height: n.height, fade: 0 });
   if (f && d.push(f), n.hands === !1) return d;
   const g = [];
   for (const p of ["left", "right"])
@@ -8962,7 +8962,7 @@ function vx(t, e, n = {}) {
     }
   return [...d, ...g];
 }
-const rs = { type: "back", mode: "out", overshoot: 1.1 }, zt = "ease-out-cubic", ty = {
+const rs = { type: "back", mode: "out", overshoot: 1.1 }, zt = "ease-out-cubic", ey = {
   label: "Disco",
   bpm: 120,
   stance: { leftHip: 10, rightHip: 10, leftKnee: 6, rightKnee: 6 },
@@ -9010,7 +9010,7 @@ const rs = { type: "back", mode: "out", overshoot: 1.1 }, zt = "ease-out-cubic",
     { move: "point", beats: 8, mirror: !0 },
     { move: "bump", beats: 8 }
   ]
-}, ey = {
+}, ny = {
   label: "Hip hop",
   bpm: 95,
   stance: { leftHip: 14, rightHip: 14, leftKnee: 20, rightKnee: 20, leftShoulder: 22, rightShoulder: 22, leftElbow: -30, rightElbow: -30, leftFootOut: 0.15, rightFootOut: 0.15 },
@@ -9062,7 +9062,7 @@ const rs = { type: "back", mode: "out", overshoot: 1.1 }, zt = "ease-out-cubic",
     { move: "armWave", beats: 8 },
     { move: "bounce", beats: 4 }
   ]
-}, ny = {
+}, sy = {
   label: "Breaking (toprock)",
   bpm: 110,
   stance: { leftHip: 14, rightHip: 14, leftKnee: 14, rightKnee: 14, leftShoulder: 35, rightShoulder: 35, leftElbow: -90, rightElbow: -90 },
@@ -9104,7 +9104,7 @@ const rs = { type: "back", mode: "out", overshoot: 1.1 }, zt = "ease-out-cubic",
     { move: "kick", beats: 4, mirror: !0 },
     { move: "freeze", beats: 4 }
   ]
-}, sy = {
+}, oy = {
   label: "Jazz",
   bpm: 130,
   stance: { leftHip: 10, rightHip: 10 },
@@ -9165,7 +9165,7 @@ const rs = { type: "back", mode: "out", overshoot: 1.1 }, zt = "ease-out-cubic",
     { move: "jazzHands", beats: 4 },
     { move: "splitDrop", beats: 8 }
   ]
-}, oy = {
+}, iy = {
   label: "K-pop",
   bpm: 125,
   stance: { leftHip: 9, rightHip: 9, leftKnee: 4, rightKnee: 4 },
@@ -9212,7 +9212,7 @@ const rs = { type: "back", mode: "out", overshoot: 1.1 }, zt = "ease-out-cubic",
     { move: "pointCombo", beats: 8, mirror: !0 },
     { move: "isolations", beats: 4 }
   ]
-}, iy = {
+}, ry = {
   label: "Bollywood",
   bpm: 120,
   stance: { leftHip: 10, rightHip: 10 },
@@ -9257,7 +9257,7 @@ const rs = { type: "back", mode: "out", overshoot: 1.1 }, zt = "ease-out-cubic",
     { move: "thumka", beats: 4, mirror: !0 },
     { move: "lightBulb", beats: 8, mirror: !0 }
   ]
-}, ry = {
+}, ay = {
   label: "Bhangra",
   bpm: 100,
   stance: { leftShoulder: 150, rightShoulder: 150, leftElbow: 18, rightElbow: 18, leftHip: 10, rightHip: 10 },
@@ -9292,11 +9292,11 @@ const rs = { type: "back", mode: "out", overshoot: 1.1 }, zt = "ease-out-cubic",
     { move: "basic", beats: 8 },
     { move: "dhamaal", beats: 4 }
   ]
-}, ay = { leftHip: 42, rightHip: 42, leftKnee: 82, rightKnee: 82, leftFootOut: 0.3, rightFootOut: 0.3 }, ly = {
+}, ly = { leftHip: 42, rightHip: 42, leftKnee: 82, rightKnee: 82, leftFootOut: 0.3, rightFootOut: 0.3 }, cy = {
   label: "Bharatanatyam",
   bpm: 80,
   // Natyarambhe: arms out at shoulder height, hands raised in pataka.
-  stance: { ...ay, leftShoulder: 90, rightShoulder: 90, leftElbow: 0, rightElbow: 0, leftWrist: 75, rightWrist: 75 },
+  stance: { ...ly, leftShoulder: 90, rightShoulder: 90, leftElbow: 0, rightElbow: 0, leftWrist: 75, rightWrist: 75 },
   expression: { smile: 0.5, leftEye: 1.2, rightEye: 1.2, leftBrow: 0.3, rightBrow: 0.3 },
   hands: { left: "pataka", right: "pataka" },
   groove: { bounce: 0 },
@@ -9338,7 +9338,7 @@ const rs = { type: "back", mode: "out", overshoot: 1.1 }, zt = "ease-out-cubic",
     { move: "alapadma", beats: 8 },
     { move: "tatta", beats: 4 }
   ]
-}, cy = {
+}, hy = {
   label: "Charleston",
   bpm: 150,
   stance: { leftHip: 10, rightHip: 10, leftKnee: 10, rightKnee: 10, leftShoulder: 30, rightShoulder: 30, leftElbow: 20, rightElbow: 20 },
@@ -9388,7 +9388,7 @@ const rs = { type: "back", mode: "out", overshoot: 1.1 }, zt = "ease-out-cubic",
     { move: "basic", beats: 8, mirror: !0 },
     { move: "twist", beats: 4 }
   ]
-}, hy = {
+}, uy = {
   label: "Tap",
   bpm: 120,
   // Three-quarters to side-on, so shuffles read as brushes forward and back. Side-on,
@@ -9486,7 +9486,7 @@ const rs = { type: "back", mode: "out", overshoot: 1.1 }, zt = "ease-out-cubic",
     { move: "heelToe", beats: 8 },
     { move: "crampRoll", beats: 4 }
   ]
-}, uy = {
+}, dy = {
   label: "Popping (glides, moonwalk)",
   bpm: 100,
   stance: { leftHip: 9, rightHip: 9, leftShoulder: 16, rightShoulder: 16, leftElbow: -24, rightElbow: -24 },
@@ -9560,17 +9560,17 @@ const rs = { type: "back", mode: "out", overshoot: 1.1 }, zt = "ease-out-cubic",
     { move: "toeStand", beats: 4 }
   ]
 }, on = {
-  disco: ty,
-  hipHop: ey,
-  breaking: ny,
-  jazz: sy,
-  kpop: oy,
-  bollywood: iy,
-  bhangra: ry,
-  bharatanatyam: ly,
-  charleston: cy,
-  tap: hy,
-  popping: uy
+  disco: ey,
+  hipHop: ny,
+  breaking: sy,
+  jazz: oy,
+  kpop: iy,
+  bollywood: ry,
+  bhangra: ay,
+  bharatanatyam: cy,
+  charleston: hy,
+  tap: uy,
+  popping: dy
 }, vr = {
   standard: {},
   slim: { headSize: 0.24, shoulderWidth: 0.05, hipWidth: 0.02 },
@@ -9582,7 +9582,7 @@ const rs = { type: "back", mode: "out", overshoot: 1.1 }, zt = "ease-out-cubic",
   kid: { headSize: 0.42 },
   child: { headSize: 0.4, legLength: 0.88, armLength: 0.9, shoulderWidth: 0.05, hipWidth: 0.02 },
   toddler: { headSize: 0.46, legLength: 0.78, armLength: 0.82, shoulderWidth: 0.05, hipWidth: 0.025 }
-}, Ti = 0.215, Ei = 0.205, dy = 0.065, Xl = 0.035, fy = 0.165, py = 0.155, gy = 12, my = 0.3, yy = 0.7, by = 0.35, wy = (t) => t * Math.PI / 180, ht = {
+}, Ti = 0.215, Ei = 0.205, fy = 0.065, Xl = 0.035, py = 0.165, gy = 0.155, my = 12, yy = 0.3, by = 0.7, wy = 0.35, ky = (t) => t * Math.PI / 180, ht = {
   turn: 0,
   lean: 0,
   bend: 0,
@@ -9640,12 +9640,12 @@ const rs = { type: "back", mode: "out", overshoot: 1.1 }, zt = "ease-out-cubic",
 function wt(t = {}) {
   return { ...ht, ...t };
 }
-const ky = /* @__PURE__ */ new Set(["turn", "side", "head.turn", "head.tilt", "roll", "lookX", "hair.swing"]);
-function vy(t) {
+const vy = /* @__PURE__ */ new Set(["turn", "side", "head.turn", "head.tilt", "roll", "lookX", "hair.swing"]);
+function My(t) {
   const e = {};
   for (const [n, s] of Object.entries(t)) {
     const o = n.replace(/(^|\.)(left|right)(\.|$)/, (i, r, a, l) => `${r}${a === "left" ? "right" : "left"}${l}`);
-    e[o] = ky.has(n) ? -s : s;
+    e[o] = vy.has(n) ? -s : s;
   }
   return e;
 }
@@ -9692,22 +9692,22 @@ const de = {
   phone: wt({ "arm.right.swing": 80, "arm.right.spread": 8, "arm.right.elbow": 80, "arm.right.bend": -10, "head.nod": 18, lookY: 0.7, lookX: -0.3, smile: 0.4 }),
   read: wt({ ...xt("arm", { swing: 32, spread: 10, elbow: 82, bend: -28 }), "head.nod": 22, lookY: 0.8, smile: 0.2 }),
   type: wt({ ...xt("leg", { swing: 90, knee: 90, spread: 4 }), ...xt("arm", { swing: 40, spread: 10, elbow: 55, bend: -20 }), lean: 8, "head.nod": 10, lookY: 0.5, smile: 0 })
-}, My = ["round", "flat", "pointed", "big"], xy = {
+}, xy = ["round", "flat", "pointed", "big"], Sy = {
   round: { length: 1, width: [0.95, 0.7] },
   flat: { length: 1.12, width: [0.85, 0.85] },
   pointed: { length: 1.25, width: [1, 0.3] },
   big: { length: 1.5, width: [1.25, 1.1] }
 };
 function Z0(t = {}) {
-  const e = t.headSize ?? 0.3, n = t.shoulderWidth ?? 0.06, s = t.hipWidth ?? 0.022, o = t.legLength ?? 1, i = t.armLength ?? 1, r = xy[t.feet ?? "round"], a = Math.max(0.12, 1 - e - Xl - (Ti + Ei) * o), l = (u) => ({
+  const e = t.headSize ?? 0.3, n = t.shoulderWidth ?? 0.06, s = t.hipWidth ?? 0.022, o = t.legLength ?? 1, i = t.armLength ?? 1, r = Sy[t.feet ?? "round"], a = Math.max(0.12, 1 - e - Xl - (Ti + Ei) * o), l = (u) => ({
     id: `arm.${u}`,
     parent: "spine",
     offset: [(u === "left" ? 1 : -1) * n, -0.035, 0],
     rest: [0, -1, 0],
     side: u === "left" ? 1 : -1,
     bones: [
-      { length: fy * i, width: [1.25, 0.9] },
-      { length: py * i, width: [0.9, 0.75] }
+      { length: py * i, width: [1.25, 0.9] },
+      { length: gy * i, width: [0.9, 0.75] }
     ]
   }), c = (u) => ({
     id: `leg.${u}`,
@@ -9718,7 +9718,7 @@ function Z0(t = {}) {
     bones: [
       { length: Ti * o, width: [1.45, 1.05] },
       { length: Ei * o, width: [1.05, 0.85] },
-      { length: dy * Math.sqrt(o) * r.length, width: r.width }
+      { length: fy * Math.sqrt(o) * r.length, width: r.width }
     ]
   }), h = (u, d) => u[d] ?? ht[d] ?? 0;
   return {
@@ -9759,23 +9759,23 @@ function Z0(t = {}) {
       if (d.id === "spine") {
         const k = -h(u, "lean") / 2, w = h(u, "side") / 2, y = -h(u, "bend");
         return [
-          { swing: k + y * my, spread: w },
-          { swing: k + y * yy, spread: w }
+          { swing: k + y * yy, spread: w },
+          { swing: k + y * by, spread: w }
         ];
       }
-      if (d.id === "neck") return [{ swing: -h(u, "bend") * by, spread: 0 }];
+      if (d.id === "neck") return [{ swing: -h(u, "bend") * wy, spread: 0 }];
       const [f, g] = d.id.split("."), p = (k) => h(u, `${f}.${g}.${k}`);
       if (f === "arm")
         return [
           { swing: p("swing"), spread: p("spread") },
           { swing: p("elbow"), spread: p("bend") }
         ];
-      const m = (d.side ?? 1) * p("rotate"), b = 1 - Math.cos(wy(p("rotate")));
+      const m = (d.side ?? 1) * p("rotate"), b = 1 - Math.cos(ky(p("rotate")));
       return [
         { swing: p("swing"), spread: p("spread"), yaw: m },
         { swing: -p("knee"), spread: 0, yaw: m },
         // The foot points forward, square to the shin, turned out a little (more with `toeOut`).
-        { swing: 90 + p("ankle") - b * (p("swing") - p("knee")), spread: 0, yaw: (gy + p("toeOut")) * (d.side ?? 1) }
+        { swing: 90 + p("ankle") - b * (p("swing") - p("knee")), spread: 0, yaw: (my + p("toeOut")) * (d.side ?? 1) }
       ];
     },
     withAngles(u, d, f) {
@@ -9877,15 +9877,15 @@ function Mx(t) {
     "held.both": "Both hands · holding"
   }[t] ?? t;
 }
-const Sy = {
+const Ty = {
   leftEye: "eye.left",
   rightEye: "eye.right",
   leftBrow: "brow.left",
   rightBrow: "brow.right"
-}, Ty = { blush: 0, tears: 0, sweat: 0, pupil: 1, lid: 0, bulge: 0 }, rn = Object.fromEntries(
+}, Ey = { blush: 0, tears: 0, sweat: 0, pupil: 1, lid: 0, bulge: 0 }, rn = Object.fromEntries(
   Object.entries(vt).map(([t, e]) => [
     t,
-    { ...Object.fromEntries(Object.entries(e).map(([n, s]) => [Sy[n] ?? n, s])), ...Ty }
+    { ...Object.fromEntries(Object.entries(e).map(([n, s]) => [Ty[n] ?? n, s])), ...Ey }
   ])
 );
 rn.crying.tears = 1;
@@ -10086,7 +10086,7 @@ function ko(t, e, n, s, o) {
   ];
   return t.withAngles(e, i, P);
 }
-const Tn = (t, e) => (t % e + e) % e, Gl = (t) => t * t * (3 - 2 * t), Ey = (t) => Object.fromEntries(
+const Tn = (t, e) => (t % e + e) % e, Gl = (t) => t * t * (3 - 2 * t), Ay = (t) => Object.fromEntries(
   ["left", "right"].flatMap((e) => Object.entries(Ot[t]).map(([n, s]) => [`hand.${e}.${n}`, s]))
 );
 function $i(t, e = !1) {
@@ -10112,7 +10112,7 @@ function $i(t, e = !1) {
       "arm.left.bend": -35 * d,
       "arm.right.bend": -35 * d,
       smile: 0.9,
-      ...Ey(e ? "hold" : "spread")
+      ...Ay(e ? "hold" : "spread")
     };
     if (!e)
       for (const g of Object.keys(o)) g.startsWith("arm.") && (f[g] += (o[g] - f[g]) * d);
@@ -10156,21 +10156,33 @@ function xx(t, e) {
     keyframes: a.map((c) => ({ time: c.time, value: c.pose[l], easing: "linear" }))
   }));
 }
-function Ay(t, e) {
+function nu(t, e) {
   const n = Math.min(0.95, Math.max(0.55, e.jawWidth ?? 0.74)), s = Math.min(0.35, Math.max(0.03, e.chinWidth ?? 0.14)), o = [[-1, 0], [-0.92, s], [-0.5, n], [-0.12, Math.sqrt(1 - 0.12 ** 2)]];
-  for (let r = 0; r <= 12; r++) {
-    const a = r * Math.PI / 24;
-    o.push([Math.sin(a), Math.cos(a)]);
+  for (let c = 0; c <= 12; c++) {
+    const h = c * Math.PI / 24;
+    o.push([Math.sin(h), Math.cos(h)]);
   }
   const i = [];
-  for (const [r, a] of o)
-    for (let l = 0; l < 40; l++) {
-      const c = l * Math.PI / 20;
-      i.push(Uo(t, [a * Math.cos(c), r, a * Math.sin(c)]).point);
+  for (const [c, h] of o)
+    for (let u = 0; u < 40; u++) {
+      const d = u * Math.PI / 20;
+      i.push(Uo(t, [h * Math.cos(d), c, h * Math.sin(d)]).point);
     }
-  return nu(i);
+  let r = su(i);
+  const a = Math.min(1, Math.max(0, e.jawRoundness ?? 0));
+  if (a === 0) return r;
+  const l = a * 0.25;
+  for (let c = 0; c < 3; c++)
+    r = r.flatMap((h, u) => {
+      const d = r[(u + 1) % r.length];
+      return [
+        { x: h.x + (d.x - h.x) * l, y: h.y + (d.y - h.y) * l },
+        { x: d.x + (h.x - d.x) * l, y: d.y + (h.y - d.y) * l }
+      ];
+    });
+  return r;
 }
-function nu(t) {
+function su(t) {
   const e = t.sort((o, i) => o.x - i.x || o.y - i.y), n = (o, i, r) => (i.x - o.x) * (r.y - o.y) - (i.y - o.y) * (r.x - o.x), s = (o) => {
     const i = [];
     for (const r of o) {
@@ -10181,7 +10193,7 @@ function nu(t) {
   };
   return [...s(e), ...s([...e].reverse())];
 }
-const su = 0.34, Bt = 0.12, Nt = -0.4, Dt = (t, e, n) => t[e] ?? n, $y = (t, e) => Math.max(0, t) * (1 - Math.min(1, Math.max(0, e))), Py = 0.45, Iy = 0.35, Oy = 0.7;
+const ou = 0.34, Bt = 0.12, Nt = -0.4, Dt = (t, e, n) => t[e] ?? n, $y = (t, e) => Math.max(0, t) * (1 - Math.min(1, Math.max(0, e))), Py = 0.45, Iy = 0.35, Oy = 0.7;
 function Mt(t, e, n) {
   const s = (f) => Math.sqrt(Math.max(0, 1 - f.x * f.x - f.y * f.y)), o = Uo(t, [n.x, n.y, s(n)]).facing, i = t.axes[2], r = Math.atan2(i[0], i[2]), a = Math.cos(r), l = a >= 0 ? 1 : -1, c = l * Math.max(Iy, Math.abs(a)), h = l * Math.max(Oy, Math.abs(a)), u = Math.cos(t.angle), d = Math.sin(t.angle);
   return {
@@ -10205,7 +10217,7 @@ const Pe = (t, e, n, s = 12) => Array.from({ length: s + 1 }, (o, i) => {
 function Cy(t, e, n, s, o = {}, i) {
   const r = Math.max(1, Math.min(s * 0.6, 0.14 * e.rx)), a = (E, O) => Mt(e, E, O).points, l = (E, O) => Mt(e, [], { x: E, y: O }).facing, c = Dt(n, "smile", 0), h = Dt(n, "blink", 0), u = Dt(n, "lookX", 0), d = Dt(n, "lookY", 0), f = Dt(n, "browTilt", 0), g = Math.max(0.2, Dt(n, "pupil", 1)), p = Math.min(1, Math.max(0, Dt(n, "lid", 0))), m = Math.min(1, Math.max(0, Dt(n, "bulge", 0)));
   for (const E of [1, -1]) {
-    const O = E === 1 ? "left" : "right", _ = su * E;
+    const O = E === 1 ? "left" : "right", _ = ou * E;
     if (l(_, Bt) < Ve) continue;
     const L = { x: _, y: Bt }, D = $y(Dt(n, `eye.${O}`, 1), h);
     if (D < 0.2 || o.style === "anime" && p >= 0.98) {
@@ -10317,7 +10329,7 @@ function Fy(t, e, n, s) {
             t.line(Mt(e, f, l).points, s * 0.3);
           }
       }
-      const h = { x: su * a, y: Bt };
+      const h = { x: ou * a, y: Bt };
       if (i > 0.01 && Mt(e, [], h).facing >= Ve) {
         const u = 0.05 + 0.04 * i, d = { x: h.x + 0.06 * a, y: Bt - 0.2 - 0.12 * i };
         if (t.shape(Mt(e, Jl(d.x, d.y, u), d).points, Vl, s * 0.35), i > 0.6) {
@@ -10445,10 +10457,16 @@ function da(t, e, n) {
   let o = s.get(e);
   return o || s.set(e, o = n()), o;
 }
-function fa(t, e, n) {
-  t.save(), t.beginPath(), t.rect(-1e5, -1e5, 2e5, 2e5), t.ellipse(e.center.x, e.center.y, e.rx, e.ry, e.angle, 0, Math.PI * 2), t.clip("evenodd"), n(), t.restore();
+function fa(t, e, n, s) {
+  if (t.save(), t.beginPath(), t.rect(-1e5, -1e5, 2e5, 2e5), s?.length) {
+    t.moveTo(s[0].x, s[0].y);
+    for (const o of s.slice(1)) t.lineTo(o.x, o.y);
+    t.closePath();
+  } else
+    t.ellipse(e.center.x, e.center.y, e.rx, e.ry, e.angle, 0, Math.PI * 2);
+  t.clip("evenodd"), n(), t.restore();
 }
-function ou(t, e, n, s = 0.04) {
+function iu(t, e, n, s = 0.04) {
   const o = [];
   let i = [];
   return e.forEach((r, a) => {
@@ -10511,7 +10529,7 @@ function qy(t, e, n) {
   }
   return i.length >= 2 && o.push(i), o;
 }
-function iu(t, e, n, s, o, i, r) {
+function ru(t, e, n, s, o, i, r) {
   const a = (n.locks ?? []).map((h) => zy(h, n.volume, s, o)), l = (h) => h.reduce((u, d) => u + Yt(e, d.center), 0) / h.length;
   a.sort((h, u) => l(h) - l(u));
   const c = Math.max(0.7, i * 0.35);
@@ -10600,7 +10618,7 @@ function pa(t) {
   const e = t["hair.swing"] ?? 0, n = t["hair.trail"] ?? 0, s = t["hair.lift"] ?? 0;
   return e === 0 && n === 0 && s === 0 ? ys : { swing: e, trail: n, lift: s };
 }
-const ru = (t) => t.swing === 0 && t.trail === 0 && t.lift === 0;
+const au = (t) => t.swing === 0 && t.trail === 0 && t.lift === 0;
 function jy(t) {
   return t.length > 0 || t.ties.some((e) => e.kind !== "bun") || (t.locks ?? []).some((e) => (e.follow ?? 1) > 0);
 }
@@ -10626,7 +10644,7 @@ const nc = {
   fill: "solid",
   ties: [],
   coversEars: !1
-}, sc = 1.75, au = {
+}, sc = 1.75, lu = {
   ...Yy,
   // Short hair and hairlines
   bald: { volume: 0, hairline: { front: 2, side: 2, back: 2 } },
@@ -10692,7 +10710,7 @@ const nc = {
   white: "#ecebe7"
 };
 function Ky(t) {
-  const e = typeof t == "string" ? { style: t } : t, n = e.style ? au[e.style] : {};
+  const e = typeof t == "string" ? { style: t } : t, n = e.style ? lu[e.style] : {};
   if (e.style && !n) throw new Error(`hair: unknown style '${e.style}'`);
   const { style: s, hairline: o, ...i } = e, r = {
     ...nc,
@@ -10733,7 +10751,7 @@ function oc(t, e, n) {
       return 0;
   }
 }
-function lu(t, e, n = ys) {
+function cu(t, e, n = ys) {
   const s = t.length > 0, o = /* @__PURE__ */ new Map(), i = (h) => {
     let u = o.get(h);
     return u === void 0 && o.set(h, u = xo(t, h)), u;
@@ -10768,7 +10786,7 @@ function lu(t, e, n = ys) {
       return s && u < 0 ? [Math.sin(h), 0, Math.cos(h)] : pe(h, u);
     }
   };
-  return s && !ru(n) ? Xy(c, t, n) : c;
+  return s && !au(n) ? Xy(c, t, n) : c;
 }
 function Xy(t, e, n) {
   const s = (i) => i < 0 ? An(-0.15, -Math.max(0.7, e.length), i) : 0, o = (i) => Je(n.swing) * s(i);
@@ -10786,17 +10804,17 @@ function Xy(t, e, n) {
   };
 }
 const Uy = (t) => t.texture === "spiky" || t.texture === "curly" || t.texture === "locs" ? 104 : t.texture === "wavy" ? 80 : 64;
-function cu(t, e, n, s) {
+function hu(t, e, n, s) {
   return da(t, Vy(e, s), () => Go(t, n, Uy(e)));
 }
 const ic = /* @__PURE__ */ new WeakMap();
 let Gy = 1;
 function Vy(t, e) {
-  if (ru(e)) return t;
+  if (au(e)) return t;
   let n = ic.get(t);
   return n || ic.set(t, n = Gy++), `${n}:${e.swing}:${e.trail}:${e.lift}`;
 }
-function hu(t) {
+function uu(t) {
   switch (t) {
     case "top":
       return { point: [0, 1.02, -0.12], out: [0, 1, -0.15] };
@@ -10827,9 +10845,9 @@ function Zy(t, e, n, s, o) {
   }, f = { x: n.x + a.x / c * i * u * 0.6 + h.x * 1.3 + l.x, y: n.y + r + l.y };
   return Jy(n, d, f);
 }
-const Vo = (t) => Math.max(1, t * 0.5), uu = (t, e) => Math.max(0.8, Math.min(t * 0.4, 0.1 * e.rx));
-function du(t, e, n, s, o, i) {
-  const { point: r, out: a } = hu(s.at), l = 1 + n.volume, c = At(e, [r[0] * l, r[1] * l, r[2] * l]), h = Vo(o), u = uu(o, e);
+const Vo = (t) => Math.max(1, t * 0.5), du = (t, e) => Math.max(0.8, Math.min(t * 0.4, 0.1 * e.rx));
+function fu(t, e, n, s, o, i) {
+  const { point: r, out: a } = uu(s.at), l = 1 + n.volume, c = At(e, [r[0] * l, r[1] * l, r[2] * l]), h = Vo(o), u = du(o, e);
   if (s.kind === "bun") {
     const p = s.size ?? 0.32, m = At(e, [r[0] * l + a[0] * p, r[1] * l + a[1] * p, r[2] * l + a[2] * p]);
     t.ellipse(m.x, m.y, p * e.rx, p * e.ry, e.angle, n.color, h);
@@ -10858,8 +10876,8 @@ function du(t, e, n, s, o, i) {
   const g = d[s.kind === "braid" ? d.length - 4 : 2];
   t.ellipse(g.x, g.y, f * 0.32, f * 0.22, e.angle, n.color, h);
 }
-function fu(t, e) {
-  return Yt(t, hu(e.at).out) < -0.2;
+function pu(t, e) {
+  return Yt(t, uu(e.at).out) < -0.2;
 }
 function Qy(t) {
   const e = (o, i, r = 0, a = 14) => Array.from({ length: a + 1 }, (l, c) => {
@@ -10890,17 +10908,17 @@ function Qy(t) {
 }
 function tb(t, e, n, s, o) {
   if (s.fill === "stipple" || s.hairline.front > 1.5) return;
-  const i = o.motion ?? ys, r = o.lineWidth * 0.45 / n.rx, { far: a } = cu(n, s, lu(s, r, i), i);
+  const i = o.motion ?? ys, r = o.lineWidth * 0.45 / n.rx, { far: a } = hu(n, s, cu(s, r, i), i);
   fa(e, n, () => {
-    for (const l of s.ties) fu(n, l) && du(t, n, s, l, o.lineWidth, i);
-    gu(t, n, s, o.lineWidth, r, !1);
+    for (const l of s.ties) pu(n, l) && fu(t, n, s, l, o.lineWidth, i);
+    mu(t, n, s, o.lineWidth, r, !1);
     for (const l of a) t.shape(l, s.color, Vo(o.lineWidth));
-    iu(t, n, s, r, i, o.lineWidth, !1);
-  });
+    ru(t, n, s, r, i, o.lineWidth, !1);
+  }, o.headOutline);
 }
-function pu(t, e, n, s) {
+function gu(t, e, n, s) {
   if (n.hairline.front > 1.5) return;
-  const o = s.motion ?? ys, i = s.lineWidth * 0.45 / e.rx, r = lu(n, i, o), a = uu(s.lineWidth, e);
+  const o = s.motion ?? ys, i = s.lineWidth * 0.45 / e.rx, r = cu(n, i, o), a = du(s.lineWidth, e);
   if (n.fill === "stipple") {
     for (let h = 0.97; h > -1; h -= 0.17)
       for (let u = -Math.PI; u < Math.PI; u += 0.27) {
@@ -10913,20 +10931,20 @@ function pu(t, e, n, s) {
       }
     return;
   }
-  const { near: l } = cu(e, n, r, o), c = Vo(s.lineWidth);
-  gu(t, e, n, s.lineWidth, i, !0);
+  const { near: l } = hu(e, n, r, o), c = Vo(s.lineWidth);
+  mu(t, e, n, s.lineWidth, i, !0);
   for (const h of l) t.shape(h, n.color, c);
-  iu(t, e, n, i, o, s.lineWidth, !0);
+  ru(t, e, n, i, o, s.lineWidth, !0);
   for (const h of Qy(n)) {
     const u = h.map(([f, g]) => {
       const [p, m, b] = r.position(f, g);
       return [p * 0.985, m * 0.985, b * 0.985];
     }), d = h.map(([f, g]) => r.normal(f, g));
-    for (const f of ou(e, u, d, 0.12)) t.line(f, a);
+    for (const f of iu(e, u, d, 0.12)) t.line(f, a);
   }
-  for (const h of n.ties) fu(e, h) || du(t, e, n, h, s.lineWidth, o);
+  for (const h of n.ties) pu(e, h) || fu(t, e, n, h, s.lineWidth, o);
 }
-function gu(t, e, n, s, o, i) {
+function mu(t, e, n, s, o, i) {
   for (const r of n.spikes ?? []) {
     const a = pe(Je(r.around), Math.max(-1, Math.min(1, r.up)));
     if (Yt(e, a) >= 0 !== i) continue;
@@ -10935,11 +10953,11 @@ function gu(t, e, n, s, o, i) {
       const p = g * Math.PI / 4, m = a.map((b, k) => b * h + u * (l[k] * Math.cos(p) + c[k] * Math.sin(p)));
       f.push(At(e, m));
     }
-    t.shape(nu(f), n.color, Vo(s));
+    t.shape(su(f), n.color, Vo(s));
   }
 }
-const mu = 0.35, ga = (t) => ({ centre: [t * 0.98, -0.02, -0.08], out: [t, 0, -0.12] });
-function yu(t, e, n, s, o) {
+const yu = 0.35, ga = (t) => ({ centre: [t * 0.98, -0.02, -0.08], out: [t, 0, -0.12] });
+function bu(t, e, n, s, o) {
   const { centre: i, out: r } = ga(n), a = Yt(e, r), l = Math.max(1, s.lineWidth * 0.55), c = s.skin === "none" ? null : s.skin, h = e.ry * 0.27;
   if (!o) {
     const m = At(e, [i[0] * 1.06, i[1], i[2]]);
@@ -10956,13 +10974,13 @@ function yu(t, e, n, s, o) {
 }
 function eb(t, e, n, s) {
   fa(e, n, () => {
-    for (const o of [1, -1]) Yt(n, ga(o).out) < mu && yu(t, n, o, s, !1);
-  });
+    for (const o of [1, -1]) Yt(n, ga(o).out) < yu && bu(t, n, o, s, !1);
+  }, s.headOutline);
 }
 function nb(t, e, n) {
-  for (const s of [1, -1]) Yt(e, ga(s).out) >= mu && yu(t, e, s, n, !0);
+  for (const s of [1, -1]) Yt(e, ga(s).out) >= yu && bu(t, e, s, n, !0);
 }
-const bu = {
+const wu = {
   cleanShaven: { moustache: "none", beard: "none" },
   stubble: { moustache: "none", beard: "stubble" },
   pencilMoustache: { moustache: "pencil", beard: "none" },
@@ -10985,7 +11003,7 @@ const bu = {
   moustacheStubble: { moustache: "short", beard: "stubble" }
 };
 function sb(t, e) {
-  const n = typeof t == "string" ? { style: t } : t, s = n.style ? bu[n.style] : void 0;
+  const n = typeof t == "string" ? { style: t } : t, s = n.style ? wu[n.style] : void 0;
   if (n.style && !s) throw new Error(`facialHair: unknown style '${n.style}'`);
   return {
     color: n.color ?? e ?? "#6b4630",
@@ -10996,7 +11014,7 @@ function sb(t, e) {
 const Ee = (t) => t * Math.PI / 180, eo = (t, e, n) => {
   const s = Math.min(1, Math.max(0, (n - t) / (e - t)));
   return s * s * (3 - 2 * s);
-}, wu = {
+}, ku = {
   goatee: { top: [-0.55, -0.55], reach: 22, band: 0, length: 0.22, shape: "point", volume: 0.06, aroundMouth: !1 },
   circle: { top: [-0.24, -0.3], reach: 42, band: 0, length: 0.08, shape: "round", volume: 0.06, aroundMouth: !0 },
   boxed: { top: [-0.38, 0.02], reach: 100, band: 0, length: 0.18, shape: "square", volume: 0.08, aroundMouth: !0 },
@@ -11012,7 +11030,7 @@ const Ee = (t) => t * Math.PI / 180, eo = (t, e, n) => {
   return t.top[0] + (t.top[1] - t.top[0]) * n;
 }, ib = (t) => t === "sideburns" || t === "muttonChops";
 function Ar(t, e) {
-  const n = wu[t];
+  const n = ku[t];
   if (!n) return null;
   const s = Ee(n.reach), o = (i) => {
     const r = Mo(i, 0);
@@ -11070,7 +11088,7 @@ function lb(t, e, n, s, o) {
   const { far: r } = da(n, s, () => Go(n, i));
   fa(e, n, () => {
     for (const a of r) t.shape(a, s.color, bs(o.lineWidth));
-  });
+  }, o.headOutline);
 }
 function cb(t, e, n, s, o) {
   if (n.beard === "none") return;
@@ -11088,7 +11106,7 @@ function cb(t, e, n, s, o) {
   if (!r) return;
   const { near: a } = da(e, n, () => Go(e, r));
   for (const l of a) t.shape(l, n.color, bs(s.lineWidth));
-  if (wu[n.beard]?.aroundMouth) {
+  if (ku[n.beard]?.aroundMouth) {
     const l = 0.27 * Math.max(0.3, o), c = Array.from({ length: 20 }, (d, f) => {
       const g = Math.PI * 2 * f / 20;
       return { x: Math.cos(g) * l, y: -0.42 + Math.sin(g) * 0.13 };
@@ -11116,10 +11134,10 @@ function hb(t, e, n, s) {
       c.unshift({ x: l * 0.22, y: -0.27 }), t.line(Mt(e, c, o).points, bs(s.lineWidth) * 0.8);
     }
 }
-const ku = { round: !0, square: !0, sunglasses: !0 };
+const vu = { round: !0, square: !0, sunglasses: !0 };
 function ub(t) {
   const n = (typeof t == "string" ? { style: t } : t).style ?? "round";
-  if (!(n in ku)) throw new Error(`glasses: unknown style '${n}'`);
+  if (!(n in vu)) throw new Error(`glasses: unknown style '${n}'`);
   return { style: n };
 }
 const rc = 0.34, ce = 0.12, db = 0.05;
@@ -11208,7 +11226,7 @@ function bb(t) {
       return [n(0.12)];
   }
 }
-function vu(t, e, n, s) {
+function Mu(t, e, n, s) {
   const o = ma[n.style], r = 1 + s.lineWidth * 0.45 / e.rx + Math.max(0.05, Math.min(0.3, s.hairVolume) + 0.04), a = Math.max(1, s.lineWidth * 0.5), l = yb(e, o, r);
   l && t.shape(l, n.color, a);
   const c = mb(o, r), { near: h, far: u } = Go(e, c);
@@ -11219,7 +11237,7 @@ function vu(t, e, n, s) {
       const [k, w, y] = c.position(m, b);
       return [k * 0.99, w * 0.99, y * 0.99];
     }), p = f.map(([m, b]) => pe(m, b));
-    for (const m of ou(e, g, p, 0.1)) t.line(m, d);
+    for (const m of iu(e, g, p, 0.1)) t.line(m, d);
   }
   if (o.detail === "seams") {
     const f = At(e, [0, r * 1.01, 0]);
@@ -11236,34 +11254,36 @@ function wb(t) {
     ears: t.ears ?? !1
   };
 }
-const Mu = (t) => !t.hair && !t.facialHair && !t.glasses && !t.hat && !t.ears, xu = (t) => t.axes[2][2] < -0.3, Su = (t) => t.ears && !t.hair?.coversEars;
-function Tu(t, e, n, s, o, i) {
-  Mu(n) || (n.hair && tb(e, t, s, n.hair, { ...i, motion: pa(o) }), n.facialHair && lb(e, t, s, n.facialHair, i), Su(n) && eb(e, t, s, i));
+const xu = (t) => !t.hair && !t.facialHair && !t.glasses && !t.hat && !t.ears, Su = (t) => t.axes[2][2] < -0.3, Tu = (t) => t.ears && !t.hair?.coversEars;
+function Eu(t, e, n, s, o, i) {
+  if (xu(n)) return;
+  const r = { ...i, headOutline: i.face?.shape === "angular" ? nu(s, i.face) : void 0 };
+  n.hair && tb(e, t, s, n.hair, { ...r, motion: pa(o) }), n.facialHair && lb(e, t, s, n.facialHair, r), Tu(n) && eb(e, t, s, r);
 }
 function kb(t, e, n, s, o, i, r) {
-  if (Mu(n)) {
+  if (xu(n)) {
     r();
     return;
   }
-  const a = xu(s);
-  Su(n) && nb(e, s, i), n.hair && !a && pu(e, s, n.hair, { ...i, motion: pa(o) }), n.facialHair && cb(e, s, n.facialHair, i, o.mouthWidth ?? 1), r(), n.facialHair && hb(e, s, n.facialHair, i), n.glasses && pb(e, s, n.glasses, i), n.hat && !a && vu(e, s, n.hat, { lineWidth: i.lineWidth, hairVolume: n.hair?.volume ?? 0 });
+  const a = Su(s);
+  Tu(n) && nb(e, s, i), n.hair && !a && gu(e, s, n.hair, { ...i, motion: pa(o) }), n.facialHair && cb(e, s, n.facialHair, i, o.mouthWidth ?? 1), r(), n.facialHair && hb(e, s, n.facialHair, i), n.glasses && pb(e, s, n.glasses, i), n.hat && !a && Mu(e, s, n.hat, { lineWidth: i.lineWidth, hairVolume: n.hair?.volume ?? 0 });
 }
-function Eu(t, e, n, s, o, i) {
-  xu(s) && (n.hair && pu(e, s, n.hair, { ...i, motion: pa(o) }), n.hat && vu(e, s, n.hat, { lineWidth: i.lineWidth, hairVolume: n.hair?.volume ?? 0 }));
+function Au(t, e, n, s, o, i) {
+  Su(s) && (n.hair && gu(e, s, n.hair, { ...i, motion: pa(o) }), n.hat && Mu(e, s, n.hat, { lineWidth: i.lineWidth, hairVolume: n.hair?.volume ?? 0 }));
 }
 const ac = 40, vb = 0.215 + 0.205, Kt = (t, e) => {
   const n = {};
   for (const s of ["left", "right"]) for (const [o, i] of Object.entries(e)) n[`${t}.${s}.${o}`] = i;
   return n;
 }, ft = (t, e) => t[e] ?? ht[e] ?? 0;
-function Au(t, e, n = ht, s = 1) {
+function $u(t, e, n = ht, s = 1) {
   const o = Yo(t), i = e * Math.PI * 2, r = Math.sin(i) * s, a = Math.cos(i) * s, l = (1 + Math.cos(i * 2 * (o.bounces ?? 1))) / 2, c = o.crouch ?? 0, h = o.shoulder ?? 0, u = o.forearm ?? 0, d = { ...ht, ...n };
   d["leg.left.swing"] = o.swing * r + c * 0.6, d["leg.right.swing"] = -o.swing * r + c * 0.6, d["leg.left.knee"] = o.knee * Math.max(0, a) + c * 1.2, d["leg.right.knee"] = o.knee * Math.max(0, -a) + c * 1.2, d["leg.left.ankle"] = ft(n, "leg.left.ankle") - (o.tiptoe ?? 0), d["leg.right.ankle"] = ft(n, "leg.right.ankle") - (o.tiptoe ?? 0);
   for (const [f, g] of [["left", -1], ["right", 1]])
     ft(n, `arm.${f}.spread`) > ac || ft(n, `arm.${f}.swing`) > ac || (d[`arm.${f}.swing`] = h + g * o.arm * r, d[`arm.${f}.elbow`] = ft(n, `arm.${f}.elbow`) + u + o.elbow * Math.max(0, g * r));
   return d.lean = ft(n, "lean") + o.lean * s, d.bend = ft(n, "bend") + (o.bend ?? 0), d["head.nod"] = ft(n, "head.nod") - o.lean * 0.5 * s + (o.headTilt ?? 0), d.side = ft(n, "side") + (o.sway ?? 0) * Math.sin(i), d.lift = ft(n, "lift") + (o.bounce ?? 0) * s * l, d.stretch = ft(n, "stretch") * (1 + (o.squash ?? 0) * (l - 0.5)), d;
 }
-function $u(t, e, n = 1, s = 1) {
+function Pu(t, e, n = 1, s = 1) {
   const o = Yo(t);
   return 4 * vb * s * e * Math.sin(o.swing * n * Math.PI / 180);
 }
@@ -11624,7 +11644,7 @@ function Ab(t = {}) {
     }
   };
 }
-const Pu = {
+const Iu = {
   mug: { color: "#e2493b", hands: "one" },
   phone: { color: "#2b2f36", hands: "one" },
   book: { color: "#3a6ea5", hands: "either" },
@@ -11640,7 +11660,7 @@ function $b(t) {
   for (const n of ["left", "right", "both"]) {
     const s = t[n];
     if (!s) continue;
-    const o = typeof s == "string" ? s : s.item, i = Pu[o];
+    const o = typeof s == "string" ? s : s.item, i = Iu[o];
     if (!i) throw new Error(`holding: unknown item '${o}'`);
     if (n === "both" && i.hands === "one") throw new Error(`holding: a ${o} is held in one hand ('left' or 'right'), not 'both'`);
     if (n !== "both" && i.hands === "both") throw new Error(`holding: a ${o} is held in both hands ('both')`);
@@ -11849,7 +11869,7 @@ function Jo(t, e, n) {
 function ae(t, e) {
   return ws(t, e).joints;
 }
-function Iu(t, e, n) {
+function Ou(t, e, n) {
   const { head: s } = n;
   t.guideEllipse(s.center.x, s.center.y, s.rx * 1.03, s.ry * 1.03, s.angle);
   const o = Array.from({ length: 13 }, (l, c) => ({ x: 0, y: -0.95 + 1.9 * c / 12 })), i = Array.from({ length: 13 }, (l, c) => ({ x: -0.95 + 1.9 * c / 12, y: 0.12 })), r = Mt(s, o, { x: 0, y: 0 });
@@ -11860,11 +11880,11 @@ function Iu(t, e, n) {
     c && t.guideEllipse(c.x, c.y, a, a, 0);
   }
 }
-function Ou(t, e, n, s, o, i) {
+function _u(t, e, n, s, o, i) {
   const r = n.lineWidth;
   if (o === "head") {
     const { head: f } = s, g = n.skin === "none" ? null : n.skin;
-    n.face.shape === "angular" ? e.shape(Ay(f, n.face), g, r) : e.ellipse(f.center.x, f.center.y, f.rx, f.ry, f.angle, g, r), kb(t, e, n.head, f, i, { lineWidth: r, skin: n.skin }, () => {
+    n.face.shape === "angular" ? e.shape(nu(f, n.face), g, r) : e.ellipse(f.center.x, f.center.y, f.rx, f.ry, f.angle, g, r), kb(t, e, n.head, f, i, { lineWidth: r, skin: n.skin }, () => {
       e.look !== "silhouette" && Cy(e, f, i, r, { ...n.face, skin: n.skin === "none" ? "#ffffff" : n.skin }, t);
     });
     return;
@@ -11947,9 +11967,9 @@ function Lb(t, e, n, s) {
       const g = qo(d, { look: r.look, ink: r.ink, lineWidth: r.lineWidth, seed: ee(`${r.seed}:${h}`), time: f, pencil: r.pencil }), p = (b) => {
         b && (d.save(), b(d, a, g, f, o), d.restore());
       };
-      d.save(), d.lineCap = "round", d.lineJoin = "round", u === 0 && (r.look === "pencil" && r.pencil.construction !== !1 && Iu(g, r, a), p(r.layers.behind), Tu(d, g, r.head, a.head, o, { lineWidth: r.lineWidth, skin: r.skin }));
+      d.save(), d.lineCap = "round", d.lineJoin = "round", u === 0 && (r.look === "pencil" && r.pencil.construction !== !1 && Ou(g, r, a), p(r.layers.behind), Eu(d, g, r.head, a.head, o, { lineWidth: r.lineWidth, skin: r.skin, face: r.face }));
       const m = r.layers.parts?.[h];
-      p(m?.under), d.save(), m?.clip?.(d, a, g, f, o), Ou(d, g, r, a, h, o), d.restore(), p(m?.over), u === l.length - 1 && (Eu(d, g, r.head, a.head, o, { lineWidth: r.lineWidth, skin: r.skin }), p(r.layers.front)), d.restore();
+      p(m?.under), d.save(), m?.clip?.(d, a, g, f, o), _u(d, g, r, a, h, o), d.restore(), p(m?.over), u === l.length - 1 && (Au(d, g, r.head, a.head, o, { lineWidth: r.lineWidth, skin: r.skin }), p(r.layers.front)), d.restore();
     }
   }));
 }
@@ -11964,18 +11984,18 @@ function wa(t, e, n, s, o, i) {
   }), c = (h) => {
     h && (t.save(), h(t, r, l, o, n), t.restore());
   };
-  t.save(), t.lineCap = "round", t.lineJoin = "round", !i && e.look === "pencil" && e.pencil.construction !== !1 && Iu(l, e, r), i || c(e.layers.behind), Tu(t, l, e.head, r.head, n, { lineWidth: e.lineWidth, skin: e.skin });
+  t.save(), t.lineCap = "round", t.lineJoin = "round", !i && e.look === "pencil" && e.pencil.construction !== !1 && Ou(l, e, r), i || c(e.layers.behind), Eu(t, l, e.head, r.head, n, { lineWidth: e.lineWidth, skin: e.skin, face: e.face });
   for (const h of a) {
     const u = e.layers.parts?.[h];
-    c(u?.under), t.save(), u?.clip?.(t, r, l, o, n), Ou(t, l, e, r, h, n), t.restore(), c(u?.over);
+    c(u?.under), t.save(), u?.clip?.(t, r, l, o, n), _u(t, l, e, r, h, n), t.restore(), c(u?.over);
   }
-  Eu(t, l, e.head, r.head, n, { lineWidth: e.lineWidth, skin: e.skin }), i || c(e.layers.front), t.restore();
+  Au(t, l, e.head, r.head, n, { lineWidth: e.lineWidth, skin: e.skin }), i || c(e.layers.front), t.restore();
 }
 function $x(t, e, n, s) {
   const o = e.plan.id === "human" ? { ...ht, ...n } : n, i = ws(e, o).joints.head.rx, r = Zo(e, e.height * s.radius / Math.max(1e-6, i)), a = ws(r, o);
   t.save(), t.translate(s.x - a.joints.head.center.x, s.y - a.joints.head.center.y), wa(t, r, o, a, s.time ?? 0, /* @__PURE__ */ new Set(["head"])), t.restore();
 }
-function _u(t, e, n) {
+function Hu(t, e, n) {
   const s = { ...t };
   for (const [o, i] of Object.entries(e)) {
     const r = t[o] ?? i;
@@ -11994,14 +12014,14 @@ function Ce(t, e, n, s) {
   }
   return ko(t.plan, o, n, i, { height: t.height });
 }
-const Hu = /* @__PURE__ */ new Set(["walk", "walking", "gait"]);
+const Cu = /* @__PURE__ */ new Set(["walk", "walking", "gait"]);
 function ka(t, e = ht, n) {
   let s = { ...e };
   for (const [i, r] of Object.entries(t))
-    typeof r == "number" && !Hu.has(i) && (s[i] = r);
+    typeof r == "number" && !Cu.has(i) && (s[i] = r);
   const o = Math.max(0, Math.min(1, typeof t.walking == "number" ? t.walking : 0));
   if (o > 0) {
-    const i = typeof t.gait == "string" ? t.gait : void 0, r = i ? n?.[i] ?? i : void 0, a = Au(r, typeof t.walk == "number" ? t.walk : 0, s);
+    const i = typeof t.gait == "string" ? t.gait : void 0, r = i ? n?.[i] ?? i : void 0, a = $u(r, typeof t.walk == "number" ? t.walk : 0, s);
     s = Object.fromEntries(Object.keys({ ...s, ...a }).map((l) => [l, (s[l] ?? 0) + ((a[l] ?? 0) - (s[l] ?? 0)) * o]));
   }
   return s;
@@ -12039,11 +12059,11 @@ function Ix(t, e, n) {
   const o = { ...t.props };
   let i = 0, r = 0;
   for (const [c, h] of e.state?.values.get(n) ?? [])
-    c === "x" || c === "motionPathX" ? i = typeof h == "number" ? h : i : c === "y" || c === "motionPathY" ? r = typeof h == "number" ? h : r : (typeof h == "number" || Hu.has(c)) && (o[c] = h);
+    c === "x" || c === "motionPathX" ? i = typeof h == "number" ? h : i : c === "y" || c === "motionPathY" ? r = typeof h == "number" ? h : r : (typeof h == "number" || Cu.has(c)) && (o[c] = h);
   const a = ka(o, s.plan.id === "human" ? ht : {}, t.gaits), l = ae(s, a);
   return { pose: a, joints: Fb(l, t.x + i + t.width / 2, t.y + r + t.height) };
 }
-function Cu(t, e = ht) {
+function Ru(t, e = ht) {
   const n = [];
   return t.forEach((s, o) => {
     const i = o === 0 ? e : n[o - 1], r = typeof s.pose == "string" ? de[s.pose] : void 0;
@@ -12051,7 +12071,7 @@ function Cu(t, e = ht) {
   }), n;
 }
 function Ox(t, e, n = ht) {
-  const s = Cu(e, n);
+  const s = Ru(e, n);
   return Object.keys(n).filter((i) => s.some((r) => (r[i] ?? n[i]) !== n[i])).map((i) => ({
     id: `${t}-${i}`,
     target: t,
@@ -12063,11 +12083,11 @@ function Ox(t, e, n = ht) {
     }))
   }));
 }
-const Qo = (t, e) => [t[0] + e[0], t[1] + e[1], t[2] + e[2]], fe = (t, e) => [t[0] - e[0], t[1] - e[1], t[2] - e[2]], So = (t, e) => [t[0] * e, t[1] * e, t[2] * e], va = (t) => Math.hypot(...t), Ru = (t) => So(t, 1 / (va(t) || 1)), ti = (t) => ({ ...ht, ...t }), Ma = (t) => Xo(t.character.plan, ti(t.pose), { height: t.character.height, contact: t.character.contact });
+const Qo = (t, e) => [t[0] + e[0], t[1] + e[1], t[2] + e[2]], fe = (t, e) => [t[0] - e[0], t[1] - e[1], t[2] - e[2]], So = (t, e) => [t[0] * e, t[1] * e, t[2] * e], va = (t) => Math.hypot(...t), Lu = (t) => So(t, 1 / (va(t) || 1)), ti = (t) => ({ ...ht, ...t }), Ma = (t) => Xo(t.character.plan, ti(t.pose), { height: t.character.height, contact: t.character.contact });
 function Nn(t, e, n) {
   return Qo(t.position, Ma(t).chains[e][n]);
 }
-function Lu(t, e, n) {
+function Fu(t, e, n) {
   const s = ti(t.pose), o = Ma(t).hip, i = Ko(t.character.plan, s, t.character.height), r = fe(fe(n, t.position), o), a = jo(r, (s.roll ?? 0) * Math.PI / 180), l = Qo(i.root, Qt(a, -(s.turn ?? 0) * Math.PI / 2));
   return ko(t.character.plan, s, e, l, { height: t.character.height });
 }
@@ -12076,7 +12096,7 @@ function Wb(t, e, n, s = "toe") {
   let r = { ...t, pose: ti(t.pose), position: [...t.position] };
   for (let l = 0; l < 6; l++) {
     const c = Ma(r).chains[o], h = fe(c[i], c[2]);
-    r = { ...r, pose: Lu(r, o, fe(n, h)) };
+    r = { ...r, pose: Fu(r, o, fe(n, h)) };
     const u = Nn(r, o, i);
     r.position[1] += n[1] - u[1];
   }
@@ -12085,17 +12105,17 @@ function Wb(t, e, n, s = "toe") {
 }
 function pc(t, e) {
   const n = Nn(t, `arm.${e}`, 2), s = Nn(t, `arm.${e}`, 1);
-  return Qo(n, So(Ru(fe(n, s)), t.character.lineWidth * 0.5));
+  return Qo(n, So(Lu(fe(n, s)), t.character.lineWidth * 0.5));
 }
 function _x(t, e, n = {}) {
   const s = Math.min(t.character.height, e.character.height), o = n.length ?? s * 0.22;
   if (!(o > 0) || !Number.isFinite(o)) throw new Error("meetDandiya: stick length must be positive and finite");
   const i = n.point ?? [(t.position[0] + e.position[0]) / 2, Math.max(t.position[1], e.position[1]) + s * 0.62, (t.position[2] + e.position[2]) / 2], r = (c, h) => {
-    const u = Ru([i[0] - c.position[0], s * 0.2, i[2] - c.position[2]]), d = fe(i, So(u, o));
+    const u = Lu([i[0] - c.position[0], s * 0.2, i[2] - c.position[2]]), d = fe(i, So(u, o));
     let f = ti(c.pose);
     for (let p = 0; p < 6; p++) {
       const m = { ...c, pose: f }, b = Nn(m, `arm.${h}`, 2);
-      f = Lu(m, `arm.${h}`, fe(d, fe(pc(m, h), b)));
+      f = Fu(m, `arm.${h}`, fe(d, fe(pc(m, h), b)));
     }
     for (const [p, m] of Object.entries(Ot.hold)) f[`hand.${h}.${p}`] = m;
     const g = pc({ ...c, pose: f }, h);
@@ -12124,7 +12144,7 @@ function Nb(t, e) {
     const f = l(c.start, u), g = Nn(f, `leg.${c.side}`, 3), p = Wb(d, c.side, g);
     return {
       ...d,
-      pose: _u(d.pose, p.pose, c.weight),
+      pose: Hu(d.pose, p.pose, c.weight),
       position: [d.position[0], p.position[1] * c.weight, d.position[2]],
       planted: p.reached && c.weight === 1
     };
@@ -12404,7 +12424,7 @@ function Zb(t, e, n, s) {
   for (const r of Object.keys(It)) i[`hand.${t}.${r}`] = e[r] ?? It[r];
   return i[`hand.${t}.turn`] = (e.turn ?? 0) - o, i[`hand.${t}.roll`] = (e.roll ?? 0) + n, i;
 }
-class Fu {
+class Wu {
   positions = [];
   normals = [];
   indices = [];
@@ -12443,7 +12463,7 @@ function Qb(t) {
 }
 const xa = Math.PI * 2;
 function tw(t, e = 16) {
-  const n = new Fu(), s = Math.max(6, Math.round(e)), o = Math.max(3, Math.round(s / 2)), i = [];
+  const n = new Wu(), s = Math.max(6, Math.round(e)), o = Math.max(3, Math.round(s / 2)), i = [];
   for (let r = 0; r <= o; r++) {
     const a = r / o * Math.PI, l = [];
     for (let c = 0; c <= s; c++) {
@@ -12469,8 +12489,8 @@ function gc(t, e, n, s, o) {
     s === 1 ? t.triangle(i, l, c) : t.triangle(i, c, l);
   }
 }
-function Wu(t, e, n = 24) {
-  const s = new Fu(), o = Math.max(6, Math.round(n)), i = e / 2, r = -e / 2, a = (h) => Array.from({ length: o + 1 }, (u, d) => {
+function Nu(t, e, n = 24) {
+  const s = new Wu(), o = Math.max(6, Math.round(n)), i = e / 2, r = -e / 2, a = (h) => Array.from({ length: o + 1 }, (u, d) => {
     const f = d / o * xa;
     return s.vertex(Math.sin(f) * t, h, Math.cos(f) * t, Math.sin(f), 0, Math.cos(f));
   }), l = a(r), c = a(i);
@@ -12506,7 +12526,7 @@ const nw = (t, e, n) => {
   const s = Math.min(1, Math.max(0, (n - t) / (e - t)));
   return s * s * (3 - 2 * s);
 };
-function Nu(t, e, n) {
+function Du(t, e, n) {
   const s = [0, 0, 0];
   for (const o of n) {
     const i = ew(o.color);
@@ -12526,15 +12546,15 @@ function Nu(t, e, n) {
   }
   return s;
 }
-function Du(t, e) {
+function Bu(t, e) {
   return t ? Math.min(1, Math.max(0, (e - t.near) / (t.far - t.near))) : 0;
 }
-function Bu(t, e, n = {}) {
+function zu(t, e, n = {}) {
   t.save(), sw(t, e, n), t.restore();
 }
 function sw(t, e, n) {
-  const s = zu(e, n);
-  n.shadow !== !1 && qu(t, e, n);
+  const s = qu(e, n);
+  n.shadow !== !1 && Yu(t, e, n);
   for (const o of e.under) mc(t, o, s, n);
   if (n.rider) {
     if (t.save(), e.openings.length > 0) {
@@ -12562,10 +12582,10 @@ function mc(t, e, n, s) {
   const r = i.map((c) => c.x), a = i.map((c) => c.y), l = { x: (Math.min(...r) + Math.max(...r)) / 2, y: (Math.min(...a) + Math.max(...a)) / 2 };
   t.save(), t.globalAlpha *= Math.min(1, o.opacity), t.translate(l.x + o.x, l.y + o.y), t.rotate(o.rotate * Math.PI / 180), t.translate(-l.x, -l.y), Pr(t, e, n, s), t.restore();
 }
-function zu(t, e = {}) {
+function qu(t, e = {}) {
   return e.lineWidth ?? Math.max(1.3, t.sizePx * 0.022);
 }
-function qu(t, e, n = {}) {
+function Yu(t, e, n = {}) {
   e.shadow.opacity <= 0 || e.shadow.points.length < 3 || (t.save(), t.globalAlpha = e.shadow.opacity, ni(t, e.shadow.points, n.ink ?? "#26262b", !1), t.restore());
 }
 function Rx(t, e, n, s = {}) {
@@ -12606,7 +12626,7 @@ function ow(t, e, n, s = {}) {
     const d = l(h);
     if (!u) d.line(h.spine, n * 1.15);
     else {
-      const f = o ? Yu(h, s) : u.light ? iw(h, u, s) : Ta(h);
+      const f = o ? ju(h, s) : u.light ? iw(h, u, s) : Ta(h);
       f && (!o && s.look === "silhouette" ? d.shape(u.points, f, 0) : ni(t, u.points, o || u.light ? f : Aa(f, u.tone), !0, h.cut ? 1.6 : 0.8));
       const g = (h.part.outline ?? 1) * n;
       if (g > 0)
@@ -12629,15 +12649,15 @@ function Sa(t, e, n, s) {
 }
 function Ta(t) {
   const { part: e } = t;
-  return e.glow && t.glow > 0 && e.fill ? Ku(e.fill, e.glow.color, t.glow) : e.fill;
+  return e.glow && t.glow > 0 && e.fill ? Xu(e.fill, e.glow.color, t.glow) : e.fill;
 }
 function iw(t, e, n) {
   const { part: s } = t;
   if (!s.fill) return;
-  const o = ju(s.fill, e.light, e.fog ?? 0, n.fog);
-  return s.glow && t.glow > 0 ? Ku(o, s.glow.color, t.glow) : o;
+  const o = Ku(s.fill, e.light, e.fog ?? 0, n.fog);
+  return s.glow && t.glow > 0 ? Xu(o, s.glow.color, t.glow) : o;
 }
-function Yu(t, e) {
+function ju(t, e) {
   const n = Ta(t);
   return n && (aw(n) || t.glow > 0) ? n : e.paper ?? "#fbf8ef";
 }
@@ -12662,7 +12682,7 @@ function rw(t, e, n, s) {
     i.line(e.spine, n * 1.15);
     return;
   }
-  const r = Yu(e, s);
+  const r = ju(e, s);
   for (const l of e.faces) ni(t, l.points, r);
   const a = (o.outline ?? 1) * n;
   if (a > 0)
@@ -12689,14 +12709,14 @@ function Aa(t, e) {
   const n = Dn(t);
   return n ? Ea(e >= 1 ? n.map((s) => s + (255 - s) * (e - 1) * 2) : n.map((s) => s * e)) : t;
 }
-function ju(t, e, n, s) {
+function Ku(t, e, n, s) {
   const o = Dn(t);
   if (!o) return t;
   let i = o.map((a, l) => a * e[l]);
   const r = s ? Dn(s) : void 0;
   return r && n > 0 && (i = i.map((a, l) => a + (r[l] - a) * n)), Ea(i);
 }
-function Ku(t, e, n) {
+function Xu(t, e, n) {
   const s = Dn(t), o = Dn(e);
   return !s || !o ? n < 0.5 ? t : e : Ea(s.map((i, r) => i + (o[r] - i) * n));
 }
@@ -12761,7 +12781,7 @@ const Lx = {
   prepare(t) {
     return {
       who: ba({ ...t.character, height: 1 }),
-      cylinder: Eo(Wu(1, 1, 16)),
+      cylinder: Eo(Nu(1, 1, 16)),
       sphere: Eo(tw(1, 20))
     };
   },
@@ -12773,7 +12793,7 @@ const Lx = {
       typeof v == "number" && !lw.has(S) && !cw.has(S) && (u[S] = v);
     const d = Math.max(0, Math.min(1, wc(n.get("walking")) ?? l.walking ?? 0));
     if (d > 0) {
-      const S = typeof n.get("gait") == "string" ? n.get("gait") : l.gait, v = Au(S, wc(n.get("walk")) ?? 0, u);
+      const S = typeof n.get("gait") == "string" ? n.get("gait") : l.gait, v = $u(S, wc(n.get("walk")) ?? 0, u);
       u = Object.fromEntries(Object.keys({ ...u, ...v }).map((x) => [x, (u[x] ?? 0) + ((v[x] ?? 0) - (u[x] ?? 0)) * d]));
     }
     const f = l.height ?? hw, g = Pt(o.view, s), p = {
@@ -12786,7 +12806,7 @@ const Lx = {
       const S = Xo(h.plan, u, { height: f, contact: h.contact });
       return { meshes: fw(l, c, h.plan, S, s), drawables: k };
     }
-    const w = Xt(s, [0, f * 0.6, 0]), y = en(zn(o.position, w)), T = Nu(w, y, i).map((S) => Math.min(1, S)), $ = i.length > 0 && h.skin !== "none" ? { ...h, skin: ju(h.skin, T, Du(r, Ur(w, o.position)), r?.color) } : h, M = Lb($, u, p, { height: f });
+    const w = Xt(s, [0, f * 0.6, 0]), y = en(zn(o.position, w)), T = Du(w, y, i).map((S) => Math.min(1, S)), $ = i.length > 0 && h.skin !== "none" ? { ...h, skin: Ku(h.skin, T, Bu(r, Ur(w, o.position)), r?.color) } : h, M = Lb($, u, p, { height: f });
     return {
       drawables: [
         ...k,
@@ -12876,7 +12896,7 @@ function bw(t) {
   for (; e.length > 0 && (e[e.length - 1].viseme === "rest" || e[e.length - 1].weight === kc); ) e.pop();
   return e;
 }
-function Xu(t, e = {}) {
+function Uu(t, e = {}) {
   const n = e.fields?.mouth ?? "mouth", s = e.fields?.mouthWidth ?? "mouthWidth", o = e.energy ?? 1, i = bw(t.text), r = [{ time: t.start, value: We.rest.mouth }], a = [{ time: t.start, value: We.rest.mouthWidth }], l = i.reduce((h, u) => h + u.weight, 0), c = t.end - t.start;
   if (l > 0 && c > 0) {
     let h = t.start;
@@ -12894,7 +12914,7 @@ function Xu(t, e = {}) {
 function Fx(t, e, n = {}) {
   const s = {};
   for (const o of [...e].sort((i, r) => i.start - r.start))
-    for (const [i, r] of Object.entries(Xu(o, n))) {
+    for (const [i, r] of Object.entries(Uu(o, n))) {
       const a = s[i] ??= [], l = a.length > 0 ? a[a.length - 1].time : -1 / 0;
       a.push(...r.filter((c) => c.time > l));
     }
@@ -12907,7 +12927,7 @@ function $a(t, e, n, s = {}) {
     const d = e.find((g) => g.target === t && g.property === u);
     let f = d ? [...d.keyframes] : [{ time: 0, value: l(u, 0) }];
     for (const g of n) {
-      const p = Xu(g, s)[u];
+      const p = Uu(g, s)[u];
       p[0] = { ...p[0], value: l(u, g.start) }, p[p.length - 1] = { ...p[p.length - 1], value: l(u, g.end) }, f = [...f.filter((m) => m.time < g.start || m.time > g.end), ...p], f.sort((m, b) => m.time - b.time);
     }
     h.push({ id: d?.id ?? `${t}-${u}`, target: t, property: u, keyframes: f });
@@ -13054,7 +13074,7 @@ function Ew(t) {
       return { ...Tw(t.points, t.radius, t.segments), joined: t.joined };
   }
 }
-function Uu(t, e) {
+function Gu(t, e) {
   if (t.length < 2) return t;
   const n = (o) => t[Math.max(0, Math.min(t.length - 1, o))], s = (o) => {
     const i = o * (t.length - 1), r = Math.min(t.length - 2, Math.floor(i)), a = i - r, [l, c, h, u] = [n(r - 1), n(r), n(r + 1), n(r + 2)];
@@ -13069,21 +13089,21 @@ const qe = (t) => Array.isArray(t) && t.length === 2 && t.every((e) => typeof e 
 function Ao(t, e) {
   return ((e - t) % 360 + 540) % 360 - 180;
 }
-function Gu(t) {
+function Vu(t) {
   const e = t.map((n, s) => ({ frame: n, i: s })).sort((n, s) => n.frame.time - s.frame.time || n.i - s.i).map(({ frame: n }) => n);
   return e.filter((n, s) => s + 1 >= e.length || e[s + 1].time !== n.time);
 }
 function Pn(t, e) {
   return Math.atan2(e[0] - t[0], e[1] - t[1]) * 180 / Math.PI;
 }
-function Vu(t) {
+function Ju(t) {
   const e = t.filter((o, i) => i === 0 || Math.hypot(o[0] - t[i - 1][0], o[1] - t[i - 1][1]) > 1e-6);
   if (e.length < 2) return [];
-  const n = e.length === 2 ? e : Uu(e.map(([o, i]) => [o, 0, i]), (e.length - 1) * 12).map(([o, , i]) => [o, i]);
+  const n = e.length === 2 ? e : Gu(e.map(([o, i]) => [o, 0, i]), (e.length - 1) * 12).map(([o, , i]) => [o, i]);
   let s = 0;
   return n.map((o, i) => (i > 0 && (s += Math.hypot(o[0] - n[i - 1][0], o[1] - n[i - 1][1])), { point: o, at: s }));
 }
-function Ju(t, e) {
+function Zu(t, e) {
   let n = 1;
   for (; n < t.length - 1 && t[n].at < e; ) n++;
   const s = t[n - 1], o = t[n], i = o.at > s.at ? Math.max(0, Math.min(1, (e - s.at) / (o.at - s.at))) : 0;
@@ -13092,7 +13112,7 @@ function Ju(t, e) {
     direction: [o.point[0] - s.point[0], o.point[1] - s.point[1]]
   };
 }
-function Zu(t, e) {
+function Qu(t, e) {
   if (e <= 0) return 0;
   if (e >= 1) return 1;
   let n = 0, s = 1;
@@ -13103,7 +13123,7 @@ function Zu(t, e) {
   return (n + s) / 2;
 }
 const Jn = 520, $c = ["do", "at", "for", "to", "through", "toward", "speed", "pose", "gag", "say", "look", "turns", "dance", "bpm", "beats"], Aw = (t) => Math.max(700, Array.from(t).length * 65), Pc = 70, Ic = 35;
-function Qu(t, e) {
+function td(t, e) {
   const n = e[0] - t.x, s = e[1] - t.eyeHeight, o = e[2] - t.z, i = t.heading * Math.PI / 180, r = n * Math.cos(i) - o * Math.sin(i), a = n * Math.sin(i) + o * Math.cos(i), l = Math.atan2(r, a) * 180 / Math.PI, c = Math.hypot(r, a), h = -Math.atan2(s, c) * 180 / Math.PI, u = Math.max(-Pc, Math.min(Pc, l * 0.75)), d = Math.max(-Ic, Math.min(Ic, h * 0.7));
   return {
     "head.turn": u,
@@ -13176,14 +13196,14 @@ ${s.map((M) => `  beat ${M.beat}: ${M.message}`).join(`
     for (const [P, E] of Object.entries(v))
       r(P) !== E && (g(P, M, r(P)), f(P, S, E, x), i[P] = E);
   }, b = (M, S, v) => {
-    const x = Vu([[a, l], ...S.through ?? [S.to]]);
+    const x = Ju([[a, l], ...S.through ?? [S.to]]);
     if (x.length < 2) return v;
-    const P = p(v, Pn(x[0].point, x[1].point)), E = x[x.length - 1].at, O = S.speed ?? $w[M] * Math.sqrt(o / 1.7), _ = S.for ?? E / O * 1e3, L = $u(M, o), D = Wt("ease-in-out"), X = Math.min(_w, _ / 4);
+    const P = p(v, Pn(x[0].point, x[1].point)), E = x[x.length - 1].at, O = S.speed ?? $w[M] * Math.sqrt(o / 1.7), _ = S.for ?? E / O * 1e3, L = Pu(M, o), D = Wt("ease-in-out"), X = Math.min(_w, _ / 4);
     d.push({ time: P, value: M }), g("walking", P, 0), f("walking", P + X, 1, "ease-out"), f("walking", P + _ - X, 1), f("walking", P + _, 0, "ease-in");
     const J = h;
     let q = c;
     for (let R = 0; ; R = Math.min(E, R + Pw)) {
-      const B = P + Zu(D, R / E) * _, { point: I, direction: A } = Ju(x, R);
+      const B = P + Qu(D, R / E) * _, { point: I, direction: A } = Zu(x, R);
       q += Ao(q, Pn([0, 0], A));
       const H = R === 0 ? g : f;
       if (H("x", B, I[0]), H("z", B, I[1]), H("rotateY", B, q), H("walk", B, J + R / L), R >= E) break;
@@ -13233,12 +13253,12 @@ ${s.map((M) => `  beat ${M.beat}: ${M.message}`).join(`
       P > 0 && m(v - Jn / 2, v, { "head.tilt": x.tilt, "brow.left": x.left, "brow.right": x.right });
     } else if (M.do === "look") {
       const x = M.look ?? M.toward, P = o * 0.9, E = x === "camera" ? n.camera ?? [0, 1.6, 8] : x.length === 3 ? x : [x[0], P, x[1]];
-      v = S + (M.for ?? 500), m(S, v, Qu({ x: a, z: l, heading: c, eyeHeight: P }, E), "ease-out");
+      v = S + (M.for ?? 500), m(S, v, td({ x: a, z: l, heading: c, eyeHeight: P }, E), "ease-out");
     }
     k.push({ do: M.do, start: S, end: v }), y = v;
   }
   const T = `${n.scene}/${t}`;
-  let $ = [...u].map(([M, S]) => ({ id: `${t}-${M}`, target: T, property: M, keyframes: Gu(S) }));
+  let $ = [...u].map(([M, S]) => ({ id: `${t}-${M}`, target: T, property: M, keyframes: Vu(S) }));
   return d.length > 0 && $.push({ id: `${t}-gait`, target: T, property: "gait", keyframes: d }), w.length > 0 && ($ = $a(T, $, w, { rest: { mouth: n.pose?.mouth ?? ht.mouth ?? 0, mouthWidth: n.pose?.mouthWidth ?? ht.mouthWidth ?? 1 } })), { tracks: $, duration: y, beats: k, end: { position: [a, l], heading: c, pose: { ...i } } };
 }
 function Oc(t, e, n = [0, 0, 0]) {
@@ -13265,7 +13285,7 @@ function Nx(t, e) {
     const d = r.getStateAtTime(u).values.get(n), f = (p, m) => {
       const b = d?.get(p);
       return typeof b == "number" ? b : m;
-    }, g = Qu({ x: f("x", i[0]), z: f("z", i[2]), heading: f("rotateY", 0), eyeHeight: f("y", i[1]) + s * 0.9 }, l(u));
+    }, g = td({ x: f("x", i[0]), z: f("z", i[2]), heading: f("rotateY", 0), eyeHeight: f("y", i[1]) + s * 0.9 }, l(u));
     for (const p of c) h[p].push({ time: u, value: g[p] ?? 0 });
     if (u >= e.end) break;
   }
@@ -13341,10 +13361,10 @@ function Rw(t, e, n = {}, s) {
     [{ x: r, y: -i }, { x: r, y: i }],
     [{ x: a, y: -i }, { x: a, y: i }]
   ];
-  for (const c of l) sd(t, c, s);
+  for (const c of l) od(t, c, s);
   t.restore();
 }
-function td(t, e, n = {}, s) {
+function ed(t, e, n = {}, s) {
   const o = n.length ?? 90, i = n.thickness ?? 34;
   t.save(), t.translate(e.x, e.y), t.rotate((n.angle ?? -35) * Math.PI / 180);
   const r = -i / 2;
@@ -13366,9 +13386,9 @@ function td(t, e, n = {}, s) {
     }
   t.restore();
 }
-const ed = 150, Lw = { pencil: 44, eraser: 30 };
-function nd(t, e, n = {}, s) {
-  const o = n.tool ?? "pencil", i = n.skin ?? "#f1c9a5", r = n.outline ?? "#2f2f33", a = n.scale ?? 1, l = Math.min(1, Math.max(0, n.lift ?? 0)), c = (n.angle ?? -30) * Math.PI / 180, h = s ? s.nudge(0.6) : { x: 0, y: 0 }, u = ed * a * (1 + 0.05 * l);
+const nd = 150, Lw = { pencil: 44, eraser: 30 };
+function sd(t, e, n = {}, s) {
+  const o = n.tool ?? "pencil", i = n.skin ?? "#f1c9a5", r = n.outline ?? "#2f2f33", a = n.scale ?? 1, l = Math.min(1, Math.max(0, n.lift ?? 0)), c = (n.angle ?? -30) * Math.PI / 180, h = s ? s.nudge(0.6) : { x: 0, y: 0 }, u = nd * a * (1 + 0.05 * l);
   l > 0 && (t.save(), t.fillStyle = r, t.globalAlpha = 0.15 * l, t.beginPath(), t.ellipse(e.x, e.y, 9 * a, 4 * a, 0, 0, Math.PI * 2), t.fill(), t.restore());
   const d = { x: e.x + h.x + 6 * l * a, y: e.y + h.y - 18 * l * a }, f = Ot.pencilGrip, g = (M) => {
     const S = M.fingers.thumb, v = M.fingers.index, x = M.fingers.middle, P = _c([S.points[3], v.points[3], x.points[3]]), E = _c([S.points[1], v.points[0]]), O = (S.depths[3] + v.depths[3] + x.depths[3]) / 3;
@@ -13383,7 +13403,7 @@ function nd(t, e, n = {}, s) {
     prop: {
       depth: k.depth,
       draw: () => {
-        t.save(), t.translate(d.x, d.y), t.scale(a, a), o === "eraser" ? td(t, { x: 0, y: 0 }, { angle: c * 180 / Math.PI, outline: r }, s) : Rw(t, { x: 0, y: 0 }, { angle: c * 180 / Math.PI, length: 190, outline: r }, s), t.restore();
+        t.save(), t.translate(d.x, d.y), t.scale(a, a), o === "eraser" ? ed(t, { x: 0, y: 0 }, { angle: c * 180 / Math.PI, outline: r }, s) : Rw(t, { x: 0, y: 0 }, { angle: c * 180 / Math.PI, length: 190, outline: r }, s), t.restore();
       }
     }
   });
@@ -13400,7 +13420,7 @@ function Fw(t, e, n, s, o, i, r, a) {
     const m = t.createLinearGradient(e.x, e.y, u.x, u.y);
     return m.addColorStop(0, p), m.addColorStop(0.6, p), m.addColorStop(1, Ww(p)), m;
   }, f = Math.min(s * 0.55, o * 0.35);
-  t.save(), t.lineJoin = "round", t.lineCap = "round", t.lineWidth = 3 * (s / ed), t.beginPath(), t.moveTo(h(-s * 0.1, -1, c).x, h(-s * 0.1, -1, c).y), t.lineTo(h(f + 4, -1, c * 1.1).x, h(f + 4, -1, c * 1.1).y), t.lineTo(h(f + 4, 1, c * 1.1).x, h(f + 4, 1, c * 1.1).y), t.lineTo(h(-s * 0.1, 1, c).x, h(-s * 0.1, 1, c).y), t.closePath(), t.fillStyle = i, t.fill(), t.strokeStyle = a, t.beginPath(), t.moveTo(h(0, -1, c).x, h(0, -1, c).y), t.lineTo(h(f, -1, c * 1.1).x, h(f, -1, c * 1.1).y), t.moveTo(h(0, 1, c).x, h(0, 1, c).y), t.lineTo(h(f, 1, c * 1.1).x, h(f, 1, c * 1.1).y), t.stroke();
+  t.save(), t.lineJoin = "round", t.lineCap = "round", t.lineWidth = 3 * (s / nd), t.beginPath(), t.moveTo(h(-s * 0.1, -1, c).x, h(-s * 0.1, -1, c).y), t.lineTo(h(f + 4, -1, c * 1.1).x, h(f + 4, -1, c * 1.1).y), t.lineTo(h(f + 4, 1, c * 1.1).x, h(f + 4, 1, c * 1.1).y), t.lineTo(h(-s * 0.1, 1, c).x, h(-s * 0.1, 1, c).y), t.closePath(), t.fillStyle = i, t.fill(), t.strokeStyle = a, t.beginPath(), t.moveTo(h(0, -1, c).x, h(0, -1, c).y), t.lineTo(h(f, -1, c * 1.1).x, h(f, -1, c * 1.1).y), t.moveTo(h(0, 1, c).x, h(0, 1, c).y), t.lineTo(h(f, 1, c * 1.1).x, h(f, 1, c * 1.1).y), t.stroke();
   const g = [h(f, -1, c * 1.3), h(o, -1, c * 1.5), h(o, 1, c * 1.5), h(f, 1, c * 1.3)];
   t.beginPath(), g.forEach((p, m) => m ? t.lineTo(p.x, p.y) : t.moveTo(p.x, p.y)), t.closePath(), t.fillStyle = d(r), t.fill(), t.strokeStyle = d(a), t.beginPath(), t.moveTo(g[1].x, g[1].y), t.lineTo(g[0].x, g[0].y), t.lineTo(g[3].x, g[3].y), t.lineTo(g[2].x, g[2].y), t.stroke(), t.restore();
 }
@@ -13449,7 +13469,7 @@ function Kx(t) {
       const h = Math.min(1, Math.max(0, Number(l.props?.draw ?? 0)));
       a.translate(-o, -i), a.strokeStyle = t.color ?? "#2f2f33", a.lineWidth = t.lineWidth ?? 5, a.lineCap = "round", a.lineJoin = "round";
       const u = t.sketch ? ur(a, t.sketch, c) : void 0;
-      h > 0 && (u ? t.smooth ? u.curve(e, h) : u.line(e, h) : sd(a, fs(e, h))), r && h > 0 && h < 1 && nd(a, na(e, h), r, u);
+      h > 0 && (u ? t.smooth ? u.curve(e, h) : u.line(e, h) : od(a, fs(e, h))), r && h > 0 && h < 1 && sd(a, na(e, h), r, u);
     }
   };
 }
@@ -13459,7 +13479,7 @@ function Ww(t) {
   const n = e[1].length === 3 ? [...e[1]].map((r) => r + r).join("") : e[1], [s, o, i] = [0, 2, 4].map((r) => parseInt(n.slice(r, r + 2), 16));
   return `rgba(${s}, ${o}, ${i}, 0)`;
 }
-function sd(t, e, n) {
+function od(t, e, n) {
   if (!(e.length < 2)) {
     if (n) return n.line(e);
     t.beginPath(), t.moveTo(e[0].x, e[0].y);
@@ -13474,7 +13494,7 @@ function Xx(t, e, n, s, o = 6) {
     i.push({ x: a % 2 === 0 ? t : t + n, y: e + s * a / r });
   return i;
 }
-function od(t, e, n, s) {
+function id(t, e, n, s) {
   if (s <= 0 || e.length === 0) return;
   const o = fs(e, s), i = n / 2, r = (a) => {
     t.beginPath(), t.rect(-Ds, -Ds, 2 * Ds, 2 * Ds), a(), t.clip("evenodd");
@@ -13493,7 +13513,7 @@ function od(t, e, n, s) {
   }
 }
 function Ux(t, e, n, s, o) {
-  t.save(), od(t, e, n, s), o(), t.restore();
+  t.save(), id(t, e, n, s), o(), t.restore();
 }
 function Gx(t, e) {
   const n = e.width ?? 40, s = e.hand === !0 ? {} : e.hand || void 0, o = e.eraser === !1 ? void 0 : e.eraser === !0 || e.eraser === void 0 ? {} : e.eraser;
@@ -13502,9 +13522,9 @@ function Gx(t, e) {
     props: { ...t.props, erase: 0 },
     draw(i, r, a) {
       const l = Number(r.props?.erase ?? 0);
-      if (i.save(), od(i, e.path, n, l), t.draw(i, r, a), i.restore(), !o || l <= 0 || l >= 1) return;
+      if (i.save(), id(i, e.path, n, l), t.draw(i, r, a), i.restore(), !o || l <= 0 || l >= 1) return;
       const c = na(e.path, l);
-      s ? nd(i, c, { ...s, tool: "eraser" }) : td(i, c, o);
+      s ? sd(i, c, { ...s, tool: "eraser" }) : ed(i, c, o);
     }
   };
 }
@@ -13698,7 +13718,7 @@ function Vx(t) {
       get props() {
         return Kw(Object.keys(_));
       },
-      actions: id
+      actions: rd
     },
     draw(R, B) {
       const I = B.props ?? {}, A = (W) => Number(I[W] ?? _[W]), H = r + a, N = (W) => r + (W - 1) * o - A(`line.${W}.shift`) * o;
@@ -13926,7 +13946,7 @@ function jw(t, e, n, s, o) {
     t.translate(a, l), t.scale(r, r), t.translate(-a, -l);
   }
 }
-const id = {
+const rd = {
   highlight: "highlight(n | n[], { at, duration?, on? }): tint lines (on: false clears)",
   strike: "strike(n | n[], { at, duration? }): strike lines through, left to right",
   remove: "remove(n | n[], { at, duration?, style?: wipe | fly | blur, from?: left | right, close? }): take lines away; the lines below close the gap",
@@ -14934,7 +14954,7 @@ const u2 = {
       outfit: { shirt: "#b65e7c", trousers: "#31405b", sleeves: "long", collar: !0, shoes: "boots" }
     }
   }
-}, rd = {
+}, ad = {
   boy: {
     label: "Boy",
     group: "family",
@@ -15030,7 +15050,7 @@ const u2 = {
   ...d2
 };
 function Qx(t, e = 300, n = {}) {
-  const s = rd[t];
+  const s = ad[t];
   if (!s) throw new Error(`castMember: unknown cast member '${t}'`);
   return { ...s.options, height: Math.round(e * s.scale), ...n };
 }
@@ -15093,7 +15113,7 @@ function iS(t, e, n, s = {}) {
   let h = { ...ht, ...t.pose, turn: c(r), lean: (t.pose?.lean ?? 0) + xn.helperLean * (1 - o) + 4, bend: (t.pose?.bend ?? 0) + xn.helperBend * (1 - o), "head.nod": 18 * (1 - o) };
   h = Ce(t.character, h, "arm.right", { x: l.x - t.x, y: l.y });
   const u = { ...de.sitFloor, ...e.pose, turn: c(!r) }, d = { ...ht, ...e.pose, turn: c(!r) };
-  let f = _u(u, d, o);
+  let f = Hu(u, d, o);
   f = Ce(e.character, f, "arm.right", { x: l.x - e.x, y: l.y });
   const g = 0.04 * a, p = (m, b) => {
     const k = ae(m.character, b).points["hand.right"];
@@ -15251,7 +15271,7 @@ const In = {
     jumpSquash: 0
   }
 };
-function ad(t) {
+function ld(t) {
   if (t === void 0) return In.full;
   if (typeof t == "string") return In[t];
   const { base: e, ...n } = t;
@@ -15259,7 +15279,7 @@ function ad(t) {
 }
 const Cr = 160, S2 = 120, T2 = 700, Bi = 60, E2 = 90, qs = 3200, On = 1, Ke = 1e-6;
 function Oa(t, e, n = {}) {
-  const s = ad(n.style), o = n.seed ?? 1, i = {};
+  const s = ld(n.style), o = n.seed ?? 1, i = {};
   if (t.length === 0) return i;
   const r = Object.keys(t[0].pose).filter((u) => t.some((d) => Math.abs(d.pose[u] - t[0].pose[u]) > Ke));
   for (const u of r) i[u] = A2(u, t, e, s, o);
@@ -15454,16 +15474,16 @@ function _2() {
   };
 }
 const H2 = _2();
-function ld(t, e) {
+function cd(t, e) {
   return Object.entries(e).map(([n, s]) => ({ id: `${t}-${n}`, target: t, property: n, keyframes: s }));
 }
 function C2(t, e, n = {}) {
   const s = ia(e), o = e.map((i, r) => ({ time: i.time, pose: { ...s[r] }, easing: i.easing, act: i.act }));
-  return ld(t, Oa(o, n.rig ?? I2, n));
+  return cd(t, Oa(o, n.rig ?? I2, n));
 }
 function R2(t, e, n = {}) {
-  const s = n.rest ?? ht, o = Cu(e, s), i = e.map((r, a) => ({ time: r.time, pose: { ...s, ...o[a] }, easing: r.easing, act: r.act }));
-  return ld(t, Oa(i, n.rig ?? H2, n));
+  const s = n.rest ?? ht, o = Ru(e, s), i = e.map((r, a) => ({ time: r.time, pose: { ...s, ...o[a] }, easing: r.easing, act: r.act }));
+  return cd(t, Oa(i, n.rig ?? H2, n));
 }
 const jc = vt.shocked, L2 = vt.scared, nn = {
   /** The classic take: squash down in a squint, then shoot up stretched with eyes popping, hang, and land squashed. */
@@ -15511,9 +15531,9 @@ const jc = vt.shocked, L2 = vt.scared, nn = {
 };
 function Kc(t, e) {
   const n = typeof e.from == "string" ? te[e.from] : e.from ?? lt;
-  return cd(nn[t](n), { ...e, from: n });
+  return hd(nn[t](n), { ...e, from: n });
 }
-function cd(t, e) {
+function hd(t, e) {
   const n = e.speed ?? 1;
   let s = e.from;
   return [
@@ -15619,7 +15639,7 @@ const ii = {
   write: { summary: "Reaches a pen to the spot and writes along it left to right (moving along when it is wide).", needs: ["target"] },
   push: { summary: "Sets both hands on the target’s near side and walks it along until its centre is at `to`.", needs: ["target", "to"] }
 };
-function hd(t = {}) {
+function ud(t = {}) {
   return [
     ...Object.keys(qt),
     ...Object.keys(te),
@@ -15629,15 +15649,15 @@ function hd(t = {}) {
     ...Object.keys(t.actions ?? {})
   ];
 }
-function ud(t = {}) {
-  const e = new Set(hd()), n = [];
+function dd(t = {}) {
+  const e = new Set(ud()), n = [];
   for (const s of [...Object.keys(t.actions ?? {}), ...Object.keys(t.gaits ?? {})])
     e.has(s) && n.push(`Custom action or gait "${s}" has the name of a built-in one; give it its own name.`);
   for (const s of Object.keys(t.actions ?? {}))
     t.gaits && s in t.gaits && n.push(`"${s}" is both a custom action and a custom gait.`);
   return n;
 }
-function dd(t = {}) {
+function fd(t = {}) {
   const e = {};
   for (const n of Object.keys(qt)) e[n] = `Walks to \`to\` in the ${n} gait, feet planted, turning round first if needed.`;
   for (const n of Object.keys(te)) e[n] = `Moves into the ${n} pose and holds it.`;
@@ -15676,9 +15696,9 @@ const Rr = ["do", "at", "for", "to", "toward", "mood", "say", "pose", "target", 
   at_target: "target"
 }, Ys = ["viewer", "ahead", "back"], Fe = (t) => typeof t == "number" && Number.isFinite(t);
 function Oo(t, e = {}) {
-  const n = ud(e).map((l) => ({ level: "error", beat: -1, message: l }));
+  const n = dd(e).map((l) => ({ level: "error", beat: -1, message: l }));
   if (!Array.isArray(t)) return [...n, { level: "error", beat: -1, message: `Beats must be an array of { do: … } objects (got ${typeof t}).` }];
-  const s = hd(e), o = (l) => l in qt || l in (e.gaits ?? {}), i = Object.keys(vt), r = Object.keys(lt);
+  const s = ud(e), o = (l) => l in qt || l in (e.gaits ?? {}), i = Object.keys(vt), r = Object.keys(lt);
   let a = -1 / 0;
   return t.forEach((l, c) => {
     const h = (p) => n.push({ level: "error", beat: c, message: p }), u = (p) => n.push({ level: "warning", beat: c, message: p });
@@ -15729,7 +15749,7 @@ function Xc(t, e = {}, n = "scriptTracks") {
 ${s.map((o) => `  ${o.beat >= 0 ? `beat ${o.beat}: ` : ""}${o.message}`).join(`
 `)}`);
 }
-Hm(dd);
+Cm(fd);
 function hS(t) {
   const e = "steps" in t && typeof t.steps == "function", n = "beats" in t && typeof t.beats == "function";
   if (e === n) throw new Error("defineAction: give either `steps: (from, beat) => [...]` or `beats: (beat) => [...]`");
@@ -15903,7 +15923,7 @@ function Ha(t, e, n = {}) {
       const ot = Math.abs(K - F.x), nt = et + (A.for ?? Math.max(600, ot / rk)), at = ot / gr("shove", u);
       M.push({ time: et, value: "shove" }), $.push({ time: et, value: 0 }, { time: et + ye, value: 1, easing: "ease-out" }, { time: nt - ye, value: 1 }, { time: nt, value: 0, easing: "ease-in" }), T.push({ time: et, value: m }, { time: nt, value: m + at }), m += at, w.push({ time: et, value: d - c }, { time: nt, value: d + (K - F.x) - c }), d += K - F.x, E(nt, {}, void 0, !1), E(nt + lh, { lean: 0, bend: 0, rightShoulder: lt.rightShoulder, leftShoulder: lt.leftShoulder, rightElbow: lt.rightElbow, leftElbow: lt.leftElbow }), N = nt + lh, z = et, W = nt;
     } else if (G) {
-      const F = A.mood ? Be(p, A.mood) : p, K = G.steps(F, A), Y = cd(K, { at: H, from: F });
+      const F = A.mood ? Be(p, A.mood) : p, K = G.steps(F, A), Y = hd(K, { at: H, from: F });
       k.push(...Y), p = Y[Y.length - 1].pose, N = H + Math.max(z2(K), A.for ?? 0);
     } else if (ch(A.do)) {
       const F = Kc(A.do, { at: H, from: A.mood ? Be(p, A.mood) : p });
@@ -15968,7 +15988,7 @@ function gk(t, e, n, s) {
   }
   a.length > 0 && a.push({ time: s, pose: e }), t.length = 0, t.push(...r, ...a.filter((l) => !i.some((c) => Math.abs(c.time - l.time) < 60)), ...i), t.sort((l, c) => l.time - c.time);
 }
-function fd(t, e, n) {
+function pd(t, e, n) {
   const s = new _t({ id: `${t}-hand`, tracks: e.filter((l) => l.target === t) }), o = X0({ x: n.x, y: n.y, style: n.style, cast: n.cast }), i = n.side ?? "right", r = n.every ?? 33, a = [];
   for (let l = n.start; ; l = Math.min(n.end, l + r)) {
     const { joints: c } = U0(o, { time: l, state: s.getStateAtTime(l) }, t), h = c.hands[i], u = c.fingertips[i];
@@ -15983,7 +16003,7 @@ function dS(t, e, n, s = {}) {
     throw new Error(`surfaceScript: ${o.length} problem(s) in the beats:
 ${o.map((d) => `  ${d.beat >= 0 ? `beat ${d.beat}: ` : ""}${d.message}`).join(`
 `)}`);
-  const i = n.map((d) => pd(d, e)), r = Ha(t, i, s), a = kk(i, r.beats, s), l = s.ground ?? 0, c = (d) => s.ride === !1 ? d : Object.values(e).reduce((f, g) => g.ride(f, t, { ground: l }), d);
+  const i = n.map((d) => gd(d, e)), r = Ha(t, i, s), a = kk(i, r.beats, s), l = s.ground ?? 0, c = (d) => s.ride === !1 ? d : Object.values(e).reduce((f, g) => g.ride(f, t, { ground: l }), d);
   n.forEach((d, f) => {
     for (const g of bk(d)) {
       const p = (y) => new Error(`surfaceScript: beat ${f} (${d.do}), ${g.edit} on ${g.surface}: ${y}`), m = (y, T) => {
@@ -15997,7 +16017,7 @@ ${o.map((d) => `  ${d.beat >= 0 ? `beat ${d.beat}: ` : ""}${d.message}`).join(`
       if (w !== void 0 && w < k) throw p(`it ends (${w} ms) before it starts (${k} ms)`);
       try {
         if (g.edit === "carry") {
-          const T = b.piece(g.anchor), $ = fd(t, c(r.tracks), {
+          const T = b.piece(g.anchor), $ = pd(t, c(r.tracks), {
             x: s.from ?? 0,
             y: l,
             style: s.figureStyle ?? (s.height ? { height: s.height } : void 0),
@@ -16066,10 +16086,10 @@ function wk(t, e, n = {}) {
       g.edit === "carry" && typeof g.anchor != "string" && s.push({ level: "error", beat: h, message: `${m}: \`carry\` takes one anchor, the piece it carries.` }), g.edit === "carry" && g.until === void 0 && s.push({ level: "error", beat: h, message: `${m}: \`carry\` needs \`until\` (when it lets go, such as { beat: ${h + 1}, at: 'release' }).` }), g.at !== void 0 && a(h, g.at, `${m} \`at\``), g.until !== void 0 && a(h, g.until, `${m} \`until\``), g.until !== void 0 && g.duration !== void 0 && s.push({ level: "error", beat: h, message: `${m}: give \`until\` or \`duration\`, not both.` });
     });
   });
-  const l = t.map((c) => c && typeof c == "object" && !Array.isArray(c) ? pd(c, e, !0) : c);
+  const l = t.map((c) => c && typeof c == "object" && !Array.isArray(c) ? gd(c, e, !0) : c);
   return [...Oo(l, n), ...s];
 }
-function pd(t, e, n = !1) {
+function gd(t, e, n = !1) {
   const { then: s, ...o } = t, i = (a) => {
     try {
       return e[a.surface].anchor(a.anchor, 0);
@@ -16095,7 +16115,7 @@ function kk(t, e, n) {
   });
 }
 function fS(t) {
-  const e = { actions: t.actions, gaits: t.gaits }, n = ud(e);
+  const e = { actions: t.actions, gaits: t.gaits }, n = dd(e);
   if (n.length > 0) throw new Error(`persona "${t.name}": ${n.join(" ")}`);
   const s = [...Object.keys(qt), ...Object.keys(t.gaits ?? {})], o = t.gait ?? "walk";
   if (!s.includes(o)) throw new Error(`persona "${t.name}": ${ut("gait", o, s)}`);
@@ -16124,7 +16144,7 @@ function fS(t) {
       energy: t.energy
     }),
     check: (u) => Oo(u, e),
-    handPath: (u, d, f) => fd(u, d, { ...f, style: c, cast: e }),
+    handPath: (u, d, f) => pd(u, d, { ...f, style: c, cast: e }),
     describe: () => ({
       name: t.name,
       summary: h,
@@ -16135,7 +16155,7 @@ function fS(t) {
         ...t.mood ? { mood: t.mood } : {},
         stance: typeof t.stance == "string" ? t.stance : t.stance ? "custom" : "rest"
       },
-      actions: dd(e),
+      actions: fd(e),
       own: { actions: Object.keys(t.actions ?? {}), gaits: Object.keys(t.gaits ?? {}) }
     })
   };
@@ -16143,7 +16163,7 @@ function fS(t) {
 const vk = /* @__PURE__ */ new Set(["x", "y", "walking", "gait"]), hh = 0.215 + 0.205;
 function Mk(t, e, n = 1) {
   const { points: s } = ae(t, ht), o = s["hip.left"], i = s["knee.left"], r = s["ankle.left"], a = o && i && r ? Math.hypot(i.x - o.x, i.y - o.y) + Math.hypot(r.x - i.x, r.y - i.y) : hh * t.height;
-  return $u(e, a / hh, n);
+  return Pu(e, a / hh, n);
 }
 function pS(t, e, n, s = {}) {
   const o = Ha(t, n, { ...s, height: e.height, reach: s.reach ?? xk(e) }), i = o.tracks.find((b) => b.property === "facing")?.keyframes ?? [], r = (b) => {
@@ -16154,7 +16174,7 @@ function pS(t, e, n, s = {}) {
     const w = Vb(a[k]);
     return {
       time: b.time,
-      pose: r(b.time) < 0 ? vy(w) : w,
+      pose: r(b.time) < 0 ? My(w) : w,
       ...b.easing ? { easing: b.easing } : {},
       ...b.act === !1 ? { act: !1 } : {}
     };
@@ -16405,16 +16425,16 @@ function Dk(t, e, n) {
     }
   return o;
 }
-const Bk = /* @__PURE__ */ new WeakMap(), zk = /* @__PURE__ */ new WeakMap(), qk = 48, gd = (t) => t.map((e) => Math.round(e * 1e5)).join(",");
-function md(t, e, n, s) {
+const Bk = /* @__PURE__ */ new WeakMap(), zk = /* @__PURE__ */ new WeakMap(), qk = 48, md = (t) => t.map((e) => Math.round(e * 1e5)).join(",");
+function yd(t, e, n, s) {
   let o = t.get(e);
   o || t.set(e, o = /* @__PURE__ */ new Map());
   let i = o.get(n);
   return i === void 0 && (o.size >= qk && o.clear(), o.set(n, i = s())), i;
 }
 function Ra(t, e) {
-  const n = gd(e);
-  return md(Bk, t, n, () => {
+  const n = md(e);
+  return yd(Bk, t, n, () => {
     const s = Nk(t, e), o = [1 / 0, 1 / 0, 1 / 0], i = [-1 / 0, -1 / 0, -1 / 0];
     for (const r of s.vertices) for (const a of [0, 1, 2])
       o[a] = Math.min(o[a], r[a]), i[a] = Math.max(i[a], r[a]);
@@ -16430,7 +16450,7 @@ function Yk(t, e) {
       const d = [(h.low[0] + h.high[0]) / 2, (h.low[1] + h.high[1]) / 2, (h.low[2] + h.high[2]) / 2];
       return [{ part: h.part, mesh: h.mesh, cut: !1, cell: Wk(i, r, d) }];
     }
-    return md(zk, h.inSpace, a, () => Dk(h.inSpace, i, r)).map((d) => ({ part: h.part, mesh: d.mesh, cut: !0, cell: d.cell }));
+    return yd(zk, h.inSpace, a, () => Dk(h.inSpace, i, r)).map((d) => ({ part: h.part, mesh: d.mesh, cut: !0, cell: d.cell }));
   }), c = (s[1] + o[1]) / 2;
   return { pieces: l, middle: ([h, u]) => [(i[h] + i[h + 1]) / 2, c, (r[u] + r[u + 1]) / 2] };
 }
@@ -16443,7 +16463,7 @@ function jk(t) {
   }), ph.set(t, e)), e;
 }
 const gh = /* @__PURE__ */ new WeakMap();
-function yd(t) {
+function bd(t) {
   return t.filter(({ mesh: e }) => jk(e)).map(({ part: e, key: n, inSpace: s, low: o, high: i }) => {
     let r = gh.get(s);
     return r || (r = s.faces.map((a) => {
@@ -16466,7 +16486,7 @@ function Kk(t, e, n, s) {
   return !1;
 }
 const mh = /* @__PURE__ */ new WeakMap();
-function bd(t, e, n, s, o) {
+function wd(t, e, n, s, o) {
   const i = `${s}|${o.map((l) => l.key).join(";")}`;
   let r = mh.get(e);
   r || mh.set(e, r = /* @__PURE__ */ new Map());
@@ -16543,12 +16563,12 @@ const Vi = (() => {
   const t = [-0.45, 0.75, 0.5], e = Math.hypot(...t);
   return [t[0] / e, t[1] / e, t[2] / e];
 })(), Uk = Math.cos(35 * Wr);
-function wd(t, e, n, s, o = {}) {
-  const i = t.derive ? { ...e, ...t.derive(e) } : e, r = La(t, i), a = n.toView([0, 0, 0]), l = (_) => (L) => [_[0] * L[0] + _[4] * L[1] + _[8] * L[2], _[1] * L[0] + _[5] * L[1] + _[9] * L[2], _[2] * L[0] + _[6] * L[1] + _[10] * L[2]], c = vs(t, i), h = o.slice === void 0 ? null : Vr(c), u = h ? t.parts.map((_) => ({ part: _, mesh: oo(_.shape), local: Pt(h, r.get(_.id)), whole: _.shape.type === "tube" })) : void 0, d = u ? Yk(u, o.slice) : void 0, f = u ? yd(u.map((_) => ({ part: _.part.id, mesh: _.mesh, ...Ra(_.mesh, _.local) }))) : void 0, g = (_, L, D, X) => {
+function kd(t, e, n, s, o = {}) {
+  const i = t.derive ? { ...e, ...t.derive(e) } : e, r = La(t, i), a = n.toView([0, 0, 0]), l = (_) => (L) => [_[0] * L[0] + _[4] * L[1] + _[8] * L[2], _[1] * L[0] + _[5] * L[1] + _[9] * L[2], _[2] * L[0] + _[6] * L[1] + _[10] * L[2]], c = vs(t, i), h = o.slice === void 0 ? null : Vr(c), u = h ? t.parts.map((_) => ({ part: _, mesh: oo(_.shape), local: Pt(h, r.get(_.id)), whole: _.shape.type === "tube" })) : void 0, d = u ? Yk(u, o.slice) : void 0, f = u ? bd(u.map((_) => ({ part: _.part.id, mesh: _.mesh, ...Ra(_.mesh, _.local) }))) : void 0, g = (_, L, D, X) => {
     const J = (U) => n.toView(Xt(D, U)), q = L.vertices.map(J), R = q.map((U) => n.toScreen(U)), B = o.perspective ? o.near : void 0, I = (U) => U.map((st) => n.toScreen(st)), A = (U) => B === void 0 ? U : uh(U, B), H = (U) => B === void 0 ? [U] : Fk(U, B), N = l(D), z = L.faces.map((U) => {
       const st = n.toView(N(U.normal)), ct = [st[0] - a[0], st[1] - a[1], st[2] - a[2]], dt = Math.hypot(...ct) || 1;
       return [ct[0] / dt, ct[1] / dt, ct[2] / dt];
-    }), W = f && X ? bd(_.id, L, X, gd(X), f) : void 0, j = (U) => W?.[U] ?? !1, G = z.map((U, st) => {
+    }), W = f && X ? wd(_.id, L, X, md(X), f) : void 0, j = (U) => W?.[U] ?? !1, G = z.map((U, st) => {
       if (j(st)) return !1;
       if (!o.perspective) return U[2] > 1e-6;
       const dt = L.faces[st].corners.reduce((yt, mt) => [yt[0] + q[mt][0], yt[1] + q[mt][1], yt[2] + q[mt][2]], [0, 0, 0]);
@@ -16564,8 +16584,8 @@ function wd(t, e, n, s, o = {}) {
     if (o.light) {
       const U = l(D);
       for (const { i: st, solved: ct } of K) {
-        const dt = L.faces[st].corners, yt = dt.reduce((ai, _d) => {
-          const li = Xt(D, L.vertices[_d]);
+        const dt = L.faces[st].corners, yt = dt.reduce((ai, Hd) => {
+          const li = Xt(D, L.vertices[Hd]);
           return [ai[0] + li[0] / dt.length, ai[1] + li[1] / dt.length, ai[2] + li[2] / dt.length];
         }, [0, 0, 0]), mt = U(L.faces[st].normal), Ut = Math.hypot(...mt) || 1, qn = o.light(yt, [mt[0] / Ut, mt[1] / Ut, mt[2] / Ut]);
         ct.light = qn.light, ct.fog = qn.fog;
@@ -16707,14 +16727,14 @@ function wh(t) {
   }
   return n;
 }
-function kd(t, e) {
+function vd(t, e) {
   if (!t.loose?.size) return;
   const n = {};
   for (const [s, o] of t.loose)
     n[s] = { x: e[`piece.${o}.x`] ?? 0, y: e[`piece.${o}.y`] ?? 0, rotate: e[`piece.${o}.rotate`] ?? 0, opacity: e[`piece.${o}.opacity`] ?? 1 };
   return n;
 }
-function vd(t) {
+function Md(t) {
   const e = {};
   for (const [n, s] of Object.entries({ ...As, ...t.rig.controls })) {
     const { bind: o, ...i } = s;
@@ -16723,7 +16743,7 @@ function vd(t) {
   return e;
 }
 function e5(t) {
-  const { prop: e } = t, n = t.scale ?? 60, s = e.rig.length * n * 1.4, o = e.rig.height * n * 1.6, i = vd(e), r = {};
+  const { prop: e } = t, n = t.scale ?? 60, s = e.rig.length * n * 1.4, o = e.rig.height * n * 1.6, i = Md(e), r = {};
   for (const [l, c] of Object.entries(i)) r[l] = t.values?.[l] ?? c.default ?? 0;
   const a = { look: t.look, ink: t.ink, lineWidth: t.lineWidth, pencil: t.pencil, seed: t.seed, style: t.style, paper: t.paper };
   return {
@@ -16744,13 +16764,13 @@ function e5(t) {
     },
     draw(l, c, h) {
       const u = c.props ?? {};
-      l.translate(s / 2, o), Bu(l, $s(e, u, n), { ...a, time: h, loose: kd(c, u) });
+      l.translate(s / 2, o), zu(l, $s(e, u, n), { ...a, time: h, loose: vd(c, u) });
     }
   };
 }
 function $s(t, e, n) {
   const s = Xk(Et(t.rig, e, "turn"), Et(t.rig, e, "tilt"), n);
-  return wd(t.rig, e, s, n);
+  return kd(t.rig, e, s, n);
 }
 function Fa(t, e, n) {
   const s = { ...t.props };
@@ -16771,10 +16791,10 @@ function Fa(t, e, n) {
 }
 function mS(t, e, n, s, o = {}) {
   const i = Fa(e, n, s);
-  return t.save(), t.translate(i.origin.x, i.origin.y), Bu(t, i.solved, {
+  return t.save(), t.translate(i.origin.x, i.origin.y), zu(t, i.solved, {
     ...e.propDraw,
     time: n.time,
-    loose: kd(e, i.values),
+    loose: vd(e, i.values),
     // The rider is drawn in scene px.
     rider: o.rider ? (r) => {
       r.save(), r.translate(-i.origin.x, -i.origin.y), o.rider(r), r.restore();
@@ -16798,7 +16818,7 @@ const os = {
   }
 }, n5 = 400, s5 = 0.2;
 function yS(t, e = {}) {
-  const { prop: n } = t, s = vd(n), o = Object.keys(s), i = Object.keys(n.rig.anchors ?? {}), r = n.rig.parts.map(($) => $.id), a = Es(), l = si(a), c = e.tracks?.length ? new _t({ id: `${n.kind}-surface`, tracks: e.tracks }) : void 0, h = Math.max(0, ...(e.tracks ?? []).flatMap(($) => $.keyframes.map((M) => M.time))), u = /* @__PURE__ */ new Map(), d = /* @__PURE__ */ new Map();
+  const { prop: n } = t, s = Md(n), o = Object.keys(s), i = Object.keys(n.rig.anchors ?? {}), r = n.rig.parts.map(($) => $.id), a = Es(), l = si(a), c = e.tracks?.length ? new _t({ id: `${n.kind}-surface`, tracks: e.tracks }) : void 0, h = Math.max(0, ...(e.tracks ?? []).flatMap(($) => $.keyframes.map((M) => M.time))), u = /* @__PURE__ */ new Map(), d = /* @__PURE__ */ new Map();
   t.loose = d;
   const f = t.props, g = ($) => {
     const M = { ...t.props };
@@ -16942,7 +16962,7 @@ function yS(t, e = {}) {
 }
 const o5 = { body: "#e8574a", trim: "#3b3b44", glass: "#bfe3f2", tyre: "#2c2c33", hub: "#c9ccd3", light: "#fff4b8", tail: "#ff5a4f", inside: "#3b3640", seat: "#6d5d55" };
 function Re(t) {
-  const e = { ...o5, ...t.colors }, n = [], { forwardMost: s, backMost: o, top: i } = Md(t);
+  const e = { ...o5, ...t.colors }, n = [], { forwardMost: s, backMost: o, top: i } = xd(t);
   t.body && n.push({ id: "body", shape: { type: "extrude", profile: t.body, width: t.width }, fill: e.body });
   for (const [h, u] of (t.frame ?? []).entries())
     n.push({ id: `frame-${h}`, shape: { type: "tube", points: u.points, radius: u.radius ?? 0.035, segments: 6 }, fill: u.color ?? e.body, outline: 0.7 });
@@ -17078,7 +17098,7 @@ function Re(t) {
     ...t.wheels.length > 0 ? { moves: { drive: { speed: t.speed ?? 6, perMetre: { wheelSpin: 180 / (Math.PI * r) } } } } : {}
   };
 }
-function Md(t) {
+function xd(t) {
   const e = [
     ...(t.body ?? []).map(([s]) => s),
     ...(t.frame ?? []).flatMap((s) => s.points.map((o) => o[2])),
@@ -17104,7 +17124,7 @@ function Xs(t, e, n, s, o, i, r = !1) {
 }
 const kh = 0.4;
 function r5(t) {
-  const e = t.wheels[0]?.radius ?? 0.4, { forwardMost: n, backMost: s } = Md(t), o = (n - s) / 2, i = (a, l, c) => {
+  const e = t.wheels[0]?.radius ?? 0.4, { forwardMost: n, backMost: s } = xd(t), o = (n - s) / 2, i = (a, l, c) => {
     const h = a.exaggeration;
     let u = l;
     return a.facing() !== c && (u = a.turnTo(u, c > 0 ? "right" : "left")), a.key(u + 200, { pitch: 4 * h, squash: 1 - 0.07 * h, lean: -0.1 * h }, { act: !1, easing: "ease-out" }), Xs(a, u, u + 200, a.x - c * 0.15 * h * a.scale, "ease-out", e), a.effect({ kind: "exhaust", time: u + 150, x: a.x - c * o * a.scale, y: a.floor - 0.3 * a.scale, length: 900, direction: -c }), u + 260;
@@ -17760,7 +17780,7 @@ function I5() {
     }
   };
 }
-const xd = 1.4;
+const Sd = 1.4;
 function O5(t = {}) {
   const e = t.width ?? 0.5, n = t.seatHeight ?? 0.5, s = t.wheelRadius ?? 0.3, o = 0.08, i = { frame: "#2b2f36", seat: "#3c6ea5", tyre: "#1f2328", ...t.colors }, r = 0.04, a = 0.018, l = 0.44, c = n + 0.5, h = -0.08, u = e / 2 + 0.06, d = [
     { id: "seat", shape: { type: "box", size: [e, r, l] }, at: [0, n - r / 2, 0], fill: i.seat },
@@ -17823,7 +17843,7 @@ function O5(t = {}) {
     acting: _5,
     colors: { body: i.seat, ink: i.frame },
     wheelRadius: s,
-    moves: { roll: { speed: xd, perMetre: { wheelSpin: 180 / (Math.PI * s) } } }
+    moves: { roll: { speed: Sd, perMetre: { wheelSpin: 180 / (Math.PI * s) } } }
   };
 }
 const _5 = {
@@ -17848,7 +17868,7 @@ function H5(t) {
         if (o === 0) return { end: s };
         let i = s;
         e.facing() !== o && (i = e.turnTo(i, o > 0 ? "right" : "left"));
-        const r = Math.abs(n.to - e.x), a = n.for ?? Math.max(300, r / (n.speed ?? xd * e.scale / 1e3));
+        const r = Math.abs(n.to - e.x), a = n.for ?? Math.max(300, r / (n.speed ?? Sd * e.scale / 1e3));
         return e.key(i + 150, { tip: 1.5 * e.exaggeration }, { act: !1, easing: "ease-out" }), vh(e, i, i + a, n.to, "ease-in-out", t), e.key(i + a, { tip: 0 }, { easing: "ease-out" }), { end: i + a };
       }
     },
@@ -17926,13 +17946,13 @@ function C5(t = {}) {
     summary: t.summary ?? "A cartoon helicopter: spools up and takes off, flies nose-down banking into its moves, hovers with a bob, and lands with a squash.",
     rig: o,
     actions: R5(),
-    acting: Sd,
+    acting: Td,
     colors: { body: e.body, ink: "#26262b" },
     // In world metres: flies with its rotor spinning (a blur), at the height a beat gives.
     moves: { fly: { speed: 15, flies: !0, hold: { blur: 1 }, perSecond: { rotor: Ae * 1e3 } } }
   };
 }
-const Sd = {
+const Td = {
   depth: { turn: 0, lift: 0, blur: 0, pitch: 1, roll: 1, squash: 1, lean: 1, size: 0 },
   limits: { turn: 0.08, pitch: 6, roll: 6, squash: 0.06, lift: 0.15 },
   eyes: [],
@@ -18030,7 +18050,7 @@ function L5(t = {}) {
     summary: t.summary ?? "A propeller plane: takes off from a run, flies banked, loops the loop, and lands with a flare and a squash.",
     rig: o,
     actions: W5(),
-    acting: Sd,
+    acting: Td,
     colors: { body: e.body, ink: "#26262b" },
     moves: { fly: { speed: 30, flies: !0, hold: { blur: 1 }, perSecond: { rotor: Ae * 1e3 } } }
   };
@@ -18088,7 +18108,7 @@ function W5() {
     }
   };
 }
-const Ps = ["walk", "trot", "canter", "gallop"], bS = Ps, Td = ["fl", "fr", "hl", "hr"], ri = {
+const Ps = ["walk", "trot", "canter", "gallop"], bS = Ps, Ed = ["fl", "fr", "hl", "hr"], ri = {
   walk: { offsets: { hl: 0, fl: 0.25, hr: 0.5, fr: 0.75 }, swing: 16, lift: 45, bob: 0.02, rock: 0, cycle: 1100 },
   trot: { offsets: { fl: 0, hr: 0, fr: 0.5, hl: 0.5 }, swing: 22, lift: 75, bob: 0.05, rock: 0, cycle: 640 },
   canter: { offsets: { hr: 0, hl: 0.33, fr: 0.33, fl: 0.66 }, swing: 30, lift: 70, bob: 0.08, rock: 5, cycle: 560 },
@@ -18125,7 +18145,7 @@ function an(t) {
     // The ears hinge at their base: laid back on a run, on a spring behind the motion.
     ears: { description: "Ears pricked forward (+) or laid back (−), on a spring behind the motion", unit: "degrees", bind: [{ parts: ["ear-left", "ear-right"], rotate: { axis: "x", degrees: 1, pivot: [0, -t.ears.radii[1], 0] } }] }
   };
-  for (const u of Td) {
+  for (const u of Ed) {
     const d = u[0] === "f", f = u[1] === "l" ? 1 : -1, g = d ? e.thickness[0] : e.thickness[1];
     r.push(
       // Tapered from the hip down, a rounded knee, a tapered lower leg and a rounded paw or hoof.
@@ -18170,7 +18190,7 @@ function an(t) {
     summary: t.summary,
     rig: c,
     actions: { ...q5(t, h), ...t.actions?.(h) },
-    acting: Ed,
+    acting: Ad,
     colors: { body: n.coat, ink: "#26262b" },
     follow: [
       { control: "tail", of: "x", per: 0.6, stiffness: 90, damping: 6, limit: 40 },
@@ -18193,7 +18213,7 @@ function N5(t, e) {
 }
 const se = Array.from({ length: 7 }, (t, e) => e === 0 ? "tail" : `tail-${e}`);
 function D5(t, e, n) {
-  const s = Uu(t.tail.points, se.length + 1), [, o, i] = t.body.radii, r = (t.tail.at[1] - n) / o, a = Math.abs(r) < 1 ? -i * Math.sqrt(1 - r * r) : t.tail.at[2], l = [t.tail.at[0], t.tail.at[1], a + Math.min(0.04, i * 0.08)], c = (f) => t.tail.radius * (1 - 0.5 * f / se.length), h = se.map((f, g) => {
+  const s = Gu(t.tail.points, se.length + 1), [, o, i] = t.body.radii, r = (t.tail.at[1] - n) / o, a = Math.abs(r) < 1 ? -i * Math.sqrt(1 - r * r) : t.tail.at[2], l = [t.tail.at[0], t.tail.at[1], a + Math.min(0.04, i * 0.08)], c = (f) => t.tail.radius * (1 - 0.5 * f / se.length), h = se.map((f, g) => {
     const p = s[g], m = s[g + 1], b = [m[0] - p[0], m[1] - p[1], m[2] - p[2]], k = g === 0 ? void 0 : s[g - 1];
     return {
       id: f,
@@ -18219,7 +18239,7 @@ function B5(t, e, n) {
   const s = Math.max(0, Math.min(1, t.walking ?? 0));
   if (s === 0) return {};
   const o = Ps[Math.max(0, Math.min(3, Math.round(t.gait ?? 0)))], i = ri[e.gaits.includes(o) ? o : e.gaits[0]], r = t.walk ?? 0, a = {};
-  for (const c of Td) {
+  for (const c of Ed) {
     const h = Math.PI * 2 * (r + i.offsets[c]);
     a[`${c}.swing`] = (t[`${c}.swing`] ?? 0) + s * i.swing * Math.sin(h), a[`${c}.knee`] = (t[`${c}.knee`] ?? 0) + s * i.lift * Math.max(0, Math.cos(h));
   }
@@ -18242,13 +18262,13 @@ function Mh(t) {
     l[`${c}.swing`] = o - 32, l[`${c}.knee`] = -(o + a), l[`${c}.ankle`] = a;
   return l;
 }
-const Ed = {
+const Ad = {
   depth: { turn: 0, lift: 0, pitch: 1, roll: 1, squash: 1, neck: 2, tail: 3, wag: 3, "fl.swing": 2, "fr.swing": 2, "hl.swing": 2, "hr.swing": 2, "fl.knee": 3, "fr.knee": 3, "hl.knee": 3, "hr.knee": 3 },
   limits: { pitch: 6, neck: 8, tail: 10, wag: 8, "fl.swing": 8, "fr.swing": 8, "hl.swing": 8, "hr.swing": 8, lift: 0 },
   eyes: [],
   headTurns: {},
   drift: []
-}, wS = Ed;
+}, wS = Ad;
 function z5(t) {
   const e = (t.upper + t.lower) * 0.32, n = Math.asin(Math.min(1, e / (t.upper + t.lower + t.foot))) / Oe, s = {
     pitch: 0,
@@ -18582,7 +18602,7 @@ function V5(t = {}) {
     grazes: !0
   });
 }
-const Me = 0.6, Ad = 75, Ji = 80;
+const Me = 0.6, $d = 75, Ji = 80;
 function ln(t) {
   const { colors: e } = t, [n, s, o] = t.body.radii, i = (t.tail.raised ?? 15) * Math.PI / 180, r = t.tail.length * 0.4, a = [
     { id: "body", shape: { type: "ellipsoid", radii: t.body.radii, segments: 16 }, at: [0, t.body.height, 0], fill: e.body },
@@ -18666,7 +18686,7 @@ function ln(t) {
     peck: {
       description: "Head bobbed down and forward (+, pecking) or up (−)",
       unit: "degrees",
-      bind: [{ parts: ["neck"], rotate: { axis: "x", degrees: 1 }, translate: [0, -(t.neckReach ?? 0) / Ad, 0] }]
+      bind: [{ parts: ["neck"], rotate: { axis: "x", degrees: 1 }, translate: [0, -(t.neckReach ?? 0) / $d, 0] }]
     },
     step: { description: "Phase of a walk, in steps (a chicken’s legs)", unit: "steps" },
     stepping: { description: "How much of the walk is applied", unit: "0..1", min: 0, max: 1 },
@@ -18758,7 +18778,7 @@ function Q5(t) {
         const c = a.for ?? 900, h = Math.max(1, Math.round(c / 300));
         r.key(l + 120, { pitch: -(t.stoop ?? 12) }, { act: !1, easing: "ease-out" });
         for (let u = 0; u < h; u++)
-          r.key(l + 120 + u * 300 + 90, { peck: Ad }, { act: !1, easing: "ease-in" }), r.key(l + 120 + u * 300 + 260, { peck: 20 }, { act: !1, easing: "ease-out" });
+          r.key(l + 120 + u * 300 + 90, { peck: $d }, { act: !1, easing: "ease-in" }), r.key(l + 120 + u * 300 + 260, { peck: 20 }, { act: !1, easing: "ease-out" });
         return r.key(l + 120 + h * 300 + 200, { peck: 0, pitch: 0 }), { end: l + 120 + h * 300 + 200, contact: l + 210 };
       }
     },
@@ -18929,12 +18949,12 @@ function rv(t = {}) {
   });
 }
 const Ms = { car: a5, truck: l5, bus: c5, tractor: h5, cart: u5, trainCar: d5, bike: f5, motorbike: p5, tree: g5, house: b5, chair: v5, desk: S5, bed: E5, door: $5, wheelchair: O5, helicopter: C5, airplane: L5, horse: Y5, dog: j5, cat: K5, cow: X5, goat: U5, rabbit: G5, squirrel: V5, songbird: tv, crow: ev, chicken: nv, pigeon: sv, duck: ov, owl: iv, parrot: rv };
-function $d(t, e = {}) {
+function Pd(t, e = {}) {
   const n = Ms[t];
   if (!n) throw new Error(ut("prop preset", t, Object.keys(Ms)));
   return n(e);
 }
-const Nr = ["do", "at", "for", "to", "toward", "speed", "open", "on", "height", "wind"], Dr = { viewer: 0, right: 1, away: 2, left: 3 }, av = 420, Pd = {
+const Nr = ["do", "at", "for", "to", "toward", "speed", "open", "on", "height", "wind"], Dr = { viewer: 0, right: 1, away: 2, left: 3 }, av = 420, Id = {
   hold: {
     summary: "Holds still (`for` ms, default 1000).",
     run: (t, e, n) => ({ end: n + (e.for ?? 1e3) })
@@ -18962,7 +18982,7 @@ const Nr = ["do", "at", "for", "to", "toward", "speed", "open", "on", "height", 
   }
 };
 function Na(t) {
-  return { ...Pd, ...t.actions };
+  return { ...Id, ...t.actions };
 }
 const Zi = (t) => typeof t == "number" && Number.isFinite(t);
 function lv(t, e) {
@@ -19045,7 +19065,7 @@ ${o.map((v) => `  beat ${v.beat}: ${v.message}`).join(`
     const x = Math.max(v.at ?? y, u[u.length - 1].time), P = c[v.do].run(k, v, x);
     P.end > u[u.length - 1].time && u.push({ time: P.end, pose: { ...h } }), w.push({ start: x, end: P.end, ...P.contact !== void 0 ? { contact: P.contact } : {}, ...P.release !== void 0 ? { release: P.release } : {} }), y = P.end;
   }
-  const T = ad(s.style ?? "snappy"), $ = { ...T, anticipation: T.anticipation * l, overshoot: T.overshoot * l }, M = Oa(fv(u), e.acting, { style: $ }), S = [
+  const T = ld(s.style ?? "snappy"), $ = { ...T, anticipation: T.anticipation * l, overshoot: T.overshoot * l }, M = Oa(fv(u), e.acting, { style: $ }), S = [
     // Controls keyed exactly (wheels, rotors) are not acted.
     ...Object.entries(M).filter(([v]) => !d.has(v)).map(([v, x]) => ({ id: `${t}-${v}`, target: t, property: v, keyframes: x })),
     ...[...d].map(([v, x]) => ({ id: `${t}-${v}`, target: t, property: v, keyframes: pv(x) }))
@@ -19169,7 +19189,7 @@ function mv(t, e = {}) {
       },
       beatFields: Nr,
       commonControls: Object.fromEntries(Object.entries(As).map(([s, o]) => [s, `${o.description}${o.unit ? ` (${o.unit})` : ""}`])),
-      commonActions: Object.fromEntries(Object.entries(Pd).map(([s, o]) => [s, o.summary])),
+      commonActions: Object.fromEntries(Object.entries(Id).map(([s, o]) => [s, o.summary])),
       presets: Object.fromEntries(
         Object.entries(Ms).map(([s, o]) => {
           const i = o();
@@ -19206,14 +19226,14 @@ function mv(t, e = {}) {
       faceShapes: ["round", "angular"],
       gags: Object.keys(ya),
       builds: Object.keys(vr),
-      hair: Object.keys(au),
+      hair: Object.keys(lu),
       hairColors: { ...be },
-      facialHair: Object.keys(bu),
-      glasses: Object.keys(ku),
+      facialHair: Object.keys(wu),
+      glasses: Object.keys(vu),
       hats: Object.keys(ma),
-      feet: [...My],
-      cast: Object.keys(rd),
-      heldItems: Object.fromEntries(Object.entries(Pu).map(([s, o]) => [s, o.hands])),
+      feet: [...xy],
+      cast: Object.keys(ad),
+      heldItems: Object.fromEntries(Object.entries(Iu).map(([s, o]) => [s, o.hands])),
       handMeetings: Object.keys(Po)
     },
     codePanel: {
@@ -19226,7 +19246,7 @@ function mv(t, e = {}) {
         "landing(piece, n, column)": "where a dropped piece will land",
         box: "the whole panel"
       },
-      edits: id
+      edits: rd
     },
     surfaces: { code: no, board: Se, chart: Mn, prop: os },
     surfaceScript: {
@@ -19378,7 +19398,7 @@ function vS(t, e = {}) {
     `- \`castMember(name, height)\`: ${bt(n.character.cast)}`,
     "- Face marks (pose fields, 0–1): `blush`, `tears`, `sweat`; close-up fields `pupil` (size, 1 usual), `lid` (upper lids lowered, 0–1), `bulge` (eyes out of the head, 0–1); `face: { nose: true, inPupil(ctx, pupil) }`; `drawCharacterHead(ctx, who, pose, { x, y, radius })` draws just the head big",
     `- Face styles: ${bt(n.character.faceStyles)}; \`face: { style: 'anime', iris: '#4b7fce', lashes: true, ageLines: 0.8 }\` uses coloured eyes and the same expressions, blinks and gaze. \`ANIME_CAST\` contains eight age presets, also available through \`castMember\`.`,
-    `- Face shapes: ${bt(n.character.faceShapes)}; \`face: { shape: 'angular', jawWidth: 0.74, chinWidth: 0.14, eyeScale: 0.8, eyeAspect: 0.65 }\` sets a tapered 3D jaw and narrower anime eyes. \`MANGA_CAST\` contains four original young adult presets; hair styles \`mangaSpikes\` and \`mangaSweep\` remain editable.`,
+    `- Face shapes: ${bt(n.character.faceShapes)}; \`face: { shape: 'angular', jawWidth: 0.74, chinWidth: 0.14, eyeScale: 0.8, eyeAspect: 0.65 }\` sets a tapered 3D jaw and narrower anime eyes; \`jawRoundness: 1\` softens the cheek/chin corners (default 0 keeps sharp jaws). \`MANGA_CAST\` contains four original young adult presets; hair styles \`mangaSpikes\` and \`mangaSweep\` remain editable.`,
     "- Hair in motion (pose fields): `hair.swing` (degrees round the head, + toward its left), `hair.trail` (head radii back), `hair.lift` (head radii up); key them with `hairFollowTracks(target, tracks, who)` after the character's tracks, or `hairFollow` + `hairMotionAt` when posing per frame",
     `- \`holding\`: ${Object.entries(n.character.heldItems).map(([i, r]) => `\`${i}\` (${r === "both" ? "both" : r === "either" ? "one hand or both" : "left or right"})`).join(", ")}; pose fields \`held.left\`, \`held.right\`, \`held.both\` (below 0.5 lets go); \`handGrip(joints, side)\``,
     `- \`meetHands(kind, a, b)\` (stand them \`meetingSpacing(kind, a, b)\` apart): ${bt(n.character.handMeetings)}; \`embrace(a, b)\` (a hug, \`embraceSpacing\` apart); \`helpUp(helper, sitter, progress)\` (0 on the floor, hand taken; 1 standing; \`helpUpSpacing\` apart)`,
@@ -19575,7 +19595,7 @@ function Tv(t, e) {
   const n = /^#([0-9a-f]{6})$/i.exec(t.trim());
   return n ? `#${[0, 2, 4].map((o) => Math.round(parseInt(n[1].slice(o, o + 2), 16) * Math.max(0, Math.min(1, e)))).map((o) => o.toString(16).padStart(2, "0")).join("")}` : t;
 }
-const Ev = Eo(Wu(1, 2e-3, 28));
+const Ev = Eo(Nu(1, 2e-3, 28));
 function Av(t, e, n) {
   const s = t.rig, [o, i] = s.footprint ?? [s.length * 0.45, s.length], r = Math.max(0, Et(s, e, "lift")), a = Math.max(0, Et(s, e, "size")) / (1 + r * 0.8);
   return {
@@ -19610,7 +19630,7 @@ const $v = /* @__PURE__ */ new Set([
   },
   prepare(t) {
     const e = t;
-    return $d(e.prop, e.options);
+    return Pd(e.prop, e.options);
   },
   // `lights` may be missing from a scene entry older than this add-on: treated as none.
   resolve({ object: t, prepared: e, values: n, world: s, camera: o, lights: i = [], fog: r, toScreen: a }) {
@@ -19624,7 +19644,7 @@ const $v = /* @__PURE__ */ new Set([
     }, f = d.toView([0, c.rig.height / 2, 0]);
     if (-f[2] <= o.near) return null;
     if (l.look === "mesh") {
-      const M = Vk(c.rig, h), S = M.map(({ part: P, local: E }) => ({ part: P.id, mesh: _o(P.shape), ...Ra(_o(P.shape), E) })), v = yd(S), x = M.map((P, E) => ({ ...P, hidden: bd(P.part.id, S[E].mesh, P.local, S[E].key, v) })).filter(({ opacity: P }) => P > 0.01).map(({ part: P, matrix: E, glow: O, opacity: _, hidden: L }) => ({
+      const M = Vk(c.rig, h), S = M.map(({ part: P, local: E }) => ({ part: P.id, mesh: _o(P.shape), ...Ra(_o(P.shape), E) })), v = bd(S), x = M.map((P, E) => ({ ...P, hidden: wd(P.part.id, S[E].mesh, P.local, S[E].key, v) })).filter(({ opacity: P }) => P > 0.01).map(({ part: P, matrix: E, glow: O, opacity: _, hidden: L }) => ({
         mesh: xv(P.shape, L),
         world: Pt(s, E),
         material: Sv(P, { glow: O, opacity: _ }, { shading: l.shading, ink: l.ink, outline: l.outline })
@@ -19633,11 +19653,11 @@ const $v = /* @__PURE__ */ new Set([
     }
     const g = a(f), p = a(d.toView([0, c.rig.height / 2 + 1, 0])), m = Math.hypot(p.x - g.x, p.y - g.y), b = i.length === 0 ? void 0 : (M, S) => {
       const v = Xt(s, M), x = [s[0] * S[0] + s[4] * S[1] + s[8] * S[2], s[1] * S[0] + s[5] * S[1] + s[9] * S[2], s[2] * S[0] + s[6] * S[1] + s[10] * S[2]], P = Math.hypot(...x) || 1;
-      return { light: Nu(v, [x[0] / P, x[1] / P, x[2] / P], i), fog: Du(r, Math.hypot(v[0] - o.position[0], v[1] - o.position[1], v[2] - o.position[2])) };
-    }, k = wd(c.rig, h, d, m, { perspective: !0, near: o.near, slice: Pv, light: b }), w = { look: l.look, style: l.style, ink: l.ink, paper: l.paper, fog: r?.color }, y = zu(k), T = k.cells ?? [], $ = Math.max(...T.map((M) => -M.depth), -f[2]);
+      return { light: Du(v, [x[0] / P, x[1] / P, x[2] / P], i), fog: Bu(r, Math.hypot(v[0] - o.position[0], v[1] - o.position[1], v[2] - o.position[2])) };
+    }, k = kd(c.rig, h, d, m, { perspective: !0, near: o.near, slice: Pv, light: b }), w = { look: l.look, style: l.style, ink: l.ink, paper: l.paper, fog: r?.color }, y = qu(k), T = k.cells ?? [], $ = Math.max(...T.map((M) => -M.depth), -f[2]);
     return {
       drawables: [
-        ...l.shadow === !1 ? [] : [{ depth: $ + c.rig.length, draw: (M) => qu(M, k, w) }],
+        ...l.shadow === !1 ? [] : [{ depth: $ + c.rig.length, draw: (M) => Yu(M, k, w) }],
         ...T.map((M) => ({
           depth: -M.depth,
           draw(S, v) {
@@ -19686,7 +19706,7 @@ ${o.map((w) => `  beat ${w.beat}: ${w.message}`).join(`
     const $ = Math.max(_v, Math.abs(T) * Ov);
     return u("rotateY", w, l), l += T, h("rotateY", w + $, l, "ease-in-out"), w + $;
   }, f = (w, y, T) => {
-    const $ = Vu([[r, a], ...y.through ?? [y.to]]);
+    const $ = Ju([[r, a], ...y.through ?? [y.to]]);
     if ($.length < 2) return T;
     const M = d(T, Pn($[0].point, $[1].point)), S = $[$.length - 1].at, v = y.for ?? S / (y.speed ?? w.speed) * 1e3, x = Wt("ease-in-out"), P = Math.min(Hv, v / 4);
     for (const [X, J] of Object.entries(w.set ?? {}))
@@ -19698,7 +19718,7 @@ ${o.map((w) => `  beat ${w.beat}: ${w.message}`).join(`
     const _ = { ...i };
     let L = l;
     for (let X = 0; ; X = Math.min(S, X + Iv)) {
-      const J = M + Zu(x, X / S) * v, { point: q, direction: R } = Ju($, X);
+      const J = M + Qu(x, X / S) * v, { point: q, direction: R } = Zu($, X);
       L += Ao(L, Pn([0, 0], R)), h("x", J, q[0]), h("z", J, q[1]), h("rotateY", J, L);
       for (const [B, I] of Object.entries(w.perMetre ?? {})) h(B, J, _[B] + X * I);
       for (const [B, I] of Object.entries(w.perSecond ?? {})) h(B, J, _[B] + (J - M) / 1e3 * I);
@@ -19732,17 +19752,17 @@ ${o.map((w) => `  beat ${w.beat}: ${w.message}`).join(`
     id: `${t}-${w}`,
     target: b,
     property: w,
-    keyframes: Gu(y)
+    keyframes: Vu(y)
   })), duration: m, beats: p, end: { position: [r, a], heading: l, values: { ...i } } };
 }
-const Fv = ["x", "y", "turn", "facing", "tilt"], Wv = 0.35, Id = {
+const Fv = ["x", "y", "turn", "facing", "tilt"], Wv = 0.35, Od = {
   seated: de.sit,
   astride: { ...de.sit, "leg.left.spread": 26, "leg.right.spread": 26, "leg.left.swing": 40, "leg.right.swing": 40, "leg.left.knee": 70, "leg.right.knee": 70 },
   driving: { ...de.sit, "arm.left.swing": 52, "arm.right.swing": 52, "arm.left.spread": 8, "arm.right.spread": 8, "arm.left.elbow": 38, "arm.right.elbow": 38, lean: 4 },
   wheeling: { ...de.sit, "arm.left.swing": -6, "arm.right.swing": -6, "arm.left.spread": 16, "arm.right.spread": 16, "arm.left.elbow": 28, "arm.right.elbow": 28, "leg.left.knee": 80, "leg.right.knee": 80 },
   cycling: { ...de.sit, lean: 22, bend: 10, "head.nod": -14, "arm.left.swing": 58, "arm.right.swing": 58, "arm.left.spread": 10, "arm.right.spread": 10, "arm.left.elbow": 22, "arm.right.elbow": 22, "leg.left.spread": 6, "leg.right.spread": 6 }
 }, Nv = 22, Eh = 38;
-function Ah(t, e = Id.cycling) {
+function Ah(t, e = Od.cycling) {
   const n = t * Math.PI * 2, s = (r) => ({
     swing: (e["leg.left.swing"] ?? 40) + Nv * Math.cos(n + r),
     // The knee straightens as the foot pushes down and over the bottom of the stroke.
@@ -19770,7 +19790,7 @@ const $h = (t, e) => {
   return [t[0] * Math.cos(n) + t[2] * Math.sin(n), t[1], -t[0] * Math.sin(n) + t[2] * Math.cos(n)];
 };
 function PS(t) {
-  const e = `${t.scene}/${t.propId}`, n = new _t({ id: `${t.propId}-ride-3d`, tracks: t.propTracks.filter((m) => m.target === e) }), s = t.placement ?? {}, [o, i, r] = s.position ?? [0, 0, 0], a = t.prop.rig, l = ba({ ...t.character, height: 1 }), c = { ...ht, ...t.pose ?? Id.seated }, h = Xo(l.plan, c, { height: t.height ?? 1.7, contact: l.contact }).hip, u = t.facing ?? 0, d = t.every ?? 33, f = { x: [], y: [], z: [], rotateY: [] };
+  const e = `${t.scene}/${t.propId}`, n = new _t({ id: `${t.propId}-ride-3d`, tracks: t.propTracks.filter((m) => m.target === e) }), s = t.placement ?? {}, [o, i, r] = s.position ?? [0, 0, 0], a = t.prop.rig, l = ba({ ...t.character, height: 1 }), c = { ...ht, ...t.pose ?? Od.seated }, h = Xo(l.plan, c, { height: t.height ?? 1.7, contact: l.contact }).hip, u = t.facing ?? 0, d = t.every ?? 33, f = { x: [], y: [], z: [], rotateY: [] };
   for (let m = t.start; ; m = Math.min(t.end, m + d)) {
     const b = n.getStateAtTime(m).values.get(e) ?? /* @__PURE__ */ new Map(), k = (_, L) => {
       const D = b.get(_);
@@ -20005,7 +20025,7 @@ function Gv(t, e) {
   }
 }
 function IS(t, e) {
-  const n = Gv(t, e), s = Xv(n.scenery), o = n.props.map((i) => e5({ x: i.x, y: s.ground, prop: $d(i.preset), scale: i.scale, values: { turn: i.turn ?? 0, ...i.values } }));
+  const n = Gv(t, e), s = Xv(n.scenery), o = n.props.map((i) => e5({ x: i.x, y: s.ground, prop: Pd(i.preset), scale: i.scale, values: { turn: i.turn ?? 0, ...i.values } }));
   return { scenery: s, props: o, ground: s.ground };
 }
 function OS(t) {
@@ -20050,7 +20070,7 @@ function OS(t) {
   };
 }
 const _S = {
-  timeline: qp,
+  timeline: Yp,
   to(t, e, n) {
     const s = new Sn(n);
     return s.to(t, e), s;
@@ -20068,7 +20088,7 @@ const _S = {
     return s.set(t, e), s;
   }
 };
-function Od(t, e, n) {
+function _d(t, e, n) {
   if (typeof OffscreenCanvas < "u") return new OffscreenCanvas(e, n);
   const s = t.canvas;
   if (s?.ownerDocument) {
@@ -20115,7 +20135,7 @@ function Ih(t, e, n, s) {
 function HS(t, e = {}) {
   const n = t.canvas, s = n.width, o = n.height;
   if (!(s > 0 && o > 0)) return;
-  const i = Math.max(1, Math.round(e.downsample ?? 4)), r = Math.max(1, Math.ceil(s / i)), a = Math.max(1, Math.ceil(o / i)), l = Od(t, r, a), c = l?.getContext("2d");
+  const i = Math.max(1, Math.round(e.downsample ?? 4)), r = Math.max(1, Math.ceil(s / i)), a = Math.max(1, Math.ceil(o / i)), l = _d(t, r, a), c = l?.getContext("2d");
   if (!l || !c) return;
   c.imageSmoothingEnabled = !0, c.drawImage(t.canvas, 0, 0, r, a);
   const h = Vv(c.getImageData(0, 0, r, a).data, e.threshold ?? 0.55), u = (e.radius ?? Math.max(s, o) * 0.02) / i, d = Ih(h, r, a, u), f = Ih(h, r, a, u * 3), g = e.halo ?? 0.6, p = c.createImageData(r, a);
@@ -20147,7 +20167,7 @@ function Jv(t, e) {
   return o ? `rgba(${o[1]}, ${o[2]}, ${o[3]}, 0)` : "rgba(0, 0, 0, 0)";
 }
 function Zv(t, e, n, s, o) {
-  const i = t.map((c) => ({ x: c.at.x, y: c.at.y, width: e * (1 - n * c.age) })), r = up(i), a = dp(i) ?? void 0, l = [];
+  const i = t.map((c) => ({ x: c.at.x, y: c.at.y, width: e * (1 - n * c.age) })), r = dp(i), a = fp(i) ?? void 0, l = [];
   for (let c = 0; c + 1 < t.length; c++) {
     const h = (t[c].age + t[c + 1].age) / 2, u = o * (1 - s * h);
     if (u <= 0) continue;
@@ -20176,7 +20196,7 @@ function Qv(t, e, n) {
       a = Math.min(a, b.x), l = Math.min(l, b.y), c = Math.max(c, b.x), h = Math.max(h, b.y);
   }
   if (!(c > a && h > l)) return;
-  const u = Math.floor(a) - 1, d = Math.floor(l) - 1, f = s ? Od(t, Math.ceil(c) + 1 - u, Math.ceil(h) + 1 - d) : null, g = f?.getContext("2d");
+  const u = Math.floor(a) - 1, d = Math.floor(l) - 1, f = s ? _d(t, Math.ceil(c) + 1 - u, Math.ceil(h) + 1 - d) : null, g = f?.getContext("2d");
   if (!f || !g) {
     Br(t, e, n);
     return;
@@ -20184,10 +20204,10 @@ function Qv(t, e, n) {
   g.translate(-u, -d), g.globalCompositeOperation = "lighter", Br(g, r, n), t.save(), t.setTransform(1, 0, 0, 1, 0, 0), t.globalAlpha = 1, t.drawImage(f, u, d), t.restore();
 }
 const RS = ne.to, LS = ne.from, FS = ne.fromTo, WS = ne.set, NS = ne.timeline, DS = ne.ticker, BS = ne.splitText, zS = ne.context, qS = ne.matchMedia, YS = ne.quickTo, jS = ne.imageSequence, KS = ne.pageTransition;
-Om();
+_m();
 export {
   In as ACTING_STYLES,
-  Sd as AIRCRAFT_ACTING,
+  Td as AIRCRAFT_ACTING,
   Ps as ANIMAL_GAITS,
   u2 as ANIME_CAST,
   Rr as BEAT_FIELDS,
@@ -20199,24 +20219,24 @@ export {
   Ca as CANVAS_PROPERTIES,
   M5 as CHAIR_ACTING,
   $c as CHARACTER_BEAT_3D_FIELDS,
-  rd as CHARACTER_CAST,
+  ad as CHARACTER_CAST,
   $w as CHARACTER_GAIT_SPEEDS,
   Dc as CHART_KINDS,
   Mn as CHART_SURFACE,
   zs as CHART_THEMES,
   _r as CODE_LANGUAGES,
-  id as CODE_PANEL_EDITS,
+  rd as CODE_PANEL_EDITS,
   no as CODE_SURFACE,
   zw as CODE_THEME,
   nM as Clock,
   Sn as CompatTimeline,
-  tm as CustomBounce,
-  Qg as CustomEase,
-  em as CustomWiggle,
+  em as CustomBounce,
+  tm as CustomEase,
+  nm as CustomWiggle,
   on as DANCE_STYLES,
   qh as DEFAULT_BAKE_INTERVAL_MS,
   Ba as DEFAULT_INERTIA_FRICTION,
-  fm as DEFAULT_LABELS,
+  pm as DEFAULT_LABELS,
   oe as DEFAULT_SPRING,
   dx as DEFAULT_TRANSITION,
   T5 as DESK_ACTING,
@@ -20224,24 +20244,24 @@ export {
   b0 as Draggable,
   Hr as EMBRACE,
   vt as EXPRESSIONS,
-  bu as FACIAL_HAIR_STYLES,
-  zm as FINGERS,
+  wu as FACIAL_HAIR_STYLES,
+  qm as FINGERS,
   ei as FLIPS,
-  My as FOOT_SHAPES,
+  xy as FOOT_SHAPES,
   Da as FORMAT_VERSION,
-  ap as FRAME_ASPECTS,
+  lp as FRAME_ASPECTS,
   nn as GAGS,
   qt as GAITS,
   Gc as GAIT_CYCLE_MS,
-  ku as GLASSES_STYLES,
+  vu as GLASSES_STYLES,
   be as HAIR_COLORS,
   ys as HAIR_STILL,
-  au as HAIR_STYLES,
+  lu as HAIR_STYLES,
   Po as HAND_MEETINGS,
   It as HAND_REST,
   Ot as HAND_SHAPES,
   ma as HAT_STYLES,
-  Pu as HELD_ITEMS,
+  Iu as HELD_ITEMS,
   xn as HELP_UP,
   wS as HORSE_ACTING,
   bS as HORSE_GAITS,
@@ -20256,26 +20276,26 @@ export {
   ht as HUMAN_REST,
   Cw as IDENTITY_CAMERA,
   zM as IDENTITY_SIMILARITY,
-  Nd as INERTIA_MAX_DURATION_MS,
-  Lf as InertiaTrackPlayer,
+  Dd as INERTIA_MAX_DURATION_MS,
+  Ff as InertiaTrackPlayer,
   ke as LiveTimeline,
   d2 as MANGA_CAST,
   cM as MORPH_SAMPLES,
   wr as MUDRAS,
   eM as ManualClock,
   $l as MediaSync,
-  pg as Observer,
+  gg as Observer,
   te as POSES,
   Th as PROP_BEAT_3D_FIELDS,
   Nr as PROP_BEAT_FIELDS,
-  Pd as PROP_COMMON_ACTIONS,
+  Id as PROP_COMMON_ACTIONS,
   As as PROP_COMMON_CONTROLS,
   Ms as PROP_PRESETS,
   os as PROP_SURFACE,
-  Ed as QUADRUPED_ACTING,
+  Ad as QUADRUPED_ACTING,
   Or as REMOVE_STYLES,
   lt as REST_POSE,
-  Id as RIDING_POSES,
+  Od as RIDING_POSES,
   Ye as SAMPLE_STEP,
   Dv as SCENERY_COLORS,
   ii as SCRIPT_ACTIONS,
@@ -20283,41 +20303,41 @@ export {
   ci as SPRING_PRESETS,
   ts as SPRING_STEP_MS,
   I2 as STICK_ACTING_RIG,
-  Lg as ScrollAnimator,
+  Fg as ScrollAnimator,
   zo as ScrollDriver,
-  Fg as ScrollMarkers,
-  Og as ScrollPin,
+  Wg as ScrollMarkers,
+  _g as ScrollPin,
   vl as SmoothScroll,
   Co as SpringSampler,
-  Rf as SpringTrackPlayer,
-  rg as Stage,
+  Lf as SpringTrackPlayer,
+  ag as Stage,
   m5 as TREE_ACTING,
   _t as Timeline,
   ea as TinyflyPlayer,
-  _m as TinyflySequencer,
+  Hm as TinyflySequencer,
   Gs as TrackPlayer,
   i5 as VEHICLE_ACTING,
   We as VISEMES,
   wM as ValueResolver,
-  Ig as VisibilityDriver,
+  Og as VisibilityDriver,
   _5 as WHEELCHAIR_ACTING,
   Se as WHITEBOARD_SURFACE,
   R2 as actCharacterTracks,
   Oa as actKeyframes,
   C2 as actTracks,
-  hd as actionNames,
+  ud as actionNames,
   L5 as airplane,
   je as anchorError,
   Wa as animalStrideLength,
   Lk as animatableProperties,
   HS as applyBloom,
   zx as applyCamera,
-  G1 as applyGroove,
+  V1 as applyGroove,
   i0 as applySimilarity,
   o0 as aspectOf,
   Xc as assertBeats,
   LM as audioEnvelope,
-  Jd as backOut,
+  Zd as backOut,
   vx as bakeDanceTracks,
   Xh as bakeEasing,
   jh as bakeInertiaTrack,
@@ -20332,11 +20352,11 @@ export {
   TM as beatsBetween,
   E5 as bed,
   f5 as bike,
-  Sm as bindChoiceHotspots,
+  Tm as bindChoiceHotspots,
   ln as bird,
   gs as blendPose,
   O0 as boilFrame,
-  Vd as bounceOut,
+  Jd as bounceOut,
   ww as boxMesh,
   Sb as brushingPose,
   ZM as bubblePath,
@@ -20368,10 +20388,10 @@ export {
   Wx as characterScript3D,
   Mk as characterStrideLength,
   Px as characterTarget,
-  Wf as charactersFor,
+  Nf as charactersFor,
   Zx as chart,
   Oo as checkBeats,
-  ud as checkCast,
+  dd as checkCast,
   Hw as checkCharacterBeats3D,
   lv as checkPropBeats,
   Lv as checkPropBeats3D,
@@ -20382,7 +20402,7 @@ export {
   M0 as clamp01,
   hM as clearMorphCache,
   aM as clearPathCache,
-  od as clipErased,
+  id as clipErased,
   lo as closestName,
   Vx as codePanel,
   Uw as codeTokens,
@@ -20392,18 +20412,18 @@ export {
   Et as controlValue,
   X5 as cow,
   cx as create,
-  ym as createControls,
-  Ud as createCubicBezier,
-  am as createLive,
+  bm as createControls,
+  Gd as createCubicBezier,
+  lm as createLive,
   qo as createPen,
   sn as createRandom,
   or as createTrack,
   iM as criticalDamping,
   ev as crow,
   _M as curve,
-  Gf as customBounce,
-  Uf as customEase,
-  Vf as customWiggle,
+  Vf as customBounce,
+  Gf as customEase,
+  Jf as customWiggle,
   kw as cylinderMesh,
   Nb as danceCircleAt,
   Hx as danceCircleTracks,
@@ -20414,13 +20434,13 @@ export {
   yx as danceTaps,
   kx as danceTracks,
   Si as danceTravel,
-  Q1 as danceTravelTrack,
+  ty as danceTravelTrack,
   wx as dancer,
   hS as defineAction,
   uS as defineGait,
   Rk as describeTarget,
   us as deserializeTimeline,
-  qf as deserializeTrack,
+  Yf as deserializeTrack,
   S5 as desk,
   EM as detectTempo,
   j5 as dog,
@@ -20431,37 +20451,37 @@ export {
   $x as drawCharacterHead,
   Ax as drawCharacterInView,
   N2 as drawDustPuff,
-  td as drawEraser,
-  nd as drawHand,
+  ed as drawEraser,
+  sd as drawHand,
   hc as drawHeldItem,
   cS as drawImpactStars,
   Rw as drawPencil,
   mS as drawProp,
   MS as drawPropEffects,
-  qu as drawPropShadow,
+  Yu as drawPropShadow,
   ow as drawSolvedFaces,
   Rx as drawSolvedPart,
-  Bu as drawSolvedProp,
+  zu as drawSolvedProp,
   F2 as drawSpeedLines,
-  W1 as drawStickFigure,
+  N1 as drawStickFigure,
   lS as drawStickSmear,
   CS as drawTrail,
   Kx as drawnPathTarget,
   JM as dripPath,
   ov as duck,
-  Yd as easeIn,
+  jd as easeIn,
   Lh as easeInCubic,
-  Kd as easeInOut,
+  Xd as easeInOut,
   Lo as easeInOutCubic,
-  qd as easeInOutQuad,
-  Bd as easeInQuad,
-  jd as easeOut,
+  Yd as easeInOutQuad,
+  zd as easeInQuad,
+  Kd as easeOut,
   Fh as easeOutCubic,
-  zd as easeOutQuad,
-  op as editDistance,
+  qd as easeOutQuad,
+  ip as editDistance,
   oi as editError,
   Es as editLog,
-  Gd as elasticOut,
+  Vd as elasticOut,
   _l as ellipsePoints,
   vw as ellipsoidMesh,
   sS as embrace,
@@ -20469,7 +20489,7 @@ export {
   FM as envelopeAt,
   Gx as erasable,
   _a as expandBeats,
-  Hf as expandParametricEasings,
+  Cf as expandParametricEasings,
   xw as extrudeMesh,
   Yb as flipPose,
   Cx as flipTracks,
@@ -20482,15 +20502,15 @@ export {
   FS as fromTo,
   Kc as gag,
   Io as gagDuration,
-  c1 as gaitPose,
+  h1 as gaitPose,
   gr as gaitStrideLength,
   Wt as getEasingFunction,
   ao as getInterpolator,
   Uh as getMotionPathPoint,
   lM as getPathLength,
-  cf as getPointAtProgress,
+  hf as getPointAtProgress,
   U5 as goat,
-  mg as gridLinesFor,
+  yg as gridLinesFor,
   M2 as hairFollow,
   aS as hairFollowTracks,
   jy as hairHangs,
@@ -20500,14 +20520,14 @@ export {
   Yx as handAt,
   Hi as handGrip,
   pr as handJoints,
-  t1 as handJointsAt,
-  fd as handPath,
+  e1 as handJointsAt,
+  pd as handPath,
   Ht as handPose,
   yo as handProp,
-  Cd as hasKeyframes,
+  Rd as hasKeyframes,
   ee as hashSeed,
   px as headPoint,
-  Rd as heldTime,
+  Ld as heldTime,
   C5 as helicopter,
   iS as helpUp,
   oS as helpUpSpacing,
@@ -20520,8 +20540,8 @@ export {
   xx as humanDanceTracks,
   Mx as humanFieldLabel,
   Mb as humanGag,
-  Au as humanGaitPose,
-  $u as humanGaitStrideLength,
+  $u as humanGaitPose,
+  Pu as humanGaitStrideLength,
   Z0 as humanPlan,
   wt as humanPose,
   jS as imageSequence,
@@ -20529,15 +20549,15 @@ export {
   xs as inertiaRest,
   tr as inertiaValueAt,
   rM as inertiaVelocityAt,
-  If as interpolateArray,
-  Pf as interpolateColor,
+  Of as interpolateArray,
+  If as interpolateColor,
   pM as interpolateMotionPath,
   we as interpolateNumber,
-  _f as interpolatePathString,
-  Of as interpolateQuaternion,
+  Hf as interpolatePathString,
+  _f as interpolateQuaternion,
   el as interpolateString,
   jM as invertSimilarity,
-  Hd as isCubicBezierEasing,
+  Cd as isCubicBezierEasing,
   uc as isHeld,
   Qe as isInertiaTrack,
   tM as isMotionPathPoint,
@@ -20552,18 +20572,18 @@ export {
   a0 as isometricBoxFaces,
   l0 as isometricFaces,
   Fb as jointsInScene,
-  F1 as jointsToScene,
+  W1 as jointsToScene,
   er as linear,
-  Xu as lipSyncKeyframes,
+  Uu as lipSyncKeyframes,
   $a as lipSyncOver,
   Fx as lipSyncTracks,
-  ju as lit,
+  Ku as lit,
   ne as live,
-  Qu as lookFields,
+  td as lookFields,
   CM as loopBeats,
   PM as loopEase,
   IM as loopNoise,
-  kd as loosePartsOf,
+  vd as loosePartsOf,
   z5 as lyingPose,
   ho as mapEase,
   sx as mat4,
@@ -20573,16 +20593,16 @@ export {
   eS as meetHands,
   tS as meetingSpacing,
   VM as metaballContours,
-  gp as metaballField,
-  vy as mirrorHumanPose,
-  X1 as mirrorPose,
-  Ku as mixColors,
+  mp as metaballField,
+  My as mirrorHumanPose,
+  U1 as mirrorPose,
+  Xu as mixColors,
   ps as mixHandPoses,
-  _u as mixPoses,
-  vf as morphPath,
+  Hu as mixPoses,
+  Mf as morphPath,
   p5 as motorbike,
-  Em as mount,
-  Pm as mountAll,
+  Am as mount,
+  Im as mountAll,
   vM as narrationMarkers,
   MM as narrationSceneAt,
   ro as naturalRest,
@@ -20593,14 +20613,14 @@ export {
   iv as owl,
   KS as pageTransition,
   Sw as panelMesh,
-  Qd as parametricEasing,
+  tf as parametricEasing,
   rv as parrot,
   Bn as parseAnchor,
   yl as parseEdge,
   Hn as parsePath,
   v0 as parseTrigger,
   fs as partialPath,
-  Rm as pathLength,
+  Lm as pathLength,
   $S as pedallingKeys,
   Ah as pedallingPose,
   GM as penroseStairs,
@@ -20619,7 +20639,7 @@ export {
   na as pointAlong,
   Wh as pointAtDistance,
   Tx as pointOnHead,
-  lp as pointsToPath,
+  cp as pointsToPath,
   Lt as pose,
   gx as poseTracks,
   KM as powSimilarity,
@@ -20627,11 +20647,11 @@ export {
   Na as propActions,
   Jk as propAnchors3D,
   Fa as propAt,
-  vd as propControls,
-  zu as propLineWidth,
+  Md as propControls,
+  qu as propLineWidth,
   ES as propObjects,
   Vk as propPartsInSpace,
-  $d as propPreset,
+  Pd as propPreset,
   xS as propRide,
   PS as propRide3D,
   cv as propScript,
@@ -20648,11 +20668,11 @@ export {
   G5 as rabbit,
   Jh as randomBetween,
   yM as randomChoice,
-  jf as randomSnapped,
+  Kf as randomSnapped,
   Ce as reachCharacter,
   xk as reachOf,
-  ad as resolveActingStyle,
-  Cu as resolveCharacterPoseKeys,
+  ld as resolveActingStyle,
+  Ru as resolveCharacterPoseKeys,
   sb as resolveFacialHair,
   Yo as resolveGait,
   ub as resolveGlasses,
@@ -20661,12 +20681,12 @@ export {
   wb as resolveHeadLook,
   $b as resolveHolding,
   ia as resolvePoseKeys,
-  Kf as resolveSequence,
+  Xf as resolveSequence,
   j0 as resolveStickFrame,
-  N1 as resolveStickPose,
+  D1 as resolveStickPose,
   t0 as resolveValue,
-  up as ribbon,
-  dp as ribbonHeadCap,
+  dp as ribbon,
+  fp as ribbonHeadCap,
   Ia as rideFloors,
   Ge as rotateAbout,
   la as routineBeats,
@@ -20675,43 +20695,43 @@ export {
   ex as scalePoints,
   Gv as scenePreset,
   Xv as scenery,
-  dd as scriptActionSummaries,
+  fd as scriptActionSummaries,
   Ha as scriptTracks,
   ix as scrollProgress,
   ax as scrubOnScroll,
   Xx as scrubPath,
   fx as seatHeight,
-  Yf as serializeTimeline,
-  zf as serializeTrack,
+  jf as serializeTimeline,
+  qf as serializeTrack,
   WS as set,
   Aa as shade,
   Ew as shapeMesh,
   Kr as shapeToPathData,
   qM as similarity,
-  fp as similarityAbout,
-  pp as similarityFixedPoint,
+  pp as similarityAbout,
+  gp as similarityFixedPoint,
   XM as similarityMatrix,
-  Cf as simplifyKeyframes,
+  Rf as simplifyKeyframes,
   Mh as sittingPose,
   ua as skeletonInView,
   ur as sketchPen,
   zv as skyColors,
-  Uu as smoothPath,
-  Pg as smoothToward,
-  gg as snapAxis,
-  Hg as snapConfig,
-  Rg as snapDuration,
-  Cg as snapProgress,
+  Gu as smoothPath,
+  Ig as smoothToward,
+  mg as snapAxis,
+  Cg as snapConfig,
+  Lg as snapDuration,
+  Rg as snapProgress,
   $s as solveAt,
   Ko as solvePlanSpace,
-  wd as solveProp,
+  kd as solveProp,
   tv as songbird,
   bw as soundsOf,
   uk as speechDuration,
   Aw as speechLength,
   SS as spliceTracks,
   BS as splitText,
-  Ld as springDuration,
+  Fd as springDuration,
   Vs as springFollow,
   sM as springValueAt,
   tx as squashStretch,
@@ -20723,21 +20743,21 @@ export {
   Qi as staggerOffsets,
   Ho as staggerSpan,
   z2 as stepsDuration,
-  Zd as stepsEasing,
-  cd as stepsToKeys,
+  Qd as stepsEasing,
+  hd as stepsToKeys,
   U0 as stickFigureAt,
   he as stickFigureJoints,
   X0 as stickFigureTarget,
   Vb as stickToHuman,
-  d1 as strideLength,
+  f1 as strideLength,
   kt as surfaceBox,
   dS as surfaceScript,
   xb as sweepingPose,
-  dm as syncMediaElement,
-  f1 as talkingMouth,
+  fm as syncMediaElement,
+  p1 as talkingMouth,
   sa as taperedLine,
   Ft as taperedOutline,
-  Df as textAt,
+  Bf as textAt,
   _S as tf,
   DS as ticker,
   NS as timeline,
@@ -20759,7 +20779,7 @@ export {
   Pa as valueAt,
   nx as vec3,
   Re as vehicle,
-  u1 as walkPose,
+  d1 as walkPose,
   O5 as wheelchair,
   Jx as whiteboard,
   Ux as withErased,

@@ -178,6 +178,7 @@ function moustacheOutline(style: MoustacheStyle): Point[] | null {
 }
 
 export interface FacialHairDrawOptions {
+  headOutline?: Point[]
   lineWidth: number
   skin: string
 }
@@ -206,7 +207,7 @@ export function drawBeardBehind(pen: Pen, ctx: CanvasRenderingContext2D, head: S
   const { far } = cachedOutlines(head, hair, () => shellOutlines(head, region))
   behindHead(ctx, head, () => {
     for (const loop of far) pen.shape(loop, hair.color, outlineOf(options.lineWidth))
-  })
+  }, options.headOutline)
 }
 
 /** The beard over the face (before the mouth is drawn, so the mouth shows in its opening). */

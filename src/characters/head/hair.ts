@@ -458,6 +458,8 @@ function hangingPath(head: SolvedHead, tie: HairTie, root: Point, out: Vec3, mot
 }
 
 export interface HairDrawOptions {
+  /** Projected face outline for clipping behind angular heads. */
+  headOutline?: Point[]
   /** The character's line width, px */
   lineWidth: number
   /** Skin colour, for the scalp under close-cropped hair */
@@ -576,7 +578,7 @@ export function drawHairBehind(pen: Pen, ctx: CanvasRenderingContext2D, head: So
     drawSpikes(pen, head, hair, options.lineWidth, pad, false)
     for (const loop of far) pen.shape(loop, hair.color, outlineOf(options.lineWidth))
     drawHairLocks(pen, head, hair, pad, motion, options.lineWidth, false)
-  })
+  }, options.headOutline)
 }
 
 /** The hair over the head: the part facing the viewer, its detail lines, and near ties. */

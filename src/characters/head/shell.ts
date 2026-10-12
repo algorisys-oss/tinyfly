@@ -210,14 +210,20 @@ export function cachedOutlines(head: SolvedHead, key: unknown, make: () => Shell
 }
 
 /**
- * Run `draw` with the head's disc cut out of the canvas, for things behind
+ * Run `draw` with the projected face outline (or default oval) cut out, for things behind
  * the head: they show only around it, even when the head is see-through.
  */
-export function behindHead(ctx: CanvasRenderingContext2D, head: SolvedHead, draw: () => void): void {
+export function behindHead(ctx: CanvasRenderingContext2D, head: SolvedHead, draw: () => void, outline?: Point[]): void {
   ctx.save()
   ctx.beginPath()
   ctx.rect(-1e5, -1e5, 2e5, 2e5)
-  ctx.ellipse(head.center.x, head.center.y, head.rx, head.ry, head.angle, 0, Math.PI * 2)
+  if (outline?.length) {
+    ctx.moveTo(outline[0].x, outline[0].y)
+    for (const point of outline.slice(1)) ctx.lineTo(point.x, point.y)
+    ctx.closePath()
+  } else {
+    ctx.ellipse(head.center.x, head.center.y, head.rx, head.ry, head.angle, 0, Math.PI * 2)
+  }
   ctx.clip('evenodd')
   draw()
   ctx.restore()

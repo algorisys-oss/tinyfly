@@ -489,7 +489,7 @@ export function characterPartsInView(character: Character, pose: Pose, projectio
       if (index === 0) {
         if (seen.look === 'pencil' && seen.pencil.construction !== false) drawConstruction(pen, seen, joints)
         hook(seen.layers.behind)
-        drawHeadBehind(ctx, pen, seen.head, joints.head, full, { lineWidth: seen.lineWidth, skin: seen.skin })
+        drawHeadBehind(ctx, pen, seen.head, joints.head, full, { lineWidth: seen.lineWidth, skin: seen.skin, face: seen.face })
       }
       const layers = seen.layers.parts?.[id]
       hook(layers?.under)
@@ -529,7 +529,7 @@ function drawSolved(ctx: CanvasRenderingContext2D, character: Character, full: P
   ctx.lineJoin = 'round'
   if (!only && character.look === 'pencil' && character.pencil.construction !== false) drawConstruction(pen, character, joints)
   if (!only) hook(character.layers.behind)
-  drawHeadBehind(ctx, pen, character.head, joints.head, full, { lineWidth: character.lineWidth, skin: character.skin })
+  drawHeadBehind(ctx, pen, character.head, joints.head, full, { lineWidth: character.lineWidth, skin: character.skin, face: character.face })
   for (const id of order) {
     const layers = character.layers.parts?.[id]
     hook(layers?.under)

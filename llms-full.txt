@@ -204,7 +204,7 @@ with a GSAP-style call (durations are in seconds here):
 ```html
 <div class="box" style="width:60px;height:60px;background:#4a9eff"></div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.1/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -412,7 +412,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.1/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -2327,7 +2327,7 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.0/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.1/cdn/tinyfly-player.iife.js`.
 
 ---
 
@@ -6680,7 +6680,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.1/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed
@@ -8110,6 +8110,7 @@ or link `llms-full.txt`.
 
 `MANGA_CAST` supplies four original young adult presets through `castMember`.
 `face.shape: 'angular'`, `jawWidth` and `chinWidth` shape the projected pen head;
+`jawRoundness: 1` rounds cheek/chin corners (default `0` preserves sharp jaws).
 `eyeScale` and `eyeAspect` shape anime eyes. Hair and outfit overrides remain
 independent; spread the preset's face when changing one nested field.
 `mangaSpikes` / `mangaSweep` contain editable `hair.spikes` tufts as JSON
@@ -8158,7 +8159,7 @@ path for all of that:
 </figure>
 
 <!-- once, anywhere on the page (a site-wide footer is fine) -->
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.1/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 Every `[data-tinyfly-embed]` mounts when the page is ready, with no per-post
@@ -9430,8 +9431,8 @@ On a page with no build step, load the maps add-on after the browser bundle; it
 adds to the same `tinyfly` global:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.0/cdn/tinyfly.iife.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.0/cdn/tinyfly-maps.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.1/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.1/cdn/tinyfly-maps.iife.js"></script>
 ```
 
 It is a separate script because the offline world map it carries adds about
@@ -9996,6 +9997,10 @@ const hero = character(castMember('mangaYoungMan', 300, {
 projected 3D tapered head, following yaw, nod and roll. `jawWidth` is the
 half-width at the jaw (clamped to 0.55–0.95 head radii, default 0.74);
 `chinWidth` is the half-width just above the chin (0.03–0.35, default 0.14).
+`jawRoundness` softens angular cheek and chin corners (0–1, default 0 keeps
+the sharp outline). The Flowing Cartoon Hair demo's soft angular face uses
+`jawWidth: 0.8`, `chinWidth: 0.28` and `jawRoundness: 1` for a fuller,
+rounded chin. Behind-head hair, ears and beards clip to this same outline.
 `shape: 'round'` is the original default. The underlying rig and contact
 geometry retain their original head bounds; solid mesh characters retain
 their existing mesh head.
@@ -14454,7 +14459,7 @@ magnet.addEventListener('pointerleave', () => {
 
 <!-- capabilities: generated from the library -->
 
-# tinyfly capabilities (v0.107.0)
+# tinyfly capabilities (v0.107.1)
 
 Generated from the library itself: every name below is accepted, and names not listed are rejected (beat scripts, code panels and `checkTracks` say which name was probably meant).
 
@@ -14746,7 +14751,7 @@ Appearance options of `character({ … })`, all plain data that turns with the h
 - `castMember(name, height)`: `boy`, `girl`, `youngMan`, `youngWoman`, `man`, `woman`, `grandpa`, `grandma`, `doctor`, `cook`, `builder`, `courier`, `teacher`, `farmer`, `animeBoy`, `animeGirl`, `animeYoungMan`, `animeYoungWoman`, `animeMan`, `animeWoman`, `animeOlderMan`, `animeOlderWoman`, `mangaYoungMan`, `mangaYoungWoman`, `mangaRival`, `mangaHeroine`
 - Face marks (pose fields, 0–1): `blush`, `tears`, `sweat`; close-up fields `pupil` (size, 1 usual), `lid` (upper lids lowered, 0–1), `bulge` (eyes out of the head, 0–1); `face: { nose: true, inPupil(ctx, pupil) }`; `drawCharacterHead(ctx, who, pose, { x, y, radius })` draws just the head big
 - Face styles: `simple`, `anime`; `face: { style: 'anime', iris: '#4b7fce', lashes: true, ageLines: 0.8 }` uses coloured eyes and the same expressions, blinks and gaze. `ANIME_CAST` contains eight age presets, also available through `castMember`.
-- Face shapes: `round`, `angular`; `face: { shape: 'angular', jawWidth: 0.74, chinWidth: 0.14, eyeScale: 0.8, eyeAspect: 0.65 }` sets a tapered 3D jaw and narrower anime eyes. `MANGA_CAST` contains four original young adult presets; hair styles `mangaSpikes` and `mangaSweep` remain editable.
+- Face shapes: `round`, `angular`; `face: { shape: 'angular', jawWidth: 0.74, chinWidth: 0.14, eyeScale: 0.8, eyeAspect: 0.65 }` sets a tapered 3D jaw and narrower anime eyes; `jawRoundness: 1` softens the cheek/chin corners (default 0 keeps sharp jaws). `MANGA_CAST` contains four original young adult presets; hair styles `mangaSpikes` and `mangaSweep` remain editable.
 - Hair in motion (pose fields): `hair.swing` (degrees round the head, + toward its left), `hair.trail` (head radii back), `hair.lift` (head radii up); key them with `hairFollowTracks(target, tracks, who)` after the character's tracks, or `hairFollow` + `hairMotionAt` when posing per frame
 - `holding`: `mug` (left or right), `phone` (left or right), `book` (one hand or both), `bag` (left or right), `briefcase` (left or right), `umbrella` (left or right), `broom` (left or right), `cane` (left or right), `parcel` (both); pose fields `held.left`, `held.right`, `held.both` (below 0.5 lets go); `handGrip(joints, side)`
 - `meetHands(kind, a, b)` (stand them `meetingSpacing(kind, a, b)` apart): `handshake`, `highFive`, `fistBump`, `handOver`; `embrace(a, b)` (a hug, `embraceSpacing` apart); `helpUp(helper, sitter, progress)` (0 on the floor, hand taken; 1 standing; `helpUpSpacing` apart)

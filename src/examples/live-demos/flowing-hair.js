@@ -35,7 +35,7 @@ export function run(live, root) {
   const faces = {
     simpleRound: { style: 'simple', shape: 'round' },
     expressiveRound: { style: 'anime', shape: 'round', iris: '#567f73' },
-    softAngular: { style: 'anime', shape: 'angular', jawWidth: 0.62, chinWidth: 0.09, eyeScale: 0.9, eyeAspect: 0.8, iris: '#567f73' },
+    softAngular: { style: 'anime', shape: 'angular', jawWidth: 0.8, chinWidth: 0.28, jawRoundness: 1, eyeScale: 0.95, eyeAspect: 0.9, iris: '#567f73' },
     broadJaw: { style: 'anime', shape: 'angular', jawWidth: 0.95, chinWidth: 0.35, eyeScale: 0.7, eyeAspect: 0.6, lashes: false, nose: true, iris: '#567f73' },
     olderExpressive: { style: 'anime', shape: 'round', eyeScale: 0.8, eyeAspect: 0.65, ageLines: 1, lashes: false, nose: true, iris: '#567f73' },
   }

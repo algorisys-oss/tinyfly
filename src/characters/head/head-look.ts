@@ -1,6 +1,8 @@
 import type { Pose } from '../rig/body-plan'
 import type { SolvedHead } from '../rig/skeleton'
 import type { Pen } from '../look/pen'
+import type { FaceOptions } from './face'
+import { angularHeadOutline } from './head-shape'
 import { drawHairBehind, drawHairFront, hairMotionOf, resolveHair, type Hair, type HairSpec, type HairStyleName } from './hair'
 import { drawEarsBehind, drawEarsFront } from './ears'
 import { drawBeardBehind, drawBeardFront, drawMoustache, resolveFacialHair, type FacialHair, type FacialHairSpec, type FacialHairStyleName } from './facial-hair'
@@ -61,6 +63,7 @@ export function resolveHeadLook(options: HeadLookOptions): HeadLook {
 }
 
 export interface HeadDrawOptions {
+  face?: FaceOptions
   lineWidth: number
   skin: string
 }
@@ -78,9 +81,10 @@ const showsEars = (look: HeadLook) => look.ears && !look.hair?.coversEars
 
 export function drawHeadBehind(ctx: CanvasRenderingContext2D, pen: Pen, look: HeadLook, head: SolvedHead, pose: Pose, options: HeadDrawOptions): void {
   if (isBare(look)) return
-  if (look.hair) drawHairBehind(pen, ctx, head, look.hair, { ...options, motion: hairMotionOf(pose) })
-  if (look.facialHair) drawBeardBehind(pen, ctx, head, look.facialHair, options)
-  if (showsEars(look)) drawEarsBehind(pen, ctx, head, options)
+  const clipping = { ...options, headOutline: options.face?.shape === 'angular' ? angularHeadOutline(head, options.face) : undefined }
+  if (look.hair) drawHairBehind(pen, ctx, head, look.hair, { ...clipping, motion: hairMotionOf(pose) })
+  if (look.facialHair) drawBeardBehind(pen, ctx, head, look.facialHair, clipping)
+  if (showsEars(look)) drawEarsBehind(pen, ctx, head, clipping)
 }
 
 /** The head's front pass; `drawFace` draws the face at its place in the order. */

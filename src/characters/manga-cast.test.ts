@@ -44,6 +44,42 @@ describe('young adult manga cast', () => {
     for (const p of a) expect(Math.min(...b.map(q => Math.hypot(p.x - q.x, p.y - q.y)))).toBeLessThan(1e-8)
   })
 
+  it('rounds angular corners without changing existing sharp faces', () => {
+    const who = character({ face: { shape: 'angular', jawWidth: 0.8, chinWidth: 0.28, jawRoundness: 1 } })
+    expect(JSON.parse(JSON.stringify(who.face)).jawRoundness).toBe(1)
+    const cornerAngle = (points: Array<{ x: number; y: number }>) => Math.max(...points.map((point, i) => {
+      const before = points[(i + points.length - 1) % points.length]
+      const after = points[(i + 1) % points.length]
+      const a = [point.x - before.x, point.y - before.y]
+      const b = [after.x - point.x, after.y - point.y]
+      const cosine = (a[0] * b[0] + a[1] * b[1]) / (Math.hypot(...a) * Math.hypot(...b))
+      return Math.acos(Math.min(1, Math.max(-1, cosine)))
+    }))
+    for (const turn of [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5]) {
+      const head = characterJoints(who, humanPose({ turn, 'head.nod': 12, 'head.tilt': -8 })).head
+      const sharp = angularHeadOutline(head, { jawWidth: 0.8, chinWidth: 0.28 })
+      expect(angularHeadOutline(head, { jawWidth: 0.8, chinWidth: 0.28, jawRoundness: 0 })).toEqual(sharp)
+      const rounded = angularHeadOutline(head, who.face)
+      expect(rounded.every(p => Number.isFinite(p.x) && Number.isFinite(p.y))).toBe(true)
+      expect(cornerAngle(rounded)).toBeLessThan(cornerAngle(sharp))
+      expect(angularHeadOutline(head, JSON.parse(JSON.stringify(who.face)))).toEqual(rounded)
+    }
+  })
+
+  it.each([0, 1])('fills hair next to the angular chin without an oval clipping gap (roundness %s)', jawRoundness => {
+    const canvas = createCanvas(300, 320)
+    const ctx = canvas.getContext('2d')
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, 300, 320)
+    const who = character({ skin: '#f2cfb1', ink: '#342b32', lineWidth: 2.2, look: 'clean',
+      face: { shape: 'angular', jawWidth: 0.8, chinWidth: 0.28, jawRoundness },
+      hair: { style: 'cascadingWaves', color: '#985b32' },
+    })
+    drawCharacterHead(ctx as unknown as CanvasRenderingContext2D, who, humanPose({}), { x: 150, y: 170, radius: 80 })
+    // These points lie beside the jaw, inside the former oval mask.
+    for (const x of [110, 190]) expect([...ctx.getImageData(x, 234, 1, 1).data]).toEqual([152, 91, 50, 255])
+  })
+
   it('renders each editable JSON preset through views and expressions in all pen looks', () => {
     expect(Object.keys(MANGA_CAST)).toHaveLength(4)
     for (const name of Object.keys(MANGA_CAST) as Array<keyof typeof MANGA_CAST>) {

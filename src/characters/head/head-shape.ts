@@ -18,7 +18,22 @@ export function angularHeadOutline(head: SolvedHead, face: FaceOptions): Point[]
       points.push(headPoint(head, [radius * Math.cos(angle), y, radius * Math.sin(angle)]).point)
     }
   }
-  return convexHull(points)
+  let outline = convexHull(points)
+  const roundness = Math.min(1, Math.max(0, face.jawRoundness ?? 0))
+  if (roundness === 0) return outline
+  // Corner cutting keeps the silhouette convex and inside the original head.
+  // Dense crown edges barely move; the longer cheek/chin edges soften visibly.
+  const weight = roundness * 0.25
+  for (let pass = 0; pass < 3; pass++) {
+    outline = outline.flatMap((point, i) => {
+      const next = outline[(i + 1) % outline.length]
+      return [
+        { x: point.x + (next.x - point.x) * weight, y: point.y + (next.y - point.y) * weight },
+        { x: next.x + (point.x - next.x) * weight, y: next.y + (point.y - next.y) * weight },
+      ]
+    })
+  }
+  return outline
 }
 
 /** Monotone chain. Dropping interior points preserves sharp jaw corners at any view. */

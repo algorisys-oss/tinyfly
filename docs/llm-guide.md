@@ -277,6 +277,7 @@ or link `llms-full.txt`.
 
 `MANGA_CAST` supplies four original young adult presets through `castMember`.
 `face.shape: 'angular'`, `jawWidth` and `chinWidth` shape the projected pen head;
+`jawRoundness: 1` rounds cheek/chin corners (default `0` preserves sharp jaws).
 `eyeScale` and `eyeAspect` shape anime eyes. Hair and outfit overrides remain
 independent; spread the preset's face when changing one nested field.
 `mangaSpikes` / `mangaSweep` contain editable `hair.spikes` tufts as JSON

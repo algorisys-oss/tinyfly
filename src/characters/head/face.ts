@@ -111,6 +111,8 @@ export interface FaceOptions {
   jawWidth?: number
   /** Angular chin half-width in head radii, 0.03..0.35 (default 0.14). */
   chinWidth?: number
+  /** Round angular jaw corners, 0..1 (default 0: keep the sharp outline). */
+  jawRoundness?: number
   /** Anime eye size, 0.5..1.2 (default 1). */
   eyeScale?: number
   /** Anime eye height relative to width, 0.45..1.2 (default 1). */

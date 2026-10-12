@@ -1,5 +1,7 @@
 ## Flowing cartoon hairstyles
 
+- [x] v0.107.1: fuller soft angular chin and opt-in JSON `face.jawRoundness`;
+  clip hair, ears and beards to the actual face outline to eliminate white gaps.
 - [x] Three original editable presets: soft sweep, flowing bob and cascading waves.
 - [x] Scalp-attached cubic locks, tapered tips, soft supporting mass and subtle clean-look highlights.
 - [x] Fixed roots and per-lock flexibility through the existing deterministic hair-follow API.
