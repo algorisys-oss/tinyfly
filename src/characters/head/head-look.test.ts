@@ -9,6 +9,7 @@ import { GLASSES_STYLES } from './glasses'
 import { HAT_STYLES } from './hats'
 import { resolveHeadLook } from './head-look'
 import { shellOutlines, spherePoint } from './shell'
+import { softCartoonCharacter } from '../soft-cartoon-cast'
 import type { Pose } from '../rig/body-plan'
 
 const W = 240
@@ -37,6 +38,23 @@ const hex = (color: string): [number, number, number] => [1, 3, 5].map((i) => pa
 const near = (a: [number, number, number], b: [number, number, number], tolerance = 24) => a.every((value, i) => Math.abs(value - b[i]) <= tolerance)
 
 describe('head looks', () => {
+  it('lets opaque hair cover cartoon eyes throughout story turns', () => {
+    let visible = 0
+    for (const name of ['youngMan', 'youngWoman'] as const) for (const turn of [0, .6, .85, 1, 1.1, 1.5, 2, -1, -.85, -.6]) {
+      const who = softCartoonCharacter(name, { face: { iris: '#ff00ff' }, body: { shading: { mode: 'none' } } })
+      const images = [0, 1].map(blink => {
+        const canvas = createCanvas(260, 260)
+        drawCharacterHead(canvas.getContext('2d') as unknown as CanvasRenderingContext2D, who, humanPose({ turn, blink }), { x: 130, y: 130, radius: 90 })
+        return canvas.getContext('2d').getImageData(0, 0, 260, 260).data
+      })
+      const hair = hex(who.head.hair!.color)
+      for (let i = 0; i < images[0].length; i += 4) if (images[0][i] > 230 && images[0][i + 1] < 25 && images[0][i + 2] > 230) {
+        visible++
+        expect(near([images[1][i], images[1][i + 1], images[1][i + 2]], hair, 25), `${name} at ${turn}: eye over hair`).toBe(false)
+      }
+    }
+    expect(visible).toBeGreaterThan(500)
+  })
   it('leave plain characters exactly as they were', () => {
     const plain = render({}).toBuffer('image/png')
     const explicit = render({ hair: null, facialHair: null, glasses: null, hat: null, ears: false }).toBuffer('image/png')

@@ -30,6 +30,10 @@ export * from '../adapters/canvas/polyline'
 export * from './hand'
 // Characters v2: body plans, turned in 3D, drawn in a look (see docs/character-system-m1.md).
 export * from './character'
+export { leafOutfit, leafOutfitContours, type LeafOutfitOptions, type LeafOutfitContours } from './wardrobe/leaf-outfit'
+export { softCartoonCharacter, SOFT_CARTOON_CAST, type SoftCartoonName } from './soft-cartoon-cast'
+export { resolveOrganicBody, bodyProfileWidth, type OrganicBody, type OrganicBodyOptions, type BodyProfilePoint, type SkinShading } from './body/organic-body'
+export { organicBodyContours, organicCenterLine, type OrganicBodyContours, type OrganicContour, type OrganicSample } from './body/organic-geometry'
 export { humanPlan, humanPose, mirrorHumanPose, humanFieldLabel, HUMAN_REST, HUMAN_POSES, HUMAN_EXPRESSIONS, HUMAN_BUILDS, FOOT_SHAPES, type FootShape, type HumanBuild, type HumanBuildName, type HumanPoseName, type HumanExpressionName } from './species/human'
 // A recurring cast of ready-made characters (family, ages, looks).
 export { CHARACTER_CAST, ANIME_CAST, MANGA_CAST, castMember, type CastMember, type CastName, type AnimeCastName, type MangaCastName } from './cast'
@@ -41,6 +45,7 @@ export * from './species/human-motion'
 export type { BodyPlan, ChainSpec, BoneSpec, BoneAngles, ContactSpec, HeadSpec, Pose as CharacterPose, Vec3 } from './rig/body-plan'
 export { createPen, ellipsePoints, type Pen, type Look, type PencilOptions, type PenOptions } from './look/pen'
 export { basicOutfit, type BasicOutfitOptions } from './wardrobe/basic-outfit'
+export { outfitPreset, OUTFIT_PRESETS, type OutfitCategory } from './wardrobe/outfit-preset'
 // Heads: hair, ears, facial hair, glasses and hats, as plain data that turns with the head (see docs/character-appearance.md).
 export * from './head'
 // Hair in motion: hanging hair lags behind the head, keyed ahead of time from its motion.

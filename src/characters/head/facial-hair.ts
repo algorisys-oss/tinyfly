@@ -1,7 +1,7 @@
 import type { Point } from '../../adapters/canvas/sketch'
 import type { SolvedHead } from '../rig/skeleton'
 import type { Pen } from '../look/pen'
-import { faceToScreen } from './face'
+import { faceToScreen, type FaceOptions } from './face'
 import { aroundDistance, behindHead, cachedOutlines, facingOf, onScreen, shellOutlines, spherePoint, type ShellRegion } from './shell'
 
 /**
@@ -178,6 +178,7 @@ function moustacheOutline(style: MoustacheStyle): Point[] | null {
 }
 
 export interface FacialHairDrawOptions {
+  face?: FaceOptions
   headOutline?: Point[]
   lineWidth: number
   skin: string
@@ -220,7 +221,7 @@ export function drawBeardFront(pen: Pen, head: SolvedHead, hair: FacialHair, opt
   }
   if (hair.beard === 'soulPatch') {
     const shape = [{ x: -0.05, y: -0.55 }, { x: 0.05, y: -0.55 }, { x: 0, y: -0.68 }]
-    const { points, facing } = faceToScreen(head, shape, { x: 0, y: -0.6 })
+    const { points, facing } = faceToScreen(head, shape, { x: 0, y: -0.6 }, options.face?.projection)
     if (facing > -SHOWN) pen.shape(points, hair.color, outlineOf(options.lineWidth) * 0.7)
     return
   }
@@ -235,7 +236,7 @@ export function drawBeardFront(pen: Pen, head: SolvedHead, hair: FacialHair, opt
       const a = (Math.PI * 2 * i) / 20
       return { x: Math.cos(a) * w, y: -0.42 + Math.sin(a) * 0.13 }
     })
-    const { points, facing } = faceToScreen(head, opening, { x: 0, y: -0.42 })
+    const { points, facing } = faceToScreen(head, opening, { x: 0, y: -0.42 }, options.face?.projection)
     if (facing > -SHOWN) pen.shape(points, options.skin === 'none' ? '#ffffff' : options.skin, 0)
   }
 }
@@ -246,13 +247,13 @@ export function drawMoustache(pen: Pen, head: SolvedHead, hair: FacialHair, opti
   const centre = { x: 0, y: -0.24 }
   if (hair.moustache === 'pencil') {
     const line = [-0.2, -0.1, 0, 0.1, 0.2].map((x) => ({ x, y: -0.25 + 0.03 * Math.cos((x / 0.2) * Math.PI) }))
-    const { points, facing } = faceToScreen(head, line, centre)
+    const { points, facing } = faceToScreen(head, line, centre, options.face?.projection)
     if (facing > -SHOWN) pen.line(points, Math.max(1, options.lineWidth * 0.32))
     return
   }
   const outline = moustacheOutline(hair.moustache)
   if (!outline) return
-  const { points, facing } = faceToScreen(head, outline, centre)
+  const { points, facing } = faceToScreen(head, outline, centre, options.face?.projection)
   if (facing <= -SHOWN) return
   pen.shape(points, hair.color, outlineOf(options.lineWidth) * 0.8)
   if (hair.moustache === 'handlebar') {
@@ -263,7 +264,7 @@ export function drawMoustache(pen: Pen, head: SolvedHead, hair: FacialHair, opti
         return { x: side * (0.27 + 0.05 * Math.cos(a)), y: -0.21 + 0.05 * (1 + Math.sin(a)) }
       })
       curl.unshift({ x: side * 0.22, y: -0.27 })
-      pen.line(faceToScreen(head, curl, centre).points, outlineOf(options.lineWidth) * 0.8)
+      pen.line(faceToScreen(head, curl, centre, options.face?.projection).points, outlineOf(options.lineWidth) * 0.8)
     }
   }
 }

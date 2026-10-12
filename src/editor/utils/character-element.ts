@@ -15,6 +15,8 @@ import { HUMAN_BUILDS } from '../../characters/species/human'
 export function characterOf(element: CharacterElement): Character {
   return character({
     figure: element.figure,
+    body: element.body,
+    leafOutfit: element.figure === 'organic' && element.outfit === 'leaves' ? element.leafOutfit ?? {} : null,
     look: element.look,
     height: Math.max(1, element.height),
     ink: element.ink,
@@ -24,10 +26,11 @@ export function characterOf(element: CharacterElement): Character {
     seed: hashSeed(element.id) % 1000,
     layers:
       element.outfit === 'basic'
-        ? basicOutfit({ shirt: element.shirt, trousers: element.trousers, sleeves: element.sleeves, bottom: element.bottom, collar: element.collar, tie: element.tie, over: element.over, shoes: element.shoes })
+        ? basicOutfit({ top: element.top, trouserStyle: element.trouserStyle, shirt: element.shirt, trousers: element.trousers, sleeves: element.sleeves, bottom: element.bottom, collar: element.collar, tie: element.tie, over: element.over, shoes: element.shoes })
         : undefined,
-    hands: (element.hands ?? 'dot') === 'dot' ? 'dot' : 'cartoon',
-    handStyle: element.hands === 'natural' ? 'natural' : 'glove',
+    hands: element.hands === undefined ? undefined : element.hands === 'dot' ? 'dot' : 'cartoon',
+    handStyle: element.hands === undefined ? undefined : element.hands === 'natural' ? 'natural' : 'glove',
+    handSize: element.handSize,
     ...element.build,
     hair: element.hair ? { ...element.hairDetails, style: element.hair as HairStyleName, ...(element.hairColor ? { color: element.hairColor } : {}) } : null,
     facialHair: element.facialHair ? { style: element.facialHair as FacialHairStyleName, ...(element.hairColor ? { color: element.hairColor } : {}) } : null,
@@ -38,8 +41,10 @@ export function characterOf(element: CharacterElement): Character {
       teeth: element.teeth ?? false, tongue: element.tongue ?? false,
       ...(element.faceStyle !== undefined ? { style: element.faceStyle } : {}),
       ...(element.faceShape !== undefined ? { shape: element.faceShape } : {}),
+      ...(element.faceProjection !== undefined ? { projection: element.faceProjection } : {}),
       ...(element.jawWidth !== undefined ? { jawWidth: element.jawWidth } : {}),
       ...(element.chinWidth !== undefined ? { chinWidth: element.chinWidth } : {}),
+      ...(element.jawRoundness !== undefined ? { jawRoundness: element.jawRoundness } : {}),
       ...(element.eyeScale !== undefined ? { eyeScale: element.eyeScale } : {}),
       ...(element.eyeAspect !== undefined ? { eyeAspect: element.eyeAspect } : {}),
       ...(element.faceNose !== undefined ? { nose: element.faceNose } : {}),
@@ -52,6 +57,38 @@ export function characterOf(element: CharacterElement): Character {
   })
 }
 
+/** Values shown by appearance controls, including the selected figure's resolved defaults. */
+export function characterControlValues(element: CharacterElement) {
+  const who = characterOf(element)
+  return {
+    headSize: who.plan.head.size,
+    shoulderWidth: Math.abs(who.plan.chains.find(chain => chain.id === 'arm.left')?.offset?.[0] ?? 0),
+    hipWidth: Math.abs(who.plan.chains.find(chain => chain.id === 'leg.left')?.offset?.[0] ?? 0),
+    legLength: element.build?.legLength ?? 1,
+    armLength: element.build?.armLength ?? 1,
+    hands: who.hands === 'dot' ? 'dot' : who.handStyle === 'natural' ? 'natural' : 'cartoon',
+    lineWidth: who.lineWidth,
+    skin: who.skin,
+    ink: who.ink,
+    faceStyle: who.face.style ?? 'simple',
+    faceShape: who.face.shape ?? 'round',
+    jawWidth: who.face.jawWidth ?? .74,
+    chinWidth: who.face.chinWidth ?? .14,
+    eyeScale: who.face.eyeScale ?? 1,
+    eyeAspect: who.face.eyeAspect ?? 1,
+    irisColor: who.face.iris ?? '#4b7fce',
+    eyeLashes: who.face.lashes ?? true,
+    ageLines: who.face.ageLines ?? 0,
+  }
+}
+
+export function characterColorFields(element: CharacterElement, field: 'skin' | 'ink', value: string): Partial<CharacterElement> {
+  const body = element.body
+  if (field === 'skin' && body?.fill !== undefined) return { skin: value, body: { ...body, fill: value } }
+  if (field === 'ink' && body?.outline?.color !== undefined) return { ink: value, body: { ...body, outline: { ...body.outline, color: value } } }
+  return { [field]: value }
+}
+
 /**
  * The element fields that dress a character as a cast member: its build,
  * hair, facial hair, glasses, ears and clothes. Heights are left alone (the
@@ -61,7 +98,7 @@ export function castElementFields(name: CastName): Partial<CharacterElement> {
   const { options } = CHARACTER_CAST[name] as (typeof CHARACTER_CAST)[CastName] & { options: Record<string, unknown> }
   const styleOf = (value: unknown) => (typeof value === 'string' ? value : (value as { style?: string } | undefined)?.style)
   const colorOf = (value: unknown) => (typeof value === 'object' && value ? (value as { color?: string }).color : undefined)
-  const outfit = options.outfit as Pick<CharacterElement, 'sleeves' | 'bottom' | 'collar' | 'tie' | 'over'> & { shirt?: string; trousers?: string } | undefined
+  const outfit = options.outfit as Pick<CharacterElement, 'top' | 'trouserStyle' | 'sleeves' | 'bottom' | 'collar' | 'tie' | 'over'> & { shirt?: string; trousers?: string } | undefined
   const build = options.build as keyof typeof CHARACTER_BUILDS | undefined
   const shape: CharacterBuild = build && build in CHARACTER_BUILDS ? { ...CHARACTER_BUILDS[build].build } : {}
   for (const field of ['headSize', 'shoulderWidth', 'hipWidth', 'legLength', 'armLength'] as const) {
@@ -81,8 +118,10 @@ export function castElementFields(name: CastName): Partial<CharacterElement> {
     ...(options.hands ? { hands: options.hands === 'cartoon' && options.handStyle === 'natural' ? 'natural' as const : options.hands as CharacterElement['hands'] } : {}),
     faceStyle: face?.style,
     faceShape: face?.shape,
+    faceProjection: face?.projection,
     jawWidth: face?.jawWidth,
     chinWidth: face?.chinWidth,
+    jawRoundness: face?.jawRoundness,
     eyeScale: face?.eyeScale,
     eyeAspect: face?.eyeAspect,
     faceNose: face?.nose,
@@ -103,6 +142,8 @@ export function castElementFields(name: CastName): Partial<CharacterElement> {
           outfit: 'basic' as const,
           shirt: outfit.shirt ?? '#e2493b',
           trousers: outfit.trousers ?? '#24476b',
+          top: outfit.top,
+          trouserStyle: outfit.trouserStyle,
           sleeves: outfit.sleeves,
           bottom: outfit.bottom,
           collar: outfit.collar,

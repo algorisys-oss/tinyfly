@@ -1,7 +1,7 @@
 import type { Point } from '../../adapters/canvas/sketch'
 import type { SolvedHead } from '../rig/skeleton'
 import type { Pen } from '../look/pen'
-import { faceToScreen } from './face'
+import { faceToScreen, type FaceOptions } from './face'
 import { facingOf, onScreen } from './shell'
 
 /**
@@ -49,6 +49,7 @@ function lensOutline(style: GlassesStyle, cx: number): Point[] {
 }
 
 export interface GlassesDrawOptions {
+  face?: FaceOptions
   lineWidth: number
 }
 
@@ -57,14 +58,14 @@ export function drawGlasses(pen: Pen, head: SolvedHead, glasses: Glasses, option
   const shown: number[] = []
   for (const side of [1, -1]) {
     const cx = EYE_X * side
-    const { points, facing } = faceToScreen(head, lensOutline(glasses.style, cx), { x: cx, y: EYE_Y })
+    const { points, facing } = faceToScreen(head, lensOutline(glasses.style, cx), { x: cx, y: EYE_Y }, options.face?.projection)
     if (facing < SHOWN) continue
     shown.push(side)
     pen.shape(points, glasses.style === 'sunglasses' ? '#1f2328' : null, frame)
     // The arm back to the ear on this side, when that side of the head faces the viewer.
     const ear = [side * 0.97, EYE_Y + 0.02, -0.1] as [number, number, number]
     if (facingOf(head, [side, 0, 0]) > 0.15) {
-      const hinge = faceToScreen(head, [{ x: cx + side * 0.21, y: EYE_Y + 0.02 }], { x: cx, y: EYE_Y }).points[0]
+      const hinge = faceToScreen(head, [{ x: cx + side * 0.21, y: EYE_Y + 0.02 }], { x: cx, y: EYE_Y }, options.face?.projection).points[0]
       pen.line([hinge, onScreen(head, ear)], frame * 0.9)
     }
   }
@@ -74,6 +75,6 @@ export function drawGlasses(pen: Pen, head: SolvedHead, glasses: Glasses, option
       { x: 0, y: EYE_Y + 0.07 },
       { x: -(EYE_X - 0.2), y: EYE_Y + 0.02 },
     ]
-    pen.line(faceToScreen(head, bridge, { x: 0, y: EYE_Y }).points, frame)
+    pen.line(faceToScreen(head, bridge, { x: 0, y: EYE_Y }, options.face?.projection).points, frame)
   }
 }

@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.108.0](v0.108.0.md) | 2026-10-13 | Organic story characters; adult/child presets, editable formal/casual clothing and corrected face/hand turns |
 | [v0.107.1](v0.107.1.md) | 2026-10-12 | Softer angular cheeks and chin; hair, ears and beards clip to the actual face outline without white gaps |
 | [v0.107.0](v0.107.0.md) | 2026-10-12 | Flowing cartoon hairstyles: scalp-attached cubic locks, tapered ends, individual flexibility, highlights and an animated eight-view gallery example |
 | [v0.106.1](v0.106.1.md) | 2026-10-12 | Clothing coverage during turns: thighs behind tops, wider waists and consistent shared-garment ordering in camera views |

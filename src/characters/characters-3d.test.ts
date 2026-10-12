@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import { createCanvas } from '@napi-rs/canvas'
 import { loadScene3D, drawScene3D, resolveScene3D, type Scene3D } from '../scene-3d'
-import { humanPlan, HUMAN_REST, HUMAN_POSES, characterObjects, skeletonInView, type ViewProjection } from './index'
+import { humanPlan, HUMAN_REST, HUMAN_POSES, characterObjects, skeletonInView, type ViewProjection, type Character } from './index'
 import type { Pose } from './rig/body-plan'
 import { solveSkeleton, rotY, type Skeleton } from './rig/skeleton'
+import { character, characterJointsInView, characterPartsInView, mirrorHumanPose, humanPose, SOFT_CARTOON_CAST, type CharacterOptions } from './index'
+import { mat4 } from '../engine/math'
 
 const plan = humanPlan()
 const H = 300
@@ -91,6 +93,156 @@ describe('characters in 3D scenes', () => {
     return ctx.getImageData(0, 0, SIZE.width, SIZE.height).data
   }
   const differ = (a: Uint8ClampedArray, b: Uint8ClampedArray) => a.some((v, i) => v !== b[i])
+
+  it.each(['youngMan', 'youngWoman', 'childBoy', 'childGirl'] as const)('keeps %s wrists over waist garments in globally sorted scene pixels', name => {
+    const size = { width: 500, height: 450 }
+    const camera: Scene3D['objects'][number] = { id: 'cam', kind: 'camera', projection: 'orthographic', height: 2.5, near: .1, far: 50, position: [0, 1, 5] }
+    for (const leaves of [false, true]) for (const mirrored of [false, true]) for (const t of [.2, .3, .4, .5, .6]) {
+      const preset: CharacterOptions = SOFT_CARTOON_CAST[name]
+      const options: CharacterOptions = { ...preset, body: { ...preset.body, shading: { mode: 'none' } }, ...(leaves ? { outfit: null, leafOutfit: { top: true } } : {}) }
+      const blended = humanPose(Object.fromEntries(Object.keys(HUMAN_REST).map(key => [key, HUMAN_REST[key] + ((HUMAN_POSES.think[key] ?? HUMAN_REST[key]) - HUMAN_REST[key]) * t])))
+      const pose = mirrored ? mirrorHumanPose({ ...blended, turn: .15 }) : { ...blended, turn: .15 }
+      const json: Scene3D = { ...scene(), objects: [camera, { id: 'actor', kind: 'character', height: 1.7, character: { ...options }, pose, shadow: false }] }
+      const loaded = loadScene3D(json, { kinds: [characterObjects] })
+      const frame = resolveScene3D(loaded, new Map(), size)
+      const projection: ViewProjection = { toView: v => mat4.transformPoint(frame.camera.view, v), toScreen: v => {
+        const ndc = mat4.transformPoint(frame.camera.projection, v)
+        return { x: (ndc[0] + 1) * size.width / 2, y: (1 - ndc[1]) * size.height / 2 }
+      } }
+      const who = character(options)
+      const joints = characterJointsInView(who, pose, projection, { height: 1.7 })
+      const wrist = joints.points[`hand.${mirrored ? 'left' : 'right'}`]
+      const image = (objects: Scene3D['objects']) => {
+        const ctx = createCanvas(size.width, size.height).getContext('2d') as unknown as CanvasRenderingContext2D
+        drawScene3D(ctx, loadScene3D({ ...json, objects }, { kinds: [characterObjects] }), undefined, size)
+        return ctx.getImageData(Math.round(wrist.x) - 3, Math.round(wrist.y) - 3, 7, 7).data
+      }
+      const skin = [1, 3, 5].map(i => parseInt(who.skin.slice(i, i + 2), 16))
+      const count = (data: Uint8ClampedArray, rgb: number[]) => {
+        let matches = 0
+        for (let i = 0; i < data.length; i += 4) if (rgb.every((v, k) => Math.abs(v - data[i + k]) < 8)) matches++
+        return matches
+      }
+      expect(count(image(json.objects), skin), `${leaves} ${mirrored} ${t}`).toBeGreaterThan(12)
+      const box = (z: number): Scene3D['objects'][number] => ({ id: 'box', kind: 'mesh', geometry: { type: 'box', size: [1, 2, .1] }, material: 'red', position: [0, 1, z] })
+      expect(count(image([...json.objects, box(1)]), [255, 0, 0])).toBe(49)
+      expect(count(image([...json.objects, box(-1)]), skin)).toBeGreaterThan(12)
+    }
+  })
+
+  it.each(['fluid', 'stick'] as const)('preserves raw part depth sorting and scene pixels for %s figures', figure => {
+    for (const turn of [-.7, 0, .7, 1.5]) {
+      const pose = humanPose({ ...HUMAN_POSES.think, turn })
+      const options: CharacterOptions = { figure, skin: '#f2c49b', outfit: { shirt: '#72958b', trousers: '#6b6888', bottom: 'skirt' } }
+      const json: Scene3D = { ...scene(), objects: [scene().objects[0], { id: 'actor', kind: 'character', height: 1.7, character: { ...options }, pose, shadow: false }] }
+      const frame = resolveScene3D(loadScene3D(json, { kinds: [characterObjects] }), new Map(), SIZE)
+      const projection: ViewProjection = { toView: v => mat4.transformPoint(frame.camera.view, v), toScreen: v => {
+        const ndc = mat4.transformPoint(frame.camera.projection, v)
+        return { x: (ndc[0] + 1) * SIZE.width / 2, y: (1 - ndc[1]) * SIZE.height / 2 }
+      } }
+      const parts = characterPartsInView(character(options), pose, projection, { height: 1.7 })
+      expect(parts.every(part => part.sortDepth === undefined)).toBe(true)
+      const ctx = createCanvas(SIZE.width, SIZE.height).getContext('2d') as unknown as CanvasRenderingContext2D
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, SIZE.width, SIZE.height)
+      parts.map((part, index) => ({ part, depth: part.depth + index * 1e-6 })).sort((a, b) => a.depth - b.depth).forEach(({ part }) => part.draw(ctx))
+      expect(Buffer.from(pixels(json)).equals(Buffer.from(ctx.getImageData(0, 0, SIZE.width, SIZE.height).data))).toBe(true)
+    }
+  })
+
+  it.each(['youngMan', 'youngWoman', 'childBoy', 'childGirl'] as const)('keeps %s leaning body parts behind a box between them and the head', name => {
+    const size = { width: 500, height: 450 }
+    const options: CharacterOptions = { ...SOFT_CARTOON_CAST[name], outfit: null, hair: null, body: { shading: { mode: 'none' } } }
+    const pose = humanPose({ lean: 45, 'arm.left.spread': 100, 'arm.right.spread': 100, 'arm.left.elbow': 0, 'arm.right.elbow': 0 })
+    const json: Scene3D = { ...scene(), objects: [
+      { id: 'cam', kind: 'camera', projection: 'orthographic', height: 2.5, near: .1, far: 50, position: [0, 1, 5] },
+      { id: 'actor', kind: 'character', height: 1.7, character: { ...options }, pose, shadow: false },
+    ] }
+    const frame = resolveScene3D(loadScene3D(json, { kinds: [characterObjects] }), new Map(), size)
+    const projection: ViewProjection = { toView: v => mat4.transformPoint(frame.camera.view, v), toScreen: v => {
+      const ndc = mat4.transformPoint(frame.camera.projection, v)
+      return { x: (ndc[0] + 1) * size.width / 2, y: (1 - ndc[1]) * size.height / 2 }
+    } }
+    const who = character(options)
+    const parts = characterPartsInView(who, pose, projection, { height: 1.7 })
+    const head = parts.find(part => part.part === 'head')!
+    const bodyDepth = Math.max(...parts.filter(part => part.part === 'spine' || part.part.startsWith('leg.')).map(part => part.depth))
+    expect(head.depth - bodyDepth).toBeGreaterThan(.1)
+    const z = 5 + (head.depth + bodyDepth) / 2
+    const ctx = createCanvas(size.width, size.height).getContext('2d') as unknown as CanvasRenderingContext2D
+    drawScene3D(ctx, loadScene3D(json, { kinds: [characterObjects] }), undefined, size)
+    const before = ctx.getImageData(0, 0, size.width, size.height).data
+    json.objects.push({ id: 'box', kind: 'mesh', geometry: { type: 'box', size: [2, 2.5, .001] }, material: 'red', position: [0, 1.25, z] })
+    drawScene3D(ctx, loadScene3D(json, { kinds: [characterObjects] }), undefined, size)
+    const joints = characterJointsInView(who, pose, projection, { height: 1.7 })
+    for (const id of ['spine', 'leg.left', 'leg.right']) {
+      const point = joints.bodyContours![id].samples[6].center
+      expect(Array.from(ctx.getImageData(Math.round(point.x), Math.round(point.y), 1, 1).data), id).toEqual([255, 0, 0, 255])
+    }
+    const point = { x: Math.round(joints.head.center.x - joints.head.rx * .5), y: Math.round(joints.head.center.y) }
+    const offset = (point.y * size.width + point.x) * 4
+    expect(Array.from(ctx.getImageData(point.x, point.y, 1, 1).data)).toEqual(Array.from(before.slice(offset, offset + 4)))
+    expect(Array.from(before.slice(offset, offset + 3))).not.toEqual([255, 255, 255])
+    for (const part of parts.filter(part => !part.part.startsWith('arm.'))) expect(part.sortDepth).toBe(part.depth)
+  })
+
+  it('allows a world object between an organic rear arm and foreground arm', () => {
+    const size = { width: 500, height: 450 }
+    const pose = humanPose({ turn: .6, 'arm.left.swing': -40, 'arm.right.swing': 40 })
+    const options: CharacterOptions = { figure: 'organic', body: { shading: { mode: 'none' } } }
+    const json: Scene3D = { ...scene(), objects: [
+      { id: 'cam', kind: 'camera', projection: 'orthographic', height: 2.5, near: .1, far: 50, position: [0, 1, 5] },
+      { id: 'actor', kind: 'character', height: 1.7, character: { ...options }, pose, shadow: false },
+    ] }
+    const frame = resolveScene3D(loadScene3D(json, { kinds: [characterObjects] }), new Map(), size)
+    const projection: ViewProjection = { toView: v => mat4.transformPoint(frame.camera.view, v), toScreen: v => {
+      const ndc = mat4.transformPoint(frame.camera.projection, v)
+      return { x: (ndc[0] + 1) * size.width / 2, y: (1 - ndc[1]) * size.height / 2 }
+    } }
+    const who = character(options)
+    const arms = characterPartsInView(who, pose, projection, { height: 1.7 }).filter(part => part.part.startsWith('arm.'))
+    const [rear, front] = arms.sort((a, b) => a.sortDepth! - b.sortDepth!)
+    expect(front.sortDepth! - rear.sortDepth!).toBeGreaterThan(.1)
+    const z = 5 + (rear.sortDepth! + front.sortDepth!) / 2
+    json.objects.push({ id: 'box', kind: 'mesh', geometry: { type: 'box', size: [2, 2, .001] }, material: 'red', position: [0, 1, z] })
+    const ctx = createCanvas(size.width, size.height).getContext('2d') as unknown as CanvasRenderingContext2D
+    drawScene3D(ctx, loadScene3D(json, { kinds: [characterObjects] }), undefined, size)
+    const joints = characterJointsInView(who, pose, projection, { height: 1.7 })
+    for (const arm of [rear, front]) {
+      const wrist = joints.points[arm.part.replace('arm.', 'hand.')]
+      const pixel = ctx.getImageData(Math.round(wrist.x), Math.round(wrist.y), 1, 1).data
+      const color = arm === rear ? '#ff0000' : who.skin
+      expect(Array.from(pixel)).toEqual([...([1, 3, 5].map(i => parseInt(color.slice(i, i + 2), 16))), 255])
+    }
+  })
+
+  it.each([
+    { intensity: 1, color: '#ffffff' },
+    { intensity: .3, color: '#6070a0' },
+    { intensity: .3, color: '#6070a0', fog: { color: '#c0d0e0', near: 0, far: 10 } },
+    { intensity: 1, color: '#ffffff', fog: { color: '#c0d0e0', near: 0, far: 4 } },
+  ])('shares scene lighting and fog across organic body, face and hands: %j', ({ intensity, color, fog }) => {
+    const base = '#f2c49b'
+    const options = { figure: 'organic', skin: '#ffffff', body: { fill: base, shading: { mode: 'none' } } }
+    const actor: Scene3D['objects'][number] = { id: 'tum', kind: 'character', shadow: false, character: options }
+    const amount = fog ? Math.min(1, Math.hypot(5, 1 - 1.7 * .6) / fog.far) : 0
+    const expected = '#' + [1, 3, 5].map(i => {
+      const lit = parseInt(base.slice(i, i + 2), 16) * parseInt(color.slice(i, i + 2), 16) / 255 * intensity
+      const into = fog ? parseInt(fog.color.slice(i, i + 2), 16) : 0
+      return Math.round(lit + (into - lit) * amount).toString(16).padStart(2, '0')
+    }).join('')
+    const original = JSON.stringify(options)
+    const loaded = loadScene3D({ ...scene(), fog, objects: [scene().objects[0], actor, { id: 'sky', kind: 'light', light: 'ambient', color, intensity }] }, { kinds: [characterObjects] })
+    const who = (loaded.prepared.get('tum') as { who: Character }).who
+    const material = JSON.stringify({ skin: who.skin, body: who.body })
+    const ctx = createCanvas(SIZE.width, SIZE.height).getContext('2d') as unknown as CanvasRenderingContext2D
+    drawScene3D(ctx, loaded, undefined, SIZE)
+    const actual = ctx.getImageData(0, 0, SIZE.width, SIZE.height).data
+    const reference = pixels({ ...scene(), objects: [scene().objects[0], { ...actor, character: { ...options, body: { ...options.body, fill: expected } } }] })
+    expect(Buffer.from(actual).equals(Buffer.from(reference))).toBe(true)
+    expect(JSON.stringify(options)).toBe(original)
+    expect(JSON.stringify({ skin: who.skin, body: who.body })).toBe(material)
+    expect(differ(actual, pixels({ ...scene(), objects: [scene().objects[0], actor] }))).toBe(intensity !== 1 || !!fog)
+  })
 
   it('draws the character, posed by tracks on its object, deterministically', () => {
     const still = pixels(scene())

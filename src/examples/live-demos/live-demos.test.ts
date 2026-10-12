@@ -67,6 +67,10 @@ describe('live demos', () => {
       const snapshot = () => markup(root)
       // Before any input, so a demo that moves only while dragged still counts.
       const beforeInput = snapshot()
+      // A playback control may pause on the click below. Verify automatic
+      // motion before exercising controls, as well as input-driven motion.
+      const seen = new Set<string>([beforeInput])
+      for (let i = 0; i < 12; i++) { frames.advance(16); seen.add(snapshot()) }
 
       // Interactive demos only move on input; give them some.
       exercise(root)
@@ -74,7 +78,6 @@ describe('live demos', () => {
 
       // Record every frame for 1.6s: a looping demo can be back where it
       // started at any single later moment, so look for any change at all.
-      const seen = new Set<string>([beforeInput])
       for (let i = 0; i < 100; i++) {
         frames.advance(16)
         seen.add(snapshot())

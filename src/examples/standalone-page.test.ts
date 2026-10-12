@@ -34,6 +34,14 @@ describe('standalone pages', () => {
     )
   })
 
+  it('can preview unreleased live APIs from the local browser entry', () => {
+    const html = liveDemoPage(liveDemos[0], 'http://localhost:5173/src/browser/index.ts')
+    expect(html).toContain('<script type="module">')
+    expect(html).toContain('import * as tinyfly from "http://localhost:5173/src/browser/index.ts"')
+    expect(html).not.toContain(BROWSER_BUNDLE_URL)
+    expect(html).toContain('const live = tinyfly.live')
+  })
+
   it('covers every example', () => {
     expect(pages).toHaveLength(liveDemos.length + codeExamples.length + sampleDefinitions.length + allSteps.length)
   })

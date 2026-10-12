@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest'
+import { createCanvas } from '@napi-rs/canvas'
 import { createSceneStore, type CharacterElement } from '../stores/scene-store'
-import { characterElementPose, characterElementTarget, characterOf, castElementFields } from './character-element'
+import { characterElementPose, characterElementTarget, characterOf, characterControlValues, characterColorFields, castElementFields } from './character-element'
 import { trackPropertyLabel } from './track-labels'
 import { sceneElementToCanvasTarget } from './scene-to-canvas'
-import { characterJoints, humanPose } from '../../characters'
+import { characterJoints, drawCharacter, humanPose } from '../../characters'
 import { HUMAN_REST } from '../../characters'
 import type { AnimationState } from '../../engine/types'
 
@@ -22,6 +23,77 @@ const stateWith = (target: string, values: Record<string, number>): AnimationSta
 })
 
 describe('character elements', () => {
+  it.each(['fluid', 'stick', 'organic'] as const)('shows resolved %s appearance defaults without authoring overrides', figure => {
+    const element = aCharacter({ figure, height: 250 })
+    const before = JSON.stringify(element), who = characterOf(element)
+    const values = characterControlValues(element)
+    expect(values.lineWidth).toBe(who.lineWidth)
+    expect(values.skin).toBe(who.skin)
+    expect(values.ink).toBe(who.ink)
+    expect(values.headSize).toBe(who.plan.head.size)
+    expect(values.shoulderWidth).toBe(figure === 'stick' ? 0 : figure === 'organic' ? .07 : .06)
+    expect(values.hipWidth).toBe(figure === 'stick' ? 0 : figure === 'organic' ? .045 : .022)
+    expect(values.hands).toBe(figure === 'organic' ? 'natural' : 'dot')
+    expect(values.faceStyle).toBe(figure === 'organic' ? 'anime' : 'simple')
+    expect(values.irisColor).toBe(figure === 'organic' ? '#66422e' : '#4b7fce')
+    expect(JSON.stringify(element)).toBe(before)
+    expect(characterOf({ ...element, lineWidth: values.lineWidth + .1 }).lineWidth).toBeCloseTo(who.lineWidth + .1)
+  })
+  it('shows explicit appearance choices and resolved body outline overrides', () => {
+    const element = aCharacter({ figure: 'organic', hands: 'dot', faceStyle: 'simple', faceShape: 'angular', irisColor: '#123456', eyeScale: .8, eyeLashes: false, body: { outline: { width: .25 } } })
+    expect(characterControlValues(element)).toMatchObject({ hands: 'dot', faceStyle: 'simple', faceShape: 'angular', irisColor: '#123456', eyeScale: .8, eyeLashes: false, lineWidth: .25 })
+  })
+  it('shows imported body colour overrides without changing their JSON', () => {
+    const element = aCharacter({ figure: 'organic', skin: '#ffffff', ink: '#000000', body: { fill: '#a86443', outline: { color: '#543210', width: 0 } } })
+    const before = JSON.stringify(element)
+    expect(characterControlValues(element)).toMatchObject({ skin: '#a86443', ink: '#543210', lineWidth: 0 })
+    expect(JSON.stringify(element)).toBe(before)
+  })
+  it('edits active body colour overrides immutably and preserves unrelated authored fields', () => {
+    const bodies: CharacterElement['body'][] = [undefined, { shading: { mode: 'none' } }, { fill: '#a86443' }, { outline: { color: '#543210', width: 0 } }, { fill: '#a86443', outline: { color: '#543210', width: 0 }, depth: .6 }]
+    for (const body of bodies) {
+      const original = aCharacter({ figure: 'organic', body })
+      const before = JSON.stringify(original)
+      let edited = { ...original, ...characterColorFields(original, 'skin', '#fedcba') }
+      edited = { ...edited, ...characterColorFields(edited, 'ink', '#123456') }
+      expect(characterOf(edited)).toMatchObject({ skin: '#fedcba', ink: '#123456' })
+      expect(edited.body).toEqual(body ? { ...body, ...(body.fill !== undefined ? { fill: '#fedcba' } : {}), ...(body.outline?.color !== undefined ? { outline: { ...body.outline, color: '#123456' } } : {}) } : undefined)
+      expect(JSON.stringify(original)).toBe(before)
+      const restored = createSceneStore()
+      restored.loadElements(JSON.parse(JSON.stringify([edited])))
+      expect(characterOf(restored.elements()[0] as CharacterElement)).toMatchObject({ skin: '#fedcba', ink: '#123456' })
+    }
+  })
+  it('preserves top cuts and trouser styles in saved editor JSON and rendering', () => {
+    for (const fields of [{ top: 'dress' }, { top: 'shirt', trouserStyle: 'cargo' }] satisfies Partial<CharacterElement>[]) {
+      const store = createSceneStore()
+      store.addElement('character', { figure: 'organic', height: 250, outfit: 'basic', ...fields })
+      const saved = JSON.parse(JSON.stringify(store.exportElements()))
+      const restored = createSceneStore(); restored.loadElements(saved)
+      const element = restored.elements()[0] as CharacterElement
+      expect(element).toMatchObject(fields)
+      const image = (who: ReturnType<typeof characterOf>) => {
+        const canvas = createCanvas(300, 300), ctx = canvas.getContext('2d'); ctx.translate(150, 280)
+        drawCharacter(ctx as unknown as CanvasRenderingContext2D, who, humanPose({ turn: .5 }))
+        return canvas.toBuffer('image/png')
+      }
+      expect(image(characterOf(element)).equals(image(characterOf(store.elements()[0] as CharacterElement)))).toBe(true)
+      expect(image(characterOf(element)).equals(image(characterOf({ ...element, top: undefined, trouserStyle: undefined })))).toBe(false)
+    }
+  })
+  it('round-trips organic contours, material, small hands and leaf garments as editor JSON', () => {
+    const store = createSceneStore()
+    store.addElement('character', { figure: 'organic', outfit: 'leaves', leafOutfit: { top: true, color: '#648b34' }, body: { depth: .6, arm: [{ at: 0, width: .03 }, { at: 1, width: .012 }], shading: { mode: 'none' } }, handSize: .075, jawRoundness: 1, faceProjection: 'volume' })
+    const restored = createSceneStore()
+    restored.loadElements(JSON.parse(JSON.stringify(store.exportElements())))
+    const who = characterOf(restored.elements()[0] as CharacterElement)
+    expect(who.body).toMatchObject({ depth: .6, arm: [{ at: 0, width: .03 }, { at: 1, width: .012 }], shading: { mode: 'none' } })
+    expect(who.face.jawRoundness).toBe(1)
+    expect(who.face.projection).toBe('volume')
+    expect(who.hands).toBe('cartoon'); expect(who.handSize).toBe(.075)
+    expect(who.layers.parts?.spine?.over).toBeTypeOf('function')
+    expect(characterElementTarget(restored.elements()[0] as CharacterElement).draw).toBeTypeOf('function')
+  })
   it('preserves editable flowing locks through saved editor JSON and clears them on a style change', () => {
     const store = createSceneStore()
     const hairDetails = { locks: [{ width: 0.55, follow: 0.4, path: [

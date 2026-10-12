@@ -1,3 +1,27 @@
+## Organic cartoon story characters — v0.108.0
+
+- [x] Opt-in organic contours on the existing human rig, with independent JSON width profiles, skin fill and outline settings.
+- [x] Joined shoulders, elbows/knees, hips, wrists and ankles with native depth ordering and preserved contacts/reaching.
+- [x] Deterministic clipped cel shading and small native articulated hands.
+- [x] Inherited opacity for body/face/palm shading, shared organic skin lighting/fog, and owned leaf garment options validated at construction; focused regression coverage.
+- [x] Original generic actor presets and anatomy-fitted everyday/leaf garments.
+- [x] Reject unknown/inherited actor names and reuse head contours within each draw; focused regressions and exact pixel comparison across 192 render combinations.
+- [x] Covered rounded sleeve/waist attachments; volume face projection, gradual far-eye occlusion through three-quarter views, a flatter facial plane in profile and a small forward nose above the mouth without extending the chin.
+- [x] Foreground arms and hands stay together over waist garments during interpolated gestures on either actor; rear arms keep their occlusion.
+- [x] Local Soft Cartoon Characters example: face then hair choices, story/walk/turn/gestures/seated speech/cheek/crossed arms, shading, skin, outline and scrubbing.
+- [x] Editor figure picker and JSON preservation for profiles, materials, garments, hand size and rounded jaws.
+- [x] Headless contact/head-turn sheets and 16-second motion clip visually reviewed; both actors checked in all seven local actions with everyday and leaf garments, including between-keyframe wrist/waist crossings.
+- [x] Full suite: 3,610 tests in 234 files; production, browser/add-on and declaration builds; 74 desktop/mobile browser checks, including the local standalone preview.
+- [x] Child boy/girl presets with child proportions and editable JSON options; adult/child/family choices in the interactive example.
+- [x] Everyday/Formal/Casual JSON presets; editable top cuts, jeans/cargo details, bottoms, sleeves, colours, collars and ties for all actors.
+- [x] Per-actor outfit editing in the live example; editor garment controls and saved scene JSON; headless clothing sheet.
+- [x] Combined clothing release: 3,610 tests in 234 files and 74 desktop/mobile checks pass; production build and headless clothing sheet verified.
+- [x] Resolved Organic appearance controls; camera-relative garment detail visibility/offsets, independent of head yaw; seven unit regressions and three live editor checks.
+- [x] Organic painter order survives global scene depth sorting with world-object occlusion and unchanged fluid/stick ordering; scene-pixel regressions for all four actors. Imported body colours resolve and edit through Skin/Line controls without mutating source JSON; nine unit regressions and three live editor checks.
+- [x] Foreground-arm depth promotion uses only torso/leg garment depths; leaning head, neck, torso and legs retain physical depths and world-object occlusion. Transparent organic skin keeps body/head/dot/articulated hands outline-only in all looks and 2D/3D, with inherited alpha and non-organic semantics preserved; ten additional unit regressions.
+- [x] v0.108.0 minor version, release notes, CDN pins and model guides prepared.
+- [ ] Publish v0.108.0 web/CDN/npm and verify public availability.
+
 ## Flowing cartoon hairstyles
 
 - [x] v0.107.1: fuller soft angular chin and opt-in JSON `face.jawRoundness`;
@@ -3084,7 +3108,7 @@ biggest gap was the head (sheets 2 and 12–16), so that came first.
 
 ## Test Coverage
 
-- 1711 tests passing across 99 files (`npx vitest run`); the per-area counts below date from 731 tests and are kept for history
+- 3610 tests passing across 234 files (`npx vitest run`); the per-area counts below date from 731 tests and are kept for history
 - Easing functions: 48 tests
 - Interpolators: 21 tests
 - Clock: 19 tests

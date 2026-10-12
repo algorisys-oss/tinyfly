@@ -182,13 +182,17 @@ export const characterObjects: ObjectKind = {
     const toEye = vec3.normalize(vec3.subtract(camera.position, chest))
     // Full light is its own colour (light past that would bleach a drawn face); less light darkens it.
     const light = lightAt(chest, toEye, lights).map((v) => Math.min(1, v)) as [number, number, number]
-    const litWho: Character = lights.length > 0 && who.skin !== 'none' ? { ...who, skin: lit(who.skin, light, fogAmount(fog, vec3.distance(chest, camera.position)), fog?.color) } : who
+    let litWho = who
+    if (lights.length > 0 && who.skin !== 'none') {
+      const skin = lit(who.skin, light, fogAmount(fog, vec3.distance(chest, camera.position)), fog?.color)
+      litWho = { ...who, skin, ...(who.body ? { body: { ...who.body, fill: skin } } : {}) }
+    }
     const seen = characterPartsInView(litWho, pose, projection, { height })
     return {
       drawables: [
         ...shadow,
         // Ties keep the character's own order.
-        ...seen.map((part, index) => ({ depth: -part.depth - index * 1e-6, draw: (ctx: CanvasRenderingContext2D, frame: { time: number }) => part.draw(ctx, frame.time) })),
+        ...seen.map((part, index) => ({ depth: -(part.sortDepth ?? part.depth) - index * 1e-6, draw: (ctx: CanvasRenderingContext2D, frame: { time: number }) => part.draw(ctx, frame.time) })),
       ],
     }
   },

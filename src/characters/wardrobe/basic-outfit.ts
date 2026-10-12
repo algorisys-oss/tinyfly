@@ -2,6 +2,8 @@ import type { Point } from '../../adapters/canvas/sketch'
 import type { CharacterJoints, CharacterLayers } from '../character'
 import type { Pen } from '../look/pen'
 import { taperedOutline } from '../look/tapered-line'
+import { organicContourSection, insideBodyContour } from '../body/organic-geometry'
+import { leafOutfitContours } from './leaf-outfit'
 
 /**
  * Clothes for the human character, as plain data, drawn as layers on the
@@ -14,7 +16,11 @@ import { taperedOutline } from '../look/tapered-line'
  */
 
 export interface BasicOutfitOptions {
-  /** Shirt colour (default red) */
+  /** Top cut. Omitted retains the original plain T-shirt. */
+  top?: 'tshirt' | 'shirt' | 'blouse' | 'dress'
+  /** Details on trousers/shorts (default plain); the colour remains editable. */
+  trouserStyle?: 'plain' | 'jeans' | 'cargo'
+  /** Shirt colour (default red); also colours the skirt of a dress. */
   shirt?: string
   /** Trouser (or shorts, or skirt) colour (default navy) */
   trousers?: string
@@ -63,13 +69,43 @@ function lastLeg(j: CharacterJoints): 'left' | 'right' {
 const legsAfterBody = (j: CharacterJoints) => Math.max(j.parts['leg.left'].order, j.parts['leg.right'].order) > j.parts.spine.order
 
 /** How much the character's front faces the viewer: 1 front-on, 0 side-on, negative from behind. */
-const frontFacing = (j: CharacterJoints) => Math.cos((j.turn * Math.PI) / 2)
+const frontFacing = (j: CharacterJoints) => j.bodyForward?.[2] ?? Math.cos((j.turn * Math.PI) / 2)
+
+const frontOffset = (j: CharacterJoints) => j.bodyForward?.[0] ?? Math.sin((j.turn * Math.PI) / 2)
+
+/** Clip garment details to their moving native coverage. */
+function within(ctx: CanvasRenderingContext2D, outline: Point[], draw: () => void) {
+  ctx.save()
+  ctx.beginPath()
+  ctx.moveTo(outline[0].x, outline[0].y)
+  for (const point of outline.slice(1)) ctx.lineTo(point.x, point.y)
+  ctx.closePath()
+  ctx.clip()
+  draw()
+  ctx.restore()
+}
+
+/** A fractional position and perpendicular offset along a resolved limb. */
+function onLine(points: Point[], fraction: number, offset = 0): Point {
+  const position = fraction * (points.length - 1)
+  const index = Math.min(points.length - 2, Math.floor(position))
+  const a = points[index], b = points[index + 1]
+  const at = lerp(a, b, position - index)
+  const length = Math.hypot(b.x - a.x, b.y - a.y) || 1
+  return { x: at.x + (b.y - a.y) / length * offset, y: at.y - (b.x - a.x) / length * offset }
+}
 
 export function basicOutfit(options: BasicOutfitOptions = {}): CharacterLayers {
+  options = { ...options }
+  if (options.top !== undefined && !['tshirt', 'shirt', 'blouse', 'dress'].includes(options.top)) throw new Error(`basicOutfit: unknown top '${options.top}'`)
+  if (options.trouserStyle !== undefined && !['plain', 'jeans', 'cargo'].includes(options.trouserStyle)) throw new Error(`basicOutfit: unknown trouser style '${options.trouserStyle}'`)
+  const topCut = options.top
+  const trouserStyle = options.trouserStyle ?? 'plain'
+  const hasCollar = options.collar ?? topCut === 'shirt'
   const shirtColor = options.shirt ?? '#e2493b'
-  const trouserColor = options.trousers ?? '#24476b'
+  const trouserColor = topCut === 'dress' ? shirtColor : options.trousers ?? '#24476b'
   const sleeves = options.sleeves ?? 'short'
-  const bottom = options.bottom ?? 'trousers'
+  const bottom = topCut === 'dress' ? 'skirt' : options.bottom ?? 'trousers'
   const coat = options.over === 'labCoat'
   const hoodie = options.over === 'hoodie'
   const cardigan = options.over === 'cardigan'
@@ -80,15 +116,31 @@ export function basicOutfit(options: BasicOutfitOptions = {}): CharacterLayers {
   const shoeColor = options.shoeColor ?? '#3b2a1e'
   const edge = (j: CharacterJoints) => j.lineWidth * 0.45
 
-  const trouser = (j: CharacterJoints, pen: Pen, side: 'left' | 'right') => {
+  const trouser = (ctx: CanvasRenderingContext2D, j: CharacterJoints, pen: Pen, side: 'left' | 'right') => {
     const leg = j.parts[`leg.${side}`].points
     if (bottom === 'skirt' && !overalls) return
-    if (bottom === 'shorts' && !overalls) {
-      const short = along(leg, 0, 0.5)
-      pen.shape(taperedOutline(short, j.height * 0.085, j.height * 0.07), trouserColor, edge(j))
-      return
-    }
-    pen.shape(taperedOutline(leg, j.height * 0.08, j.height * 0.05), trouserColor, edge(j))
+    const short = bottom === 'shorts' && !overalls
+    const organic = j.bodyContours?.[`leg.${side}`]
+    const outline = organic
+      ? organicContourSection(organic, 0, short ? .5 : 1, j.height * .006)
+      : taperedOutline(short ? along(leg, 0, .5) : leg, j.height * (short ? .085 : .08), j.height * (short ? .07 : .05))
+    pen.shape(outline, trouserColor, edge(j))
+    if (trouserStyle === 'plain' || frontFacing(j) < .15) return
+    within(ctx, outline, () => {
+      const at = (t: number, offset = 0) => onLine(leg, t, offset * j.height)
+      if (trouserStyle === 'jeans') {
+        // Pocket stitching and an inset leg seam, contained inside the fabric.
+        pen.line([at(.07, -.018), at(.17, -.02), at(.23, 0), at(.17, .02), at(.07, .018)], edge(j) * .65)
+        pen.line([at(.27, .013), ...[.4, .55, .7, .85, .96].filter(t => !short || t < .5).map(t => at(t, .013))], edge(j) * .5)
+      } else {
+        // Thigh pocket and flap. It stays above the hem of cargo shorts.
+        const pocket = [at(.25, -.024), at(.25, .024), at(.43, .024), at(.43, -.024)]
+        pen.shape(pocket, trouserColor, edge(j) * .65)
+        pen.line([at(.28, -.024), at(.32, 0), at(.28, .024)], edge(j) * .65)
+        const button = at(.32)
+        pen.dot(button.x, button.y, edge(j) * .8)
+      }
+    })
   }
 
   /** Boots: the foot and the shin above the ankle, in the boot's colour, with a line at the top. */
@@ -116,6 +168,7 @@ export function basicOutfit(options: BasicOutfitOptions = {}): CharacterLayers {
   }
 
   const shirtOutline = (j: CharacterJoints) => {
+    if (j.bodyContours?.spine) return organicContourSection(j.bodyContours.spine, 0, .97, j.height * (hoodie ? .014 : .006))
     const wide = hoodie ? 1.14 : 1
     // Wide-hipped builds need room for the trouser roots and thigh thickness.
     const hips = Math.hypot(j.points['hip.left'].x - j.points['hip.right'].x, j.points['hip.left'].y - j.points['hip.right'].y)
@@ -150,6 +203,33 @@ export function basicOutfit(options: BasicOutfitOptions = {}): CharacterLayers {
     // A hoodie is loose: wider, in its own colour; a cardigan and a sari leave the shirt (a blouse) under them.
     const color = hoodie ? overColor : shirtColor
     pen.shape(shirtOutline(j), color, edge(j))
+  }
+
+  /** Front seams and necklines follow the spine and remain inside the top. */
+  const topDetails = (ctx: CanvasRenderingContext2D, j: CharacterJoints, pen: Pen) => {
+    const facing = frontFacing(j)
+    if (!topCut || facing < .2 || hoodie) return
+    const { top, hip } = torso(j)
+    const shift = frontOffset(j) * j.height * .025
+    const line = [top, hip]
+    const at = (t: number, across = 0) => onLine(line, t, shift + across * j.height * facing)
+    within(ctx, shirtOutline(j), () => {
+      if (topCut === 'shirt') {
+        pen.line([at(.12), at(.92)], edge(j) * .65)
+        for (const t of [.24, .4, .56, .72, .88]) {
+          const button = at(t, .008)
+          pen.dot(button.x, button.y, edge(j) * .9)
+        }
+      } else if (topCut === 'blouse') {
+        pen.line([at(.025, -.04), at(.24), at(.025, .04)], edge(j) * .75)
+        const button = at(.31)
+        pen.dot(button.x, button.y, edge(j))
+      } else if (topCut === 'dress') {
+        pen.line([at(.04, -.035), at(.17, -.028), at(.17, .028), at(.04, .035)], edge(j) * .75)
+      } else {
+        pen.line([at(.025, -.035), at(.1, -.02), at(.12), at(.1, .02), at(.025, .035)], edge(j) * .65)
+      }
+    })
   }
 
   /** The hood: from the front, a bump behind the neck above the shoulders; from behind, hanging down the back. */
@@ -193,7 +273,7 @@ export function basicOutfit(options: BasicOutfitOptions = {}): CharacterLayers {
     const facing = frontFacing(j)
     if (facing < 0.2) return
     const { top, hip } = torso(j)
-    const shift = Math.sin((j.turn * Math.PI) / 2) * j.height * 0.03
+    const shift = frontOffset(j) * j.height * 0.03
     const w = j.height * 0.06 * facing
     const pocketTop = lerp(top, hip, 0.62)
     const pocketBottom = lerp(top, hip, 0.9)
@@ -210,7 +290,7 @@ export function basicOutfit(options: BasicOutfitOptions = {}): CharacterLayers {
     pen.shape(taperedOutline([top, lerp(top, hip, 0.5), lerp(top, hip, 1.08)], j.height * 0.155, j.height * 0.15), overColor, edge(j))
     if (facing < 0.2) return
     // The opening: a strip of the shirt, the edges lined, and buttons down one side.
-    const shift = Math.sin((j.turn * Math.PI) / 2) * j.height * 0.03
+    const shift = frontOffset(j) * j.height * 0.03
     const w = j.height * 0.02 * facing
     const from = lerp(top, hip, 0.12)
     const to = lerp(top, hip, 1.05)
@@ -225,7 +305,7 @@ export function basicOutfit(options: BasicOutfitOptions = {}): CharacterLayers {
   const bib = (j: CharacterJoints, pen: Pen) => {
     const facing = frontFacing(j)
     const { top, hip } = torso(j)
-    const shift = Math.sin((j.turn * Math.PI) / 2) * j.height * 0.04
+    const shift = frontOffset(j) * j.height * 0.04
     const waist = lerp(hip, top, 0.12)
     const chest = lerp(hip, top, 0.74)
     if (facing < 0.15) {
@@ -285,7 +365,7 @@ export function basicOutfit(options: BasicOutfitOptions = {}): CharacterLayers {
     // Pleats: a few folds down the front.
     const facing = frontFacing(j)
     if (facing > 0.2) {
-      const shift = Math.sin((j.turn * Math.PI) / 2) * j.height * 0.03
+      const shift = frontOffset(j) * j.height * 0.03
       for (const k of [-0.35, 0, 0.35]) {
         const w0 = halfWaist * 0.5 * k
         const w1 = halfHem * 0.45 * k
@@ -298,7 +378,7 @@ export function basicOutfit(options: BasicOutfitOptions = {}): CharacterLayers {
   const pallu = (j: CharacterJoints, pen: Pen) => {
     const facing = frontFacing(j)
     const { top, hip } = torso(j)
-    const toward = Math.sin((j.turn * Math.PI) / 2)
+    const toward = frontOffset(j)
     const near = toward >= 0 ? 'left' : 'right'
     const far = near === 'left' ? 'right' : 'left'
     const shoulder = j.points[`shoulder.${near}`]
@@ -318,6 +398,10 @@ export function basicOutfit(options: BasicOutfitOptions = {}): CharacterLayers {
 
   /** A skirt from the waist to the knees, flaring out, over both legs. */
   const skirt = (j: CharacterJoints, pen: Pen) => {
+    if (j.bodyContours) {
+      pen.shape(leafOutfitContours(j, { top: false, length: .45 }).skirt, trouserColor, edge(j))
+      return
+    }
     const { hip, top } = torso(j)
     const waist = lerp(hip, top, 0.18)
     const knees = [j.points['knee.left'], j.points['knee.right']]
@@ -365,7 +449,7 @@ export function basicOutfit(options: BasicOutfitOptions = {}): CharacterLayers {
     const facing = frontFacing(j)
     if (facing < 0.25) return
     const { top, hip } = torso(j)
-    const shift = Math.sin((j.turn * Math.PI) / 2) * j.height * 0.03
+    const shift = frontOffset(j) * j.height * 0.03
     const at = (t: number) => ({ x: lerp(top, hip, t).x + shift, y: lerp(top, hip, t).y })
     const w = j.height * 0.022 * facing
     const knot = at(0.08)
@@ -381,7 +465,7 @@ export function basicOutfit(options: BasicOutfitOptions = {}): CharacterLayers {
     const chest = lerp(hip, top, 0.72)
     const knees = [j.points['knee.left'], j.points['knee.right']]
     const hem = lerp(hip, { x: (knees[0].x + knees[1].x) / 2, y: (knees[0].y + knees[1].y) / 2 }, 0.9)
-    const shift = Math.sin((j.turn * Math.PI) / 2) * j.height * 0.04
+    const shift = frontOffset(j) * j.height * 0.04
     if (facing < 0.15) {
       // From behind: the bow at the waist.
       const waist = lerp(hip, top, 0.2)
@@ -420,7 +504,7 @@ export function basicOutfit(options: BasicOutfitOptions = {}): CharacterLayers {
     const facing = frontFacing(j)
     if (facing > 0.2) {
       // The opening down the front, and a pocket on the chest.
-      const shift = Math.sin((j.turn * Math.PI) / 2) * j.height * 0.03
+      const shift = frontOffset(j) * j.height * 0.03
       const [from, to] = skirts ? [hip, hem] : [top, hip]
       pen.line([{ x: from.x + shift, y: from.y }, { x: to.x + shift, y: to.y }], edge(j) * 0.8)
       if (!skirts) {
@@ -437,6 +521,17 @@ export function basicOutfit(options: BasicOutfitOptions = {}): CharacterLayers {
    * it covers the shirt's shoulder corner, so the edges run on with no seam.
    */
   const sleeve = (j: CharacterJoints, pen: Pen, side: 'left' | 'right', color: string, length: number) => {
+    const organic = j.bodyContours?.[`arm.${side}`]
+    if (organic) {
+      const outline = organicContourSection(organic, 0, length, j.height * .006)
+      pen.shape(outline, color, 0)
+      const torso = shirtOutline(j)
+      for (let i = 0; i < outline.length; i++) {
+        const a = outline[i], b = outline[(i + 1) % outline.length]
+        if (!insideBodyContour({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, torso)) pen.line([a, b], edge(j))
+      }
+      return
+    }
     const arm = j.parts[`arm.${side}`].points
     const shoulder = arm[0]
     const top = j.chains.spine[j.chains.spine.length - 1]
@@ -473,7 +568,7 @@ export function basicOutfit(options: BasicOutfitOptions = {}): CharacterLayers {
   const leg = (side: 'left' | 'right') => (ctx: CanvasRenderingContext2D, j: CharacterJoints, pen: Pen) => {
     ctx.save()
     clipTop(ctx, j)
-    trouser(j, pen, side)
+    trouser(ctx, j, pen, side)
     if (boots) boot(j, pen, side)
     ctx.restore()
     if (lastLeg(j) === side && legsAfterBody(j)) overLegs(j, pen)
@@ -484,10 +579,11 @@ export function basicOutfit(options: BasicOutfitOptions = {}): CharacterLayers {
       'leg.left': { clip: clipTop, over: leg('left') },
       'leg.right': { clip: clipTop, over: leg('right') },
       spine: {
-        over: (_ctx, j, pen) => {
+        over: (ctx, j, pen) => {
           if (hoodie && frontFacing(j) >= 0) hood(j, pen)
           shirt(j, pen)
-          if (options.collar && !hoodie) collar(j, pen)
+          topDetails(ctx, j, pen)
+          if (hasCollar && !hoodie) collar(j, pen)
           if (options.tie && !hoodie) tie(j, pen, options.tie)
           if (coat) labCoat(j, pen, false)
           if (cardigan) cardiganBody(j, pen)

@@ -25,7 +25,7 @@ import { InertiaInspector } from './inertia-inspector'
 import { MarkerInspector } from './marker-inspector'
 import type { SketchStyle } from '../../adapters/canvas'
 import { HUMAN_POSES, HUMAN_EXPRESSIONS, HUMAN_REST } from '../../characters/species/human'
-import { CHARACTER_BUILDS, buildName, buildValue, castElementFields, isCharacterField, type CharacterBuildName } from '../utils/character-element'
+import { CHARACTER_BUILDS, buildName, characterControlValues, characterColorFields, castElementFields, isCharacterField, type CharacterBuildName } from '../utils/character-element'
 import { codeElementHeight } from '../utils/code-element'
 import { chartElementProblem } from '../utils/chart-element'
 import { CharacterActingPanel, keyActedPose } from './character-acting-panel'
@@ -33,6 +33,7 @@ import { CHARACTER_DANCES, characterDanceTracks, characterFlipTracks, danceLengt
 import { beatGridOf, detectAudioTempo, tapTempo } from '../utils/beat-grid'
 import { nearestBeat, nextBeat } from '../../engine'
 import { CHART_KINDS, CODE_LANGUAGES, FLIPS, CHARACTER_CAST, HELD_ITEMS, FACIAL_HAIR_STYLES, GLASSES_STYLES, HAIR_STYLES, HAT_STYLES, resolveHair, type CastName, type FlipName, FOOT_SHAPES } from '../../characters'
+import { outfitPreset, type OutfitCategory } from '../../characters'
 import { fitPlaces, mapElementProps, placeId, tripTracks } from '../utils/map-element'
 import { WORLD_CITIES } from '../../maps'
 import { Scene3DProperties } from './scene3d-properties'
@@ -1689,7 +1690,7 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
 
   const danceFromPlayhead = (element: CharacterElement) => {
     const start = startTime()
-    const hands = (element.hands ?? 'dot') !== 'dot'
+    const hands = characterControlValues(element).hands !== 'dot'
     // Glides and the moonwalk travel from where the character is; facing left, it dances the mirror image.
     writeCharacterTracks(
       element,
@@ -1717,14 +1718,20 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
     )
   }
 
-  const renderCharacterProperties = (element: CharacterElement) => (
+  const renderCharacterProperties = (element: CharacterElement) => {
+    const values = createMemo(() => characterControlValues(element))
+    return (
     <div class="property-section">
       <h4>Character</h4>
       <div class="property-row">
         <label>Figure</label>
-        <select value={element.figure} onChange={(e) => updateElement({ figure: (e.target as HTMLSelectElement).value })}>
+        <select value={element.figure} onChange={(e) => {
+          const figure = (e.target as HTMLSelectElement).value
+          updateElement({ figure, ...(figure !== 'organic' && element.outfit === 'leaves' ? { outfit: 'basic' } : {}) })
+        }}>
           <option value="fluid">Fluid</option>
           <option value="stick">Stick</option>
+          <option value="organic">Organic cartoon</option>
         </select>
       </div>
       <div class="property-row">
@@ -1767,7 +1774,7 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
                 min={range[0]}
                 max={range[1]}
                 step="0.005"
-                value={buildValue(element.build, field)}
+                value={values()[field]}
                 // One undo step per drag, not one per tick.
                 onPointerDown={() => props.sceneStore.beginInteraction()}
                 onPointerUp={() => props.sceneStore.endInteraction()}
@@ -1780,22 +1787,23 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
       </For>
       <div class="property-row">
         <label>Line</label>
-        <input type="color" value={element.ink} onInput={handleColorChange('ink')} />
+        <input type="color" value={values().ink} onInput={(e) => updateElement(characterColorFields(element, 'ink', e.currentTarget.value))} />
       </div>
       <div class="property-row">
         <label>Skin</label>
-        <input type="color" value={element.skin === 'none' ? '#ffffff' : element.skin} onInput={handleColorChange('skin')} />
+        <input type="color" value={values().skin === 'none' ? '#ffffff' : values().skin} onInput={(e) => updateElement(characterColorFields(element, 'skin', e.currentTarget.value))} />
       </div>
       <div class="property-row">
         <label>Clothes</label>
         <select value={element.outfit} onChange={(e) => updateElement({ outfit: (e.target as HTMLSelectElement).value })}>
-          <option value="basic">T-shirt and trousers</option>
+          <option value="basic">Editable outfit</option>
           <option value="none">None</option>
+          <Show when={element.figure === 'organic'}><option value="leaves">Leaf garments</option></Show>
         </select>
       </div>
       <div class="property-row">
         <label>Hands</label>
-        <select value={element.hands ?? 'dot'} onChange={(e) => updateElement({ hands: (e.target as HTMLSelectElement).value })}>
+        <select value={values().hands} onChange={(e) => updateElement({ hands: (e.target as HTMLSelectElement).value })}>
           <option value="dot">Round</option>
           <option value="cartoon">Cartoon gloves</option>
           <option value="natural">Natural (five fingers, for mudras)</option>
@@ -1803,12 +1811,32 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
       </div>
       <Show when={element.outfit === 'basic'}>
         <div class="property-row">
-          <label>Shirt</label>
+          <label>Outfit preset</label>
+          <select value="" onChange={(e) => {
+            const category = e.currentTarget.value as OutfitCategory
+            if (category) {
+              const outfit = outfitPreset(category)
+              updateElement({ top: outfit.top, trouserStyle: outfit.trouserStyle, shirt: outfit.shirt, trousers: outfit.trousers, sleeves: outfit.sleeves, bottom: outfit.bottom, collar: outfit.collar, tie: outfit.tie ?? undefined, over: undefined })
+            }
+            e.currentTarget.value = ''
+          }}>
+            <option value="">Start from…</option>
+            <option value="everyday">Everyday</option><option value="formal">Formal</option><option value="casual">Casual</option>
+          </select>
+        </div>
+        <div class="property-row">
+          <label>Top cut</label>
+          <select value={element.top ?? 'tshirt'} onChange={(e) => updateElement({ top: e.currentTarget.value, collar: e.currentTarget.value === 'shirt', tie: undefined })}>
+            <option value="tshirt">T-shirt</option><option value="shirt">Shirt</option><option value="blouse">Blouse</option><option value="dress">Dress</option>
+          </select>
+        </div>
+        <div class="property-row">
+          <label>Top colour</label>
           <input type="color" value={element.shirt} onInput={handleColorChange('shirt')} />
         </div>
         <div class="property-row">
-          <label>Trousers</label>
-          <input type="color" value={element.trousers} onInput={handleColorChange('trousers')} />
+          <label>Bottom colour</label>
+          <input type="color" disabled={element.top === 'dress'} value={element.top === 'dress' ? element.shirt : element.trousers} onInput={handleColorChange('trousers')} />
         </div>
         <div class="property-row">
           <label>Sleeves</label>
@@ -1820,10 +1848,16 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
         </div>
         <div class="property-row">
           <label>Below</label>
-          <select value={element.bottom ?? 'trousers'} onChange={(e) => updateElement({ bottom: (e.target as HTMLSelectElement).value })}>
+          <select disabled={element.top === 'dress'} value={element.top === 'dress' ? 'skirt' : element.bottom ?? 'trousers'} onChange={(e) => updateElement({ bottom: (e.target as HTMLSelectElement).value })}>
             <option value="trousers">Trousers</option>
             <option value="shorts">Shorts</option>
             <option value="skirt">Skirt</option>
+          </select>
+        </div>
+        <div class="property-row">
+          <label>Trouser style</label>
+          <select disabled={element.top === 'dress' || element.bottom === 'skirt'} value={element.trouserStyle ?? 'plain'} onChange={(e) => updateElement({ trouserStyle: e.currentTarget.value })}>
+            <option value="plain">Plain</option><option value="jeans">Jeans</option><option value="cargo">Cargo</option>
           </select>
         </div>
         <div class="property-row">
@@ -1847,7 +1881,7 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
         </div>
         <div class="property-row">
           <label>Collar</label>
-          <input type="checkbox" checked={element.collar ?? false} onChange={(e) => updateElement({ collar: (e.target as HTMLInputElement).checked })} />
+          <input type="checkbox" checked={element.collar ?? element.top === 'shirt'} onChange={(e) => updateElement({ collar: (e.target as HTMLInputElement).checked })} />
         </div>
         <div class="property-row">
           <label>Tie</label>
@@ -1859,39 +1893,42 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
       </Show>
 
       <h4>Head</h4>
-      <div class="property-row"><label>Line width</label><input type="number" min="0.5" step="0.1" value={element.lineWidth ?? element.height * (element.build?.proportions === 'thin' ? 0.022 : 0.045)} onChange={(e) => updateElement({ lineWidth: Math.max(0.5, Number(e.currentTarget.value)) })} /></div>
+      <div class="property-row"><label>Line width</label><input type="number" min="0" step="0.1" value={values().lineWidth} onChange={(e) => {
+        const width = Math.max(0, Number(e.currentTarget.value))
+        updateElement({ lineWidth: width, ...(element.body?.outline?.width !== undefined ? { body: { ...element.body, outline: { ...element.body.outline, width } } } : {}) })
+      }} /></div>
       <div class="property-row">
         <label>Face style</label>
-        <select value={element.faceStyle ?? 'simple'} onChange={(e) => updateElement({ faceStyle: e.currentTarget.value as CharacterElement['faceStyle'] })}>
+        <select value={values().faceStyle} onChange={(e) => updateElement({ faceStyle: e.currentTarget.value as CharacterElement['faceStyle'] })}>
           <option value="simple">Simple</option>
           <option value="anime">Colour anime</option>
         </select>
       </div>
       <div class="property-row">
         <label>Face shape</label>
-        <select value={element.faceShape ?? 'round'} onChange={(e) => updateElement({ faceShape: e.currentTarget.value as CharacterElement['faceShape'] })}>
+        <select value={values().faceShape} onChange={(e) => updateElement({ faceShape: e.currentTarget.value as CharacterElement['faceShape'] })}>
           <option value="round">Round</option><option value="angular">Angular jaw</option>
         </select>
       </div>
-      <Show when={element.faceShape === 'angular'}>
-        <div class="property-row"><label>Jaw width</label><input type="range" min="0.55" max="0.95" step="0.01" value={element.jawWidth ?? 0.74} onInput={(e) => updateElement({ jawWidth: Number(e.currentTarget.value) })} /></div>
-        <div class="property-row"><label>Chin width</label><input type="range" min="0.03" max="0.35" step="0.01" value={element.chinWidth ?? 0.14} onInput={(e) => updateElement({ chinWidth: Number(e.currentTarget.value) })} /></div>
+      <Show when={values().faceShape === 'angular'}>
+        <div class="property-row"><label>Jaw width</label><input type="range" min="0.55" max="0.95" step="0.01" value={values().jawWidth} onInput={(e) => updateElement({ jawWidth: Number(e.currentTarget.value) })} /></div>
+        <div class="property-row"><label>Chin width</label><input type="range" min="0.03" max="0.35" step="0.01" value={values().chinWidth} onInput={(e) => updateElement({ chinWidth: Number(e.currentTarget.value) })} /></div>
       </Show>
-      <Show when={element.faceStyle === 'anime'}>
-        <div class="property-row"><label>Eye size</label><input type="range" min="0.5" max="1.2" step="0.01" value={element.eyeScale ?? 1} onInput={(e) => updateElement({ eyeScale: Number(e.currentTarget.value) })} /></div>
-        <div class="property-row"><label>Eye height</label><input type="range" min="0.45" max="1.2" step="0.01" value={element.eyeAspect ?? 1} onInput={(e) => updateElement({ eyeAspect: Number(e.currentTarget.value) })} /></div>
+      <Show when={values().faceStyle === 'anime'}>
+        <div class="property-row"><label>Eye size</label><input type="range" min="0.5" max="1.2" step="0.01" value={values().eyeScale} onInput={(e) => updateElement({ eyeScale: Number(e.currentTarget.value) })} /></div>
+        <div class="property-row"><label>Eye height</label><input type="range" min="0.45" max="1.2" step="0.01" value={values().eyeAspect} onInput={(e) => updateElement({ eyeAspect: Number(e.currentTarget.value) })} /></div>
         <div class="property-row">
           <label>Iris colour</label>
-          <input type="color" value={element.irisColor ?? '#4b7fce'} onInput={handleColorChange('irisColor')} />
+          <input type="color" value={values().irisColor} onInput={handleColorChange('irisColor')} />
         </div>
         <div class="property-row">
           <label>Eyelashes</label>
-          <input type="checkbox" checked={element.eyeLashes ?? true} onChange={(e) => updateElement({ eyeLashes: e.currentTarget.checked })} />
+          <input type="checkbox" checked={values().eyeLashes} onChange={(e) => updateElement({ eyeLashes: e.currentTarget.checked })} />
         </div>
       </Show>
       <div class="property-row">
         <label>Age creases</label>
-        <input type="range" min="0" max="1" step="0.05" value={element.ageLines ?? 0} onInput={(e) => updateElement({ ageLines: Number(e.currentTarget.value) })} />
+        <input type="range" min="0" max="1" step="0.05" value={values().ageLines} onInput={(e) => updateElement({ ageLines: Number(e.currentTarget.value) })} />
       </div>
       <div class="property-row">
         <label>Cast</label>
@@ -2092,7 +2129,8 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
       </p>
       <CharacterActingPanel element={element} store={props.store} sceneStore={props.sceneStore} />
     </div>
-  )
+    )
+  }
 
   const [mapCity, setMapCity] = createSignal('')
   const [mapCustom, setMapCustom] = createSignal({ name: '', lat: '', lon: '' })

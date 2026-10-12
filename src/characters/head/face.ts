@@ -2,6 +2,7 @@ import type { Point } from '../../adapters/canvas/sketch'
 import type { Pose } from '../rig/body-plan'
 import { headPoint, type SolvedHead } from '../rig/skeleton'
 import type { Pen } from '../look/pen'
+import { nosePoints } from './head-shape'
 
 /**
  * A face on the head's surface: eyes, brows and a mouth placed by head
@@ -35,27 +36,47 @@ const PROFILE_SHIFT = 0.45
 const MIN_SQUEEZE = 0.35
 /** Narrowest a feature's own shape gets (an eye stays an eye in profile) */
 const MIN_SHAPE_SQUEEZE = 0.7
+/** An illustrated facial plane lies inside the skull's spherical envelope. */
+const FACE_DEPTH = .78
 
 /**
  * Face coordinates to the screen. Cartoon faces slide less than a sphere
  * would: the whole face shifts toward the side the head faces, the spacing of
  * features narrows (to a minimum) and each feature's own shape narrows less, so
- * a profile still shows an eye and a mouth inside the head. Points are given
- * around a feature's `centre`; `facing` comes from the real surface at that
- * centre, so features on the far side are hidden.
+ * a profile still shows an eye and a mouth inside the head. Volume projection
+ * carries centres around the head and keeps the far eye through three-quarter
+ * views. Surface facing hides rear features; the far eye narrows to profile.
  */
-export function faceToScreen(head: SolvedHead, points: Point[], centre: Point): { points: Point[]; facing: number } {
+export function faceToScreen(head: SolvedHead, points: Point[], centre: Point, projection: FaceOptions['projection'] = 'cartoon'): { points: Point[]; facing: number } {
   const z = (p: Point) => Math.sqrt(Math.max(0, 1 - p.x * p.x - p.y * p.y))
-  const facing = headPoint(head, [centre.x, centre.y, z(centre)]).facing
+  let facing = headPoint(head, [centre.x, centre.y, z(centre)]).facing
   const forward = head.axes[2]
+  // A cartoon far eye remains readable in a three-quarter view. It narrows
+  // toward profile instead of vanishing at the sphere's earlier tangent.
+  if (projection === 'volume' && centre.x * forward[0] > 0) facing = Math.max(facing, forward[2])
   // The head's turn from the viewer (0 front, ±90° profile) and its nod.
   const yaw = Math.atan2(forward[0], forward[2])
   const cosYaw = Math.cos(yaw)
-  const sign = cosYaw >= 0 ? 1 : -1
-  const spacing = sign * Math.max(MIN_SQUEEZE, Math.abs(cosYaw))
-  const shape = sign * Math.max(MIN_SHAPE_SQUEEZE, Math.abs(cosYaw))
+  // Visible features stay on the same side as the head passes profile.
+  // Reflecting at cosYaw = 0 made an eye jump across the face before its
+  // surface normal hid it. Visibility already handles the rear hemisphere.
+  const spacing = Math.max(MIN_SQUEEZE, cosYaw)
+  const shape = Math.max(MIN_SHAPE_SQUEEZE, cosYaw)
   const cos = Math.cos(head.angle)
   const sin = Math.sin(head.angle)
+  if (projection === 'volume') {
+    // Inset the facial plane slightly so a profile mouth/eye fits inside the
+    // jaw silhouette. Feature centres follow the head's actual 3D axes;
+    // their own shapes retain enough width to read as cartoon features.
+    const anchor = headPoint(head, [centre.x, centre.y, z(centre) * FACE_DEPTH]).point
+    const visibility = Math.abs(centre.x) > .1 ? Math.min(1, Math.max(0, facing) / .25) : 1
+    const squeeze = Math.max(centre.x * forward[0] > 0 ? .2 : .5, cosYaw)
+    return { facing, points: points.map(p => {
+      const ax = (p.x - centre.x) * squeeze * head.rx * visibility
+      const ay = ((p.y - centre.y) + forward[1] * (z(p) - z(centre)) * FACE_DEPTH) * head.ry * visibility
+      return { x: anchor.x + ax * cos + ay * sin, y: anchor.y + ax * sin - ay * cos }
+    }) }
+  }
   return {
     facing,
     points: points.map((p) => {
@@ -101,6 +122,8 @@ export interface PupilCircle {
 
 /** What an open mouth shows: a row of upper teeth, and a tongue (default neither, as the plain face); a nose; what is in the pupils. */
 export interface FaceOptions {
+  /** `cartoon` keeps the classic face slide; `volume` follows the head's 3D axes (organic default). */
+  projection?: 'cartoon' | 'volume'
   /** `simple` (default) or colour anime eyes with irises, highlights and expressive lids. Uses the same pose fields. */
   style?: 'simple' | 'anime'
   /** Anime iris colour (default blue); plain data, including in scene JSON. */
@@ -142,8 +165,8 @@ const TONGUE = '#e06b7d'
 export function drawFace(pen: Pen, head: SolvedHead, pose: Pose, lineWidth: number, options: FaceOptions = {}, ctx?: CanvasRenderingContext2D): void {
   // Face lines are lighter than the body's, and capped by the head's size.
   const thin = Math.max(1, Math.min(lineWidth * 0.6, 0.14 * head.rx))
-  const toScreen = (points: Point[], centre: Point) => faceToScreen(head, points, centre).points
-  const facingAt = (x: number, y: number) => faceToScreen(head, [], { x, y }).facing
+  const toScreen = (points: Point[], centre: Point) => faceToScreen(head, points, centre, options.projection).points
+  const facingAt = (x: number, y: number) => faceToScreen(head, [], { x, y }, options.projection).facing
   const smile = field(pose, 'smile', 0)
   const blink = field(pose, 'blink', 0)
   const lookX = field(pose, 'lookX', 0)
@@ -206,15 +229,17 @@ export function drawFace(pen: Pen, head: SolvedHead, pose: Pose, lineWidth: numb
     pen.line(toScreen([outer, { x: (outer.x + inner.x) / 2, y: (outer.y + inner.y) / 2 }, inner], { x: ex, y: brow }), thin)
   }
 
-  drawMarks(pen, head, pose, thin)
-  drawAgeLines(pen, head, options.ageLines ?? 0, thin)
+  drawMarks(pen, head, pose, thin, options.projection)
+  drawAgeLines(pen, head, options.ageLines ?? 0, thin, options.projection)
 
   // Mouth: closed is a curve; open is an O, a grin (flat top) or a wail (flat bottom).
   const mouthCentre = { x: 0, y: MOUTH_Y }
   if (facingAt(0, MOUTH_Y) < -SHOWN) return
   if (options.nose && facingAt(0, EYE_Y - 0.15) >= SHOWN) {
     // A small nose: down from between the eyes, hooking toward the character's right.
-    pen.line(toScreen([{ x: 0.01, y: EYE_Y - 0.1 }, { x: 0.03, y: MOUTH_Y + 0.2 }, { x: -0.05, y: MOUTH_Y + 0.17 }], { x: 0, y: MOUTH_Y + 0.22 }), thin)
+    if (options.projection === 'volume') {
+      pen.line(nosePoints(head), thin)
+    } else pen.line(toScreen([{ x: 0.01, y: EYE_Y - 0.1 }, { x: 0.03, y: MOUTH_Y + 0.2 }, { x: -0.05, y: MOUTH_Y + 0.17 }], { x: 0, y: MOUTH_Y + 0.22 }), thin)
   }
   const w = 0.25 * Math.max(0.3, field(pose, 'mouthWidth', 1))
   const open = Math.min(1, Math.max(0, field(pose, 'mouth', 0)))
@@ -294,7 +319,7 @@ function drawAnimeEye(
   const bottom = { x: ex, y: ey - height * 1.35 }
   const upper = quadratic(left, top, right)
   const lower = quadratic(right, bottom, left)
-  const screen = (points: Point[]) => faceToScreen(head, points, eye).points
+  const screen = (points: Point[]) => faceToScreen(head, points, eye, options.projection).points
   // Clamp coloured features to the eye opening, also when drawFace is used without a canvas context.
   const inside = (points: Point[]) => points.map((p) => {
     const x = Math.min(right.x, Math.max(left.x, p.x))
@@ -334,19 +359,19 @@ function drawAnimeEye(
   }
 }
 
-function drawAgeLines(pen: Pen, head: SolvedHead, amount: number, thin: number): void {
+function drawAgeLines(pen: Pen, head: SolvedHead, amount: number, thin: number, projection?: FaceOptions['projection']): void {
   const strength = Math.min(1, Math.max(0, amount))
   if (strength <= 0) return
   for (const side of [-1, 1]) {
     const centre = { x: side * 0.59, y: EYE_Y }
-    if (faceToScreen(head, [], centre).facing < SHOWN) continue
+    if (faceToScreen(head, [], centre, projection).facing < SHOWN) continue
     for (const slope of [-0.06, 0.035]) {
       const points = [{ x: centre.x, y: centre.y }, { x: centre.x + side * 0.1, y: centre.y + slope }]
-      pen.line(faceToScreen(head, points, centre).points, thin * 0.45 * strength)
+      pen.line(faceToScreen(head, points, centre, projection).points, thin * 0.45 * strength)
     }
     const cheek = { x: side * 0.3, y: -0.38 }
     const crease = quadratic({ x: cheek.x, y: -0.31 }, { x: cheek.x + side * 0.07, y: -0.4 }, { x: cheek.x + side * 0.035, y: -0.49 })
-    pen.line(faceToScreen(head, crease, cheek).points, thin * 0.35 * strength)
+    pen.line(faceToScreen(head, crease, cheek, projection).points, thin * 0.35 * strength)
   }
 }
 
@@ -362,41 +387,41 @@ const drop = (cx: number, cy: number, r: number): Point[] =>
   })
 
 /** Blush, tears and sweat: marks that fade in with their fields. */
-function drawMarks(pen: Pen, head: SolvedHead, pose: Pose, thin: number) {
+function drawMarks(pen: Pen, head: SolvedHead, pose: Pose, thin: number, projection?: FaceOptions['projection']) {
   const blush = Math.min(1, Math.max(0, field(pose, 'blush', 0)))
   const tears = Math.min(1, Math.max(0, field(pose, 'tears', 0)))
   const sweat = Math.min(1, Math.max(0, field(pose, 'sweat', 0)))
   if (blush + tears + sweat <= 0.01) return
   for (const side of [1, -1]) {
     const cheek = { x: 0.5 * side, y: -0.16 }
-    const shown = faceToScreen(head, [], cheek).facing >= SHOWN
+    const shown = faceToScreen(head, [], cheek, projection).facing >= SHOWN
     if (blush > 0.01 && shown) {
-      const { points } = faceToScreen(head, ellipse(cheek.x, cheek.y, 0.17, 0.1), cheek)
+      const { points } = faceToScreen(head, ellipse(cheek.x, cheek.y, 0.17, 0.1), cheek, projection)
       pen.shape(points, `rgba(240, 120, 140, ${(0.75 * blush).toFixed(3)})`, 0)
       if (blush > 0.5) {
         // Hatch lines over the cheek.
         for (const dx of [-0.07, 0, 0.07]) {
           const hatch = [{ x: cheek.x + dx - 0.018, y: cheek.y - 0.03 }, { x: cheek.x + dx + 0.018, y: cheek.y + 0.03 }]
-          pen.line(faceToScreen(head, hatch, cheek).points, thin * 0.3)
+          pen.line(faceToScreen(head, hatch, cheek, projection).points, thin * 0.3)
         }
       }
     }
     const eye = { x: EYE_X * side, y: EYE_Y }
-    if (tears > 0.01 && faceToScreen(head, [], eye).facing >= SHOWN) {
+    if (tears > 0.01 && faceToScreen(head, [], eye, projection).facing >= SHOWN) {
       const r = 0.05 + 0.04 * tears
       const below = { x: eye.x + 0.06 * side, y: EYE_Y - 0.2 - 0.12 * tears }
-      pen.shape(faceToScreen(head, drop(below.x, below.y, r), below).points, WATER, thin * 0.35)
+      pen.shape(faceToScreen(head, drop(below.x, below.y, r), below, projection).points, WATER, thin * 0.35)
       if (tears > 0.6) {
         const streak = [{ x: eye.x + 0.05 * side, y: EYE_Y - 0.1 }, { x: below.x, y: below.y + r * 0.8 }]
-        pen.line(faceToScreen(head, streak, below).points, thin * 0.3)
+        pen.line(faceToScreen(head, streak, below, projection).points, thin * 0.3)
       }
     }
   }
   if (sweat > 0.01) {
     // One bead at the temple on the character's left (screen right from the front).
     const temple = { x: 0.64, y: 0.42 }
-    if (faceToScreen(head, [], temple).facing >= SHOWN) {
-      pen.shape(faceToScreen(head, drop(temple.x, temple.y, 0.05 + 0.05 * sweat), temple).points, WATER, thin * 0.35)
+    if (faceToScreen(head, [], temple, projection).facing >= SHOWN) {
+      pen.shape(faceToScreen(head, drop(temple.x, temple.y, 0.05 + 0.05 * sweat), temple, projection).points, WATER, thin * 0.35)
     }
   }
 }

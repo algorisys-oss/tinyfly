@@ -54,6 +54,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Code-drawn targets** - A `custom` canvas target draws with code (characters, charts, props) while the timeline animates its position, opacity and its own `props`, so drawing stays code and timing stays JSON
 - **Immediate mode too** - A scene's `background` and `draw(ctx, { time })` functions paint each frame directly, Cairo/Processing-style, and mix freely with timeline targets
 - **Timing from narration** - `planNarration()` lays spoken lines out from their clip lengths (lead, gap, tail) into cues, scene spans and markers; `voiceNarration()` measures recorded clips with ffmpeg and writes the sample-aligned narration WAV
+- **Soft cartoon story characters** - Opt-in `figure: 'organic'` adds filled shoulders, chest/waist/hip contours, supple limbs, small posed hands and deterministic cel shading on the existing rig. JSON body profiles keep anatomy independent of outline width; one skin colour covers body, face and hands under scene lighting and fog, and cel shading respects inherited opacity. Foreground arms stay over waist garments in 2D and globally sorted 3D scenes, with only foreground arms promoted to garment depths so leaning head, neck, torso and legs retain world-object occlusion. Transparent organic skin keeps exposed body, head and both hand variants outline-only in every look. Editor Skin and Line controls resolve and edit imported body colour overrides. Leaf garment options are validated and copied at construction. Actor names are checked at runtime, and each head contour is reused for filling, shading and face clipping within a draw. Editable adult and child `softCartoonCharacter` presets, flowing hair, editable everyday/formal/casual/leaf clothing and the existing script, reach and lip-sync APIs support original stories. Try [**Soft Cartoon Characters**](https://tinyfly.app/examples/live-organic-characters): adults, children or an adult and child, with seven actions, face/hair controls and independent outfit editing. `outfitPreset()` supplies JSON wardrobe defaults; shirts, T-shirts, blouses, dresses, trousers, jeans, cargo, shorts, skirts, sleeves, collars, ties and colours remain editable. See [the appearance guide](docs/character-appearance.md).
 - **Characters** - A poseable stick figure (`@algorisys/tinyfly/characters`): named poses, facial expressions (brows, eyes that widen, close and look around, mouth shapes), squash and stretch, rubber-hose limbs, blending, walk cycles and talking, all driven by timeline tracks. **Characters v2**: one skeleton in 3D drawn flat, turning front to side to back, resting on whatever touches the ground, reaching for points, in clean, pencil or silhouette looks, and a 🧍 Character element in the editor you pose and keyframe. **Character appearance**: 41 hairstyles, including soft sweeps, flowing bobs and cascading waves with scalp-attached curved locks and individual flexibility, 20 facial-hair styles, glasses, hats and ears as plain data on the head (they turn with it through all eight views), builds from toddler to tall, a recurring cast (`castMember`), 30 expressions with blush, tears and sweat, and hair that swings after a turn or a run and settles (`hairFollowTracks` keys the lag from the character's own tracks, so drawing stays stateless); four-legged animals' ears lay back on a run the way their tails already trail. Clothes are data too (`outfit.over`: an apron, a lab coat, a hoodie, a cardigan, overalls, a sari; boots), a mouth opens on teeth and a tongue, feet come in shapes, two people hug and help each other up (`embrace`, `helpUp`), and a cane in the hand or a wheelchair to ride are accessories any character can have, not part of an age ([guide](docs/character-appearance.md))
 - **Dance and flips** - The stick figure dances disco, hip hop, breaking toprock, jazz, K-pop, Bollywood, Bhangra, Bharatanatyam (with mudras), the Charleston, tap (foot strikes as data, for tap sounds) and popping (side glide, moonwalk, forward glide, which travel with the planted foot staying put), and does front, back, layout, scissor and side flips, cartwheels, back handsprings, split leaps, toe touches and full splits. Wrists, ankles, foot turn-out, whole-body `spin` and `rise` are pose fields; moves are keyed in beats, so any tempo plays them; styles, grooves and routines are plain JSON (`danceFrame()`, `danceTracks()`, `flipPose()`, `flipTracks()`). In the editor a 🧍 Character dances from the playhead, in time with the music: an Audio element's tempo is detected (`detectTempo()`) or tapped, the timeline shows its beats and bars, and keyframes snap to them. Native v2 garba (two/three clap) and dandiya add body-local poses, circle formations with planted toes, paired stick-tip contacts, and timed full spins (`humanDanceFrame`, `danceCircleTracks`, `meetDandiya`, `characterScript3D`). Sparse custom keys keep numeric hand and pose values through JSON playback; rolled circles preserve native yaw-before-roll and foot grounding. Foot IK preserves authored hip turn-out for ankle and toe plants. Scripted dance entry preserves relaxed or explicitly posed hands through preceding holds. Script action boundaries retain preceding easing; festive examples solve contacts with their rendered body options. See [docs/dance.md](docs/dance.md)
 - **Maps** - Animated maps on OpenStreetMap tiles or an offline world outline (also in pencil): the camera flies in, pins drop, routes draw themselves while a marker travels them; a 🗺 Map element in the editor with a one-click trip
@@ -274,7 +275,7 @@ GSAP-shaped functions at the top level. Teaching embeds are included: add
 itself.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.1/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.108.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -310,7 +311,7 @@ A teaching figure needs no code at all:
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON with markers… }</script>
   <figcaption>Appending to a full slice</figcaption>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.1/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.108.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
 ```
 
 See [Teaching Animations](docs/teaching.md).
@@ -409,7 +410,7 @@ Without a build step, the player bundle puts the same functions on a `tinyfly` g
   <div data-tinyfly="box" style="width: 60px; height: 60px; background: #4a9eff;"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.1/cdn/tinyfly-player.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.108.0/cdn/tinyfly-player.iife.js"></script>
 <script>
   tinyfly.play('#animation', './animation.json', { loop: -1 })
 </script>
@@ -518,7 +519,7 @@ Or skip the code entirely with declarative embeds (see [Teaching Animations](doc
   <svg viewBox="0 0 720 200">…</svg>
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON… }</script>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.1/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.108.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 ### Audio / Video Sync
@@ -762,7 +763,7 @@ npm run build
 ```
 
 The private repository's `.no-mistakes.yaml` selects the Codex reviewer and
-uses `npm run test:run -- --maxWorkers 2` for tests and
+builds the add-on bundles before `npm run test:run -- --maxWorkers 2` for tests and
 `npx tsc -p tsconfig.app.json --noEmit` for its lint/type check.
 It is excluded from the OSS mirror; the project needs no runtime configuration
 for this validation.
@@ -808,20 +809,24 @@ load.
 
 ### Test Coverage
 
-`npm test` runs 2,197 unit tests in 127 files, all passing:
+`npm test` runs 3,610 unit tests in 234 files, all passing. The Organic
+Characters browser suite checks 74 desktop/mobile scenarios per browser.
 
 | Area | Tests |
 |---|---|
-| Engine (`src/engine`: timeline, easing, paths, text, exports, serialization) | 521 |
-| Editor (`src/editor`: stores, utils, presets, AI, samples) | 409 |
-| GSAP-style API (`src/compat/gsap`) | 332 |
-| Examples page, GSAP-style demos and showcases (`src/examples`) | 302 |
-| Render adapters (`src/adapters`) | 134 |
+| Engine (`src/engine`: timeline, easing, paths, text, exports, serialization) | 601 |
+| Editor (`src/editor`: stores, utils, presets, AI, samples) | 600 |
+| GSAP-style API (`src/compat/gsap`) | 335 |
+| Examples page, GSAP-style demos and showcases (`src/examples`) | 436 |
+| Render adapters (`src/adapters`) | 197 |
+| Characters, maps and 3D scenes (`src/characters`, `src/maps`, `src/scene-3d`) | 865 |
 | Interactive course (`src/learn`) | 211 |
 | Drivers and interaction (`src/drivers`, `src/interaction`) | 136 |
 | Player, media sync, sequencer, teaching and scenarios (`src/player`) | 103 |
-| Docs viewer and `llms.txt` (`src/docs`) | 16 |
+| Docs viewer and `llms.txt` (`src/docs`) | 18 |
 | Embeds, teaching kit, framework hooks, landing (`src/embed`, `src/teach`, `src/frameworks`, `src/landing`) | 33 |
+| Headless rendering and audio (`src/headless`) | 63 |
+| Entry boundaries | 2 |
 
 ## Contributing
 

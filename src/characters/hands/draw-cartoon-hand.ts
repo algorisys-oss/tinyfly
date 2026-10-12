@@ -1,7 +1,9 @@
 import type { Point } from '../../adapters/canvas/sketch'
-import { taperedLine } from '../look/tapered-line'
-import { createPen, type Look, type Pen, type PencilOptions } from '../look/pen'
+import { taperedLine, taperedOutline } from '../look/tapered-line'
+import { createPen, unfilledPen, type Look, type Pen, type PencilOptions } from '../look/pen'
 import { handJoints, handJointsAt, type FingerJoints, type FingerName, type HandJoints, type HandPose, type HandRigStyle } from './hand-rig'
+import type { SkinShading } from '../body/organic-body'
+import { shadeSkinOutline } from '../look/skin-shading'
 
 /**
  * Drawing a posed hand: the palm and each finger are parts, drawn far to near
@@ -10,6 +12,9 @@ import { handJoints, handJointsAt, type FingerJoints, type FingerName, type Hand
  */
 
 export interface CartoonHandStyle extends HandRigStyle {
+  /** Join a native forearm without outlining the wrist's interior edge. */
+  connected?: boolean
+  shading?: SkinShading
   /** Skin fill (default a warm tan); a glove is just another colour */
   skin?: string
   /** Outline colour (default graphite) */
@@ -44,7 +49,7 @@ export function drawCartoonHand(ctx: CanvasRenderingContext2D, at: Point, pose: 
   const joints = handJointsAt(handJoints(pose, style), at)
   const ink = style.ink ?? DEFAULT_INK
   const lineWidth = style.lineWidth ?? joints.size * 0.035
-  const pen =
+  let pen =
     style.pen ??
     createPen(ctx, {
       look: style.look ?? 'clean',
@@ -55,13 +60,14 @@ export function drawCartoonHand(ctx: CanvasRenderingContext2D, at: Point, pose: 
       pencil: { construction: false, ...style.pencil },
     })
   const skin = style.skin ?? DEFAULT_SKIN
+  if (skin === 'none') pen = unfilledPen(ctx, pen)
   const nails = style.nails ?? true
 
   type Part = { depth: number; draw: () => void }
   const parts: Part[] = [
     {
       depth: joints.palmDepth,
-      draw: () => drawPalm(pen, joints, skin, lineWidth),
+      draw: () => drawPalm(ctx, pen, joints, skin, lineWidth, style),
     },
   ]
   for (const finger of Object.values(joints.fingers) as FingerJoints[]) {
@@ -85,8 +91,28 @@ export function drawCartoonHand(ctx: CanvasRenderingContext2D, at: Point, pose: 
   return joints
 }
 
-function drawPalm(pen: Pen, joints: HandJoints, skin: string, lineWidth: number) {
-  pen.shape(joints.palm, skin, lineWidth)
+function drawPalm(ctx: CanvasRenderingContext2D, pen: Pen, joints: HandJoints, skin: string, lineWidth: number, style: CartoonHandStyle) {
+  pen.shape(joints.palm, skin === 'none' ? null : skin, style.connected ? 0 : lineWidth)
+  if (skin !== 'none' && style.shading && pen.look === 'clean') {
+    const center = joints.palm.reduce((sum, point) => ({ x: sum.x + point.x / joints.palm.length, y: sum.y + point.y / joints.palm.length }), { x: 0, y: 0 })
+    shadeSkinOutline(ctx, joints.palm, center, style.shading)
+  }
+  if (style.connected && lineWidth > 0 && (pen.look !== 'silhouette' || skin === 'none')) {
+    const { up } = joints.axes
+    let run: Point[] = []
+    for (let i = 0; i <= joints.palm.length; i++) {
+      const point = joints.palm[i % joints.palm.length], next = joints.palm[(i + 1) % joints.palm.length]
+      const along = ((point.x + next.x) / 2 - joints.wrist.x) * up.x + ((point.y + next.y) / 2 - joints.wrist.y) * up.y
+      if (along < joints.size * 0.08) {
+        if (run.length > 1) pen.line(run, lineWidth)
+        run = []
+      } else {
+        if (run.length === 0) run.push(point)
+        run.push(next)
+      }
+    }
+    if (run.length > 1) pen.line(run, lineWidth)
+  }
   // The back of a curled hand: a bump over each knuckle.
   if (joints.palmFacing < -0.3 && pen.look !== 'silhouette') {
     const { up } = joints.axes
@@ -133,7 +159,7 @@ function drawFinger(ctx: CanvasRenderingContext2D, pen: Pen, finger: FingerJoint
 
   ctx.save()
   // Everything except a disc round the knuckle (a silhouette has no seams to hide).
-  if (pen.look !== 'silhouette') {
+  if (pen.look !== 'silhouette' || skin === 'none') {
     ctx.beginPath()
     ctx.rect(base.x - 1e5, base.y - 1e5, 2e5, 2e5)
     const r = from / 2 + lineWidth * 1.6
@@ -141,14 +167,23 @@ function drawFinger(ctx: CanvasRenderingContext2D, pen: Pen, finger: FingerJoint
     ctx.arc(base.x, base.y, r, 0, Math.PI * 2)
     ctx.clip('evenodd')
   }
-  pen.limb(points, from + 2 * lineWidth, to + 2 * lineWidth)
+  if (skin === 'none') {
+    const outline = taperedOutline(points, from, to)
+    const before = points[points.length - 2]
+    const angle = Math.atan2(tip.y - before.y, tip.x - before.x)
+    const cap = Array.from({ length: 13 }, (_, i) => {
+      const a = angle + Math.PI / 2 - i * Math.PI / 12
+      return { x: tip.x + Math.cos(a) * to / 2, y: tip.y + Math.sin(a) * to / 2 }
+    })
+    pen.shape([...outline.slice(0, points.length), ...cap.slice(1), ...outline.slice(points.length)], null, lineWidth)
+  } else pen.limb(points, from + 2 * lineWidth, to + 2 * lineWidth)
   ctx.restore()
-  if (pen.look !== 'silhouette') {
+  if (skin !== 'none' && pen.look !== 'silhouette') {
     ctx.fillStyle = skin
     taperedLine(ctx, points, from, to)
   }
 
-  if (pen.look === 'silhouette' || !nails || finger.nail < 0.25) return
+  if (skin === 'none' || pen.look === 'silhouette' || !nails || finger.nail < 0.25) return
   // The nail sits on the back of the fingertip, foreshortened as it turns away.
   const before = points[points.length - 2]
   const along = unit({ x: tip.x - before.x, y: tip.y - before.y }) ?? {

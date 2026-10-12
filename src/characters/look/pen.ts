@@ -86,7 +86,11 @@ function tracePath(ctx: CanvasRenderingContext2D, points: Point[], close = false
   if (close) ctx.closePath()
 }
 
-function cleanPen(ctx: CanvasRenderingContext2D, ink: string, look: 'clean' | 'silhouette'): Pen {
+export function unfilledPen(ctx: CanvasRenderingContext2D, pen: Pen): Pen {
+  return pen.look === 'silhouette' ? cleanPen(ctx, pen.ink, 'silhouette', false) : pen
+}
+
+function cleanPen(ctx: CanvasRenderingContext2D, ink: string, look: 'clean' | 'silhouette', fillEmpty = true): Pen {
   const solid = look === 'silhouette'
   // A silhouette fattens lines a little, so thin parts still read as shape.
   const weight = solid ? 1.25 : 1
@@ -108,7 +112,7 @@ function cleanPen(ctx: CanvasRenderingContext2D, ink: string, look: 'clean' | 's
     },
     shape(points, fill, outline) {
       tracePath(ctx, points, true)
-      if (fill !== null || solid) {
+      if (fill !== null || solid && fillEmpty) {
         ctx.fillStyle = solid ? ink : (fill as string)
         ctx.fill()
       }
@@ -121,7 +125,7 @@ function cleanPen(ctx: CanvasRenderingContext2D, ink: string, look: 'clean' | 's
     ellipse(cx, cy, rx, ry, angle, fill, outline) {
       ctx.beginPath()
       ctx.ellipse(cx, cy, rx, ry, angle, 0, Math.PI * 2)
-      if (fill !== null || solid) {
+      if (fill !== null || solid && fillEmpty) {
         ctx.fillStyle = solid ? ink : (fill as string)
         ctx.fill()
       }

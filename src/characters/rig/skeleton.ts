@@ -75,6 +75,8 @@ export interface Skeleton {
   height: number
   /** View angle, radians: turn × 90° */
   view: number
+  /** Body forward axis in camera view space; independent of head yaw. */
+  bodyForward?: Vec3
   chains: Record<string, SolvedChain>
   head: SolvedHead
   /** The hips on screen */
@@ -320,6 +322,8 @@ export function skeletonInView(plan: BodyPlan, pose: Pose, options: SolveOptions
 
   // px per unit at the hips: how big the figure looks there.
   const hipView = projection.toView(hip3)
+  const forward = rotZ(rotY([0, 0, 1], view), -rad(pose.roll ?? 0))
+  const bodyForward = unit(sub(projection.toView(add(hip3, forward)), hipView))
   const hipScreen = projection.toScreen(hipView)
   const across = projection.toScreen([hipView[0] + 1, hipView[1], hipView[2]])
   const pxPerUnit = Math.hypot(across.x - hipScreen.x, across.y - hipScreen.y)
@@ -358,6 +362,7 @@ export function skeletonInView(plan: BodyPlan, pose: Pose, options: SolveOptions
   return {
     height: H * pxPerUnit,
     view,
+    bodyForward,
     chains,
     head,
     hip: hipScreen,

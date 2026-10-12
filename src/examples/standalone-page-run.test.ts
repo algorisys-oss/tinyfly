@@ -48,11 +48,13 @@ describe('copied live demo pages run', () => {
       await Promise.resolve()
       const styles = () => markup(document.body)
       const beforeInput = styles()
+      const seen = new Set<string>([beforeInput])
+      // Observe playback before synthetic clicks can intentionally pause it.
+      for (let i = 0; i < 12; i++) { step(); seen.add(styles()) }
       exercise(document.body)
       await Promise.resolve()
 
       // Record every frame for 1.6s and look for any change (see live-demos.test.ts).
-      const seen = new Set<string>([beforeInput])
       for (let i = 0; i < 100; i++) {
         step()
         seen.add(styles())

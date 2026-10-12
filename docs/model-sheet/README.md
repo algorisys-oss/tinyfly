@@ -67,12 +67,57 @@ Regenerate with
 after building the libraries, then copy `stills/0-middle.png` to
 `docs/model-sheet/flowing-hair.png`.
 
+## Soft cartoon story characters
+
+Two original generic actors use the same human rig with `figure: 'organic'`.
+Filled contours, skin and cel shading are independent of outline width.
+The sheet includes six views, native hand gestures, seated speech, fitted
+everyday and leaf garments, and the unchanged fluid/stick modes.
+
+![Soft cartoon actors, actions, clothing and outline widths](organic-characters.png)
+
+Close-ups check both eyes in three-quarter views, gradual far-eye occlusion,
+the projected nose, and independent head turns in both directions:
+
+![Soft cartoon head turns with volume projection](organic-head-turns.png)
+
+Child boy/girl presets share the same rig, with larger head proportions,
+shorter limbs, rounded torsos and smaller default heights. The child sheet
+shows size beside adults, six views, gestures, seated speech and leaf clothing.
+
+![Original child presets, adult comparison and poses](child-characters.png)
+
+See [the appearance guide](../character-appearance.md) and the local
+`/examples/live-organic-characters` example. Regenerate after building:
+
+```bash
+npx tinyfly video examples/headless-video/organic-characters.mjs --stills stills/
+cp stills/0-middle.png docs/model-sheet/organic-characters.png
+npx tinyfly video examples/headless-video/organic-story.mjs -o organic-story.mp4
+npx tinyfly video examples/headless-video/organic-head-turns.mjs --stills heads/
+cp heads/0-middle.png docs/model-sheet/organic-head-turns.png
+npx tinyfly video examples/headless-video/child-characters.mjs --stills children/
+cp children/0-middle.png docs/model-sheet/child-characters.png
+```
+
 ## Hands
 
 Every cartoon hand shape, turned and in every look: see
 [cartoon-hands.md](../cartoon-hands.md).
 
 ![Cartoon hands](hand-shapes.png)
+
+## Editable clothing
+
+Everyday, Formal and Casual outfits use the same adult and child rigs.
+Shirts, blouses, dresses, jeans, cargo shorts and colours are plain options.
+
+![Editable clothing on adults and children](clothing-options.png)
+
+```sh
+npx tinyfly video examples/headless-video/clothing-options.mjs --stills clothing/
+cp clothing/0-middle.png docs/model-sheet/clothing-options.png
+```
 
 ## Dance and flips
 

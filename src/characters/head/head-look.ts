@@ -2,7 +2,7 @@ import type { Pose } from '../rig/body-plan'
 import type { SolvedHead } from '../rig/skeleton'
 import type { Pen } from '../look/pen'
 import type { FaceOptions } from './face'
-import { angularHeadOutline } from './head-shape'
+import { headOutline } from './head-shape'
 import { drawHairBehind, drawHairFront, hairMotionOf, resolveHair, type Hair, type HairSpec, type HairStyleName } from './hair'
 import { drawEarsBehind, drawEarsFront } from './ears'
 import { drawBeardBehind, drawBeardFront, drawMoustache, resolveFacialHair, type FacialHair, type FacialHairSpec, type FacialHairStyleName } from './facial-hair'
@@ -22,8 +22,8 @@ import { drawHat, resolveHat, type Hat, type HatSpec, type HatStyle } from './ha
  * - over: after the whole body, the hair and hat when the head is turned
  *   away, since they are then the nearest things to the viewer.
  *
- * Which part wins where two overlap is fixed by that order: the face's eyes
- * and brows draw over a fringe, the mouth over a beard (which leaves an
+ * Classic eyes and brows draw over a fringe; filled organic heads draw
+ * their face under opaque hair instead. The mouth draws over a beard (which leaves an
  * opening for it), a moustache over the mouth's top, and a hat over the hair.
  *
  * Hanging hair lags behind the head by the pose's `hair.swing`, `hair.trail`
@@ -64,6 +64,8 @@ export function resolveHeadLook(options: HeadLookOptions): HeadLook {
 
 export interface HeadDrawOptions {
   face?: FaceOptions
+  /** Filled cartoon heads let opaque bangs and side locks cover the face. */
+  faceUnderHair?: boolean
   lineWidth: number
   skin: string
 }
@@ -81,7 +83,7 @@ const showsEars = (look: HeadLook) => look.ears && !look.hair?.coversEars
 
 export function drawHeadBehind(ctx: CanvasRenderingContext2D, pen: Pen, look: HeadLook, head: SolvedHead, pose: Pose, options: HeadDrawOptions): void {
   if (isBare(look)) return
-  const clipping = { ...options, headOutline: options.face?.shape === 'angular' ? angularHeadOutline(head, options.face) : undefined }
+  const clipping = { ...options, headOutline: options.face && (options.face.shape === 'angular' || options.face.projection === 'volume') ? headOutline(head, options.face) : undefined }
   if (look.hair) drawHairBehind(pen, ctx, head, look.hair, { ...clipping, motion: hairMotionOf(pose) })
   if (look.facialHair) drawBeardBehind(pen, ctx, head, look.facialHair, clipping)
   if (showsEars(look)) drawEarsBehind(pen, ctx, head, clipping)
@@ -103,9 +105,10 @@ export function drawHeadFront(
   }
   const away = facesAway(head)
   if (showsEars(look)) drawEarsFront(pen, head, options)
-  if (look.hair && !away) drawHairFront(pen, head, look.hair, { ...options, motion: hairMotionOf(pose) })
+  if (look.hair && !away && !options.faceUnderHair) drawHairFront(pen, head, look.hair, { ...options, motion: hairMotionOf(pose) })
   if (look.facialHair) drawBeardFront(pen, head, look.facialHair, options, pose.mouthWidth ?? 1)
   drawFace()
+  if (look.hair && !away && options.faceUnderHair) drawHairFront(pen, head, look.hair, { ...options, motion: hairMotionOf(pose) })
   if (look.facialHair) drawMoustache(pen, head, look.facialHair, options)
   if (look.glasses) drawGlasses(pen, head, look.glasses, options)
   if (look.hat && !away) drawHat(pen, head, look.hat, { lineWidth: options.lineWidth, hairVolume: look.hair?.volume ?? 0 })

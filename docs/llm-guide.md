@@ -88,6 +88,38 @@ bakes. See `docs/dance.md`.
 
 ## Characters with a look
 
+For original soft cartoon story characters, opt into `figure: 'organic'`.
+Its default `face.projection: 'volume'` moves eyes/mouth around the head and
+lets hair occlude them, with a flatter profile facial plane and a nose above
+the mouth; classic `cartoon` projection remains available. Foreground organic
+arms/hands draw together over lower garments, preserving the wrist at the waist.
+`body` owns JSON half-width profiles (`torso`, `arm`, `leg`, `neck`): increasing
+arrays of `{ at: 0..1, width: fractionOfHeight }` spanning 0 to 1. Set `skin`
+once for exposed body, head and hands; `body.fill` overrides it.
+Use `body.fill: 'none'` for outline-only exposed skin, including both hand
+variants in every look. In 3D, only foreground arms use garment depths for
+painter ordering; other organic parts retain physical world-object occlusion.
+`body.outline: { color, width }` is independent of anatomy. Optional
+`body.shading: { mode: 'cel' | 'none', light: [x,y], shadow, opacity, highlight }`
+is deterministic and clipped to skin. Defaults include small natural hands.
+`softCartoonCharacter('youngMan' | 'youngWoman' | 'childBoy' | 'childGirl', options)`
+provides editable original actors; `SOFT_CARTOON_CAST` contains their source
+options. Children default to shorter heights, larger head proportions, shorter
+limbs and rounded torsos. Override `height` to change size while preserving
+their anatomy. Use `outfitPreset('everyday' | 'formal' | 'casual', overrides)`
+for owned JSON wardrobe defaults. `outfit.top` is `tshirt | shirt | blouse |
+dress`; `trouserStyle` is `plain | jeans | cargo`; `shirt` and `trousers`
+remain colour fields. Bottoms are `trousers | shorts | skirt`; sleeves,
+collar and tie colour are editable. Dresses force a skirt in the top colour.
+All garments are available for every actor. `outfit` adapts to organic contours; organic-only `leafOutfit` accepts
+`{ top?, color?, accent?, length? }`. Use the existing `characterScript`,
+`characterPoseTracks`, `reachCharacter`, hand pose and `hairFollowTracks`
+APIs for motion. Avoid a foreground whole-body overlay. An unrigged PNG
+is not a posable character. The interactive example is
+`/examples/live-organic-characters`; a headless study is
+`examples/headless-video/organic-characters.mjs`. Child proportions and poses
+are shown in `examples/headless-video/child-characters.mjs`.
+
 A v2 character's appearance is plain options to `character()`, never drawing
 code: `build` (`child`, `tall`, `short`…), `hair` (a style name, or
 `{ style, color, length, … }`), `facialHair`, `glasses`, `hat`, `ears: true`,
@@ -96,6 +128,9 @@ code: `build` (`child`, `tall`, `short`…), `hair` (a style name, or
 'cardigan' | 'overalls' | 'sari' | 'apron' | 'labCoat', shoes: 'boots' }`.
 Built-in tops hide thighs and trouser roots under their hem during turns;
 garments spanning both legs use the resolved body order in camera views too.
+Custom camera-view garment details should use `joints.bodyForward` (view-space
+body axis: `z` front visibility, `x` side offset), independent of head yaw.
+`joints.turn` remains authored; flat joints omit `bodyForward`.
 For custom clothes, `layers.parts[id].clip` clips only the bare body before
 `over` draws, and `joints.parts[id].order` gives the drawing index.
 `castMember('grandpa', 300)` gives a whole ready-made character to start

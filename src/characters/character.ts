@@ -6,15 +6,20 @@ import type { FrameInfo } from '../headless/video-scene'
 import type { BodyPlan, ChainSpec, Pose, Vec3 } from './rig/body-plan'
 import { headPoint, skeletonInView, solveSkeleton, type Skeleton, type SolvedHead, type ViewProjection } from './rig/skeleton'
 import { reachPose as reachPlanPose } from './rig/reach'
-import { createPen, type Look, type Pen, type PencilOptions } from './look/pen'
+import { createPen, unfilledPen, type Look, type Pen, type PencilOptions } from './look/pen'
+import { resolveOrganicBody, type OrganicBody, type OrganicBodyOptions } from './body/organic-body'
+import { organicBodyContours, type OrganicBodyContours } from './body/organic-geometry'
+import { drawOrganicPart } from './body/organic-draw'
+import { shadeSkinOutline } from './look/skin-shading'
 import { rubberLimb } from './look/curves'
-import { angularHeadOutline } from './head/head-shape'
+import { headOutline } from './head/head-shape'
 import { drawFace, faceToScreen, type FaceOptions } from './head/face'
 import { drawHeadBehind, drawHeadFront, drawHeadOver, resolveHeadLook, type HeadLook, type HeadLookOptions } from './head/head-look'
 import { HUMAN_BUILDS, HUMAN_POSES, HUMAN_REST, humanPlan, type HumanBuild, type HumanBuildName, type HumanPoseName, type FootShape } from './species/human'
 import { humanGaitPose } from './species/human-motion'
 import type { Gait } from './gaits'
 import { basicOutfit, type BasicOutfitOptions } from './wardrobe/basic-outfit'
+import { leafOutfit, type LeafOutfitOptions } from './wardrobe/leaf-outfit'
 import { holdingLayers, resolveHolding, type Holding, type HoldingSpec } from './hands/held-items'
 import { HAND_REST, type HandPose } from './hands/hand-rig'
 import { drawCartoonHand } from './hands/draw-cartoon-hand'
@@ -27,8 +32,8 @@ import { drawCartoonHand } from './hands/draw-cartoon-hand'
  * and unchanged. See docs/character-system-m1.md.
  */
 
-/** `stick`: the traditional (Pencilmation) stick figure. `fluid`: tapered limbs, hands, feet, shoulders. */
-export type FigureStyle = 'fluid' | 'stick'
+/** `stick`: traditional stick figure; `fluid`: tapered limbs; `organic`: filled cartoon anatomy. */
+export type FigureStyle = 'fluid' | 'stick' | 'organic'
 
 /**
  * Draws part of a character: clothes, hair, a prop. The context is in the
@@ -63,9 +68,13 @@ export interface CharacterOptions extends HeadLookOptions {
   armLength?: number
   /** A T-shirt and trousers in these colours (see basicOutfit), as data; drawn under any `layers` */
   outfit?: BasicOutfitOptions | null
+  /** Rounded leaf top/skirt, as JSON data; requires `figure: 'organic'`. */
+  leafOutfit?: LeafOutfitOptions | null
   /** What each hand holds (`{ right: 'mug' }`, `{ both: 'parcel' }`); a pose field `held.<side>` below 0.5 lets go */
   holding?: HoldingSpec | null
   figure?: FigureStyle
+  /** Opt-in organic contours, skin material and independent outline settings. */
+  body?: OrganicBodyOptions
   look?: Look
   /** Feet to top of head, px (default 300) */
   height?: number
@@ -114,6 +123,7 @@ export interface CharacterOptions extends HeadLookOptions {
 export interface Character {
   plan: BodyPlan
   figure: FigureStyle
+  body?: OrganicBody
   look: Look
   height: number
   lineWidth: number
@@ -155,46 +165,60 @@ export function character(options: CharacterOptions = {}): Character {
   const look = options.look ?? 'clean'
   const height = options.height ?? 300
   const stick = figure === 'stick'
+  const organic = figure === 'organic'
+  const shoulderWidth = options.shoulderWidth ?? build.shoulderWidth ?? (organic ? 0.07 : 0.06)
+  const hipWidth = options.hipWidth ?? build.hipWidth ?? (organic ? 0.045 : 0.022)
+  const lineWidth = options.lineWidth ?? height * (organic ? 0.005 : bold ? 0.045 : 0.022)
+  const ink = options.ink ?? (organic ? '#53362d' : look === 'pencil' ? '#2f2f33' : '#1e293b')
+  const skin = options.skin ?? (organic ? '#f1bf98' : look === 'pencil' ? 'none' : '#ffffff')
+  const body = organic ? resolveOrganicBody(options.body ?? {}, { skin, ink, lineWidth, shoulderWidth, hipWidth }) : undefined
+  if (options.leafOutfit && !organic) throw new Error("character: leafOutfit requires figure: 'organic'")
   const outfit = options.outfit ? basicOutfit(options.outfit) : null
   const holding = options.holding ? resolveHolding(options.holding) : {}
   // Clothes first, then the author's layers, then what the hands hold.
   let layers: CharacterLayers = outfit ? stackLayers(outfit, options.layers ?? {}) : (options.layers ?? {})
+  if (options.leafOutfit) layers = stackLayers(leafOutfit(options.leafOutfit), layers)
   if (Object.keys(holding).length > 0) layers = stackLayers(layers, holdingLayers(holding))
   return {
     plan:
       options.plan ??
       humanPlan({
-        headSize: options.headSize ?? build.headSize ?? (bold ? 0.3 : 0.24),
-        shoulderWidth: stick ? 0 : (options.shoulderWidth ?? build.shoulderWidth ?? 0.06),
-        hipWidth: stick ? 0 : (options.hipWidth ?? build.hipWidth ?? 0.022),
+        headSize: options.headSize ?? build.headSize ?? (organic ? 0.27 : bold ? 0.3 : 0.24),
+        shoulderWidth: stick ? 0 : shoulderWidth,
+        hipWidth: stick ? 0 : hipWidth,
         legLength: options.legLength ?? build.legLength ?? 1,
         armLength: options.armLength ?? build.armLength ?? 1,
         feet: options.feet ?? build.feet,
       }),
     figure,
+    ...(body ? { body } : {}),
     look,
     height,
-    lineWidth: options.lineWidth ?? height * (bold ? 0.045 : 0.022),
-    ink: options.ink ?? (look === 'pencil' ? '#2f2f33' : '#1e293b'),
-    skin: options.skin ?? (look === 'pencil' ? 'none' : '#ffffff'),
+    lineWidth: body?.outline.width ?? lineWidth,
+    ink: body?.outline.color ?? ink,
+    skin: body?.fill ?? skin,
     seed: options.seed ?? 1,
-    pencil: options.pencil ?? {},
+    pencil: organic ? { construction: false, ...options.pencil } : (options.pencil ?? {}),
     layers,
     holding,
     contact: options.contact ?? 'ground',
-    hands: options.hands ?? 'dot',
-    handStyle: options.handStyle ?? 'glove',
-    handSize: options.handSize ?? (options.handStyle === 'natural' ? 0.14 : 0.17),
+    hands: options.hands ?? (organic ? 'cartoon' : 'dot'),
+    handStyle: options.handStyle ?? (organic ? 'natural' : 'glove'),
+    handSize: options.handSize ?? (organic ? 0.073 : options.handStyle === 'natural' ? 0.14 : 0.17),
     head: resolveHeadLook(options),
-    face: { ...options.face, teeth: options.face?.teeth ?? false, tongue: options.face?.tongue ?? false },
+    face: { ...(organic ? { style: 'anime' as const, projection: 'volume' as const, iris: '#66422e', nose: true } : {}), ...options.face, teeth: options.face?.teeth ?? false, tongue: options.face?.tongue ?? false },
   }
 }
 
 /** Where every part of a character is, as drawn, in its drawing space (feet at 0, 0; up is -y). */
 export interface CharacterJoints {
+  /** Organic pose geometry, in drawing coordinates; omitted for existing modes. */
+  bodyContours?: OrganicBodyContours
   height: number
   lineWidth: number
   turn: number
+  /** Body forward axis in camera view space, independent of head turns; omitted in flat drawings. */
+  bodyForward?: Vec3
   /** Named points: `hip`, `neck`, `shoulder.left`, `hand.right`, `knee.left`, `toe.right`… */
   points: Record<string, Point>
   /** Every chain's joints */
@@ -260,7 +284,11 @@ function solveFrom(character: Character, full: Pose, skeleton: Skeleton): Solved
   parts.head = { points: [skeleton.head.center], depth: skeleton.head.depth, order: 0 }
   keys.head = 0
   const planOrder = [...character.plan.chains.map((c) => c.id), 'head']
-  const order = [...planOrder].sort((a, b) => keys[a] - keys[b] || planOrder.indexOf(a) - planOrder.indexOf(b))
+  // Filled figures need one coherent foreground arm/hand over the clothes.
+  // Limb keys are relative to different parent joints, so a near thigh's
+  // larger key must not paint its waist garment over a foreground wrist.
+  const foregroundArm = (id: string) => character.body && id.startsWith('arm.') && keys[id] >= 0 ? 1 : 0
+  const order = [...planOrder].sort((a, b) => foregroundArm(a) - foregroundArm(b) || keys[a] - keys[b] || planOrder.indexOf(a) - planOrder.indexOf(b))
   order.forEach((id, index) => { parts[id].order = index })
 
   const points: Record<string, Point> = { hip: skeleton.hip }
@@ -274,6 +302,7 @@ function solveFrom(character: Character, full: Pose, skeleton: Skeleton): Solved
     height: character.height,
     lineWidth: character.lineWidth,
     turn: full.turn ?? 0,
+    ...(skeleton.bodyForward ? { bodyForward: skeleton.bodyForward } : {}),
     points,
     chains,
     parts,
@@ -281,6 +310,7 @@ function solveFrom(character: Character, full: Pose, skeleton: Skeleton): Solved
     groundY: skeleton.groundY,
     grounded,
   }
+  if (character.body) joints.bodyContours = organicBodyContours(character.body, joints, character.plan)
   return { skeleton, joints, order }
 }
 
@@ -309,19 +339,44 @@ function drawConstruction(pen: Pen, character: Character, joints: CharacterJoint
 
 function drawPart(ctx: CanvasRenderingContext2D, pen: Pen, character: Character, joints: CharacterJoints, id: string, pose: Pose) {
   const lw = character.lineWidth
+  if (character.body && character.skin === 'none') pen = unfilledPen(ctx, pen)
   if (id === 'head') {
     const { head } = joints
+    let outline: Point[] | undefined
+    const resolvedOutline = () => outline ??= headOutline(head, character.face)
     const fill = character.skin === 'none' ? null : character.skin
-    if (character.face.shape === 'angular') pen.shape(angularHeadOutline(head, character.face), fill, lw)
+    if (character.face.projection === 'volume' || character.face.shape === 'angular') pen.shape(resolvedOutline(), fill, lw)
     else pen.ellipse(head.center.x, head.center.y, head.rx, head.ry, head.angle, fill, lw)
-    drawHeadFront(ctx, pen, character.head, head, pose, { lineWidth: lw, skin: character.skin }, () => {
-      if (pen.look !== 'silhouette') drawFace(pen, head, pose, lw, { ...character.face, skin: character.skin === 'none' ? '#ffffff' : character.skin }, ctx)
+    if (character.body && character.skin !== 'none' && pen.look === 'clean') {
+      shadeSkinOutline(ctx, resolvedOutline(), head.center, character.body.shading)
+    }
+    drawHeadFront(ctx, pen, character.head, head, pose, { lineWidth: lw, skin: character.skin, face: character.face, faceUnderHair: !!character.body }, () => {
+      if (pen.look === 'silhouette') return
+      ctx.save()
+      if (character.body) {
+        ctx.beginPath()
+        resolvedOutline().forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))
+        ctx.closePath(); ctx.clip()
+      }
+      drawFace(pen, head, pose, lw, { ...character.face, skin: character.skin === 'none' ? '#ffffff' : character.skin }, ctx)
+      ctx.restore()
     })
     return
   }
   const chain = character.plan.chains.find((c) => c.id === id)!
   const points = joints.chains[id]
   const line = joints.parts[id].points
+  if (character.body && drawOrganicPart(ctx, pen, character.body, joints, id)) {
+    if (id.startsWith('leg.')) drawOrganicPart(ctx, pen, character.body, joints, id.replace('leg.', 'foot.'))
+    if (id.startsWith('arm.')) {
+      if (character.hands === 'cartoon') drawArmHand(ctx, pen, character, points, id.endsWith('.left') ? 'left' : 'right', pose)
+      else {
+        const hand = points.at(-1)!
+        pen.ellipse(hand.x, hand.y, character.height * 0.014, character.height * 0.014, 0, character.skin === 'none' ? null : character.skin, lw)
+      }
+    }
+    return
+  }
   if (character.figure === 'stick') {
     // The traditional figure: even lines; the neck continues the spine.
     if (id === 'neck') return
@@ -388,12 +443,15 @@ function drawArmHand(ctx: CanvasRenderingContext2D, pen: Pen, character: Charact
     side,
     angle,
     pen,
-    skin: character.skin === 'none' ? '#ffffff' : character.skin,
+    skin: character.skin === 'none' && !character.body ? '#ffffff' : character.skin,
     // A cartoon glove: three fingers and a thumb, plump enough to match the limbs.
     // Natural: five fingers, a little fuller than a real hand so they hold up against the limbs.
     fingers: character.handStyle === 'natural' ? 5 : 4,
     plump: character.handStyle === 'natural' ? 1.15 : 1.6,
-    lineWidth: character.lineWidth * 0.3,
+    lineWidth: character.lineWidth * (character.body ? 0.65 : 0.3),
+    connected: !!character.body,
+    shading: character.body?.shading,
+    nails: character.body ? false : undefined,
   })
 }
 
@@ -452,6 +510,7 @@ export interface CharacterPartInView {
   part: string
   /** Its depth in the view, in the projection's units, nearer is larger (metres in a 3D scene) */
   depth: number
+  sortDepth?: number
   /** Draws it; `time` (ms) is the pencil's boil frame and the layer hooks' time */
   draw(ctx: CanvasRenderingContext2D, time?: number): void
 }
@@ -472,9 +531,14 @@ export function characterPartsInView(character: Character, pose: Pose, projectio
   const { joints, order } = solveFrom(seen, full, skeleton)
   // The skeleton's depths are px at the hips; the projection's own units (metres in a scene) are wanted.
   const pxPerUnit = skeleton.height / options.height
+  const depths = order.map(id => (joints.parts[id]?.depth ?? 0) / pxPerUnit)
+  const garments = order.filter(id => id === 'spine' || id.startsWith('leg.'))
+  const garmentDepth = Math.max(...garments.map(id => joints.parts[id].depth / pxPerUnit))
+  const garmentOrder = Math.max(...garments.map(id => joints.parts[id].order))
   return order.map((id, index) => ({
     part: id,
-    depth: (joints.parts[id]?.depth ?? 0) / pxPerUnit,
+    depth: depths[index],
+    ...(seen.body ? { sortDepth: id.startsWith('arm.') && index > garmentOrder ? Math.max(depths[index], garmentDepth) : depths[index] } : {}),
     draw(ctx: CanvasRenderingContext2D, time = 0) {
       const pen = createPen(ctx, { look: seen.look, ink: seen.ink, lineWidth: seen.lineWidth, seed: hashSeed(`${seen.seed}:${id}`), time, pencil: seen.pencil })
       const hook = (layer?: CharacterLayer) => {
@@ -489,7 +553,7 @@ export function characterPartsInView(character: Character, pose: Pose, projectio
       if (index === 0) {
         if (seen.look === 'pencil' && seen.pencil.construction !== false) drawConstruction(pen, seen, joints)
         hook(seen.layers.behind)
-        drawHeadBehind(ctx, pen, seen.head, joints.head, full, { lineWidth: seen.lineWidth, skin: seen.skin, face: seen.face })
+        drawHeadBehind(ctx, seen.body && seen.skin === 'none' ? unfilledPen(ctx, pen) : pen, seen.head, joints.head, full, { lineWidth: seen.lineWidth, skin: seen.skin, face: seen.face })
       }
       const layers = seen.layers.parts?.[id]
       hook(layers?.under)
@@ -529,7 +593,7 @@ function drawSolved(ctx: CanvasRenderingContext2D, character: Character, full: P
   ctx.lineJoin = 'round'
   if (!only && character.look === 'pencil' && character.pencil.construction !== false) drawConstruction(pen, character, joints)
   if (!only) hook(character.layers.behind)
-  drawHeadBehind(ctx, pen, character.head, joints.head, full, { lineWidth: character.lineWidth, skin: character.skin, face: character.face })
+  drawHeadBehind(ctx, character.body && character.skin === 'none' ? unfilledPen(ctx, pen) : pen, character.head, joints.head, full, { lineWidth: character.lineWidth, skin: character.skin, face: character.face })
   for (const id of order) {
     const layers = character.layers.parts?.[id]
     hook(layers?.under)
@@ -690,6 +754,9 @@ export function jointsInScene(joints: CharacterJoints, x: number, y: number): Ch
     Object.fromEntries(Object.entries(record).map(([key, points]) => [key, points.map(move)])) as T
   return {
     ...joints,
+    ...(joints.bodyContours ? { bodyContours: Object.fromEntries(Object.entries(joints.bodyContours).map(([id, shape]) => [id, {
+      ...shape, outline: shape.outline.map(move), samples: shape.samples.map(sample => ({ ...sample, center: move(sample.center), left: move(sample.left), right: move(sample.right) })),
+    }])) } : {}),
     points: Object.fromEntries(Object.entries(joints.points).map(([key, p]) => [key, move(p)])),
     chains: moveAll(joints.chains),
     parts: Object.fromEntries(Object.entries(joints.parts).map(([key, part]) => [key, { ...part, points: part.points.map(move) }])),

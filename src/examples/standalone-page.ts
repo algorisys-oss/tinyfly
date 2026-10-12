@@ -33,6 +33,8 @@ interface PageParts {
   style: string
   body: string
   script: string
+  /** Local source entry for a development full-page preview before release. */
+  browserModuleUrl?: string
   /** Add-on bundles to load after the browser bundle */
   addons?: Array<'maps' | 'scene-3d' | 'scene-3d-webgl'>
 }
@@ -48,7 +50,7 @@ function indent(text: string, spaces: number): string {
 
 const ADDON_URLS = { maps: MAPS_BUNDLE_URL, 'scene-3d': SCENE_3D_BUNDLE_URL, 'scene-3d-webgl': SCENE_3D_WEBGL_BUNDLE_URL }
 
-function page({ title, style, body, script, addons = [] }: PageParts): string {
+function page({ title, style, body, script, addons = [], browserModuleUrl }: PageParts): string {
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -62,11 +64,11 @@ ${indent(style, 4)}
 <body>
 ${indent(body, 2)}
 
-  <!-- ${BUNDLE_NOTE} -->
+  ${browserModuleUrl ? `<script type="module">\nimport * as tinyfly from ${JSON.stringify(browserModuleUrl)}\n${indent(script, 4)}\n  </script>` : `<!-- ${BUNDLE_NOTE} -->
   <script src="${BROWSER_BUNDLE_URL}"></script>${addons.map((addon) => `\n  <script src="${ADDON_URLS[addon]}"></script>`).join('')}
   <script>
 ${indent(script, 4)}
-  </script>
+  </script>`}
 </body>
 </html>
 `
@@ -83,9 +85,10 @@ const BASE_STYLE = `body {
 }`
 
 /** A GSAP-style demo: its markup plus its `live` code, unchanged. */
-export function liveDemoPage(demo: LiveDemoWithCode): string {
+export function liveDemoPage(demo: LiveDemoWithCode, browserModuleUrl?: string): string {
   return page({
     title: demo.name,
+    browserModuleUrl,
     addons: demo.addons,
     style: BASE_STYLE,
     body: `<div id="demo">\n${indent(demo.html, 2)}\n</div>`,

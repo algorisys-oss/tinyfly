@@ -91,6 +91,8 @@ export interface Capabilities {
   /** Making your own: actions, gaits and personas */
   custom: { api: Record<string, string>; actions: Record<string, { summary: string; needs?: string[] }>; gaits: Record<string, string> }
   character: {
+    figureStyles: string[]
+    body: Record<string, string>
     poses: string[]
     dances: string[]
     expressions: string[]
@@ -225,6 +227,15 @@ export function capabilities(version?: string, cast: Cast = {}): Capabilities {
       gaits: Object.fromEntries(Object.entries(cast.gaits ?? {}).map(([name, g]) => [name, g.summary ?? 'custom gait'])),
     },
     character: {
+      figureStyles: ['fluid', 'stick', 'organic'],
+      body: {
+        'body.torso · body.arm · body.leg · body.neck': 'Organic half-width profiles: [{ at: 0..1, width: fractionOfHeight }], increasing from 0 to 1; independent of ink width.',
+        'body.fill · body.outline · body.shading': 'Shared skin fill, outline { color, width }, cel material { mode: cel | none, light: [x,y], shadow, opacity, highlight }.',
+        'softCartoonCharacter(name, options?)': 'Original youngMan / youngWoman / childBoy / childGirl story presets. Children have larger head proportions, shorter limbs and rounded torsos; every face, hair, build, hand, clothing and material option can be overridden.',
+        'face.projection': 'Organic default volume follows the head axes, keeps both eyes in three-quarter views and projects a small nose above the mouth; opaque hair covers features. cartoon keeps the classic face slide.',
+        'outfitPreset(category, overrides?)': 'Fresh JSON Everyday / Formal / Casual wardrobe defaults for every actor; top: tshirt | shirt | blouse | dress, trouserStyle: plain | jeans | cargo, colours, sleeves, bottoms, collar and tie are editable.',
+        'leafOutfit': 'Organic-only JSON garment { top?, color?, accent?, length? }; curved leaves follow torso/thighs at native part depths. Everyday basicOutfit also follows organic contours.',
+      },
       poses: Object.keys(HUMAN_POSES),
       dances: Object.keys(HUMAN_DANCES),
       expressions: Object.keys(HUMAN_EXPRESSIONS),
@@ -406,11 +417,13 @@ export function capabilitiesMarkdown(version?: string, cast: Cast = {}): string 
     'Appearance options of `character({ … })`, all plain data that turns with the head (see docs/character-appearance.md):',
     '',
     `- \`build\`: ${list(c.character.builds)}`,
+    `- \`figure\`: ${list(c.character.figureStyles)}`,
+    ...Object.entries(c.character.body).map(([name, description]) => `- \`${name}\`: ${description}`),
     `- \`hair\`: ${list(c.character.hair)} (colours: ${list(Object.keys(c.character.hairColors))} in \`HAIR_COLORS\`)`,
     '- Flowing hair: `softSweep`, `flowingBob`, `cascadingWaves`; editable `locks: [{ path, width, follow? }]` with cubic `{ around, up, lift? }` points (around in degrees, dimensions in head radii), `fall: { taper, wave }` and `shine` (0–1). Roots stay attached; `hairFollowTracks` also drives flexible short locks.',
     `- \`facialHair\`: ${list(c.character.facialHair)}`,
     `- \`glasses\`: ${list(c.character.glasses)}; \`hat\`: ${list(c.character.hats)}; \`ears: true\`; \`face: { teeth, tongue }\` (shown when the mouth opens); \`feet\`: ${list(c.character.feet)}`,
-    '- `outfit`: `{ shirt, trousers, sleeves: short | long | none, bottom: trousers | shorts | skirt, collar, tie: colour, over: apron | labCoat | hoodie | cardigan | overalls | sari, overColor, shoes: boots, shoeColor }`',
+    '- `outfit`: `{ top: tshirt | shirt | blouse | dress, trouserStyle: plain | jeans | cargo, shirt: top colour, trousers: bottom colour, sleeves: short | long | none, bottom: trousers | shorts | skirt, collar, tie: colour, over: apron | labCoat | hoodie | cardigan | overalls | sari, overColor, shoes: boots, shoeColor }`',
     `- \`castMember(name, height)\`: ${list(c.character.cast)}`,
     '- Face marks (pose fields, 0–1): `blush`, `tears`, `sweat`; close-up fields `pupil` (size, 1 usual), `lid` (upper lids lowered, 0–1), `bulge` (eyes out of the head, 0–1); `face: { nose: true, inPupil(ctx, pupil) }`; `drawCharacterHead(ctx, who, pose, { x, y, radius })` draws just the head big',
     `- Face styles: ${list(c.character.faceStyles)}; \`face: { style: 'anime', iris: '#4b7fce', lashes: true, ageLines: 0.8 }\` uses coloured eyes and the same expressions, blinks and gaze. \`ANIME_CAST\` contains eight age presets, also available through \`castMember\`.`,

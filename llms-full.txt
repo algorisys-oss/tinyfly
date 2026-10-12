@@ -204,7 +204,7 @@ with a GSAP-style call (durations are in seconds here):
 ```html
 <div class="box" style="width:60px;height:60px;background:#4a9eff"></div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.1/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.108.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -412,7 +412,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.1/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.108.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -2327,7 +2327,7 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.1/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.108.0/cdn/tinyfly-player.iife.js`.
 
 ---
 
@@ -6680,7 +6680,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.1/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.108.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed
@@ -7921,6 +7921,38 @@ bakes. See `docs/dance.md`.
 
 ## Characters with a look
 
+For original soft cartoon story characters, opt into `figure: 'organic'`.
+Its default `face.projection: 'volume'` moves eyes/mouth around the head and
+lets hair occlude them, with a flatter profile facial plane and a nose above
+the mouth; classic `cartoon` projection remains available. Foreground organic
+arms/hands draw together over lower garments, preserving the wrist at the waist.
+`body` owns JSON half-width profiles (`torso`, `arm`, `leg`, `neck`): increasing
+arrays of `{ at: 0..1, width: fractionOfHeight }` spanning 0 to 1. Set `skin`
+once for exposed body, head and hands; `body.fill` overrides it.
+Use `body.fill: 'none'` for outline-only exposed skin, including both hand
+variants in every look. In 3D, only foreground arms use garment depths for
+painter ordering; other organic parts retain physical world-object occlusion.
+`body.outline: { color, width }` is independent of anatomy. Optional
+`body.shading: { mode: 'cel' | 'none', light: [x,y], shadow, opacity, highlight }`
+is deterministic and clipped to skin. Defaults include small natural hands.
+`softCartoonCharacter('youngMan' | 'youngWoman' | 'childBoy' | 'childGirl', options)`
+provides editable original actors; `SOFT_CARTOON_CAST` contains their source
+options. Children default to shorter heights, larger head proportions, shorter
+limbs and rounded torsos. Override `height` to change size while preserving
+their anatomy. Use `outfitPreset('everyday' | 'formal' | 'casual', overrides)`
+for owned JSON wardrobe defaults. `outfit.top` is `tshirt | shirt | blouse |
+dress`; `trouserStyle` is `plain | jeans | cargo`; `shirt` and `trousers`
+remain colour fields. Bottoms are `trousers | shorts | skirt`; sleeves,
+collar and tie colour are editable. Dresses force a skirt in the top colour.
+All garments are available for every actor. `outfit` adapts to organic contours; organic-only `leafOutfit` accepts
+`{ top?, color?, accent?, length? }`. Use the existing `characterScript`,
+`characterPoseTracks`, `reachCharacter`, hand pose and `hairFollowTracks`
+APIs for motion. Avoid a foreground whole-body overlay. An unrigged PNG
+is not a posable character. The interactive example is
+`/examples/live-organic-characters`; a headless study is
+`examples/headless-video/organic-characters.mjs`. Child proportions and poses
+are shown in `examples/headless-video/child-characters.mjs`.
+
 A v2 character's appearance is plain options to `character()`, never drawing
 code: `build` (`child`, `tall`, `short`…), `hair` (a style name, or
 `{ style, color, length, … }`), `facialHair`, `glasses`, `hat`, `ears: true`,
@@ -7929,6 +7961,9 @@ code: `build` (`child`, `tall`, `short`…), `hair` (a style name, or
 'cardigan' | 'overalls' | 'sari' | 'apron' | 'labCoat', shoes: 'boots' }`.
 Built-in tops hide thighs and trouser roots under their hem during turns;
 garments spanning both legs use the resolved body order in camera views too.
+Custom camera-view garment details should use `joints.bodyForward` (view-space
+body axis: `z` front visibility, `x` side offset), independent of head yaw.
+`joints.turn` remains authored; flat joints omit `bodyForward`.
 For custom clothes, `layers.parts[id].clip` clips only the bare body before
 `over` draws, and `joints.parts[id].order` gives the drawing index.
 `castMember('grandpa', 300)` gives a whole ready-made character to start
@@ -8159,7 +8194,7 @@ path for all of that:
 </figure>
 
 <!-- once, anywhere on the page (a site-wide footer is fine) -->
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.1/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.108.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 Every `[data-tinyfly-embed]` mounts when the page is ready, with no per-post
@@ -9431,8 +9466,8 @@ On a page with no build step, load the maps add-on after the browser bundle; it
 adds to the same `tinyfly` global:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.1/cdn/tinyfly.iife.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.1/cdn/tinyfly-maps.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.108.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.108.0/cdn/tinyfly-maps.iife.js"></script>
 ```
 
 It is a separate script because the offline world map it carries adds about
@@ -9673,6 +9708,147 @@ drawCharacter(ctx, maya, humanPose({ ...HUMAN_EXPRESSIONS.embarrassed, turn: 0.5
 
 A plain figure (no `hair`, `facialHair`, `glasses`, `hat` or `ears`) draws
 exactly as it did before these options existed.
+
+## Organic cartoon bodies
+
+Use `figure: 'organic'` for original, softly drawn story characters. The
+existing human skeleton controls poses, reaching, ground contact and part
+order. Filled contours supply shoulders, chest, waist, hips and shaped
+limbs; dimensions are independent of the outline width.
+
+```js
+import { character, softCartoonCharacter, characterScript, hairFollowTracks } from '@algorisys/tinyfly/characters'
+
+const actor = character({
+  figure: 'organic', height: 320, skin: '#efbd96',
+  body: {
+    arm: [{ at: 0, width: 0.028 }, { at: 0.5, width: 0.018 },
+          { at: 0.7, width: 0.023 }, { at: 1, width: 0.012 }],
+    outline: { color: '#53372d', width: 1.5 },
+    shading: { mode: 'cel', light: [-0.8, -0.6], opacity: 0.17 },
+  },
+  face: { style: 'anime', shape: 'angular', jawRoundness: 1 },
+  hair: { style: 'flowingBob', color: '#38291f' },
+  outfit: { shirt: '#72958b', trousers: '#495a67' },
+})
+const friend = softCartoonCharacter('youngWoman', { height: 300 })
+const story = characterScript('actor', actor, [
+  { do: 'walk', to: 240, for: 2200 },
+  { do: 'say', say: 'Let us explore!', for: 1800, mood: 'happy' },
+], { from: 60 })
+story.tracks.push(...hairFollowTracks('actor', story.tracks, actor))
+```
+
+`softCartoonCharacter` accepts only `youngMan`, `youngWoman`, `childBoy`
+and `childGirl`; unknown actor names throw an error, including inherited
+object keys such as `constructor`.
+
+`body.torso`, `arm`, `leg` and `neck` are arrays of `{ at, width }`.
+`at` increases from 0 to 1; `width` is a half-width fraction of character
+height. Torso positions run hip to neck, arms shoulder to wrist, and legs
+hip to ankle. Cubic centerlines pass through native elbow/knee joints with
+interpolated width profiles. Options are copied at construction and can
+travel as JSON. `body.depth` (0.2–1, default 0.55) sets torso side thickness.
+`body.fill` overrides `skin` for all exposed body, face and palms; omit it
+to keep one `skin` colour control. The editor's Skin and Line controls show
+the resolved fill and outline colour; editing them also updates any existing
+`body.fill` or `body.outline.color` override without changing other body options.
+
+Default organic hands are small natural five-finger hands (`handSize: 0.073`).
+Existing `hand.left.*` / `hand.right.*` tracks control palms, fists, pointing,
+bends and wrist rolls. Foreground organic arms and hands draw together after
+the torso and lower garments; rear arms remain behind them. Attached borders at shoulders, hips, wrists and ankles are hidden
+where connected contours meet. This ordering also survives the 3D scene's
+global depth sort, while separate world objects can still occlude the figure.
+`characterPartsInView()` retains each part's physical `depth` and supplies
+an organic `sortDepth` for painter ordering. Only foreground arms are promoted
+to the nearest torso/leg garment depth; head, neck, torso, legs and rear arms
+keep their physical depths. Scene integrations sort by `sortDepth ?? depth`, retaining array
+order for ties. Fluid and stick parts retain their existing depth ordering.
+
+Organic faces default to `face.projection: 'volume'`: feature centres follow
+the head's 3D axes, both eyes stay readable in three-quarter views, the far
+eye narrows toward profile, and opaque hair covers
+eyes and brows. Features stay clipped inside the head through turns and nods.
+The facial plane is flatter than the rounded rear cranium in profile.
+With `face.nose: true`, a small nose projects from above the mouth and shapes
+the turned silhouette without extending the chin.
+`projection: 'cartoon'` retains the classic face slide used by fluid/stick.
+
+Cel shading is clipped to moving skin in the clean look. `body.shading`
+accepts `mode: 'cel' | 'none'`, screen-space `light: [x, y]`, `shadow`,
+`opacity` and `highlight`. Seeking and headless rendering are deterministic.
+Pencil and silhouette use their existing pens. Artist-authored painted
+meshes remain a separate future capability.
+
+Set `body.fill: 'none'` (or `skin: 'none'` without a body fill override) for
+outline-only exposed body, head and hands in every look. Dot and articulated
+hands omit skin fills and shading; clothing retains its own material.
+
+Everyday shirts, sleeves, trousers, shorts and skirts follow organic anatomy.
+`leafOutfit: { top: true, color: '#638c39', accent: '#87ae4e', length: 0.32 }`
+selects attached leaf garments with curved shapes and veins; `top: false`
+leaves the upper body uncovered. It requires organic mode.
+`leafOutfitContours(joints, options)` exposes plain coverage geometry for
+custom layers and exporters. Both wardrobes use native part depths.
+
+`softCartoonCharacter('childBoy')` and `softCartoonCharacter('childGirl')`
+provide original child presets with a larger head/body ratio, shorter arms
+and legs, rounded torsos and smaller default heights (230 and 225 px).
+All face, hair, clothes, skin and proportions remain editable; changing
+`height` preserves the child anatomy. The same pose, script, hand, reaching
+and lip-sync APIs work for adults and children.
+
+The example at `/examples/live-organic-characters` includes adult, child and
+adult/child pairs, face/hair
+choices, independently editable everyday/formal/casual/leaf garments, seven actions, outline and skin controls,
+shading, playback and scrubbing. Available in v0.108.0. See the
+[contact sheet](model-sheet/organic-characters.png) and
+[child character sheet](model-sheet/child-characters.png).
+Close-up [head turns](model-sheet/organic-head-turns.png) exercise independent
+`head.turn` at the story's body orientation.
+`fluid` and `stick` keep their existing defaults and ink-based dimensions.
+
+## Everyday, Formal and Casual clothing
+
+`outfitPreset(category, overrides)` returns fresh plain JSON options for
+`character({ outfit })` or `softCartoonCharacter(name, { outfit })`.
+The categories are `everyday`, `formal` and `casual`. Every garment works
+with adult and child actors, regardless of gender.
+
+```js
+import { softCartoonCharacter, outfitPreset } from '@algorisys/tinyfly/characters'
+
+const formal = softCartoonCharacter('youngMan', {
+  outfit: outfitPreset('formal', { shirt: '#ece6db', trousers: '#354456', tie: '#7b3955' }),
+})
+const casual = softCartoonCharacter('youngWoman', {
+  outfit: outfitPreset('casual', { top: 'tshirt', bottom: 'shorts', trouserStyle: 'cargo' }),
+})
+const dress = softCartoonCharacter('childGirl', {
+  outfit: outfitPreset('formal', { top: 'dress', shirt: '#aa6b91', sleeves: 'none' }),
+})
+```
+
+- `top`: `tshirt`, `shirt` (button placket), `blouse` (V neckline) or `dress`.
+  Omit it to retain the original plain T-shirt. Shirts default to a collar;
+  an explicit `collar: false` removes it.
+- `bottom`: `trousers`, `shorts` or `skirt`; `trouserStyle`: `plain`, `jeans`
+  (pockets and stitching) or `cargo` (thigh pockets). Details follow the
+  limbs and stay clipped inside the fabric.
+- `shirt` and `trousers` remain top and bottom colours. A dress uses
+  `shirt` for both its bodice and skirt, overriding `bottom` and ignoring
+  the separate bottom colour. `sleeves` accepts `short`, `long` or `none`.
+- `collar` is a boolean; `tie` is a colour or `null` to remove it. Changing a
+  formal preset to a different top removes its default collar and tie;
+  explicit accessory overrides take precedence.
+
+The example's **Edit outfit** choice edits both characters or either actor
+separately. Formal starts with a shirt/tie or blouse/skirt; Casual starts
+with a T-shirt/jeans. All cuts remain selectable for either character.
+The editor exposes the same presets and garment choices, saved with scene
+JSON. [Clothing sheet](model-sheet/clothing-options.png), reproduced by
+`examples/headless-video/clothing-options.mjs`.
 
 ## How it turns
 
@@ -9926,6 +10102,13 @@ body part before it draws. Set the canvas clipping path in this hook; it is
 restored before the part's `over` layers and the next part. The built-in outfit
 uses this to hide thighs under tops. `joints.parts[id].order` is the resolved
 far-to-near drawing index; use it when a garment spans several parts.
+Camera-projected joints also provide `bodyForward: [x,y,z]` in view space:
+`z` is front visibility and `x` is the side offset for front details. This
+axis follows the body and camera independently of head yaw. `joints.turn`
+retains the authored body turn; flat drawing omits `bodyForward`, so use
+`cos(turn * Math.PI / 2)` and `sin(turn * Math.PI / 2)` there.
+The built-in wardrobe uses this direction for front buttons, necklines,
+pockets, collars, ties and outer-garment details.
 
 ## The cast
 
@@ -14459,7 +14642,7 @@ magnet.addEventListener('pointerleave', () => {
 
 <!-- capabilities: generated from the library -->
 
-# tinyfly capabilities (v0.107.1)
+# tinyfly capabilities (v0.108.0)
 
 Generated from the library itself: every name below is accepted, and names not listed are rejected (beat scripts, code panels and `checkTracks` say which name was probably meant).
 
@@ -14743,11 +14926,18 @@ Native dances: `garba`, `garbaThreeClap`, `dandiya`; `humanDanceFrame(style, bea
 Appearance options of `character({ … })`, all plain data that turns with the head (see docs/character-appearance.md):
 
 - `build`: `standard`, `slim`, `tall`, `short`, `broad`, `curvy`, `stocky`, `kid`, `child`, `toddler`
+- `figure`: `fluid`, `stick`, `organic`
+- `body.torso · body.arm · body.leg · body.neck`: Organic half-width profiles: [{ at: 0..1, width: fractionOfHeight }], increasing from 0 to 1; independent of ink width.
+- `body.fill · body.outline · body.shading`: Shared skin fill, outline { color, width }, cel material { mode: cel | none, light: [x,y], shadow, opacity, highlight }.
+- `softCartoonCharacter(name, options?)`: Original youngMan / youngWoman / childBoy / childGirl story presets. Children have larger head proportions, shorter limbs and rounded torsos; every face, hair, build, hand, clothing and material option can be overridden.
+- `face.projection`: Organic default volume follows the head axes, keeps both eyes in three-quarter views and projects a small nose above the mouth; opaque hair covers features. cartoon keeps the classic face slide.
+- `outfitPreset(category, overrides?)`: Fresh JSON Everyday / Formal / Casual wardrobe defaults for every actor; top: tshirt | shirt | blouse | dress, trouserStyle: plain | jeans | cargo, colours, sleeves, bottoms, collar and tie are editable.
+- `leafOutfit`: Organic-only JSON garment { top?, color?, accent?, length? }; curved leaves follow torso/thighs at native part depths. Everyday basicOutfit also follows organic contours.
 - `hair`: `softSweep`, `flowingBob`, `cascadingWaves`, `bald`, `buzzCut`, `crewCut`, `short`, `sidePart`, `sideSwept`, `slickBack`, `quiff`, `spiky`, `mangaSpikes`, `mangaSweep`, `undercut`, `curlyCrop`, `afro`, `wavyCrop`, `shortLocs`, `flatTop`, `receding`, `thinning`, `pixie`, `bob`, `longBob`, `wavyBob`, `shoulderStraight`, `shoulderWaves`, `longStraight`, `longWaves`, `longCurls`, `longLocs`, `lowPonytail`, `highPonytail`, `ponytail`, `sidePonytail`, `topBun`, `lowBun`, `singleBraid`, `twinBraids`, `braids` (colours: `black`, `brown`, `chestnut`, `auburn`, `blond`, `ginger`, `gray`, `white` in `HAIR_COLORS`)
 - Flowing hair: `softSweep`, `flowingBob`, `cascadingWaves`; editable `locks: [{ path, width, follow? }]` with cubic `{ around, up, lift? }` points (around in degrees, dimensions in head radii), `fall: { taper, wave }` and `shine` (0–1). Roots stay attached; `hairFollowTracks` also drives flexible short locks.
 - `facialHair`: `cleanShaven`, `stubble`, `pencilMoustache`, `shortMoustache`, `chevron`, `handlebar`, `walrus`, `goatee`, `vanDyke`, `circleBeard`, `shortBoxed`, `fullBeard`, `longBeard`, `roundedBeard`, `pointedBeard`, `chinStrap`, `soulPatch`, `sideburns`, `muttonChops`, `moustacheStubble`
 - `glasses`: `round`, `square`, `sunglasses`; `hat`: `cap`, `beanie`, `hardHat`, `sunHat`, `bowler`; `ears: true`; `face: { teeth, tongue }` (shown when the mouth opens); `feet`: `round`, `flat`, `pointed`, `big`
-- `outfit`: `{ shirt, trousers, sleeves: short | long | none, bottom: trousers | shorts | skirt, collar, tie: colour, over: apron | labCoat | hoodie | cardigan | overalls | sari, overColor, shoes: boots, shoeColor }`
+- `outfit`: `{ top: tshirt | shirt | blouse | dress, trouserStyle: plain | jeans | cargo, shirt: top colour, trousers: bottom colour, sleeves: short | long | none, bottom: trousers | shorts | skirt, collar, tie: colour, over: apron | labCoat | hoodie | cardigan | overalls | sari, overColor, shoes: boots, shoeColor }`
 - `castMember(name, height)`: `boy`, `girl`, `youngMan`, `youngWoman`, `man`, `woman`, `grandpa`, `grandma`, `doctor`, `cook`, `builder`, `courier`, `teacher`, `farmer`, `animeBoy`, `animeGirl`, `animeYoungMan`, `animeYoungWoman`, `animeMan`, `animeWoman`, `animeOlderMan`, `animeOlderWoman`, `mangaYoungMan`, `mangaYoungWoman`, `mangaRival`, `mangaHeroine`
 - Face marks (pose fields, 0–1): `blush`, `tears`, `sweat`; close-up fields `pupil` (size, 1 usual), `lid` (upper lids lowered, 0–1), `bulge` (eyes out of the head, 0–1); `face: { nose: true, inPupil(ctx, pupil) }`; `drawCharacterHead(ctx, who, pose, { x, y, radius })` draws just the head big
 - Face styles: `simple`, `anime`; `face: { style: 'anime', iris: '#4b7fce', lashes: true, ageLines: 0.8 }` uses coloured eyes and the same expressions, blinks and gaze. `ANIME_CAST` contains eight age presets, also available through `castMember`.

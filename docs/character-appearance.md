@@ -35,6 +35,147 @@ drawCharacter(ctx, maya, humanPose({ ...HUMAN_EXPRESSIONS.embarrassed, turn: 0.5
 A plain figure (no `hair`, `facialHair`, `glasses`, `hat` or `ears`) draws
 exactly as it did before these options existed.
 
+## Organic cartoon bodies
+
+Use `figure: 'organic'` for original, softly drawn story characters. The
+existing human skeleton controls poses, reaching, ground contact and part
+order. Filled contours supply shoulders, chest, waist, hips and shaped
+limbs; dimensions are independent of the outline width.
+
+```js
+import { character, softCartoonCharacter, characterScript, hairFollowTracks } from '@algorisys/tinyfly/characters'
+
+const actor = character({
+  figure: 'organic', height: 320, skin: '#efbd96',
+  body: {
+    arm: [{ at: 0, width: 0.028 }, { at: 0.5, width: 0.018 },
+          { at: 0.7, width: 0.023 }, { at: 1, width: 0.012 }],
+    outline: { color: '#53372d', width: 1.5 },
+    shading: { mode: 'cel', light: [-0.8, -0.6], opacity: 0.17 },
+  },
+  face: { style: 'anime', shape: 'angular', jawRoundness: 1 },
+  hair: { style: 'flowingBob', color: '#38291f' },
+  outfit: { shirt: '#72958b', trousers: '#495a67' },
+})
+const friend = softCartoonCharacter('youngWoman', { height: 300 })
+const story = characterScript('actor', actor, [
+  { do: 'walk', to: 240, for: 2200 },
+  { do: 'say', say: 'Let us explore!', for: 1800, mood: 'happy' },
+], { from: 60 })
+story.tracks.push(...hairFollowTracks('actor', story.tracks, actor))
+```
+
+`softCartoonCharacter` accepts only `youngMan`, `youngWoman`, `childBoy`
+and `childGirl`; unknown actor names throw an error, including inherited
+object keys such as `constructor`.
+
+`body.torso`, `arm`, `leg` and `neck` are arrays of `{ at, width }`.
+`at` increases from 0 to 1; `width` is a half-width fraction of character
+height. Torso positions run hip to neck, arms shoulder to wrist, and legs
+hip to ankle. Cubic centerlines pass through native elbow/knee joints with
+interpolated width profiles. Options are copied at construction and can
+travel as JSON. `body.depth` (0.2–1, default 0.55) sets torso side thickness.
+`body.fill` overrides `skin` for all exposed body, face and palms; omit it
+to keep one `skin` colour control. The editor's Skin and Line controls show
+the resolved fill and outline colour; editing them also updates any existing
+`body.fill` or `body.outline.color` override without changing other body options.
+
+Default organic hands are small natural five-finger hands (`handSize: 0.073`).
+Existing `hand.left.*` / `hand.right.*` tracks control palms, fists, pointing,
+bends and wrist rolls. Foreground organic arms and hands draw together after
+the torso and lower garments; rear arms remain behind them. Attached borders at shoulders, hips, wrists and ankles are hidden
+where connected contours meet. This ordering also survives the 3D scene's
+global depth sort, while separate world objects can still occlude the figure.
+`characterPartsInView()` retains each part's physical `depth` and supplies
+an organic `sortDepth` for painter ordering. Only foreground arms are promoted
+to the nearest torso/leg garment depth; head, neck, torso, legs and rear arms
+keep their physical depths. Scene integrations sort by `sortDepth ?? depth`, retaining array
+order for ties. Fluid and stick parts retain their existing depth ordering.
+
+Organic faces default to `face.projection: 'volume'`: feature centres follow
+the head's 3D axes, both eyes stay readable in three-quarter views, the far
+eye narrows toward profile, and opaque hair covers
+eyes and brows. Features stay clipped inside the head through turns and nods.
+The facial plane is flatter than the rounded rear cranium in profile.
+With `face.nose: true`, a small nose projects from above the mouth and shapes
+the turned silhouette without extending the chin.
+`projection: 'cartoon'` retains the classic face slide used by fluid/stick.
+
+Cel shading is clipped to moving skin in the clean look. `body.shading`
+accepts `mode: 'cel' | 'none'`, screen-space `light: [x, y]`, `shadow`,
+`opacity` and `highlight`. Seeking and headless rendering are deterministic.
+Pencil and silhouette use their existing pens. Artist-authored painted
+meshes remain a separate future capability.
+
+Set `body.fill: 'none'` (or `skin: 'none'` without a body fill override) for
+outline-only exposed body, head and hands in every look. Dot and articulated
+hands omit skin fills and shading; clothing retains its own material.
+
+Everyday shirts, sleeves, trousers, shorts and skirts follow organic anatomy.
+`leafOutfit: { top: true, color: '#638c39', accent: '#87ae4e', length: 0.32 }`
+selects attached leaf garments with curved shapes and veins; `top: false`
+leaves the upper body uncovered. It requires organic mode.
+`leafOutfitContours(joints, options)` exposes plain coverage geometry for
+custom layers and exporters. Both wardrobes use native part depths.
+
+`softCartoonCharacter('childBoy')` and `softCartoonCharacter('childGirl')`
+provide original child presets with a larger head/body ratio, shorter arms
+and legs, rounded torsos and smaller default heights (230 and 225 px).
+All face, hair, clothes, skin and proportions remain editable; changing
+`height` preserves the child anatomy. The same pose, script, hand, reaching
+and lip-sync APIs work for adults and children.
+
+The example at `/examples/live-organic-characters` includes adult, child and
+adult/child pairs, face/hair
+choices, independently editable everyday/formal/casual/leaf garments, seven actions, outline and skin controls,
+shading, playback and scrubbing. Available in v0.108.0. See the
+[contact sheet](model-sheet/organic-characters.png) and
+[child character sheet](model-sheet/child-characters.png).
+Close-up [head turns](model-sheet/organic-head-turns.png) exercise independent
+`head.turn` at the story's body orientation.
+`fluid` and `stick` keep their existing defaults and ink-based dimensions.
+
+## Everyday, Formal and Casual clothing
+
+`outfitPreset(category, overrides)` returns fresh plain JSON options for
+`character({ outfit })` or `softCartoonCharacter(name, { outfit })`.
+The categories are `everyday`, `formal` and `casual`. Every garment works
+with adult and child actors, regardless of gender.
+
+```js
+import { softCartoonCharacter, outfitPreset } from '@algorisys/tinyfly/characters'
+
+const formal = softCartoonCharacter('youngMan', {
+  outfit: outfitPreset('formal', { shirt: '#ece6db', trousers: '#354456', tie: '#7b3955' }),
+})
+const casual = softCartoonCharacter('youngWoman', {
+  outfit: outfitPreset('casual', { top: 'tshirt', bottom: 'shorts', trouserStyle: 'cargo' }),
+})
+const dress = softCartoonCharacter('childGirl', {
+  outfit: outfitPreset('formal', { top: 'dress', shirt: '#aa6b91', sleeves: 'none' }),
+})
+```
+
+- `top`: `tshirt`, `shirt` (button placket), `blouse` (V neckline) or `dress`.
+  Omit it to retain the original plain T-shirt. Shirts default to a collar;
+  an explicit `collar: false` removes it.
+- `bottom`: `trousers`, `shorts` or `skirt`; `trouserStyle`: `plain`, `jeans`
+  (pockets and stitching) or `cargo` (thigh pockets). Details follow the
+  limbs and stay clipped inside the fabric.
+- `shirt` and `trousers` remain top and bottom colours. A dress uses
+  `shirt` for both its bodice and skirt, overriding `bottom` and ignoring
+  the separate bottom colour. `sleeves` accepts `short`, `long` or `none`.
+- `collar` is a boolean; `tie` is a colour or `null` to remove it. Changing a
+  formal preset to a different top removes its default collar and tie;
+  explicit accessory overrides take precedence.
+
+The example's **Edit outfit** choice edits both characters or either actor
+separately. Formal starts with a shirt/tie or blouse/skirt; Casual starts
+with a T-shirt/jeans. All cuts remain selectable for either character.
+The editor exposes the same presets and garment choices, saved with scene
+JSON. [Clothing sheet](model-sheet/clothing-options.png), reproduced by
+`examples/headless-video/clothing-options.mjs`.
+
 ## How it turns
 
 Hair, beards and hats are not flat drawings pasted on the face. Each is a
@@ -287,6 +428,13 @@ body part before it draws. Set the canvas clipping path in this hook; it is
 restored before the part's `over` layers and the next part. The built-in outfit
 uses this to hide thighs under tops. `joints.parts[id].order` is the resolved
 far-to-near drawing index; use it when a garment spans several parts.
+Camera-projected joints also provide `bodyForward: [x,y,z]` in view space:
+`z` is front visibility and `x` is the side offset for front details. This
+axis follows the body and camera independently of head yaw. `joints.turn`
+retains the authored body turn; flat drawing omits `bodyForward`, so use
+`cos(turn * Math.PI / 2)` and `sin(turn * Math.PI / 2)` there.
+The built-in wardrobe uses this direction for front buttons, necklines,
+pockets, collars, ties and outer-garment details.
 
 ## The cast
 

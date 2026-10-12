@@ -1,5 +1,5 @@
 import { createSignal } from 'solid-js'
-import type { ChartDatum, ChartKind, ChartSeries, CodeLanguage, HairSpec } from '../../characters'
+import type { ChartDatum, ChartKind, ChartSeries, CodeLanguage, HairSpec, OrganicBodyOptions, LeafOutfitOptions } from '../../characters'
 import type { CharacterActing } from '../utils/character-acting'
 import { createStore } from 'solid-js/store'
 import { measureTextLetters } from '../utils/split-text'
@@ -257,17 +257,22 @@ export interface SymbolInstanceElement extends BaseElement {
  */
 export interface CharacterElement extends BaseElement {
   type: 'character'
-  /** `stick`: the traditional stick figure. `fluid`: tapered limbs, hands, feet */
-  figure: 'fluid' | 'stick'
+  /** `stick`: traditional; `fluid`: tapered limbs; `organic`: filled cartoon anatomy. */
+  figure: 'fluid' | 'stick' | 'organic'
+  /** JSON contour profiles and skin material; used by organic figures. */
+  body?: OrganicBodyOptions
+  leafOutfit?: LeafOutfitOptions
   look: 'clean' | 'pencil' | 'silhouette'
   /** Line colour */
   ink: string
-  /** Head fill; `none` leaves it see-through */
+  /** Head fill, shared with organic body/hands; `none` leaves it see-through. */
   skin: string
-  /** Clothes: none, or a T-shirt and trousers */
-  outfit: 'none' | 'basic'
+  /** Basic clothes or organic leaf garments. */
+  outfit: 'none' | 'basic' | 'leaves'
   shirt: string
   trousers: string
+  top?: 'tshirt' | 'shirt' | 'blouse' | 'dress'
+  trouserStyle?: 'plain' | 'jeans' | 'cargo'
   /** Outfit cut and extras (see basicOutfit): sleeves, below the waist, collar, tie colour, an apron or lab coat */
   sleeves?: 'short' | 'long' | 'none'
   bottom?: 'trousers' | 'shorts' | 'skirt'
@@ -322,8 +327,11 @@ export interface CharacterElement extends BaseElement {
   /** Optional character stroke width in pixels. */
   lineWidth?: number
   faceShape?: 'round' | 'angular'
+  faceProjection?: 'cartoon' | 'volume'
   jawWidth?: number
   chinWidth?: number
+  jawRoundness?: number
+  handSize?: number
   eyeScale?: number
   eyeAspect?: number
   faceNose?: boolean

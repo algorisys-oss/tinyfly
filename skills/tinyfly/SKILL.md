@@ -129,6 +129,36 @@ names.
 - For recurring characters, make a `persona()` (look, acting, gait, mood,
   stance) and use `persona.script()`; for a move the catalog lacks, write it
   with `defineAction()` rather than hand-keying joints in many places.
+- Soft cartoon bodies: `figure: 'organic'` defaults to
+  `face.projection: 'volume'` for head turns with hair occlusion, a flatter
+  profile face and a nose projecting from above the mouth;
+  `face.projection: 'cartoon'` keeps the classic face slide. Optional JSON
+  `body` profiles (`torso`, `arm`, `leg`, `neck`) use increasing `{ at, width }`
+  from 0 to 1, with half-width fractions of height. Use `skin` for the whole exposed character;
+  `body.fill` overrides it; `'none'` makes exposed body/head/hands outline-only
+  in every look. Organic 3D painter ordering promotes only foreground arms to
+  torso/leg garment depths, leaving other parts at physical depths.
+  `body.outline: { color, width }` changes ink
+  independently of anatomy; `body.shading: { mode: 'cel' | 'none', light: [x,y],
+  shadow, opacity, highlight }` clips deterministic shading to skin. Start
+  from `softCartoonCharacter('youngMan' | 'youngWoman' | 'childBoy' | 'childGirl', options)`
+  or custom character options. Child presets have larger relative heads,
+  shorter limbs and rounded torsos, with a smaller default height. Override
+  `height` without replacing the child proportions. Hands are small natural hands by default; existing
+  pose/hand/script/reach/hair APIs drive them. `outfit` follows organic
+  anatomy. `outfitPreset('everyday' | 'formal' | 'casual', overrides)` returns
+  fresh wardrobe JSON. `outfit.top` selects `tshirt | shirt | blouse | dress`;
+  `trouserStyle` selects `plain | jeans | cargo`; `shirt` and `trousers` are
+  colour fields. Bottoms, sleeves, collars and tie colours work on every
+  actor. Dresses force a skirt in the top colour. `leafOutfit: { top?, color?, accent?, length? }` requires organic
+  mode. Use the resolved part order for occlusion: foreground organic arms
+  and hands draw together over lower garments.
+  Camera-view garment details use `joints.bodyForward` (`z` front visibility,
+  `x` side offset), independently of head yaw. `joints.turn` remains authored;
+  flat drawing omits that camera axis. The interactive example is
+  `/examples/live-organic-characters` and headless
+  `examples/headless-video/organic-characters.mjs` and
+  `examples/headless-video/child-characters.mjs` examples.
 
 ## 3. Check
 
