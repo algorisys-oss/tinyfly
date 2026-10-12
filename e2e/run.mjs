@@ -3,17 +3,29 @@
  * requested browser, prints a result table, exits non-zero on any failure.
  */
 import { spawn } from 'node:child_process'
+import { createServer } from 'node:net'
 import { chromium, firefox, webkit } from 'playwright-core'
 import { checks } from './checks/index.mjs'
-
-const PORT = 5177
-const BASE = `http://localhost:${PORT}`
 
 const args = process.argv.slice(2)
 const option = (name) => {
   const i = args.indexOf(`--${name}`)
   return i >= 0 ? args[i + 1] : undefined
 }
+
+// Reserve an available port before launching our own server. Never run checks
+// against an unrelated Vite process left listening by another session.
+const requestedPort = option('port')
+if (requestedPort !== undefined && (!/^\d+$/.test(requestedPort) || +requestedPort < 1 || +requestedPort > 65535)) throw new Error('--port must be an integer from 1 to 65535')
+const PORT = await new Promise((resolve, reject) => {
+  const probe = createServer()
+  probe.once('error', reject)
+  probe.listen(requestedPort ? +requestedPort : 0, '127.0.0.1', () => {
+    const port = probe.address().port
+    probe.close(error => error ? reject(error) : resolve(port))
+  })
+})
+const BASE = `http://127.0.0.1:${PORT}`
 
 /**
  * A terminal inside a snap (VS Code installed from the Snap Store) exports GTK and
@@ -38,10 +50,12 @@ const BROWSERS = {
 
 const wantedBrowsers = option('browser') ? [option('browser')] : Object.keys(BROWSERS)
 const wantedChecks = option('check') ? checks.filter((c) => c.name === option('check')) : checks
+if (!wantedChecks.length || wantedBrowsers.some(name => !BROWSERS[name])) throw new Error('Unknown browser or check')
 
 async function waitForServer(url, timeoutMs = 30000) {
   const start = Date.now()
   while (Date.now() - start < timeoutMs) {
+    if (serverFailure || server.exitCode !== null) throw serverFailure ?? new Error(`Our dev server exited with code ${server.exitCode}`)
     try {
       const response = await fetch(url)
       if (response.ok) return
@@ -53,7 +67,9 @@ async function waitForServer(url, timeoutMs = 30000) {
   throw new Error(`dev server did not start at ${url}`)
 }
 
-const server = spawn('npx', ['vite', '--port', String(PORT), '--strictPort'], { stdio: 'ignore' })
+const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', String(PORT), '--strictPort'], { stdio: 'ignore' })
+let serverFailure
+server.once('error', error => { serverFailure = error })
 let exitCode = 0
 
 try {

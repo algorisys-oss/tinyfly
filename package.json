@@ -1,6 +1,6 @@
 {
   "name": "@algorisys/tinyfly",
-  "version": "0.108.0",
+  "version": "0.109.0",
   "type": "module",
   "description": "Lightweight, API-driven animation engine and editor. The engine is framework-agnostic and runs in browsers, Web Workers, and Node.",
   "license": "MIT",
@@ -100,6 +100,10 @@
     "./characters": {
       "types": "./lib/types/characters/index.d.ts",
       "import": "./lib/addons/characters.js"
+    },
+    "./sports": {
+      "types": "./lib/types/sports/index.d.ts",
+      "import": "./lib/addons/sports.js"
     },
     "./maps": {
       "types": "./lib/types/maps/index.d.ts",

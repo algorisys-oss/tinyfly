@@ -14,6 +14,7 @@ resolves to the built package.
 
 | Scene | Shows |
 |---|---|
+| `cricket-story.mjs` | Public sports APIs, a mixed organic cast, bat contact, event captions and a close-up camera; change the clip action/format/cast or use a full 360° ground orbit. See [cricket guide](../../docs/cricket.md). |
 | `stick-figure.mjs` | Narration timing (`planNarration`), the `characters` stick figure posed, walked and voiced by tracks, a per-scene backdrop, captions |
 | `bar-chart.mjs` | Timeline targets only: the whole animation is JSON |
 | `cairo-style.mjs` | Pure immediate mode: a duration and `draw(ctx, { time })` |

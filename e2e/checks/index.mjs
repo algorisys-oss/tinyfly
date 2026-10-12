@@ -15,5 +15,6 @@ import examplePages from './example-pages.mjs'
 import learnEditor from './learn-editor.mjs'
 import flowingHair from './flowing-hair.mjs'
 import organicCharacters from './organic-characters.mjs'
+import cricketStory from './cricket-story.mjs'
 
-export const checks = [engine, adapters, transforms3d, scene3dWebgl, exportsCheck, demos, editor, docs, showcase, landing, learn, examplePages, learnEditor, embed, editorSteps, flowingHair, organicCharacters]
+export const checks = [engine, adapters, transforms3d, scene3dWebgl, exportsCheck, demos, editor, docs, showcase, landing, learn, examplePages, learnEditor, embed, editorSteps, flowingHair, organicCharacters, cricketStory]

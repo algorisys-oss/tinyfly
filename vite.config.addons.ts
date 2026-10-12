@@ -22,6 +22,7 @@ export default defineConfig({
         'gsap-compat': resolve(__dirname, 'src/compat/gsap/index.ts'),
         teach: resolve(__dirname, 'src/teach/index.ts'),
         characters: resolve(__dirname, 'src/characters/index.ts'),
+        sports: resolve(__dirname, 'src/sports/index.ts'),
         maps: resolve(__dirname, 'src/maps/index.ts'),
         'scene-3d': resolve(__dirname, 'src/scene-3d/index.ts'),
         'scene-3d-webgl': resolve(__dirname, 'src/scene-3d/webgl/index.ts'),

@@ -5,6 +5,7 @@ import { liveDemos } from './live-demos'
 import { createLive, Stage, type FrameScheduler } from '../compat/gsap'
 import * as engine from '../engine'
 import * as characters from '../characters'
+import * as sports from '../sports'
 import * as maps from '../maps'
 import * as scene3d from '../scene-3d'
 import * as scene3dWebgl from '../scene-3d/webgl'
@@ -25,8 +26,9 @@ function load(html: string) {
 }
 
 describe('copied live demo pages run', () => {
-  for (const demo of liveDemos) {
-    it(demo.id, async () => {
+  const cases = [...liveDemos.map(demo => ({ demo, preview: false })), { demo: liveDemos.find(demo => demo.id === 'live-cricket-story')!, preview: true }]
+  for (const { demo, preview } of cases) {
+    it(`${demo.id}${preview ? ' development preview' : ''}`, async () => {
       const { body, inline } = load(liveDemoPage(demo))
       document.body.innerHTML = body
 
@@ -44,7 +46,8 @@ describe('copied live demo pages run', () => {
       // The browser bundle's global carries the engine and characters as well as `live`.
       // A demo that loads an add-on (maps, scene-3d) gets its functions on the same global.
       const addons = { ...(demo.addons?.includes('maps') ? maps : {}), ...(demo.addons?.includes('scene-3d') ? scene3d : {}), ...(demo.addons?.includes('scene-3d-webgl') ? scene3dWebgl : {}) }
-      expect(() => new Function('tinyfly', inline)({ ...engine, ...characters, ...addons, live: createLive(stage) })).not.toThrow()
+      const api = preview ? await import('./browser-preview') : { ...engine, ...characters, ...sports, ...addons }
+      expect(() => new Function('tinyfly', inline)({ ...api, live: createLive(stage) })).not.toThrow()
       await Promise.resolve()
       const styles = () => markup(document.body)
       const beforeInput = styles()

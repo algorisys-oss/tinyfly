@@ -88,6 +88,26 @@ bakes. See `docs/dance.md`.
 
 ## Characters with a look
 
+For cricket tutorials, import `cricketClip`, `cricketCameraTracks` and
+`cricketEventAt` from `@algorisys/tinyfly/sports`. The clip is an owned scene,
+JSON timeline, timed captions and declared result. Choose `test | odi | t20`,
+`adults | children | mixed`, and a play from `CRICKET_ACTIONS`. Merge camera
+tracks with action tracks; render with scene-3d plus `[characterObjects]`.
+The UI is a consumer of these APIs. `orbit` covers the full ground in 360°;
+`follow-ball` keys against the same ball tracks. Contacts are sampled exactly,
+including two-hand bat grip, release, catch and wicket break. These are authored
+demonstrations, not collision-based umpiring or an innings simulator. Do not
+infer new outcomes from the illustrative arcs. See `docs/cricket.md` and
+`examples/headless-video/cricket-story.mjs`; `/examples/live-cricket-story`
+has event seeking and downloadable scene/action/camera JSON.
+Wide cameras support the full 24–250 m boundary range; equivalent yaw angles
+use identical geometry. Ball-follow cameras sample only ball position channels.
+Render the headless example with `tinyfly video <scene.mjs> -o <output.mp4>`.
+Preserve the defensive block's two-hand blade contact and `contact` event.
+Keeper-bound pace/spin/no-ball/stumping paths clear the off stump with the
+displayed ball radius included, before palm collection. Keep bowled contact
+and the later stumping wicket break intentional when editing these paths.
+
 For original soft cartoon story characters, opt into `figure: 'organic'`.
 Its default `face.projection: 'volume'` moves eyes/mouth around the head and
 lets hair occlude them, with a flatter profile facial plane and a nose above
@@ -329,3 +349,6 @@ new-tab player using the same standalone HTML as Copy code. Live demos,
 timeline examples and editable sample scenes play with their own controls
 and scrolling, without the gallery panels. Use these URLs when sharing an
 example for visual review.
+Development live previews load the local browser API and required add-ons, so
+unpublished APIs work before release. Production previews and copied pages
+keep the versioned CDN URLs.

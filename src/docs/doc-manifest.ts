@@ -21,6 +21,7 @@ export interface DocEntry {
 export const DOC_SECTIONS: DocSection[] = ['Start here', 'Reference', 'Editor features', 'Guides']
 
 export const DOCS: DocEntry[] = [
+  { id: 'cricket', title: 'Cricket Stories', summary: 'Reusable sports APIs, organic adult/child players, sixteen cricket plays, Test/ODI/T20 facts, contact-keyed JSON, captions, headless video and a 360° ground camera.', section: 'Guides' },
   {
     id: 'getting-started',
     title: 'Getting Started',

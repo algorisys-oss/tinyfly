@@ -52,6 +52,7 @@ export * from '../drivers'
 export * from '../interaction'
 // The stick-figure character: poses, blending, walk cycle, drawing.
 export * from '../characters'
+export * from '../sports'
 export {
   tf,
   live,

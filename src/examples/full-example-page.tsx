@@ -15,7 +15,7 @@ export const FullExamplePage: Component = () => {
     return current.kind === 'editable'
       ? editableExamplePage(current.sample)
       : current.format === 'live'
-        ? liveDemoPage(current.demo, import.meta.env.DEV && !current.demo.addons?.length ? `${location.origin}/src/browser/index.ts` : undefined)
+        ? liveDemoPage(current.demo, import.meta.env.DEV ? `${location.origin}/src/examples/browser-preview.ts` : undefined)
         : timelineExamplePage(current.code, markupCss)
   })
   const previousTitle = document.title

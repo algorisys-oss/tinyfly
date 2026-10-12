@@ -1,3 +1,21 @@
+## Cricket story APIs and interactive example — v0.109.0
+
+- [x] Reuse the live organic adult/child characters for players and umpires.
+- [x] Pure JSON field and player builders: standard pitch, creases, wickets, boundary and all fielders.
+- [x] Initial action tracks, bat grips, ball releases/receives, wicket breaks and timed story events.
+- [x] Test, ODI and T20 metadata, camera close-ups, overhead, full ground orbit and ball-follow tracks.
+- [x] Interactive example controls, event seeking, playback and JSON download wired to public APIs.
+- [x] 69 sports regressions verify deterministic distinct plays, palm release, grounded feet, two-hand bat grip, blade contact, catches/ground gathers/stumping on all three casts, run-outs, runs, boundaries, scaled timing, clipping, equivalent angles and ball-only cameras. Adult/child contact sheets visually inspected.
+- [x] Public cricket guide, headless video/stills example, capability discovery, README, model guides, v0.109.0 notes/CDN pins and generated model documentation.
+- [x] Review fixes: radius-scaled camera clipping, ball-only camera generation with linear keyframe access, equivalent yaw geometry and local full-page add-on previews; focused regressions and phase-based browser play comparisons.
+- [x] Copied-page validation includes sports APIs; headless cricket output commands use `-o`.
+- [x] Defensive-block pose, two-hand blade contact and narration regressions; keeper-bound pace/spin/no-ball/stumping deliveries clear intact striker stumps with ball-radius clearance for adult, child and mixed casts. Bowled, palm handoffs and later stumping wicket breaks retained.
+- [x] All sixteen authored plays have distinct motion; ground-fielding uses its own collection position with adult/child/mixed palm-contact regressions.
+- [x] Review validation: 3,687 tests in 236 files with the configured two workers, application/library type checks and add-on build; 87 focused Chromium/Firefox/WebKit cricket checks pass, including defensive-block captions, local full-page preview and exact angle closure.
+- [x] Independent release gate passed; downloaded JSON reproduces the browser frame, copied HTML runs with fresh bundles, and the headless example renders captioned MP4 video. Organic browser checks pass, including an isolated retry after a browser closure.
+- [ ] Follow up the existing Canvas/SVG editor drag checks, reproduced on the shipped v0.108.0 baseline. Timing-sensitive stick-figure and showcase checks pass in isolation.
+- [ ] Complete release review/tests, merge main/dev directly and publish the finished feature.
+
 ## Organic cartoon story characters — v0.108.0
 
 - [x] Opt-in organic contours on the existing human rig, with independent JSON width profiles, skin fill and outline settings.
@@ -20,7 +38,9 @@
 - [x] Organic painter order survives global scene depth sorting with world-object occlusion and unchanged fluid/stick ordering; scene-pixel regressions for all four actors. Imported body colours resolve and edit through Skin/Line controls without mutating source JSON; nine unit regressions and three live editor checks.
 - [x] Foreground-arm depth promotion uses only torso/leg garment depths; leaning head, neck, torso and legs retain physical depths and world-object occlusion. Transparent organic skin keeps body/head/dot/articulated hands outline-only in all looks and 2D/3D, with inherited alpha and non-organic semantics preserved; ten additional unit regressions.
 - [x] v0.108.0 minor version, release notes, CDN pins and model guides prepared.
-- [ ] Publish v0.108.0 web/CDN/npm and verify public availability.
+- [x] Push main/dev, publish OSS v0.108.0/CDN and verify the live web example and footer version.
+- [x] npm accepted v0.108.0 after its full prepublish suite and builds; two workers avoid default-concurrency rendering timeouts.
+- [x] Verify npm registry availability after publication processing completes.
 
 ## Flowing cartoon hairstyles
 
@@ -3108,7 +3128,7 @@ biggest gap was the head (sheets 2 and 12–16), so that came first.
 
 ## Test Coverage
 
-- 3610 tests passing across 234 files (`npx vitest run`); the per-area counts below date from 731 tests and are kept for history
+- 3687 tests passing across 236 files (`npx vitest run --maxWorkers 2`); the per-area counts below date from 731 tests and are kept for history
 - Easing functions: 48 tests
 - Interpolators: 21 tests
 - Clock: 19 tests

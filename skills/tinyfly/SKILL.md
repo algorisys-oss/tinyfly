@@ -162,6 +162,25 @@ names.
 
 ## 3. Check
 
+Cricket stories use `@algorisys/tinyfly/sports`: `cricketClip` gives owned JSON
+scene/timeline/events/result; `cricketCameraTracks` adds pitch, close-up,
+overhead, ground orbit or ball-follow camera tracks. Use scene-3d with
+`kinds: [characterObjects]` for the existing organic adult/child players.
+Formats are `test | odi | t20`; cast `adults | children | mixed`; select plays
+from `CRICKET_ACTIONS`. Results and arcs are authored teaching examples, not
+physics, automatic umpiring or a complete innings. Preserve exact contact keys
+and merge the selected camera tracks when exporting. See `docs/cricket.md`,
+`/examples/live-cricket-story` and `examples/headless-video/cricket-story.mjs`.
+Wide cameras scale their clipping range for 24–250 m boundaries; equivalent
+azimuths use identical geometry. Ball-follow generation samples only the three
+ball position channels. Headless output uses `tinyfly video <scene.mjs> -o <output.mp4>`.
+Development full-page live previews use local APIs and add-ons; copied pages
+and production previews keep versioned CDN bundles.
+Keep `defend` in the bat-contact plays, preserving its two-hand downward block
+and `contact` event. Pace/spin/no-ball/stumping deliveries pass outside the off
+stump before palm collection; geometric checks must include the displayed ball
+and stump radii. Preserve bowled's collision and stumping's later wicket break.
+
 - Beat scripts: `npx @algorisys/tinyfly check beats.json` (or `checkBeats()`;
   `scriptTracks()` throws on the same errors). Beats with surface places and
   cues: `checkSurfaceBeats(beats, surfaces)` (`surfaceScript()` throws on the

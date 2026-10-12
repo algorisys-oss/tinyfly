@@ -42,6 +42,17 @@ describe('standalone pages', () => {
     expect(html).toContain('const live = tinyfly.live')
   })
 
+  it('previews addon demos locally while copied pages retain versioned CDN bundles', () => {
+    const demo = liveDemos.find(demo => demo.id === 'live-cricket-story')!
+    const html = liveDemoPage(demo, 'http://localhost:5173/src/examples/browser-preview.ts')
+    expect(html).toContain('import * as tinyfly from "http://localhost:5173/src/examples/browser-preview.ts"')
+    expect(html).not.toContain('cdn.jsdelivr.net')
+    const copied = liveDemoPage(demo)
+    expect(copied).toContain(BROWSER_BUNDLE_URL)
+    expect(copied).toContain('tinyfly-scene-3d.iife.js')
+    expect(copied).not.toContain('browser-preview.ts')
+  })
+
   it('covers every example', () => {
     expect(pages).toHaveLength(liveDemos.length + codeExamples.length + sampleDefinitions.length + allSteps.length)
   })
