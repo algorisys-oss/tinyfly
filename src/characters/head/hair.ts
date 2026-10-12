@@ -5,12 +5,15 @@ import type { Pen } from '../look/pen'
 import { convexHull } from './head-shape'
 import { taperedOutline } from '../look/tapered-line'
 import { aroundDistance, behindHead, cachedOutlines, facingOf, onScreen, shellOutlines, spherePoint, visibleRuns, type ShellOutlines, type ShellRegion } from './shell'
+import { copyHairLock, type HairLock } from './hair-lock'
+import { drawHairLocks } from './hair-lock-draw'
+import { FLOWING_HAIR_STYLES } from './flowing-hair'
 
 /**
  * Hair for the human character, as plain data: a cap of hair on the head
  * (how far it stands off the head, where its hairline runs, its texture),
- * optional length that hangs below the head, and ties (ponytails, buns,
- * braids). Every style is the same handful of numbers, so a style is a
+ * optional length that hangs below the head, curved locks and ties (ponytails,
+ * buns, braids). Every style is plain data, so a style is a
  * preset of them and any field can be changed on its own.
  *
  * Hair is a region on the head's surface (see `shell.ts`), so it turns with
@@ -52,9 +55,9 @@ export function hairMotionOf(pose: Pose | undefined): HairMotion {
 
 const isStill = (motion: HairMotion) => motion.swing === 0 && motion.trail === 0 && motion.lift === 0
 
-/** Whether a style has anything that swings: hair hanging below the head, or a ponytail or braid. */
+/** Whether a style has anything that swings: hanging hair, a ponytail/braid, or flexible locks. */
 export function hairHangs(hair: Hair): boolean {
-  return hair.length > 0 || hair.ties.some((tie) => tie.kind !== 'bun')
+  return hair.length > 0 || hair.ties.some((tie) => tie.kind !== 'bun') || (hair.locks ?? []).some(lock => (lock.follow ?? 1) > 0)
 }
 
 /** A head-space point swung round the head's up axis by `angle` (radians, + toward the character's left at the back). */
@@ -122,6 +125,12 @@ export interface Hair {
   ties: HairTie[]
   /** Optional pointed tufts; their silhouette follows every head turn. */
   spikes?: HairSpike[]
+  /** Broad curved locks, rooted on the cap, with tapered tips and individual flexibility. */
+  locks?: HairLock[]
+  /** Hanging mass: narrowing toward the tips and a soft uneven hem, in head radii. */
+  fall?: { taper: number; wave: number }
+  /** Soft highlight opacity on flowing locks, 0..1 (default 0). */
+  shine?: number
   /** Hair falls over the ears, so the ears are hidden */
   coversEars: boolean
 }
@@ -159,6 +168,7 @@ const SHOULDERS = 1.75
  * every field can be changed (`{ style: 'bob', length: 1.4 }`).
  */
 export const HAIR_STYLES = {
+  ...FLOWING_HAIR_STYLES,
   // Short hair and hairlines
   bald: { volume: 0, hairline: { front: 2, side: 2, back: 2 } },
   buzzCut: { volume: 0, fill: 'stipple', hairline: { front: 0.52, side: 0.1, back: -0.8 } },
@@ -229,14 +239,21 @@ export function resolveHair(spec: HairSpec | HairStyleName): Hair {
   const preset: HairPreset = own.style ? HAIR_STYLES[own.style] : {}
   if (own.style && !preset) throw new Error(`hair: unknown style '${own.style}'`)
   const { style: _style, hairline, ...fields } = own
-  return {
+  const hair: Hair = {
     ...DEFAULT_HAIR,
     ...(preset as Partial<Hair>),
     ...fields,
     hairline: { ...DEFAULT_HAIR.hairline, ...preset.hairline, ...hairline },
     ties: (fields.ties ?? preset.ties ?? []).map((tie) => ({ ...tie })),
     ...((fields.spikes ?? preset.spikes) ? { spikes: (fields.spikes ?? preset.spikes)!.map((spike) => ({ ...spike })) } : {}),
+    ...((fields.locks ?? preset.locks) ? { locks: (fields.locks ?? preset.locks)!.map(copyHairLock) } : {}),
+    ...((fields.fall ?? preset.fall) ? { fall: { ...(fields.fall ?? preset.fall)! } } : {}),
   } as Hair
+  if (hair.shine !== undefined && (!Number.isFinite(hair.shine) || hair.shine < 0 || hair.shine > 1)) throw new Error('hair: shine must be between 0 and 1')
+  if (hair.fall && (!Number.isFinite(hair.fall.taper) || hair.fall.taper < 0 || hair.fall.taper > 1 || !Number.isFinite(hair.fall.wave) || hair.fall.wave < 0)) {
+    throw new Error('hair: fall needs taper between 0 and 1 and nonnegative wave')
+  }
+  return hair
 }
 
 const rad = (degrees: number) => (degrees * Math.PI) / 180
@@ -296,7 +313,7 @@ export function hairRegion(hair: Hair, pad: number, motion: HairMotion = HAIR_ST
   }
   const opening = rad(hair.opening)
   const lengthAt = (around: number) =>
-    hair.length + (hair.texture === 'wavy' || hair.texture === 'curly' || hair.texture === 'locs' ? 0.12 * Math.sin(around * 9) : 0)
+    hair.length + (hair.texture === 'wavy' || hair.texture === 'curly' || hair.texture === 'locs' ? 0.12 * Math.sin(around * 9) : 0) + (hair.fall?.wave ?? 0) * Math.cos(around * 3 + 0.6)
   // The flat top: sides rise straight, then the top is flat.
   const flatTop = (around: number, up: number, radius: number): Vec3 | null => {
     if (hair.flat <= 0 || up < 0.45) return null
@@ -307,7 +324,7 @@ export function hairRegion(hair: Hair, pad: number, motion: HairMotion = HAIR_ST
   }
   const region: ShellRegion = {
     top: 1,
-    bottom: long ? -(hair.length + 0.25) : -1,
+    bottom: long ? -(hair.length + 0.25 + Math.abs(hair.fall?.wave ?? 0)) : -1,
     inside(around, up) {
       const cap = up - hairlineOf(around)
       if (!long) return cap
@@ -318,7 +335,8 @@ export function hairRegion(hair: Hair, pad: number, motion: HairMotion = HAIR_ST
       if (long && up < 0) {
         // Long hair hangs straight down; short of the shoulders its ends tuck under.
         const tuck = hair.length < 1.5 ? 0.14 * smoothstep(-hair.length + 0.45, -hair.length - 0.1, up) : 0
-        const radius = 1 + pad + hair.volume * (1 - tuck * 2.5) + textureAt(hair, around, up) - tuck
+        const taper = (hair.fall?.taper ?? 0) * smoothstep(0, -Math.max(0.1, lengthAt(around)), up)
+        const radius = 1 + pad + hair.volume * (1 - tuck * 2.5) + textureAt(hair, around, up) - tuck - taper
         return [radius * Math.sin(around), up, radius * Math.cos(around)]
       }
       // The hair thins to the scalp at its hairline, so its edge lies on the head.
@@ -557,6 +575,7 @@ export function drawHairBehind(pen: Pen, ctx: CanvasRenderingContext2D, head: So
     for (const tie of hair.ties) if (tieIsFar(head, tie)) drawTie(pen, head, hair, tie, options.lineWidth, motion)
     drawSpikes(pen, head, hair, options.lineWidth, pad, false)
     for (const loop of far) pen.shape(loop, hair.color, outlineOf(options.lineWidth))
+    drawHairLocks(pen, head, hair, pad, motion, options.lineWidth, false)
   })
 }
 
@@ -585,6 +604,7 @@ export function drawHairFront(pen: Pen, head: SolvedHead, hair: Hair, options: H
   const outline = outlineOf(options.lineWidth)
   drawSpikes(pen, head, hair, options.lineWidth, pad, true)
   for (const loop of near) pen.shape(loop, hair.color, outline)
+  drawHairLocks(pen, head, hair, pad, motion, options.lineWidth, true)
   // Detail lines: on the hair, just inside its surface.
   for (const strand of strandCurves(hair)) {
     const points = strand.map(([around, up]) => {

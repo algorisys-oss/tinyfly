@@ -54,6 +54,19 @@ cp stills/0-middle.png docs/model-sheet/model-sheet.png
 See [Costumes, hair and props](../video-rendering.md#costumes-hair-and-props) for
 `layers` and `stickFigureJoints()`.
 
+## Flowing cartoon hair
+
+Three original flowing styles, viewed from eight angles with the same options
+in each view. Locks, colours and flexibility remain editable data; see
+[character-appearance.md](../character-appearance.md).
+
+![Flowing cartoon hairstyles in eight views](flowing-hair.png)
+
+Regenerate with
+`npx tinyfly video examples/headless-video/flowing-hair-sheet.mjs --stills stills/`
+after building the libraries, then copy `stills/0-middle.png` to
+`docs/model-sheet/flowing-hair.png`.
+
 ## Hands
 
 Every cartoon hand shape, turned and in every look: see

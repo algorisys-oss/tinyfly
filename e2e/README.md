@@ -9,6 +9,7 @@ npx playwright-core install firefox webkit   # once; Chromium uses installed Chr
 npm run e2e                                  # all browsers
 npm run e2e -- --browser firefox             # one browser
 npm run e2e -- --check demos                 # one check
+npm run e2e -- --browser chromium --check flowing-hair # face/hair controls, desktop/mobile and standalone code
 ```
 
 It starts the Vite dev server itself. Checks import source modules directly

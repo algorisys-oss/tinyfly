@@ -3,3 +3,4 @@ export { FACIAL_HAIR_STYLES, resolveFacialHair, type FacialHair, type FacialHair
 export { GLASSES_STYLES, resolveGlasses, type Glasses, type GlassesSpec, type GlassesStyle } from './glasses'
 export { HAT_STYLES, resolveHat, type Hat, type HatSpec, type HatStyle } from './hats'
 export { resolveHeadLook, type HeadLook, type HeadLookOptions } from './head-look'
+export type { HairLock, HairLockPoint } from './hair-lock'

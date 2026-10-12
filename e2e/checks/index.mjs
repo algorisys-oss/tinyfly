@@ -13,5 +13,6 @@ import landing from './landing.mjs'
 import learn from './learn.mjs'
 import examplePages from './example-pages.mjs'
 import learnEditor from './learn-editor.mjs'
+import flowingHair from './flowing-hair.mjs'
 
-export const checks = [engine, adapters, transforms3d, scene3dWebgl, exportsCheck, demos, editor, docs, showcase, landing, learn, examplePages, learnEditor, embed, editorSteps]
+export const checks = [engine, adapters, transforms3d, scene3dWebgl, exportsCheck, demos, editor, docs, showcase, landing, learn, examplePages, learnEditor, embed, editorSteps, flowingHair]

@@ -8,7 +8,7 @@ import { HUMAN_REST } from './species/human'
 import { hairHangs } from './head/hair'
 
 /**
- * Hair follow-through: hanging hair (long hair, ponytails, braids) lags
+ * Hair follow-through: hanging hair and flexible curved locks lag
  * behind the head, swinging round it after a turn, streaming back on a run,
  * dropping on a jump and lifting on the landing. The drawing stays stateless:
  * the lag is three pose fields (`hair.swing`, `hair.trail`, `hair.lift`), and
@@ -182,7 +182,8 @@ const FOLLOW_SETTLE = 1500
  * its head is (the target's `x` and `y`, plus the head's place in the pose,
  * so a gait's bob, a crouch and a jump all move it), and the pose's `turn`
  * and `head.turn`. Nothing is added for hair that has nothing to swing
- * (short hair, a bun, no hair). Hair fields the tracks already key (a flick
+ * (ordinary short hair, a bun, no hair). Flexible short locks do get lag.
+ * Hair fields the tracks already key (a flick
  * written by hand) keep their values, with the lag added on.
  */
 export function hairFollowTracks(target: string, tracks: Track[], who: Character, options: HairFollowTrackOptions = {}): Track[] {

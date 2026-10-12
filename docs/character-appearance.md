@@ -97,6 +97,11 @@ Medium and long hair: `pixie`, `bob`, `longBob`, `wavyBob`, `shoulderStraight`,
 `lowPonytail`, `highPonytail`, `ponytail`, `sidePonytail`, `topBun`, `lowBun`,
 `singleBraid`, `twinBraids`, `braids`.
 
+Flowing cartoon hair: `softSweep`, `flowingBob`, `cascadingWaves`. These use
+broad curved locks over a fitted scalp cap, with soft tapered ends and gentle
+asymmetry. The bob and long waves include a narrowing supporting mass so the
+locks overlap without gaps. Each description serves every head angle.
+
 Every style is the same few fields (`resolveHair(spec)` fills them all in):
 
 | Field | Meaning |
@@ -113,16 +118,45 @@ Every style is the same few fields (`resolveHair(spec)` fills them all in):
 | `part`, `strands` | A parting (degrees round from the middle of the face) and the detail lines: `none`, `part`, `sweep`, `combed`, `hanging`, `thin` |
 | `fill` | `solid`, or `stipple` (close-cropped: dots on the scalp) |
 | `ties` | Ponytails, buns and braids: `{ kind: 'ponytail' \| 'bun' \| 'braid', at: 'top' \| 'high' \| 'low' \| 'left' \| 'right', length?, size? }` |
+| `locks` | Curved sections: `{ path, width, follow? }`; `width` is in head radii; `follow` scales their flex (default 1, 0 pins a lock) |
+| `fall` | Hanging mass: `{ taper, wave }`, narrowing toward the ends (0..1 head radii) and a soft uneven hem (nonnegative head radii) |
+| `shine` | Soft highlight opacity on the locks, 0..1 (default 0); drawn in the clean look |
 | `coversEars` | The hair hides the ears |
 
 A style stays a starting point: any style suits anyone.
+
+A lock's `path` has a root, two controls and a tip for a cubic curve; append
+groups of three points for additional segments. Each point is
+`{ around, up, lift? }`: `around` is degrees from the face toward the character's
+left, `up` is head radii from the centre (at most 1), and nonnegative `lift`
+adds distance outside the cap. The root must have `up` between 0 and 1 and no
+extra lift. Sweeps follow the scalp rather than cutting through the skull.
+Use continuous angles across the back, such as 160, 190, 220. Invalid lock
+paths, widths, flexibility, shine and fall values throw during `resolveHair`.
+
+```js
+const hair = resolveHair({ style: 'cascadingWaves', color: '#985b32' })
+// Edit the resolved data; presets and other characters keep their own paths.
+hair.locks[0].follow = 0.65
+character({ hair })
+// Remove the sculpted locks, keeping the cap and supporting mass:
+character({ hair: { style: 'flowingBob', locks: [], shine: 0 } })
+```
+
+`length` changes the supporting mass; edit lock path points to change their
+individual lengths and curls. Public types: `HairLock`, `HairLockPoint`.
+See the **Flowing Cartoon Hair** example and the
+[eight-view reference sheet](model-sheet/flowing-hair.png).
 
 ## Hair in motion
 
 Hair that hangs (long hair, ponytails, braids) lags behind the head: it swings
 round after a turn, streams back on a run, drops on a jump and lifts on the
 landing. The roots stay on the head; the ends move, more the further they hang.
-Short hair, buns, beards and hats stay put.
+Ordinary short hair, buns, beards and hats stay put. Flowing locks also flex,
+including the short `softSweep`: their roots remain fixed while their ends
+respond by each lock's `follow` amount. The presets use smaller amounts on
+the fringe and larger, varied amounts on the hanging locks.
 
 The lag is three pose fields, so it keys, saves and mirrors like any other:
 

@@ -1,3 +1,16 @@
+## Flowing cartoon hairstyles
+
+- [x] Three original editable presets: soft sweep, flowing bob and cascading waves.
+- [x] Scalp-attached cubic locks, tapered tips, soft supporting mass and subtle clean-look highlights.
+- [x] Fixed roots and per-lock flexibility through the existing deterministic hair-follow API.
+- [x] Smooth skull clearance for deformed lock centers and ribbon edges at follow-through limits, with pinned roots and free hanging tips preserved.
+- [x] Continuous scalp-relative clearance through collapsed centers, with a regression around the reported trail value.
+- [x] Public JSON types, editor persistence, preset pickers and capability discovery.
+- [x] Gallery comparison with quick turns, settling, eight resting views and drawing-look controls.
+- [x] Face type before Hairstyle: five public FaceOptions presets applied to animated and resting heads, selected hairstyle highlighting and listener cleanup.
+- [x] Headless reference sheet and updated appearance/API guides.
+- [x] Verify skull fit, front/back coverage, all views and looks, seeking and JSON playback, and scripted walking, facing and dialogue.
+
 ## Clothing coverage during turnarounds
 
 - [x] Keep bare thighs and trouser roots behind tops, including wider-hipped builds.

@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.107.0](v0.107.0.md) | 2026-10-12 | Flowing cartoon hairstyles: scalp-attached cubic locks, tapered ends, individual flexibility, highlights and an animated eight-view gallery example |
 | [v0.106.1](v0.106.1.md) | 2026-10-12 | Clothing coverage during turns: thighs behind tops, wider waists and consistent shared-garment ordering in camera views |
 | [v0.106.0](v0.106.0.md) | 2026-10-12 | Open full page for all catalog examples: shareable new-tab players with controls, independent scrolling and a full viewport |
 | [v0.105.0](v0.105.0.md) | 2026-10-12 | Young adult manga cast, angular jaws and adjustable eyes, pointed 3D hair tufts, editor and gallery controls; original stick-figure arm proportions |

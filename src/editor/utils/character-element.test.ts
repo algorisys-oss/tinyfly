@@ -22,6 +22,20 @@ const stateWith = (target: string, values: Record<string, number>): AnimationSta
 })
 
 describe('character elements', () => {
+  it('preserves editable flowing locks through saved editor JSON and clears them on a style change', () => {
+    const store = createSceneStore()
+    const hairDetails = { locks: [{ width: 0.55, follow: 0.4, path: [
+      { around: -40, up: 0.9 }, { around: 0, up: 0.85, lift: 0.1 },
+      { around: 40, up: 0.6, lift: 0.1 }, { around: 80, up: 0.2 },
+    ] }] }
+    store.addElement('character', { hair: 'softSweep', hairDetails })
+    const restored = createSceneStore()
+    restored.loadElements(JSON.parse(JSON.stringify(store.exportElements())))
+    const element = restored.elements()[0] as CharacterElement
+    expect(characterOf(element).head.hair?.locks).toEqual(hairDetails.locks)
+    expect(characterOf({ ...element, hair: 'short', hairDetails: undefined }).head.hair?.locks).toBeUndefined()
+  })
+
   it('preserves anime cast appearance through saved editor JSON and clears it for a regular cast', () => {
     const store = createSceneStore()
     store.addElement('character', { ...castElementFields('animeOlderWoman'), x: 0, y: 0, width: 150, height: 250 })

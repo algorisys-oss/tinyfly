@@ -407,6 +407,7 @@ export function capabilitiesMarkdown(version?: string, cast: Cast = {}): string 
     '',
     `- \`build\`: ${list(c.character.builds)}`,
     `- \`hair\`: ${list(c.character.hair)} (colours: ${list(Object.keys(c.character.hairColors))} in \`HAIR_COLORS\`)`,
+    '- Flowing hair: `softSweep`, `flowingBob`, `cascadingWaves`; editable `locks: [{ path, width, follow? }]` with cubic `{ around, up, lift? }` points (around in degrees, dimensions in head radii), `fall: { taper, wave }` and `shine` (0–1). Roots stay attached; `hairFollowTracks` also drives flexible short locks.',
     `- \`facialHair\`: ${list(c.character.facialHair)}`,
     `- \`glasses\`: ${list(c.character.glasses)}; \`hat\`: ${list(c.character.hats)}; \`ears: true\`; \`face: { teeth, tongue }\` (shown when the mouth opens); \`feet\`: ${list(c.character.feet)}`,
     '- `outfit`: `{ shirt, trousers, sleeves: short | long | none, bottom: trousers | shorts | skirt, collar, tie: colour, over: apron | labCoat | hoodie | cardigan | overalls | sari, overColor, shoes: boots, shoeColor }`',

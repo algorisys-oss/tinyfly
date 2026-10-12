@@ -54,7 +54,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Code-drawn targets** - A `custom` canvas target draws with code (characters, charts, props) while the timeline animates its position, opacity and its own `props`, so drawing stays code and timing stays JSON
 - **Immediate mode too** - A scene's `background` and `draw(ctx, { time })` functions paint each frame directly, Cairo/Processing-style, and mix freely with timeline targets
 - **Timing from narration** - `planNarration()` lays spoken lines out from their clip lengths (lead, gap, tail) into cues, scene spans and markers; `voiceNarration()` measures recorded clips with ffmpeg and writes the sample-aligned narration WAV
-- **Characters** - A poseable stick figure (`@algorisys/tinyfly/characters`): named poses, facial expressions (brows, eyes that widen, close and look around, mouth shapes), squash and stretch, rubber-hose limbs, blending, walk cycles and talking, all driven by timeline tracks. **Characters v2**: one skeleton in 3D drawn flat, turning front to side to back, resting on whatever touches the ground, reaching for points, in clean, pencil or silhouette looks, and a 🧍 Character element in the editor you pose and keyframe. **Character appearance**: 34 hairstyles, 20 facial-hair styles, glasses, hats and ears as plain data on the head (they turn with it through all eight views), builds from toddler to tall, a recurring cast (`castMember`), 30 expressions with blush, tears and sweat, and hair that swings after a turn or a run and settles (`hairFollowTracks` keys the lag from the character's own tracks, so drawing stays stateless); four-legged animals' ears lay back on a run the way their tails already trail. Clothes are data too (`outfit.over`: an apron, a lab coat, a hoodie, a cardigan, overalls, a sari; boots), a mouth opens on teeth and a tongue, feet come in shapes, two people hug and help each other up (`embrace`, `helpUp`), and a cane in the hand or a wheelchair to ride are accessories any character can have, not part of an age ([guide](docs/character-appearance.md))
+- **Characters** - A poseable stick figure (`@algorisys/tinyfly/characters`): named poses, facial expressions (brows, eyes that widen, close and look around, mouth shapes), squash and stretch, rubber-hose limbs, blending, walk cycles and talking, all driven by timeline tracks. **Characters v2**: one skeleton in 3D drawn flat, turning front to side to back, resting on whatever touches the ground, reaching for points, in clean, pencil or silhouette looks, and a 🧍 Character element in the editor you pose and keyframe. **Character appearance**: 41 hairstyles, including soft sweeps, flowing bobs and cascading waves with scalp-attached curved locks and individual flexibility, 20 facial-hair styles, glasses, hats and ears as plain data on the head (they turn with it through all eight views), builds from toddler to tall, a recurring cast (`castMember`), 30 expressions with blush, tears and sweat, and hair that swings after a turn or a run and settles (`hairFollowTracks` keys the lag from the character's own tracks, so drawing stays stateless); four-legged animals' ears lay back on a run the way their tails already trail. Clothes are data too (`outfit.over`: an apron, a lab coat, a hoodie, a cardigan, overalls, a sari; boots), a mouth opens on teeth and a tongue, feet come in shapes, two people hug and help each other up (`embrace`, `helpUp`), and a cane in the hand or a wheelchair to ride are accessories any character can have, not part of an age ([guide](docs/character-appearance.md))
 - **Dance and flips** - The stick figure dances disco, hip hop, breaking toprock, jazz, K-pop, Bollywood, Bhangra, Bharatanatyam (with mudras), the Charleston, tap (foot strikes as data, for tap sounds) and popping (side glide, moonwalk, forward glide, which travel with the planted foot staying put), and does front, back, layout, scissor and side flips, cartwheels, back handsprings, split leaps, toe touches and full splits. Wrists, ankles, foot turn-out, whole-body `spin` and `rise` are pose fields; moves are keyed in beats, so any tempo plays them; styles, grooves and routines are plain JSON (`danceFrame()`, `danceTracks()`, `flipPose()`, `flipTracks()`). In the editor a 🧍 Character dances from the playhead, in time with the music: an Audio element's tempo is detected (`detectTempo()`) or tapped, the timeline shows its beats and bars, and keyframes snap to them. Native v2 garba (two/three clap) and dandiya add body-local poses, circle formations with planted toes, paired stick-tip contacts, and timed full spins (`humanDanceFrame`, `danceCircleTracks`, `meetDandiya`, `characterScript3D`). Sparse custom keys keep numeric hand and pose values through JSON playback; rolled circles preserve native yaw-before-roll and foot grounding. Foot IK preserves authored hip turn-out for ankle and toe plants. Scripted dance entry preserves relaxed or explicitly posed hands through preceding holds. Script action boundaries retain preceding easing; festive examples solve contacts with their rendered body options. See [docs/dance.md](docs/dance.md)
 - **Maps** - Animated maps on OpenStreetMap tiles or an offline world outline (also in pencil): the camera flies in, pins drop, routes draw themselves while a marker travels them; a 🗺 Map element in the editor with a one-click trip
 - **Pencil sketch style** - Hand-drawn strokes with line boil (`sketch` style, `sketchPen`) for a pencil-test, Pencilmation-like look, on the stick figure and on canvas rect / circle / line / path shapes (also from the editor's Properties panel); a `drawOn` track draws any of those shapes on; the wobble is seeded by time, so renders stay deterministic
@@ -156,6 +156,18 @@ stick figure also supports `style.armLength` (default `1`).
 
 Clothed characters keep their upper legs behind shirt hems through turns and
 moving poses; shared garments follow the same order in 2D and camera views.
+
+The [Flowing Cartoon Hair](https://tinyfly.app/examples/live-flowing-hair)
+example compares `softSweep`, `flowingBob` and `cascadingWaves`: curved locks
+fit the scalp and flex after quick head turns, then settle. Choose a face type
+and hairstyle; the selected combination is highlighted in the animation and
+shown in eight resting views. Compare simple and expressive round faces,
+soft angular features, broad jaws and older expressive faces. Change colours
+and drawing looks, or use the same styles with
+`characterScript` and `hairFollowTracks` to act out a story.
+Follow-through keeps lock centers and ribbon edges outside the skull while
+roots stay pinned and free hanging tips retain their motion. Scalp-relative
+clearance stays continuous even when motion would collapse a lock center.
 
 Every catalog example has an **Open full page** action. It opens a shareable
 `/examples/<id>/full` URL in a new tab, with the animation and its controls
@@ -261,7 +273,7 @@ GSAP-shaped functions at the top level. Teaching embeds are included: add
 itself.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.106.1/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -297,7 +309,7 @@ A teaching figure needs no code at all:
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON with markers… }</script>
   <figcaption>Appending to a full slice</figcaption>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.106.1/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
 ```
 
 See [Teaching Animations](docs/teaching.md).
@@ -396,7 +408,7 @@ Without a build step, the player bundle puts the same functions on a `tinyfly` g
   <div data-tinyfly="box" style="width: 60px; height: 60px; background: #4a9eff;"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.106.1/cdn/tinyfly-player.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.0/cdn/tinyfly-player.iife.js"></script>
 <script>
   tinyfly.play('#animation', './animation.json', { loop: -1 })
 </script>
@@ -505,7 +517,7 @@ Or skip the code entirely with declarative embeds (see [Teaching Animations](doc
   <svg viewBox="0 0 720 200">…</svg>
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON… }</script>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.106.1/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 ### Audio / Video Sync

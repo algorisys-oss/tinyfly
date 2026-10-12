@@ -113,7 +113,7 @@ export const hairAndHats = {
   id: 'live-hair-and-hats',
   name: 'Hair, Beards & Hats',
   description:
-    'Pick a hairstyle (34 presets, from buzz cut to twin braids), a colour, facial hair (20), glasses, a hat and a face: the character is redrawn from plain options, turning, and in all eight views at once. Hair is a region on the head, so a ponytail stays tied in one place, a beard follows the jaw and leaves the mouth readable, and a hat sits over the hair.',
+    'Pick a hairstyle, including soft sweeps, flowing bobs and cascading waves, a colour, facial hair (20), glasses, a hat and a face: the character is redrawn from plain options, turning, and in all eight views at once. Hair fits the head, so a ponytail stays tied in one place, a beard follows the jaw and leaves the mouth readable, and a hat sits over the hair.',
   category: 'video',
   tags: ['canvas', 'character', 'appearance', 'hair', 'beard', 'hat', 'glasses', 'expression'],
   html,

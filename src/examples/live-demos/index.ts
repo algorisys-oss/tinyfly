@@ -40,6 +40,7 @@ import { castTurnaround } from './cast-turnaround'
 import { animeCast } from './anime-cast'
 import { mangaCast } from './manga-cast'
 import { hairAndHats } from './hair-and-hats'
+import { flowingHair } from './flowing-hair'
 import { handOver } from './hand-over'
 import { helpUpCard } from './help-up'
 import { kickTheTyre } from './kick-the-tyre'
@@ -112,6 +113,7 @@ import castTurnaroundSource from './cast-turnaround.js?raw'
 import animeCastSource from './anime-cast.js?raw'
 import mangaCastSource from './manga-cast.js?raw'
 import hairAndHatsSource from './hair-and-hats.js?raw'
+import flowingHairSource from './flowing-hair.js?raw'
 import handOverSource from './hand-over.js?raw'
 import helpUpSource from './help-up.js?raw'
 import kickTheTyreSource from './kick-the-tyre.js?raw'
@@ -251,6 +253,7 @@ export const liveDemos: LiveDemoWithCode[] = [
   withCode(animeCast, animeCastSource),
   withCode(mangaCast, mangaCastSource),
   withCode(hairAndHats, hairAndHatsSource),
+  withCode(flowingHair, flowingHairSource),
   withCode(handOver, handOverSource),
   withCode(helpUpCard, helpUpSource),
   withCode(kickTheTyre, kickTheTyreSource),

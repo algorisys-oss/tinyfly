@@ -113,8 +113,15 @@ and the close-up fields `pupil`, `lid` and `bulge`, so any face goes with any
 action or view; `drawCharacterHead(ctx, who, pose, { x, y, radius })` draws
 just the head big, and `face: { nose, inPupil }` adds a nose and a drawing in
 the pupils. Hair and hats turn with the head:
-don't draw a different hairstyle per view. Hanging hair swings on its own:
-after the character's tracks add `hairFollowTracks(target, tracks, who)` (or,
+don't draw a different hairstyle per view.
+`softSweep`, `flowingBob` and `cascadingWaves` provide flowing cartoon hair
+with editable cubic `locks: [{ path, width, follow? }]`. Each path is a root
+plus groups of three `{ around, up, lift? }` points (degrees around the head,
+head radii up/out); the root has up 0..1 and lift 0. `follow: 0` pins a lock.
+`length` changes the supporting mass; edit the path to change a lock's length.
+These styles work with the same acting and story tracks as other characters.
+Hanging hair and flexible locks, including short sweeps, follow motion through
+the same API: after the character's tracks add `hairFollowTracks(target, tracks, who)` (or,
 posing per frame, `hairFollow` once and `hairMotionAt(keys, t)` each frame)
 rather than keying `hair.swing` by hand. Put things in hands with `holding`
 (`{ right: 'mug' }`, `{ both: 'parcel' }`; the pose field `held.both` lets go),

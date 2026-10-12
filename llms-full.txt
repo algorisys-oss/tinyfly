@@ -204,7 +204,7 @@ with a GSAP-style call (durations are in seconds here):
 ```html
 <div class="box" style="width:60px;height:60px;background:#4a9eff"></div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.106.1/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -412,7 +412,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.106.1/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -2327,7 +2327,7 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.106.1/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.0/cdn/tinyfly-player.iife.js`.
 
 ---
 
@@ -6680,7 +6680,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.106.1/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed
@@ -7946,8 +7946,15 @@ and the close-up fields `pupil`, `lid` and `bulge`, so any face goes with any
 action or view; `drawCharacterHead(ctx, who, pose, { x, y, radius })` draws
 just the head big, and `face: { nose, inPupil }` adds a nose and a drawing in
 the pupils. Hair and hats turn with the head:
-don't draw a different hairstyle per view. Hanging hair swings on its own:
-after the character's tracks add `hairFollowTracks(target, tracks, who)` (or,
+don't draw a different hairstyle per view.
+`softSweep`, `flowingBob` and `cascadingWaves` provide flowing cartoon hair
+with editable cubic `locks: [{ path, width, follow? }]`. Each path is a root
+plus groups of three `{ around, up, lift? }` points (degrees around the head,
+head radii up/out); the root has up 0..1 and lift 0. `follow: 0` pins a lock.
+`length` changes the supporting mass; edit the path to change a lock's length.
+These styles work with the same acting and story tracks as other characters.
+Hanging hair and flexible locks, including short sweeps, follow motion through
+the same API: after the character's tracks add `hairFollowTracks(target, tracks, who)` (or,
 posing per frame, `hairFollow` once and `hairMotionAt(keys, t)` each frame)
 rather than keying `hair.swing` by hand. Put things in hands with `holding`
 (`{ right: 'mug' }`, `{ both: 'parcel' }`; the pose field `held.both` lets go),
@@ -8151,7 +8158,7 @@ path for all of that:
 </figure>
 
 <!-- once, anywhere on the page (a site-wide footer is fine) -->
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.106.1/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 Every `[data-tinyfly-embed]` mounts when the page is ready, with no per-post
@@ -9423,8 +9430,8 @@ On a page with no build step, load the maps add-on after the browser bundle; it
 adds to the same `tinyfly` global:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.106.1/cdn/tinyfly.iife.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.106.1/cdn/tinyfly-maps.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.107.0/cdn/tinyfly-maps.iife.js"></script>
 ```
 
 It is a separate script because the offline world map it carries adds about
@@ -9728,6 +9735,11 @@ Medium and long hair: `pixie`, `bob`, `longBob`, `wavyBob`, `shoulderStraight`,
 `lowPonytail`, `highPonytail`, `ponytail`, `sidePonytail`, `topBun`, `lowBun`,
 `singleBraid`, `twinBraids`, `braids`.
 
+Flowing cartoon hair: `softSweep`, `flowingBob`, `cascadingWaves`. These use
+broad curved locks over a fitted scalp cap, with soft tapered ends and gentle
+asymmetry. The bob and long waves include a narrowing supporting mass so the
+locks overlap without gaps. Each description serves every head angle.
+
 Every style is the same few fields (`resolveHair(spec)` fills them all in):
 
 | Field | Meaning |
@@ -9744,16 +9756,45 @@ Every style is the same few fields (`resolveHair(spec)` fills them all in):
 | `part`, `strands` | A parting (degrees round from the middle of the face) and the detail lines: `none`, `part`, `sweep`, `combed`, `hanging`, `thin` |
 | `fill` | `solid`, or `stipple` (close-cropped: dots on the scalp) |
 | `ties` | Ponytails, buns and braids: `{ kind: 'ponytail' \| 'bun' \| 'braid', at: 'top' \| 'high' \| 'low' \| 'left' \| 'right', length?, size? }` |
+| `locks` | Curved sections: `{ path, width, follow? }`; `width` is in head radii; `follow` scales their flex (default 1, 0 pins a lock) |
+| `fall` | Hanging mass: `{ taper, wave }`, narrowing toward the ends (0..1 head radii) and a soft uneven hem (nonnegative head radii) |
+| `shine` | Soft highlight opacity on the locks, 0..1 (default 0); drawn in the clean look |
 | `coversEars` | The hair hides the ears |
 
 A style stays a starting point: any style suits anyone.
+
+A lock's `path` has a root, two controls and a tip for a cubic curve; append
+groups of three points for additional segments. Each point is
+`{ around, up, lift? }`: `around` is degrees from the face toward the character's
+left, `up` is head radii from the centre (at most 1), and nonnegative `lift`
+adds distance outside the cap. The root must have `up` between 0 and 1 and no
+extra lift. Sweeps follow the scalp rather than cutting through the skull.
+Use continuous angles across the back, such as 160, 190, 220. Invalid lock
+paths, widths, flexibility, shine and fall values throw during `resolveHair`.
+
+```js
+const hair = resolveHair({ style: 'cascadingWaves', color: '#985b32' })
+// Edit the resolved data; presets and other characters keep their own paths.
+hair.locks[0].follow = 0.65
+character({ hair })
+// Remove the sculpted locks, keeping the cap and supporting mass:
+character({ hair: { style: 'flowingBob', locks: [], shine: 0 } })
+```
+
+`length` changes the supporting mass; edit lock path points to change their
+individual lengths and curls. Public types: `HairLock`, `HairLockPoint`.
+See the **Flowing Cartoon Hair** example and the
+[eight-view reference sheet](model-sheet/flowing-hair.png).
 
 ## Hair in motion
 
 Hair that hangs (long hair, ponytails, braids) lags behind the head: it swings
 round after a turn, streams back on a run, drops on a jump and lifts on the
 landing. The roots stay on the head; the ends move, more the further they hang.
-Short hair, buns, beards and hats stay put.
+Ordinary short hair, buns, beards and hats stay put. Flowing locks also flex,
+including the short `softSweep`: their roots remain fixed while their ends
+respond by each lock's `follow` amount. The presets use smaller amounts on
+the fringe and larger, varied amounts on the hanging locks.
 
 The lag is three pose fields, so it keys, saves and mirrors like any other:
 
@@ -14413,7 +14454,7 @@ magnet.addEventListener('pointerleave', () => {
 
 <!-- capabilities: generated from the library -->
 
-# tinyfly capabilities (v0.106.1)
+# tinyfly capabilities (v0.107.0)
 
 Generated from the library itself: every name below is accepted, and names not listed are rejected (beat scripts, code panels and `checkTracks` say which name was probably meant).
 
@@ -14697,7 +14738,8 @@ Native dances: `garba`, `garbaThreeClap`, `dandiya`; `humanDanceFrame(style, bea
 Appearance options of `character({ … })`, all plain data that turns with the head (see docs/character-appearance.md):
 
 - `build`: `standard`, `slim`, `tall`, `short`, `broad`, `curvy`, `stocky`, `kid`, `child`, `toddler`
-- `hair`: `bald`, `buzzCut`, `crewCut`, `short`, `sidePart`, `sideSwept`, `slickBack`, `quiff`, `spiky`, `mangaSpikes`, `mangaSweep`, `undercut`, `curlyCrop`, `afro`, `wavyCrop`, `shortLocs`, `flatTop`, `receding`, `thinning`, `pixie`, `bob`, `longBob`, `wavyBob`, `shoulderStraight`, `shoulderWaves`, `longStraight`, `longWaves`, `longCurls`, `longLocs`, `lowPonytail`, `highPonytail`, `ponytail`, `sidePonytail`, `topBun`, `lowBun`, `singleBraid`, `twinBraids`, `braids` (colours: `black`, `brown`, `chestnut`, `auburn`, `blond`, `ginger`, `gray`, `white` in `HAIR_COLORS`)
+- `hair`: `softSweep`, `flowingBob`, `cascadingWaves`, `bald`, `buzzCut`, `crewCut`, `short`, `sidePart`, `sideSwept`, `slickBack`, `quiff`, `spiky`, `mangaSpikes`, `mangaSweep`, `undercut`, `curlyCrop`, `afro`, `wavyCrop`, `shortLocs`, `flatTop`, `receding`, `thinning`, `pixie`, `bob`, `longBob`, `wavyBob`, `shoulderStraight`, `shoulderWaves`, `longStraight`, `longWaves`, `longCurls`, `longLocs`, `lowPonytail`, `highPonytail`, `ponytail`, `sidePonytail`, `topBun`, `lowBun`, `singleBraid`, `twinBraids`, `braids` (colours: `black`, `brown`, `chestnut`, `auburn`, `blond`, `ginger`, `gray`, `white` in `HAIR_COLORS`)
+- Flowing hair: `softSweep`, `flowingBob`, `cascadingWaves`; editable `locks: [{ path, width, follow? }]` with cubic `{ around, up, lift? }` points (around in degrees, dimensions in head radii), `fall: { taper, wave }` and `shine` (0–1). Roots stay attached; `hairFollowTracks` also drives flexible short locks.
 - `facialHair`: `cleanShaven`, `stubble`, `pencilMoustache`, `shortMoustache`, `chevron`, `handlebar`, `walrus`, `goatee`, `vanDyke`, `circleBeard`, `shortBoxed`, `fullBeard`, `longBeard`, `roundedBeard`, `pointedBeard`, `chinStrap`, `soulPatch`, `sideburns`, `muttonChops`, `moustacheStubble`
 - `glasses`: `round`, `square`, `sunglasses`; `hat`: `cap`, `beanie`, `hardHat`, `sunHat`, `bowler`; `ears: true`; `face: { teeth, tongue }` (shown when the mouth opens); `feet`: `round`, `flat`, `pointed`, `big`
 - `outfit`: `{ shirt, trousers, sleeves: short | long | none, bottom: trousers | shorts | skirt, collar, tie: colour, over: apron | labCoat | hoodie | cardigan | overalls | sari, overColor, shoes: boots, shoeColor }`
