@@ -14,7 +14,8 @@
 - [x] Review validation: 3,687 tests in 236 files with the configured two workers, application/library type checks and add-on build; 87 focused Chromium/Firefox/WebKit cricket checks pass, including defensive-block captions, local full-page preview and exact angle closure.
 - [x] Independent release gate passed; downloaded JSON reproduces the browser frame, copied HTML runs with fresh bundles, and the headless example renders captioned MP4 video. Organic browser checks pass, including an isolated retry after a browser closure.
 - [ ] Follow up the existing Canvas/SVG editor drag checks, reproduced on the shipped v0.108.0 baseline. Timing-sensitive stick-figure and showcase checks pass in isolation.
-- [ ] Complete release review/tests, merge main/dev directly and publish the finished feature.
+- [x] Release gate passed; main/dev merged directly and pushed, OSS mirror/CDN tag v0.109.0 published, and npm v0.109.0 available. Website/example and model guidance verified live.
+- [x] Published-page checks pass in Chromium, Firefox and WebKit for all sixteen distinct plays, three casts/formats, eight cameras, angle closure, event seeking, mobile layout and JSON download. Published CDN builders work in a Web Worker; a fresh npm consumer generates and samples a child stumping story in Node.
 
 ## Organic cartoon story characters — v0.108.0
 
