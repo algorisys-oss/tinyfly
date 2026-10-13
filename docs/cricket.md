@@ -42,7 +42,7 @@ See [getting started](getting-started.md) for the versioned CDN URLs.
 | `cricketPlay(field, options)` | Composes independent delivery, shot, finish, fielding, context and candidate decision; returns `play`, `ruling`, timeline, events and result. |
 | `cricketPlayClip(options)` | Builds a field and composed play together. |
 | `cricketClip(options)` | Combines field and action; default T20, adult cast, pace bowling, 6000 ms. |
-| `cricketCameraTracks(clip, { view?, yaw?, zoom?, every? })` | Ordinary scene camera tracks. Merge these with the action tracks. |
+| `cricketCameraTracks(clip, { view?, yaw?, zoom?, pitch?, distance?, target?, fov?, every? })` | Ordinary scene camera tracks. Merge these with the action tracks. |
 | `cricketEventAt(events, time)` | Most recent event at that time, including when seeking backward. |
 | `ballFlightPoint(options, time)`, `ballFlightTracks(options)` | Shared sampled arcs for other sports too. `from`, `to`, `arc`, `curve`, `start`, `end`, `target`; exact endpoints. |
 
@@ -205,6 +205,64 @@ spacing without evaluating actor tracks.
 
 Development full-page previews load the local browser API and scene add-ons;
 production previews and copied HTML retain the versioned CDN bundles.
+
+## Decision-focused camera review
+
+Select **Front-foot review**, **Striker crease** or **Bowler crease** in the
+example's Camera control. These are fixed views, so scrubbing before/after the
+event compares positions without a moving viewpoint. Front-foot framing uses
+the native front ankle at authored release; crease views include the wicket
+and popping crease. Run-out framing includes the approaching batter at the
+wicket-break event. Wide-delivery framing also includes the keeper’s sideways
+collection position, the batter and the crease.
+
+```ts
+import { cricketPlayClip, cricketCameraTracks, cricketCameraFraming,
+  cricketCameraReview, cricketDecisionOverlay } from '@algorisys/tinyfly/sports'
+
+const clip = cricketPlayClip({
+  delivery: { legality: 'no-ball' }, finish: 'stumps',
+  decision: { dismissal: 'bowled' },
+})
+const view = 'front-foot'
+const defaults = cricketCameraFraming(clip, view)
+const camera = cricketCameraTracks(clip, { view, pitch: 30, distance: 3, zoom: 1.25 })
+const moment = cricketCameraReview(clip, view) // physical event; no seeking
+const scene = { ...clip.scene,
+  objects: [...clip.scene.objects, ...cricketDecisionOverlay(clip, view)] }
+const timeline = { ...clip.timeline, tracks: [...clip.timeline.tracks, ...camera] }
+// Your playback controls can explicitly seek to moment?.time.
+// The no-ball ruling remains not out.
+```
+
+CRICKET_DECISION_VIEWS exports labels and descriptions. cricketCameraReview
+returns an owned physical event or undefined for other views. Front-foot uses
+release; striker crease prefers its wicket break, completed run, keeper gather,
+return received or contact. Bowler crease uses run-out wicket break, completed run or release.
+Times come from events and follow duration scaling. Changing cameras does not
+seek or pause; **Framing & review → Inspect moment** explicitly seeks and pauses.
+Optional gold overlays mark the crease reference, without classifying whole
+feet, bat grounding or dismissals.
+
+Camera pitch accepts 0–89 degrees above level; distance 0.5–2000 metres; fov
+10–100 degrees before existing 0.25–4 optical zoom. target overrides a fixed-view
+world target and is rejected for ball-follow. cricketCameraFraming returns
+owned defaults; ball-follow omits a fixed target, since the actual target
+follows the ball. Fixed views use absolute yaw; orbit adds 360 degrees.
+Ball-follow rotates its original [5, 3, 6] offset relative to the default
+75-degree control angle, with elevation/distance overrides too. Default geometry
+for the original eight views is retained.
+
+Explicit distance/target framing adds a conservative camera far-plane track.
+Scene projection and clipping now respect animated camera far; it must be finite
+and greater than the camera's static near plane. Camera changes leave player
+motion and authored decisions untouched.
+
+Essential controls stay above collapsed **Framing & review** controls. Elevation,
+relative distance, lens, reset and highlight controls preserve playback/time.
+Camera selection resets framing to that preset. A play/cast/format change resets
+preset framing, while marking changes retain it. Downloads include cameraOptions,
+camera tracks and any review overlay.
 
 ## Composed plays and authored decisions
 

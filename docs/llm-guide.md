@@ -100,6 +100,15 @@ demonstrations, not collision-based umpiring or an innings simulator. Do not
 infer new outcomes from the illustrative arcs. See `docs/cricket.md` and
 `examples/headless-video/cricket-story.mjs`; `/examples/live-cricket-story`
 has event seeking and downloadable scene/action/camera JSON.
+Decision camera views are front-foot, striker-crease and bowler-crease.
+Use cricketCameraFraming(clip, view) for owned preset defaults;
+cricketCameraReview(clip, view) returns a physical event without seeking.
+cricketDecisionOverlay adds optional static crease references, without umpiring.
+Camera options pitch (0–89), distance (0.5–2000), fov (10–100 before zoom) and
+fixed-view target customize framing. Follow-ball rejects target and rotates its
+default offset with yaw; pitch/distance apply there too. Default 75-degree yaw
+retains the original offset. Export all camera tracks, including far for distant
+framing; the 3D resolver respects animated far. Keep motion/rulings untouched.
 For composed plays use `cricketPlay(field, options)` / `cricketPlayClip(options)`.
 Separate `delivery: { style, legality }`, `shot`, `finish`, `fielding`,
 `context: { freeHit }` and `decision: { dismissal }`. Omitted/null dismissal

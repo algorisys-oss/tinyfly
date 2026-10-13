@@ -19,7 +19,7 @@ import { trailSamples } from '../engine/path/trail'
  *   `scaleX` / `scaleY` / `scaleZ`; `visible` (0 or 1); `opacity`;
  * - meshes and lights: `color`; lights: `intensity`, `target`;
  * - lines and trails: `color`, `width`, `opacity`; trails: `length`;
- * - cameras: `fov` (perspective), `height` (orthographic), `lookAt`;
+ * - cameras: `fov` (perspective), `height` (orthographic), `lookAt`, `far`;
  * - the scene itself, `<sceneId>`: `activeCamera` (a camera's id: a cut is one keyframe).
  */
 
@@ -174,10 +174,12 @@ function resolveCamera(camera: CameraObject, world: Mat4, values: ReadonlyMap<st
   const lookAt = (vec(values.get('lookAt'), 3) as Vec3 | undefined) ?? camera.lookAt
   const roll = num(values.get('roll')) ?? camera.roll ?? 0
   const view = lookAt ? lookAtView(position, lookAt, { up: camera.up, roll }) : rollView(mat4.invert(world) ?? mat4.identity(), roll)
+  const far = num(values.get('far')) ?? camera.far
+  if (!Number.isFinite(far) || far <= camera.near) throw new Error('resolveScene3D: camera far must be finite and greater than near')
   const projection =
     camera.projection === 'perspective'
-      ? projectionMatrix({ ...camera, fov: num(values.get('fov')) ?? camera.fov }, aspect)
-      : projectionMatrix({ ...camera, height: num(values.get('height')) ?? camera.height }, aspect)
+      ? projectionMatrix({ ...camera, far, fov: num(values.get('fov')) ?? camera.fov }, aspect)
+      : projectionMatrix({ ...camera, far, height: num(values.get('height')) ?? camera.height }, aspect)
   return {
     id: camera.id,
     view,
@@ -186,7 +188,7 @@ function resolveCamera(camera: CameraObject, world: Mat4, values: ReadonlyMap<st
     forward: vec3.normalize([-view[2], -view[6], -view[10]]),
     orthographic: camera.projection === 'orthographic',
     near: camera.near,
-    far: camera.far,
+    far,
   }
 }
 

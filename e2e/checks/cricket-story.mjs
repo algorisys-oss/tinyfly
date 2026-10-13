@@ -51,7 +51,7 @@ export default {
         document.querySelector('.crkt-play').checked = false; document.querySelector('.crkt-play').dispatchEvent(new Event('change'))
         return { actions: actions.size, views: views.size, casts: casts.size, formats: formats.size, blockContact, eventSeek, angles: angles.size, closure, stable, replay, slow }
       })
-      for (const [key, expected] of Object.entries({ actions: 16, views: 8, casts: 4, formats: 3, blockContact: true, eventSeek: true, angles: 4, closure: true, stable: true, replay: true, slow: true })) results.push({ label: `${mode}: ${key}`, ok: data[key] === expected, detail: String(data[key]) })
+      for (const [key, expected] of Object.entries({ actions: 16, views: 11, casts: 4, formats: 3, blockContact: true, eventSeek: true, angles: 4, closure: true, stable: true, replay: true, slow: true })) results.push({ label: `${mode}: ${key}`, ok: data[key] === expected, detail: String(data[key]) })
       const zoomChecks = await page.evaluate(() => {
         const set = (selector, value, type = 'change') => { const node = document.querySelector(selector); node.value = value; node.dispatchEvent(new Event(type, { bubbles: true })) }
         const canvas = document.querySelector('.crkt-canvas')
@@ -86,7 +86,7 @@ export default {
         set('.crkt-time', '3900', 'input')
         return { views, stable, persistent: document.querySelector('.crkt-zoom').value === '200' && document.querySelector('.crkt-zoom-label').value === '200%' }
       })
-      for (const [key, expected] of Object.entries({ views: 8, stable: true, persistent: true })) results.push({ label: `${mode}: camera zoom ${key}`, ok: zoomChecks[key] === expected, detail: String(zoomChecks[key]) })
+      for (const [key, expected] of Object.entries({ views: 11, stable: true, persistent: true })) results.push({ label: `${mode}: camera zoom ${key}`, ok: zoomChecks[key] === expected, detail: String(zoomChecks[key]) })
       const markingChecks = await page.evaluate(() => {
         const set = (selector, value) => { const node = document.querySelector(selector); node.value = value; node.dispatchEvent(new Event('change', { bubbles: true })) }
         const time = document.querySelector('.crkt-time').value
@@ -117,12 +117,12 @@ export default {
       await page.evaluate(() => { document.activeElement.blur(); scrollTo(0, 0) })
       for (const width of [1280, 390]) {
         await page.setViewportSize({ width, height: 768 })
-        results.push({ label: `${mode}: controls fit ${width}px`, ok: await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && [...document.querySelectorAll('.crkt-controls select, .crkt-controls input, .crkt-controls button')].every(node => node.getBoundingClientRect().right <= innerWidth)) })
+        results.push({ label: `${mode}: controls fit ${width}px`, ok: await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && [...document.querySelectorAll('.crkt-controls select, .crkt-controls input, .crkt-controls button')].filter(node => node.getClientRects().length && (!node.closest('details') || node.closest('details').open)).every(node => node.getBoundingClientRect().right <= innerWidth)) })
       }
       await page.setViewportSize({ width: 1280, height: 768 })
       results.push({ label: `${mode}: desktop controls share the scene viewport`, ok: await page.evaluate(() => {
         const scene = document.querySelector('.crkt-canvas').getBoundingClientRect()
-        return [...document.querySelectorAll('.crkt-controls select, .crkt-controls input, .crkt-controls button')].every(node => {
+        return [...document.querySelectorAll('.crkt-controls select, .crkt-controls input, .crkt-controls button')].filter(node => node.getClientRects().length && (!node.closest('details') || node.closest('details').open)).every(node => {
           const rect = node.getBoundingClientRect()
           return rect.left >= scene.right && rect.top >= 0 && rect.bottom <= innerHeight
         })
@@ -130,7 +130,7 @@ export default {
       await page.setViewportSize({ width: 390, height: 768 })
       results.push({ label: `${mode}: phone controls are available before the scene`, ok: await page.evaluate(() => {
         const scene = document.querySelector('.crkt-canvas').getBoundingClientRect()
-        return [...document.querySelectorAll('.crkt-controls select, .crkt-controls input, .crkt-controls button')].every(node => {
+        return [...document.querySelectorAll('.crkt-controls select, .crkt-controls input, .crkt-controls button')].filter(node => node.getClientRects().length && (!node.closest('details') || node.closest('details').open)).every(node => {
           const rect = node.getBoundingClientRect()
           return rect.top >= 0 && rect.bottom <= scene.top && rect.bottom <= innerHeight
         })
@@ -175,6 +175,41 @@ export default {
       for await (const chunk of composedStream) composedChunks.push(chunk)
       const composedStory = JSON.parse(Buffer.concat(composedChunks).toString())
       results.push({ label: `${mode}: composed JSON preserves context, candidate and not-out ruling`, ok: composedStory.play.delivery.legality === 'legal' && composedStory.play.context.freeHit && composedStory.play.decision.dismissal === 'caught' && composedStory.ruling.dismissal === null && composedStory.ruling.reason === 'free-hit' && composedStory.result.wickets === 0 && !composedStory.result.freeHitNext && composedStory.timeline.captions.en.result.includes('Not out') && composedStory.timeline.tracks.some(t => t.target.endsWith('/camera')) && composedDownload.suggestedFilename() === 'cricket-odi-play-free-hit-catch.json' })
+      await page.setViewportSize({ width: 1280, height: 900 })
+      const reviewChecks = await page.evaluate(() => {
+        const set = (q, v, type = 'change') => { const n = document.querySelector(q); n.value = v; n.dispatchEvent(new Event(type, { bubbles: true })) }
+        const hash = () => { let h = 2166136261; for (const value of document.querySelector('.crkt-canvas').getContext('2d').getImageData(0, 0, 1280, 720).data) h = Math.imul(h ^ value, 16777619); return h >>> 0 }
+        document.querySelector('.crkt-framing').open = true
+        set('.crkt-action', 'play/no-ball-stumps'); set('.crkt-time', '2900', 'input')
+        set('.crkt-view', 'front-foot')
+        const preserved = document.querySelector('.crkt-time').value === '2900' && !document.querySelector('.crkt-play').checked
+        document.querySelector('.crkt-review-event').click()
+        const foot = document.querySelector('.crkt-time').value === '1900'
+        const before = hash()
+        set('.crkt-pitch', '45', 'input'); set('.crkt-distance', '1.5', 'input'); set('.crkt-fov', '55', 'input')
+        const framed = before !== hash() && document.querySelector('.crkt-time').value === '1900'
+        document.querySelector('.crkt-framing-reset').click()
+        const reset = document.querySelector('.crkt-distance').value === '1' && document.querySelector('.crkt-pitch').value === '25' && document.querySelector('.crkt-zoom').value === '100'
+        set('.crkt-view', 'striker-crease'); document.querySelector('.crkt-review-event').click()
+        const striker = document.querySelector('.crkt-time').value === '3200'
+        set('.crkt-action', 'run-out'); set('.crkt-view', 'bowler-crease'); document.querySelector('.crkt-review-event').click()
+        const bowler = document.querySelector('.crkt-time').value === '5000'
+        set('.crkt-view', 'follow-ball')
+        const first = hash(); set('.crkt-yaw', '165', 'input')
+        const follow = first !== hash() && document.querySelector('.crkt-review-event').disabled && document.querySelector('.crkt-review-overlay').disabled
+        set('.crkt-view', 'bowler-crease'); document.querySelector('.crkt-review-event').click()
+        const overlay = document.querySelector('.crkt-review-overlay'); overlay.checked = true; overlay.dispatchEvent(new Event('change', { bubbles: true }))
+        set('.crkt-pitch', '25', 'input'); set('.crkt-distance', '1.5', 'input'); set('.crkt-fov', '55', 'input')
+        set('.crkt-markings', 'icc-women')
+        const retained = document.querySelector('.crkt-time').value === '5000' && document.querySelector('.crkt-pitch').value === '25' && document.querySelector('.crkt-distance').value === '1.5'
+        return { preserved, foot, framed, reset, striker, bowler, follow, retained }
+      })
+      for (const [key, ok] of Object.entries(reviewChecks)) results.push({ label: `${mode}: decision camera ${key}`, ok })
+      const [reviewDownload] = await Promise.all([page.waitForEvent('download'), page.locator('.crkt-export').evaluate(node => node.click())])
+      const reviewStream = await reviewDownload.createReadStream(), reviewChunks = []
+      for await (const chunk of reviewStream) reviewChunks.push(chunk)
+      const reviewed = JSON.parse(Buffer.concat(reviewChunks).toString())
+      results.push({ label: `${mode}: review JSON includes framing, far plane and crease reference`, ok: reviewed.cameraOptions.view === 'bowler-crease' && reviewed.cameraOptions.pitch === 25 && reviewed.cameraOptions.fov === 55 && reviewed.cameraOptions.distance > 4 && reviewed.scene.objects.some(o => o.id === 'decision-review-bowler-crease') && reviewed.timeline.tracks.some(t => t.property === 'far') })
       await page.evaluate(() => window.cricketCleanup())
     }
     await page.goto(`${base}/examples/live-cricket-story/full`)

@@ -1,3 +1,17 @@
+## Decision-focused cricket cameras — v0.113.0
+
+- [x] Public fixed front-foot and striker/bowler crease presets; native release foot anchoring, physical review event selection and run-out framing that includes the approaching batter.
+- [x] Owned framing defaults and configurable elevation/distance/target/lens; ball-follow yaw/elevation/distance apply to its offset while old default views retain their geometry.
+- [x] Optional public crease references; explicit Inspect moment, collapsed framing controls, playback/time preservation, full-width camera names and exported camera options/tracks/overlays.
+- [x] Animated camera far-plane support for explicit distant framing in the 3D resolver.
+- [x] Focused native regressions, desktop/phone visual checks, README/public/model guides and capability metadata.
+- [x] Review R1: striker-crease inspection selects the keeper's return receipt before bat contact; stock/composed throw regressions cover scaled durations and contact fallback.
+- [x] Camera fixture batches allow 15 s while retaining all geometric assertions, avoiding implicit 5 s limits under concurrent rendering load.
+- [x] Additional Wide review check exposed a cropped sideways-moving keeper. Default striker-crease framing now includes keeper/batter/reference positions at collection; four-cast, stock/composed and scaled-duration projection regressions added.
+- [x] Final release gate passed with no remaining findings: 3,827 tests across 239 files, TypeScript, app/public builds and generated docs. All 273 browser checks validated with 12 focused closed-disclosure visibility reruns; six expanded-panel keyboard checks and Wide/throw checks pass in Chromium/Firefox/WebKit. 21 native camera regressions and 32 exact published v0.112.0 default comparisons pass; desktop/phone views visually checked.
+- [ ] Published web/CDN/npm consumer verification.
+- [ ] Direct main/dev sync, OSS/CDN and npm publication.
+
 ## Composable cricket plays — v0.112.0
 
 - [x] Public JSON component builders separate delivery style/legality, shot/finish, fielding, free-hit context and explicit candidate decisions; supported motion combinations validate strictly.
@@ -23,7 +37,7 @@
 ## Cricket authoring roadmap — ordered follow-ups
 
 - [x] Separate delivery legality/free-hit context, shot, fielding action and authored decision in composable JSON play builders; demonstrate no-ball/stumps and free-hit/catch combinations while preserving native contacts.
-- [ ] Add decision-focused camera presets and configurable framing over public camera APIs; foot landing and wicket/arrival shots, optional teaching overlays.
+- [x] Add decision-focused camera presets and configurable framing over public camera APIs; foot landing and wicket/arrival shots, optional teaching overlays.
 - [ ] Extend acceptance coverage for composed decisions, framing and continuous playback; keep innings/story/narration ledgers in consuming applications.
 
 ## Cricket attention, stance and accessible controls — v0.110.0
@@ -3184,7 +3198,7 @@ biggest gap was the head (sheets 2 and 12–16), so that came first.
 
 ## Test Coverage
 
-- 3782 tests passing across 237 files (`npm run build:libs`, then `npm run test:run -- --maxWorkers 2`); the per-area counts below date from 731 tests and are kept for history
+- 3827 tests passing across 239 files (`npm run build:libs`, then `npm run test:run -- --maxWorkers 2`); the per-area counts below date from 731 tests and are kept for history
 - Easing functions: 48 tests
 - Interpolators: 21 tests
 - Clock: 19 tests

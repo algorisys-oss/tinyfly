@@ -171,6 +171,15 @@ from `CRICKET_ACTIONS`. Results and arcs are authored teaching examples, not
 physics, automatic umpiring or a complete innings. Preserve exact contact keys
 and merge the selected camera tracks when exporting. See `docs/cricket.md`,
 `/examples/live-cricket-story` and `examples/headless-video/cricket-story.mjs`.
+Decision camera views are front-foot, striker-crease and bowler-crease.
+Use cricketCameraFraming(clip, view) for owned preset defaults;
+cricketCameraReview(clip, view) returns a physical event without seeking.
+cricketDecisionOverlay adds optional static crease references, without umpiring.
+Camera options pitch (0–89), distance (0.5–2000), fov (10–100 before zoom) and
+fixed-view target customize framing. Follow-ball rejects target and rotates its
+default offset with yaw; pitch/distance apply there too. Default 75-degree yaw
+retains the original offset. Export all camera tracks, including far for distant
+framing; the 3D resolver respects animated far. Keep motion/rulings untouched.
 For composed plays use `cricketPlay(field, options)` / `cricketPlayClip(options)`.
 Separate `delivery: { style, legality }`, `shot`, `finish`, `fielding`,
 `context: { freeHit }` and `decision: { dismissal }`. Omitted/null dismissal

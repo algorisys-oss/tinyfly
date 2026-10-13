@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.113.0](v0.113.0.md) | 2026-10-13 | Decision-focused cricket cameras, configurable framing and crease references |
 | [v0.112.0](v0.112.0.md) | 2026-10-13 | Composable cricket plays, independent legality/free-hit context and authored decisions |
 | [v0.111.0](v0.111.0.md) | 2026-10-13 | Cricket marking profiles, corrected restriction areas and setup overlays |
 | [v0.110.0](v0.110.0.md) | 2026-10-13 | Cricket gaze/stance, male cast, field labels, reachable controls, review zoom and rear-hair coverage |

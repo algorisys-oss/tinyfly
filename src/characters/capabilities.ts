@@ -30,6 +30,7 @@ import { PROP_COMMON_CONTROLS } from './props/rig'
 import { PROP_PRESETS } from './props/presets'
 import { PROP_COMMON_ACTIONS, PROP_BEAT_FIELDS } from './props/script'
 import { CRICKET_ACTIONS, CRICKET_CASTS, CRICKET_FORMATS, CRICKET_FIELDING_POSITIONS } from '../sports/cricket/cricket-types'
+import { CRICKET_DECISION_VIEWS } from '../sports/cricket/cricket-camera-review'
 import { CRICKET_VIEWS } from '../sports/cricket/cricket-camera'
 import { CRICKET_PLAY_COMPONENTS, CRICKET_PLAY_EXAMPLES } from '../sports/cricket/cricket-play'
 import { CRICKET_MARKING_PROFILES } from '../sports/cricket/cricket-markings'
@@ -63,7 +64,7 @@ const EASINGS = {
 } satisfies Record<BuiltInEasingType, true>
 
 export interface Capabilities {
-  sports: { cricket: { actions: Record<string, { name: string; summary: string }>; formats: typeof CRICKET_FORMATS; casts: typeof CRICKET_CASTS; fieldingPositions: typeof CRICKET_FIELDING_POSITIONS; markingProfiles: typeof CRICKET_MARKING_PROFILES; cameras: typeof CRICKET_VIEWS; playComponents: typeof CRICKET_PLAY_COMPONENTS; playExamples: typeof CRICKET_PLAY_EXAMPLES } }
+  sports: { cricket: { actions: Record<string, { name: string; summary: string }>; formats: typeof CRICKET_FORMATS; casts: typeof CRICKET_CASTS; fieldingPositions: typeof CRICKET_FIELDING_POSITIONS; markingProfiles: typeof CRICKET_MARKING_PROFILES; cameras: typeof CRICKET_VIEWS; decisionCameras: typeof CRICKET_DECISION_VIEWS; playComponents: typeof CRICKET_PLAY_COMPONENTS; playExamples: typeof CRICKET_PLAY_EXAMPLES } }
   version?: string
   timing: string
   easings: { named: string[]; parametric: Record<string, string> }
@@ -142,7 +143,7 @@ export function capabilities(version?: string, cast: Cast = {}): Capabilities {
   for (const [name, guide] of Object.entries(SCRIPT_ACTIONS)) actions[name] = { ...guide }
 
   return {
-    sports: { cricket: { actions: { ...CRICKET_ACTIONS }, formats: { ...CRICKET_FORMATS }, casts: { ...CRICKET_CASTS }, fieldingPositions: { ...CRICKET_FIELDING_POSITIONS }, markingProfiles: { ...CRICKET_MARKING_PROFILES }, cameras: { ...CRICKET_VIEWS }, playComponents: CRICKET_PLAY_COMPONENTS, playExamples: CRICKET_PLAY_EXAMPLES } },
+    sports: { cricket: { actions: { ...CRICKET_ACTIONS }, formats: { ...CRICKET_FORMATS }, casts: { ...CRICKET_CASTS }, fieldingPositions: { ...CRICKET_FIELDING_POSITIONS }, markingProfiles: { ...CRICKET_MARKING_PROFILES }, cameras: { ...CRICKET_VIEWS }, decisionCameras: CRICKET_DECISION_VIEWS, playComponents: CRICKET_PLAY_COMPONENTS, playExamples: CRICKET_PLAY_EXAMPLES } },
     ...(version ? { version } : {}),
     timing: 'JSON timelines and tracks are in milliseconds; the GSAP-style API (live.to, tf.timeline) takes seconds. Scene x grows right, y grows down, in px.',
     easings: {
@@ -482,6 +483,8 @@ export function capabilitiesMarkdown(version?: string, cast: Cast = {}): string 
     `Formats: ${list(Object.keys(c.sports.cricket.formats))}. Casts: ${list(Object.keys(c.sports.cricket.casts))}. Cameras: ${list(Object.keys(c.sports.cricket.cameras))}. Orbit turns 360° around the whole ground. \`cricketCameraTracks(clip, { view, zoom })\` supports 0.25–4× optical magnification (default 1) in every view.`,
     '',
     `Stock fielding labels (\`CRICKET_FIELDING_POSITIONS\`): ${Object.entries(c.sports.cricket.fieldingPositions).map(([id, name]) => `\`${id}\`: ${name}`).join(', ')}. Eleven fielders, two on-field batters and two umpires; nine batting teammates wait off-field. Mid-on is closer to the pitch; long-on is its deeper boundary alternative, not an extra stock fielder. For the right-handed striker, +x is off side and -x is on/leg side.`,
+    '',
+    'Decision review cameras: front-foot, striker-crease, bowler-crease. cricketCameraFraming returns owned defaults; cricketCameraReview returns a physical event without seeking. Optional cricketDecisionOverlay marks the crease reference. pitch 0–89, distance 0.5–2000, fov 10–100 before zoom, and fixed-view target customize framing. Ball-follow yaw rotates its default offset relative to 75 degrees; pitch/distance apply too. Export all camera tracks, including far for distant framing. These APIs never alter motion or rulings.',
     '',
     '## Camera shots (`cameraTracks(shots, { stage })`)',
     '',
