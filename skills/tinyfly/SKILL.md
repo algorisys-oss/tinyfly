@@ -171,6 +171,16 @@ from `CRICKET_ACTIONS`. Results and arcs are authored teaching examples, not
 physics, automatic umpiring or a complete innings. Preserve exact contact keys
 and merge the selected camera tracks when exporting. See `docs/cricket.md`,
 `/examples/live-cricket-story` and `examples/headless-video/cricket-story.mjs`.
+Choose `markingProfile: 'icc-men' | 'icc-women' | 'mcc'` explicitly when
+teaching field geography; default ICC men is independent of cast. These are
+marking dimensions, not full competition profiles. ODI/T20 ICC areas are
+wicket-centred capsules (27.43/23 m radii); Test/MCC have no restriction line.
+ICC popping-crease marks extend 7.5 m on either side; MCC minimum is 1.83 m.
+`cricketFieldingAreaContains(field, point)` returns true/false/null, with null
+for absent metadata/areas. `cricketFieldingPositions`/`cricketFieldingOverlay`
+provide owned static setup markers. Do not count null as outside or interpret
+point classification as legal whole-player placement. Markers stay at setup
+positions; append them to the scene and preserve them in exported JSON.
 `CRICKET_FIELDING_POSITIONS` maps the eleven stock fielding IDs to public labels;
 scene objects carry them in `name`. `fielder` is Extra cover. Keep eleven fielders,
 two on-field batters and two umpires; nine batting teammates wait off-field.

@@ -7,6 +7,21 @@ import type { SoftCartoonName } from '../../characters/soft-cartoon-cast'
 export type CricketFormat = 'test' | 'odi' | 't20'
 export type CricketRole = 'batter' | 'bowler' | 'keeper' | 'fielder' | 'umpire'
 export type CricketCast = 'adults' | 'men' | 'children' | 'mixed'
+export type CricketMarkingProfile = 'mcc' | 'icc-men' | 'icc-women'
+
+/** Ground-plane capsule: outward semicircles at the two middle stumps. */
+export interface CricketFieldingArea {
+  radius: number
+  centres: [Vec3, Vec3]
+}
+
+export interface CricketFieldingPosition {
+  id: string
+  name: string
+  position: Vec3
+  /** Reference point classification; null when no restriction area is defined. */
+  inside: boolean | null
+}
 export type CricketAction = 'bowling' | 'spin' | 'batting' | 'defend' | 'running' | 'four' | 'six' | 'catch' | 'fielding' | 'throw' | 'bowled' | 'lbw' | 'stumping' | 'run-out' | 'no-ball' | 'wide'
 
 export interface CricketFormatInfo {
@@ -51,6 +66,8 @@ export interface CricketFieldOptions {
   id?: string
   format?: CricketFormat
   cast?: CricketCast
+  /** Marking dimensions only; default ICC men. Independent of character cast. */
+  markingProfile?: CricketMarkingProfile
   /** Circular illustrative boundary in metres, default 64; venues choose their own boundaries. */
   boundaryRadius?: number
   battingColor?: string
@@ -62,6 +79,9 @@ export interface CricketField {
   format: CricketFormat
   boundaryRadius: number
   landmarks: Record<string, Vec3>
+  /** Present on newly built fields; optional for pre-profile/custom JSON fields. */
+  markingProfile?: CricketMarkingProfile
+  fieldingArea?: CricketFieldingArea | null
 }
 
 export interface CricketEvent {

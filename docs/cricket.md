@@ -34,10 +34,13 @@ See [getting started](getting-started.md) for the versioned CDN URLs.
 | API | Result |
 | --- | --- |
 | `cricketPlayer({ id, role, preset?, format?, height?, position?, color?, headwear?, appearance? })` | An owned JSON `character` scene object. Roles: batter, bowler, keeper, fielder, umpire. Presets include youngMan, youngWoman, childBoy, childGirl. |
-| `cricketField({ id?, format?, cast?, boundaryRadius?, battingColor?, fieldingColor? })` | `scene`, `format`, `boundaryRadius`, `landmarks`; stock fielders have human-readable JSON `name` labels. A 20.12 × 3.05 metre pitch, standard creases, wickets/bails, two bats, ball, boundary, eleven fielding players, two batters and two umpires. |
+| `cricketField({ id?, format?, cast?, boundaryRadius?, markingProfile?, battingColor?, fieldingColor? })` | `scene`, `format`, `boundaryRadius`, `landmarks`, `markingProfile`, `fieldingArea`; stock fielders have human-readable JSON `name` labels. A 20.12 × 3.05 metre pitch, standard creases, wickets/bails, two bats, ball, boundary, eleven fielding players, two batters and two umpires. |
+| `cricketFieldingAreaContains(field, point)` | `true` inside/on the ideal restriction-area capsule, `false` outside, `null` without region metadata. Uses x/z; point height is ignored. |
+| `cricketFieldingPositions(field)` | Owned setup-position data for stock fielders: `id`, `name`, `position`, `inside`. |
+| `cricketFieldingOverlay(field)` | Optional static JSON line markers, green inside/orange outside. Append to scene objects without changing motion. |
 | `cricketAction(field, { action?, duration?, every? })` | A JSON timeline, timed events/captions and declared example result. Does not modify the field. |
 | `cricketClip(options)` | Combines field and action; default T20, adult cast, pace bowling, 6000 ms. |
-| `cricketCameraTracks(clip, { view?, yaw?, every? })` | Ordinary scene camera tracks. Merge these with the action tracks. |
+| `cricketCameraTracks(clip, { view?, yaw?, zoom?, every? })` | Ordinary scene camera tracks. Merge these with the action tracks. |
 | `cricketEventAt(events, time)` | Most recent event at that time, including when seeking backward. |
 | `ballFlightPoint(options, time)`, `ballFlightTracks(options)` | Shared sampled arcs for other sports too. `from`, `to`, `arc`, `curve`, `start`, `end`, `target`; exact endpoints. |
 
@@ -92,6 +95,63 @@ actual delivery through its flight and bounce rather than turning to the batter
 before the ball arrives. Their native head poses aim at world targets,
 independently of their body yaw and camera selection. The live example's
 **Teams and field positions** disclosure uses the scene's JSON labels.
+
+## Field marking profiles
+
+`markingProfile` is `icc-men` (default), `icc-women` or `mcc`, independent of
+`cast`. `CRICKET_MARKING_PROFILES` exports their names, dimensions and summaries.
+These select field markings only; venue boundaries, player eligibility,
+powerplay phases and the rest of a competition's conditions require separate
+checks. A caller-selected small boundary remains an illustrative venue.
+
+| Profile | Popping crease painted on each side | ODI/T20 restriction area |
+| --- | --- | --- |
+| `icc-men` | 7.5 m | Wicket-centred semicircles of radius 27.43 m, joined by straight sides |
+| `icc-women` | 7.5 m | Wicket-centred semicircles of radius 23 m, joined by straight sides |
+| `mcc` | 1.83 m minimum | None prescribed by the base Laws |
+
+Test has no restriction-area line for any profile. All profiles retain the
+20.12 m pitch, the 1.22 m popping-crease offset and the return-crease positions.
+The painted popping crease is a finite visual mark; the actual crease is
+considered unlimited in length. The existing object ID `fielding-circle` is
+retained for the corrected capsule outline. For ICC men its extrema are
+x = ±27.43 m and z = ±37.49 m; the two arc centres are z = ±10.06 m.
+
+The dimensions follow MCC 2026 Law 7.3 and ICC October 2026 clauses 7.3/28.7.
+Sources: [MCC Laws](https://www.lords.org/getmedia/a4ef9f77-2a25-4f5b-a286-4601f08e6334/Laws-of-Cricket-2017-Code-4th-Edition-%282026%29_5.pdf),
+[ICC men Test](https://images.icc-cricket.com/image/upload/prd/a8114zro5tkioifz0jqg.pdf),
+[ODI](https://images.icc-cricket.com/image/upload/prd/bxkzkcyvfn6tvi70zh0w.pdf),
+[T20I](https://images.icc-cricket.com/image/upload/prd/bsxcho7ufe2pjban0wjp.pdf),
+[ICC women Test](https://images.icc-cricket.com/image/upload/prd/hbwwi78pugzpdwft0v4v.pdf),
+[ODI](https://images.icc-cricket.com/image/upload/prd/qunpw1kfh3ibxlz58jlw.pdf) and
+[T20I](https://images.icc-cricket.com/image/upload/prd/o3vhm0zw7pppoxpgopke.pdf).
+
+```ts
+import { cricketField, cricketFieldingAreaContains, cricketFieldingPositions,
+  cricketFieldingOverlay } from '@algorisys/tinyfly/sports'
+
+const field = cricketField({ format: 't20', markingProfile: 'icc-women' })
+const inside = cricketFieldingAreaContains(field, [0, 0, 30]) // true
+const setup = cricketFieldingPositions(field)
+const outside = setup.filter(player => player.inside === false)
+const sceneWithMarkers = { ...field.scene,
+  objects: [...field.scene.objects, ...cricketFieldingOverlay(field)] }
+```
+
+Classification uses the ideal capsule rather than a midpoint circle. Points on
+its boundary count as inside, with a 1 nm numeric tolerance. `null` distinguishes
+an absent area from an outside point, including older/custom JSON fields with
+no `fieldingArea` metadata. The query accepts world-ground x/z reference points;
+it does not judge whole-player/foot placement or whether a field is legal.
+The setup helpers read the stock players' unparented scene positions. Markers
+stay there during playback. Both ICC stock layouts have nine reference points
+inside and two outside (Fine leg and Third man), useful for a powerplay placement
+illustration; this is not automatic umpiring.
+
+Select **Markings** and **Setup field markers** in the example, then choose an
+overhead/whole-ground camera. Profile and overlay changes preserve current
+story time and playback; selected zoom is retained. Downloaded JSON includes
+the profile, analytic region metadata, corrected line and optional markers.
 
 ## Review zoom
 

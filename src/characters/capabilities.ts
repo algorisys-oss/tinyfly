@@ -31,6 +31,7 @@ import { PROP_PRESETS } from './props/presets'
 import { PROP_COMMON_ACTIONS, PROP_BEAT_FIELDS } from './props/script'
 import { CRICKET_ACTIONS, CRICKET_CASTS, CRICKET_FORMATS, CRICKET_FIELDING_POSITIONS } from '../sports/cricket/cricket-types'
 import { CRICKET_VIEWS } from '../sports/cricket/cricket-camera'
+import { CRICKET_MARKING_PROFILES } from '../sports/cricket/cricket-markings'
 
 /** Every prop preset, by the name of the function that makes it. */
 
@@ -61,7 +62,7 @@ const EASINGS = {
 } satisfies Record<BuiltInEasingType, true>
 
 export interface Capabilities {
-  sports: { cricket: { actions: Record<string, { name: string; summary: string }>; formats: typeof CRICKET_FORMATS; casts: typeof CRICKET_CASTS; fieldingPositions: typeof CRICKET_FIELDING_POSITIONS; cameras: typeof CRICKET_VIEWS } }
+  sports: { cricket: { actions: Record<string, { name: string; summary: string }>; formats: typeof CRICKET_FORMATS; casts: typeof CRICKET_CASTS; fieldingPositions: typeof CRICKET_FIELDING_POSITIONS; markingProfiles: typeof CRICKET_MARKING_PROFILES; cameras: typeof CRICKET_VIEWS } }
   version?: string
   timing: string
   easings: { named: string[]; parametric: Record<string, string> }
@@ -140,7 +141,7 @@ export function capabilities(version?: string, cast: Cast = {}): Capabilities {
   for (const [name, guide] of Object.entries(SCRIPT_ACTIONS)) actions[name] = { ...guide }
 
   return {
-    sports: { cricket: { actions: { ...CRICKET_ACTIONS }, formats: { ...CRICKET_FORMATS }, casts: { ...CRICKET_CASTS }, fieldingPositions: { ...CRICKET_FIELDING_POSITIONS }, cameras: { ...CRICKET_VIEWS } } },
+    sports: { cricket: { actions: { ...CRICKET_ACTIONS }, formats: { ...CRICKET_FORMATS }, casts: { ...CRICKET_CASTS }, fieldingPositions: { ...CRICKET_FIELDING_POSITIONS }, markingProfiles: { ...CRICKET_MARKING_PROFILES }, cameras: { ...CRICKET_VIEWS } } },
     ...(version ? { version } : {}),
     timing: 'JSON timelines and tracks are in milliseconds; the GSAP-style API (live.to, tf.timeline) takes seconds. Scene x grows right, y grows down, in px.',
     easings: {
@@ -467,6 +468,8 @@ export function capabilitiesMarkdown(version?: string, cast: Cast = {}): string 
     '## Cricket stories (`@algorisys/tinyfly/sports`)',
     '',
     '`cricketClip({ format, action, cast })` returns an organic-player scene, JSON tracks, timed events/captions and a declared result. `cricketField`, `cricketPlayer` and `cricketAction` compose separately; `cricketCameraTracks` adds camera tracks. These are authored tutorial plays, not physics or automatic umpiring. See docs/cricket.md.',
+    '',
+    `Marking profiles: ${list(Object.keys(c.sports.cricket.markingProfiles))}; default ICC men, independently of cast. Limited-over ICC profiles draw a wicket-centred capsule; Test/MCC have no restriction-area line. \`cricketFieldingAreaContains(field, point)\` returns true/false/null; \`cricketFieldingPositions\` and \`cricketFieldingOverlay\` provide owned setup markers, not umpiring decisions.`,
     '',
     ...Object.entries(c.sports.cricket.actions).map(([name, action]) => `- \`${name}\`: ${action.summary}`),
     '',

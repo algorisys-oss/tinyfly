@@ -1,3 +1,20 @@
+## Cricket field correctness and marking profiles — v0.111.0
+
+- [x] Verified MCC 2026 and ICC October 2026 men's/women's Test, ODI and T20 marking dimensions against primary documents.
+- [x] Correct wicket-centred capsule outline with straight sides; stable fielding-circle ID, independent boundary and no Test restriction area.
+- [x] Public ICC men/women/MCC marking profiles; correct popping-crease painted extent, unchanged offsets/return creases. Default ICC men, independent of cast; MCC has no restriction area under base Laws.
+- [x] Owned analytic area metadata, point classification and static setup-position/overlay APIs; null for unmarked/older fields, explicit reference-point semantics.
+- [x] Interactive profile picker and optional classified setup markers, preserving time/playback/zoom and included in JSON export.
+- [x] Geometry/profile/ownership/classification regressions and demo/standalone browser checks added; README, guides and model discovery updated.
+- [x] Release review passed without findings. All 3,782 tests in 237 files, application/library types, production/public builds and generated docs pass. All 171 cricket checks pass across Chromium, Firefox and WebKit; overhead comparison against installed v0.110.0, desktop/phone layouts, active playback/profile/overlay changes and downloaded JSON visually reviewed.
+- [ ] Merge main/dev directly, publish OSS/CDN v0.111.0 and npm, and verify the live example and fresh consumer.
+
+## Cricket authoring roadmap — ordered follow-ups
+
+- [ ] Separate delivery legality/free-hit context, shot, fielding action and authored decision in composable JSON play builders; demonstrate no-ball/stumps and free-hit/catch combinations while preserving native contacts.
+- [ ] Add decision-focused camera presets and configurable framing over public camera APIs; foot landing and wicket/arrival shots, optional teaching overlays.
+- [ ] Extend acceptance coverage for composed decisions, framing and continuous playback; keep innings/story/narration ledgers in consuming applications.
+
 ## Cricket attention, stance and accessible controls — v0.110.0
 
 - [x] Whole fielding side watches bowler → incoming delivery through flight/bounce → ball after contact/miss, using camera-independent native head poses.
@@ -3156,7 +3173,7 @@ biggest gap was the head (sheets 2 and 12–16), so that came first.
 
 ## Test Coverage
 
-- 3772 tests passing across 236 files (`npm run build:libs`, then `npm run test:run -- --maxWorkers 2`); the per-area counts below date from 731 tests and are kept for history
+- 3782 tests passing across 237 files (`npm run build:libs`, then `npm run test:run -- --maxWorkers 2`); the per-area counts below date from 731 tests and are kept for history
 - Easing functions: 48 tests
 - Interpolators: 21 tests
 - Clock: 19 tests

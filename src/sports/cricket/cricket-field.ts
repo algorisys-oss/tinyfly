@@ -5,6 +5,7 @@ import type { Vec3 } from '../../engine/math'
 import { finiteVector } from '../ball-flight'
 import { CRICKET_CASTS, CRICKET_FORMATS, CRICKET_FIELDING_POSITIONS, cricketChoice, type CricketField, type CricketFieldOptions, type CricketPlayer, type CricketPlayerOptions, type CricketRole } from './cricket-types'
 import { battingStance, turnToward } from './cricket-motion'
+import { CRICKET_MARKING_PROFILES, cricketFieldingOutline } from './cricket-markings'
 
 export const CRICKET_PITCH = Object.freeze({ length: 20.12, width: 3.05, poppingCrease: 1.22, returnCrease: 1.32, stumpHeight: .711, wicketWidth: .2286 })
 
@@ -57,11 +58,16 @@ function bat(id: string, scale: number): Object3D[] {
 export function cricketField(options: CricketFieldOptions = {}): CricketField {
   const format = cricketChoice(CRICKET_FORMATS, options.format ?? 't20', 'cricketField.format')
   const cast = cricketChoice(CRICKET_CASTS, options.cast ?? 'adults', 'cricketField.cast')
+  const markingProfile = cricketChoice(CRICKET_MARKING_PROFILES, options.markingProfile ?? 'icc-men', 'cricketField.markingProfile')
+  const markings = CRICKET_MARKING_PROFILES[markingProfile]
   const R = options.boundaryRadius ?? 64
   if (!Number.isFinite(R) || R < 24 || R > 250) throw new Error('cricketField: boundaryRadius must be between 24 and 250 metres')
   const id = options.id ?? 'cricket'
   if (!id.trim()) throw new Error('cricketField: id is required')
   const half = CRICKET_PITCH.length / 2
+  const fieldingArea = format !== 'test' && markings.fieldingRadius !== null
+    ? { radius: markings.fieldingRadius, centres: [[0, 0, -half], [0, 0, half]] as [Vec3, Vec3] }
+    : null
   const landmarks: Record<string, Vec3> = {
     'striker-wicket': [0, 0, half], 'bowler-wicket': [0, 0, -half],
     'striker-crease': [0, 0, half - CRICKET_PITCH.poppingCrease],
@@ -76,14 +82,14 @@ export function cricketField(options: CricketFieldOptions = {}): CricketField {
     { id: 'pitch', kind: 'mesh', layer: -2, geometry: { type: 'plane', size: [CRICKET_PITCH.width, CRICKET_PITCH.length] }, position: [0, .008, 0], material: 'pitch' },
     { id: 'boundary', kind: 'line', layer: -1, closed: true, width: .15, color: '#f8f2db', points: Array.from({ length: 96 }, (_, i) => [Math.cos(i * Math.PI / 48) * R, .022, Math.sin(i * Math.PI / 48) * R] as Vec3) },
   ]
-  if (format !== 'test') objects.push({ id: 'fielding-circle', kind: 'line', layer: -1, closed: true, width: .06, color: '#d6e4c8', points: Array.from({ length: 80 }, (_, i) => [Math.cos(i * Math.PI / 40) * 27.43, .018, Math.sin(i * Math.PI / 40) * 27.43] as Vec3) })
+  if (fieldingArea) objects.push({ id: 'fielding-circle', kind: 'line', layer: -1, closed: true, width: .06, color: '#d6e4c8', points: cricketFieldingOutline(fieldingArea) })
   for (const sign of [-1, 1]) {
     const end = sign > 0 ? 'striker' : 'bowler'
     const z = sign * half
     const crease = z - sign * CRICKET_PITCH.poppingCrease
     objects.push(...wicket(end, z))
     const line = (name: string, points: Vec3[]) => objects.push({ id: `${end}-${name}`, kind: 'line', layer: -1, color: '#fffdf0', width: .045, points })
-    line('popping-line', [[-1.83, .02, crease], [1.83, .02, crease]])
+    line('popping-line', [[-markings.poppingCreaseHalfWidth, .02, crease], [markings.poppingCreaseHalfWidth, .02, crease]])
     line('bowling-line', [[-1.32, .02, z], [1.32, .02, z]])
     for (const side of [-1, 1]) line(`return-line-${side < 0 ? 'left' : 'right'}`, [[side * 1.32, .02, crease], [side * 1.32, .02, z + sign * 2.5]])
   }
@@ -117,7 +123,7 @@ export function cricketField(options: CricketFieldOptions = {}): CricketField {
   objects.push({ id: 'ball', kind: 'mesh', position: [0, .075, 0], geometry: { type: 'sphere', radius: .075, segments: 12 }, material: 'ball' })
   objects.push({ id: 'lbw-guide', kind: 'group', visible: false }, { id: 'lbw-projection', kind: 'line', parent: 'lbw-guide', points: [[0, 0, 0], [0, 1, 0]], width: .04, color: '#e9ae38' })
   const outlined = (color: string) => ({ color, shading: 'toon' as const, outline: { color: '#69513a', width: .8 } })
-  return { format, boundaryRadius: R, landmarks, scene: {
+  return { format, boundaryRadius: R, landmarks, markingProfile, fieldingArea, scene: {
     id, formatVersion: 1, camera: 'camera', background: { top: '#c8e5ef', bottom: '#e9efcc' }, ground: 0, objects,
     materials: {
       grass: { color: '#81a95c', shading: 'unlit' }, square: { color: '#a6b76a', shading: 'unlit', doubleSided: true }, pitch: { color: '#ddbd85', shading: 'unlit', doubleSided: true },

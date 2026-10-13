@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.111.0](v0.111.0.md) | 2026-10-13 | Cricket marking profiles, corrected restriction areas and setup overlays |
 | [v0.110.0](v0.110.0.md) | 2026-10-13 | Cricket gaze/stance, male cast, field labels, reachable controls, review zoom and rear-hair coverage |
 | [v0.109.0](v0.109.0.md) | 2026-10-13 | Reusable cricket stories, organic adult/child players, 16 plays and a 360° ground camera |
 | [v0.108.0](v0.108.0.md) | 2026-10-13 | Organic story characters; adult/child presets, editable formal/casual clothing and corrected face/hand turns |

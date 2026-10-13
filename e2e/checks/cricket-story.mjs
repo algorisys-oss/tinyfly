@@ -87,6 +87,25 @@ export default {
         return { views, stable, persistent: document.querySelector('.crkt-zoom').value === '200' && document.querySelector('.crkt-zoom-label').value === '200%' }
       })
       for (const [key, expected] of Object.entries({ views: 8, stable: true, persistent: true })) results.push({ label: `${mode}: camera zoom ${key}`, ok: zoomChecks[key] === expected, detail: String(zoomChecks[key]) })
+      const markingChecks = await page.evaluate(() => {
+        const set = (selector, value) => { const node = document.querySelector(selector); node.value = value; node.dispatchEvent(new Event('change', { bubbles: true })) }
+        const time = document.querySelector('.crkt-time').value
+        const profiles = [...document.querySelector('.crkt-markings').options].map(option => option.value).join(',') === 'mcc,icc-men,icc-women'
+        set('.crkt-markings', 'mcc')
+        const mcc = document.querySelector('.crkt-area-review').disabled && document.querySelector('.crkt-marking-note').textContent.includes('MCC minimum')
+        set('.crkt-markings', 'icc-women')
+        const women = !document.querySelector('.crkt-area-review').disabled && document.querySelector('.crkt-marking-note').textContent.includes('23 m')
+        const preserved = document.querySelector('.crkt-time').value === time && !document.querySelector('.crkt-play').checked && document.querySelector('.crkt-zoom').value === '200'
+        const review = document.querySelector('.crkt-area-review'); review.checked = true; review.dispatchEvent(new Event('change', { bubbles: true }))
+        const markers = !document.querySelector('.crkt-area-note').hidden && document.querySelector('.crkt-area-note').textContent.includes('9 inside') && document.querySelector('.crkt-area-note').textContent.includes('2 outside (orange): Fine leg, Third man') && document.querySelector('.crkt-time').value === time
+        set('.crkt-format', 'test')
+        const test = document.querySelector('.crkt-area-review').disabled && document.querySelector('.crkt-area-note').hidden
+        set('.crkt-format', 't20')
+        const restored = document.querySelector('.crkt-area-review').checked && !document.querySelector('.crkt-area-review').disabled && !document.querySelector('.crkt-area-note').hidden
+        document.querySelector('[data-event="wicket"]').click()
+        return { profiles, mcc, women, preserved, markers, test, restored }
+      })
+      for (const [key, ok] of Object.entries(markingChecks)) results.push({ label: `${mode}: field markings ${key}`, ok })
       await page.locator('.crkt-teams summary').focus()
       await page.keyboard.press('Enter')
       results.push({ label: `${mode}: accessible teams guide uses eleven exported labels`, ok: await page.evaluate(async () => {
@@ -120,6 +139,7 @@ export default {
       const stream = await download.createReadStream(); const chunks = []; for await (const chunk of stream) chunks.push(chunk)
       const story = JSON.parse(Buffer.concat(chunks).toString())
       results.push({ label: `${mode}: JSON includes scene, action, camera and captions`, ok: story.scene.objects.filter(o => o.kind === 'character').length === 15 && story.timeline.tracks.some(t => t.target.endsWith('/camera')) && Boolean(story.timeline.captions.en.wicket) && story.scene.objects.find(o => o.id === 'fielder').name === 'Extra cover' && story.timeline.tracks.some(t => t.target.endsWith('/camera') && t.property === 'fov' && Math.abs(Math.tan(48 * Math.PI / 360) / Math.tan(t.keyframes[0].value * Math.PI / 360) - 2) < 1e-10) })
+      results.push({ label: `${mode}: JSON preserves profile, capsule and setup overlay`, ok: story.markingProfile === 'icc-women' && story.fieldingArea.radius === 23 && story.fieldingArea.centres[0][2] === -10.06 && story.fieldingArea.centres[1][2] === 10.06 && story.scene.objects.find(o => o.id === 'fielding-circle').points.length === 130 && story.scene.objects.filter(o => o.id.startsWith('fielding-review-')).length === 11 && story.scene.objects.find(o => o.id === 'fielding-review-third-man').name.includes('outside') })
       await page.evaluate(() => window.cricketCleanup())
     }
     await page.goto(`${base}/examples/live-cricket-story/full`)
