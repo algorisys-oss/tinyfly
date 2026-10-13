@@ -23,7 +23,7 @@ export default {
         const set = (selector, value, type = 'change') => { const node = document.querySelector(selector); node.value = value; node.dispatchEvent(new Event(type, { bubbles: true })) }
         const hash = () => { let h = 2166136261; for (const value of document.querySelector('.crkt-canvas').getContext('2d').getImageData(0, 0, 1280, 720).data) h = Math.imul(h ^ value, 16777619); return h >>> 0 }
         const actions = new Set(), views = new Set(), casts = new Set(), formats = new Set()
-        for (const option of document.querySelector('.crkt-action').options) {
+        for (const option of [...document.querySelector('.crkt-action').options].filter(option => !option.value.startsWith('play/'))) {
           set('.crkt-action', option.value)
           const phases = [1400, 1900, 2500, 2900, 3900, 4500, 5500].map(time => { set('.crkt-time', String(time), 'input'); return hash() })
           actions.add(phases.join(','))
@@ -140,6 +140,41 @@ export default {
       const story = JSON.parse(Buffer.concat(chunks).toString())
       results.push({ label: `${mode}: JSON includes scene, action, camera and captions`, ok: story.scene.objects.filter(o => o.kind === 'character').length === 15 && story.timeline.tracks.some(t => t.target.endsWith('/camera')) && Boolean(story.timeline.captions.en.wicket) && story.scene.objects.find(o => o.id === 'fielder').name === 'Extra cover' && story.timeline.tracks.some(t => t.target.endsWith('/camera') && t.property === 'fov' && Math.abs(Math.tan(48 * Math.PI / 360) / Math.tan(t.keyframes[0].value * Math.PI / 360) - 2) < 1e-10) })
       results.push({ label: `${mode}: JSON preserves profile, capsule and setup overlay`, ok: story.markingProfile === 'icc-women' && story.fieldingArea.radius === 23 && story.fieldingArea.centres[0][2] === -10.06 && story.fieldingArea.centres[1][2] === 10.06 && story.scene.objects.find(o => o.id === 'fielding-circle').points.length === 130 && story.scene.objects.filter(o => o.id.startsWith('fielding-review-')).length === 11 && story.scene.objects.find(o => o.id === 'fielding-review-third-man').name.includes('outside') })
+      const composedChecks = await page.evaluate(() => {
+        const set = (selector, value, type = 'change') => { const node = document.querySelector(selector); node.value = value; node.dispatchEvent(new Event(type, { bubbles: true })) }
+        set('.crkt-format', 't20')
+        const group = document.querySelector('.crkt-action optgroup[label="Composed plays"]')
+        const examples = group.children.length === 5
+        let verdicts = true, physical = true
+        for (const [id, event, label, count] of [
+          ['no-ball-stumps', 'wicket', 'Stumps hit', '0 runs · 1 extras · 0 wickets'],
+          ['free-hit-catch', 'catch', 'Catch controlled', '0 runs · 0 extras · 0 wickets'],
+          ['no-ball-four', 'boundary', 'Four runs', '4 runs · 1 extras · 0 wickets'],
+          ['free-hit-run-out', 'wicket', 'Wicket broken', '0 runs · 0 extras · 1 wickets'],
+          ['free-hit-wide', 'keeper', 'Keeper gathers', '0 runs · 1 extras · 0 wickets'],
+        ]) {
+          set('.crkt-action', `play/${id}`)
+          document.querySelector(`[data-event="${event}"]`).click()
+          physical &&= document.querySelector('.crkt-caption strong').textContent === label
+          document.querySelector('[data-event="result"]').click()
+          verdicts &&= document.querySelector('.crkt-caption strong').textContent === (id === 'free-hit-run-out' ? 'Out' : 'Not out') && document.querySelector('.crkt-result').textContent.includes(count)
+        }
+        const carry = document.querySelector('.crkt-result').textContent.includes('free hit next')
+        set('.crkt-action', 'play/free-hit-catch'); set('.crkt-format', 'test')
+        const test = document.querySelector('.crkt-action').value === 'play/no-ball-stumps' && [...group.children].filter(option => option.disabled).length === 3
+        set('.crkt-format', 'odi')
+        const restored = [...group.children].every(option => !option.disabled)
+        set('.crkt-action', 'play/free-hit-catch'); document.querySelector('[data-event="result"]').click()
+        set('.crkt-markings', 'icc-men')
+        const preserved = document.querySelector('.crkt-time').value === '5700' && document.querySelector('.crkt-zoom').value === '200' && document.querySelector('.crkt-caption strong').textContent === 'Not out'
+        return { examples, physical, verdicts, carry, test, restored, preserved }
+      })
+      for (const [key, ok] of Object.entries(composedChecks)) results.push({ label: `${mode}: composed plays ${key}`, ok })
+      const [composedDownload] = await Promise.all([page.waitForEvent('download'), page.locator('.crkt-export').evaluate(node => node.click())])
+      const composedStream = await composedDownload.createReadStream(), composedChunks = []
+      for await (const chunk of composedStream) composedChunks.push(chunk)
+      const composedStory = JSON.parse(Buffer.concat(composedChunks).toString())
+      results.push({ label: `${mode}: composed JSON preserves context, candidate and not-out ruling`, ok: composedStory.play.delivery.legality === 'legal' && composedStory.play.context.freeHit && composedStory.play.decision.dismissal === 'caught' && composedStory.ruling.dismissal === null && composedStory.ruling.reason === 'free-hit' && composedStory.result.wickets === 0 && !composedStory.result.freeHitNext && composedStory.timeline.captions.en.result.includes('Not out') && composedStory.timeline.tracks.some(t => t.target.endsWith('/camera')) && composedDownload.suggestedFilename() === 'cricket-odi-play-free-hit-catch.json' })
       await page.evaluate(() => window.cricketCleanup())
     }
     await page.goto(`${base}/examples/live-cricket-story/full`)

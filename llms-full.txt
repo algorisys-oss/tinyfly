@@ -58,6 +58,8 @@ See [getting started](getting-started.md) for the versioned CDN URLs.
 | `cricketFieldingPositions(field)` | Owned setup-position data for stock fielders: `id`, `name`, `position`, `inside`. |
 | `cricketFieldingOverlay(field)` | Optional static JSON line markers, green inside/orange outside. Append to scene objects without changing motion. |
 | `cricketAction(field, { action?, duration?, every? })` | A JSON timeline, timed events/captions and declared example result. Does not modify the field. |
+| `cricketPlay(field, options)` | Composes independent delivery, shot, finish, fielding, context and candidate decision; returns `play`, `ruling`, timeline, events and result. |
+| `cricketPlayClip(options)` | Builds a field and composed play together. |
 | `cricketClip(options)` | Combines field and action; default T20, adult cast, pace bowling, 6000 ms. |
 | `cricketCameraTracks(clip, { view?, yaw?, zoom?, every? })` | Ordinary scene camera tracks. Merge these with the action tracks. |
 | `cricketEventAt(events, time)` | Most recent event at that time, including when seeking backward. |
@@ -222,6 +224,87 @@ spacing without evaluating actor tracks.
 
 Development full-page previews load the local browser API and scene add-ons;
 production previews and copied HTML retain the versioned CDN bundles.
+
+## Composed plays and authored decisions
+
+Use `cricketPlay` on an existing field or `cricketPlayClip` for a new scene.
+Delivery legality is authored, not calculated from foot geometry. No-ball uses
+the stock front-foot overstep, while shots, catches and wicket breaks retain
+their native contact keys. A candidate dismissal is separate from that motion;
+omitted/null `decision.dismissal` means no dismissal.
+
+```ts
+import { cricketPlayClip } from '@algorisys/tinyfly/sports'
+
+const first = cricketPlayClip({
+  format: 't20', delivery: { style: 'pace', legality: 'no-ball' },
+  shot: 'miss', finish: 'stumps', decision: { dismissal: 'bowled' },
+})
+// Bails fall, but ruling is { dismissal: null, reason: 'no-ball' }.
+// result: 0 bat runs, 1 extra, 0 wickets, legalBall false, freeHitNext true.
+const next = cricketPlayClip({
+  format: 't20', delivery: { style: 'spin', legality: 'legal' },
+  context: { freeHit: first.result.freeHitNext },
+  shot: 'drive', fielding: 'catch', decision: { dismissal: 'caught' },
+})
+// Catch stays visible. Not out; this legal delivery consumes the free hit.
+// Store/advance innings, score, strike and lesson state in your application.
+const again = JSON.stringify(next) // normalized play + ruling + all motion/events
+```
+
+`play` contains owned, normalized input. `action` identifies the compiled stock
+motion recipe; it does not declare the composed verdict. `ruling` holds the
+accepted dismissal or null and its reason. `result.dismissal` exists only for an
+accepted dismissal. Decision changes preserve the ball/actor motion, apart from
+the umpire signal. Physical catch, pad contact and wicket-break captions stay
+separate from the final **Out** / **Not out** decision.
+
+| Component | Choices/default |
+| --- | --- |
+| `delivery.style` | `pace` (default), `spin` |
+| `delivery.legality` | `legal` (default), `no-ball`, `wide`; select the final call, with no-ball taking precedence over Wide |
+| `shot` | `miss` (default), `drive`, `defend` |
+| `finish` | `none` (default), `single`, `four`, `six`, `stumps`, `pad` |
+| `fielding` | `none`, `keeper`, `catch`, `gather`, `throw`, `stumping`, `run-out`; defaults below |
+| `context.freeHit` | Boolean, default false; ODI/T20 only |
+| `decision.dismissal` | `caught`, `bowled`, `lbw`, `stumped`, `run-out`, null (default); candidate must match the physical recipe |
+| `duration`, `every` | Same scaling and contact-preserving sampling as `cricketAction` |
+
+Supported physical combinations:
+
+| Shot | Finish | Fielding (default when omitted) |
+| --- | --- | --- |
+| `miss` | `none` | `keeper` (default) or explicit `stumping` |
+| `miss` | `stumps` / `pad` | `none` (default) |
+| `defend` | `none` | `none` (default) |
+| `drive` | `none` | `gather` (default), `catch`, `throw`, `run-out` |
+| `drive` | `single` | `gather` (default) |
+| `drive` | `four` / `six` | `none` (default) |
+
+Other combinations throw rather than silently substitute a different play.
+Wide currently supports only an untouched miss gathered by the keeper; Wide
+stumping/run-out and additional Wide runs require future motion recipes.
+`single`/`four`/`six` score 1/4/6 bat runs; an illegal delivery adds one extra.
+Run-out depicts an attempted, uncompleted run and scores no completed runs.
+Byes, leg-byes, penalties and other dismissal modes are outside this subset.
+
+No-ball/free-hit context suppresses caught, bowled, LBW and stumped candidates,
+while the supported run-out candidate remains available. A no-ball arms the
+next free hit in ODI/T20; an existing free hit carries over a Wide/no-ball and
+is consumed by a legal delivery. Test has no automatic free hit and rejects an
+explicit current free-hit context. These conditions follow clauses 21.12,
+21.17–21.18 in [ICC ODI October 2026](https://images.icc-cricket.com/image/upload/prd/bxkzkcyvfn6tvi70zh0w.pdf)
+and [ICC T20I October 2026](https://images.icc-cricket.com/image/upload/prd/bsxcho7ufe2pjban0wjp.pdf).
+They cover the supported authored examples, not a complete umpiring engine.
+
+`CRICKET_PLAY_COMPONENTS` and `CRICKET_PLAY_EXAMPLES` provide JSON discovery;
+the latter has five frozen examples. In the live example's **Play** selector,
+choose the **Composed plays** group: no-ball/stumps, free-hit/catch,
+no-ball/four, free-hit/run-out or free-hit/Wide. Free-hit choices are disabled
+in Test; switching to Test from one selects no-ball/stumps. Downloads include
+normalized components, ruling, result, scene, camera tracks and captions.
+The original sixteen `cricketAction`/`cricketClip` presets retain their original
+motion, result shape and captions.
 
 ## Teaching scope
 
@@ -450,7 +533,7 @@ with a GSAP-style call (durations are in seconds here):
 ```html
 <div class="box" style="width:60px;height:60px;background:#4a9eff"></div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.111.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.112.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -658,7 +741,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.111.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.112.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -2573,7 +2656,7 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.111.0/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.112.0/cdn/tinyfly-player.iife.js`.
 
 ---
 
@@ -6926,7 +7009,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.111.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.112.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed
@@ -8179,6 +8262,18 @@ demonstrations, not collision-based umpiring or an innings simulator. Do not
 infer new outcomes from the illustrative arcs. See `docs/cricket.md` and
 `examples/headless-video/cricket-story.mjs`; `/examples/live-cricket-story`
 has event seeking and downloadable scene/action/camera JSON.
+For composed plays use `cricketPlay(field, options)` / `cricketPlayClip(options)`.
+Separate `delivery: { style, legality }`, `shot`, `finish`, `fielding`,
+`context: { freeHit }` and `decision: { dismissal }`. Omitted/null dismissal
+means no dismissal; never infer one from motion. Supported candidates are
+caught/bowled/lbw/stumped/run-out; no-ball/free-hit protects the first four,
+while run-out remains possible. Current illegal free hits carry forward, legal
+ones consume context; Test rejects current free-hit context. Retain `play`,
+`ruling`, `result`, contact keys and camera tracks in JSON. Keep innings/score/
+strike/lesson state in the consuming app. `CRICKET_PLAY_COMPONENTS` discovers
+choices; `CRICKET_PLAY_EXAMPLES` provides five examples. Unsupported physical
+combinations throw; Wide currently only supports miss/keeper/no finish.
+See docs/cricket.md for the combination table. Original sixteen presets remain.
 Choose `markingProfile: 'icc-men' | 'icc-women' | 'mcc'` explicitly when
 teaching field geography; default ICC men is independent of cast. These are
 marking dimensions, not full competition profiles. ODI/T20 ICC areas are
@@ -8494,7 +8589,7 @@ path for all of that:
 </figure>
 
 <!-- once, anywhere on the page (a site-wide footer is fine) -->
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.111.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.112.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 Every `[data-tinyfly-embed]` mounts when the page is ready, with no per-post
@@ -9766,8 +9861,8 @@ On a page with no build step, load the maps add-on after the browser bundle; it
 adds to the same `tinyfly` global:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.111.0/cdn/tinyfly.iife.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.111.0/cdn/tinyfly-maps.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.112.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.112.0/cdn/tinyfly-maps.iife.js"></script>
 ```
 
 It is a separate script because the offline world map it carries adds about
@@ -14945,7 +15040,7 @@ magnet.addEventListener('pointerleave', () => {
 
 <!-- capabilities: generated from the library -->
 
-# tinyfly capabilities (v0.111.0)
+# tinyfly capabilities (v0.112.0)
 
 Generated from the library itself: every name below is accepted, and names not listed are rejected (beat scripts, code panels and `checkTracks` say which name was probably meant).
 
@@ -15365,6 +15460,20 @@ Edits:
 `cricketClip({ format, action, cast })` returns an organic-player scene, JSON tracks, timed events/captions and a declared result. `cricketField`, `cricketPlayer` and `cricketAction` compose separately; `cricketCameraTracks` adds camera tracks. These are authored tutorial plays, not physics or automatic umpiring. See docs/cricket.md.
 
 Marking profiles: `mcc`, `icc-men`, `icc-women`; default ICC men, independently of cast. Limited-over ICC profiles draw a wicket-centred capsule; Test/MCC have no restriction-area line. `cricketFieldingAreaContains(field, point)` returns true/false/null; `cricketFieldingPositions` and `cricketFieldingOverlay` provide owned setup markers, not umpiring decisions.
+
+`cricketPlay(field, options)` / `cricketPlayClip(options)` independently author delivery style/legality, shot, finish, fielding, current free-hit context and candidate dismissal. Omitted dismissal means no dismissal. Unsupported motion combinations throw; no-ball/free-hit protection changes result/signals without removing physical catches or wicket breaks. Run-out remains available. Illegal free hits carry forward; legal ones consume context. Test rejects free-hit context. Keep innings/score/strike in the consuming app.
+
+Play deliveryStyles: `pace`, `spin`
+Play deliveryLegalities: `legal`, `no-ball`, `wide`
+Play shots: `miss`, `drive`, `defend`
+Play finishes: `none`, `single`, `four`, `six`, `stumps`, `pad`
+Play fielding: `none`, `keeper`, `catch`, `gather`, `throw`, `stumping`, `run-out`
+Play dismissals: `caught`, `bowled`, `lbw`, `stumped`, `run-out`
+- Composed example `no-ball-stumps`: No-ball + stumps hit
+- Composed example `free-hit-catch`: Free hit + catch
+- Composed example `no-ball-four`: No-ball + four
+- Composed example `free-hit-run-out`: Free hit + run-out
+- Composed example `free-hit-wide`: Free hit + Wide
 
 - `bowling`: Run up, deliver with a straight arm, bounce and follow through.
 - `spin`: A shorter approach and a curved illustrative flight before the bounce.

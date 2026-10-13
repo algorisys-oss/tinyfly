@@ -1,3 +1,13 @@
+## Composable cricket plays — v0.112.0
+
+- [x] Public JSON component builders separate delivery style/legality, shot/finish, fielding, free-hit context and explicit candidate decisions; supported motion combinations validate strictly.
+- [x] No-ball/free-hit protection preserves physical catch/pad/wicket contacts while changing the result, final captions and umpire signal. Run-out remains available; illegal free hits carry forward, legal ones consume context. Test rejects free-hit context.
+- [x] Five interactive combinations in the Play selector; Test disables free-hit choices. Export includes normalized play/ruling and scene/action/camera/captions. Original sixteen presets remain compatible.
+- [x] README, public/model guides and capability discovery updated; innings/scoring/strike/lesson ledgers remain in consuming applications.
+- [x] Give the existing 60-render organic contour determinism test a local 15 s timeout for concurrent suite runs; retain all pose/turn and perspective assertions. All 3,800 tests pass across 238 files with two workers.
+- [x] Release gate passed: all 3,800 tests in 238 files, types, public/production builds and generated docs; all 219 checks across Chromium/Firefox/WebKit. Desktop/phone, exact copied HTML/bundles and composed JSON visually verified. All 192 old format/action/cast clips match the base compiler exactly; installed v0.111.0 sparse/scaled comparisons also match.
+- [ ] Direct main/dev merge, OSS/CDN and npm publication, live verification.
+
 ## Cricket field correctness and marking profiles — v0.111.0
 
 - [x] Verified MCC 2026 and ICC October 2026 men's/women's Test, ODI and T20 marking dimensions against primary documents.
@@ -11,7 +21,7 @@
 
 ## Cricket authoring roadmap — ordered follow-ups
 
-- [ ] Separate delivery legality/free-hit context, shot, fielding action and authored decision in composable JSON play builders; demonstrate no-ball/stumps and free-hit/catch combinations while preserving native contacts.
+- [x] Separate delivery legality/free-hit context, shot, fielding action and authored decision in composable JSON play builders; demonstrate no-ball/stumps and free-hit/catch combinations while preserving native contacts.
 - [ ] Add decision-focused camera presets and configurable framing over public camera APIs; foot landing and wicket/arrival shots, optional teaching overlays.
 - [ ] Extend acceptance coverage for composed decisions, framing and continuous playback; keep innings/story/narration ledgers in consuming applications.
 

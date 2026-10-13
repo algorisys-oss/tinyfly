@@ -227,6 +227,7 @@ describe('organic character anatomy and material', () => {
     expect(dot).toBeGreaterThan(.9)
   })
 
+  // Sixty native canvas renders need headroom when other test files run concurrently.
   it('produces deterministic filled contours through turns, bent limbs and native perspective', () => {
     for (const turn of [0, .5, 1, 2, -1, -.5]) for (const name of ['rest', 'cheer', 'point', 'think', 'sit'] as const) {
       const who = softCartoonCharacter('youngWoman', { height: 300 })
@@ -237,7 +238,7 @@ describe('organic character anatomy and material', () => {
     }
     const j = characterJointsInView(character({ figure: 'organic' }), humanPose({ turn: .5 }), { toView: p => p, toScreen: ([x, y]) => ({ x: x * 100 + 250, y: 350 - y * 100 }) }, { height: 3 })
     expect(j.bodyContours!.spine.outline.every(p => Number.isFinite(p.x) && Number.isFinite(p.y))).toBe(true)
-  })
+  }, 15000)
 
   it('clips deterministic shading inside filled shapes and leaves legacy modes opt-in', () => {
     const flat = character({ figure: 'organic', height: 300, body: { shading: { mode: 'none' } } })

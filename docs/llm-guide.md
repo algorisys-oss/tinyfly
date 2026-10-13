@@ -100,6 +100,18 @@ demonstrations, not collision-based umpiring or an innings simulator. Do not
 infer new outcomes from the illustrative arcs. See `docs/cricket.md` and
 `examples/headless-video/cricket-story.mjs`; `/examples/live-cricket-story`
 has event seeking and downloadable scene/action/camera JSON.
+For composed plays use `cricketPlay(field, options)` / `cricketPlayClip(options)`.
+Separate `delivery: { style, legality }`, `shot`, `finish`, `fielding`,
+`context: { freeHit }` and `decision: { dismissal }`. Omitted/null dismissal
+means no dismissal; never infer one from motion. Supported candidates are
+caught/bowled/lbw/stumped/run-out; no-ball/free-hit protects the first four,
+while run-out remains possible. Current illegal free hits carry forward, legal
+ones consume context; Test rejects current free-hit context. Retain `play`,
+`ruling`, `result`, contact keys and camera tracks in JSON. Keep innings/score/
+strike/lesson state in the consuming app. `CRICKET_PLAY_COMPONENTS` discovers
+choices; `CRICKET_PLAY_EXAMPLES` provides five examples. Unsupported physical
+combinations throw; Wide currently only supports miss/keeper/no finish.
+See docs/cricket.md for the combination table. Original sixteen presets remain.
 Choose `markingProfile: 'icc-men' | 'icc-women' | 'mcc'` explicitly when
 teaching field geography; default ICC men is independent of cast. These are
 marking dimensions, not full competition profiles. ODI/T20 ICC areas are

@@ -92,13 +92,15 @@ export interface CricketEvent {
   caption: string
 }
 
+export type CricketDismissal = 'caught' | 'bowled' | 'lbw' | 'stumped' | 'run-out'
+
 export interface CricketResult {
   runs: number
   extras: number
   wickets: number
   legalBall: boolean
   freeHitNext: boolean
-  dismissal?: 'caught' | 'bowled' | 'lbw' | 'stumped' | 'run-out'
+  dismissal?: CricketDismissal
 }
 
 export interface CricketActionOptions {
@@ -143,3 +145,43 @@ export function cricketChoice<T extends string>(choices: Readonly<Record<T, unkn
   if (!Object.prototype.hasOwnProperty.call(choices, value)) throw new Error(`${name}: unknown choice '${value}'`)
   return value
 }
+
+/** Components supported by the deterministic stock motion compiler. */
+export type CricketShot = 'miss' | 'drive' | 'defend'
+export type CricketFinish = 'none' | 'single' | 'four' | 'six' | 'stumps' | 'pad'
+export type CricketFielding = 'none' | 'keeper' | 'catch' | 'gather' | 'throw' | 'stumping' | 'run-out'
+export interface CricketDelivery {
+  style: 'pace' | 'spin'
+  /** Authored legality; no-ball uses the stock front-foot overstep motion. */
+  legality: 'legal' | 'no-ball' | 'wide'
+}
+export interface CricketPlayOptions {
+  delivery?: Partial<CricketDelivery>
+  shot?: CricketShot
+  finish?: CricketFinish
+  /** Defaults to keeper for a miss, gather for a drive, none for a block/boundary/stumps/pad. */
+  fielding?: CricketFielding
+  context?: { freeHit?: boolean }
+  /** Explicit authored candidate; omitted/null means no dismissal. Geometry does not adjudicate. */
+  decision?: { dismissal?: CricketDismissal | null }
+  duration?: number
+  every?: number
+}
+export interface CricketPlay {
+  delivery: CricketDelivery
+  shot: CricketShot
+  finish: CricketFinish
+  fielding: CricketFielding
+  context: { freeHit: boolean }
+  decision: { dismissal: CricketDismissal | null }
+}
+export interface CricketRuling {
+  dismissal: CricketDismissal | null
+  reason: 'no-dismissal' | 'dismissal' | 'no-ball' | 'free-hit' | 'wide'
+}
+export interface CricketPlayResult extends CricketActionResult {
+  /** Normalized, owned JSON input; action names the compiled stock motion recipe. */
+  play: CricketPlay
+  ruling: CricketRuling
+}
+export interface CricketPlayClip extends CricketField, CricketPlayResult {}

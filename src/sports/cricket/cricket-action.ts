@@ -6,7 +6,7 @@ import { HAND_SHAPES } from '../../characters/hands/hand-rig'
 import type { Pose } from '../../characters/rig/body-plan'
 import { ballFlightPoint, sampleTimes } from '../ball-flight'
 import { CRICKET_PITCH, cricketField } from './cricket-field'
-import { CRICKET_ACTIONS, CRICKET_FORMATS, cricketChoice, type CricketAction, type CricketActionOptions, type CricketActionResult, type CricketClip, type CricketEvent, type CricketField, type CricketFieldOptions, type CricketResult } from './cricket-types'
+import { CRICKET_ACTIONS, CRICKET_FORMATS, cricketChoice, type CricketAction, type CricketActionOptions, type CricketActionResult, type CricketClip, type CricketEvent, type CricketField, type CricketFieldOptions, type CricketResult, type CricketDelivery, type CricketRuling } from './cricket-types'
 import { add, alignCricketEquipment, batSweetSpot, battingStance, blendPose, cricketActor, cricketJoint, cricketLook, cricketPalm, cricketReach, gripBat, poseSequence, progress, restSample, smooth, turnNear, turnToward, type CricketActor, type CricketSample } from './cricket-motion'
 
 const RELEASE = 1900
@@ -73,8 +73,19 @@ function outcome(action: CricketActionResult['action'], format: CricketField['fo
 
 /** Compile an authored play on a cricketField into JSON tracks and narration events. No renderer or clock. */
 export function cricketAction(field: CricketField, options: CricketActionOptions = {}): CricketActionResult {
+  return compileCricketMotion(field, options)
+}
+
+/** Internal compiler context. Public consumers author components with cricketPlay. */
+export interface CricketMotionContext { delivery: CricketDelivery; result: CricketResult; ruling: CricketRuling; freeHit: boolean }
+
+export function compileCricketMotion(field: CricketField, options: CricketActionOptions, composed?: CricketMotionContext): CricketActionResult {
   const action = cricketChoice(CRICKET_ACTIONS, options.action ?? 'bowling', 'cricketAction.action')
+  const noBall = composed ? composed.delivery.legality === 'no-ball' : action === 'no-ball'
+  const wide = composed ? composed.delivery.legality === 'wide' : action === 'wide'
+  const spin = composed ? composed.delivery.style === 'spin' : action === 'spin'
   cricketChoice(CRICKET_FORMATS, field.format, 'cricketAction.format')
+  const result = composed?.result ?? outcome(action, field.format)
   const duration = options.duration ?? 6000
   if (!Number.isFinite(duration) || duration < 4000 || duration > 60000) throw new Error('cricketAction: duration must be between 4000 and 60000 ms')
   const scene = field.scene.id
@@ -96,7 +107,7 @@ export function cricketAction(field: CricketField, options: CricketActionOptions
   const fielded = ['catch', 'fielding', 'throw', 'run-out', 'batting', 'running'].includes(action)
   const running = action === 'running' || action === 'run-out'
   const cache = new Map<string, Map<number, CricketSample>>()
-  const bowlEnd: Vec3 = [base('bowler').position[0], 0, action === 'no-ball' ? -8.25 : -9.55]
+  const bowlEnd: Vec3 = [base('bowler').position[0], 0, noBall ? -8.25 : -9.55]
   const gatherPosition: Vec3 = action === 'fielding' ? [10.5, 0, 2] : [9, 0, -1]
   const fieldStart = base('fielder').position
 
@@ -123,7 +134,7 @@ export function cricketAction(field: CricketField, options: CricketActionOptions
           [3000, { turn: 0, 'head.turn': 10 }], [6000, { turn: 0, 'head.turn': 10 }],
         ])
       }
-      if (action === 'spin') sample.pose = { ...sample.pose, 'arm.right.spread': 18, 'head.tilt': -5 }
+      if (spin) sample.pose = { ...sample.pose, 'arm.right.spread': 18, 'head.tilt': -5 }
       for (const [key, value] of Object.entries(time < RELEASE ? HAND_SHAPES.hold : HAND_SHAPES.open)) sample.pose[`hand.right.${key}`] = value
     } else if (id === 'batter' || id === 'non-striker') {
       const H = h(id)
@@ -164,7 +175,7 @@ export function cricketAction(field: CricketField, options: CricketActionOptions
       }
     } else if (id === 'keeper') {
       sample.pose = { ...sample.pose, turn: turnToward(sample.position, base('bowler').position, 2), lean: 20, 'leg.left.swing': 22, 'leg.right.swing': 22, 'leg.left.knee': 50, 'leg.right.knee': 50 }
-      if (action === 'wide') sample.position[0] = 2.15 * smooth(progress(time, 2900, 3500))
+      if (wide) sample.position[0] = 2.15 * smooth(progress(time, 2900, 3500))
       if (action === 'stumping') sample.position[2] -= .85 * smooth(progress(time, 3400, 3900))
       const target = toward(sample, h(id) * .27, h(id) * .44)
       if (action === 'stumping' && time >= 3500) {
@@ -202,7 +213,28 @@ export function cricketAction(field: CricketField, options: CricketActionOptions
         signal = { ...signal, 'arm.right.swing': 165, 'arm.right.elbow': 0 }
         for (const [key, value] of Object.entries(HAND_SHAPES.point)) signal[`hand.right.${key}`] = value
       }
-      sample.pose = blendPose(sample.pose, signal, smooth(progress(time, action === 'no-ball' ? RELEASE : action === 'wide' ? 3100 : decision, (action === 'no-ball' ? RELEASE : action === 'wide' ? 3100 : decision) + 350)))
+      if (composed) {
+        const rest: Pose = { ...HUMAN_REST }
+        const keys: [number, Pose][] = [[0, rest]]
+        let prior = rest
+        if (noBall || wide) {
+          const callAt = noBall ? RELEASE : 3100
+          prior = noBall ? { ...rest, 'arm.right.spread': 90, 'arm.right.elbow': 0 } : { ...rest, 'arm.right.spread': 90, 'arm.left.spread': 90, 'arm.right.elbow': 0, 'arm.left.elbow': 0 }
+          keys.push([callAt, rest], [callAt + 350, prior])
+        }
+        if (result.wickets || action === 'four' || action === 'six') {
+          const at = result.wickets ? decision : 5100
+          let final = signal
+          if (result.wickets) {
+            final = { ...rest, 'arm.right.swing': 165, 'arm.right.elbow': 0 }
+            for (const [key, value] of Object.entries(HAND_SHAPES.point)) final[`hand.right.${key}`] = value
+          }
+          keys.push([at, prior], [at + 350, final])
+        }
+        sample.pose = poseSequence(time, keys)
+      } else {
+        sample.pose = blendPose(sample.pose, signal, smooth(progress(time, action === 'no-ball' ? RELEASE : action === 'wide' ? 3100 : decision, (action === 'no-ball' ? RELEASE : action === 'wide' ? 3100 : decision) + 350)))
+      }
     }
     cached.set(time, sample)
     return sample
@@ -211,7 +243,7 @@ export function cricketAction(field: CricketField, options: CricketActionOptions
   const palmAt = (id: string, time: number) => cricketPalm(actors[id], sampleActor(id, time), 'right')
   const contact = hits ? batSweetSpot(sampleActor('batter', CONTACT).bat!) : action === 'lbw' ? vec3.lerp(cricketJoint(actors.batter, sampleActor('batter', CONTACT), 'leg.right', 1), cricketJoint(actors.batter, sampleActor('batter', CONTACT), 'leg.right', 2), .6) : [keeperDelivery ? CRICKET_PITCH.wicketWidth / 2 + .075 + .15 : 0, .45, 9.25] as Vec3
   const release = palmAt('bowler', RELEASE)
-  const bounce: Vec3 = [action === 'wide' ? .85 : action === 'spin' ? -.35 : action === 'lbw' ? contact[0] * .6 : 0, .075, 3.9]
+  const bounce: Vec3 = [wide ? .85 : spin ? -.35 : action === 'lbw' ? contact[0] * .6 : 0, .075, 3.9]
   const keeperCatch = palmAt('keeper', action === 'stumping' ? 3400 : 3500)
   const fieldCatch = palmAt('fielder', CATCH)
   const gather = palmAt('fielder', COLLECT)
@@ -221,8 +253,8 @@ export function cricketAction(field: CricketField, options: CricketActionOptions
   const flight = (time: number, start: number, end: number, from: Vec3, to: Vec3, arc = 0, curve = 0) => ballFlightPoint({ target: `${scene}/ball`, start, end, from, to, arc, curve }, time)
   const pointAt = (time: number): Vec3 => {
     if (time <= RELEASE) return palmAt('bowler', time)
-    if (time <= BOUNCE) return flight(time, RELEASE, BOUNCE, release, bounce, .15, action === 'spin' ? .35 : 0)
-    const delivered = action === 'wide' ? add(keeperCatch, [0, 0, -.6]) : contact
+    if (time <= BOUNCE) return flight(time, RELEASE, BOUNCE, release, bounce, .15, spin ? .35 : 0)
+    const delivered = wide ? add(keeperCatch, [0, 0, -.6]) : contact
     if (time <= CONTACT) return flight(time, BOUNCE, CONTACT, bounce, delivered, .08)
     if (action === 'bowled') {
       const wicket: Vec3 = [0, .36, CRICKET_PITCH.length / 2]
@@ -260,24 +292,36 @@ export function cricketAction(field: CricketField, options: CricketActionOptions
 
   const events: CricketEvent[] = []
   const event = (id: string, time: number, kind: CricketEvent['kind'], label: string, caption: string) => events.push({ id, time: actual(time), kind, label, caption })
-  event('setup', 0, 'setup', CRICKET_ACTIONS[action].name, CRICKET_ACTIONS[action].summary)
-  event('release', RELEASE, 'release', 'Ball released', action === 'no-ball' ? 'The front foot has landed beyond the popping crease. No-ball.' : 'The bowler releases the ball; the front foot is behind the popping crease.')
-  event('bounce', BOUNCE, 'bounce', 'Pitch bounce', action === 'spin' ? 'The curved flight is illustrative. Spin can change the ball’s path after it bounces.' : 'The delivery bounces on the pitch on its way to the striker.')
+  const motionName = composed ? ({ bowled: 'Delivery hits stumps', lbw: 'Pad contact', stumping: 'Keeper breaks wicket', 'run-out': 'Throw breaks wicket' } as Partial<Record<CricketAction, string>>)[action] ?? CRICKET_ACTIONS[action].name : CRICKET_ACTIONS[action].name
+  event('setup', 0, 'setup', motionName, composed ? `${composed.delivery.style} delivery · ${composed.delivery.legality}${composed.freeHit ? ' · free hit' : ''}. ${CRICKET_ACTIONS[action].summary.replace('A legal delivery', 'A delivery')}` : CRICKET_ACTIONS[action].summary)
+  event('release', RELEASE, 'release', 'Ball released', noBall ? 'The front foot has landed beyond the popping crease. No-ball.' : 'The bowler releases the ball; the front foot is behind the popping crease.')
+  event('bounce', BOUNCE, 'bounce', 'Pitch bounce', spin ? 'The curved flight is illustrative. Spin can change the ball’s path after it bounces.' : 'The delivery bounces on the pitch on its way to the striker.')
   if (hits) event('contact', CONTACT, 'contact', 'Bat contact', 'The ball meets the blade. The bat is keyed from the same two hand grips.')
-  else if (action === 'lbw') event('pad-contact', CONTACT, 'contact', 'Pad contact', 'The highlighted path illustrates a ball that would hit the stumps. This is an authored LBW example.')
+  else if (action === 'lbw') event('pad-contact', CONTACT, 'contact', 'Pad contact', composed ? 'The ball contacts the pad. The highlighted path is illustrative; the authored decision is resolved separately.' : 'The highlighted path illustrates a ball that would hit the stumps. This is an authored LBW example.')
   else event('miss', CONTACT, 'contact', action === 'wide' ? 'Beyond normal reach' : 'The batter misses', action === 'wide' ? 'The untouched ball is too far away for a normal stroke. The umpire calls Wide.' : 'The untouched delivery passes the striker.')
-  if (action === 'catch') event('catch', CATCH, 'collect', 'Catch controlled', 'The fielder controls the ball before it touches the ground: caught.')
+  if (action === 'catch') event('catch', CATCH, 'collect', 'Catch controlled', composed ? 'The fielder controls the ball before it touches the ground. The authored decision is resolved separately.' : 'The fielder controls the ball before it touches the ground: caught.')
   if (['fielding', 'throw', 'run-out', 'batting', 'running'].includes(action)) event('gather', COLLECT, 'collect', 'Ground ball gathered', 'The ball has touched the ground. Gathering it is fielding, not a catch dismissal.')
   if (['bowling', 'spin', 'wide', 'no-ball', 'stumping'].includes(action)) event('keeper', action === 'stumping' ? 3400 : 3500, 'collect', 'Keeper gathers', 'The keeper controls the ball behind the striker’s wicket.')
   if (action === 'throw' || action === 'run-out') event('throw', THROW, 'throw', 'Throw released', 'The fielder releases the gathered ball toward the wicket.')
   if (action === 'throw') event('return', RETURN, 'collect', 'Return received', 'The keeper receives and controls the return throw.')
-  if (action === 'stumping') event('wicket', brokenAt, 'wicket', 'Stumped', 'Holding the ball, the keeper removes a bail. The striker is out of ground and is not attempting a run.')
-  if (action === 'run-out') event('wicket', brokenAt, 'wicket', 'Run out', 'The direct throw removes a bail before the running batter makes this ground.')
-  if (action === 'bowled') event('wicket', brokenAt, 'wicket', 'Bowled', 'The legal delivery hits the wicket and removes a bail.')
+  if (action === 'stumping') event('wicket', brokenAt, 'wicket', composed ? 'Wicket broken' : 'Stumped', 'Holding the ball, the keeper removes a bail. The striker is out of ground and is not attempting a run.')
+  if (action === 'run-out') event('wicket', brokenAt, 'wicket', composed ? 'Wicket broken' : 'Run out', 'The direct throw removes a bail before the running batter makes this ground.')
+  if (action === 'bowled') event('wicket', brokenAt, 'wicket', composed ? 'Stumps hit' : 'Bowled', composed ? 'The delivery hits the wicket and removes a bail. A broken wicket does not by itself decide a dismissal.' : 'The legal delivery hits the wicket and removes a bail.')
   if (action === 'four' || action === 'six') event('boundary', 5000, 'boundary', action === 'four' ? 'Four runs' : 'Six runs', action === 'four' ? 'The struck ball reaches the boundary after touching the ground: four.' : 'The struck ball clears the boundary without touching the ground: six.')
   if (action === 'running') event('run', FINISH, 'result', 'One run completed', 'Both batters have reached the opposite ground. One run is completed.')
-  const result = outcome(action, field.format)
   event('result', 5700, 'result', 'Illustrated result', action === 'no-ball' ? `One no-ball extra; it does not count in the over.${result.freeHitNext ? ' The next legitimate delivery is a free hit.' : ' Test cricket has no automatic free hit.'}` : action === 'wide' ? 'One wide extra; the delivery does not count in the over.' : action === 'lbw' ? 'LBW is declared for this illustrated legal delivery. A full decision also checks pitching, impact and any bat contact.' : `${result.runs} bat runs · ${result.extras} extras · ${result.wickets} wicket${result.wickets === 1 ? '' : 's'}.`)
+  if (composed) {
+    const explanation: Record<CricketRuling['reason'], string> = {
+      'no-dismissal': 'No dismissal was authored for this play.',
+      dismissal: `The authored ${composed.ruling.dismissal} decision is allowed in this delivery context.`,
+      'no-ball': `Not out: ${action === 'catch' ? 'a catch' : 'this dismissal'} cannot dismiss the striker on a no-ball.`,
+      'free-hit': `Not out: ${action === 'catch' ? 'a catch' : 'this dismissal'} cannot dismiss the striker on a free hit.`,
+      wide: 'Not out: this dismissal is not available from a Wide.',
+    }
+    const final = events.find(event => event.id === 'result')!
+    final.label = result.wickets ? 'Out' : 'Not out'
+    final.caption = `${explanation[composed.ruling.reason]} ${result.runs} bat runs · ${result.extras} extras · ${result.wickets} wickets. ${result.legalBall ? 'Counts as a legal ball.' : 'Does not count in the over.'}${result.freeHitNext ? ' The next delivery is a free hit; an illegal delivery carries it forward.' : composed.freeHit ? ' This legal delivery consumes the free hit.' : ''}`
+  }
   events.sort((a, b) => a.time - b.time)
 
   const times = sampleTimes(0, duration, options.every, [1400, 1800, RELEASE, 2100, 2150, 2250, BOUNCE, 2600, 2800, CONTACT, 3050, 3100, 3200, 3250, 3300, 3400, 3500, 3800, 3900, 3950, 4000, CATCH, COLLECT, 4350, 4450, THROW, 4900, 5000, 5100, 5150, RETURN, FINISH, 5700].map(actual))
@@ -337,7 +381,7 @@ export function cricketAction(field: CricketField, options: CricketActionOptions
       { id: 'lbw-length', target: `${scene}/lbw-guide`, property: 'scaleY', keyframes: [{ time: 0, value: vec3.distance(contact, end) }] },
       { id: 'lbw-visible', target: `${scene}/lbw-guide`, property: 'visible', keyframes: [{ time: 0, value: 0 }, { time: actual(CONTACT) - .001, value: 0 }, { time: actual(CONTACT), value: 1 }] })
   }
-  return { action, duration, events, result, timeline: { id: `${scene}-${action}`, formatVersion: 2, name: CRICKET_ACTIONS[action].name, config: { duration, markers: events.map(event => ({ id: event.id, time: event.time, label: event.label })) }, captions: { en: Object.fromEntries(events.map(event => [event.id, event.caption])) }, tracks } }
+  return { action, duration, events, result, timeline: { id: `${scene}-${action}`, formatVersion: 2, name: motionName, config: { duration, markers: events.map(event => ({ id: event.id, time: event.time, label: event.label })) }, captions: { en: Object.fromEntries(events.map(event => [event.id, event.caption])) }, tracks } }
 }
 
 /** An owned scene and timeline ready for browser/Worker/Node consumers. */

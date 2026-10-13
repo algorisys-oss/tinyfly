@@ -39,6 +39,8 @@ See [getting started](getting-started.md) for the versioned CDN URLs.
 | `cricketFieldingPositions(field)` | Owned setup-position data for stock fielders: `id`, `name`, `position`, `inside`. |
 | `cricketFieldingOverlay(field)` | Optional static JSON line markers, green inside/orange outside. Append to scene objects without changing motion. |
 | `cricketAction(field, { action?, duration?, every? })` | A JSON timeline, timed events/captions and declared example result. Does not modify the field. |
+| `cricketPlay(field, options)` | Composes independent delivery, shot, finish, fielding, context and candidate decision; returns `play`, `ruling`, timeline, events and result. |
+| `cricketPlayClip(options)` | Builds a field and composed play together. |
 | `cricketClip(options)` | Combines field and action; default T20, adult cast, pace bowling, 6000 ms. |
 | `cricketCameraTracks(clip, { view?, yaw?, zoom?, every? })` | Ordinary scene camera tracks. Merge these with the action tracks. |
 | `cricketEventAt(events, time)` | Most recent event at that time, including when seeking backward. |
@@ -203,6 +205,87 @@ spacing without evaluating actor tracks.
 
 Development full-page previews load the local browser API and scene add-ons;
 production previews and copied HTML retain the versioned CDN bundles.
+
+## Composed plays and authored decisions
+
+Use `cricketPlay` on an existing field or `cricketPlayClip` for a new scene.
+Delivery legality is authored, not calculated from foot geometry. No-ball uses
+the stock front-foot overstep, while shots, catches and wicket breaks retain
+their native contact keys. A candidate dismissal is separate from that motion;
+omitted/null `decision.dismissal` means no dismissal.
+
+```ts
+import { cricketPlayClip } from '@algorisys/tinyfly/sports'
+
+const first = cricketPlayClip({
+  format: 't20', delivery: { style: 'pace', legality: 'no-ball' },
+  shot: 'miss', finish: 'stumps', decision: { dismissal: 'bowled' },
+})
+// Bails fall, but ruling is { dismissal: null, reason: 'no-ball' }.
+// result: 0 bat runs, 1 extra, 0 wickets, legalBall false, freeHitNext true.
+const next = cricketPlayClip({
+  format: 't20', delivery: { style: 'spin', legality: 'legal' },
+  context: { freeHit: first.result.freeHitNext },
+  shot: 'drive', fielding: 'catch', decision: { dismissal: 'caught' },
+})
+// Catch stays visible. Not out; this legal delivery consumes the free hit.
+// Store/advance innings, score, strike and lesson state in your application.
+const again = JSON.stringify(next) // normalized play + ruling + all motion/events
+```
+
+`play` contains owned, normalized input. `action` identifies the compiled stock
+motion recipe; it does not declare the composed verdict. `ruling` holds the
+accepted dismissal or null and its reason. `result.dismissal` exists only for an
+accepted dismissal. Decision changes preserve the ball/actor motion, apart from
+the umpire signal. Physical catch, pad contact and wicket-break captions stay
+separate from the final **Out** / **Not out** decision.
+
+| Component | Choices/default |
+| --- | --- |
+| `delivery.style` | `pace` (default), `spin` |
+| `delivery.legality` | `legal` (default), `no-ball`, `wide`; select the final call, with no-ball taking precedence over Wide |
+| `shot` | `miss` (default), `drive`, `defend` |
+| `finish` | `none` (default), `single`, `four`, `six`, `stumps`, `pad` |
+| `fielding` | `none`, `keeper`, `catch`, `gather`, `throw`, `stumping`, `run-out`; defaults below |
+| `context.freeHit` | Boolean, default false; ODI/T20 only |
+| `decision.dismissal` | `caught`, `bowled`, `lbw`, `stumped`, `run-out`, null (default); candidate must match the physical recipe |
+| `duration`, `every` | Same scaling and contact-preserving sampling as `cricketAction` |
+
+Supported physical combinations:
+
+| Shot | Finish | Fielding (default when omitted) |
+| --- | --- | --- |
+| `miss` | `none` | `keeper` (default) or explicit `stumping` |
+| `miss` | `stumps` / `pad` | `none` (default) |
+| `defend` | `none` | `none` (default) |
+| `drive` | `none` | `gather` (default), `catch`, `throw`, `run-out` |
+| `drive` | `single` | `gather` (default) |
+| `drive` | `four` / `six` | `none` (default) |
+
+Other combinations throw rather than silently substitute a different play.
+Wide currently supports only an untouched miss gathered by the keeper; Wide
+stumping/run-out and additional Wide runs require future motion recipes.
+`single`/`four`/`six` score 1/4/6 bat runs; an illegal delivery adds one extra.
+Run-out depicts an attempted, uncompleted run and scores no completed runs.
+Byes, leg-byes, penalties and other dismissal modes are outside this subset.
+
+No-ball/free-hit context suppresses caught, bowled, LBW and stumped candidates,
+while the supported run-out candidate remains available. A no-ball arms the
+next free hit in ODI/T20; an existing free hit carries over a Wide/no-ball and
+is consumed by a legal delivery. Test has no automatic free hit and rejects an
+explicit current free-hit context. These conditions follow clauses 21.12,
+21.17–21.18 in [ICC ODI October 2026](https://images.icc-cricket.com/image/upload/prd/bxkzkcyvfn6tvi70zh0w.pdf)
+and [ICC T20I October 2026](https://images.icc-cricket.com/image/upload/prd/bsxcho7ufe2pjban0wjp.pdf).
+They cover the supported authored examples, not a complete umpiring engine.
+
+`CRICKET_PLAY_COMPONENTS` and `CRICKET_PLAY_EXAMPLES` provide JSON discovery;
+the latter has five frozen examples. In the live example's **Play** selector,
+choose the **Composed plays** group: no-ball/stumps, free-hit/catch,
+no-ball/four, free-hit/run-out or free-hit/Wide. Free-hit choices are disabled
+in Test; switching to Test from one selects no-ball/stumps. Downloads include
+normalized components, ruling, result, scene, camera tracks and captions.
+The original sixteen `cricketAction`/`cricketClip` presets retain their original
+motion, result shape and captions.
 
 ## Teaching scope
 

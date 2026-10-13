@@ -54,7 +54,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Code-drawn targets** - A `custom` canvas target draws with code (characters, charts, props) while the timeline animates its position, opacity and its own `props`, so drawing stays code and timing stays JSON
 - **Immediate mode too** - A scene's `background` and `draw(ctx, { time })` functions paint each frame directly, Cairo/Processing-style, and mix freely with timeline targets
 - **Timing from narration** - `planNarration()` lays spoken lines out from their clip lengths (lead, gap, tail) into cues, scene spans and markers; `voiceNarration()` measures recorded clips with ffmpeg and writes the sample-aligned narration WAV
-- **Cricket stories** - Public `@algorisys/tinyfly/sports` builders create an organic adult/child cast, standard pitch, full fielding side, wickets and boundary. Sixteen authored plays cover deliveries, strokes, running, boundaries, catches, fielding, throws, dismissals, no-balls and wides for Test, ODI and T20. Exact contact keys, captions and results are JSON; eight camera views include a 360° ground orbit and ball follow, with 25%–400% review zoom and reset. Select MCC, ICC men or ICC women field markings. ICC ODI/T20 restriction areas use wicket-centred capsule outlines; optional public setup markers classify the field. Fielders watch the bowler, track the incoming delivery through its bounce, then follow the struck ball. Body turns stay continuous from strokes into batter runs, into collection runs and while following return throws. A side-on right-handed stance and Adults/Men/Children/Mixed casts reuse the organic rig. Keeper-bound misses clear the native legs and intact stumps before palm collection. Public `CRICKET_FIELDING_POSITIONS` labels name all eleven stock fielders, including Extra cover; the Teams and field positions guide explains the two on-field batters, nine waiting teammates and mid-on/long-on. Playback, scrubbing and camera controls sit beside the scene (above it on phones). Try [Cricket Stories](https://tinyfly.app/examples/live-cricket-story), download its scene/action/camera JSON, or render the headless example. See [the cricket guide](docs/cricket.md).
+- **Cricket stories** - Public `@algorisys/tinyfly/sports` builders create an organic adult/child cast, standard pitch, full fielding side, wickets and boundary. Composable `cricketPlay`/`cricketPlayClip` builders separate legality/free-hit context, shot, fielding and candidate decisions; five interactive combinations include no-ball/stumps and free-hit/catch without a dismissal. Sixteen authored plays cover deliveries, strokes, running, boundaries, catches, fielding, throws, dismissals, no-balls and wides for Test, ODI and T20. Exact contact keys, captions and results are JSON; eight camera views include a 360° ground orbit and ball follow, with 25%–400% review zoom and reset. Select MCC, ICC men or ICC women field markings. ICC ODI/T20 restriction areas use wicket-centred capsule outlines; optional public setup markers classify the field. Fielders watch the bowler, track the incoming delivery through its bounce, then follow the struck ball. Body turns stay continuous from strokes into batter runs, into collection runs and while following return throws. A side-on right-handed stance and Adults/Men/Children/Mixed casts reuse the organic rig. Keeper-bound misses clear the native legs and intact stumps before palm collection. Public `CRICKET_FIELDING_POSITIONS` labels name all eleven stock fielders, including Extra cover; the Teams and field positions guide explains the two on-field batters, nine waiting teammates and mid-on/long-on. Playback, scrubbing and camera controls sit beside the scene (above it on phones). Try [Cricket Stories](https://tinyfly.app/examples/live-cricket-story), download its scene/action/camera JSON, or render the headless example. See [the cricket guide](docs/cricket.md).
   Wide camera clipping scales for boundaries up to 250 m, and ball-follow generation reads only ball channels. Local full-page previews include add-ons before publication; copied pages keep their versioned CDN bundles.
   Defensive blocks meet the blade with both hands on the bat. Keeper-bound deliveries pass outside the off stump with clearance for the displayed ball before collection.
 
@@ -233,7 +233,7 @@ for what you import:
 | `@algorisys/tinyfly/maps` | Animated maps: OpenStreetMap tiles or an offline world outline, places, routes that draw on, a camera that flies (`mapTarget`, `mapFlyTracks`, `fitView`, `WORLD_CITIES`) | Anywhere with a Canvas 2D context (tiles need a network) |
 | `@algorisys/tinyfly/characters` | Poseable stick figure: `stickFigureTarget`, `poseTracks`, `POSES`, `blendPose`, `walkPose`, `drawStickFigure`; `stickFigureJoints` and `layers` for costumes, hair and props; `turn`, `sit` and ground contact; an organic look by default (`classic` keeps the old one); **characters v2**: `character()` / `characterTarget()`, turnarounds front to back, contact, reaching, clean / pencil / silhouette looks; `hair`, `facialHair`, `glasses`, `hat`, `ears`, `face`, `feet`, `build`, `outfit` as data, `castMember()`, `HUMAN_EXPRESSIONS` with face marks; `embrace`, `helpUp`, `scenery` | Anywhere with a Canvas 2D context |
 | `@algorisys/tinyfly/headless` | `renderVideo`, `renderStills`, `FrameRenderer`: render a scene to MP4 or PNGs (see [Rendering Video from Code](docs/video-rendering.md)) | Node (`@napi-rs/canvas` optional peer, ffmpeg) |
-| `@algorisys/tinyfly/sports` | `cricketPlayer`, `cricketField`, `cricketAction`, `cricketClip`, `cricketCameraTracks`, `cricketEventAt`, field marking profiles/classification/overlays, shared `ballFlightTracks`; authored organic cricket stories and a 360° ground camera | Browser, Worker, Node; scene rendering through adapters |
+| `@algorisys/tinyfly/sports` | `cricketPlayer`, `cricketField`, `cricketAction`, `cricketClip`, `cricketPlay`, `cricketPlayClip`, `cricketCameraTracks`, `cricketEventAt`, field marking profiles/classification/overlays, shared `ballFlightTracks`; authored organic cricket stories and a 360° ground camera | Browser, Worker, Node; scene rendering through adapters |
 | `@algorisys/tinyfly/browser` | One script-tag bundle (`tinyfly.iife.js`): the engine, player, drivers, interaction, the GSAP-style `live` / `tf` facades, teaching-embed controls and mounting, and the `characters` stick figure. Not included: `export`, `adapters`, `teach`, the framework hooks, `headless` | Browser |
 
 ```js
@@ -280,7 +280,7 @@ GSAP-shaped functions at the top level. Teaching embeds are included: add
 itself.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.111.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.112.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -316,7 +316,7 @@ A teaching figure needs no code at all:
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON with markers… }</script>
   <figcaption>Appending to a full slice</figcaption>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.111.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.112.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
 ```
 
 See [Teaching Animations](docs/teaching.md).
@@ -415,7 +415,7 @@ Without a build step, the player bundle puts the same functions on a `tinyfly` g
   <div data-tinyfly="box" style="width: 60px; height: 60px; background: #4a9eff;"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.111.0/cdn/tinyfly-player.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.112.0/cdn/tinyfly-player.iife.js"></script>
 <script>
   tinyfly.play('#animation', './animation.json', { loop: -1 })
 </script>
@@ -524,7 +524,7 @@ Or skip the code entirely with declarative embeds (see [Teaching Animations](doc
   <svg viewBox="0 0 720 200">…</svg>
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON… }</script>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.111.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.112.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 ### Audio / Video Sync
@@ -772,6 +772,9 @@ builds the add-on bundles before `npm run test:run -- --maxWorkers 2` for tests 
 `npx tsc -p tsconfig.app.json --noEmit` for its lint/type check.
 It is excluded from the OSS mirror; the project needs no runtime configuration
 for this validation.
+
+The organic contour determinism test allows 15 seconds to compare 60 native
+canvas renders during concurrent suite runs.
 
 ### Publishing to npm
 

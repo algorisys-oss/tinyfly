@@ -1,9 +1,9 @@
 import { Timeline } from '../../engine'
-import { cricketClip, cricketCameraTracks, cricketEventAt, CRICKET_ACTIONS, CRICKET_CASTS, CRICKET_FIELDING_POSITIONS, CRICKET_FORMATS, CRICKET_VIEWS, CRICKET_CAMERA_ANGLES, CRICKET_MARKING_PROFILES, cricketFieldingPositions, cricketFieldingOverlay } from '../../sports'
+import { cricketClip, cricketPlayClip, CRICKET_PLAY_EXAMPLES, cricketCameraTracks, cricketEventAt, CRICKET_ACTIONS, CRICKET_CASTS, CRICKET_FIELDING_POSITIONS, CRICKET_FORMATS, CRICKET_VIEWS, CRICKET_CAMERA_ANGLES, CRICKET_MARKING_PROFILES, cricketFieldingPositions, cricketFieldingOverlay } from '../../sports'
 import { characterObjects } from '../../characters'
 import { loadScene3D, resolveScene3D, drawResolvedScene } from '../../scene-3d'
 
-const tinyfly = { Timeline, cricketClip, cricketCameraTracks, cricketEventAt, CRICKET_ACTIONS, CRICKET_CASTS, CRICKET_FIELDING_POSITIONS, CRICKET_FORMATS, CRICKET_VIEWS, CRICKET_CAMERA_ANGLES, CRICKET_MARKING_PROFILES, cricketFieldingPositions, cricketFieldingOverlay, characterObjects, loadScene3D, resolveScene3D, drawResolvedScene }
+const tinyfly = { Timeline, cricketClip, cricketPlayClip, CRICKET_PLAY_EXAMPLES, cricketCameraTracks, cricketEventAt, CRICKET_ACTIONS, CRICKET_CASTS, CRICKET_FIELDING_POSITIONS, CRICKET_FORMATS, CRICKET_VIEWS, CRICKET_CAMERA_ANGLES, CRICKET_MARKING_PROFILES, cricketFieldingPositions, cricketFieldingOverlay, characterObjects, loadScene3D, resolveScene3D, drawResolvedScene }
 
 export const html = `<style>
 .crkt-wrap{container-type:inline-size;display:grid;gap:12px;width:min(1060px,calc(100vw - 24px));max-width:100%;min-width:0;font:14px system-ui;color:#e6eddc}
@@ -30,7 +30,7 @@ export const html = `<style>
 <details class="crkt-teams"><summary>Teams and field positions</summary><p>Each team has eleven players. All eleven of the fielding XI are shown; only the striker and non-striker of the batting XI are on the field. Their nine teammates wait off-field. Two umpires are also shown.</p><ul class="crkt-positions" aria-label="Eleven stock fielding positions"></ul><p>For this right-handed batter, the off side is in front of the chest; the on or leg side is behind the back. Mid-on is on the leg side, closer to the pitch toward the bowler. Long-on is its deeper boundary alternative, not an additional fielder in this stock layout. Extra cover is the collecting fielder in these authored plays.</p><p>Wicketkeeper and slip stand behind the striker. They watch the bowler during the run-up, then track the delivery through its bounce and follow the ball after a stroke or miss.</p><p class="crkt-marking-note"></p></details>
 </div>
 <aside class="crkt-panel" aria-label="Cricket story controls">
-<div class="crkt-controls crkt-selectors"><label>Format <select class="crkt-format" aria-label="Cricket format"></select></label><label>Markings <select class="crkt-markings" aria-label="Field marking profile"></select></label><label>Play <select class="crkt-action" aria-label="Cricket action"></select></label><label>Cast <select class="crkt-cast" aria-label="Cricket cast"></select></label><label>Camera <select class="crkt-view" aria-label="Cricket camera"></select></label><label>Angle <input class="crkt-yaw" aria-label="Camera angle" type="range" min="0" max="360" value="75" step="1"></label></div>
+<div class="crkt-controls crkt-selectors"><label>Format <select class="crkt-format" aria-label="Cricket format"></select></label><label>Cast <select class="crkt-cast" aria-label="Cricket cast"></select></label><label>Markings <select class="crkt-markings" aria-label="Field marking profile"></select></label><label>Camera <select class="crkt-view" aria-label="Cricket camera"></select></label><label>Play <select class="crkt-action" aria-label="Cricket action"></select></label><label>Angle <input class="crkt-yaw" aria-label="Camera angle" type="range" min="0" max="360" value="75" step="1"></label></div>
 <div class="crkt-controls crkt-zoom-controls"><label>Zoom <output class="crkt-zoom-label">100%</output><input class="crkt-zoom" aria-label="Camera zoom" type="range" min="25" max="400" value="100" step="25"></label><div class="crkt-zoom-buttons"><button class="crkt-zoom-out" type="button" aria-label="Zoom out">−</button><button class="crkt-zoom-reset" type="button" aria-label="Reset zoom">Reset</button><button class="crkt-zoom-in" type="button" aria-label="Zoom in">+</button></div></div>
 <div class="crkt-controls crkt-area-controls"><label><input class="crkt-area-review" type="checkbox"> Setup field markers</label></div>
 <div class="crkt-controls crkt-playback"><div class="crkt-transport"><label><input class="crkt-play" type="checkbox" checked> Play</label><button class="crkt-replay" type="button">Replay</button><label>Speed <select class="crkt-speed" aria-label="Playback speed"><option value="1">1×</option><option value="0.5">½×</option><option value="0.25">¼×</option></select></label></div><label>Story time <input class="crkt-time" aria-label="Story time" type="range" min="0" max="6000" step="1" value="0"></label><button class="crkt-export" type="button">Download story JSON</button></div>
@@ -54,7 +54,10 @@ export function run(live, root) {
   const on = (node, type, fn) => { node.addEventListener(type, fn); listeners.push(() => node.removeEventListener(type, fn)) }
   const choices = (select, entries) => { for (const [value, label] of entries) { const option = document.createElement('option'); option.value = value; option.textContent = label; select.appendChild(option) } }
   choices(format, Object.entries(tinyfly.CRICKET_FORMATS).map(([key, info]) => [key, info.name]))
-  choices(action, Object.entries(tinyfly.CRICKET_ACTIONS).map(([key, info]) => [key, info.name]))
+  const singles = document.createElement('optgroup'); singles.label = 'Single actions'; action.appendChild(singles)
+  choices(singles, Object.entries(tinyfly.CRICKET_ACTIONS).map(([key, info]) => [key, info.name]))
+  const composed = document.createElement('optgroup'); composed.label = 'Composed plays'; action.appendChild(composed)
+  choices(composed, Object.entries(tinyfly.CRICKET_PLAY_EXAMPLES).map(([key, info]) => [`play/${key}`, info.name]))
   choices(view, Object.entries(tinyfly.CRICKET_VIEWS))
   choices(markings, Object.entries(tinyfly.CRICKET_MARKING_PROFILES).map(([key, info]) => [key, info.name]))
   choices(cast, Object.entries(tinyfly.CRICKET_CASTS))
@@ -107,7 +110,12 @@ export function run(live, root) {
     const time = preserveTime ? clock.time : 0
     playback.pause().progress(time / 6000); clock.time = time; lastEvent = undefined
     // The same builders work in Node/Workers and in your own app. All motion is data.
-    clip = tinyfly.cricketClip({ format: format.value, action: action.value, cast: cast.value, markingProfile: markings.value })
+    for (const option of composed.children) option.disabled = format.value === 'test' && !!tinyfly.CRICKET_PLAY_EXAMPLES[option.value.slice(5)].options.context?.freeHit
+    if (action.selectedOptions[0]?.disabled) action.value = 'play/no-ball-stumps'
+    const fieldOptions = { format: format.value, cast: cast.value, markingProfile: markings.value }
+    clip = action.value.startsWith('play/')
+      ? tinyfly.cricketPlayClip({ ...fieldOptions, ...tinyfly.CRICKET_PLAY_EXAMPLES[action.value.slice(5)].options })
+      : tinyfly.cricketClip({ ...fieldOptions, action: action.value })
     sceneFor()
     motion = new tinyfly.Timeline(clip.timeline)
     cameraFor()
@@ -139,7 +147,7 @@ export function run(live, root) {
   on(root.querySelector('.crkt-export'), 'click', () => {
     const story = { ...clip, scene: shownScene, timeline: { ...clip.timeline, tracks: [...clip.timeline.tracks, ...cameraTracks] } }
     const url = URL.createObjectURL(new Blob([JSON.stringify(story, null, 2)], { type: 'application/json' }))
-    const anchor = document.createElement('a'); anchor.href = url; anchor.download = `cricket-${format.value}-${action.value}.json`
+    const anchor = document.createElement('a'); anchor.href = url; anchor.download = `cricket-${format.value}-${action.value.replace('/', '-')}.json`
     root.appendChild(anchor); anchor.click(); anchor.remove()
     setTimeout(() => URL.revokeObjectURL(url), 1000)
   })
@@ -151,7 +159,7 @@ export function run(live, root) {
 /** @type {import('./types').LiveDemo} */
 export const cricketStory = {
   id: 'live-cricket-story', name: 'Cricket Stories: Organic Players & 360° Ground',
-  description: 'Reusable sports APIs create a cricket ground, standard pitch and creases, two wickets, eleven named fielders, two on-field batters and two umpires on the existing organic rig. Choose MCC, ICC men or ICC women markings; ODI/T20 restriction areas use wicket-centred capsule outlines, with optional classified setup markers. Choose Test, ODI or T20 and inspect sixteen plays: pace/spin bowling, drive, block, running, four, six, catch, ground field, throw, bowled, LBW, stumping, run-out, no-ball and wide. The camera can orbit the whole ground, view either end close up or follow the ball. Zoom from 25% to 400% to review poses, and reset to the default framing. Motion, bat grips, ball handoffs, wicket breaks, events and captions are JSON; download the story for your own tutorial.',
+  description: 'Reusable sports APIs create a cricket ground, standard pitch and creases, two wickets, eleven named fielders, two on-field batters and two umpires on the existing organic rig. Choose MCC, ICC men or ICC women markings; ODI/T20 restriction areas use wicket-centred capsule outlines, with optional classified setup markers. Choose Test, ODI or T20 and inspect sixteen plays: pace/spin bowling, drive, block, running, four, six, catch, ground field, throw, bowled, LBW, stumping, run-out, no-ball and wide. The Composed plays group combines no-ball + stumps, free hit + catch, no-ball + four, free hit + run-out and free hit + Wide, with independent legality, physical motion and authored decisions. The camera can orbit the whole ground, view either end close up or follow the ball. Zoom from 25% to 400% to review poses, and reset to the default framing. Motion, bat grips, ball handoffs, wicket breaks, events and captions are JSON; download the story for your own tutorial.',
   category: '3d', alsoIn: ['video'], tags: ['cricket', 'sports', 'story', 'organic', 'camera', '360', 'bowling', 'batting', 'catch', 'stumping', 'Test', 'ODI', 'T20'],
   addons: ['scene-3d'], html, run,
 }
