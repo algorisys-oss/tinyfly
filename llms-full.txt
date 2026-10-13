@@ -53,15 +53,16 @@ See [getting started](getting-started.md) for the versioned CDN URLs.
 | API | Result |
 | --- | --- |
 | `cricketPlayer({ id, role, preset?, format?, height?, position?, color?, headwear?, appearance? })` | An owned JSON `character` scene object. Roles: batter, bowler, keeper, fielder, umpire. Presets include youngMan, youngWoman, childBoy, childGirl. |
-| `cricketField({ id?, format?, cast?, boundaryRadius?, battingColor?, fieldingColor? })` | `scene`, `format`, `boundaryRadius`, `landmarks`. A 20.12 × 3.05 metre pitch, standard creases, wickets/bails, two bats, ball, boundary, eleven fielding players, two batters and two umpires. |
+| `cricketField({ id?, format?, cast?, boundaryRadius?, battingColor?, fieldingColor? })` | `scene`, `format`, `boundaryRadius`, `landmarks`; stock fielders have human-readable JSON `name` labels. A 20.12 × 3.05 metre pitch, standard creases, wickets/bails, two bats, ball, boundary, eleven fielding players, two batters and two umpires. |
 | `cricketAction(field, { action?, duration?, every? })` | A JSON timeline, timed events/captions and declared example result. Does not modify the field. |
 | `cricketClip(options)` | Combines field and action; default T20, adult cast, pace bowling, 6000 ms. |
 | `cricketCameraTracks(clip, { view?, yaw?, every? })` | Ordinary scene camera tracks. Merge these with the action tracks. |
 | `cricketEventAt(events, time)` | Most recent event at that time, including when seeking backward. |
 | `ballFlightPoint(options, time)`, `ballFlightTracks(options)` | Shared sampled arcs for other sports too. `from`, `to`, `arc`, `curve`, `start`, `end`, `target`; exact endpoints. |
 
-Units are metres, milliseconds and degrees. `cast` is `adults`, `children` or
-`mixed`; `format` is `test`, `odi` or `t20`. `boundaryRadius` defaults to 64 m
+Units are metres, milliseconds and degrees. `cast` is `adults`, `men`, `children` or
+`mixed`; `CRICKET_CASTS` exports their labels. `men` uses the existing youngMan
+organic preset for every role; adults/children/mixed retain their varied casts; `format` is `test`, `odi` or `t20`. `boundaryRadius` defaults to 64 m
 and accepts 24–250 m. A boundary is venue dependent. Sampling defaults to 40 ms,
 accepts 16–1000 ms and always includes play contact events. Durations accept
 4000–60000 ms; changing duration scales the whole play. Player height accepts
@@ -72,6 +73,57 @@ The standard action builder expects the named actors/equipment from
 `cricketField`; required actors must be unparented with no object rotation or
 scale. It owns poses and paths for that layout. Customize appearance and
 uniforms before compiling; author your own scene tracks for a different layout.
+
+Fielders watch the bowler during the run-up, smoothly pick up the moving ball
+after release, track its flight and bounce, then follow it after contact or a miss. Head turns
+use the rig's neck frame, including torso lean, and are independent of the
+camera. Stationary fielders turn their bodies toward the play; running players
+face their travel and collectors keep their catch/throw poses. The striker uses
+a side-on right-handed guard: left shoulder and front foot toward the bowler,
+soft knees, both feet supported, left hand above the right on the handle and a
+bat resting near the back foot. These authored poses also fit the child rig.
+
+The live example keeps cast/action/camera selection and playback/scrubbing in a
+panel beside the scene, or above it on narrow screens. Select **Men** in Cast for
+the male team; individual players remain editable through `cricketPlayer`.
+
+## Teams and stock field positions
+
+Each team has eleven players. `cricketField` shows all eleven of the fielding
+XI, two on-field batters (striker and non-striker) and two umpires. The other
+nine members of the batting XI wait off-field.
+
+`CRICKET_FIELDING_POSITIONS` exports the stock actor IDs and labels as plain
+JSON data. Each corresponding scene object also carries the label in `name`:
+Bowler, Wicketkeeper, Extra cover (`fielder`, the collecting actor), Slip,
+Point, Cover, Mid-off, Mid-on, Square leg, Fine leg and Third man. IDs used by
+action tracks remain stable. These are illustrative placements, not a roster
+or automatic field-setting system.
+
+For this right-handed striker, the off side is in front of the chest (+x),
+and the on or leg side is behind the back (−x). Mid-on stands on the leg side
+closer to the pitch toward the bowler; long-on is its deeper boundary
+alternative. Long-on is not an additional stock fielder. Choose a different
+layout by authoring your own scene and tracks.
+
+Wicketkeeper and slip stand behind the striker. Their attention follows the
+actual delivery through its flight and bounce rather than turning to the batter
+before the ball arrives. Their native head poses aim at world targets,
+independently of their body yaw and camera selection. The live example's
+**Teams and field positions** disclosure uses the scene's JSON labels.
+
+## Review zoom
+
+Pass `zoom` to `cricketCameraTracks(clip, { view: 'batter', zoom: 2 })` for
+2× magnification. All eight views support 0.25–4 (default 1), including orbit
+and ball follow. Zoom changes the field of view while preserving camera position,
+look target, clipping distances, player motion and current story time. Invalid
+or non-finite zoom values throw. The generated camera tracks are ordinary JSON.
+
+The example provides a 25%–400% slider, zoom-in/out buttons and **Reset**.
+Zoom persists while choosing another play, cast or view, and downloaded story
+JSON includes the selected magnification. Native range controls support keyboard
+and touch review; zooming does not seek, pause or restart playback.
 
 ## Plays and cameras
 
@@ -94,7 +146,9 @@ ball and fielder keyed to the same palm contact.
 Defensive blocks retain their downward two-hand bat pose and emit the `contact`
 event with the “Bat contact” label. Pace, spin, no-ball and stumping deliveries
 pass outside the off stump on the side away from the batter, allowing for the
-displayed ball and stump radii before collection. Bowled keeps its intentional
+displayed ball and stump radii before collection. Their positive-x clearance
+path also avoids both native legs throughout the delivery, including the
+striker’s movement during stumping. Bowled keeps its intentional
 wicket collision; stumping keeps the later hand-held wicket break.
 
 `CRICKET_VIEWS` offers `pitch`, `batter`, `bowler`, `keeper`, `field`, `overhead`,
@@ -336,7 +390,7 @@ with a GSAP-style call (durations are in seconds here):
 ```html
 <div class="box" style="width:60px;height:60px;background:#4a9eff"></div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.109.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.110.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -544,7 +598,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.109.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.110.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -2459,7 +2513,7 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.109.0/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.110.0/cdn/tinyfly-player.iife.js`.
 
 ---
 
@@ -6812,7 +6866,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.109.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.110.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed
@@ -8056,7 +8110,7 @@ bakes. See `docs/dance.md`.
 For cricket tutorials, import `cricketClip`, `cricketCameraTracks` and
 `cricketEventAt` from `@algorisys/tinyfly/sports`. The clip is an owned scene,
 JSON timeline, timed captions and declared result. Choose `test | odi | t20`,
-`adults | children | mixed`, and a play from `CRICKET_ACTIONS`. Merge camera
+`adults | men | children | mixed`, and a play from `CRICKET_ACTIONS`. Merge camera
 tracks with action tracks; render with scene-3d plus `[characterObjects]`.
 The UI is a consumer of these APIs. `orbit` covers the full ground in 360°;
 `follow-ball` keys against the same ball tracks. Contacts are sampled exactly,
@@ -8065,6 +8119,27 @@ demonstrations, not collision-based umpiring or an innings simulator. Do not
 infer new outcomes from the illustrative arcs. See `docs/cricket.md` and
 `examples/headless-video/cricket-story.mjs`; `/examples/live-cricket-story`
 has event seeking and downloadable scene/action/camera JSON.
+`CRICKET_FIELDING_POSITIONS` maps the eleven stock fielding IDs to public labels;
+scene objects carry them in `name`. `fielder` is Extra cover. Keep eleven fielders,
+two on-field batters and two umpires; nine batting teammates wait off-field.
+Mid-on is closer to the pitch; long-on is its deeper boundary alternative, not
+an extra stock player. For the right-handed striker, +x is off side and −x is
+on/leg side. Keeper/slip stand behind the striker; track the actual incoming delivery,
+never force their heads toward a screen direction or the camera.
+`cricketCameraTracks(clip, { view, zoom })` supports optical zoom 0.25–4
+(default 1) for every view, preserving the camera path and story state. Merge
+the returned field-of-view track into exported JSON; do not CSS-scale the canvas.
+In camera-sorted character rendering, rear hair and hats belong to the head
+pass; attaching them to the final body part lets the skin paint over them.
+`CRICKET_CASTS` supplies cast labels; `men` uses the existing youngMan organic
+preset for every role. Standard actions include camera-independent fielding
+attention: bowler during run-up, moving delivery after release and through the
+bounce, then the ball after contact/miss. Do not switch to the batter early.
+The right-handed guard is side-on with the left hand above the right; preserve
+these world-facing poses instead of rotating players toward the camera.
+Keeper-bound misses pass on positive x, clear of the native legs and stumps
+through every ball segment, including sparse keys and scaled durations. Keep
+keeper palm contacts and intentional LBW pad contact.
 Wide cameras support the full 24–250 m boundary range; equivalent yaw angles
 use identical geometry. Ball-follow cameras sample only ball position channels.
 Render the headless example with `tinyfly video <scene.mjs> -o <output.mp4>`.
@@ -8349,7 +8424,7 @@ path for all of that:
 </figure>
 
 <!-- once, anywhere on the page (a site-wide footer is fine) -->
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.109.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.110.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 Every `[data-tinyfly-embed]` mounts when the page is ready, with no per-post
@@ -9621,8 +9696,8 @@ On a page with no build step, load the maps add-on after the browser bundle; it
 adds to the same `tinyfly` global:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.109.0/cdn/tinyfly.iife.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.109.0/cdn/tinyfly-maps.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.110.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.110.0/cdn/tinyfly-maps.iife.js"></script>
 ```
 
 It is a separate script because the offline world map it carries adds about
@@ -10016,8 +10091,11 @@ off the head, how far it hangs), drawn wherever the head's `turn`, `head.turn`,
   shoulders seen from the front, and a bob shows beside the face;
 - the part facing the viewer is drawn over the head, so a fringe crosses the
   forehead and, from behind, the hair covers the whole head;
-- turned away (past about `turn` 1.2), the hair is drawn after the whole body,
-  over an arm at the side;
+- in a whole-figure 2D draw, turned away (past about `turn` 1.2), hair is
+  drawn after the body, over an arm at the side;
+- in a camera-sorted 3D scene, rear hair and hats draw with the head's own
+  part, after its skin. They remain attached through independent head turns
+  and nods, without another body's draw order exposing the scalp;
 - a parting, a side ponytail or a braid stays on the character's own side
   through a turn: left and right are the character's, never mirrored.
 
@@ -14797,7 +14875,7 @@ magnet.addEventListener('pointerleave', () => {
 
 <!-- capabilities: generated from the library -->
 
-# tinyfly capabilities (v0.109.0)
+# tinyfly capabilities (v0.110.0)
 
 Generated from the library itself: every name below is accepted, and names not listed are rejected (beat scripts, code panels and `checkTracks` say which name was probably meant).
 
@@ -15233,7 +15311,9 @@ Edits:
 - `no-ball`: The landing front foot oversteps the popping crease at release; one extra, no legal ball.
 - `wide`: An untouched delivery passes beyond reach for a normal stroke; one extra, no legal ball.
 
-Formats: `test`, `odi`, `t20`. Casts: adults, children, mixed. Cameras: `pitch`, `batter`, `bowler`, `keeper`, `field`, `overhead`, `orbit`, `follow-ball`. Orbit turns 360° around the whole ground.
+Formats: `test`, `odi`, `t20`. Casts: `adults`, `men`, `children`, `mixed`. Cameras: `pitch`, `batter`, `bowler`, `keeper`, `field`, `overhead`, `orbit`, `follow-ball`. Orbit turns 360° around the whole ground. `cricketCameraTracks(clip, { view, zoom })` supports 0.25–4× optical magnification (default 1) in every view.
+
+Stock fielding labels (`CRICKET_FIELDING_POSITIONS`): `bowler`: Bowler, `keeper`: Wicketkeeper, `fielder`: Extra cover, `slip`: Slip, `point`: Point, `cover`: Cover, `mid-off`: Mid-off, `mid-on`: Mid-on, `square-leg`: Square leg, `fine-leg`: Fine leg, `third-man`: Third man. Eleven fielders, two on-field batters and two umpires; nine batting teammates wait off-field. Mid-on is closer to the pitch; long-on is its deeper boundary alternative, not an extra stock fielder. For the right-handed striker, +x is off side and -x is on/leg side.
 
 ## Camera shots (`cameraTracks(shots, { stage })`)
 

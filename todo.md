@@ -1,3 +1,22 @@
+## Cricket attention, stance and accessible controls — v0.110.0
+
+- [x] Whole fielding side watches bowler → incoming delivery through flight/bounce → ball after contact/miss, using camera-independent native head poses.
+- [x] Bowler watches batter during run-up; travel-facing running/collection and wicket contacts retained.
+- [x] Review fixes: collecting fielders start their run from the attention heading; bowler return-ball yaw stays unwrapped after the initial blend. Dense, sparse and duration-scaled continuity regressions cover all six fielded plays and the run-out return.
+- [x] Review R1/T1: both batters carry their 3050 ms handoff yaw into running/run-out gaits; four-cast dense, irregular, sparse and duration-scaled regressions retain bat grips, contact and outcomes. Rear-scalp scene options use an owned plain record for application type checking.
+- [x] Review validation: application types, public library/type builds and 215 focused native regressions pass; all 3,772 tests pass with two workers and a 15 s default timeout. The configured 5 s run hit two unchanged rendering-test timeouts, both passing in isolation.
+- [x] Review R3: positive-x keeper-bound miss paths clear native thighs, shins, feet and intact stumps; continuous segment regressions cover four casts, dense/irregular/sparse keys and scaled durations, preserving palm/LBW/bowled/stumping contacts.
+- [x] Review U1: eleven public stock fielding labels and JSON player names, Extra cover collector, accessible Teams and field positions guide; two on-field batters, nine waiting teammates, mid-on/long-on and off/on-side explanations. Keeper/slip native head checks retain world-facing attention and camera independence.
+- [x] Side-on right-handed striker, supported feet, bat near back foot, left hand above right, child-scaled contacts.
+- [x] Explicit Men cast and public CRICKET_CASTS metadata, reusing the existing male organic preset across all roles.
+- [x] Controls beside the scene on wide layouts and above it on phones; keyboard focus, playback/speed/time and camera access.
+- [x] Facing/stance/grip regressions, four-cast contact coverage and browser layout checks; guides and CDN pins refreshed.
+- [x] Review zoom (25%–400%, plus/minus/reset), public camera option, unchanged playback time and zoom included in exported story JSON.
+- [x] Striker/keeper/slip delivery-flight gaze regressions on all casts; close fielders no longer turn toward the batter prematurely.
+- [x] Rear scalp hair/hat pass stays with the head in globally sorted 3D scenes; four organic presets stay covered through eight camera angles, independent head turns and nods. Regression reproduces the original bald patch.
+- [x] Release gate passed: review, configured full suite (3,772 tests in 236 files), application types, production/public builds and generated docs. All 123 cricket checks pass across Chromium, Firefox and WebKit; desktop/phone, rear-head renders and downloaded zoomed JSON visually reviewed. WebKit reset comparison allows at most 64 changed edge pixels and 64 channel error; camera/path state remains exact in native checks.
+- [ ] Merge main/dev directly, publish OSS/CDN v0.110.0 and npm, and verify the live example and fresh consumers.
+
 ## Cricket story APIs and interactive example — v0.109.0
 
 - [x] Reuse the live organic adult/child characters for players and umpires.
@@ -3129,7 +3148,7 @@ biggest gap was the head (sheets 2 and 12–16), so that came first.
 
 ## Test Coverage
 
-- 3687 tests passing across 236 files (`npx vitest run --maxWorkers 2`); the per-area counts below date from 731 tests and are kept for history
+- 3772 tests passing across 236 files (`npm run build:libs`, then `npm run test:run -- --maxWorkers 2`); the per-area counts below date from 731 tests and are kept for history
 - Easing functions: 48 tests
 - Interpolators: 21 tests
 - Clock: 19 tests

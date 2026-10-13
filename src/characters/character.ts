@@ -562,8 +562,12 @@ export function characterPartsInView(character: Character, pose: Pose, projectio
       drawPart(ctx, pen, seen, joints, id, full)
       ctx.restore()
       hook(layers?.over)
+      // Scene sorting can draw the head after the character's last body part.
+      // Keep rear scalp hair and hats with the head so skin cannot cover them.
+      if (id === 'head') {
+        drawHeadOver(ctx, pen, seen.head, joints.head, full, { lineWidth: seen.lineWidth, skin: seen.skin, face: seen.face })
+      }
       if (index === order.length - 1) {
-        drawHeadOver(ctx, pen, seen.head, joints.head, full, { lineWidth: seen.lineWidth, skin: seen.skin })
         hook(seen.layers.front)
       }
       ctx.restore()

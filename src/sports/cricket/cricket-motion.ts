@@ -20,6 +20,23 @@ export const smooth = (t: number) => t * t * (3 - 2 * t)
 export const add = (a: Vec3, b: Vec3): Vec3 => vec3.add(a, b)
 export const scale = (a: Vec3, b: number): Vec3 => vec3.scale(a, b)
 
+/** The nearest equivalent body yaw, in quarter turns, without a wrap-around spin. */
+export function turnNear(turn: number, reference: number): number {
+  const value = reference + ((turn - reference + 2) % 4 + 4) % 4 - 2
+  return value === 0 ? 0 : value
+}
+
+export function turnToward(from: Vec3, to: Vec3, reference = 0): number {
+  if (Math.hypot(to[0] - from[0], to[2] - from[2]) < .001) return reference
+  return turnNear(Math.atan2(to[0] - from[0], to[2] - from[2]) * 2 / Math.PI, reference)
+}
+
+/** Right-handed guard: left shoulder/front foot toward the bowler, soft knees. */
+export function battingStance(): Pose {
+  return { turn: 1, 'head.turn': 90, 'leg.left.spread': 12, 'leg.right.spread': 12,
+    'leg.left.swing': 6, 'leg.right.swing': 6, 'leg.left.knee': 12, 'leg.right.knee': 12 }
+}
+
 export function cricketActor(scene: Scene3D, id: string): CricketActor {
   const object = scene.objects.find(o => o.id === id)
   if (!object || object.kind !== 'character') throw new Error(`cricketAction: required character '${id}' is missing`)
@@ -43,6 +60,17 @@ export function cricketPalm(actor: CricketActor, sample: CricketSample, side: 'l
   return add(wrist, scale(vec3.normalize(vec3.subtract(wrist, elbow)), actor.who.lineWidth * .5))
 }
 
+/** Aim the head in the rig's own neck frame, including a bent/leaning torso. */
+export function cricketLook(actor: CricketActor, sample: CricketSample, target: Vec3): CricketSample {
+  const neutral = { ...sample.pose, 'head.turn': 0, 'head.nod': 0, 'head.tilt': 0 }
+  const head = stagePlanSpace(actor.who.plan, neutral, { height: actor.who.height, contact: actor.who.contact }).head
+  const direction = vec3.subtract(target, add(sample.position, head.center))
+  const local = head.axes.map(axis => vec3.dot(direction, axis))
+  const turn = Math.atan2(local[0], local[2]) * 180 / Math.PI
+  const nod = Math.atan2(-local[1], Math.hypot(local[0], local[2])) * 180 / Math.PI
+  return { ...sample, pose: { ...sample.pose, 'head.turn': Math.max(-90, Math.min(90, turn)), 'head.nod': Math.max(-25, Math.min(30, nod)), 'head.tilt': 0 } }
+}
+
 /** Solve to the rendered palm rather than snapping an unattached prop to a desired hand point. */
 export function cricketReach(actor: CricketActor, sample: CricketSample, side: 'left' | 'right', target: Vec3, shape: keyof typeof HAND_SHAPES = 'hold'): CricketSample {
   let pose = { ...sample.pose }
@@ -63,9 +91,11 @@ export function cricketReach(actor: CricketActor, sample: CricketSample, side: '
 export function gripBat(actor: CricketActor, sample: CricketSample, target: Vec3, axis: Vec3): CricketSample {
   const direction = vec3.normalize(axis)
   const size = actor.who.height / 1.78
-  let posed = cricketReach(actor, sample, 'right', target)
-  posed = cricketReach(actor, posed, 'left', add(cricketPalm(actor, posed, 'right'), scale(direction, .105 * size)))
-  return { ...posed, bat: { grip: cricketPalm(actor, posed, 'right'), axis: direction, scale: size } }
+  // The left hand is above the right hand for a right-handed batter. The bat's
+  // +y axis points from the upper grip toward the blade, even during a backlift.
+  let posed = cricketReach(actor, sample, 'left', target)
+  posed = cricketReach(actor, posed, 'right', add(cricketPalm(actor, posed, 'left'), scale(direction, .105 * size)))
+  return { ...posed, bat: { grip: cricketPalm(actor, posed, 'left'), axis: direction, scale: size } }
 }
 
 export function batSweetSpot(bat: BatFrame): Vec3 { return add(bat.grip, scale(bat.axis, .51 * bat.scale)) }

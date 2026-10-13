@@ -91,7 +91,7 @@ bakes. See `docs/dance.md`.
 For cricket tutorials, import `cricketClip`, `cricketCameraTracks` and
 `cricketEventAt` from `@algorisys/tinyfly/sports`. The clip is an owned scene,
 JSON timeline, timed captions and declared result. Choose `test | odi | t20`,
-`adults | children | mixed`, and a play from `CRICKET_ACTIONS`. Merge camera
+`adults | men | children | mixed`, and a play from `CRICKET_ACTIONS`. Merge camera
 tracks with action tracks; render with scene-3d plus `[characterObjects]`.
 The UI is a consumer of these APIs. `orbit` covers the full ground in 360°;
 `follow-ball` keys against the same ball tracks. Contacts are sampled exactly,
@@ -100,6 +100,27 @@ demonstrations, not collision-based umpiring or an innings simulator. Do not
 infer new outcomes from the illustrative arcs. See `docs/cricket.md` and
 `examples/headless-video/cricket-story.mjs`; `/examples/live-cricket-story`
 has event seeking and downloadable scene/action/camera JSON.
+`CRICKET_FIELDING_POSITIONS` maps the eleven stock fielding IDs to public labels;
+scene objects carry them in `name`. `fielder` is Extra cover. Keep eleven fielders,
+two on-field batters and two umpires; nine batting teammates wait off-field.
+Mid-on is closer to the pitch; long-on is its deeper boundary alternative, not
+an extra stock player. For the right-handed striker, +x is off side and −x is
+on/leg side. Keeper/slip stand behind the striker; track the actual incoming delivery,
+never force their heads toward a screen direction or the camera.
+`cricketCameraTracks(clip, { view, zoom })` supports optical zoom 0.25–4
+(default 1) for every view, preserving the camera path and story state. Merge
+the returned field-of-view track into exported JSON; do not CSS-scale the canvas.
+In camera-sorted character rendering, rear hair and hats belong to the head
+pass; attaching them to the final body part lets the skin paint over them.
+`CRICKET_CASTS` supplies cast labels; `men` uses the existing youngMan organic
+preset for every role. Standard actions include camera-independent fielding
+attention: bowler during run-up, moving delivery after release and through the
+bounce, then the ball after contact/miss. Do not switch to the batter early.
+The right-handed guard is side-on with the left hand above the right; preserve
+these world-facing poses instead of rotating players toward the camera.
+Keeper-bound misses pass on positive x, clear of the native legs and stumps
+through every ball segment, including sparse keys and scaled durations. Keep
+keeper palm contacts and intentional LBW pad contact.
 Wide cameras support the full 24–250 m boundary range; equivalent yaw angles
 use identical geometry. Ball-follow cameras sample only ball position channels.
 Render the headless example with `tinyfly video <scene.mjs> -o <output.mp4>`.

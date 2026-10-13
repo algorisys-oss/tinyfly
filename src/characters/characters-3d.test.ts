@@ -94,6 +94,32 @@ describe('characters in 3D scenes', () => {
   }
   const differ = (a: Uint8ClampedArray, b: Uint8ClampedArray) => a.some((v, i) => v !== b[i])
 
+  it.each(['youngMan', 'youngWoman', 'childBoy', 'childGirl'] as const)('keeps %s rear scalp covered when scene parts sort independently', name => {
+    const size = { width: 500, height: 450 }
+    for (const yaw of [0, 45, 75, 145, 180, 225, 270, 315]) for (const nod of [-20, 0, 30]) for (const headTurn of [-30, 0, 30]) {
+      const angle = yaw * Math.PI / 180
+      const options: CharacterOptions = { ...SOFT_CARTOON_CAST[name], hair: { style: name === 'youngWoman' || name === 'childGirl' ? 'flowingBob' : 'softSweep', color: '#804020' }, body: { shading: { mode: 'none' } }, outfit: null }
+      const pose = humanPose({ turn: yaw / 90 + 2, lean: 22, 'head.nod': nod, 'head.turn': headTurn })
+      const json: Scene3D = { ...scene(), objects: [
+        { id: 'cam', kind: 'camera', projection: 'perspective', fov: 40, near: .1, far: 50, position: [Math.sin(angle) * 4, 2.4, Math.cos(angle) * 4], lookAt: [0, .95, 0] },
+        { id: 'actor', kind: 'character', height: 1.7, character: { ...options }, pose, shadow: false },
+      ] }
+      const loaded = loadScene3D(json, { kinds: [characterObjects] }), frame = resolveScene3D(loaded, new Map(), size)
+      const projection: ViewProjection = { toView: v => mat4.transformPoint(frame.camera.view, v), toScreen: v => {
+        const ndc = mat4.transformPoint(frame.camera.projection, v)
+        return { x: (ndc[0] + 1) * size.width / 2, y: (1 - ndc[1]) * size.height / 2 }
+      } }
+      const head = characterJointsInView(character(options), pose, projection, { height: 1.7 }).head
+      expect(head.axes[2][2]).toBeLessThan(-.3)
+      const canvas = createCanvas(size.width, size.height), ctx = canvas.getContext('2d')
+      drawScene3D(ctx as unknown as CanvasRenderingContext2D, loaded, undefined, size)
+      const pixels = ctx.getImageData(Math.round(head.center.x) - 3, Math.round(head.center.y) - 3, 7, 7).data
+      let covered = 0
+      for (let i = 0; i < pixels.length; i += 4) if ([128, 64, 32].every((v, k) => Math.abs(v - pixels[i + k]) < 10)) covered++
+      expect(covered, `${name} camera ${yaw} nod ${nod} head ${headTurn}: skin showing through rear hair`).toBeGreaterThan(35)
+    }
+  }, 15000)
+
   it.each(['youngMan', 'youngWoman', 'childBoy', 'childGirl'] as const)('keeps %s wrists over waist garments in globally sorted scene pixels', name => {
     const size = { width: 500, height: 450 }
     const camera: Scene3D['objects'][number] = { id: 'cam', kind: 'camera', projection: 'orthographic', height: 2.5, near: .1, far: 50, position: [0, 1, 5] }

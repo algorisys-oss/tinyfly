@@ -34,15 +34,16 @@ See [getting started](getting-started.md) for the versioned CDN URLs.
 | API | Result |
 | --- | --- |
 | `cricketPlayer({ id, role, preset?, format?, height?, position?, color?, headwear?, appearance? })` | An owned JSON `character` scene object. Roles: batter, bowler, keeper, fielder, umpire. Presets include youngMan, youngWoman, childBoy, childGirl. |
-| `cricketField({ id?, format?, cast?, boundaryRadius?, battingColor?, fieldingColor? })` | `scene`, `format`, `boundaryRadius`, `landmarks`. A 20.12 × 3.05 metre pitch, standard creases, wickets/bails, two bats, ball, boundary, eleven fielding players, two batters and two umpires. |
+| `cricketField({ id?, format?, cast?, boundaryRadius?, battingColor?, fieldingColor? })` | `scene`, `format`, `boundaryRadius`, `landmarks`; stock fielders have human-readable JSON `name` labels. A 20.12 × 3.05 metre pitch, standard creases, wickets/bails, two bats, ball, boundary, eleven fielding players, two batters and two umpires. |
 | `cricketAction(field, { action?, duration?, every? })` | A JSON timeline, timed events/captions and declared example result. Does not modify the field. |
 | `cricketClip(options)` | Combines field and action; default T20, adult cast, pace bowling, 6000 ms. |
 | `cricketCameraTracks(clip, { view?, yaw?, every? })` | Ordinary scene camera tracks. Merge these with the action tracks. |
 | `cricketEventAt(events, time)` | Most recent event at that time, including when seeking backward. |
 | `ballFlightPoint(options, time)`, `ballFlightTracks(options)` | Shared sampled arcs for other sports too. `from`, `to`, `arc`, `curve`, `start`, `end`, `target`; exact endpoints. |
 
-Units are metres, milliseconds and degrees. `cast` is `adults`, `children` or
-`mixed`; `format` is `test`, `odi` or `t20`. `boundaryRadius` defaults to 64 m
+Units are metres, milliseconds and degrees. `cast` is `adults`, `men`, `children` or
+`mixed`; `CRICKET_CASTS` exports their labels. `men` uses the existing youngMan
+organic preset for every role; adults/children/mixed retain their varied casts; `format` is `test`, `odi` or `t20`. `boundaryRadius` defaults to 64 m
 and accepts 24–250 m. A boundary is venue dependent. Sampling defaults to 40 ms,
 accepts 16–1000 ms and always includes play contact events. Durations accept
 4000–60000 ms; changing duration scales the whole play. Player height accepts
@@ -53,6 +54,57 @@ The standard action builder expects the named actors/equipment from
 `cricketField`; required actors must be unparented with no object rotation or
 scale. It owns poses and paths for that layout. Customize appearance and
 uniforms before compiling; author your own scene tracks for a different layout.
+
+Fielders watch the bowler during the run-up, smoothly pick up the moving ball
+after release, track its flight and bounce, then follow it after contact or a miss. Head turns
+use the rig's neck frame, including torso lean, and are independent of the
+camera. Stationary fielders turn their bodies toward the play; running players
+face their travel and collectors keep their catch/throw poses. The striker uses
+a side-on right-handed guard: left shoulder and front foot toward the bowler,
+soft knees, both feet supported, left hand above the right on the handle and a
+bat resting near the back foot. These authored poses also fit the child rig.
+
+The live example keeps cast/action/camera selection and playback/scrubbing in a
+panel beside the scene, or above it on narrow screens. Select **Men** in Cast for
+the male team; individual players remain editable through `cricketPlayer`.
+
+## Teams and stock field positions
+
+Each team has eleven players. `cricketField` shows all eleven of the fielding
+XI, two on-field batters (striker and non-striker) and two umpires. The other
+nine members of the batting XI wait off-field.
+
+`CRICKET_FIELDING_POSITIONS` exports the stock actor IDs and labels as plain
+JSON data. Each corresponding scene object also carries the label in `name`:
+Bowler, Wicketkeeper, Extra cover (`fielder`, the collecting actor), Slip,
+Point, Cover, Mid-off, Mid-on, Square leg, Fine leg and Third man. IDs used by
+action tracks remain stable. These are illustrative placements, not a roster
+or automatic field-setting system.
+
+For this right-handed striker, the off side is in front of the chest (+x),
+and the on or leg side is behind the back (−x). Mid-on stands on the leg side
+closer to the pitch toward the bowler; long-on is its deeper boundary
+alternative. Long-on is not an additional stock fielder. Choose a different
+layout by authoring your own scene and tracks.
+
+Wicketkeeper and slip stand behind the striker. Their attention follows the
+actual delivery through its flight and bounce rather than turning to the batter
+before the ball arrives. Their native head poses aim at world targets,
+independently of their body yaw and camera selection. The live example's
+**Teams and field positions** disclosure uses the scene's JSON labels.
+
+## Review zoom
+
+Pass `zoom` to `cricketCameraTracks(clip, { view: 'batter', zoom: 2 })` for
+2× magnification. All eight views support 0.25–4 (default 1), including orbit
+and ball follow. Zoom changes the field of view while preserving camera position,
+look target, clipping distances, player motion and current story time. Invalid
+or non-finite zoom values throw. The generated camera tracks are ordinary JSON.
+
+The example provides a 25%–400% slider, zoom-in/out buttons and **Reset**.
+Zoom persists while choosing another play, cast or view, and downloaded story
+JSON includes the selected magnification. Native range controls support keyboard
+and touch review; zooming does not seek, pause or restart playback.
 
 ## Plays and cameras
 
@@ -75,7 +127,9 @@ ball and fielder keyed to the same palm contact.
 Defensive blocks retain their downward two-hand bat pose and emit the `contact`
 event with the “Bat contact” label. Pace, spin, no-ball and stumping deliveries
 pass outside the off stump on the side away from the batter, allowing for the
-displayed ball and stump radii before collection. Bowled keeps its intentional
+displayed ball and stump radii before collection. Their positive-x clearance
+path also avoids both native legs throughout the delivery, including the
+striker’s movement during stumping. Bowled keeps its intentional
 wicket collision; stumping keeps the later hand-held wicket break.
 
 `CRICKET_VIEWS` offers `pitch`, `batter`, `bowler`, `keeper`, `field`, `overhead`,

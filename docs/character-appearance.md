@@ -187,8 +187,11 @@ off the head, how far it hangs), drawn wherever the head's `turn`, `head.turn`,
   shoulders seen from the front, and a bob shows beside the face;
 - the part facing the viewer is drawn over the head, so a fringe crosses the
   forehead and, from behind, the hair covers the whole head;
-- turned away (past about `turn` 1.2), the hair is drawn after the whole body,
-  over an arm at the side;
+- in a whole-figure 2D draw, turned away (past about `turn` 1.2), hair is
+  drawn after the body, over an arm at the side;
+- in a camera-sorted 3D scene, rear hair and hats draw with the head's own
+  part, after its skin. They remain attached through independent head turns
+  and nods, without another body's draw order exposing the scalp;
 - a parting, a side ponytail or a braid stays on the character's own side
   through a turn: left and right are the character's, never mirrored.
 

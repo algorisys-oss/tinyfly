@@ -3,6 +3,7 @@ export default {
   async run({ page, base }) {
     const results = []
     for (const mode of ['demo', 'standalone']) {
+      await page.setViewportSize({ width: 1280, height: 900 })
       await page.goto(`${base}/e2e/harness.html`)
       await page.evaluate(async mode => {
         const demo = await import('/src/examples/live-demos/cricket-story.js')
@@ -29,7 +30,7 @@ export default {
         }
         set('.crkt-action', 'defend')
         let blockContact = true
-        for (const cast of ['adults', 'children', 'mixed']) {
+        for (const cast of ['adults', 'men', 'children', 'mixed']) {
           set('.crkt-cast', cast); set('.crkt-time', '2900', 'input'); casts.add(hash())
           blockContact &&= document.querySelector('.crkt-caption strong').textContent === 'Bat contact' && document.querySelector('.crkt-caption').textContent.includes('The ball meets the blade')
         }
@@ -50,15 +51,75 @@ export default {
         document.querySelector('.crkt-play').checked = false; document.querySelector('.crkt-play').dispatchEvent(new Event('change'))
         return { actions: actions.size, views: views.size, casts: casts.size, formats: formats.size, blockContact, eventSeek, angles: angles.size, closure, stable, replay, slow }
       })
-      for (const [key, expected] of Object.entries({ actions: 16, views: 8, casts: 3, formats: 3, blockContact: true, eventSeek: true, angles: 4, closure: true, stable: true, replay: true, slow: true })) results.push({ label: `${mode}: ${key}`, ok: data[key] === expected, detail: String(data[key]) })
+      for (const [key, expected] of Object.entries({ actions: 16, views: 8, casts: 4, formats: 3, blockContact: true, eventSeek: true, angles: 4, closure: true, stable: true, replay: true, slow: true })) results.push({ label: `${mode}: ${key}`, ok: data[key] === expected, detail: String(data[key]) })
+      const zoomChecks = await page.evaluate(() => {
+        const set = (selector, value, type = 'change') => { const node = document.querySelector(selector); node.value = value; node.dispatchEvent(new Event(type, { bubbles: true })) }
+        const canvas = document.querySelector('.crkt-canvas')
+        const hash = () => { let h = 2166136261; for (const value of canvas.getContext('2d').getImageData(0, 0, 1280, 720).data) h = Math.imul(h ^ value, 16777619); return h >>> 0 }
+        let views = 0, stable = true
+        set('.crkt-time', '2500', 'input')
+        for (const option of document.querySelector('.crkt-view').options) {
+          set('.crkt-view', option.value); document.querySelector('.crkt-zoom-reset').click()
+          const base = hash(), basePixels = canvas.getContext('2d').getImageData(0, 0, 1280, 720).data, time = document.querySelector('.crkt-time').value
+          document.querySelector('.crkt-zoom-in').click()
+          const enlarged = hash()
+          stable &&= document.querySelector('.crkt-time').value === time && !document.querySelector('.crkt-play').checked
+          set('.crkt-zoom', '25', 'input')
+          const reduced = hash(), minimum = document.querySelector('.crkt-zoom-out').disabled
+          set('.crkt-zoom', '400', 'input')
+          const maximum = document.querySelector('.crkt-zoom-in').disabled
+          document.querySelector('.crkt-zoom-reset').click()
+          const resetPixels = canvas.getContext('2d').getImageData(0, 0, 1280, 720).data
+          let changedPixels = 0, maxError = 0
+          for (let i = 0; i < basePixels.length; i += 4) {
+            let pixelError = 0
+            for (let channel = 0; channel < 4; channel++) pixelError = Math.max(pixelError, Math.abs(basePixels[i + channel] - resetPixels[i + channel]))
+            if (pixelError) changedPixels++
+            maxError = Math.max(maxError, pixelError)
+          }
+          // WebKit can vary a few antialiased edge pixels after changing projection.
+          // Keep the reset framing check tight; native tests require exact camera state.
+          const restored = changedPixels <= 64 && maxError <= 64
+          if (base !== enlarged && base !== reduced && restored && minimum && maximum && document.querySelector('.crkt-zoom-label').value === '100%') views++
+        }
+        set('.crkt-zoom', '200', 'input'); set('.crkt-view', 'field'); set('.crkt-cast', 'men')
+        set('.crkt-time', '3900', 'input')
+        return { views, stable, persistent: document.querySelector('.crkt-zoom').value === '200' && document.querySelector('.crkt-zoom-label').value === '200%' }
+      })
+      for (const [key, expected] of Object.entries({ views: 8, stable: true, persistent: true })) results.push({ label: `${mode}: camera zoom ${key}`, ok: zoomChecks[key] === expected, detail: String(zoomChecks[key]) })
+      await page.locator('.crkt-teams summary').focus()
+      await page.keyboard.press('Enter')
+      results.push({ label: `${mode}: accessible teams guide uses eleven exported labels`, ok: await page.evaluate(async () => {
+        const { CRICKET_FIELDING_POSITIONS } = await import('/src/sports/index.ts')
+        const guide = document.querySelector('.crkt-teams'), items = [...guide.querySelectorAll('li')]
+        return guide.open && items.length === 11 && items.every(item => item.textContent === CRICKET_FIELDING_POSITIONS[item.dataset.player]) && guide.textContent.includes('nine teammates wait off-field') && guide.textContent.includes('Long-on is its deeper boundary alternative')
+      }) })
+      await page.keyboard.press('Enter')
+      await page.evaluate(() => { document.activeElement.blur(); scrollTo(0, 0) })
       for (const width of [1280, 390]) {
-        await page.setViewportSize({ width, height: 980 })
+        await page.setViewportSize({ width, height: 768 })
         results.push({ label: `${mode}: controls fit ${width}px`, ok: await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && [...document.querySelectorAll('.crkt-controls select, .crkt-controls input, .crkt-controls button')].every(node => node.getBoundingClientRect().right <= innerWidth)) })
       }
+      await page.setViewportSize({ width: 1280, height: 768 })
+      results.push({ label: `${mode}: desktop controls share the scene viewport`, ok: await page.evaluate(() => {
+        const scene = document.querySelector('.crkt-canvas').getBoundingClientRect()
+        return [...document.querySelectorAll('.crkt-controls select, .crkt-controls input, .crkt-controls button')].every(node => {
+          const rect = node.getBoundingClientRect()
+          return rect.left >= scene.right && rect.top >= 0 && rect.bottom <= innerHeight
+        })
+      }) })
+      await page.setViewportSize({ width: 390, height: 768 })
+      results.push({ label: `${mode}: phone controls are available before the scene`, ok: await page.evaluate(() => {
+        const scene = document.querySelector('.crkt-canvas').getBoundingClientRect()
+        return [...document.querySelectorAll('.crkt-controls select, .crkt-controls input, .crkt-controls button')].every(node => {
+          const rect = node.getBoundingClientRect()
+          return rect.top >= 0 && rect.bottom <= scene.top && rect.bottom <= innerHeight
+        })
+      }) })
       const [download] = await Promise.all([page.waitForEvent('download'), page.locator('.crkt-export').evaluate(node => node.click())])
       const stream = await download.createReadStream(); const chunks = []; for await (const chunk of stream) chunks.push(chunk)
       const story = JSON.parse(Buffer.concat(chunks).toString())
-      results.push({ label: `${mode}: JSON includes scene, action, camera and captions`, ok: story.scene.objects.filter(o => o.kind === 'character').length === 15 && story.timeline.tracks.some(t => t.target.endsWith('/camera')) && Boolean(story.timeline.captions.en.wicket) })
+      results.push({ label: `${mode}: JSON includes scene, action, camera and captions`, ok: story.scene.objects.filter(o => o.kind === 'character').length === 15 && story.timeline.tracks.some(t => t.target.endsWith('/camera')) && Boolean(story.timeline.captions.en.wicket) && story.scene.objects.find(o => o.id === 'fielder').name === 'Extra cover' && story.timeline.tracks.some(t => t.target.endsWith('/camera') && t.property === 'fov' && Math.abs(Math.tan(48 * Math.PI / 360) / Math.tan(t.keyframes[0].value * Math.PI / 360) - 2) < 1e-10) })
       await page.evaluate(() => window.cricketCleanup())
     }
     await page.goto(`${base}/examples/live-cricket-story/full`)

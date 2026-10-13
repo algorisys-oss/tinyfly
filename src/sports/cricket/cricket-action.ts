@@ -7,7 +7,7 @@ import type { Pose } from '../../characters/rig/body-plan'
 import { ballFlightPoint, sampleTimes } from '../ball-flight'
 import { CRICKET_PITCH, cricketField } from './cricket-field'
 import { CRICKET_ACTIONS, CRICKET_FORMATS, cricketChoice, type CricketAction, type CricketActionOptions, type CricketActionResult, type CricketClip, type CricketEvent, type CricketField, type CricketFieldOptions, type CricketResult } from './cricket-types'
-import { add, alignCricketEquipment, batSweetSpot, blendPose, cricketActor, cricketJoint, cricketPalm, cricketReach, gripBat, poseSequence, progress, restSample, smooth, type CricketActor, type CricketSample } from './cricket-motion'
+import { add, alignCricketEquipment, batSweetSpot, battingStance, blendPose, cricketActor, cricketJoint, cricketLook, cricketPalm, cricketReach, gripBat, poseSequence, progress, restSample, smooth, turnNear, turnToward, type CricketActor, type CricketSample } from './cricket-motion'
 
 const RELEASE = 1900
 const BOUNCE = 2450
@@ -19,10 +19,11 @@ const RETURN = 5300
 const FINISH = 5500
 
 /** Native gait, keyed ahead of time. Travel and stride use the same distance. */
-function runBetween(actor: CricketActor, time: number, start: number, end: number, from: Vec3, to: Vec3): CricketSample {
+function runBetween(actor: CricketActor, time: number, start: number, end: number, from: Vec3, to: Vec3, startTurn = actor.object.pose?.turn ?? 0): CricketSample {
   const u = progress(time, start, end)
   const distance = vec3.distance(from, to)
-  const turn = Math.atan2(to[0] - from[0], to[2] - from[2]) * 2 / Math.PI
+  const travelTurn = turnToward(from, to, startTurn)
+  const turn = startTurn + (travelTurn - startTurn) * smooth(progress(time, start, start + 200))
   const base = { ...HUMAN_REST, ...actor.object.pose, turn }
   const stride = humanGaitStrideLength('run', actor.who.height, 1, (actor.object.character?.legLength as number | undefined) ?? 1)
   const gait = humanGaitPose('run', distance * u / stride, base)
@@ -81,6 +82,11 @@ export function cricketAction(field: CricketField, options: CricketActionOptions
     if (!field.scene.objects.some(object => object.id === id)) throw new Error(`cricketAction: required equipment '${id}' is missing`)
   }
   const actors = Object.fromEntries(['batter', 'non-striker', 'bowler', 'keeper', 'fielder', 'umpire'].map(id => [id, cricketActor(field.scene, id)]))
+  // The remaining stock fielders also watch the play. Extra consumer actors
+  // retain their own authored animation rather than being enrolled implicitly.
+  for (const id of ['slip', 'point', 'cover', 'mid-off', 'mid-on', 'square-leg', 'fine-leg', 'third-man', 'square-umpire']) {
+    if (field.scene.objects.some(object => object.id === id && object.kind === 'character')) actors[id] = cricketActor(field.scene, id)
+  }
   const h = (id: string) => actors[id].who.height
   const base = (id: string) => restSample(actors[id])
   const phase = (real: number) => Math.round(real * 6000 / duration * 1e9) / 1e9
@@ -124,35 +130,40 @@ export function cricketAction(field: CricketField, options: CricketActionOptions
       if (action === 'lbw' && id === 'batter') sample.position[0] = 0
       if (action === 'stumping' && id === 'batter') sample.position[2] -= 1.1 * smooth(progress(time, 2150, 2800))
       if (running && time > 3050) {
-        const from = sample.position
+        const handoff = sampleActor(id, 3050)
         const to: Vec3 = id === 'batter' ? [1, 0, -9.5] : [-1, 0, 9.5]
         const end = action === 'run-out' ? 6000 : FINISH
-        sample = runBetween(actor, time, 3050, end, from, to)
+        sample = runBetween(actor, time, 3050, end, handoff.position, to, handoff.pose.turn)
         const grip = cricketPalm(actor, sample, 'right')
         sample.bat = { grip, axis: vec3.normalize([.7, -.35, .5]), scale: H / 1.78 }
       } else {
-        sample.pose = { ...sample.pose, 'leg.left.spread': 10, 'leg.right.spread': 10, 'leg.left.knee': 10, 'leg.right.knee': 8, 'head.turn': id === 'batter' ? 12 : -12 }
-        const direction = id === 'batter' ? -1 : 1
-        const down: Vec3 = [0, -1, direction * .12]
+        sample.pose = { ...sample.pose, ...(id === 'batter' ? battingStance() : { turn: .15, 'leg.left.knee': 8, 'leg.right.knee': 8 }) }
+        const down: Vec3 = [0, -1, id === 'batter' ? .05 : .12]
         let axis = down
-        let grip = add(sample.position, [-.18, H * .49, direction * .22 * H])
+        let grip = add(sample.position, [H * .15, H * .44, H * .04])
+        if (id === 'non-striker') grip = add(sample.position, [H * .08, H * .44, H * .17])
         if (id === 'batter') {
           const wind = smooth(progress(time, 2100, 2600)) * (1 - smooth(progress(time, 2600, CONTACT)))
           const strike = smooth(progress(time, 2600, CONTACT)) * (1 - smooth(progress(time, CONTACT, 3800)))
           const follow = smooth(progress(time, CONTACT, 3250)) * (1 - smooth(progress(time, 3250, 4000)))
           if (hits) {
-            grip = add(sample.position, [-.18 - .08 * strike - .13 * follow, H * (.49 + .12 * wind + .13 * follow), H * (-.22 + .18 * wind - .035 * strike)])
-            axis = vec3.normalize([.45 * wind - .85 * follow, -1 + 1.9 * wind + .8 * follow, -.12 + .8 * wind - .4 * strike - .45 * follow])
-            if (action === 'defend') { axis = down; grip = add(sample.position, [-.18, H * .49, -.27 * H]) }
-            sample.pose.lean = 5 + 8 * strike
+            grip = add(sample.position, [H * (.15 + .03 * wind - .02 * strike - .03 * follow), H * (.44 + .14 * wind + .07 * strike + .23 * follow), H * (.04 + .16 * wind - .12 * strike - .06 * follow)])
+            axis = vec3.normalize([.15 * wind + .25 * follow, -1 + 1.85 * wind + 1.6 * follow, .05 + .55 * wind - .4 * strike - .8 * follow])
+            sample.pose.turn = 1 + .12 * strike + .3 * follow
+            sample.pose.lean = 3 + 4 * strike
+            const spread = 12 + 4 * strike
+            sample.pose['leg.left.spread'] = spread; sample.pose['leg.right.spread'] = spread
+            if (action === 'defend') { axis = [0, -1, -.08]; grip = add(sample.position, [H * .1, H * .5, -H * .12]) }
           } else if (['stumping', 'bowled', 'lbw'].includes(action)) {
-            axis = vec3.normalize([-.5, .7, .4]); grip = add(sample.position, [-.1, H * .64, -.1 * H])
+            const lift = smooth(progress(time, 2100, 2700)) * (1 - smooth(progress(time, 4000, 4500)))
+            axis = vec3.normalize([.15 * lift, -1 + 1.85 * lift, .05 + .55 * lift])
+            grip = add(sample.position, [H * (.15 + .03 * lift), H * (.44 + .14 * lift), H * (.04 + .16 * lift)])
           }
         }
         sample = gripBat(actor, sample, grip, axis)
       }
     } else if (id === 'keeper') {
-      sample.pose = { ...sample.pose, turn: 2, lean: 20, 'leg.left.swing': 22, 'leg.right.swing': 22, 'leg.left.knee': 50, 'leg.right.knee': 50 }
+      sample.pose = { ...sample.pose, turn: turnToward(sample.position, base('bowler').position, 2), lean: 20, 'leg.left.swing': 22, 'leg.right.swing': 22, 'leg.left.knee': 50, 'leg.right.knee': 50 }
       if (action === 'wide') sample.position[0] = 2.15 * smooth(progress(time, 2900, 3500))
       if (action === 'stumping') sample.position[2] -= .85 * smooth(progress(time, 3400, 3900))
       const target = toward(sample, h(id) * .27, h(id) * .44)
@@ -168,15 +179,14 @@ export function cricketAction(field: CricketField, options: CricketActionOptions
       }
     } else if (id === 'fielder' && fielded) {
       sample = runBetween(actor, time, 3050, action === 'catch' ? 3800 : 3950, fieldStart, gatherPosition)
-      sample.pose.turn = -.55
       if (time >= 3800) {
-        const catchPose: Pose = { ...HUMAN_REST, turn: -.55, lean: action === 'catch' ? 5 : 42, bend: action === 'catch' ? 0 : 18, 'leg.left.swing': action === 'catch' ? 0 : 45, 'leg.right.swing': action === 'catch' ? 0 : 45, 'leg.left.knee': action === 'catch' ? 0 : 85, 'leg.right.knee': action === 'catch' ? 0 : 85, smile: .7 }
+        const catchPose: Pose = { ...HUMAN_REST, turn: turnToward(gatherPosition, base('batter').position, sample.pose.turn), lean: action === 'catch' ? 5 : 42, bend: action === 'catch' ? 0 : 18, 'leg.left.swing': action === 'catch' ? 0 : 45, 'leg.right.swing': action === 'catch' ? 0 : 45, 'leg.left.knee': action === 'catch' ? 0 : 85, 'leg.right.knee': action === 'catch' ? 0 : 85, smile: .7 }
         sample.pose = blendPose(sample.pose, catchPose, smooth(progress(time, 3800, COLLECT)))
         const target = toward(sample, h(id) * .22, h(id) * (action === 'catch' ? .73 : .2))
         sample = cricketReach(actor, sample, 'right', target)
         sample = cricketReach(actor, sample, 'left', add(target, [.035, 0, 0]))
         if ((action === 'throw' || action === 'run-out') && time > COLLECT) {
-          const wind = { ...HUMAN_REST, turn: action === 'throw' ? -.75 : -1.5, 'arm.right.swing': 225, 'arm.right.elbow': 60, 'arm.left.spread': 70, 'leg.left.swing': 15 }
+          const wind = { ...HUMAN_REST, turn: turnToward(gatherPosition, action === 'throw' ? base('keeper').position : field.landmarks['bowler-wicket'], sample.pose.turn), 'arm.right.swing': 225, 'arm.right.elbow': 60, 'arm.left.spread': 70, 'leg.left.swing': 15 }
           const release = { ...wind, 'arm.right.swing': 110, 'arm.right.elbow': 0, lean: 15 }
           sample.pose = poseSequence(time, [[COLLECT, sample.pose], [4450, wind], [THROW, release], [4900, { ...HUMAN_REST, turn: wind.turn, 'arm.right.swing': 25, lean: 22 }], [6000, { ...HUMAN_REST, turn: wind.turn }]])
         }
@@ -199,7 +209,7 @@ export function cricketAction(field: CricketField, options: CricketActionOptions
   }
 
   const palmAt = (id: string, time: number) => cricketPalm(actors[id], sampleActor(id, time), 'right')
-  const contact = hits ? batSweetSpot(sampleActor('batter', CONTACT).bat!) : action === 'lbw' ? vec3.lerp(cricketJoint(actors.batter, sampleActor('batter', CONTACT), 'leg.right', 1), cricketJoint(actors.batter, sampleActor('batter', CONTACT), 'leg.right', 2), .6) : [keeperDelivery ? -(CRICKET_PITCH.wicketWidth / 2 + .075 + .15) : 0, .45, 9.25] as Vec3
+  const contact = hits ? batSweetSpot(sampleActor('batter', CONTACT).bat!) : action === 'lbw' ? vec3.lerp(cricketJoint(actors.batter, sampleActor('batter', CONTACT), 'leg.right', 1), cricketJoint(actors.batter, sampleActor('batter', CONTACT), 'leg.right', 2), .6) : [keeperDelivery ? CRICKET_PITCH.wicketWidth / 2 + .075 + .15 : 0, .45, 9.25] as Vec3
   const release = palmAt('bowler', RELEASE)
   const bounce: Vec3 = [action === 'wide' ? .85 : action === 'spin' ? -.35 : action === 'lbw' ? contact[0] * .6 : 0, .075, 3.9]
   const keeperCatch = palmAt('keeper', action === 'stumping' ? 3400 : 3500)
@@ -271,9 +281,44 @@ export function cricketAction(field: CricketField, options: CricketActionOptions
   events.sort((a, b) => a.time - b.time)
 
   const times = sampleTimes(0, duration, options.every, [1400, 1800, RELEASE, 2100, 2150, 2250, BOUNCE, 2600, 2800, CONTACT, 3050, 3100, 3200, 3250, 3300, 3400, 3500, 3800, 3900, 3950, 4000, CATCH, COLLECT, 4350, 4450, THROW, 4900, 5000, 5100, 5150, RETURN, FINISH, 5700].map(actual))
-  const tracks: Track[] = []
-  for (const [id, actor] of Object.entries(actors)) appendActorTracks(tracks, scene, actor, times, times.map(time => sampleActor(id, phase(time))))
   const ball = times.map(time => pointAt(phase(time)))
+  const tracks: Track[] = []
+  for (const [id, actor] of Object.entries(actors)) {
+    let turn = actor.object.pose?.turn ?? 0
+    let runStartTurn = turn
+    const samples = times.map((real, index) => {
+      const time = phase(real)
+      let sample = id === 'fielder' && fielded && time > 3050 && time < 3250
+        ? runBetween(actor, time, 3050, action === 'catch' ? 3800 : 3950, fieldStart, gatherPosition, runStartTurn)
+        : sampleActor(id, time)
+      let target = ball[index]
+      const spectator = !['batter', 'non-striker', 'bowler', 'keeper'].includes(id)
+      if (spectator) {
+        const bowler = sampleActor('bowler', Math.min(time, RELEASE))
+        const delivery = add(bowler.position, [0, h('bowler') * .8, 0])
+        // Follow the delivery itself. A premature switch to the striker makes
+        // close fielders look away while the ball is still travelling/bouncing.
+        target = time <= RELEASE ? delivery : time < 2100 ? vec3.lerp(delivery, target, smooth(progress(time, RELEASE, 2100))) : target
+      }
+      if (running && (id === 'batter' || id === 'non-striker') && time > 3050) target = id === 'batter' ? [1, h(id) * .8, -10.5] : [-1, h(id) * .8, 10.5]
+      if (id === 'bowler' && time <= CONTACT) target = add(sampleActor('batter', time).position, [0, h('batter') * .65, 0])
+      const freeBody = spectator && (id !== 'fielder' || !fielded || time <= 3050) || id === 'bowler' && time >= 3000
+      if (freeBody) {
+        const aimed = turnToward(sample.position, target, turn)
+        turn = id === 'bowler' && time < 3500 ? (sample.pose.turn ?? 0) + (turnNear(aimed, sample.pose.turn ?? 0) - (sample.pose.turn ?? 0)) * smooth(progress(time, 3000, 3500)) : aimed
+        sample = { ...sample, pose: { ...sample.pose, turn } }
+      }
+      if (id === 'fielder' && fielded) {
+        if (time === 3050) runStartTurn = turn
+        else if (time > 3050) {
+          turn = turnNear(sample.pose.turn ?? 0, turn)
+          sample = { ...sample, pose: { ...sample.pose, turn } }
+        }
+      }
+      return cricketLook(actor, sample, target)
+    })
+    appendActorTracks(tracks, scene, actor, times, samples)
+  }
   for (const [axis, property] of ['x', 'y', 'z'].entries()) tracks.push({ id: `ball-${property}`, target: `${scene}/ball`, property, keyframes: times.map((time, i) => ({ time, value: ball[i][axis] })) })
   if (['bowled', 'stumping', 'run-out'].includes(action)) {
     for (let i = 0; i < 2; i++) {

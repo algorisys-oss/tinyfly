@@ -6,7 +6,7 @@ import type { SoftCartoonName } from '../../characters/soft-cartoon-cast'
 
 export type CricketFormat = 'test' | 'odi' | 't20'
 export type CricketRole = 'batter' | 'bowler' | 'keeper' | 'fielder' | 'umpire'
-export type CricketCast = 'adults' | 'children' | 'mixed'
+export type CricketCast = 'adults' | 'men' | 'children' | 'mixed'
 export type CricketAction = 'bowling' | 'spin' | 'batting' | 'defend' | 'running' | 'four' | 'six' | 'catch' | 'fielding' | 'throw' | 'bowled' | 'lbw' | 'stumping' | 'run-out' | 'no-ball' | 'wide'
 
 export interface CricketFormatInfo {
@@ -23,6 +23,14 @@ export const CRICKET_FORMATS: Readonly<Record<CricketFormat, Readonly<CricketFor
   test: Object.freeze({ name: 'Test', inningsPerSide: 2, oversPerInnings: null, ballsPerOver: 6, freeHitAfterNoBall: false, summary: 'Multi-day cricket. Each side can have two innings; there is no innings over limit.' }),
   odi: Object.freeze({ name: 'ODI', inningsPerSide: 1, oversPerInnings: 50, ballsPerOver: 6, freeHitAfterNoBall: true, summary: 'One innings per side, up to 50 overs. A no-ball gives a free hit on the next legitimate delivery.' }),
   t20: Object.freeze({ name: 'T20', inningsPerSide: 1, oversPerInnings: 20, ballsPerOver: 6, freeHitAfterNoBall: true, summary: 'One innings per side, up to 20 overs. A no-ball gives a free hit on the next legitimate delivery.' }),
+})
+
+export const CRICKET_CASTS: Readonly<Record<CricketCast, string>> = Object.freeze({ adults: 'Adults', men: 'Men', children: 'Children', mixed: 'Mixed cast' })
+
+export const CRICKET_FIELDING_POSITIONS = Object.freeze({
+  bowler: 'Bowler', keeper: 'Wicketkeeper', fielder: 'Extra cover', slip: 'Slip',
+  point: 'Point', cover: 'Cover', 'mid-off': 'Mid-off', 'mid-on': 'Mid-on',
+  'square-leg': 'Square leg', 'fine-leg': 'Fine leg', 'third-man': 'Third man',
 })
 
 export interface CricketPlayerOptions {

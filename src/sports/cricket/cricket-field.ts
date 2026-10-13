@@ -3,7 +3,8 @@ import { outfitPreset } from '../../characters/wardrobe/outfit-preset'
 import type { Object3D, MeshObject } from '../../scene-3d/scene-types'
 import type { Vec3 } from '../../engine/math'
 import { finiteVector } from '../ball-flight'
-import { CRICKET_FORMATS, cricketChoice, type CricketField, type CricketFieldOptions, type CricketPlayer, type CricketPlayerOptions, type CricketRole } from './cricket-types'
+import { CRICKET_CASTS, CRICKET_FORMATS, CRICKET_FIELDING_POSITIONS, cricketChoice, type CricketField, type CricketFieldOptions, type CricketPlayer, type CricketPlayerOptions, type CricketRole } from './cricket-types'
+import { battingStance, turnToward } from './cricket-motion'
 
 export const CRICKET_PITCH = Object.freeze({ length: 20.12, width: 3.05, poppingCrease: 1.22, returnCrease: 1.32, stumpHeight: .711, wicketWidth: .2286 })
 
@@ -25,7 +26,7 @@ export function cricketPlayer(options: CricketPlayerOptions): CricketPlayer {
     outfit: outfitPreset('casual', { top: 'shirt', shirt: color, trousers: options.role === 'umpire' ? '#405058' : color, bottom: 'trousers', trouserStyle: 'plain', sleeves: 'short', collar: true, tie: null, shoes: 'boots', shoeColor: '#f3ead7' }),
     hat: headwear === 'none' ? null : { style: headwear === 'sun-hat' ? 'sunHat' : 'cap', color },
   }))
-  return { id: options.id, name: options.role, kind: 'character', look: 'pen', height, position: [...(options.position ?? [0, 0, 0])], character, pose: { turn: options.role === 'batter' || options.role === 'keeper' ? 2 : 0 } }
+  return { id: options.id, name: options.role, kind: 'character', look: 'pen', height, position: [...(options.position ?? [0, 0, 0])], character, pose: options.role === 'batter' ? battingStance() : { turn: options.role === 'keeper' ? 2 : 0 } }
 }
 
 function box(id: string, position: Vec3, size: Vec3, material: string, layer = 0): MeshObject {
@@ -55,7 +56,7 @@ function bat(id: string, scale: number): Object3D[] {
 /** Standard pitch/creases; illustrative field positions and circular boundary. All units are metres. */
 export function cricketField(options: CricketFieldOptions = {}): CricketField {
   const format = cricketChoice(CRICKET_FORMATS, options.format ?? 't20', 'cricketField.format')
-  const cast = cricketChoice({ adults: 1, children: 1, mixed: 1 }, options.cast ?? 'adults', 'cricketField.cast')
+  const cast = cricketChoice(CRICKET_CASTS, options.cast ?? 'adults', 'cricketField.cast')
   const R = options.boundaryRadius ?? 64
   if (!Number.isFinite(R) || R < 24 || R > 250) throw new Error('cricketField: boundaryRadius must be between 24 and 250 metres')
   const id = options.id ?? 'cricket'
@@ -87,7 +88,7 @@ export function cricketField(options: CricketFieldOptions = {}): CricketField {
     for (const side of [-1, 1]) line(`return-line-${side < 0 ? 'left' : 'right'}`, [[side * 1.32, .02, crease], [side * 1.32, .02, z + sign * 2.5]])
   }
   const roles: Array<[string, CricketRole, Vec3]> = [
-    ['batter', 'batter', [.38, 0, 9.3]], ['non-striker', 'batter', [-.85, 0, -9.3]],
+    ['batter', 'batter', [-.38, 0, 9.3]], ['non-striker', 'batter', [-.85, 0, -9.3]],
     ['bowler', 'bowler', [.68, 0, -17]], ['keeper', 'keeper', [0, 0, 11.25]],
     ['fielder', 'fielder', [12, 0, -3]], ['slip', 'fielder', [3.5, 0, 12]],
     ['point', 'fielder', [20, 0, 6]], ['cover', 'fielder', [22, 0, -16]],
@@ -98,13 +99,17 @@ export function cricketField(options: CricketFieldOptions = {}): CricketField {
   ]
   roles.forEach(([name, role, position], index) => {
     const child = cast === 'children' || cast === 'mixed' && index % 3 === 0
-    const preset = child ? index % 2 ? 'childGirl' : 'childBoy' : index % 2 ? 'youngWoman' : 'youngMan'
+    const preset = cast === 'men' ? 'youngMan' : child ? index % 2 ? 'childGirl' : 'childBoy' : index % 2 ? 'youngWoman' : 'youngMan'
     // Keep outer fielders inside a smaller caller-selected boundary.
     const length = Math.hypot(position[0], position[2])
     const placed: Vec3 = length > R * .88 ? [position[0] * R * .88 / length, 0, position[2] * R * .88 / length] : [...position]
     landmarks[name] = [...placed]
     const player = cricketPlayer({ id: name, role, preset, format, position: placed, color: role === 'batter' ? options.battingColor ?? '#397cb9' : options.fieldingColor ?? '#bf604e' })
-    if (name === 'non-striker') player.pose = { turn: 0 }
+    if (Object.hasOwn(CRICKET_FIELDING_POSITIONS, name)) player.name = CRICKET_FIELDING_POSITIONS[name as keyof typeof CRICKET_FIELDING_POSITIONS]
+    if (name !== 'batter') {
+      const target = name === 'non-striker' || name === 'bowler' ? roles[0][2] : roles.find(([id]) => id === 'bowler')![2]
+      player.pose = { turn: turnToward(placed, target) }
+    }
     objects.push(player)
   })
   const heightOf = (name: string) => (objects.find(object => object.id === name) as CricketPlayer).height! / 1.78

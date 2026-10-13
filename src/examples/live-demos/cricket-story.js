@@ -1,28 +1,40 @@
 import { Timeline } from '../../engine'
-import { cricketClip, cricketCameraTracks, cricketEventAt, CRICKET_ACTIONS, CRICKET_FORMATS, CRICKET_VIEWS, CRICKET_CAMERA_ANGLES } from '../../sports'
+import { cricketClip, cricketCameraTracks, cricketEventAt, CRICKET_ACTIONS, CRICKET_CASTS, CRICKET_FIELDING_POSITIONS, CRICKET_FORMATS, CRICKET_VIEWS, CRICKET_CAMERA_ANGLES } from '../../sports'
 import { characterObjects } from '../../characters'
 import { loadScene3D, resolveScene3D, drawResolvedScene } from '../../scene-3d'
 
-const tinyfly = { Timeline, cricketClip, cricketCameraTracks, cricketEventAt, CRICKET_ACTIONS, CRICKET_FORMATS, CRICKET_VIEWS, CRICKET_CAMERA_ANGLES, characterObjects, loadScene3D, resolveScene3D, drawResolvedScene }
+const tinyfly = { Timeline, cricketClip, cricketCameraTracks, cricketEventAt, CRICKET_ACTIONS, CRICKET_CASTS, CRICKET_FIELDING_POSITIONS, CRICKET_FORMATS, CRICKET_VIEWS, CRICKET_CAMERA_ANGLES, characterObjects, loadScene3D, resolveScene3D, drawResolvedScene }
 
 export const html = `<style>
-.crkt-wrap{display:grid;gap:12px;width:100%;max-width:min(1060px,calc(100vw - 24px));min-width:0;font:14px system-ui;color:#e6eddc}
+.crkt-wrap{container-type:inline-size;display:grid;gap:12px;width:min(1060px,calc(100vw - 24px));max-width:100%;min-width:0;font:14px system-ui;color:#e6eddc}
 .crkt-heading{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:8px}.crkt-heading h2{margin:0;font-size:24px;color:#f8edcf}.crkt-heading p{margin:4px 0 0;color:#a7bb9f;font-size:13px}
+.crkt-workspace{display:grid;grid-template-columns:minmax(0,1fr) 210px;align-items:start;gap:12px}.crkt-stage{display:grid;gap:10px;min-width:0}
 .crkt-canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;border-radius:14px;background:#c8e5ef}
-.crkt-controls{display:flex;flex-wrap:wrap;align-items:center;gap:10px}.crkt-controls label{display:flex;align-items:center;gap:6px;font-size:12px}.crkt-controls select,.crkt-controls button{padding:6px 9px;color:#e6eddc;background:#1c302b;border:1px solid #466150;border-radius:7px;font:12px system-ui}.crkt-controls input[type=range]{width:130px;accent-color:#c4da87}.crkt-time{flex:1;min-width:140px}.crkt-format-note{margin:0;font-size:12px;color:#b7cba9}
+.crkt-panel{position:sticky;top:12px;max-height:calc(100dvh - 24px);overflow:auto;box-sizing:border-box;display:grid;gap:12px;padding:12px;border:1px solid #425546;border-radius:12px;background:#182821;min-width:0}
+.crkt-controls{display:grid;gap:10px;min-width:0}.crkt-controls label{display:grid;gap:5px;font-size:12px;min-width:0}.crkt-controls select,.crkt-controls button{box-sizing:border-box;min-width:0;width:100%;padding:8px;color:#e6eddc;background:#1c302b;border:1px solid #466150;border-radius:7px;font:12px system-ui}.crkt-controls input[type=range]{box-sizing:border-box;width:100%;min-width:0;margin:0;accent-color:#c4da87}.crkt-controls :focus-visible,.crkt-beats button:focus-visible{outline:2px solid #f8edcf;outline-offset:3px}.crkt-controls button{cursor:pointer}.crkt-transport{display:grid;grid-template-columns:auto 1fr 1fr;gap:8px;align-items:center}.crkt-transport label:first-child{display:flex;align-items:center;gap:5px}.crkt-format-note{margin:0;font-size:12px;line-height:1.5;color:#b7cba9}
+.crkt-zoom-controls{display:grid;gap:6px;grid-column:1/-1}.crkt-zoom-buttons{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}.crkt-controls button:disabled{opacity:.45;cursor:default}
 .crkt-caption{display:grid;gap:4px;min-height:58px;padding:13px 16px;border:1px solid #425546;border-radius:10px;background:#182821}.crkt-caption strong{color:#f8edcf;font-size:16px}.crkt-caption p{margin:0;color:#c3d1b6;font-size:13px;line-height:1.5}
-.crkt-beats{display:flex;flex-wrap:wrap;gap:6px}.crkt-beats button{padding:5px 8px;font:11px system-ui;border:1px solid #486047;border-radius:20px;background:#1a2921;color:#aebda1;cursor:pointer}.crkt-beats button[aria-current=true]{background:#d4dfae;color:#203627;border-color:#d4dfae}.crkt-readout{font:11px ui-monospace,monospace;color:#a8b6a0;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}.crkt-legend{display:flex;flex-wrap:wrap;gap:14px;font-size:11px;color:#afbea4}.crkt-legend span:before{content:'';display:inline-block;width:9px;height:9px;margin-right:5px;border-radius:50%;background:#397cb9}.crkt-legend span:nth-child(2):before{background:#bf604e}.crkt-legend span:nth-child(3):before{background:#edd99e}
-@media(max-width:600px){.crkt-heading h2{font-size:20px}.crkt-controls{gap:8px}.crkt-controls select{max-width:180px}.crkt-controls input[type=range]{width:95px}.crkt-caption{padding:10px;min-height:76px}}
+.crkt-teams{border:1px solid #425546;border-radius:10px;padding:12px;color:#c3d1b6;font-size:13px;line-height:1.5}.crkt-teams summary{cursor:pointer;color:#f8edcf}.crkt-teams summary:focus-visible{outline:2px solid #f8edcf;outline-offset:3px}.crkt-teams p{margin:8px 0}.crkt-positions{display:flex;flex-wrap:wrap;gap:4px 20px;margin:8px 0;padding-left:20px}
+.crkt-beats{display:flex;flex-wrap:wrap;gap:6px}.crkt-beats button{padding:7px 9px;font:11px system-ui;border:1px solid #486047;border-radius:20px;background:#1a2921;color:#aebda1;cursor:pointer}.crkt-beats button[aria-current=true]{background:#d4dfae;color:#203627;border-color:#d4dfae}.crkt-readout{font:11px ui-monospace,monospace;color:#a8b6a0;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}.crkt-legend{display:flex;flex-wrap:wrap;gap:14px;font-size:11px;color:#afbea4}.crkt-legend span:before{content:'';display:inline-block;width:9px;height:9px;margin-right:5px;border-radius:50%;background:#397cb9}.crkt-legend span:nth-child(2):before{background:#bf604e}.crkt-legend span:nth-child(3):before{background:#edd99e}
+@container(max-width:600px){.crkt-workspace{grid-template-columns:minmax(0,1fr)}.crkt-panel{position:static;max-height:none;grid-row:1;gap:10px}.crkt-selectors{grid-template-columns:repeat(2,minmax(0,1fr))}.crkt-selectors label:last-child{grid-column:1/-1}.crkt-playback{grid-template-columns:minmax(0,1fr) auto;align-items:end}.crkt-playback>label{grid-column:1/-1}.crkt-playback>.crkt-transport{grid-column:1/-1}.crkt-format-note{display:none}.crkt-heading h2{font-size:20px}.crkt-caption{padding:10px}}
 </style>
 <div class="crkt-wrap">
 <div class="crkt-heading"><div><h2>Cricket, one play at a time</h2><p>A ground, an organic cast and a camera for your next story.</p></div><div class="crkt-legend"><span>Batting side</span><span>Fielding side</span><span>Wickets</span></div></div>
+<div class="crkt-workspace">
+<div class="crkt-stage">
 <canvas class="crkt-canvas" width="1280" height="720" aria-label="Animated cricket ground and players"></canvas>
-<div class="crkt-controls"><label>Format <select class="crkt-format" aria-label="Cricket format"></select></label><label>Play <select class="crkt-action" aria-label="Cricket action"></select></label><label>Cast <select class="crkt-cast" aria-label="Cricket cast"><option value="adults">Adults</option><option value="children">Children</option><option value="mixed">Mixed cast</option></select></label><label>Camera <select class="crkt-view" aria-label="Cricket camera"></select></label><label>Angle <input class="crkt-yaw" aria-label="Camera angle" type="range" min="0" max="360" value="75" step="1"></label></div>
-<p class="crkt-format-note"></p>
 <div class="crkt-caption" role="status" aria-live="polite"><strong></strong><p></p></div>
 <div class="crkt-beats" aria-label="Story events"></div>
-<div class="crkt-controls"><label><input class="crkt-play" type="checkbox" checked> Play</label><button class="crkt-replay">Replay</button><label>Speed <select class="crkt-speed" aria-label="Playback speed"><option value="1">1×</option><option value="0.5">½×</option><option value="0.25">¼×</option></select></label><input class="crkt-time" aria-label="Story time" type="range" min="0" max="6000" step="1" value="0"><button class="crkt-export">Download story JSON</button></div>
 <div class="crkt-readout"><span class="crkt-time-label"></span><span class="crkt-result"></span></div>
+<details class="crkt-teams"><summary>Teams and field positions</summary><p>Each team has eleven players. All eleven of the fielding XI are shown; only the striker and non-striker of the batting XI are on the field. Their nine teammates wait off-field. Two umpires are also shown.</p><ul class="crkt-positions" aria-label="Eleven stock fielding positions"></ul><p>For this right-handed batter, the off side is in front of the chest; the on or leg side is behind the back. Mid-on is on the leg side, closer to the pitch toward the bowler. Long-on is its deeper boundary alternative, not an additional fielder in this stock layout. Extra cover is the collecting fielder in these authored plays.</p><p>Wicketkeeper and slip stand behind the striker. They watch the bowler during the run-up, then track the delivery through its bounce and follow the ball after a stroke or miss.</p></details>
+</div>
+<aside class="crkt-panel" aria-label="Cricket story controls">
+<div class="crkt-controls crkt-selectors"><label>Format <select class="crkt-format" aria-label="Cricket format"></select></label><label>Play <select class="crkt-action" aria-label="Cricket action"></select></label><label>Cast <select class="crkt-cast" aria-label="Cricket cast"></select></label><label>Camera <select class="crkt-view" aria-label="Cricket camera"></select></label><label>Angle <input class="crkt-yaw" aria-label="Camera angle" type="range" min="0" max="360" value="75" step="1"></label></div>
+<div class="crkt-controls crkt-zoom-controls"><label>Zoom <output class="crkt-zoom-label">100%</output><input class="crkt-zoom" aria-label="Camera zoom" type="range" min="25" max="400" value="100" step="25"></label><div class="crkt-zoom-buttons"><button class="crkt-zoom-out" type="button" aria-label="Zoom out">−</button><button class="crkt-zoom-reset" type="button" aria-label="Reset zoom">Reset</button><button class="crkt-zoom-in" type="button" aria-label="Zoom in">+</button></div></div>
+<div class="crkt-controls crkt-playback"><div class="crkt-transport"><label><input class="crkt-play" type="checkbox" checked> Play</label><button class="crkt-replay" type="button">Replay</button><label>Speed <select class="crkt-speed" aria-label="Playback speed"><option value="1">1×</option><option value="0.5">½×</option><option value="0.25">¼×</option></select></label></div><label>Story time <input class="crkt-time" aria-label="Story time" type="range" min="0" max="6000" step="1" value="0"></label><button class="crkt-export" type="button">Download story JSON</button></div>
+<p class="crkt-format-note"></p>
+</aside>
+</div>
 </div>`
 
 /** @param {import('../../compat/gsap').LiveApi} live @param {HTMLElement} root */
@@ -31,6 +43,8 @@ export function run(live, root) {
   const canvas = root.querySelector('.crkt-canvas'), ctx = canvas.getContext('2d')
   const format = root.querySelector('.crkt-format'), action = root.querySelector('.crkt-action'), cast = root.querySelector('.crkt-cast')
   const view = root.querySelector('.crkt-view'), yaw = root.querySelector('.crkt-yaw'), play = root.querySelector('.crkt-play')
+  const zoom = root.querySelector('.crkt-zoom'), zoomLabel = root.querySelector('.crkt-zoom-label')
+  const zoomOut = root.querySelector('.crkt-zoom-out'), zoomIn = root.querySelector('.crkt-zoom-in')
   const scrub = root.querySelector('.crkt-time'), speed = root.querySelector('.crkt-speed'), beats = root.querySelector('.crkt-beats')
   const title = root.querySelector('.crkt-caption strong'), caption = root.querySelector('.crkt-caption p')
   const listeners = []
@@ -39,14 +53,18 @@ export function run(live, root) {
   choices(format, Object.entries(tinyfly.CRICKET_FORMATS).map(([key, info]) => [key, info.name]))
   choices(action, Object.entries(tinyfly.CRICKET_ACTIONS).map(([key, info]) => [key, info.name]))
   choices(view, Object.entries(tinyfly.CRICKET_VIEWS))
+  choices(cast, Object.entries(tinyfly.CRICKET_CASTS))
   format.value = 't20'; action.value = 'bowling'; view.value = 'pitch'
 
   const clock = { time: 0 }
   const playback = live.timeline({ paused: true, repeat: -1 }).to(clock, { time: 6000, duration: 6, ease: 'none' })
   let clip, loaded, motion, camera, cameraTracks, lastEvent
   const cameraFor = () => {
-    cameraTracks = tinyfly.cricketCameraTracks(clip, { view: view.value, yaw: Number(yaw.value) })
+    cameraTracks = tinyfly.cricketCameraTracks(clip, { view: view.value, yaw: Number(yaw.value), zoom: Number(zoom.value) / 100 })
     camera = new tinyfly.Timeline({ id: 'cricket-camera', tracks: cameraTracks })
+    zoomLabel.value = `${zoom.value}%`
+    zoomOut.disabled = Number(zoom.value) <= Number(zoom.min)
+    zoomIn.disabled = Number(zoom.value) >= Number(zoom.max)
   }
   const draw = () => {
     if (!loaded) return
@@ -76,6 +94,12 @@ export function run(live, root) {
     motion = new tinyfly.Timeline(clip.timeline)
     cameraFor()
     root.querySelector('.crkt-format-note').textContent = tinyfly.CRICKET_FORMATS[format.value].summary
+    const positions = root.querySelector('.crkt-positions')
+    positions.replaceChildren()
+    for (const id of Object.keys(tinyfly.CRICKET_FIELDING_POSITIONS)) {
+      const player = clip.scene.objects.find(object => object.id === id)
+      const item = document.createElement('li'); item.textContent = player.name; item.dataset.player = id; positions.appendChild(item)
+    }
     beats.replaceChildren()
     for (const event of clip.events) { const button = document.createElement('button'); button.type = 'button'; button.textContent = event.label; button.dataset.time = String(event.time); button.dataset.event = event.id; beats.appendChild(button) }
     draw(); if (play.checked) playback.play()
@@ -83,6 +107,10 @@ export function run(live, root) {
   for (const select of [format, action, cast]) on(select, 'change', rebuild)
   on(view, 'change', () => { yaw.value = String(tinyfly.CRICKET_CAMERA_ANGLES[view.value]); cameraFor(); draw() })
   on(yaw, 'input', () => { cameraFor(); draw() })
+  on(zoom, 'input', () => { cameraFor(); draw() })
+  on(zoomOut, 'click', () => { zoom.stepDown(); cameraFor(); draw() })
+  on(zoomIn, 'click', () => { zoom.stepUp(); cameraFor(); draw() })
+  on(root.querySelector('.crkt-zoom-reset'), 'click', () => { zoom.value = '100'; cameraFor(); draw() })
   on(play, 'change', () => { if (play.checked) playback.play(); else playback.pause(); draw() })
   on(scrub, 'input', () => seek(Number(scrub.value)))
   on(speed, 'change', () => playback.timeScale(Number(speed.value)))
@@ -103,7 +131,7 @@ export function run(live, root) {
 /** @type {import('./types').LiveDemo} */
 export const cricketStory = {
   id: 'live-cricket-story', name: 'Cricket Stories: Organic Players & 360° Ground',
-  description: 'Reusable sports APIs create a cricket ground, standard pitch and creases, two wickets, eleven fielders, two batters and umpires on the existing organic rig. Choose Test, ODI or T20 and inspect sixteen plays: pace/spin bowling, drive, block, running, four, six, catch, ground field, throw, bowled, LBW, stumping, run-out, no-ball and wide. The camera can orbit the whole ground, view either end close up or follow the ball. Motion, bat grips, ball handoffs, wicket breaks, events and captions are JSON; download the story for your own tutorial.',
+  description: 'Reusable sports APIs create a cricket ground, standard pitch and creases, two wickets, eleven named fielders, two on-field batters and two umpires on the existing organic rig. Choose Test, ODI or T20 and inspect sixteen plays: pace/spin bowling, drive, block, running, four, six, catch, ground field, throw, bowled, LBW, stumping, run-out, no-ball and wide. The camera can orbit the whole ground, view either end close up or follow the ball. Zoom from 25% to 400% to review poses, and reset to the default framing. Motion, bat grips, ball handoffs, wicket breaks, events and captions are JSON; download the story for your own tutorial.',
   category: '3d', alsoIn: ['video'], tags: ['cricket', 'sports', 'story', 'organic', 'camera', '360', 'bowling', 'batting', 'catch', 'stumping', 'Test', 'ODI', 'T20'],
   addons: ['scene-3d'], html, run,
 }

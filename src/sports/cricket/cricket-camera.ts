@@ -12,6 +12,8 @@ export interface CricketCameraOptions {
   view?: CricketView
   /** Any azimuth, degrees; orbit adds one complete revolution to this angle. */
   yaw?: number
+  /** Optical magnification, 0.25–4; 1 preserves the view's default framing. */
+  zoom?: number
   every?: number
 }
 
@@ -21,6 +23,9 @@ export function cricketCameraTracks(clip: CricketClip, options: CricketCameraOpt
   const angle = options.yaw ?? CRICKET_CAMERA_ANGLES[view]
   if (!Number.isFinite(angle)) throw new Error('cricketCamera: yaw must be finite')
   const yaw = ((angle % 360) + 360) % 360
+  const zoom = options.zoom ?? 1
+  if (!Number.isFinite(zoom) || zoom < .25 || zoom > 4) throw new Error('cricketCamera: zoom must be between 0.25 and 4')
+  const magnifiedFov = (fov: number) => zoom === 1 ? fov : Math.atan(Math.tan(fov * Math.PI / 360) / zoom) * 360 / Math.PI
   const every = options.every ?? 40
   if (!Number.isFinite(every) || every < 16 || every > 1000) throw new Error('cricketCamera: every must be between 16 and 1000 ms')
   if (view === 'follow-ball') {
@@ -37,11 +42,14 @@ export function cricketCameraTracks(clip: CricketClip, options: CricketCameraOpt
         return player.getValueAtTime(time) as number
       }
     })
-    return cameraFollowTracks({ scene: clip.scene.id, camera: 'camera', start: 0, end: clip.duration, every, offset: [5, 3, 6], subjectAt: time => channels.map(sample => sample(time)) as Vec3 })
+    const tracks = cameraFollowTracks({ scene: clip.scene.id, camera: 'camera', start: 0, end: clip.duration, every, offset: [5, 3, 6], subjectAt: time => channels.map(sample => sample(time)) as Vec3 })
+    const baseFov = clip.scene.objects.find(object => object.id === 'camera' && object.kind === 'camera')
+    const fov = magnifiedFov(baseFov?.kind === 'camera' && baseFov.projection === 'perspective' ? baseFov.fov : 48)
+    return [...tracks, { id: `${clip.scene.id}/camera-zoom-fov`, target: `${clip.scene.id}/camera`, property: 'fov', keyframes: [{ time: 0, value: fov }, { time: clip.duration, value: fov }] }]
   }
   const wide = view === 'field' || view === 'overhead' || view === 'orbit'
   const target: Vec3 = view === 'batter' ? [.1, .85, 9.3] : view === 'bowler' ? [.68, 1.0, -9.55] : view === 'keeper' ? [0, .7, 10.1] : [0, .65, 0]
   const distance = wide ? clip.boundaryRadius * 2.8 : view === 'pitch' ? 29 : 4.3
   const pitch = view === 'overhead' ? 89 : wide ? 52 : view === 'pitch' ? 16 : 12
-  return cameraMoveTracks({ scene: clip.scene.id, camera: 'camera', start: 0, end: clip.duration, every, easing: 'linear', from: { target, yaw, pitch, distance, fov: wide ? 48 : view === 'pitch' ? 50 : 46 }, to: { yaw: view === 'orbit' ? yaw + 360 : yaw } })
+  return cameraMoveTracks({ scene: clip.scene.id, camera: 'camera', start: 0, end: clip.duration, every, easing: 'linear', from: { target, yaw, pitch, distance, fov: magnifiedFov(wide ? 48 : view === 'pitch' ? 50 : 46) }, to: { yaw: view === 'orbit' ? yaw + 360 : yaw } })
 }
