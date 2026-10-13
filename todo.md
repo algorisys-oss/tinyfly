@@ -9,8 +9,8 @@
 - [x] Camera fixture batches allow 15 s while retaining all geometric assertions, avoiding implicit 5 s limits under concurrent rendering load.
 - [x] Additional Wide review check exposed a cropped sideways-moving keeper. Default striker-crease framing now includes keeper/batter/reference positions at collection; four-cast, stock/composed and scaled-duration projection regressions added.
 - [x] Final release gate passed with no remaining findings: 3,827 tests across 239 files, TypeScript, app/public builds and generated docs. All 273 browser checks validated with 12 focused closed-disclosure visibility reruns; six expanded-panel keyboard checks and Wide/throw checks pass in Chromium/Firefox/WebKit. 21 native camera regressions and 32 exact published v0.112.0 default comparisons pass; desktop/phone views visually checked.
-- [ ] Published web/CDN/npm consumer verification.
-- [ ] Direct main/dev sync, OSS/CDN and npm publication.
+- [x] Published web/CDN/npm consumer verification completed: fresh exact-version npm consumer passes all four casts, composed/scaled review moments, protected results, owned overlays, Wide/run-out framing, JSON/Timeline playback, animated far clipping and invalid input checks.
+- [x] Direct main/dev sync and push completed; OSS/CDN immutable v0.113.0 tag published. npm accepted v0.113.0 after all 3,827 prepublish tests and bundle builds. Live and localhost decision views, review event seeking, framing/overlay JSON and immutable CDN APIs in a Web Worker verified.
 
 ## Composable cricket plays — v0.112.0
 
