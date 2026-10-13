@@ -591,7 +591,7 @@ with a GSAP-style call (durations are in seconds here):
 ```html
 <div class="box" style="width:60px;height:60px;background:#4a9eff"></div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.113.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.114.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -799,7 +799,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.113.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.114.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -2714,7 +2714,7 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.113.0/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.114.0/cdn/tinyfly-player.iife.js`.
 
 ---
 
@@ -7067,7 +7067,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.113.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.114.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed
@@ -8386,7 +8386,12 @@ lets hair occlude them, with a flatter profile facial plane and a nose above
 the mouth; classic `cartoon` projection remains available. Foreground organic
 arms/hands draw together over lower garments, preserving the wrist at the waist.
 `body` owns JSON half-width profiles (`torso`, `arm`, `leg`, `neck`): increasing
-arrays of `{ at: 0..1, width: fractionOfHeight }` spanning 0 to 1. Set `skin`
+arrays of `{ at: 0..1, width: fractionOfHeight }` spanning 0 to 1. For a body
+in proportion, prefer `body.measurements`: a shape name (`hourglass`, `pear`,
+`rectangle`, `invertedTriangle`, `round`) or girths `{ height, bust, underbust?,
+waist, hip }` in one unit. It sets the front width, the side depth (bust forward,
+seat back) and the leg spacing, so the figure reads correctly at every `turn`.
+Don't hand-tune `torso` to fake a side view; `torsoFront`/`torsoBack` set depth. Set `skin`
 once for exposed body, head and hands; `body.fill` overrides it.
 Use `body.fill: 'none'` for outline-only exposed skin, including both hand
 variants in every look. In 3D, only foreground arms use garment depths for
@@ -8656,7 +8661,7 @@ path for all of that:
 </figure>
 
 <!-- once, anywhere on the page (a site-wide footer is fine) -->
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.113.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.114.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 Every `[data-tinyfly-embed]` mounts when the page is ready, with no per-post
@@ -9928,8 +9933,8 @@ On a page with no build step, load the maps add-on after the browser bundle; it
 adds to the same `tinyfly` global:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.113.0/cdn/tinyfly.iife.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.113.0/cdn/tinyfly-maps.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.114.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.114.0/cdn/tinyfly-maps.iife.js"></script>
 ```
 
 It is a separate script because the offline world map it carries adds about
@@ -10211,6 +10216,32 @@ height. Torso positions run hip to neck, arms shoulder to wrist, and legs
 hip to ankle. Cubic centerlines pass through native elbow/knee joints with
 interpolated width profiles. Options are copied at construction and can
 travel as JSON. `body.depth` (0.2–1, default 0.55) sets torso side thickness.
+`body.torsoFront` and `body.torsoBack` (same format) set the torso's side
+view directly: its depth from the spine line toward the chest and belly, and
+toward the back and seat. They default to `torso × depth` each way.
+
+### Body shape and measurements
+
+`body.measurements` describes the torso the way a size chart does, so women,
+men and children of every build can be drawn in proportion:
+
+```ts
+character({ figure: 'organic', body: { measurements: 'hourglass' } })
+character({ figure: 'organic', body: { measurements: { height: 165, bust: 94, underbust: 76, waist: 70, hip: 98 } } })
+```
+
+The girths can be in any unit, as long as `height` uses the same one. `underbust`
+defaults to 0.86 × `bust`, and the difference between the two is how far the bust
+projects. Named shapes (`BODY_SHAPES`) are `hourglass`, `pear`, `rectangle`,
+`invertedTriangle` and `round`. Measurements set the front width, the side depth
+(the bust forward, the seat back, and a belly when the waist is close to the hips)
+and the hip and thigh spacing. Because each torso section is projected from both
+its width and its depth, the shape reads correctly at every `turn`, not only from
+the front. Clothing follows the same contour. Any explicit `torso`, `torsoFront`,
+`torsoBack` or `hipWidth` still wins. `softCartoonCharacter` drops its preset torso
+when you pass new measurements. The shapes are kept as stylised silhouettes, in
+proportion with the rest of the cast. In the editor, organic characters have a
+**Body shape** picker.
 `body.fill` overrides `skin` for all exposed body, face and palms; omit it
 to keep one `skin` colour control. The editor's Skin and Line controls show
 the resolved fill and outline colour; editing them also updates any existing
@@ -15107,7 +15138,7 @@ magnet.addEventListener('pointerleave', () => {
 
 <!-- capabilities: generated from the library -->
 
-# tinyfly capabilities (v0.113.0)
+# tinyfly capabilities (v0.114.0)
 
 Generated from the library itself: every name below is accepted, and names not listed are rejected (beat scripts, code panels and `checkTracks` say which name was probably meant).
 
@@ -15393,6 +15424,8 @@ Appearance options of `character({ … })`, all plain data that turns with the h
 - `build`: `standard`, `slim`, `tall`, `short`, `broad`, `curvy`, `stocky`, `kid`, `child`, `toddler`
 - `figure`: `fluid`, `stick`, `organic`
 - `body.torso · body.arm · body.leg · body.neck`: Organic half-width profiles: [{ at: 0..1, width: fractionOfHeight }], increasing from 0 to 1; independent of ink width.
+- `body.measurements`: Organic torso from tape-measure girths { height, bust, underbust?, waist, hip } in any one unit, or a named shape (hourglass | pear | rectangle | invertedTriangle | round). Sets the front width, the side depth (bust forward, seat back, belly) and the hip and thigh spacing; reads correctly at every turn. An explicit torso / torsoFront / torsoBack / hipWidth still wins.
+- `body.torsoFront · body.torsoBack`: Organic side-view depth from the spine line toward the chest/belly and toward the back/seat, same profile format; default torso × depth.
 - `body.fill · body.outline · body.shading`: Shared skin fill, outline { color, width }, cel material { mode: cel | none, light: [x,y], shadow, opacity, highlight }.
 - `softCartoonCharacter(name, options?)`: Original youngMan / youngWoman / childBoy / childGirl story presets. Children have larger head proportions, shorter limbs and rounded torsos; every face, hair, build, hand, clothing and material option can be overridden.
 - `face.projection`: Organic default volume follows the head axes, keeps both eyes in three-quarter views and projects a small nose above the mouth; opaque hair covers features. cartoon keeps the classic face slide.

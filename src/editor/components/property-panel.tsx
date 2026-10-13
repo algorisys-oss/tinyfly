@@ -25,7 +25,7 @@ import { InertiaInspector } from './inertia-inspector'
 import { MarkerInspector } from './marker-inspector'
 import type { SketchStyle } from '../../adapters/canvas'
 import { HUMAN_POSES, HUMAN_EXPRESSIONS, HUMAN_REST } from '../../characters/species/human'
-import { CHARACTER_BUILDS, buildName, characterControlValues, characterColorFields, castElementFields, isCharacterField, type CharacterBuildName } from '../utils/character-element'
+import { BODY_SHAPE_LABELS, bodyShapeChoice, withBodyShape, CHARACTER_BUILDS, buildName, characterControlValues, characterColorFields, castElementFields, isCharacterField, type CharacterBuildName } from '../utils/character-element'
 import { codeElementHeight } from '../utils/code-element'
 import { chartElementProblem } from '../utils/chart-element'
 import { CharacterActingPanel, keyActedPose } from './character-acting-panel'
@@ -1734,6 +1734,16 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
           <option value="organic">Organic cartoon</option>
         </select>
       </div>
+      <Show when={element.figure === 'organic'}>
+        <div class="property-row">
+          <label>Body shape</label>
+          <select value={bodyShapeChoice(element.body)} onChange={(e) => updateElement({ body: withBodyShape(element.body, (e.target as HTMLSelectElement).value) })}>
+            <option value="">Standard</option>
+            <For each={Object.entries(BODY_SHAPE_LABELS)}>{([name, label]) => <option value={name}>{label}</option>}</For>
+            <Show when={bodyShapeChoice(element.body) === 'custom'}><option value="custom">Custom measurements</option></Show>
+          </select>
+        </div>
+      </Show>
       <div class="property-row">
         <label>Look</label>
         <select value={element.look} onChange={(e) => updateElement({ look: (e.target as HTMLSelectElement).value })}>

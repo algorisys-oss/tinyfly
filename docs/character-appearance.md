@@ -75,6 +75,32 @@ height. Torso positions run hip to neck, arms shoulder to wrist, and legs
 hip to ankle. Cubic centerlines pass through native elbow/knee joints with
 interpolated width profiles. Options are copied at construction and can
 travel as JSON. `body.depth` (0.2–1, default 0.55) sets torso side thickness.
+`body.torsoFront` and `body.torsoBack` (same format) set the torso's side
+view directly: its depth from the spine line toward the chest and belly, and
+toward the back and seat. They default to `torso × depth` each way.
+
+### Body shape and measurements
+
+`body.measurements` describes the torso the way a size chart does, so women,
+men and children of every build can be drawn in proportion:
+
+```ts
+character({ figure: 'organic', body: { measurements: 'hourglass' } })
+character({ figure: 'organic', body: { measurements: { height: 165, bust: 94, underbust: 76, waist: 70, hip: 98 } } })
+```
+
+The girths can be in any unit, as long as `height` uses the same one. `underbust`
+defaults to 0.86 × `bust`, and the difference between the two is how far the bust
+projects. Named shapes (`BODY_SHAPES`) are `hourglass`, `pear`, `rectangle`,
+`invertedTriangle` and `round`. Measurements set the front width, the side depth
+(the bust forward, the seat back, and a belly when the waist is close to the hips)
+and the hip and thigh spacing. Because each torso section is projected from both
+its width and its depth, the shape reads correctly at every `turn`, not only from
+the front. Clothing follows the same contour. Any explicit `torso`, `torsoFront`,
+`torsoBack` or `hipWidth` still wins. `softCartoonCharacter` drops its preset torso
+when you pass new measurements. The shapes are kept as stylised silhouettes, in
+proportion with the rest of the cast. In the editor, organic characters have a
+**Body shape** picker.
 `body.fill` overrides `skin` for all exposed body, face and palms; omit it
 to keep one `skin` colour control. The editor's Skin and Line controls show
 the resolved fill and outline colour; editing them also updates any existing

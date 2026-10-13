@@ -134,7 +134,11 @@ names.
   profile face and a nose projecting from above the mouth;
   `face.projection: 'cartoon'` keeps the classic face slide. Optional JSON
   `body` profiles (`torso`, `arm`, `leg`, `neck`) use increasing `{ at, width }`
-  from 0 to 1, with half-width fractions of height. Use `skin` for the whole exposed character;
+  from 0 to 1, with half-width fractions of height. For realistic proportions
+  use `body.measurements`: `'hourglass' | 'pear' | 'rectangle' |
+  'invertedTriangle' | 'round'` or `{ height, bust, underbust?, waist, hip }`
+  in any one unit. It shapes width and side depth (bust/seat/belly) at every turn,
+  and `torsoFront`/`torsoBack` override the depth. Use `skin` for the whole exposed character;
   `body.fill` overrides it; `'none'` makes exposed body/head/hands outline-only
   in every look. Organic 3D painter ordering promotes only foreground arms to
   torso/leg garment depths, leaving other parts at physical depths.

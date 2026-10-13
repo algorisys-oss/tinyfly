@@ -44,39 +44,69 @@ export function organicCenterLine(points: Point[], steps = 12): Point[] {
   return result
 }
 
-function contour(line: Point[], profile: BodyProfilePoint[], height: number, scale = 1, startCap = 1): OrganicContour {
+/** Half-widths either side of a centerline at 0..1 along it, px: `left` is along the normal (-ty, tx). */
+type ContourWidth = (at: number) => { left: number; right: number }
+
+const evenWidth = (profile: BodyProfilePoint[], height: number): ContourWidth => at => {
+  const width = bodyProfileWidth(profile, at) * height
+  return { left: width, right: width }
+}
+
+function contour(line: Point[], widthAt: ContourWidth, startCap = 1): OrganicContour {
   const samples = line.map((center, i): OrganicSample => {
     const before = line[Math.max(0, i - 1)], after = line[Math.min(line.length - 1, i + 1)]
     let tangent = direction(before, after)
     if (Math.hypot(tangent.x, tangent.y) < 1e-6) tangent = { x: 0, y: 1 }
     const normal = { x: -tangent.y, y: tangent.x }
     const at = i / Math.max(1, line.length - 1)
-    const width = bodyProfileWidth(profile, at) * height * scale
+    const { left, right } = widthAt(at)
     // Limit only the inside of a very tight bend; the outside retains volume.
     const incoming = direction(before, center), outgoing = direction(center, after)
     const cross = incoming.x * outgoing.y - incoming.y * outgoing.x
     const angle = Math.acos(Math.min(1, Math.max(-1, incoming.x * outgoing.x + incoming.y * outgoing.y)))
     const radius = (Math.hypot(center.x - before.x, center.y - before.y) + Math.hypot(after.x - center.x, after.y - center.y)) / (2 * Math.max(1e-6, angle))
-    const inner = Math.min(width, Math.max(width * 0.2, radius * 0.8))
-    return { center, width, at, left: shifted(center, normal, cross > 0 ? inner : width), right: shifted(center, normal, cross < 0 ? -inner : -width) }
+    const inner = (width: number) => Math.min(width, Math.max(width * 0.2, radius * 0.8))
+    return { center, width: (left + right) / 2, at, left: shifted(center, normal, cross > 0 ? inner(left) : left), right: shifted(center, normal, cross < 0 ? -inner(right) : -right) }
   })
   const outline: Point[] = [], positions: number[] = []
   const append = (point: Point, at: number) => { outline.push(point); positions.push(at) }
   for (const sample of samples) append(sample.left, sample.at)
   const cap = (sample: OrganicSample, tangent: Point, end: boolean) => {
     const normal = { x: -tangent.y, y: tangent.x }
+    // Round between the two edges: on an uneven section the cap's centre is off the line.
+    const { left, right } = widthAt(sample.at)
+    const middle = shifted(sample.center, normal, (left - right) / 2)
+    const radius = (left + right) / 2
     for (let i = 1; i < CAP_STEPS; i++) {
       const angle = i * Math.PI / CAP_STEPS
       const across = (end ? 1 : -1) * Math.cos(angle)
       const along = (end ? 1 : -startCap) * Math.sin(angle)
-      append({ x: sample.center.x + sample.width * (normal.x * across + tangent.x * along),
-        y: sample.center.y + sample.width * (normal.y * across + tangent.y * along) }, sample.at)
+      append({ x: middle.x + radius * (normal.x * across + tangent.x * along),
+        y: middle.y + radius * (normal.y * across + tangent.y * along) }, sample.at)
     }
   }
   cap(samples.at(-1)!, direction(line[Math.max(0, line.length - 2)], line.at(-1)!), true)
   for (const sample of [...samples].reverse()) append(sample.right, sample.at)
   cap(samples[0], direction(line[0], line[Math.min(1, line.length - 1)]), false)
   return { outline, samples, positions }
+}
+
+/**
+ * The torso as seen at this turn. Each section is treated as a front half and
+ * a back half of an ellipse (half-width w, depth f in front and b behind), so
+ * its silhouette edge is √((w·cos)² + (f·sin)²) on the side the body faces and
+ * √((w·cos)² + (b·sin)²) on the other: the bust and belly lead, the back and
+ * seat trail, and from the front both sides are simply w.
+ */
+function torsoWidth(body: OrganicBody, height: number, across: number, facesRight: boolean): ContourWidth {
+  const side = Math.sqrt(Math.max(0, 1 - across * across))
+  return at => {
+    const width = bodyProfileWidth(body.torso, at) * height * across
+    const front = Math.hypot(width, bodyProfileWidth(body.torsoFront, at) * height * side)
+    const back = Math.hypot(width, bodyProfileWidth(body.torsoBack, at) * height * side)
+    // The spine runs up from the hip, so its left normal points screen-right.
+    return facesRight ? { left: front, right: back } : { left: back, right: front }
+  }
 }
 
 /** Pose-dependent plain geometry, shared by rendering, layers and exporters. */
@@ -89,18 +119,18 @@ export function organicBodyContours(body: OrganicBody, joints: CharacterJoints, 
     const span = plan.chains.find(chain => chain.id === 'arm.left')?.offset?.[0] ?? 0.07
     const fullSpan = Math.max(1e-6, Math.abs(span) * height * 2)
     const across = left && right ? Math.min(1, Math.hypot(left.x - right.x, left.y - right.y) / fullSpan) : Math.abs(Math.cos(joints.turn * Math.PI / 2))
-    const scale = Math.sqrt(across * across + body.depth * body.depth * (1 - across * across))
+    const facesRight = Math.sin(joints.turn * Math.PI / 2) >= 0
     const extended = [mix(spine[0], spine[1], -0.16), ...spine.slice(1)]
-    result.spine = contour(organicCenterLine(extended), body.torso, height, scale, 0.25)
+    result.spine = contour(organicCenterLine(extended), torsoWidth(body, height, across, facesRight), 0.25)
   }
-  if (joints.chains.neck?.length >= 2) result.neck = contour(organicCenterLine(joints.chains.neck), body.neck, height)
+  if (joints.chains.neck?.length >= 2) result.neck = contour(organicCenterLine(joints.chains.neck), evenWidth(body.neck, height))
   for (const side of ['left', 'right']) {
     for (const limb of ['arm', 'leg'] as const) {
       const points = joints.chains[`${limb}.${side}`]
       if (!points || points.length < 3) continue
-      result[`${limb}.${side}`] = contour(organicCenterLine(points.slice(0, 3)), body[limb], height)
+      result[`${limb}.${side}`] = contour(organicCenterLine(points.slice(0, 3)), evenWidth(body[limb], height))
       if (limb === 'leg' && points.length > 3) {
-        result[`foot.${side}`] = contour(organicCenterLine(points.slice(2)), [{ at: 0, width: 0.019 }, { at: 1, width: 0.014 }], height)
+        result[`foot.${side}`] = contour(organicCenterLine(points.slice(2)), evenWidth([{ at: 0, width: 0.019 }, { at: 1, width: 0.014 }], height))
       }
     }
   }

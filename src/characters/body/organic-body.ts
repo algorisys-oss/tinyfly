@@ -1,3 +1,5 @@
+import { bodyShapeProfiles, measuredThighWidth, type BodyMeasurements, type BodyShapeName } from './body-shape'
+
 /** A contour's half-width as a share of character height, at 0..1 along it. */
 export interface BodyProfilePoint { at: number; width: number }
 
@@ -13,6 +15,19 @@ export interface SkinShading {
 export interface OrganicBodyOptions {
   /** Hip to neck: hips, waist, chest and shoulders. */
   torso?: BodyProfilePoint[]
+  /**
+   * Seen from the side, the torso's depth from the spine line toward the
+   * chest and belly (front) and toward the back and seat (back). Default:
+   * `torso` × `depth` each way.
+   */
+  torsoFront?: BodyProfilePoint[]
+  torsoBack?: BodyProfilePoint[]
+  /**
+   * The torso from tape-measure girths, or a named shape (`hourglass`, `pear`,
+   * `rectangle`, `invertedTriangle`, `round`; see BODY_SHAPES). Sets each of
+   * `torso`, `torsoFront`, `torsoBack` and the thighs that is not given too.
+   */
+  measurements?: BodyMeasurements | BodyShapeName
   /** Shoulder to wrist: upper arm, elbow, forearm and wrist. */
   arm?: BodyProfilePoint[]
   /** Hip to ankle: thigh, knee, calf and ankle. */
@@ -30,6 +45,8 @@ export interface OrganicBodyOptions {
 /** Resolved, owned JSON data. Profiles are copied once when making a character. */
 export interface OrganicBody {
   torso: BodyProfilePoint[]
+  torsoFront: BodyProfilePoint[]
+  torsoBack: BodyProfilePoint[]
   arm: BodyProfilePoint[]
   leg: BodyProfilePoint[]
   neck: BodyProfilePoint[]
@@ -64,21 +81,29 @@ export function resolveOrganicBody(options: OrganicBodyOptions, defaults: {
   const light = shade.light ?? [-0.8, -0.6]
   if (light.length !== 2 || !light.every(Number.isFinite) || Math.hypot(...light) === 0) throw new Error('organic body: light must be a finite nonzero 2D vector')
   if (shade.mode !== undefined && shade.mode !== 'none' && shade.mode !== 'cel') throw new Error('organic body: unknown shading mode')
+  const shaped = options.measurements !== undefined ? bodyShapeProfiles(options.measurements, shoulder) : undefined
+  const torso = copyProfile(options.torso ?? shaped?.torso ?? [
+    { at: 0, width: hip }, { at: 0.2, width: hip }, { at: 0.42, width: hip * 0.72 },
+    { at: 0.68, width: shoulder * 0.9 }, { at: 0.86, width: shoulder }, { at: 1, width: 0.024 },
+  ], 'torso')
+  const depth = bounded(options.depth ?? 0.55, 'depth', 0.2, 1)
+  const deep = (points: BodyProfilePoint[]) => points.map(point => ({ at: point.at, width: Math.max(0.001, point.width * depth) }))
+  // Fuller hips carry fuller thighs; the standard leg is unchanged.
+  const thigh = shaped ? Math.max(1, measuredThighWidth(shaped.hipHalfWidth) / 0.042) : 1
   return {
-    torso: copyProfile(options.torso ?? [
-      { at: 0, width: hip }, { at: 0.2, width: hip }, { at: 0.42, width: hip * 0.72 },
-      { at: 0.68, width: shoulder * 0.9 }, { at: 0.86, width: shoulder }, { at: 1, width: 0.024 },
-    ], 'torso'),
+    torso,
+    torsoFront: copyProfile(options.torsoFront ?? shaped?.torsoFront ?? deep(torso), 'torsoFront'),
+    torsoBack: copyProfile(options.torsoBack ?? shaped?.torsoBack ?? deep(torso), 'torsoBack'),
     arm: copyProfile(options.arm ?? [
       { at: 0, width: 0.028 }, { at: 0.22, width: 0.027 }, { at: 0.5, width: 0.019 },
       { at: 0.68, width: 0.023 }, { at: 1, width: 0.012 },
     ], 'arm'),
     leg: copyProfile(options.leg ?? [
-      { at: 0, width: 0.04 }, { at: 0.24, width: 0.042 }, { at: 0.5, width: 0.027 },
+      { at: 0, width: 0.04 * thigh }, { at: 0.24, width: 0.042 * thigh }, { at: 0.5, width: 0.027 },
       { at: 0.68, width: 0.032 }, { at: 1, width: 0.016 },
     ], 'leg'),
     neck: copyProfile(options.neck ?? [{ at: 0, width: 0.024 }, { at: 1, width: 0.023 }], 'neck'),
-    depth: bounded(options.depth ?? 0.55, 'depth', 0.2, 1),
+    depth,
     fill: options.fill ?? defaults.skin,
     outline: { color: options.outline?.color ?? defaults.ink, width: bounded(options.outline?.width ?? defaults.lineWidth, 'outline.width', 0, 100) },
     shading: {

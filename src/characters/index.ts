@@ -34,6 +34,7 @@ export { leafOutfit, leafOutfitContours, type LeafOutfitOptions, type LeafOutfit
 export { softCartoonCharacter, SOFT_CARTOON_CAST, type SoftCartoonName } from './soft-cartoon-cast'
 export { resolveOrganicBody, bodyProfileWidth, type OrganicBody, type OrganicBodyOptions, type BodyProfilePoint, type SkinShading } from './body/organic-body'
 export { organicBodyContours, organicCenterLine, type OrganicBodyContours, type OrganicContour, type OrganicSample } from './body/organic-geometry'
+export { BODY_SHAPES, bodyShapeProfiles, measuredHipWidth, resolveMeasurements, type BodyMeasurements, type BodyShapeName, type BodyShapeProfiles } from './body/body-shape'
 export { humanPlan, humanPose, mirrorHumanPose, humanFieldLabel, HUMAN_REST, HUMAN_POSES, HUMAN_EXPRESSIONS, HUMAN_BUILDS, FOOT_SHAPES, type FootShape, type HumanBuild, type HumanBuildName, type HumanPoseName, type HumanExpressionName } from './species/human'
 // A recurring cast of ready-made characters (family, ages, looks).
 export { CHARACTER_CAST, ANIME_CAST, MANGA_CAST, castMember, type CastMember, type CastName, type AnimeCastName, type MangaCastName } from './cast'

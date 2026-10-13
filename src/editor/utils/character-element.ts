@@ -4,6 +4,8 @@ import { hashSeed } from '../../engine/authoring/random'
 import { basicOutfit, character, characterPoseOf, drawCharacter, HAND_REST, HUMAN_REST, CHARACTER_CAST, type FaceOptions, type HairSpec, type CastName, type Character, type CharacterPose, type FacialHairStyleName, type GlassesStyle, type HairStyleName, type HatStyle, type HoldingSpec, type FootShape } from '../../characters'
 import type { CharacterBuild, CharacterElement } from '../stores/scene-store'
 import { HUMAN_BUILDS } from '../../characters/species/human'
+import type { BodyShapeName } from '../../characters/body/body-shape'
+import type { OrganicBodyOptions } from '../../characters/body/organic-body'
 
 /**
  * Character elements: the editor's bridge to the v2 character system. The
@@ -153,6 +155,33 @@ export function castElementFields(name: CastName): Partial<CharacterElement> {
         }
       : {}),
   }
+}
+
+/** Body shapes for the organic figure's picker (see BODY_SHAPES). */
+export const BODY_SHAPE_LABELS: Record<BodyShapeName, string> = {
+  hourglass: 'Hourglass',
+  pear: 'Pear',
+  rectangle: 'Rectangle',
+  invertedTriangle: 'Inverted triangle',
+  round: 'Round',
+}
+
+/** The picker's value: a shape name, `custom` for hand-entered measurements, or '' for none. */
+export function bodyShapeChoice(body: OrganicBodyOptions | undefined): string {
+  const measurements = body?.measurements
+  if (measurements === undefined) return ''
+  return typeof measurements === 'string' ? measurements : 'custom'
+}
+
+/**
+ * The body with this shape chosen. A shape replaces any hand-made torso
+ * profiles, so the choice is what you see; '' goes back to the standard torso.
+ */
+export function withBodyShape(body: OrganicBodyOptions | undefined, choice: string): OrganicBodyOptions | undefined {
+  if (choice === 'custom') return body
+  const { measurements: _measurements, torso: _torso, torsoFront: _front, torsoBack: _back, ...rest } = body ?? {}
+  const next: OrganicBodyOptions = choice in BODY_SHAPE_LABELS ? { ...rest, measurements: choice as BodyShapeName } : rest
+  return Object.keys(next).length > 0 ? next : undefined
 }
 
 /** Named builds for the property panel; each sets every build field it changes from standard. */

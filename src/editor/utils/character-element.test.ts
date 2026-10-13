@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { createCanvas } from '@napi-rs/canvas'
 import { createSceneStore, type CharacterElement } from '../stores/scene-store'
-import { characterElementPose, characterElementTarget, characterOf, characterControlValues, characterColorFields, castElementFields } from './character-element'
+import { characterElementPose, characterElementTarget, characterOf, characterControlValues, characterColorFields, castElementFields, bodyShapeChoice, withBodyShape } from './character-element'
 import { trackPropertyLabel } from './track-labels'
 import { sceneElementToCanvasTarget } from './scene-to-canvas'
 import { characterJoints, drawCharacter, humanPose } from '../../characters'
@@ -202,5 +202,22 @@ describe('character hands', () => {
     const state = { values: new Map([[element.name, new Map([['hand.right.index.curl', 0.9]])]]) } as unknown as AnimationState
     expect(characterElementPose(element, state)['hand.right.index.curl']).toBe(0.9)
     expect(trackPropertyLabel('hand.right.index.curl')).toBe('Right hand · index curl')
+  })
+})
+
+describe('body shape picker', () => {
+  it('stores a named shape as body data the character draws with', () => {
+    const body = withBodyShape({ fill: '#e0b090', torso: [{ at: 0, width: 0.1 }, { at: 1, width: 0.02 }] }, 'pear')
+    expect(body).toEqual({ fill: '#e0b090', measurements: 'pear' })
+    expect(bodyShapeChoice(body)).toBe('pear')
+    const who = characterOf(aCharacter({ figure: 'organic', body }))
+    expect(who.body!.torsoBack[0].width).not.toBe(who.body!.torsoFront[0].width)
+  })
+
+  it('goes back to the standard torso, and leaves custom measurements alone', () => {
+    expect(withBodyShape({ measurements: 'round' }, '')).toBeUndefined()
+    const custom = { measurements: { height: 170, bust: 90, waist: 72, hip: 96 } }
+    expect(bodyShapeChoice(custom)).toBe('custom')
+    expect(withBodyShape(custom, 'custom')).toBe(custom)
   })
 })

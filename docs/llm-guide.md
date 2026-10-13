@@ -166,7 +166,12 @@ lets hair occlude them, with a flatter profile facial plane and a nose above
 the mouth; classic `cartoon` projection remains available. Foreground organic
 arms/hands draw together over lower garments, preserving the wrist at the waist.
 `body` owns JSON half-width profiles (`torso`, `arm`, `leg`, `neck`): increasing
-arrays of `{ at: 0..1, width: fractionOfHeight }` spanning 0 to 1. Set `skin`
+arrays of `{ at: 0..1, width: fractionOfHeight }` spanning 0 to 1. For a body
+in proportion, prefer `body.measurements`: a shape name (`hourglass`, `pear`,
+`rectangle`, `invertedTriangle`, `round`) or girths `{ height, bust, underbust?,
+waist, hip }` in one unit. It sets the front width, the side depth (bust forward,
+seat back) and the leg spacing, so the figure reads correctly at every `turn`.
+Don't hand-tune `torso` to fake a side view; `torsoFront`/`torsoBack` set depth. Set `skin`
 once for exposed body, head and hands; `body.fill` overrides it.
 Use `body.fill: 'none'` for outline-only exposed skin, including both hand
 variants in every look. In 3D, only foreground arms use garment depths for

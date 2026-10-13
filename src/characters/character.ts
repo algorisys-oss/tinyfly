@@ -8,6 +8,7 @@ import { headPoint, skeletonInView, solveSkeleton, type Skeleton, type SolvedHea
 import { reachPose as reachPlanPose } from './rig/reach'
 import { createPen, unfilledPen, type Look, type Pen, type PencilOptions } from './look/pen'
 import { resolveOrganicBody, type OrganicBody, type OrganicBodyOptions } from './body/organic-body'
+import { measuredHipWidth } from './body/body-shape'
 import { organicBodyContours, type OrganicBodyContours } from './body/organic-geometry'
 import { drawOrganicPart } from './body/organic-draw'
 import { shadeSkinOutline } from './look/skin-shading'
@@ -167,7 +168,9 @@ export function character(options: CharacterOptions = {}): Character {
   const stick = figure === 'stick'
   const organic = figure === 'organic'
   const shoulderWidth = options.shoulderWidth ?? build.shoulderWidth ?? (organic ? 0.07 : 0.06)
-  const hipWidth = options.hipWidth ?? build.hipWidth ?? (organic ? 0.045 : 0.022)
+  // Measured hips are more specific than a named build: the legs sit under them.
+  const measuredHips = organic && options.body?.measurements !== undefined ? measuredHipWidth(options.body.measurements) : undefined
+  const hipWidth = options.hipWidth ?? measuredHips ?? build.hipWidth ?? (organic ? 0.045 : 0.022)
   const lineWidth = options.lineWidth ?? height * (organic ? 0.005 : bold ? 0.045 : 0.022)
   const ink = options.ink ?? (organic ? '#53362d' : look === 'pencil' ? '#2f2f33' : '#1e293b')
   const skin = options.skin ?? (organic ? '#f1bf98' : look === 'pencil' ? 'none' : '#ffffff')

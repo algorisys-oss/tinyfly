@@ -21,7 +21,11 @@ export const SOFT_CARTOON_CAST = {
   youngWoman: {
     figure: 'organic', skin: '#f1c299', ink: '#53372d', headSize: .28,
     shoulderWidth: .065, hipWidth: .054, handSize: .075,
-    body: { torso: [{ at: 0, width: .098 }, { at: .18, width: .097 }, { at: .44, width: .061 }, { at: .7, width: .087 }, { at: .85, width: .09 }, { at: 1, width: .024 }] },
+    body: {
+      torso: [{ at: 0, width: .098 }, { at: .18, width: .097 }, { at: .44, width: .061 }, { at: .7, width: .087 }, { at: .85, width: .09 }, { at: 1, width: .024 }],
+      // Her side view: a stylised hourglass in proportion with the front torso above.
+      measurements: { height: 165, bust: 86, underbust: 72, waist: 58, hip: 88 },
+    },
     hair: { style: 'flowingBob', color: '#38291f' }, ears: true,
     face: { style: 'anime', shape: 'angular', jawWidth: .78, chinWidth: .32, jawRoundness: 1, eyeScale: .95, eyeAspect: 1.1, nose: true, iris: '#6a472d', lashes: true },
     outfit: { shirt: '#72958b', trousers: '#6b6888', sleeves: 'short', bottom: 'skirt' },
@@ -48,5 +52,8 @@ export type SoftCartoonName = keyof typeof SOFT_CARTOON_CAST
 export function softCartoonCharacter(name: SoftCartoonName, options: CharacterOptions = {}): Character {
   if (!Object.prototype.hasOwnProperty.call(SOFT_CARTOON_CAST, name)) throw new Error(`softCartoonCharacter: unknown actor '${name}'`)
   const preset: CharacterOptions = SOFT_CARTOON_CAST[name]
-  return character({ ...preset, ...options, body: { ...preset.body, ...options.body }, face: { ...preset.face, ...options.face } })
+  // New measurements reshape the torso, so the preset's own torso makes way for them.
+  const presetBody: CharacterOptions['body'] = { ...preset.body }
+  if (options.body?.measurements !== undefined) delete presetBody.torso
+  return character({ ...preset, ...options, body: { ...presetBody, ...options.body }, face: { ...preset.face, ...options.face } })
 }

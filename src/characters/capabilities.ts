@@ -7,6 +7,7 @@ import { HUMAN_DANCES } from './human-dance'
 import { FLIPS } from './acrobatics'
 import { HAND_SHAPES } from './hands/hand-rig'
 import { HUMAN_POSES, HUMAN_EXPRESSIONS, HUMAN_BUILDS, FOOT_SHAPES } from './species/human'
+import { BODY_SHAPES } from './body/body-shape'
 import { HAIR_STYLES, HAIR_COLORS } from './head/hair'
 import { FACIAL_HAIR_STYLES } from './head/facial-hair'
 import { GLASSES_STYLES } from './head/glasses'
@@ -237,6 +238,8 @@ export function capabilities(version?: string, cast: Cast = {}): Capabilities {
       figureStyles: ['fluid', 'stick', 'organic'],
       body: {
         'body.torso · body.arm · body.leg · body.neck': 'Organic half-width profiles: [{ at: 0..1, width: fractionOfHeight }], increasing from 0 to 1; independent of ink width.',
+        'body.measurements': `Organic torso from tape-measure girths { height, bust, underbust?, waist, hip } in any one unit, or a named shape (${Object.keys(BODY_SHAPES).join(' | ')}). Sets the front width, the side depth (bust forward, seat back, belly) and the hip and thigh spacing; reads correctly at every turn. An explicit torso / torsoFront / torsoBack / hipWidth still wins.`,
+        'body.torsoFront · body.torsoBack': 'Organic side-view depth from the spine line toward the chest/belly and toward the back/seat, same profile format; default torso × depth.',
         'body.fill · body.outline · body.shading': 'Shared skin fill, outline { color, width }, cel material { mode: cel | none, light: [x,y], shadow, opacity, highlight }.',
         'softCartoonCharacter(name, options?)': 'Original youngMan / youngWoman / childBoy / childGirl story presets. Children have larger head proportions, shorter limbs and rounded torsos; every face, hair, build, hand, clothing and material option can be overridden.',
         'face.projection': 'Organic default volume follows the head axes, keeps both eyes in three-quarter views and projects a small nose above the mouth; opaque hair covers features. cartoon keeps the classic face slide.',

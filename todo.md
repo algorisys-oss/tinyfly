@@ -1,3 +1,13 @@
+## Organic body shapes and measurements — v0.114.0
+
+- [x] `body.measurements` builds the organic torso from tape-measure girths (`height`, `bust`, `underbust?`, `waist`, `hip`, any unit) or a named shape (`BODY_SHAPES`: hourglass, pear, rectangle, invertedTriangle, round).
+- [x] Side-view depth: new `torsoFront`/`torsoBack` profiles; each torso section is projected from width and depth by the turn, so bust, seat and belly read correctly in profile and three-quarter views. Unmeasured bodies are unchanged (torso × depth).
+- [x] Hip joint spacing and thighs follow measured hips; explicit `torso`/`torsoFront`/`torsoBack`/`hipWidth` still win. Clothing follows the shaped contour.
+- [x] `softCartoonCharacter('youngWoman')` gains a stylised side profile; new measurements replace a preset torso.
+- [x] Editor **Body shape** picker for organic figures; capabilities, appearance guide and model guides updated.
+- [x] Tests for profiles, units, validation, projection symmetry, leg spacing, presets and the editor picker; contact sheets of all five shapes at five turns visually reviewed.
+- [x] v0.114.0 minor version, release notes, CDN pins and model guides prepared.
+
 ## Decision-focused cricket cameras — v0.113.0
 
 - [x] Public fixed front-foot and striker/bowler crease presets; native release foot anchoring, physical review event selection and run-out framing that includes the approaching batter.
