@@ -6,7 +6,8 @@
 - [x] README, public/model guides and capability discovery updated; innings/scoring/strike/lesson ledgers remain in consuming applications.
 - [x] Give the existing 60-render organic contour determinism test a local 15 s timeout for concurrent suite runs; retain all pose/turn and perspective assertions. All 3,800 tests pass across 238 files with two workers.
 - [x] Release gate passed: all 3,800 tests in 238 files, types, public/production builds and generated docs; all 219 checks across Chromium/Firefox/WebKit. Desktop/phone, exact copied HTML/bundles and composed JSON visually verified. All 192 old format/action/cast clips match the base compiler exactly; installed v0.111.0 sparse/scaled comparisons also match.
-- [ ] Direct main/dev merge, OSS/CDN and npm publication, live verification.
+- [x] Direct main/dev merge/push completed in sync; OSS/CDN immutable v0.112.0 tag published. npm accepted v0.112.0 after all 3,800 prepublish tests/builds. Live app version, all five composed examples/downloads, public/model guides and CDN APIs/JSON playback in a Web Worker verified.
+- [x] Fresh external npm v0.112.0 consumer passes public ESM exports/capability discovery, all format/cast combinations, protected decisions, native falling bails, free-hit carry/consume, run-out, JSON/Timeline playback and invalid-input checks. Registry lists v0.112.0 as latest.
 
 ## Cricket field correctness and marking profiles — v0.111.0
 
