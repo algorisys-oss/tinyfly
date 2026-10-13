@@ -7,7 +7,7 @@
 - [x] Interactive profile picker and optional classified setup markers, preserving time/playback/zoom and included in JSON export.
 - [x] Geometry/profile/ownership/classification regressions and demo/standalone browser checks added; README, guides and model discovery updated.
 - [x] Release review passed without findings. All 3,782 tests in 237 files, application/library types, production/public builds and generated docs pass. All 171 cricket checks pass across Chromium, Firefox and WebKit; overhead comparison against installed v0.110.0, desktop/phone layouts, active playback/profile/overlay changes and downloaded JSON visually reviewed.
-- [ ] Merge main/dev directly, publish OSS/CDN v0.111.0 and npm, and verify the live example and fresh consumer.
+- [x] Main/dev merged directly and pushed in sync. OSS/CDN immutable tag v0.111.0 and npm published after all 3,782 prepublish tests/builds. Live version/profile picker, overlays, time preservation, model guidance and CDN APIs in a Web Worker verified. A clean external npm consumer passes all nine format/profile combinations, capsule geometry/classification, setup overlays and JSON playback.
 
 ## Cricket authoring roadmap — ordered follow-ups
 
