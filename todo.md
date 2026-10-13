@@ -15,7 +15,15 @@
 - [x] Striker/keeper/slip delivery-flight gaze regressions on all casts; close fielders no longer turn toward the batter prematurely.
 - [x] Rear scalp hair/hat pass stays with the head in globally sorted 3D scenes; four organic presets stay covered through eight camera angles, independent head turns and nods. Regression reproduces the original bald patch.
 - [x] Release gate passed: review, configured full suite (3,772 tests in 236 files), application types, production/public builds and generated docs. All 123 cricket checks pass across Chromium, Firefox and WebKit; desktop/phone, rear-head renders and downloaded zoomed JSON visually reviewed. WebKit reset comparison allows at most 64 changed edge pixels and 64 channel error; camera/path state remains exact in native checks.
-- [ ] Merge main/dev directly, publish OSS/CDN v0.110.0 and npm, and verify the live example and fresh consumers.
+- [x] Main/dev merged directly and pushed in sync. OSS mirror and immutable CDN tag v0.110.0 published. npm accepted v0.110.0 after all 3,772 prepublish tests and public builds. Live website version, Men/keeper/125% zoom, model guidance and CDN builders in a Web Worker verified.
+- [x] npm registry availability confirmed after processing. A clean external Node consumer installs v0.110.0 and verifies Men, eleven fielding labels, fifteen actors, all eight zoom views and JSON playback.
+
+## Camera review gestures — follow-up
+
+- [x] Reviewed Ctrl+mouse/touchpad zoom and camera rotation after the current release. Recommended as a later feature: Ctrl+wheel or touchpad pinch for zoom, mouse/touch drag for orbit, with visible sliders/buttons and reset retained. Wheel/trackpad zoom events can carry `ctrlKey`; see [MDN wheel events](https://developer.mozilla.org/en-US/docs/Web/API/Element/wheel_event). Use [Pointer Events](https://developer.mozilla.org/en-US/docs/Web/API/Pointer_events) for shared mouse/touch input.
+- [ ] Add a reusable scene interaction adapter, scoped to the scene canvas. Preserve normal page scrolling/zoom outside it, keep camera controls in sync, and retain story time/playback and JSON export.
+- [ ] Drive gestures through public camera APIs; add bounded elevation and apply orbit changes to ball-follow offsets as well as fixed views. The current cricket API exposes yaw/zoom, while elevation is preset and the ball-follow offset is fixed.
+- [ ] Verify mouse wheel delta modes, touchpad pinch, pointer capture/cancel, touch rotation/pinch, limits/reset, keyboard controls and playback preservation across Chromium, Firefox and WebKit.
 
 ## Cricket story APIs and interactive example — v0.109.0
 
