@@ -1,6 +1,7 @@
 import { createRandom, hashSeed, type RandomSource } from '../../engine/authoring/random'
 import { boilFrame, type Point } from '../../adapters/canvas/sketch'
 import { taperedLine } from './tapered-line'
+import { createIllustratedPen, type ResolvedIllustration } from './illustrated-pen'
 
 /**
  * The pen every part of a character is drawn with: its body, face, hair,
@@ -12,12 +13,15 @@ import { taperedLine } from './tapered-line'
  *   few times a second, pressure that thins and thickens along each stroke,
  *   faint construction guides, and the odd rubbed-out earlier attempt.
  * - `silhouette`: everything filled solid in the ink, for a readability check.
+ * - `illustrated`: inked and painted. Line weight follows the light, strokes
+ *   taper like a brush, and fills get shadow, core shadow and highlight tones
+ *   mixed from their own colour (see illustrated-pen.ts).
  *
  * Deterministic: the pencil's wobble and pressure are seeded by the seed, the
  * boil frame and the stroke's place in the drawing order, never Math.random.
  */
 
-export type Look = 'clean' | 'pencil' | 'silhouette'
+export type Look = 'clean' | 'pencil' | 'silhouette' | 'illustrated'
 
 export interface PencilOptions {
   /** Largest wobble, px (default: 12% of the line width, at least 1) */
@@ -39,10 +43,18 @@ export interface Pen {
   readonly ink: string
   /** A stroke through `points` whose width runs from `from` to `to` px */
   limb(points: Point[], from: number, to: number): void
-  /** An even stroke */
-  line(points: Point[], width: number): void
-  /** A closed shape: filled with `fill` (none when null) and outlined (not when `outline` is 0) */
-  shape(points: Point[], fill: string | null, outline: number): void
+  /**
+   * An even stroke. `outside` says which side of it is the outside of a
+   * shape (+1 the right of the direction of travel, −1 the left), for looks
+   * whose ink weight follows the light; others ignore it.
+   */
+  line(points: Point[], width: number, outside?: 1 | -1): void
+  /**
+   * A closed shape: filled with `fill` (none when null) and outlined (not when
+   * `outline` is 0). `flat` keeps a look that paints form into fills from
+   * painting this one (an eye, a mouth: features with their own shading).
+   */
+  shape(points: Point[], fill: string | null, outline: number, flat?: boolean): void
   /** An ellipse: filled with `fill` (none when null) and outlined */
   ellipse(cx: number, cy: number, rx: number, ry: number, angle: number, fill: string | null, outline: number): void
   /** A filled dot in the ink */
@@ -60,6 +72,7 @@ export interface PenOptions {
   seed: number
   time: number
   pencil?: PencilOptions
+  illustrated?: ResolvedIllustration
 }
 
 /** Points around an ellipse, from `start` radians, `turns` of a full turn. */
@@ -76,6 +89,10 @@ export function ellipsePoints(cx: number, cy: number, rx: number, ry: number, an
 
 export function createPen(ctx: CanvasRenderingContext2D, options: PenOptions): Pen {
   if (options.look === 'pencil') return pencilPen(ctx, options)
+  if (options.look === 'illustrated') {
+    if (!options.illustrated) throw new Error('createPen: the illustrated look needs its resolved style')
+    return createIllustratedPen(ctx, options.ink, options.lineWidth, options.illustrated)
+  }
   return cleanPen(ctx, options.ink, options.look)
 }
 

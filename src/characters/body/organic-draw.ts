@@ -66,6 +66,17 @@ function joined(point: Point, at: number, id: string, joints: CharacterJoints): 
   return false
 }
 
+/** Which side of the outline's direction of travel is outside it (+1 right, −1 left; y points down). */
+function outsideSide(outline: Point[]): 1 | -1 {
+  let area = 0
+  outline.forEach((p, i) => {
+    const q = outline[(i + 1) % outline.length]
+    area += p.x * q.y - q.x * p.y
+  })
+  // Clockwise on screen (positive area with y down) keeps the inside on the right.
+  return area > 0 ? -1 : 1
+}
+
 /** One part at its native depth; no foreground whole-body overlay. */
 export function drawOrganicPart(ctx: CanvasRenderingContext2D, pen: Pen, body: OrganicBody, joints: CharacterJoints, id: string): boolean {
   const shape = joints.bodyContours?.[id]
@@ -74,6 +85,7 @@ export function drawOrganicPart(ctx: CanvasRenderingContext2D, pen: Pen, body: O
   pen.shape(shape.outline, body.fill === 'none' ? null : body.fill, 0)
   if (pen.look === 'clean') shade(ctx, shape, body)
   if ((pen.look !== 'silhouette' || body.fill === 'none') && joints.lineWidth > 0) {
+    const outside = outsideSide(shape.outline)
     let run: Point[] = []
     for (let i = 0; i <= shape.outline.length; i++) {
       const index = i % shape.outline.length
@@ -82,14 +94,14 @@ export function drawOrganicPart(ctx: CanvasRenderingContext2D, pen: Pen, body: O
       const midpoint = { x: (point.x + next.x) / 2, y: (point.y + next.y) / 2 }
       const handEnd = id.startsWith('arm.') && shape.positions[index] === 1
       if (handEnd || joined(midpoint, shape.positions[index], id, joints)) {
-        if (run.length >= 2) pen.line(run, joints.lineWidth)
+        if (run.length >= 2) pen.line(run, joints.lineWidth, outside)
         run = []
       } else {
         if (run.length === 0) run.push(point)
         run.push(next)
       }
     }
-    if (run.length >= 2) pen.line(run, joints.lineWidth)
+    if (run.length >= 2) pen.line(run, joints.lineWidth, outside)
   }
   return true
 }

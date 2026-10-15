@@ -7,6 +7,7 @@ import type { BodyPlan, ChainSpec, Pose, Vec3 } from './rig/body-plan'
 import { headPoint, skeletonInView, solveSkeleton, type Skeleton, type SolvedHead, type ViewProjection } from './rig/skeleton'
 import { reachPose as reachPlanPose } from './rig/reach'
 import { createPen, unfilledPen, type Look, type Pen, type PencilOptions } from './look/pen'
+import { resolveIllustration, type IllustratedOptions, type ResolvedIllustration } from './look/illustrated-pen'
 import { resolveOrganicBody, type OrganicBody, type OrganicBodyOptions } from './body/organic-body'
 import { measuredHipWidth } from './body/body-shape'
 import { organicBodyContours, type OrganicBodyContours } from './body/organic-geometry'
@@ -77,6 +78,8 @@ export interface CharacterOptions extends HeadLookOptions {
   /** Opt-in organic contours, skin material and independent outline settings. */
   body?: OrganicBodyOptions
   look?: Look
+  /** The `illustrated` look's ink weight, taper, shadow and highlight (light defaults to the body's skin light) */
+  illustrated?: IllustratedOptions
   /** Feet to top of head, px (default 300) */
   height?: number
   /** `bold` (default): head 30% of the height, line 4.5%. `thin`: head 24%, line 2.2%, as the reference sheets */
@@ -126,6 +129,7 @@ export interface Character {
   figure: FigureStyle
   body?: OrganicBody
   look: Look
+  illustrated: ResolvedIllustration
   height: number
   lineWidth: number
   ink: string
@@ -196,6 +200,7 @@ export function character(options: CharacterOptions = {}): Character {
     figure,
     ...(body ? { body } : {}),
     look,
+    illustrated: resolveIllustration(options.illustrated, body?.shading.light),
     height,
     lineWidth: body?.outline.width ?? lineWidth,
     ink: body?.outline.color ?? ink,
@@ -543,7 +548,7 @@ export function characterPartsInView(character: Character, pose: Pose, projectio
     depth: depths[index],
     ...(seen.body ? { sortDepth: id.startsWith('arm.') && index > garmentOrder ? Math.max(depths[index], garmentDepth) : depths[index] } : {}),
     draw(ctx: CanvasRenderingContext2D, time = 0) {
-      const pen = createPen(ctx, { look: seen.look, ink: seen.ink, lineWidth: seen.lineWidth, seed: hashSeed(`${seen.seed}:${id}`), time, pencil: seen.pencil })
+      const pen = createPen(ctx, { look: seen.look, ink: seen.ink, lineWidth: seen.lineWidth, seed: hashSeed(`${seen.seed}:${id}`), time, pencil: seen.pencil, illustrated: seen.illustrated })
       const hook = (layer?: CharacterLayer) => {
         if (!layer) return
         ctx.save()
@@ -588,6 +593,7 @@ function drawSolved(ctx: CanvasRenderingContext2D, character: Character, full: P
     seed: character.seed,
     time,
     pencil: character.pencil,
+    illustrated: character.illustrated,
   })
   const hook = (layer?: CharacterLayer) => {
     if (!layer) return

@@ -428,6 +428,7 @@ export function capabilitiesMarkdown(version?: string, cast: Cast = {}): string 
     '',
     `- \`build\`: ${list(c.character.builds)}`,
     `- \`figure\`: ${list(c.character.figureStyles)}`,
+    "- `look`: `clean` (default), `pencil`, `silhouette`, `illustrated` (inked and painted: line weight follows the light, brush-tapered strokes, shadow/core/highlight tones from each fill; `illustrated: { light: [x, y], weight, taper, shadow, highlight }`, each 0–1)",
     ...Object.entries(c.character.body).map(([name, description]) => `- \`${name}\`: ${description}`),
     `- \`hair\`: ${list(c.character.hair)} (colours: ${list(Object.keys(c.character.hairColors))} in \`HAIR_COLORS\`)`,
     '- Flowing hair: `softSweep`, `flowingBob`, `cascadingWaves`; editable `locks: [{ path, width, follow? }]` with cubic `{ around, up, lift? }` points (around in degrees, dimensions in head radii), `fall: { taper, wave }` and `shine` (0–1). Roots stay attached; `hairFollowTracks` also drives flexible short locks.',

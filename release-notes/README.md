@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.115.0](v0.115.0.md) | 2026-10-15 | Illustrated character look: light-weighted ink, brush-tapered strokes and painted shadow and highlight tones |
 | [v0.114.0](v0.114.0.md) | 2026-10-14 | Organic body shapes and measurements with side-view bust, seat and belly depth |
 | [v0.113.0](v0.113.0.md) | 2026-10-13 | Decision-focused cricket cameras, configurable framing and crease references |
 | [v0.112.0](v0.112.0.md) | 2026-10-13 | Composable cricket plays, independent legality/free-hit context and authored decisions |

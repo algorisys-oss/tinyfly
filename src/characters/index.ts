@@ -45,6 +45,8 @@ export { meetHands, meetingSpacing, HAND_MEETINGS, embrace, embraceSpacing, EMBR
 export * from './species/human-motion'
 export type { BodyPlan, ChainSpec, BoneSpec, BoneAngles, ContactSpec, HeadSpec, Pose as CharacterPose, Vec3 } from './rig/body-plan'
 export { createPen, ellipsePoints, type Pen, type Look, type PencilOptions, type PenOptions } from './look/pen'
+export { resolveIllustration, type IllustratedOptions, type ResolvedIllustration } from './look/illustrated-pen'
+export { illustrationTones, type IllustrationTones } from './look/illustration-color'
 export { basicOutfit, type BasicOutfitOptions } from './wardrobe/basic-outfit'
 export { outfitPreset, OUTFIT_PRESETS, type OutfitCategory } from './wardrobe/outfit-preset'
 // Heads: hair, ears, facial hair, glasses and hats, as plain data that turns with the head (see docs/character-appearance.md).

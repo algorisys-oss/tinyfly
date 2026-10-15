@@ -14,6 +14,7 @@ import {
 import { HUMAN_POSES, HUMAN_REST, humanFieldLabel, humanPose } from './species/human'
 import { faceToScreen } from './head/face'
 import type { Point } from '../adapters/canvas/sketch'
+import type { IllustratedOptions } from './look/illustrated-pen'
 import { CanvasAdapter } from '../adapters/canvas'
 import { deserializeTimeline } from '../engine/serialization'
 import type { TimelineDefinition } from '../engine/types'
@@ -32,6 +33,7 @@ function recordingContext() {
       log.push('stroke')
     },
     fill: () => log.push('fill'),
+    createRadialGradient: () => ({ addColorStop: () => undefined }),
   }
   const store: Record<string | symbol, unknown> = {}
   const ctx = new Proxy(store, {
@@ -214,18 +216,32 @@ describe('looks', () => {
     expect(at(0)).not.toBe(at(200))
   })
 
-  it('draws clean, pencil, silhouette, stick and fluid differently', () => {
+  it('draws clean, pencil, silhouette, illustrated, stick and fluid differently', () => {
     const draw = (options: Parameters<typeof character>[0]) => pixels((ctx) => drawCharacter(ctx, character({ height: 300, ...options }), HUMAN_POSES.wave))
-    const all = [draw({}), draw({ look: 'pencil' }), draw({ look: 'silhouette' }), draw({ figure: 'stick' }), draw({ proportions: 'thin' })]
+    const all = [draw({}), draw({ look: 'pencil' }), draw({ look: 'silhouette' }), draw({ look: 'illustrated' }), draw({ figure: 'stick' }), draw({ proportions: 'thin' })]
     expect(new Set(all).size).toBe(all.length)
   })
 
   it('calls layer hooks with the pen of the look', () => {
     const looks: string[] = []
-    for (const look of ['clean', 'pencil', 'silhouette'] as const) {
+    for (const look of ['clean', 'pencil', 'silhouette', 'illustrated'] as const) {
       drawCharacter(recordingContext().ctx, character({ look, layers: { front: (_ctx, _j, pen) => void looks.push(pen.look) } }), HUMAN_REST)
     }
-    expect(looks).toEqual(['clean', 'pencil', 'silhouette'])
+    expect(looks).toEqual(['clean', 'pencil', 'silhouette', 'illustrated'])
+  })
+
+  it('draws the illustrated look the same every time, and follows its light and options', () => {
+    const draw = (illustrated?: IllustratedOptions) =>
+      pixels((ctx) => drawCharacter(ctx, character({ look: 'illustrated', height: 300, illustrated }), HUMAN_POSES.wave, 0))
+    expect(draw()).toBe(draw())
+    expect(draw()).not.toBe(draw({ light: [0.8, -0.6] }))
+    expect(draw()).not.toBe(draw({ shadow: 0, highlight: 0 }))
+    expect(draw()).not.toBe(draw({ weight: 0, taper: 0 }))
+  })
+
+  it('rejects illustrated options out of range', () => {
+    expect(() => character({ look: 'illustrated', illustrated: { weight: 2 } })).toThrow(/weight/)
+    expect(() => character({ look: 'illustrated', illustrated: { light: [0, 0] } })).toThrow(/light/)
   })
 })
 

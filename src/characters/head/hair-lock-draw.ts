@@ -55,7 +55,7 @@ export function drawHairLocks(pen: Pen, head: SolvedHead, hair: Hair, pad: numbe
       // Filled roots merge with the cap; skip their cross-edge and keep only
       // a few curved edges, rather than outlining every lock like a sticker.
       pen.shape([...left, ...right.slice().reverse()], hair.color, 0)
-      if (pen.look === 'clean' && (hair.shine ?? 0) > 0) {
+      if ((pen.look === 'clean' || pen.look === 'illustrated') && (hair.shine ?? 0) > 0) {
         const shine = run.filter(sample => sample.t >= 0.2 && sample.t <= 0.75)
         if (shine.length >= 3) {
           const outer = shine.map((sample, i) => {

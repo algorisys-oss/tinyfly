@@ -133,6 +133,31 @@ accepts `mode: 'cel' | 'none'`, screen-space `light: [x, y]`, `shadow`,
 Pencil and silhouette use their existing pens. Artist-authored painted
 meshes remain a separate future capability.
 
+### The illustrated look
+
+`look: 'illustrated'` inks and paints the same shapes the clean look draws:
+
+- Outlines are heavier on the side turned away from the light and thinner on
+  the lit side; open strokes (brows, mouth lines, folds, hair strands) taper
+  at their ends like a brush.
+- Skin, clothes and hair are painted with a soft shadow, a narrower core
+  shadow and a highlight, mixed from each fill's own colour: shadows lean
+  toward red-violet, highlights toward warm yellow, greys shade cool
+  (`illustrationTones(colour)` returns the three tones).
+- Faces get heavier arched brows, a lid shadow and crease, an iris glow, a
+  soft lower lip and cheek warmth.
+
+```ts
+character({
+  look: 'illustrated',
+  illustrated: { light: [-0.8, -0.6], weight: 0.6, taper: 0.7, shadow: 1, highlight: 0.6 },
+})
+```
+
+Every option is optional. `light` points toward the light in screen space
+and defaults to the body's `shading.light`; the others run 0..1. Drawing is
+deterministic: the same character, pose and options give the same pixels.
+
 Set `body.fill: 'none'` (or `skin: 'none'` without a body fill override) for
 outline-only exposed body, head and hands in every look. Dot and articulated
 hands omit skin fills and shading; clothing retains its own material.
@@ -290,7 +315,7 @@ Every style is the same few fields (`resolveHair(spec)` fills them all in):
 | `ties` | Ponytails, buns and braids: `{ kind: 'ponytail' \| 'bun' \| 'braid', at: 'top' \| 'high' \| 'low' \| 'left' \| 'right', length?, size? }` |
 | `locks` | Curved sections: `{ path, width, follow? }`; `width` is in head radii; `follow` scales their flex (default 1, 0 pins a lock) |
 | `fall` | Hanging mass: `{ taper, wave }`, narrowing toward the ends (0..1 head radii) and a soft uneven hem (nonnegative head radii) |
-| `shine` | Soft highlight opacity on the locks, 0..1 (default 0); drawn in the clean look |
+| `shine` | Soft highlight opacity on the locks, 0..1 (default 0); drawn in the clean and illustrated looks |
 | `coversEars` | The hair hides the ears |
 
 A style stays a starting point: any style suits anyone.
@@ -501,7 +526,7 @@ coloured irises and highlights. `iris` sets their colour (default `#4b7fce`),
 `lashes` enables outer lashes (default true), and `ageLines` sets subtle eye
 and smile creases from 0 to 1 (default 0). `style: 'simple'` is the original
 face and remains the default. Face style is separate from the pen's `look`
-(`clean`, `pencil`, or `silhouette`); `look: 'anime'` is not a pen style.
+(`clean`, `pencil`, `silhouette` or `illustrated`); `look: 'anime'` is not a pen style.
 
 The existing `eye.left`, `eye.right`, `blink`, `lookX`, `lookY`, `pupil`, `lid`,
 `bulge`, brows and mouth fields animate both styles. The coloured eye opening

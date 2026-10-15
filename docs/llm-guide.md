@@ -217,6 +217,8 @@ from. The eight presets in `ANIME_CAST` (`animeBoy`, `animeGirl`,
 Use `face: { style: 'anime', iris: '#4b7fce', lashes: true, ageLines: 0.6 }`
 for coloured expressive eyes and optional creases; this is a face style,
 not a `look` value. It uses the same expressions, blink, gaze and turn fields.
+The `look` values are `clean`, `pencil`, `silhouette` and `illustrated`
+(inked and painted, tuned with `illustrated: { light, weight, taper, shadow, highlight }`).
 Age is proportions, hair, creases and clothes, never a stoop; a `cane` in a hand or
 a `wheelchair()` to ride (`RIDING_POSES.wheeling`) is an accessory any
 character can have. Expressions come from `HUMAN_EXPRESSIONS`

@@ -1,3 +1,14 @@
+## Illustrated character look — v0.115.0
+
+- [x] `look: 'illustrated'`: ink weighted by the light (heavier on the shadow side, thinner where lit), brush-tapered open strokes, and fills painted with graded shadow, core-shadow and highlight bands.
+- [x] `illustrationTones(colour)`: painted tones mixed from the fill (shadows toward red-violet, highlights toward warm yellow, greys shade cool); translucent fills stay unpainted.
+- [x] `illustrated: { light, weight, taper, shadow, highlight }` options, checked and normalised; light defaults to the body's skin light.
+- [x] Painted faces: heavier arched brows, lid shadow and crease, iris glow, a soft lower lip and cheek warmth; features with their own shading draw `flat`. Hair shine shows in the illustrated look.
+- [x] Tests for tones, option checks, determinism, light/option sensitivity and the layer-hook pen; side-by-side clean/illustrated renders visually reviewed.
+- [x] Appearance guide, README, model guides and capabilities updated.
+- [x] **Illustrated Look** gallery demo (`src/examples/live-demos/illustrated-look.js`): clean and illustrated side by side, full figure and head close-up, with light direction (or a circling light), weight, taper, shadow and highlight controls; `illustrated` added to the Cast Turnaround and Flowing Hair look pickers. Desktop and phone views checked.
+- [x] v0.115.0 minor version, release notes, CDN pins and model guides prepared.
+
 ## Organic body shapes and measurements — v0.114.0
 
 - [x] `body.measurements` builds the organic torso from tape-measure girths (`height`, `bust`, `underbust?`, `waist`, `hip`, any unit) or a named shape (`BODY_SHAPES`: hourglass, pear, rectangle, invertedTriangle, round).

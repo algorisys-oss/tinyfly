@@ -591,7 +591,7 @@ with a GSAP-style call (durations are in seconds here):
 ```html
 <div class="box" style="width:60px;height:60px;background:#4a9eff"></div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.114.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.115.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -799,7 +799,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.114.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.115.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -2714,7 +2714,7 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.114.0/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.115.0/cdn/tinyfly-player.iife.js`.
 
 ---
 
@@ -7067,7 +7067,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.114.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.115.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed
@@ -8437,6 +8437,8 @@ from. The eight presets in `ANIME_CAST` (`animeBoy`, `animeGirl`,
 Use `face: { style: 'anime', iris: '#4b7fce', lashes: true, ageLines: 0.6 }`
 for coloured expressive eyes and optional creases; this is a face style,
 not a `look` value. It uses the same expressions, blink, gaze and turn fields.
+The `look` values are `clean`, `pencil`, `silhouette` and `illustrated`
+(inked and painted, tuned with `illustrated: { light, weight, taper, shadow, highlight }`).
 Age is proportions, hair, creases and clothes, never a stoop; a `cane` in a hand or
 a `wheelchair()` to ride (`RIDING_POSES.wheeling`) is an accessory any
 character can have. Expressions come from `HUMAN_EXPRESSIONS`
@@ -8661,7 +8663,7 @@ path for all of that:
 </figure>
 
 <!-- once, anywhere on the page (a site-wide footer is fine) -->
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.114.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.115.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 Every `[data-tinyfly-embed]` mounts when the page is ready, with no per-post
@@ -9933,8 +9935,8 @@ On a page with no build step, load the maps add-on after the browser bundle; it
 adds to the same `tinyfly` global:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.114.0/cdn/tinyfly.iife.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.114.0/cdn/tinyfly-maps.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.115.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.115.0/cdn/tinyfly-maps.iife.js"></script>
 ```
 
 It is a separate script because the offline world map it carries adds about
@@ -10274,6 +10276,31 @@ accepts `mode: 'cel' | 'none'`, screen-space `light: [x, y]`, `shadow`,
 Pencil and silhouette use their existing pens. Artist-authored painted
 meshes remain a separate future capability.
 
+### The illustrated look
+
+`look: 'illustrated'` inks and paints the same shapes the clean look draws:
+
+- Outlines are heavier on the side turned away from the light and thinner on
+  the lit side; open strokes (brows, mouth lines, folds, hair strands) taper
+  at their ends like a brush.
+- Skin, clothes and hair are painted with a soft shadow, a narrower core
+  shadow and a highlight, mixed from each fill's own colour: shadows lean
+  toward red-violet, highlights toward warm yellow, greys shade cool
+  (`illustrationTones(colour)` returns the three tones).
+- Faces get heavier arched brows, a lid shadow and crease, an iris glow, a
+  soft lower lip and cheek warmth.
+
+```ts
+character({
+  look: 'illustrated',
+  illustrated: { light: [-0.8, -0.6], weight: 0.6, taper: 0.7, shadow: 1, highlight: 0.6 },
+})
+```
+
+Every option is optional. `light` points toward the light in screen space
+and defaults to the body's `shading.light`; the others run 0..1. Drawing is
+deterministic: the same character, pose and options give the same pixels.
+
 Set `body.fill: 'none'` (or `skin: 'none'` without a body fill override) for
 outline-only exposed body, head and hands in every look. Dot and articulated
 hands omit skin fills and shading; clothing retains its own material.
@@ -10431,7 +10458,7 @@ Every style is the same few fields (`resolveHair(spec)` fills them all in):
 | `ties` | Ponytails, buns and braids: `{ kind: 'ponytail' \| 'bun' \| 'braid', at: 'top' \| 'high' \| 'low' \| 'left' \| 'right', length?, size? }` |
 | `locks` | Curved sections: `{ path, width, follow? }`; `width` is in head radii; `follow` scales their flex (default 1, 0 pins a lock) |
 | `fall` | Hanging mass: `{ taper, wave }`, narrowing toward the ends (0..1 head radii) and a soft uneven hem (nonnegative head radii) |
-| `shine` | Soft highlight opacity on the locks, 0..1 (default 0); drawn in the clean look |
+| `shine` | Soft highlight opacity on the locks, 0..1 (default 0); drawn in the clean and illustrated looks |
 | `coversEars` | The hair hides the ears |
 
 A style stays a starting point: any style suits anyone.
@@ -10642,7 +10669,7 @@ coloured irises and highlights. `iris` sets their colour (default `#4b7fce`),
 `lashes` enables outer lashes (default true), and `ageLines` sets subtle eye
 and smile creases from 0 to 1 (default 0). `style: 'simple'` is the original
 face and remains the default. Face style is separate from the pen's `look`
-(`clean`, `pencil`, or `silhouette`); `look: 'anime'` is not a pen style.
+(`clean`, `pencil`, `silhouette` or `illustrated`); `look: 'anime'` is not a pen style.
 
 The existing `eye.left`, `eye.right`, `blink`, `lookX`, `lookY`, `pupil`, `lid`,
 `bulge`, brows and mouth fields animate both styles. The coloured eye opening
@@ -15138,7 +15165,7 @@ magnet.addEventListener('pointerleave', () => {
 
 <!-- capabilities: generated from the library -->
 
-# tinyfly capabilities (v0.114.0)
+# tinyfly capabilities (v0.115.0)
 
 Generated from the library itself: every name below is accepted, and names not listed are rejected (beat scripts, code panels and `checkTracks` say which name was probably meant).
 
@@ -15423,6 +15450,7 @@ Appearance options of `character({ … })`, all plain data that turns with the h
 
 - `build`: `standard`, `slim`, `tall`, `short`, `broad`, `curvy`, `stocky`, `kid`, `child`, `toddler`
 - `figure`: `fluid`, `stick`, `organic`
+- `look`: `clean` (default), `pencil`, `silhouette`, `illustrated` (inked and painted: line weight follows the light, brush-tapered strokes, shadow/core/highlight tones from each fill; `illustrated: { light: [x, y], weight, taper, shadow, highlight }`, each 0–1)
 - `body.torso · body.arm · body.leg · body.neck`: Organic half-width profiles: [{ at: 0..1, width: fractionOfHeight }], increasing from 0 to 1; independent of ink width.
 - `body.measurements`: Organic torso from tape-measure girths { height, bust, underbust?, waist, hip } in any one unit, or a named shape (hourglass | pear | rectangle | invertedTriangle | round). Sets the front width, the side depth (bust forward, seat back, belly) and the hip and thigh spacing; reads correctly at every turn. An explicit torso / torsoFront / torsoBack / hipWidth still wins.
 - `body.torsoFront · body.torsoBack`: Organic side-view depth from the spine line toward the chest/belly and toward the back/seat, same profile format; default torso × depth.

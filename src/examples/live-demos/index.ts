@@ -41,6 +41,7 @@ import { animeCast } from './anime-cast'
 import { mangaCast } from './manga-cast'
 import { hairAndHats } from './hair-and-hats'
 import { flowingHair } from './flowing-hair'
+import { illustratedLook } from './illustrated-look'
 import { organicCharacters } from './organic-characters'
 import { cricketStory } from './cricket-story'
 import { handOver } from './hand-over'
@@ -116,6 +117,7 @@ import animeCastSource from './anime-cast.js?raw'
 import mangaCastSource from './manga-cast.js?raw'
 import hairAndHatsSource from './hair-and-hats.js?raw'
 import flowingHairSource from './flowing-hair.js?raw'
+import illustratedLookSource from './illustrated-look.js?raw'
 import organicCharactersSource from './organic-characters.js?raw'
 import cricketStorySource from './cricket-story.js?raw'
 import handOverSource from './hand-over.js?raw'
@@ -258,6 +260,7 @@ export const liveDemos: LiveDemoWithCode[] = [
   withCode(mangaCast, mangaCastSource),
   withCode(hairAndHats, hairAndHatsSource),
   withCode(flowingHair, flowingHairSource),
+  withCode(illustratedLook, illustratedLookSource),
   withCode(organicCharacters, organicCharactersSource),
   withCode(cricketStory, cricketStorySource),
   withCode(handOver, handOverSource),

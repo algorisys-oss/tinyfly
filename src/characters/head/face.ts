@@ -2,6 +2,7 @@ import type { Point } from '../../adapters/canvas/sketch'
 import type { Pose } from '../rig/body-plan'
 import { headPoint, type SolvedHead } from '../rig/skeleton'
 import type { Pen } from '../look/pen'
+import { illustrationTones } from '../look/illustration-color'
 import { nosePoints } from './head-shape'
 
 /**
@@ -175,6 +176,9 @@ export function drawFace(pen: Pen, head: SolvedHead, pose: Pose, lineWidth: numb
   const pupilSize = Math.max(0.2, field(pose, 'pupil', 1))
   const lid = Math.min(1, Math.max(0, field(pose, 'lid', 0)))
   const bulge = Math.min(1, Math.max(0, field(pose, 'bulge', 0)))
+  // The illustrated look paints the face too: lids, creases, iris glow, lips and cheeks.
+  const painted = pen.look === 'illustrated'
+  if (painted && ctx) drawCheekWarmth(ctx, head, options.projection)
 
   for (const side of [1, -1]) {
     const name = side === 1 ? 'left' : 'right'
@@ -192,12 +196,12 @@ export function drawFace(pen: Pen, head: SolvedHead, pose: Pose, lineWidth: numb
       // Wide open or bulging: the whites show around the pupil.
       const whites = open > 1.2 || bulge > 0.02
       const white = 0.13 * Math.max(open, 1) * (1 + bulge * 0.7)
-      if (whites) pen.shape(toScreen(ellipse(ex, EYE_Y, white * 0.85, white), eye), '#ffffff', thin)
+      if (whites) pen.shape(toScreen(ellipse(ex, EYE_Y, white * 0.85, white), eye), '#ffffff', thin, true)
       const pupil = (open > 1.2 ? 0.075 : 0.1) * pupilSize * (1 + bulge * 0.3)
       const px = ex + lookX * 0.08
       const py = EYE_Y - lookY * 0.07
       const circle = ellipse(px, py, pupil, pupil * 1.1 * Math.min(open, 1))
-      pen.shape(toScreen(circle, eye), pen.ink, 0)
+      pen.shape(toScreen(circle, eye), pen.ink, 0, true)
       if (options.inPupil && ctx) {
         // The pupil's circle on screen: its centre, and the nearest edge as the radius, so the drawing stays inside.
         const [centre] = toScreen([{ x: px, y: py }], eye)
@@ -218,7 +222,7 @@ export function drawFace(pen: Pen, head: SolvedHead, pose: Pose, lineWidth: numb
         const top = EYE_Y + reach
         const edge = top - reach * 2 * lid
         const half = reach * 1.1
-        pen.shape(toScreen([{ x: ex - half, y: top + 0.02 }, { x: ex + half, y: top + 0.02 }, { x: ex + half, y: edge }, { x: ex - half, y: edge }], eye), options.skin ?? '#ffffff', 0)
+        pen.shape(toScreen([{ x: ex - half, y: top + 0.02 }, { x: ex + half, y: top + 0.02 }, { x: ex + half, y: edge }, { x: ex - half, y: edge }], eye), options.skin ?? '#ffffff', 0, true)
         pen.line(toScreen([{ x: ex - half, y: edge }, { x: ex + half, y: edge }], eye), thin)
       }
     }
@@ -226,7 +230,8 @@ export function drawFace(pen: Pen, head: SolvedHead, pose: Pose, lineWidth: numb
     const brow = EYE_Y + (options.style === 'anime' ? 0.38 : 0.3) + field(pose, `brow.${name}`, 0) * 0.14 + Math.max(0, open - 1) * 0.12
     const outer = { x: ex + side * 0.13, y: brow }
     const inner = { x: ex - side * 0.13, y: brow + browTilt * 0.1 }
-    pen.line(toScreen([outer, { x: (outer.x + inner.x) / 2, y: (outer.y + inner.y) / 2 }, inner], { x: ex, y: brow }), thin)
+    const arch = painted ? 0.035 : 0
+    pen.line(toScreen([outer, { x: (outer.x + inner.x) / 2, y: (outer.y + inner.y) / 2 + arch }, inner], { x: ex, y: brow }), thin * (painted ? 2.2 : 1))
   }
 
   drawMarks(pen, head, pose, thin, options.projection)
@@ -244,6 +249,7 @@ export function drawFace(pen: Pen, head: SolvedHead, pose: Pose, lineWidth: numb
   const w = 0.25 * Math.max(0.3, field(pose, 'mouthWidth', 1))
   const open = Math.min(1, Math.max(0, field(pose, 'mouth', 0)))
   if (open <= 0.05) {
+    if (painted) drawLowerLip(pen, w, smile, toScreen)
     pen.line(toScreen(quadratic({ x: -w, y: MOUTH_Y }, { x: 0, y: MOUTH_Y - smile * 0.25 }, { x: w, y: MOUTH_Y }), mouthCentre), thin)
     return
   }
@@ -278,7 +284,7 @@ export function drawFace(pen: Pen, head: SolvedHead, pose: Pose, lineWidth: numb
     yBottom = (x) => MOUTH_Y - rise(x)
     inside = 0.5
   }
-  pen.shape(toScreen(outline, mouthCentre), pen.ink, 0)
+  pen.shape(toScreen(outline, mouthCentre), pen.ink, 0, true)
   if (open < SHOWS_INSIDE) return
   const gap = yTop(0) - yBottom(0)
   const half = w * inside
@@ -288,14 +294,14 @@ export function drawFace(pen: Pen, head: SolvedHead, pose: Pose, lineWidth: numb
     const tw = half * 0.55
     const floor = across(tw, -tw).map((x) => ({ x, y: yBottom(x) }))
     const tip = quadratic({ x: -tw, y: yBottom(-tw) }, { x: 0, y: yBottom(0) + gap * 0.8 }, { x: tw, y: yBottom(tw) }, 8)
-    pen.shape(toScreen([...floor, ...tip.slice(1, -1)], mouthCentre), TONGUE, 0)
+    pen.shape(toScreen([...floor, ...tip.slice(1, -1)], mouthCentre), TONGUE, 0, true)
   }
   if (options.teeth) {
     // A row of upper teeth hanging from the top of the opening, with the lines between them.
     const t = Math.min(0.06, gap * 0.4)
     const edge = across(-half, half).map((x) => ({ x, y: yTop(x) }))
     const under = edge.map(({ x, y }) => ({ x: x * 0.92, y: y - t })).reverse()
-    pen.shape(toScreen([...edge, ...under], mouthCentre), '#ffffff', 0)
+    pen.shape(toScreen([...edge, ...under], mouthCentre), '#ffffff', 0, true)
     for (const k of [-0.5, 0, 0.5]) {
       const x = half * k
       pen.line(toScreen([{ x, y: yTop(x) }, { x: x * 0.92, y: yTop(x) - t }], mouthCentre), thin * 0.6)
@@ -325,16 +331,20 @@ function drawAnimeEye(
     const x = Math.min(right.x, Math.max(left.x, p.x))
     return { x, y: Math.min(quadraticY(left, top, right, x), Math.max(quadraticY(right, bottom, left, x), p.y)) }
   })
-  pen.shape(screen([...upper, ...lower.slice(1, -1)]), '#ffffff', thin * 0.5)
+  pen.shape(screen([...upper, ...lower.slice(1, -1)]), '#ffffff', thin * 0.5, true)
   const px = ex + Math.max(-1, Math.min(1, lookX)) * 0.07 * scale
   const py = ey - Math.max(-1, Math.min(1, lookY)) * 0.055 * scale
   const irisX = 0.115 * scale
   const irisY = 0.185 * scale
-  pen.shape(screen(inside(ellipse(px, py, irisX, irisY, 24))), options.iris ?? '#4b7fce', thin * 0.4)
-  pen.shape(screen(inside(ellipse(px, py - 0.075 * scale, irisX * 0.7, irisY * 0.35))), 'rgba(255,255,255,0.25)', 0)
+  pen.shape(screen(inside(ellipse(px, py, irisX, irisY, 24))), options.iris ?? '#4b7fce', thin * 0.4, true)
+  pen.shape(screen(inside(ellipse(px, py - 0.075 * scale, irisX * 0.7, irisY * 0.35))), 'rgba(255,255,255,0.25)', 0, true)
+  const painted = pen.look === 'illustrated'
+  const glow = painted ? illustrationTones(options.iris ?? '#4b7fce')?.highlight : undefined
+  // Light through the iris gathers in its lower half.
+  if (glow) pen.shape(screen(inside(ellipse(px, py - irisY * 0.5, irisX * 0.7, irisY * 0.32))), glow, 0, true)
   const radius = Math.min(0.085, 0.042 * pupilSize) * scale
   const pupil = inside(ellipse(px, py, radius, radius * 1.35))
-  pen.shape(screen(pupil), pen.ink, 0)
+  pen.shape(screen(pupil), pen.ink, 0, true)
   if (options.inPupil && ctx) {
     const [centre] = screen([{ x: px, y: py }])
     const r = Math.min(...screen(pupil).map((p) => Math.hypot(p.x - centre.x, p.y - centre.y)))
@@ -347,15 +357,53 @@ function drawAnimeEye(
       ctx.restore()
     }
   }
-  pen.shape(screen(inside(ellipse(px - 0.038 * scale, py + 0.075 * scale, 0.035 * scale, 0.045 * scale))), '#ffffff', 0)
-  pen.shape(screen(inside(ellipse(px + 0.04 * scale, py - 0.04 * scale, 0.014 * scale, 0.02 * scale))), '#ffffff', 0)
-  pen.line(screen(upper), thin * 1.1)
+  pen.shape(screen(inside(ellipse(px - 0.038 * scale, py + 0.075 * scale, 0.035 * scale, 0.045 * scale))), '#ffffff', 0, true)
+  pen.shape(screen(inside(ellipse(px + 0.04 * scale, py - 0.04 * scale, 0.014 * scale, 0.02 * scale))), '#ffffff', 0, true)
+  if (painted) {
+    // The upper lid's shadow over the top of the eye, then its crease above.
+    const shaded = quadratic(left, { x: ex, y: ey + height * 1.2 }, right)
+    pen.shape(screen([...upper, ...shaded.slice(1, -1).reverse()]), 'rgba(70, 35, 30, 0.22)', 0, true)
+    const crease = quadratic({ x: ex - width * 0.7, y: ey + height * 0.55 + 0.03 }, { x: ex, y: ey + height * 1.4 + 0.09 }, { x: ex + width * 0.85, y: ey + height * 0.5 + 0.03 })
+    pen.line(screen(crease), thin * 0.45)
+    // A short lower lash line at the outer corner.
+    const outerLower = lower.filter(p => side * (p.x - ex) > width * 0.25)
+    if (outerLower.length >= 2) pen.line(screen(outerLower), thin * 0.55)
+  }
+  pen.line(screen(upper), thin * (painted ? 1.9 : 1.1))
   if (options.lashes !== false) {
     for (const offset of [0, 0.035]) {
       const x = ex + side * (width - offset)
       const y = quadraticY(left, top, right, x)
       pen.line(screen([{ x, y }, { x: x + side * 0.055, y: y + 0.07 }]), thin * 0.75)
     }
+  }
+}
+
+/** A closed mouth's lower lip: a soft rose lens under the line (illustrated look). */
+function drawLowerLip(pen: Pen, w: number, smile: number, toScreen: (points: Point[], centre: Point) => Point[]): void {
+  // A rounded fullness hanging just under the middle of the mouth line, never pointed.
+  const lineY = MOUTH_Y - smile * 0.125
+  const half = w * 0.5
+  const ry = 0.045
+  const lip = ellipse(0, lineY - ry * 0.9, half, ry, 24)
+  pen.shape(toScreen(lip, { x: 0, y: MOUTH_Y - 0.08 }), 'rgba(165, 55, 70, 0.2)', 0, true)
+}
+
+/** Soft warmth over the cheeks (illustrated look): blood under skin, not a blush mark. */
+function drawCheekWarmth(ctx: CanvasRenderingContext2D, head: SolvedHead, projection?: FaceOptions['projection']): void {
+  for (const side of [1, -1]) {
+    const cheek = { x: 0.48 * side, y: -0.2 }
+    const seen = faceToScreen(head, [cheek], cheek, projection)
+    if (seen.facing < SHOWN) continue
+    const [centre] = seen.points
+    const radius = head.rx * 0.26
+    const warmth = ctx.createRadialGradient(centre.x, centre.y, 0, centre.x, centre.y, radius)
+    warmth.addColorStop(0, 'rgba(225, 95, 95, 0.2)')
+    warmth.addColorStop(1, 'rgba(225, 95, 95, 0)')
+    ctx.fillStyle = warmth
+    ctx.beginPath()
+    ctx.arc(centre.x, centre.y, radius, 0, Math.PI * 2)
+    ctx.fill()
   }
 }
 
@@ -397,7 +445,7 @@ function drawMarks(pen: Pen, head: SolvedHead, pose: Pose, thin: number, project
     const shown = faceToScreen(head, [], cheek, projection).facing >= SHOWN
     if (blush > 0.01 && shown) {
       const { points } = faceToScreen(head, ellipse(cheek.x, cheek.y, 0.17, 0.1), cheek, projection)
-      pen.shape(points, `rgba(240, 120, 140, ${(0.75 * blush).toFixed(3)})`, 0)
+      pen.shape(points, `rgba(240, 120, 140, ${(0.75 * blush).toFixed(3)})`, 0, true)
       if (blush > 0.5) {
         // Hatch lines over the cheek.
         for (const dx of [-0.07, 0, 0.07]) {

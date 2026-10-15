@@ -18,6 +18,7 @@ export const html = `<style>
         <option value="clean">clean</option>
         <option value="pencil">pencil</option>
         <option value="silhouette">silhouette</option>
+        <option value="illustrated">illustrated</option>
       </select>
     </label>
     <label><input type="checkbox" class="ctn-spin" checked /> turn</label>

@@ -34,7 +34,9 @@ names.
 - Colour anime characters: use `castMember('animeYoungWoman', height)` or any
   of the eight age presets in `ANIME_CAST`. For a custom character use
   `face: { style: 'anime', iris: '#4b7fce', lashes: true, ageLines: 0.6 }`.
-  Keep `look` as `clean`, `pencil` or `silhouette`; anime is a face style.
+  Keep `look` as `clean`, `pencil`, `silhouette` or `illustrated` (inked and
+  painted: light-weighted lines, shadow and highlight tones, tuned with
+  `illustrated: { light, weight, taper, shadow, highlight }`); anime is a face style.
   The same `HUMAN_EXPRESSIONS`, blink, gaze, turn, acting and dance fields apply.
 
 - Prefer the high-level builders: `scriptTracks()` beats for characters

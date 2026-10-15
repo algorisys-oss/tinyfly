@@ -12,7 +12,7 @@ export const html = `<style>
 <div class="fh-controls">
 <label>Face type <select class="fh-face"><option value="simpleRound">Simple round</option><option value="expressiveRound" selected>Expressive round</option><option value="softAngular">Soft angular</option><option value="broadJaw">Broad jaw</option><option value="olderExpressive">Older expressive</option></select></label>
 <label>Hairstyle <select class="fh-style"><option value="softSweep">Soft sweep</option><option value="flowingBob">Flowing bob</option><option value="cascadingWaves" selected>Cascading waves</option></select></label>
-<label>Look <select class="fh-look"><option value="clean">Clean</option><option value="pencil">Pencil</option><option value="silhouette">Silhouette</option></select></label>
+<label>Look <select class="fh-look"><option value="clean">Clean</option><option value="pencil">Pencil</option><option value="silhouette">Silhouette</option><option value="illustrated">Illustrated</option></select></label>
 <label>Colour <input class="fh-color" type="color" value="#985b32" /></label>
 <label><input class="fh-motion" type="checkbox" checked /> Hair follow-through</label>
 <label><input class="fh-turn" type="checkbox" /> Full turn</label>
