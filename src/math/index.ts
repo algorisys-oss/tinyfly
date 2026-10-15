@@ -17,6 +17,11 @@ export { parseExpression, expressionNames, ExpressionError, FUNCTIONS, CONSTANTS
 export { evaluate, compile, compileDerivative, type Scope } from './expr/evaluate'
 export { differentiate, nthDerivative, expressionToString } from './expr/differentiate'
 export { integrate } from './figure/derived'
+export { density, meanOf, sdOf, supportOf, sample, samples, isDiscrete, distributionProblem, DISTRIBUTION_KINDS, type Distribution, type DistributionKind } from './prob/distributions'
+export { binSamples, defaultBins, summary, type Bin } from './prob/histogram'
+export { scatterPoints, leastSquares, type PointsSpec } from './prob/scatter'
+export { ballPath, ballAt, binOf } from './prob/galton'
+export { bayesAreas, type BayesAreas } from './prob/bayes'
 export { parseTex, TexError, TEX_COMMANDS, SYMBOLS, type TexNode, type TexClass } from './tex/tex-parser'
 export { layoutTex, type TexLayout, type TexPiece, type TexGlyph, type TexRule, type TexStroke, type TexLayoutOptions } from './tex/tex-layout'
 export { morphEquation, type MorphPiece, type PlacedLayout } from './tex/equation-morph'
@@ -42,6 +47,7 @@ export {
   type PresetOptions,
 } from './presets/linear-algebra'
 export { tangentFigure, secantFigure, riemannFigure, areaFigure, taylorFigure, limitFigure, type CalculusOptions } from './presets/calculus'
+export { normalFigure, binomialFigure, cltFigure, galtonFigure, monteCarloPiFigure, regressionFigure, bayesFigure, type ProbabilityOptions } from './presets/probability'
 
 import type { MathFigureSpec } from './figure/figure-spec'
 import { validateMathFigure } from './figure/validate-spec'

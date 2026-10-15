@@ -36,7 +36,7 @@ describe('capabilities', () => {
     const c = capabilities()
     expect(Object.keys(c.math.items)).toEqual([...math.ITEM_KINDS])
     expect(c.math.functions).toEqual(Object.keys(math.FUNCTIONS))
-    for (const name of ['mathFigure', 'layoutFigure', 'mathTarget', 'mathSteps', 'mountMath', 'mountAllMath', 'mathExplorable', 'mathFigureToSvg', 'linearMapFigure', 'determinantFigure', 'eigenFigure', 'vectorSumFigure', 'spanFigure', 'tangentFigure', 'secantFigure', 'riemannFigure', 'areaFigure', 'taylorFigure', 'limitFigure', 'differentiate', 'compileDerivative', 'integrate', 'layoutTex', 'morphEquation', 'vec2', 'mat2', 'drawDisplayList', 'displayListToSvg']) {
+    for (const name of ['mathFigure', 'layoutFigure', 'mathTarget', 'mathSteps', 'mountMath', 'mountAllMath', 'mathExplorable', 'mathFigureToSvg', 'linearMapFigure', 'determinantFigure', 'eigenFigure', 'vectorSumFigure', 'spanFigure', 'tangentFigure', 'secantFigure', 'riemannFigure', 'areaFigure', 'taylorFigure', 'limitFigure', 'differentiate', 'compileDerivative', 'integrate', 'normalFigure', 'binomialFigure', 'cltFigure', 'galtonFigure', 'monteCarloPiFigure', 'regressionFigure', 'bayesFigure', 'density', 'samples', 'layoutTex', 'morphEquation', 'vec2', 'mat2', 'drawDisplayList', 'displayListToSvg']) {
       expect(math, name).toHaveProperty(name)
     }
     expect(capabilitiesMarkdown()).toContain('## Maths (`@algorisys/tinyfly/math`)')

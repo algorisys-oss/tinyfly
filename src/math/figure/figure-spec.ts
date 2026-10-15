@@ -238,16 +238,107 @@ export interface EquationItem extends ItemBase {
   backdrop?: boolean
 }
 
+/**
+ * A distribution whose numbers may be value names, so a slider or timeline can
+ * move the mean, the spread or n: `{ kind: 'normal', mean: 'mu', sd: 1 }`.
+ */
+export type DistributionRef =
+  | { kind: 'normal'; mean?: NumRef; sd?: NumRef }
+  | { kind: 'uniform'; min?: NumRef; max?: NumRef }
+  | { kind: 'exponential'; rate?: NumRef }
+  | { kind: 'binomial'; n: NumRef; p: NumRef }
+  | { kind: 'poisson'; rate: NumRef }
+  | { kind: 'dice'; count?: NumRef; sides?: NumRef }
+  | { kind: 'mean'; of: DistributionRef; count: NumRef }
+
+/** Samples from a distribution, binned: fills as `count` grows (the same samples every time, from `seed`). */
+export interface HistogramItem extends ItemBase {
+  kind: 'histogram'
+  distribution: DistributionRef
+  /** How many samples so far (animate it to watch the bars grow) */
+  count: NumRef
+  /** [from, to, number of bins]; discrete distributions default to one bin per whole number */
+  bins?: [number, number, number]
+  /** Bar heights as a density (area 1, matches the curve; default) or as counts */
+  scale?: 'density' | 'count'
+  /** Draw the distribution's own density over the bars (default false) */
+  curve?: boolean
+  /** Seed for the samples (default the item id) */
+  seed?: number | string
+  fillOpacity?: number
+}
+
+/** A distribution's density curve (or bars, for whole-number ones), with an optional shaded probability. */
+export interface DistributionItem extends ItemBase {
+  kind: 'distribution'
+  distribution: DistributionRef
+  /** Shade P(from ≤ X ≤ to); `\val{ID.p}` shows it */
+  shade?: [NumRef, NumRef]
+  domain?: [number, number]
+  width?: number
+  fillOpacity?: number
+}
+
+/** A Galton board: balls bounce left or right at each row of pegs and pile up into a bell. */
+export interface GaltonItem extends ItemBase {
+  kind: 'galton'
+  /** Rows of pegs (default 10) */
+  rows?: number
+  /** Balls dropped so far; the fractional part is the next ball's way down */
+  balls: NumRef
+  seed?: number | string
+  /** World units between pegs (default 0.5) */
+  spacing?: number
+  /** World y of the top peg (default near the top of the view) */
+  top?: number
+}
+
+/** Random points: a uniform scatter (Monte Carlo) or noisy points about a line (regression). */
+export interface ScatterItem extends ItemBase {
+  kind: 'scatter'
+  points:
+    | { kind: 'uniform'; x: [number, number]; y: [number, number] }
+    | { kind: 'linear'; slope: NumRef; intercept: NumRef; noise: NumRef; x: [number, number] }
+  /** How many points so far */
+  count: NumRef
+  seed?: number | string
+  /** An expression in x and y; points where it is true take `insideColor` (e.g. `x^2 + y^2 - 1`, true when ≤ 0) */
+  inside?: string
+  insideColor?: string
+  /** Draw the least-squares line (default false) */
+  fit?: boolean
+  /** px at a 600 px figure (default 3) */
+  radius?: number
+}
+
+/** A unit square cut by a prior and a test's two error rates: Bayes' rule as areas. */
+export interface BayesItem extends ItemBase {
+  kind: 'bayes'
+  /** P(condition) */
+  prior: NumRef
+  /** P(positive | condition) */
+  truePositive: NumRef
+  /** P(positive | no condition) */
+  falsePositive: NumRef
+  /** World bottom-left corner and size (default most of the view) */
+  at?: Vec2
+  size?: Vec2
+  /** Label the four regions (default true) */
+  labels?: boolean
+}
+
 export type MathItem =
   | GridItem | AxesItem | VectorItem | BasisItem | PointItem | FunctionItem
   | ParametricItem | PolygonItem | LineItem | LabelItem | EquationItem
   | TangentItem | RiemannItem | AreaItem | TaylorItem
+  | HistogramItem | DistributionItem | GaltonItem | ScatterItem | BayesItem
 
 export type MathItemKind = MathItem['kind']
 
 export const ITEM_KINDS: readonly MathItemKind[] = [
   'grid', 'axes', 'vector', 'basis', 'point', 'function', 'parametric', 'polygon', 'line', 'label', 'equation',
   'tangent', 'riemann', 'area', 'taylor',
+  'histogram', 'distribution', 'galton', 'scatter', 'bayes',
 ]
 
 export type MathThemeName = 'dark' | 'light' | 'chalk'

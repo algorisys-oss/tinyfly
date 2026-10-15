@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.117.0](v0.117.0.md) | 2026-10-16 | Maths animations: probability and statistics (seeded histograms, distributions, Galton board, CLT, Monte Carlo π, regression, Bayes) |
 | [v0.116.0](v0.116.0.md) | 2026-10-16 | Maths animations: `@algorisys/tinyfly/math` with linear algebra, calculus, a built-in TeX subset, lesson embeds, explorables and videos |
 | [v0.115.0](v0.115.0.md) | 2026-10-15 | Illustrated character look: light-weighted ink, brush-tapered strokes and painted shadow and highlight tones |
 | [v0.114.0](v0.114.0.md) | 2026-10-14 | Organic body shapes and measurements with side-view bust, seat and belly depth |

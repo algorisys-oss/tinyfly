@@ -174,7 +174,9 @@ names.
   `opacity` or `scale`. Lesson pages: `<figure data-tinyfly-math>` with
   `tinyfly-math.iife.js`; videos: `mathTarget(figure)`. Calculus: `tangent`
   (`h` makes a secant), `riemann`, `area`, `taylor`; animate `at` / `n` / `to` /
-  `order` through number values. See `docs/math.md`.
+  `order` through number values. Probability: `histogram`, `distribution`,
+  `galton`, `scatter`, `bayes`; distributions are data and samples are seeded.
+  See `docs/math.md`.
 
 ## 3. Check
 

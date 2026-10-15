@@ -4,8 +4,9 @@ import { isMat2 } from '../linear/mat2'
 import { isVec2 } from '../linear/vec2'
 import { layoutTex } from '../tex/tex-layout'
 import { differentiate } from '../expr/differentiate'
-import { ITEM_KINDS, MATH_THEMES, type MathFigureSpec, type MathItem, type NumRef, type VecRef } from './figure-spec'
-import { scopeOf } from './item-context'
+import { ITEM_KINDS, MATH_THEMES, type DistributionRef, type MathFigureSpec, type MathItem, type NumRef, type VecRef } from './figure-spec'
+import { distributionOf, scopeOf } from './item-context'
+import { distributionProblem, DISTRIBUTION_KINDS } from '../prob/distributions'
 import { derivedValues } from './derived'
 
 /**
@@ -88,6 +89,29 @@ export function validateMathFigure(spec: MathFigureSpec): MathFigureSpec {
       fail(`${item.id}.${field} must be a number or the name of a number value`)
     }
   }
+  const distribution = (item: MathItem, field: string, ref: DistributionRef) => {
+    if (!ref || typeof ref !== 'object' || !DISTRIBUTION_KINDS.includes(ref.kind)) {
+      fail(`${item.id}.${field}: ${unknownName('distribution', (ref as { kind?: string })?.kind, DISTRIBUTION_KINDS)}`)
+    }
+    for (const [key, value] of Object.entries(ref)) {
+      if (key === 'kind') continue
+      if (key === 'of') distribution(item, `${field}.of`, value as DistributionRef)
+      else number(item, `${field}.${key}`, value as NumRef)
+    }
+    const problem = distributionProblem(distributionOf(values, ref))
+    if (problem) fail(`${item.id}.${field}: ${problem}`)
+  }
+  const twoVariables = (item: MathItem, field: string, source: string) => {
+    let names: string[] = []
+    try {
+      names = expressionNames(parseExpression(source))
+    } catch (error) {
+      fail(`${item.id}.${field}: ${(error as Error).message}`)
+    }
+    for (const name of names) {
+      if (name !== 'x' && name !== 'y' && !numberNames.includes(name)) fail(`${item.id}.${field}: "${name}" is neither x, y nor a number value`)
+    }
+  }
   const derivable = (item: MathItem, field: string, source: string, order: number) => {
     // Every function used has a derivative rule (floor and round do not).
     try {
@@ -159,6 +183,36 @@ export function validateMathFigure(spec: MathFigureSpec): MathFigureSpec {
         if (item.lower !== undefined) expression(item, 'lower', item.lower, 'x')
         number(item, 'from', item.from)
         number(item, 'to', item.to)
+        break
+      case 'histogram':
+        distribution(item, 'distribution', item.distribution)
+        number(item, 'count', item.count)
+        if (item.bins !== undefined && !(Array.isArray(item.bins) && item.bins.length === 3 && item.bins[1] > item.bins[0] && Number.isInteger(item.bins[2]) && item.bins[2] >= 1 && item.bins[2] <= 500)) {
+          fail(`${item.id}.bins must be [from, to, count] with from < to and a whole count 1..500`)
+        }
+        break
+      case 'distribution':
+        distribution(item, 'distribution', item.distribution)
+        if (item.shade) item.shade.forEach((ref, k) => number(item, `shade[${k}]`, ref))
+        break
+      case 'galton':
+        if (item.rows !== undefined && !(Number.isInteger(item.rows) && item.rows >= 1 && item.rows <= 30)) fail(`${item.id}.rows must be a whole number 1..30`)
+        number(item, 'balls', item.balls)
+        break
+      case 'scatter':
+        if (!item.points || !['uniform', 'linear'].includes(item.points.kind)) fail(`${item.id}.points: ${unknownName('points kind', item.points?.kind, ['uniform', 'linear'])}`)
+        if (item.points.kind === 'linear') {
+          number(item, 'points.slope', item.points.slope)
+          number(item, 'points.intercept', item.points.intercept)
+          number(item, 'points.noise', item.points.noise)
+        }
+        number(item, 'count', item.count)
+        if (item.inside) twoVariables(item, 'inside', item.inside)
+        break
+      case 'bayes':
+        number(item, 'prior', item.prior)
+        number(item, 'truePositive', item.truePositive)
+        number(item, 'falsePositive', item.falsePositive)
         break
       case 'taylor':
         expression(item, 'expr', item.expr, 'x')

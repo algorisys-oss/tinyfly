@@ -1772,8 +1772,20 @@ function uS(t, e) {
   if (e.length !== 0)
     return e[Math.floor(t.next() * e.length)];
 }
+function dS(t, e = 0, n = 1) {
+  const s = 1 - t.next(), o = t.next();
+  return e + n * Math.sqrt(-2 * Math.log(s)) * Math.cos(2 * Math.PI * o);
+}
+function fS(t, e) {
+  const n = [...e];
+  for (let s = n.length - 1; s > 0; s--) {
+    const o = Math.floor(t.next() * (s + 1));
+    [n[s], n[o]] = [n[o], n[s]];
+  }
+  return n;
+}
 const Wu = /^([+\-*/])=\s*(-?[\d.]+)$/, Nu = /^random\(\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*(?:,\s*(-?[\d.]+)\s*)?\)$/i;
-function dS(t) {
+function gS(t) {
   return typeof t != "string" ? !1 : Wu.test(t.trim()) || Nu.test(t.trim());
 }
 function Du(t, e = {}) {
@@ -1812,7 +1824,7 @@ function Jp(t, e = 0, n) {
   }
   return s;
 }
-class fS {
+class pS {
   random;
   constructor(e) {
     this.random = Mn(e);
@@ -1918,7 +1930,7 @@ function Tc(t, e, n, s) {
   };
 }
 const om = 350, rm = 300, im = 550;
-function gS(t, e = {}) {
+function mS(t, e = {}) {
   const n = e.lead ?? om, s = e.gap ?? rm, o = e.tail ?? im, r = [];
   let i = 0;
   return t.forEach((a, l) => {
@@ -1940,10 +1952,10 @@ function gS(t, e = {}) {
     r.push({ id: a.id ?? `s${l}`, start: i, duration: u - i, cues: c }), i = u;
   }), { duration: i, scenes: r, cues: r.flatMap((a) => a.cues) };
 }
-function pS(t) {
+function yS(t) {
   return t.cues.map((e) => ({ id: e.id, time: e.start, label: e.text }));
 }
-function mS(t, e) {
+function bS(t, e) {
   let n = t.scenes[0];
   for (const s of t.scenes)
     if (e >= s.start) n = s;
@@ -1957,13 +1969,13 @@ function dl(t, e) {
 function Rr(t, e) {
   return (e - t.offset) / Hr(t);
 }
-function yS(t, e) {
+function wS(t, e) {
   return dl(t, Math.round(Rr(t, e)));
 }
-function bS(t, e) {
+function kS(t, e) {
   return dl(t, Math.ceil(Rr(t, e) - 1e-9));
 }
-function wS(t, e, n) {
+function vS(t, e, n) {
   const s = Math.max(1, Math.round(t.beatsPerBar ?? 4)), o = [];
   if (!(t.bpm > 0) || n < e) return o;
   for (let r = Math.ceil(Rr(t, e) - 1e-9); ; r++) {
@@ -1974,7 +1986,7 @@ function wS(t, e, n) {
   return o;
 }
 const $n = 100;
-function kS(t, e, n = {}) {
+function MS(t, e, n = {}) {
   const s = n.minBpm ?? 70, o = n.maxBpm ?? 180, r = Math.max(1, Math.round(e / $n)), i = Math.min(t.length, Math.round((n.maxSeconds ?? 60) * e)), a = Math.floor(i / r);
   if (a < 4) return { bpm: 120, offset: 0, confidence: 0 };
   const l = new Float64Array(a);
@@ -2021,7 +2033,7 @@ function kS(t, e, n = {}) {
   return { bpm: Math.round(E * 100) / 100, offset: Math.round(x % (6e4 / E)), confidence: v };
 }
 const am = 600, lm = 250, Ec = 1;
-function vS(t, e) {
+function xS(t, e) {
   const n = e.target ?? "Camera", s = { x: e.stage.width / 2, y: e.stage.height / 2 }, o = {}, r = (u, d, f, p) => {
     const g = o[u] ??= [];
     for (; g.length > 0 && g[g.length - 1].time >= d; ) g.pop();
@@ -2121,7 +2133,7 @@ function Bu(t) {
   const e = t - Math.floor(t);
   return 1 - Math.abs(e * 2 - 1);
 }
-function MS(t, e) {
+function SS(t, e) {
   const n = Math.max(1, Math.round(e.cycles ?? 1)), s = e.amplitude ?? 1, o = rs(t, e.period, n) + (e.phase ?? 0), r = o - Math.floor(o);
   switch (e.shape ?? "sine") {
     case "triangle":
@@ -2132,15 +2144,15 @@ function MS(t, e) {
       return s * Math.sin(r * Math.PI * 2);
   }
 }
-function xS(t, e) {
+function TS(t, e) {
   const n = Math.max(1, Math.round(e.cycles ?? 1)), s = typeof e.easing == "function" ? e.easing : zt(e.easing ?? "ease-in-out"), o = rs(t, e.period, n) + (e.phase ?? 0);
   return s(Bu(o));
 }
-function SS(t, e) {
+function ES(t, e) {
   const n = zu(e.seed), s = Math.max(1, Math.round(e.cycles ?? 1)), o = (rs(t, e.period, 1) + (e.phase ?? 0)) * Math.PI * 2, r = s / Math.PI;
   return qu([Math.cos(o) * r + 7.31, Math.sin(o) * r + 3.17], n, e.octaves ?? 1);
 }
-function TS(t, e, n) {
+function AS(t, e, n) {
   const s = zu(n.seed), o = Math.max(1, Math.round(n.cycles ?? 1)), r = Math.max(1, Math.round(n.cyclesAlong ?? 1)), i = rs(t, n.period, 1) * Math.PI * 2, a = rs(e, n.periodAlong, 1) * Math.PI * 2, l = o / Math.PI, c = r / Math.PI;
   return qu([Math.cos(i) * l + 5.13, Math.sin(i) * l + 9.47, Math.cos(a) * c + 2.71, Math.sin(a) * c + 6.29], s, n.octaves ?? 1);
 }
@@ -2174,25 +2186,25 @@ function um(t, e) {
     n = Math.imul(n ^ (s | 0), 2246822507) >>> 0, n = (n ^ n >>> 13) >>> 0, n = Math.imul(n, 3266489909) >>> 0, n = (n ^ n >>> 16) >>> 0;
   return n / 4294967296 * 2 - 1;
 }
-function ES(t, e = {}) {
+function $S(t, e = {}) {
   if (t.length === 0) throw new Error("curve: needs at least one key");
   const s = { id: "curve", target: "curve", property: "value", keyframes: t.map((r) => ({ time: r.at, value: r.value, easing: r.easing })).sort((r, i) => r.time - i.time), interpolation: e.interpolation }, o = new dn(s);
   return (r) => o.getValueAtTime(r);
 }
-function AS(t, e) {
+function PS(t, e) {
   return e * Hr({ bpm: t.bpm });
 }
-function $S(t, e) {
+function OS(t, e) {
   const n = Math.max(1, Math.round(t / Hr(e)));
   return { beats: n, grid: { ...e, bpm: n * 6e4 / t } };
 }
-function PS(t, e, n = {}) {
+function IS(t, e, n = {}) {
   const s = Math.max(1e-6, n.attack ?? 0.05), o = Math.max(1e-6, n.decay ?? 0.4), r = Rr(e, t), i = r - Math.floor(r), a = i < s ? i / s : Math.max(0, 1 - (i - s) / o), l = n.barAccent ?? 0;
   if (l <= 0) return a;
   const c = Math.max(1, Math.round(e.beatsPerBar ?? 4)), u = (Math.floor(r) % c + c) % c === 0;
   return a * (u ? 1 + l : 1) / (1 + l);
 }
-function OS(t, e, n = {}) {
+function _S(t, e, n = {}) {
   const s = n.fps ?? 30, o = Math.max(1, Math.round(e / s)), r = Math.max(1, Math.ceil(t.length / o)), i = new Float32Array(r), a = Math.min(0.99, Math.max(0, n.smoothing ?? 0.5));
   let l = 0, c = 0;
   for (let h = 0; h < r; h++) {
@@ -2205,7 +2217,7 @@ function OS(t, e, n = {}) {
   if (n.normalize !== !1 && c > 0) for (let h = 0; h < r; h++) i[h] /= c;
   return i;
 }
-function IS(t, e, n = 30, s) {
+function CS(t, e, n = 30, s) {
   if (t.length === 0) return 0;
   const r = (s ? rs(e, s) * s : e) * n / 1e3, i = Math.floor(r), a = t[Math.min(t.length - 1, Math.max(0, i))], l = t[Math.min(t.length - 1, Math.max(0, i + 1))];
   return a + (l - a) * (r - i);
@@ -2218,7 +2230,7 @@ const dm = {
   "9:16": 9 / 16,
   "4:5": 4 / 5
 }, ju = (t) => typeof t == "number" ? t : dm[t];
-function _S(t, e) {
+function HS(t, e) {
   const n = ju(e), s = t.width / t.height;
   if (n >= s) {
     const r = t.width / n;
@@ -2227,11 +2239,11 @@ function _S(t, e) {
   const o = t.height * n;
   return { x: (t.width - o) / 2, y: 0, width: o, height: t.height };
 }
-function CS(t, e) {
+function RS(t, e) {
   const n = ju(t), s = (o) => Math.max(2, Math.round(o / 2) * 2);
   return "width" in e ? { width: s(e.width), height: s(e.width / n) } : { width: s(e.height * n), height: s(e.height) };
 }
-function HS(t, e = {}) {
+function FS(t, e = {}) {
   const n = (s) => ({
     x: t.x + t.width * (1 - s) / 2,
     y: t.y + t.height * (1 - s) / 2,
@@ -2295,7 +2307,7 @@ function fl(t) {
       return null;
   }
 }
-function RS(t, e, n) {
+function LS(t, e, n) {
   const s = Math.max(2, Math.round(n.samples ?? 32)), o = Math.max(0, n.length), r = n.since !== void 0 ? Math.max(e - o, n.since) : e - o;
   if (r >= e) return [];
   const i = n.period, a = [];
@@ -2335,8 +2347,8 @@ function ym(t) {
   }
   return null;
 }
-const FS = { scale: 1, turn: 0, x: 0, y: 0 };
-function LS(t = {}) {
+const WS = { scale: 1, turn: 0, x: 0, y: 0 };
+function NS(t = {}) {
   return { scale: t.scale ?? 1, turn: t.turn ?? 0, x: t.x ?? 0, y: t.y ?? 0 };
 }
 function bm(t, e, n) {
@@ -2347,11 +2359,11 @@ function Yu(t, e) {
   const { ax: n, ay: s } = Fr(t.scale, t.turn);
   return { x: n * e.x - s * e.y + t.x, y: s * e.x + n * e.y + t.y };
 }
-function WS(t, e) {
+function DS(t, e) {
   const n = Yu(e, { x: t.x, y: t.y });
   return { scale: t.scale * e.scale, turn: t.turn + e.turn, x: n.x, y: n.y };
 }
-function NS(t) {
+function BS(t) {
   if (t.scale === 0) throw new Error("invertSimilarity: a scale of 0 cannot be undone");
   const e = { scale: 1 / t.scale, turn: -t.turn, x: 0, y: 0 }, n = Yu(e, { x: t.x, y: t.y });
   return { ...e, x: -n.x, y: -n.y };
@@ -2360,12 +2372,12 @@ function wm(t) {
   const { ax: e, ay: n } = Fr(t.scale, t.turn), s = 1 - e, o = -n, r = s * s + o * o;
   return r < 1e-18 ? null : { x: (t.x * s + t.y * o) / r, y: (t.y * s - t.x * o) / r };
 }
-function DS(t, e) {
+function zS(t, e) {
   if (t.scale <= 0) throw new Error("powSimilarity: the scale must be positive");
   const n = Math.pow(t.scale, e), s = t.turn * e, o = wm(t);
   return o ? bm(n, s, o) : { scale: n, turn: s, x: t.x * e, y: t.y * e };
 }
-function BS(t) {
+function qS(t) {
   const { ax: e, ay: n } = Fr(t.scale, t.turn);
   return [e, n, -n, e, t.x, t.y];
 }
@@ -2389,7 +2401,7 @@ function Xu(t, e = {}) {
 function Uu(t, e = {}) {
   return t.map((n) => ({ box: n, depth: Ku([(n.min[0] + n.max[0]) / 2, (n.min[1] + n.max[1]) / 2, (n.min[2] + n.max[2]) / 2]) })).sort((n, s) => n.depth - s.depth).flatMap(({ box: n }) => Xu(n, e));
 }
-function zS(t = {}) {
+function jS(t = {}) {
   const e = t.size ?? 10, s = (t.thickness ?? 2) / 2, o = [
     { tag: 0, min: [-s, -s, -s], max: [e - s, s, s] },
     { tag: 1, min: [e - s, -s, -s], max: [e + s, e - s, s] },
@@ -2397,7 +2409,7 @@ function zS(t = {}) {
   ], r = t.centre ?? { x: 0, y: 0 }, i = gl([2 * e / 3, e / 3, e / 3], { scale: t.scale }), a = { centre: { x: r.x - i.x, y: r.y - i.y }, scale: t.scale };
   return { boxes: o, faces: [...Uu(o, a), ...Xu({ ...o[0], hide: ["right"] }, a)] };
 }
-function qS(t = {}) {
+function YS(t = {}) {
   const e = Math.max(2, Math.round(t.steps ?? 8)), n = t.tread ?? 1.5, s = t.rise ?? 0.25, o = t.width ?? 3, r = t.base ?? 1.5, i = Math.max(1, Math.round(e * (n - 2 * s) / (n + 2 * s))), a = 2 * (e + i), l = n * (e - i) / a, c = [
     { dir: [1, 0, 0], across: [0, 1, 0], count: e },
     { dir: [0, 1, 0], across: [-1, 0, 0], count: e },
@@ -2427,7 +2439,7 @@ function km(t, e, n) {
   }
   return s;
 }
-function jS(t, e = {}) {
+function KS(t, e = {}) {
   if (t.length === 0) return [];
   const n = e.threshold ?? 1, s = Math.max(0.5, e.cell ?? 4), o = Math.sqrt(1 / n) * 1.6, r = e.bounds ?? {
     x: Math.min(...t.map((f) => f.x - f.r * o)),
@@ -2515,7 +2527,7 @@ function Ac(t) {
   }
   return e;
 }
-function YS(t) {
+function XS(t) {
   const e = Math.min(1, Math.max(0, t.progress));
   if (e <= 0) return [];
   const n = t.width / 2, s = n * (0.55 + 0.75 * e), o = Math.max(t.length * e, s * 1.2), r = t.x, i = t.y + o - s, a = Math.max(0.1, n * (0.35 - 0.3 * e)), l = i - Math.sqrt(Math.max(0, s * s - a * a)), c = Math.max(0, l - t.y), h = 8, u = [], d = [];
@@ -2530,7 +2542,7 @@ function YS(t) {
   }
   return [...d, ...y, ...u.reverse()];
 }
-function KS(t) {
+function US(t) {
   const e = Math.min(1, Math.max(0, t.grow ?? 1)), n = e >= 1 ? 1 : 1 - Math.pow(1 - e, 3) + 0.08 * Math.sin(e * Math.PI) * e, s = t.r * Math.max(0, n);
   if (s <= 0) return [];
   const o = Math.max(12, Math.round(t.segments ?? 48)), r = t.wobble ?? 0.05, i = t.time ?? 0, a = t.period ? i / t.period : i / 2500, l = (a - Math.floor(a)) * Math.PI * 2, c = t.seed ?? 0, h = [];
@@ -2540,7 +2552,7 @@ function KS(t) {
   }
   return h;
 }
-function XS(t) {
+function GS(t) {
   const e = t.progress;
   if (e <= 0 || e >= 1) return [];
   const n = Math.max(3, Math.round(t.pieces ?? 8)), s = [], o = t.r * (1 + 1.2 * e), r = Math.PI * 2 / n * 0.6 * (1 - e);
@@ -2554,11 +2566,11 @@ function XS(t) {
   }
   return s;
 }
-function US(t, e = {}) {
+function VS(t, e = {}) {
   const n = Math.max(0.05, 1 + t);
   return { sx: e.keep === "volume" ? 1 / Math.sqrt(n) : 1 / n, sy: n };
 }
-function GS(t, e, n = { x: 0, y: 0 }) {
+function JS(t, e, n = { x: 0, y: 0 }) {
   return t.map((s) => ({ x: n.x + (s.x - n.x) * e.sx, y: n.y + (s.y - n.y) * e.sy }));
 }
 function Hs(t, e) {
@@ -2589,7 +2601,7 @@ function Zt(t) {
 function sn(t, e, n) {
   return [t[0] + (e[0] - t[0]) * n, t[1] + (e[1] - t[1]) * n, t[2] + (e[2] - t[2]) * n];
 }
-const VS = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const ZS = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   add: Hs,
   cross: qs,
@@ -2708,7 +2720,7 @@ function se(t, e) {
   const n = t[0] * e[0] + t[4] * e[1] + t[8] * e[2] + t[12], s = t[1] * e[0] + t[5] * e[1] + t[9] * e[2] + t[13], o = t[2] * e[0] + t[6] * e[1] + t[10] * e[2] + t[14], r = t[3] * e[0] + t[7] * e[1] + t[11] * e[2] + t[15];
   return r === 1 || r === 0 ? [n, s, o] : [n / r, s / r, o / r];
 }
-const JS = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const QS = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   compose: pl,
   fromQuat: me,
@@ -4341,7 +4353,7 @@ class sd {
 function My(t) {
   return t < 0 ? 0 : t > 1 ? 1 : t;
 }
-function ZS(t) {
+function t4(t) {
   const e = new sd(t);
   return e.start(), e;
 }
@@ -4733,7 +4745,7 @@ function js(t, e, n) {
   const s = id(n), o = s.absolutePx !== void 0 ? t.top + s.absolutePx : t.top + t.height * s.elementFraction, r = e * s.viewportFraction;
   return o - r + s.offsetPx;
 }
-function QS(t, e, n, s) {
+function e4(t, e, n, s) {
   const o = js(t, e, n), i = js(t, e, s) - o;
   return i <= 0 ? o <= 0 ? 1 : 0 : ad(-o / i);
 }
@@ -4803,7 +4815,7 @@ class Ry {
     this.options.onLeave?.(), this.behaviour === "reset" && this.timeline.stop();
   }
 }
-function t4(t) {
+function n4(t) {
   const e = new Ry(t);
   return e.start(), e;
 }
@@ -5194,7 +5206,7 @@ class Nr {
 function ks(t) {
   return typeof t == "function" ? t() : t;
 }
-function e4(t) {
+function s4(t) {
   const e = new Nr(t);
   return e.start(), e;
 }
@@ -6851,11 +6863,11 @@ class vl {
     }
   }
 }
-async function n4(t, e, n = {}) {
+async function o4(t, e, n = {}) {
   const s = new vl(t, { ...n, autoplay: !0 });
   return await s.load(e), s;
 }
-function s4(t, e = {}) {
+function r4(t, e = {}) {
   return new vl(t, e);
 }
 const b1 = {
@@ -7239,7 +7251,7 @@ async function H1(t = document, e = {}) {
   const n = Array.from(t.querySelectorAll("[data-tinyfly-embed]"));
   return (await Promise.all(n.map((o) => I1(o, e)))).filter((o) => o !== void 0);
 }
-function o4(t) {
+function i4(t) {
   const e = ar.get(t);
   e && (Sa.get(t)?.(), Sa.delete(t), e.controls?.destroy(), e.player.destroy(), ar.delete(t), t.removeAttribute("data-tinyfly-mounted"));
 }
@@ -7525,11 +7537,11 @@ class L1 {
     this.animationFrameId !== void 0 && (cancelAnimationFrame(this.animationFrameId), this.animationFrameId = void 0);
   }
 }
-async function r4(t, e, n = {}) {
+async function a4(t, e, n = {}) {
   const s = new L1(t, { ...n, autoplay: !0 });
   return await s.load(e), s;
 }
-const i4 = { type: "none", duration: 0 }, Ct = (t) => ({ description: t, unit: "degrees" }), At = (t, e = 0, n = 1) => ({ description: t, unit: `${e}..${n}`, min: e, max: n }), dd = {
+const l4 = { type: "none", duration: 0 }, Ct = (t) => ({ description: t, unit: "degrees" }), At = (t, e = 0, n = 1) => ({ description: t, unit: `${e}..${n}`, min: e, max: n }), dd = {
   lean: Ct("Upper body tipped about the hips (+ toward the way it faces)"),
   bend: Ct("Line of action: the spine curved (+ curls forward, − arches back)"),
   headTilt: Ct("Head tilt"),
@@ -8538,7 +8550,7 @@ function xb(t) {
   return e * n;
 }
 const Td = 0.12, lh = 0.46, Sb = 1 - 2 * Td, Tb = 0.1, Eb = 0.21, Ab = 0.19, Ia = 0.24, hr = 0.22, Ed = 0.12, $b = 0.14, Ad = 0.33, ch = 0.7, hh = 0.3, Pb = 0.35, Ob = [1.7, 1.05], Ib = [1.3, 0.75], uh = [1.45, 0.85], _b = [1.15, 0.75], dh = 0.06, Cb = 0.7, Hb = 0.65, $d = 0.075, Rb = 0.3, Fb = 0.02, Lb = 0.012, Wb = 12, Nb = 0.25, Mo = 90, Db = 0.25, Bb = 0.04, Pd = 0.01, an = (t) => Math.min(1, Math.max(0, t ?? 0));
-function a4(t, e = 1) {
+function c4(t, e = 1) {
   return hr * t * e;
 }
 const _a = -0.12, Od = 0.4, le = (t) => t * Math.PI / 180, zb = (t, e) => ({ x: e * Math.sin(le(t)), y: Math.cos(le(t)) }), Id = (t, e) => Math.max(0, t) * (1 - Math.min(1, Math.max(0, e))), _d = (t, e, n, s) => t - 0.3 * e - n * 0.14 * e - Math.max(0, s - 1) * 0.12 * e;
@@ -8750,7 +8762,7 @@ function Kb(t, e) {
 function ke(t, e = {}) {
   return Hd(Cd(t, e), t);
 }
-function l4(t, e, n) {
+function h4(t, e, n) {
   return Us({ x: t.center.x + e * t.rx, y: t.center.y + n * t.ry }, t.center, t.angle);
 }
 function Xb(t, e, n) {
@@ -8942,7 +8954,7 @@ function Sl(t) {
     e.push(n.expression ? rn(r, n.expression) : r);
   }), e;
 }
-function c4(t, e) {
+function u4(t, e) {
   const n = Sl(e);
   return Sd.filter((s) => n.some((o) => o[s] !== ht[s])).map((s) => ({
     id: `${t}-${s}`,
@@ -9069,7 +9081,7 @@ function El(t, e, n = {}) {
   }
   return { ...o, pose: rw(o.pose, s.groove, e) };
 }
-function h4(t, e, n = {}) {
+function d4(t, e, n = {}) {
   return El(t, e, n).pose;
 }
 function Al(t) {
@@ -9084,7 +9096,7 @@ function ph(t, e, n, s, o, r, i) {
         for (const u of l.taps ?? []) o.push({ beat: h, tap: s ? iw[u] : u });
     }
 }
-function u4(t, e, n, s = {}) {
+function f4(t, e, n, s = {}) {
   const o = typeof t == "string" ? xn[t] : t, r = [];
   if (n <= e) return r;
   if (s.move) {
@@ -9148,13 +9160,13 @@ function cw(t, e, n) {
     keyframes: p.map((y) => ({ time: g + y.beat * 6e4 / o, value: m + n.height * y.travel, easing: "linear" }))
   };
 }
-function d4(t, e, n = 0) {
+function g4(t, e, n = 0) {
   return (t - n) * e / 6e4;
 }
-function f4(t, e = {}) {
+function p4(t, e = {}) {
   return (n) => El(t, n, e);
 }
-function g4(t, e) {
+function m4(t, e) {
   const n = e.start ?? 0, s = 6e4 / e.bpm, o = n + e.beats * s, r = Math.min((e.fade ?? 1) * s, (o - n) / 2);
   return [
     {
@@ -9179,7 +9191,7 @@ function g4(t, e) {
     }
   ];
 }
-function p4(t, e, n = {}) {
+function y4(t, e, n = {}) {
   const s = typeof e == "string" ? xn[e] : e, o = n.bpm ?? s.bpm, r = n.beats ?? (n.move ? s.moves[n.move].beats : Al(s)), i = n.samplesPerBeat ?? 4, a = n.start ?? 0, l = Math.round(r * i), c = Array.from({ length: l + 1 }, (g, m) => {
     const y = m / i;
     return { time: a + y * 6e4 / o, frame: El(s, y, n) };
@@ -10058,7 +10070,7 @@ function qd(t = {}) {
     }
   };
 }
-function m4(t) {
+function b4(t) {
   const e = t.split(".");
   if (e[0] === "hand" && e.length >= 3) {
     const s = `${e[1] === "left" ? "Left" : "Right"} hand`, o = { spread: "finger spread", turn: "wrist turn", bend: "wrist bend", tilt: "wrist tilt", roll: "roll" }, r = e.slice(2).join(".");
@@ -10381,7 +10393,7 @@ function pr(t, e, n = at) {
   const d = Math.floor(e), f = e - d, p = f <= 0.6 ? 1 : 1 - wh((f - 0.6) / 0.4), g = Math.max(0, ...s.strikes.map((m) => 1 - Math.min(Un(o - m, s.beats), Un(m - o, s.beats)) / 0.25));
   return { pose: u, contact: { side: Un(d, 2) === 0 ? "left" : "right", start: d, weight: p }, strike: g };
 }
-function y4(t, e) {
+function w4(t, e) {
   const n = Yd(e.style), s = e.bpm ?? n.bpm, o = e.beats ?? n.beats, r = e.samplesPerBeat ?? 16;
   if (![s, o, r].every((l) => Number.isFinite(l) && l > 0)) throw new Error("humanDanceTracks: bpm, beats and samplesPerBeat must be positive and finite");
   if (!Number.isFinite(e.start ?? 0)) throw new Error("humanDanceTracks: start must be finite");
@@ -12021,7 +12033,7 @@ function J2(t, e = at) {
   };
 }
 const Dh = { sweeping: V2, brushing: J2 };
-function b4(t, e, n = at) {
+function k4(t, e, n = at) {
   const s = Dh[t];
   if (!s) throw new Error(`humanCyclePose: ${dt("cycle", t, Object.keys(Dh))}`);
   return s(e, n);
@@ -12548,7 +12560,7 @@ function ho(t = {}) {
     face: { ...a ? { style: "anime", projection: "volume", iris: "#66422e", nose: !0 } : {}, ...t.face, teeth: t.face?.teeth ?? !1, tongue: t.face?.tongue ?? !1 }
   };
 }
-function w4(t, e, n, s) {
+function v4(t, e, n, s) {
   const { point: o, facing: r } = ls(t, [e, n, s]);
   return { point: o, facing: r };
 }
@@ -12691,11 +12703,11 @@ function Kr(t, e) {
   const n = e / t.height;
   return { ...t, height: e, lineWidth: t.lineWidth * n };
 }
-function k4(t, e, n, s) {
+function M4(t, e, n, s) {
   const o = t.plan.id === "human" ? { ...at, ...e } : e, r = Ol(t.plan, o, { height: s.height, contact: t.contact }, n);
   return Yr(Kr(t, r.height), o, r).joints;
 }
-function v4(t, e, n, s, o) {
+function x4(t, e, n, s, o) {
   const r = e.plan.id === "human" ? { ...at, ...n } : n, i = Ol(e.plan, r, { height: o.height, contact: e.contact }, s), a = Kr(e, i.height);
   Nl(t, a, r, Yr(a, r, i), o.time ?? 0);
 }
@@ -12734,7 +12746,7 @@ function Nl(t, e, n, s, o, r) {
   }
   xf(t, l, e.head, i.head, n, { lineWidth: e.lineWidth, skin: e.skin }), r || c(e.layers.front), t.restore();
 }
-function M4(t, e, n, s) {
+function S4(t, e, n, s) {
   const o = e.plan.id === "human" ? { ...at, ...n } : n, r = Zs(e, o).joints.head.rx, i = Kr(e, e.height * s.radius / Math.max(1e-6, r)), a = Zs(i, o);
   t.save(), t.translate(s.x - a.joints.head.center.x, s.y - a.joints.head.center.y), Nl(t, i, o, a, s.time ?? 0, /* @__PURE__ */ new Set(["head"])), t.restore();
 }
@@ -12769,7 +12781,7 @@ function Dl(t, e = at, n) {
   }
   return s;
 }
-function x4(t) {
+function T4(t) {
   const { character: e } = t, n = e.height * 0.8, s = e.height, o = e.plan.id === "human" ? at : {};
   return {
     type: "custom",
@@ -12801,7 +12813,7 @@ function dk(t, e, n) {
     groundY: t.groundY + n
   };
 }
-function S4(t, e, n) {
+function E4(t, e, n) {
   const s = t.character;
   if (!s) throw new Error("characterAt: the target was not made by characterTarget");
   const o = { ...t.props };
@@ -12818,7 +12830,7 @@ function If(t, e = at) {
     n.push(i ? { ...i, turn: r.turn ?? 0 } : { ...r, ...s.pose });
   }), n;
 }
-function T4(t, e, n = at) {
+function A4(t, e, n = at) {
   const s = If(e, n);
   return Object.keys(n).filter((r) => s.some((i) => (i[r] ?? n[r]) !== n[r])).map((r) => ({
     id: `${t}-${r}`,
@@ -12855,7 +12867,7 @@ function Jh(t, e) {
   const n = hs(t, `arm.${e}`, 2), s = hs(t, `arm.${e}`, 1);
   return Xr(n, wr(_f(Se(n, s)), t.character.lineWidth * 0.5));
 }
-function E4(t, e, n = {}) {
+function $4(t, e, n = {}) {
   const s = Math.min(t.character.height, e.character.height), o = n.length ?? s * 0.22;
   if (!(o > 0) || !Number.isFinite(o)) throw new Error("meetDandiya: stick length must be positive and finite");
   const r = n.point ?? [(t.position[0] + e.position[0]) / 2, Math.max(t.position[1], e.position[1]) + s * 0.62, (t.position[2] + e.position[2]) / 2], i = (c, h) => {
@@ -12898,7 +12910,7 @@ function gk(t, e) {
     };
   });
 }
-function A4(t, e) {
+function P4(t, e) {
   if (e.count !== void 0 && e.count !== t.length) throw new Error("danceCircleTracks: count must match targets.length");
   const n = e.bpm ?? 120, s = e.samplesPerBeat ?? 16;
   if (!t.length || ![n, e.beats, s].every((l) => Number.isFinite(l) && l > 0)) throw new Error("danceCircleTracks: targets and positive finite bpm, beats and samplesPerBeat are required");
@@ -12949,7 +12961,7 @@ function kk(t, e, n) {
   const s = typeof t == "string" ? Gr[t] : t, o = kr(e), r = kr((o - s.takeoff) / (s.landing - s.takeoff));
   return s.travel * n * r;
 }
-function $4(t, e, n = {}) {
+function O4(t, e, n = {}) {
   const s = typeof e == "string" ? Gr[e] : e, o = n.start ?? 0, r = n.duration ?? s.duration, i = n.samples ?? 48, a = Array.from({ length: i + 1 }, (h, u) => {
     const d = u / i;
     return { time: o + d * r, progress: d, pose: wk(s, d) };
@@ -13293,7 +13305,7 @@ function Lf(t, e = {}) {
 function Wf(t, e, n = {}) {
   e.shadow.opacity <= 0 || e.shadow.points.length < 3 || (t.save(), t.globalAlpha = e.shadow.opacity, Vr(t, e.shadow.points, n.ink ?? "#26262b", !1), t.restore());
 }
-function P4(t, e, n, s = {}) {
+function I4(t, e, n, s = {}) {
   t.save(), Ka(t, e, n, s), t.restore();
 }
 function Ik(t, e, n, s = {}) {
@@ -13477,7 +13489,7 @@ function Dk(t, e, n, s, o) {
   }
   return u;
 }
-const O4 = {
+const _4 = {
   kind: "character",
   validate(t) {
     const e = t;
@@ -13622,7 +13634,7 @@ function zf(t, e = {}) {
   }
   return t.end > i[i.length - 1].time && (i.push({ time: t.end, value: en.rest.mouth, easing: "ease-in-out" }), a.push({ time: t.end, value: en.rest.mouthWidth, easing: "ease-in-out" })), { [n]: i, [s]: a };
 }
-function I4(t, e, n = {}) {
+function C4(t, e, n = {}) {
   const s = {};
   for (const o of [...e].sort((r, i) => r.start - i.start))
     for (const [r, i] of Object.entries(zf(o, n))) {
@@ -13874,7 +13886,7 @@ function i5(t) {
     i.do === "pose" && !(typeof i.pose == "object" && i.pose !== null) && !zi.includes(i.pose) && r(dt("pose", i.pose, zi)), i.do === "gag" && !qi.includes(i.gag) && r(dt("gag", i.gag, qi));
   }), n;
 }
-function _4(t, e, n) {
+function H4(t, e, n) {
   const s = i5(e);
   if (s.length > 0) throw new Error(`characterScript3D: ${s.length} problem(s) in the beats:
 ${s.map((v) => `  beat ${v.beat}: ${v.message}`).join(`
@@ -13984,7 +13996,7 @@ function g0(t, e, n = [0, 0, 0]) {
     return [l("x", n[0]), l("y", n[1]), l("z", n[2])];
   };
 }
-function C4(t, e) {
+function R4(t, e) {
   const n = `${e.scene}/${e.character}`, s = e.height ?? 1.7, o = Math.max(1, e.every ?? 66), r = e.objects?.[e.character] ?? [0, 0, 0], i = new Ft({ id: `${n}-own`, tracks: t.filter((u) => u.target === n) }), a = e.at, l = typeof a == "function" ? a : Array.isArray(a) ? () => a : "camera" in a ? g0(t, `${e.scene}/${a.camera}`, e.objects?.[a.camera] ?? [0, 1.6, 8]) : (() => {
     const u = g0(t, `${e.scene}/${a.object}`, e.objects?.[a.object] ?? [0, 0, 0]), d = a.eyeHeight ?? s * 0.9;
     return (f) => {
@@ -14002,7 +14014,7 @@ function C4(t, e) {
   }
   return c.map((u) => ({ id: `${n}-lookAt-${u}`, target: n, property: u, keyframes: h[u] }));
 }
-function H4(t) {
+function F4(t) {
   const e = Math.max(1, Math.round(t.count)), [n, s] = t.centre ?? [0, 0], o = t.spacing ?? 1.2, r = t.shape ?? "line", i = [];
   if (r === "circle") {
     const h = e < 2 ? 0 : Math.max(o, o * e / (Math.PI * 2));
@@ -14038,7 +14050,7 @@ function H4(t) {
   return i;
 }
 const a5 = { x: 0, y: 0, scale: 1, rotate: 0, shakeX: 0, shakeY: 0, shakeRotate: 0 };
-function R4(t) {
+function L4(t) {
   const e = (n) => {
     const s = t?.get(n);
     return typeof s == "number" ? s : a5[n];
@@ -14053,11 +14065,11 @@ function R4(t) {
     shakeRotate: e("shakeRotate")
   };
 }
-function F4(t, e, n) {
+function W4(t, e, n) {
   const s = n.width / 2, o = n.height / 2, i = 1 + 2 * Math.max(Math.abs(e.shakeX), Math.abs(e.shakeY)) / Math.max(1, Math.min(n.width, n.height));
   t.translate(s + e.x + e.shakeX, o + e.y + e.shakeY), t.rotate((e.rotate + e.shakeRotate) * Math.PI / 180), t.scale(e.scale * i, e.scale * i), t.translate(-s, -o);
 }
-function L4(t, e, n) {
+function N4(t, e, n) {
   const s = e.width / 2, o = e.height / 2, r = (t.rotate + t.shakeRotate) * Math.PI / 180, i = (n.x - s) * t.scale, a = (n.y - o) * t.scale;
   return {
     x: s + t.x + t.shakeX + i * Math.cos(r) - a * Math.sin(r),
@@ -14135,7 +14147,7 @@ function h5(t, e, n, s, o, r, i, a) {
   const p = [h(f, -1, c * 1.3), h(o, -1, c * 1.5), h(o, 1, c * 1.5), h(f, 1, c * 1.3)];
   t.beginPath(), p.forEach((g, m) => m ? t.lineTo(g.x, g.y) : t.moveTo(g.x, g.y)), t.closePath(), t.fillStyle = d(i), t.fill(), t.strokeStyle = d(a), t.beginPath(), t.moveTo(p[1].x, p[1].y), t.lineTo(p[0].x, p[0].y), t.lineTo(p[3].x, p[3].y), t.lineTo(p[2].x, p[2].y), t.stroke(), t.restore();
 }
-function W4(t, e, n = {}) {
+function D4(t, e, n = {}) {
   const s = n.offstage ?? { x: 2e3, y: 1400 }, o = n.enter ?? 450, r = n.exit ?? 450, i = n.linger ?? 1500, a = [...t].filter((g) => g.path.length > 0).sort((g, m) => g.start - m.start), l = (g) => g.tool ?? "pencil", c = (g) => {
     const m = Math.min(1, Math.max(0, g));
     return m * m * (3 - 2 * m);
@@ -14159,7 +14171,7 @@ function W4(t, e, n = {}) {
   }
   return null;
 }
-function N4(t, e, n, s = 0.08, o = 32) {
+function B4(t, e, n, s = 0.08, o = 32) {
   const r = Math.PI * 2 * (1 + s), i = [];
   for (let a = 0; a <= o; a++) {
     const l = -Math.PI / 2 + r * a / o;
@@ -14167,7 +14179,7 @@ function N4(t, e, n, s = 0.08, o = 32) {
   }
   return i;
 }
-function D4(t) {
+function z4(t) {
   const { path: e } = t, n = e.map((a) => a.x), s = e.map((a) => a.y), o = Math.min(...n), r = Math.min(...s), i = t.hand === !1 ? void 0 : t.hand === !0 || t.hand === void 0 ? {} : t.hand;
   return {
     type: "custom",
@@ -14199,7 +14211,7 @@ function Zf(t, e, n) {
   }
 }
 const Io = 1e5;
-function B4(t, e, n, s, o = 6) {
+function q4(t, e, n, s, o = 6) {
   const r = [], i = Math.max(1, Math.round(o));
   for (let a = 0; a <= i; a++)
     r.push({ x: a % 2 === 0 ? t : t + n, y: e + s * a / i });
@@ -14223,10 +14235,10 @@ function Qf(t, e, n, s) {
     });
   }
 }
-function z4(t, e, n, s, o) {
+function j4(t, e, n, s, o) {
   t.save(), Qf(t, e, n, s), o(), t.restore();
 }
-function q4(t, e) {
+function Y4(t, e) {
   const n = e.width ?? 40, s = e.hand === !0 ? {} : e.hand || void 0, o = e.eraser === !1 ? void 0 : e.eraser === !0 || e.eraser === void 0 ? {} : e.eraser;
   return {
     ...t,
@@ -14397,7 +14409,7 @@ const p5 = {
     fling: "a token; { at, velocity?, spin?, gravity?, duration? }: throw or kick the word away on a spinning arc"
   }
 }, m5 = 0.9, y5 = 8;
-function j4(t) {
+function K4(t) {
   const e = { ...p5, ...t.theme }, n = t.code.replace(/\t/g, "    ").replace(/\n$/, "").split(`
 `), s = t.fontSize ?? 16, o = (t.lineHeight ?? 1.6) * s, r = (t.charWidth ?? 0.6) * s, i = t.padding ?? 12, a = t.lineNumbers === !1 ? 0 : (String(n.length).length + 2) * r, l = Math.max(1, ...n.map((R) => R.length)), c = t.width ?? i * 2 + a + l * r, h = i * 2 + n.length * o, u = t.x + i + a, d = new Set(t.hidden ?? []), f = t.language ?? "plain";
   if (!Ga.includes(f)) throw new Error(`codePanel: ${dt("language", f, Ga)}`);
@@ -14793,7 +14805,7 @@ const ji = '"Patrick Hand", "Segoe Print", "Bradley Hand", "Comic Sans MS", "Cha
     fling: "a term; { at, velocity?, spin?, gravity?, duration? }: throw or knock the term off on a spinning arc"
   }
 }, b0 = 90, w0 = 300, M5 = 0.3;
-function Y4(t) {
+function X4(t) {
   const e = typeof t.theme == "string" ? t.theme : "whiteboard";
   if (!(e in _o)) throw new Error(`whiteboard: ${dt("theme", e, Object.keys(_o))}`);
   const n = typeof t.theme == "object" ? { ..._o.whiteboard, ...t.theme } : _o[e], s = t.fontSize ?? 28, o = t.charWidth ?? 0.55, r = (b) => b === void 0 ? n.ink : n.colors[b] ?? b, i = (b) => kt(t.x + b.left, t.y + b.top, b.width, b.height), a = uo(), l = Jr(a), c = {}, h = /* @__PURE__ */ new Map(), u = [], d = [], f = (b, S, E, v) => {
@@ -15149,7 +15161,7 @@ const x0 = ["bar", "line", "pie", "donut"], S0 = 'system-ui, -apple-system, "Seg
     pull: "slice anchors; { at, duration?, on? }: pull the slice out from the centre (on: false puts it back)"
   }
 }, $5 = 600, P5 = 500, O5 = 200, I5 = 400, _5 = 0.14, C5 = Math.PI * 2;
-function K4(t) {
+function U4(t) {
   if (!x0.includes(t.kind)) throw new Error(`chart: ${dt("kind", t.kind, x0)}`);
   const e = typeof t.theme == "string" ? t.theme : "light";
   if (!(e in Co)) throw new Error(`chart: ${dt("theme", e, Object.keys(Co))}`);
@@ -15492,7 +15504,7 @@ const Sr = {
     outfit: { shirt: "#ae7396", trousers: "#648769", sleeves: "short", bottom: "skirt" }
   }
 };
-function X4(t, e = {}) {
+function G4(t, e = {}) {
   if (!Object.prototype.hasOwnProperty.call(Sr, t)) throw new Error(`softCartoonCharacter: unknown actor '${t}'`);
   const n = Sr[t], s = { ...n.body };
   return e.body?.measurements !== void 0 && delete s.torso, ho({ ...n, ...e, body: { ...s, ...e.body }, face: { ...n.face, ...e.face } });
@@ -15839,7 +15851,7 @@ const W5 = {
   ...W5,
   ...N5
 };
-function U4(t, e = 300, n = {}) {
+function V4(t, e = 300, n = {}) {
   const s = eg[t];
   if (!s) throw new Error(`castMember: unknown cast member '${t}'`);
   return { ...s.options, height: Math.round(e * s.scale), ...n };
@@ -15850,11 +15862,11 @@ const Tr = {
   fistBump: { height: 0.55, spacing: 0.44, lean: 6 },
   handOver: { height: 0.52, spacing: 0.46, lean: 8 }
 };
-function G4(t, e, n) {
+function J4(t, e, n) {
   return Tr[t].spacing * Math.min(e.height, n.height);
 }
 const A0 = 0.075;
-function V4(t, e, n, s = {}) {
+function Z4(t, e, n, s = {}) {
   const o = Tr[t];
   if (!o) throw new Error(`meetHands: unknown meeting '${t}' (one of ${Object.keys(Tr).join(", ")})`);
   const [r, i] = e.x <= n.x ? [e, n] : [n, e], a = s.view === "side", l = Math.min(r.character.height, i.character.height), c = { x: (r.x + i.x) / 2, y: -(s.height ?? o.height) * l }, h = (m, y) => {
@@ -15876,10 +15888,10 @@ function V4(t, e, n, s = {}) {
   return e.x <= n.x ? { a: u, b: d, point: c, reached: g } : { a: d, b: u, point: c, reached: g };
 }
 const Va = { spacing: 0.3, lean: 10, tilt: 8 };
-function J4(t, e) {
+function Q4(t, e) {
   return Va.spacing * Math.min(t.height, e.height);
 }
-function Z4(t, e, n = {}) {
+function tT(t, e, n = {}) {
   const [s, o] = t.x <= e.x ? [t, e] : [e, t], r = n.view === "side", i = Math.min(s.character.height, o.character.height), a = (p, g, m) => ({
     over: { x: g.x - m * 0.02 * i - p.x, y: -0.72 * i, depth: -0.08 * i },
     round: { x: g.x - m * 0.04 * i - p.x, y: -0.5 * i, depth: 0.06 * i }
@@ -15895,10 +15907,10 @@ function Z4(t, e, n = {}) {
   return t.x <= e.x ? { a: c, b: h, reached: f } : { a: h, b: c, reached: f };
 }
 const Yn = { spacing: 0.32, low: 0.3, high: 0.5, helperLean: 40, helperBend: 16 };
-function Q4(t, e) {
+function eT(t, e) {
   return Yn.spacing * Math.min(t.height, e.height);
 }
-function tT(t, e, n, s = {}) {
+function nT(t, e, n, s = {}) {
   const o = Math.max(0, Math.min(1, n)), r = s.view === "side", i = t.x <= e.x, a = Math.min(t.character.height, e.character.height), l = { x: (t.x + e.x) / 2, y: -(Yn.low + (Yn.high - Yn.low) * o) * a }, c = (m) => m ? r ? 1 : 0.62 : r ? 3 : 3.38;
   let h = { ...at, ...t.pose, turn: c(i), lean: (t.pose?.lean ?? 0) + Yn.helperLean * (1 - o) + 4, bend: (t.pose?.bend ?? 0) + Yn.helperBend * (1 - o), "head.nod": 18 * (1 - o) };
   h = Ue(t.character, h, "arm.right", { x: l.x - t.x, y: l.y });
@@ -15939,7 +15951,7 @@ function V5(t, e) {
     };
   });
 }
-function eT(t, e) {
+function sT(t, e) {
   if (t.length === 0) return { "hair.swing": 0, "hair.trail": 0, "hair.lift": 0 };
   if (e <= t[0].time) return P0(t[0]);
   if (e >= t[t.length - 1].time) return P0(t[t.length - 1]);
@@ -15956,7 +15968,7 @@ function eT(t, e) {
   };
 }
 const P0 = (t) => ({ "hair.swing": t.swing, "hair.trail": t.trail, "hair.lift": t.lift }), Rn = 16, J5 = 1500;
-function nT(t, e, n, s = {}) {
+function oT(t, e, n, s = {}) {
   const o = n.head.hair;
   if (!o || !b2(o)) return [];
   const r = e.filter((k) => k.target === t), i = r.reduce((k, w) => w.keyframes.reduce((b, S) => Math.max(b, S.time), k), 0), a = at, l = /* @__PURE__ */ new Set(["x", "y", "turn", "head.turn"]), c = new Ft({ id: `${t}-hair-follow`, tracks: r.filter((k) => l.has(k.property)) }), h = (k, w, b) => {
@@ -16373,7 +16385,7 @@ const dv = {
     { name: "neck", at: (t) => t.neck }
   ]
 };
-function sT(t, e, n, s, o = {}) {
+function rT(t, e, n, s, o = {}) {
   const r = n.stateAt;
   if (!r) return;
   const i = o.length ?? 120, a = Math.max(2, Math.round(o.samples ?? 8)), l = Math.max(0, n.time - i);
@@ -16404,7 +16416,7 @@ function fv(t, e, n, s = {}) {
   }
   t.restore();
 }
-function oT(t, e, n, s = {}) {
+function iT(t, e, n, s = {}) {
   if (n <= 0 || n >= 1) return;
   const o = s.size ?? 40, r = 5, i = 1 - (1 - n) ** 2;
   t.save(), t.strokeStyle = s.color ?? "#222", t.lineWidth = Math.max(1, o * 0.035), t.lineJoin = "round", t.globalAlpha = n < 0.7 ? 1 : (1 - n) / 0.3;
@@ -16550,13 +16562,13 @@ ${s.map((o) => `  ${o.beat >= 0 ? `beat ${o.beat}: ` : ""}${o.message}`).join(`
 `)}`);
 }
 W1(ag);
-function rT(t) {
+function aT(t) {
   const e = "steps" in t && typeof t.steps == "function", n = "beats" in t && typeof t.beats == "function";
   if (e === n) throw new Error("defineAction: give either `steps: (from, beat) => [...]` or `beats: (beat) => [...]`");
   if (!t.summary) throw new Error("defineAction: give a `summary`: one line on what the figure does");
   return t;
 }
-function iT(t) {
+function lT(t) {
   for (const e of ["swing", "knee", "arm", "elbow", "lean"])
     if (typeof t[e] != "number") throw new Error(`defineGait: \`${e}\` must be a number (degrees)`);
   if (t.cycle !== void 0 && !(t.cycle > 0)) throw new Error("defineGait: `cycle` is ms per two steps, above 0");
@@ -16797,7 +16809,7 @@ function lg(t, e, n) {
   return a;
 }
 const Ds = ["start", "contact", "release", "end"], jv = ["surface", "edit", "anchor", "at", "until"], Yv = ["carry"], Vo = (t) => !!t && typeof t == "object" && !Array.isArray(t) && "surface" in t && "anchor" in t, Kv = (t) => t.then === void 0 ? [] : Array.isArray(t.then) ? t.then : [t.then];
-function aT(t, e, n, s = {}) {
+function cT(t, e, n, s = {}) {
   const o = Xv(n, e, s).filter((d) => d.level === "error");
   if (o.length > 0)
     throw new Error(`surfaceScript: ${o.length} problem(s) in the beats:
@@ -16914,7 +16926,7 @@ function Uv(t, e, n) {
     };
   });
 }
-function lT(t) {
+function hT(t) {
   const e = { actions: t.actions, gaits: t.gaits }, n = ig(e);
   if (n.length > 0) throw new Error(`persona "${t.name}": ${n.join(" ")}`);
   const s = [...Object.keys(Qt), ...Object.keys(t.gaits ?? {})], o = t.gait ?? "walk";
@@ -16965,7 +16977,7 @@ function Vv(t, e, n = 1) {
   const { points: s } = ye(t, at), o = s["hip.left"], r = s["knee.left"], i = s["ankle.left"], a = o && r && i ? Math.hypot(r.x - o.x, r.y - o.y) + Math.hypot(i.x - r.x, i.y - r.y) : G0 * t.height;
   return Ll(e, a / G0, n);
 }
-function cT(t, e, n, s = {}) {
+function uT(t, e, n, s = {}) {
   const o = Ql(t, n, { ...s, height: e.height, reach: s.reach ?? Jv(e) }), r = o.tracks.find((y) => y.property === "facing")?.keyframes ?? [], i = (y) => {
     let k = s.facing ?? 1;
     for (const w of r) w.time <= y && (k = w.value);
@@ -17122,7 +17134,7 @@ function hM(t) {
   const e = cM(t).properties.map((n) => n.name);
   return [...e, ...Object.keys(Qa).filter((n) => e.includes(Qa[n]))];
 }
-function hT(t, e) {
+function dT(t, e) {
   const n = [], s = Object.keys(e);
   for (const o of t) {
     const r = (d) => n.push({ level: "error", track: o.id, message: d }), i = e[o.target];
@@ -17589,7 +17601,7 @@ function sc(t, e, n) {
     }
   };
 }
-function uT(t, e, n, s, o = {}) {
+function fT(t, e, n, s, o = {}) {
   const r = sc(e, n, s);
   return t.save(), t.translate(r.origin.x, r.origin.y), Ff(t, r.solved, {
     ...e.propDraw,
@@ -17617,7 +17629,7 @@ const Cs = {
     fling: "a part; { at, velocity?, spin?, gravity?, duration? }: knock the part off on a spinning arc"
   }
 }, OM = 400, IM = 0.2;
-function dT(t, e = {}) {
+function gT(t, e = {}) {
   const { prop: n } = t, s = mg(n), o = Object.keys(s), r = Object.keys(n.rig.anchors ?? {}), i = n.rig.parts.map((E) => E.id), a = uo(), l = Jr(a), c = e.tracks?.length ? new Ft({ id: `${n.kind}-surface`, tracks: e.tracks }) : void 0, h = Math.max(0, ...(e.tracks ?? []).flatMap((E) => E.keyframes.map((v) => v.time))), u = /* @__PURE__ */ new Map(), d = /* @__PURE__ */ new Map();
   t.loose = d;
   const f = t.props, p = (E) => {
@@ -18908,7 +18920,7 @@ function dx() {
     }
   };
 }
-const po = ["walk", "trot", "canter", "gallop"], fT = po, kg = ["fl", "fr", "hl", "hr"], ti = {
+const po = ["walk", "trot", "canter", "gallop"], pT = po, kg = ["fl", "fr", "hl", "hr"], ti = {
   walk: { offsets: { hl: 0, fl: 0.25, hr: 0.5, fr: 0.75 }, swing: 16, lift: 45, bob: 0.02, rock: 0, cycle: 1100 },
   trot: { offsets: { fl: 0, hr: 0, fr: 0.5, hl: 0.5 }, swing: 22, lift: 75, bob: 0.05, rock: 0, cycle: 640 },
   canter: { offsets: { hr: 0, hl: 0.33, fr: 0.33, fl: 0.66 }, swing: 30, lift: 70, bob: 0.08, rock: 5, cycle: 560 },
@@ -19068,7 +19080,7 @@ const vg = {
   eyes: [],
   headTurns: {},
   drift: []
-}, gT = vg;
+}, mT = vg;
 function mx(t) {
   const e = (t.upper + t.lower) * 0.32, n = Math.asin(Math.min(1, e / (t.upper + t.lower + t.foot))) / Ke, s = {
     pitch: 0,
@@ -19332,7 +19344,7 @@ function vx(t = {}) {
     grazes: !0
   });
 }
-function pT(t) {
+function yT(t) {
   return oc(1, t);
 }
 function Mx(t = {}) {
@@ -20050,7 +20062,7 @@ function Ig(t) {
   if (Re(t.from, "ballFlight.from"), Re(t.to, "ballFlight.to"), !Number.isFinite(t.start) || !Number.isFinite(t.end) || t.start < 0 || t.end <= t.start) throw new Error("ballFlight: end must be greater than start, both finite and nonnegative");
   if (!Number.isFinite(t.arc ?? 0) || (t.arc ?? 0) < 0 || !Number.isFinite(t.curve ?? 0)) throw new Error("ballFlight: arc must be finite and nonnegative; curve must be finite");
 }
-function mT(t) {
+function bT(t) {
   Ig(t);
   const e = Pg(t.start, t.end, t.every), n = e.map((s) => Og(t, s));
   return ["x", "y", "z"].map((s, o) => ({
@@ -20098,7 +20110,7 @@ function Cg(t, e) {
   const n = e === "striker-crease" ? "striker" : "bowler", s = t.landmarks[n + "-crease"];
   return Re(s, "cricketCamera.crease"), [...s];
 }
-function yT(t, e) {
+function wT(t, e) {
   if (!ac(e)) return [];
   const n = Cg(t, e), s = e === "front-foot" ? _g(t).point[0] : 0;
   return [{
@@ -20186,7 +20198,7 @@ function Gx(t, e = "pitch") {
 function ha(t, e, n, s) {
   if (t !== void 0 && (!Number.isFinite(t) || t < e || t > n)) throw new Error("cricketCamera: " + s + " must be between " + e + " and " + n);
 }
-function bT(t, e = {}) {
+function kT(t, e = {}) {
   const n = ce(lc, e.view ?? "pitch", "cricketCamera.view"), s = e.yaw ?? ca[n];
   if (!Number.isFinite(s)) throw new Error("cricketCamera: yaw must be finite");
   const o = (s % 360 + 360) % 360, r = e.zoom ?? 1;
@@ -20257,7 +20269,7 @@ function Zx(t) {
     return [{ id: e, name: n.name ?? no[e], position: s, inside: Jx(t, s) }];
   });
 }
-function wT(t) {
+function vT(t) {
   return t.fieldingArea ? Zx(t).map((e) => ({
     id: `fielding-review-${e.id}`,
     name: `${e.name}: ${e.inside ? "inside" : "outside"} restriction area`,
@@ -20598,11 +20610,11 @@ function Rg(t, e, n) {
   }
   return { action: s, duration: l, events: R, result: a, timeline: { id: `${c}-${s}`, formatVersion: 2, name: Y, config: { duration: l, markers: R.map(($) => ({ id: $.id, time: $.time, label: $.label })) }, captions: { en: Object.fromEntries(R.map(($) => [$.id, $.caption])) }, tracks: nt } };
 }
-function kT(t = {}) {
+function MT(t = {}) {
   const e = Hg(t);
   return { ...e, ...s3(e, t) };
 }
-function vT(t, e) {
+function xT(t, e) {
   if (!Number.isFinite(e)) throw new Error("cricketEventAt: time must be finite");
   let n;
   for (const s of t) {
@@ -20691,7 +20703,7 @@ function a3(t, e = {}) {
   };
   return { ...Rg(t, { action: o, duration: e.duration, every: e.every }, { delivery: s.delivery, result: a, ruling: r, freeHit: s.context.freeHit }), play: s, ruling: r };
 }
-function MT(t = {}) {
+function ST(t = {}) {
   const e = Hg(t);
   return { ...e, ...a3(e, t) };
 }
@@ -20881,6 +20893,8 @@ function h3(t, e = {}) {
         "linearMapFigure, determinantFigure, eigenFigure, vectorSumFigure, spanFigure": "ready linear algebra figures; the matrix is the value M",
         "tangentFigure, secantFigure, riemannFigure, areaFigure, taylorFigure, limitFigure": "ready calculus figures; their moving parts are number values (a, h, n, b, order, p)",
         "differentiate / compileDerivative / integrate": "exact symbolic derivatives of expressions; Simpson integration",
+        "normalFigure, binomialFigure, cltFigure, galtonFigure, monteCarloPiFigure, regressionFigure, bayesFigure": "ready probability and statistics figures",
+        distributions: "{ kind: normal | uniform | exponential | binomial | poisson | dice | mean, …numbers or value names }; density, meanOf, sdOf, samples (seeded)",
         "layoutTex(tex) / morphEquation(a, b, t)": "the built-in TeX subset, and term-by-term transitions",
         "vec2, mat2": "2D vectors and 2×2 matrices (apply, multiply, determinant, inverse, eigen)"
       },
@@ -20899,7 +20913,12 @@ function h3(t, e = {}) {
         tangent: "{ expr, at, h? (secant), label? }: \\val{ID.slope} is the exact slope",
         riemann: "{ expr, from, to, n, rule?: left | right | midpoint | trapezoid }: \\val{ID.sum}, \\val{ID.exact}",
         area: "{ expr, from, to, lower? }: signed, coloured by sign; \\val{ID.value}",
-        taylor: "{ expr, at, order }: exact Taylor polynomials; a fractional order grows the next term in"
+        taylor: "{ expr, at, order }: exact Taylor polynomials; a fractional order grows the next term in",
+        histogram: "{ distribution, count, bins?, scale?, curve?, seed? }: seeded samples, binned; fills as count grows",
+        distribution: "{ distribution, shade?: [a, b] }: a density curve (bars when discrete); \\val{ID.p}",
+        galton: "{ rows?, balls, spacing?, top?, seed? }: a Galton board; fractional balls = the next one falling",
+        scatter: "{ points: uniform | linear, count, inside?, fit?, seed? }: Monte Carlo and regression; \\val{ID.ratio}, \\val{ID.r}",
+        bayes: "{ prior, truePositive, falsePositive }: Bayes as areas; \\val{ID.posterior}"
       },
       props: {
         NAME: "a value: a number, [x, y] vector or [a, b, c, d] matrix (row by row; columns are where î and ĵ land)",
@@ -20921,7 +20940,7 @@ function h3(t, e = {}) {
 }
 const pt = (t) => t.map((e) => `\`${e}\``).join(", "), cu = (t) => Object.entries(t).map(([e, n]) => `| \`${e}\` | ${n.unit ?? n.kind ?? ""} | ${n.description} |`).join(`
 `);
-function xT(t, e = {}) {
+function TT(t, e = {}) {
   const n = h3(t, e), s = n.stickFigure;
   return [
     `# tinyfly capabilities${n.version ? ` (v${n.version})` : ""}`,
@@ -21129,7 +21148,7 @@ function xT(t, e = {}) {
   ].join(`
 `);
 }
-function ST(t, e, n, s = {}) {
+function ET(t, e, n, s = {}) {
   const o = s.color ?? "#555", r = s.size ?? 60;
   for (const i of e) {
     const a = (n - i.time) / i.length;
@@ -21186,7 +21205,7 @@ function p3(t, e, n, s, o) {
   }
   t.restore();
 }
-function TT(t) {
+function AT(t) {
   const e = new Ft({ id: `${t.propId}-ride`, tracks: t.propTracks.filter((h) => h.target === t.propId) }), n = t.every ?? 33, s = [], o = [], r = [], i = [];
   let a = 1;
   for (let h = t.start; ; h = Math.min(t.end, h + n)) {
@@ -21209,7 +21228,7 @@ function m3(t) {
   }
   return e;
 }
-function ET(t, e, n) {
+function $T(t, e, n) {
   const s = (i) => `${i.target}\0${i.property}`, o = new Map(e.map((i) => [s(i), i]));
   return [...t.map((i) => {
     const a = o.get(s(i));
@@ -21219,7 +21238,7 @@ function ET(t, e, n) {
     return { ...i, keyframes: c };
   }), ...o.values()];
 }
-function AT(t) {
+function PT(t) {
   const e = new Ft({ id: `${t.leaderId}-tow`, tracks: t.leaderTracks.filter((f) => f.target === t.leaderId) }), n = t.every ?? 33, s = t.towed, o = s.x + s.width / 2, r = s.props, i = s.prop.wheelRadius, a = [], l = [], c = [];
   let h = r.wheelSpin ?? 0, u;
   for (let f = t.start; ; f = Math.min(t.end, f + n)) {
@@ -21303,7 +21322,7 @@ const M3 = /* @__PURE__ */ new Set([
   "visible",
   "opacity",
   "color"
-]), x3 = 1, $T = {
+]), x3 = 1, OT = {
   kind: "prop",
   validate(t) {
     const e = t, n = typeof e.prop == "string" && e.prop in eo ? [] : [dt("prop preset", e.prop, Object.keys(eo))];
@@ -21370,7 +21389,7 @@ function O3(t, e) {
     n.includes(c.do) && (c.to === void 0 && c.through === void 0 && l(`\`${c.do}\` needs \`to\` ([x, z] metres) or \`through\` (a list of them).`), c.to !== void 0 && !ln(c.to) && l(`\`to\` is a point on the ground, [x, z] metres (got ${JSON.stringify(c.to)}).`), c.through !== void 0 && !(Array.isArray(c.through) && c.through.length > 0 && c.through.every(ln)) && l("`through` is a list of points on the ground, each [x, z] metres.")), c.do === "face" && !(ln(c.toward) || typeof c.toward == "number") && l("`face` needs `toward`: a point [x, z] or a heading in degrees.");
   }), r;
 }
-function PT(t, e, n, s) {
+function IT(t, e, n, s) {
   const o = O3(n, e);
   if (o.length > 0) throw new Error(`propScript3D (${e.kind}): ${o.length} problem(s) in the beats:
 ${o.map((w) => `  beat ${w.beat}: ${w.message}`).join(`
@@ -21462,7 +21481,7 @@ function fu(t, e = Fg.cycling) {
     "leg.right.ankle": r.ankle
   };
 }
-function OT(t) {
+function _T(t) {
   const e = t.cadence ?? 1.2, n = Math.max(2, t.samplesPerTurn ?? 8), s = 1e3 / e / n, o = [];
   for (let r = t.start, i = 0; r < t.end; r += s, i++)
     o.push({ time: Math.round(r), pose: fu((r - t.start) / 1e3 * e, t.base), ...i > 0 ? { act: !1 } : {} });
@@ -21472,7 +21491,7 @@ const gu = (t, e) => {
   const n = e * Math.PI / 180;
   return [t[0] * Math.cos(n) + t[2] * Math.sin(n), t[1], -t[0] * Math.sin(n) + t[2] * Math.cos(n)];
 };
-function IT(t) {
+function CT(t) {
   const e = `${t.scene}/${t.propId}`, n = new Ft({ id: `${t.propId}-ride-3d`, tracks: t.propTracks.filter((m) => m.target === e) }), s = t.placement ?? {}, [o, r, i] = s.position ?? [0, 0, 0], a = t.prop.rig, l = ho({ ...t.character, height: 1 }), c = { ...at, ...t.pose ?? Fg.seated }, h = Tn(l.plan, c, { height: t.height ?? 1.7, contact: l.contact }).hip, u = t.facing ?? 0, d = t.every ?? 33, f = { x: [], y: [], z: [], rotateY: [] };
   for (let m = t.start; ; m = Math.min(t.end, m + d)) {
     const y = n.getStateAtTime(m).values.get(e) ?? /* @__PURE__ */ new Map(), k = (C, W) => {
@@ -21707,11 +21726,11 @@ function q3(t, e) {
       throw new Error(dt("scene preset", t, ["park", "street", "office", "home"]));
   }
 }
-function _T(t, e) {
+function HT(t, e) {
   const n = q3(t, e), s = B3(n.scenery), o = n.props.map((r) => PM({ x: r.x, y: s.ground, prop: xg(r.preset), scale: r.scale, values: { turn: r.turn ?? 0, ...r.values } }));
   return { scenery: s, props: o, ground: s.ground };
 }
-function CT(t) {
+function RT(t) {
   const { timeline: e } = t, n = new pn();
   for (const [c, h] of Object.entries(t.targets)) {
     const u = typeof h == "string" ? document.querySelector(h) : h;
@@ -21752,7 +21771,7 @@ function CT(t) {
     }
   };
 }
-const HT = {
+const FT = {
   timeline: Um,
   to(t, e, n) {
     const s = new Xn(n);
@@ -21815,7 +21834,7 @@ function mu(t, e, n, s) {
     r = pu(r, e, n, o, !0), r = pu(r, e, n, o, !1);
   return r;
 }
-function RT(t, e = {}) {
+function LT(t, e = {}) {
   const n = t.canvas, s = n.width, o = n.height;
   if (!(s > 0 && o > 0)) return;
   const r = Math.max(1, Math.round(e.downsample ?? 4)), i = Math.max(1, Math.ceil(s / r)), a = Math.max(1, Math.ceil(o / r)), l = Lg(t, i, a), c = l?.getContext("2d");
@@ -21828,7 +21847,7 @@ function RT(t, e = {}) {
   }
   c.putImageData(g, 0, 0), t.save(), t.setTransform(1, 0, 0, 1, 0, 0), t.globalCompositeOperation = "lighter", t.globalAlpha = Math.max(0, e.strength ?? 0.9), t.imageSmoothingEnabled = !0, t.drawImage(l, 0, 0, s, o), t.restore();
 }
-function FT(t, e, n) {
+function WT(t, e, n) {
   const s = n.width ?? 6, o = n.taper ?? 1, r = n.fade ?? 1, i = n.opacity ?? 1, a = n.blend === "add";
   if (t.save(), e.length >= 2) {
     const c = K3(e, s, o, r, i);
@@ -21886,7 +21905,7 @@ function X3(t, e, n) {
   }
   p.translate(-u, -d), p.globalCompositeOperation = "lighter", ll(p, i, n), t.save(), t.setTransform(1, 0, 0, 1, 0, 0), t.globalAlpha = 1, t.drawImage(f, u, d), t.restore();
 }
-const LT = de.to, WT = de.from, NT = de.fromTo, DT = de.set, BT = de.timeline, zT = de.ticker, qT = de.splitText, jT = de.context, YT = de.matchMedia, KT = de.quickTo, XT = de.imageSequence, UT = de.pageTransition;
+const NT = de.to, DT = de.from, BT = de.fromTo, zT = de.set, qT = de.timeline, jT = de.ticker, YT = de.splitText, KT = de.context, XT = de.matchMedia, UT = de.quickTo, GT = de.imageSequence, VT = de.pageTransition;
 F1();
 export {
   ts as ACTING_STYLES,
@@ -21933,7 +21952,7 @@ export {
   hc as DEFAULT_INERTIA_FRICTION,
   b1 as DEFAULT_LABELS,
   ge as DEFAULT_SPRING,
-  i4 as DEFAULT_TRANSITION,
+  l4 as DEFAULT_TRANSITION,
   QM as DESK_ACTING,
   sx as DOOR_ACTING,
   sd as Draggable,
@@ -21958,8 +21977,8 @@ export {
   Rl as HAT_STYLES,
   Ef as HELD_ITEMS,
   Yn as HELP_UP,
-  gT as HORSE_ACTING,
-  fT as HORSE_GAITS,
+  mT as HORSE_ACTING,
+  pT as HORSE_GAITS,
   XM as HOUSE_ACTING,
   av as HUMAN_ACTING_RIG,
   Ra as HUMAN_BUILDS,
@@ -21970,7 +21989,7 @@ export {
   Me as HUMAN_POSES,
   at as HUMAN_REST,
   a5 as IDENTITY_CAMERA,
-  FS as IDENTITY_SIMILARITY,
+  WS as IDENTITY_SIMILARITY,
   Yg as INERTIA_MAX_DURATION_MS,
   Bp as InertiaTrackPlayer,
   _e as LiveTimeline,
@@ -22015,7 +22034,7 @@ export {
   dn as TrackPlayer,
   CM as VEHICLE_ACTING,
   en as VISEMES,
-  fS as ValueResolver,
+  pS as ValueResolver,
   Ry as VisibilityDriver,
   ix as WHEELCHAIR_ACTING,
   Ne as WHITEBOARD_SURFACE,
@@ -22027,28 +22046,28 @@ export {
   hn as anchorError,
   oc as animalStrideLength,
   hM as animatableProperties,
-  RT as applyBloom,
-  F4 as applyCamera,
+  LT as applyBloom,
+  W4 as applyCamera,
   rw as applyGroove,
   Yu as applySimilarity,
   ju as aspectOf,
   _0 as assertBeats,
-  OS as audioEnvelope,
+  _S as audioEnvelope,
   sp as backOut,
-  p4 as bakeDanceTracks,
+  y4 as bakeDanceTracks,
   Cu as bakeEasing,
   Iu as bakeInertiaTrack,
   Ou as bakeSpringTrack,
   Og as ballFlightPoint,
-  mT as ballFlightTracks,
+  bT as ballFlightTracks,
   sk as basicOutfit,
-  d4 as beatAt,
+  g4 as beatAt,
   Rr as beatAtTime,
   Hr as beatLength,
-  AS as beatPeriod,
-  PS as beatPulse,
+  PS as beatPeriod,
+  IS as beatPulse,
   dl as beatTime,
-  wS as beatsBetween,
+  vS as beatsBetween,
   tx as bed,
   BM as bike,
   P1 as bindChoiceHotspots,
@@ -22060,59 +22079,59 @@ export {
   np as bounceOut,
   Kk as boxMesh,
   J2 as brushingPose,
-  KS as bubblePath,
-  XS as bubblePop,
-  _T as buildScene,
+  US as bubblePath,
+  GS as bubblePop,
+  HT as buildScene,
   LM as bus,
-  R4 as cameraFromValues,
-  L4 as cameraPoint,
-  vS as cameraTracks,
+  L4 as cameraFromValues,
+  N4 as cameraPoint,
+  xS as cameraTracks,
   h3 as capabilities,
-  xT as capabilitiesMarkdown,
+  TT as capabilitiesMarkdown,
   RM as car,
   NM as cart,
-  U4 as castMember,
+  V4 as castMember,
   kx as cat,
   GM as chair,
   Qs as changingWindows,
   ho as character,
-  S4 as characterAt,
+  E4 as characterAt,
   ck as characterHandPose,
   ye as characterJoints,
-  k4 as characterJointsInView,
-  C4 as characterLookAtTracks,
-  O4 as characterObjects,
+  M4 as characterJointsInView,
+  R4 as characterLookAtTracks,
+  _4 as characterObjects,
   uk as characterPartsInView,
   Dl as characterPoseOf,
-  T4 as characterPoseTracks,
-  cT as characterScript,
-  _4 as characterScript3D,
+  A4 as characterPoseTracks,
+  uT as characterScript,
+  H4 as characterScript3D,
   Vv as characterStrideLength,
-  x4 as characterTarget,
+  T4 as characterTarget,
   qp as charactersFor,
-  K4 as chart,
+  U4 as chart,
   Ar as checkBeats,
   ig as checkCast,
   i5 as checkCharacterBeats3D,
   Fx as checkPropBeats,
   O3 as checkPropBeats3D,
   Xv as checkSurfaceBeats,
-  hT as checkTracks,
+  dT as checkTracks,
   Ox as chicken,
-  N4 as circlePath,
+  B4 as circlePath,
   ad as clamp01,
   oS as clearMorphCache,
   eS as clearPathCache,
   Qf as clipErased,
   sr as closestName,
-  j4 as codePanel,
+  K4 as codePanel,
   v5 as codeTokens,
-  WS as composeSimilarity,
+  DS as composeSimilarity,
   Bc as containerProgressAt,
-  jT as context,
+  KT as context,
   Ot as controlValue,
   vx as cow,
-  s4 as create,
+  r4 as create,
   M1 as createControls,
   tp as createCubicBezier,
   d1 as createLive,
@@ -22122,67 +22141,67 @@ export {
   s3 as cricketAction,
   Gx as cricketCameraFraming,
   il as cricketCameraReview,
-  bT as cricketCameraTracks,
-  kT as cricketClip,
-  yT as cricketDecisionOverlay,
-  vT as cricketEventAt,
+  kT as cricketCameraTracks,
+  MT as cricketClip,
+  wT as cricketDecisionOverlay,
+  xT as cricketEventAt,
   Hg as cricketField,
   Jx as cricketFieldingAreaContains,
-  wT as cricketFieldingOverlay,
+  vT as cricketFieldingOverlay,
   Zx as cricketFieldingPositions,
   a3 as cricketPlay,
-  MT as cricketPlayClip,
+  ST as cricketPlayClip,
   Qx as cricketPlayer,
   Q3 as criticalDamping,
   Px as crow,
-  ES as curve,
+  $S as curve,
   tm as customBounce,
   Qp as customEase,
   em as customWiggle,
   Xk as cylinderMesh,
   gk as danceCircleAt,
-  A4 as danceCircleTracks,
+  P4 as danceCircleTracks,
   El as danceFrame,
   hs as danceJoint,
-  h4 as dancePose,
+  d4 as dancePose,
   Ha as danceStance,
-  u4 as danceTaps,
-  g4 as danceTracks,
+  f4 as danceTaps,
+  m4 as danceTracks,
   Ai as danceTravel,
   cw as danceTravelTrack,
-  f4 as dancer,
-  rT as defineAction,
-  iT as defineGait,
+  p4 as dancer,
+  aT as defineAction,
+  lT as defineGait,
   cM as describeTarget,
   zs as deserializeTimeline,
   Up as deserializeTrack,
   ZM as desk,
-  kS as detectTempo,
+  MS as detectTempo,
   wx as dog,
   nx as door,
-  ZS as draggable,
+  t4 as draggable,
   xl as drawCartoonHand,
   hk as drawCharacter,
-  M4 as drawCharacterHead,
-  v4 as drawCharacterInView,
+  S4 as drawCharacterHead,
+  x4 as drawCharacterInView,
   fv as drawDustPuff,
   Gf as drawEraser,
   Jf as drawHand,
   Xh as drawHeldItem,
-  oT as drawImpactStars,
+  iT as drawImpactStars,
   l5 as drawPencil,
-  uT as drawProp,
-  ST as drawPropEffects,
+  fT as drawProp,
+  ET as drawPropEffects,
   Wf as drawPropShadow,
   Ik as drawSolvedFaces,
-  P4 as drawSolvedPart,
+  I4 as drawSolvedPart,
   Ff as drawSolvedProp,
   uv as drawSpeedLines,
   Ub as drawStickFigure,
-  sT as drawStickSmear,
-  FT as drawTrail,
-  D4 as drawnPathTarget,
-  YS as dripPath,
+  rT as drawStickSmear,
+  WT as drawTrail,
+  z4 as drawnPathTarget,
+  XS as dripPath,
   _x as duck,
   Vg as easeIn,
   Mu as easeInCubic,
@@ -22199,22 +22218,22 @@ export {
   ep as elasticOut,
   lr as ellipsePoints,
   Uk as ellipsoidMesh,
-  Z4 as embrace,
-  J4 as embraceSpacing,
-  IS as envelopeAt,
-  q4 as erasable,
+  tT as embrace,
+  Q4 as embraceSpacing,
+  CS as envelopeAt,
+  Y4 as erasable,
   Zl as expandBeats,
   Wp as expandParametricEasings,
   Vk as extrudeMesh,
   wk as flipPose,
-  $4 as flipTracks,
+  O4 as flipTracks,
   kk as flipTravel,
   yu as formatVersionFor,
-  _S as frameRect,
-  CS as frameSize,
-  WT as from,
+  HS as frameRect,
+  RS as frameSize,
+  DT as from,
   hS as fromJSON,
-  NT as fromTo,
+  BT as fromTo,
   I0 as gag,
   Er as gagDuration,
   wb as gaitPose,
@@ -22227,12 +22246,12 @@ export {
   Mx as goat,
   vy as gridLinesFor,
   V5 as hairFollow,
-  nT as hairFollowTracks,
+  oT as hairFollowTracks,
   b2 as hairHangs,
-  eT as hairMotionAt,
+  sT as hairMotionAt,
   yr as hairMotionOf,
   br as hairlineAt,
-  W4 as handAt,
+  D4 as handAt,
   Di as handGrip,
   $a as handJoints,
   hb as handJointsAt,
@@ -22241,26 +22260,26 @@ export {
   ur as handProp,
   Dg as hasKeyframes,
   ue as hashSeed,
-  l4 as headPoint,
+  h4 as headPoint,
   Bg as heldTime,
   lx as helicopter,
-  tT as helpUp,
-  Q4 as helpUpSpacing,
+  nT as helpUp,
+  eT as helpUpSpacing,
   rk as holdingLayers,
   bx as horse,
-  pT as horseStrideLength,
+  yT as horseStrideLength,
   KM as house,
-  b4 as humanCyclePose,
+  k4 as humanCyclePose,
   pr as humanDanceFrame,
-  y4 as humanDanceTracks,
-  m4 as humanFieldLabel,
+  w4 as humanDanceTracks,
+  b4 as humanFieldLabel,
   G2 as humanGag,
   Fl as humanGaitPose,
   Ll as humanGaitStrideLength,
   qd as humanPlan,
   wt as humanPose,
   kd as illustrationTones,
-  XT as imageSequence,
+  GT as imageSequence,
   ro as inertiaDuration,
   oo as inertiaRest,
   ga as inertiaValueAt,
@@ -22272,7 +22291,7 @@ export {
   Lp as interpolatePathString,
   Fp as interpolateQuaternion,
   Sc as interpolateString,
-  NS as invertSimilarity,
+  BS as invertSimilarity,
   Ng as isCubicBezierEasing,
   Uh as isHeld,
   wn as isInertiaTrack,
@@ -22283,7 +22302,7 @@ export {
   kn as isSpringTrack,
   cl as isTextTrack,
   Z3 as isUnderdamped,
-  dS as isUnresolved,
+  gS as isUnresolved,
   Ku as isoDepth,
   Xu as isometricBoxFaces,
   Uu as isometricFaces,
@@ -22294,24 +22313,24 @@ export {
   pa as linear,
   zf as lipSyncKeyframes,
   Ul as lipSyncOver,
-  I4 as lipSyncTracks,
+  C4 as lipSyncTracks,
   Df as lit,
   de as live,
   Uf as lookFields,
-  $S as loopBeats,
-  xS as loopEase,
-  SS as loopNoise,
+  OS as loopBeats,
+  TS as loopEase,
+  ES as loopNoise,
   pg as loosePartsOf,
   mx as lyingPose,
   or as mapEase,
-  JS as mat4,
-  YT as matchMedia,
+  QS as mat4,
+  XT as matchMedia,
   ku as maxStaggerDistance,
   qw as measuredHipWidth,
-  E4 as meetDandiya,
-  V4 as meetHands,
-  G4 as meetingSpacing,
-  jS as metaballContours,
+  $4 as meetDandiya,
+  Z4 as meetHands,
+  J4 as meetingSpacing,
+  KS as metaballContours,
   km as metaballField,
   Iw as mirrorHumanPose,
   sw as mirrorPose,
@@ -22322,18 +22341,18 @@ export {
   zM as motorbike,
   I1 as mount,
   H1 as mountAll,
-  pS as narrationMarkers,
-  mS as narrationSceneAt,
+  yS as narrationMarkers,
+  bS as narrationSceneAt,
   er as naturalRest,
-  yS as nearestBeat,
-  bS as nextBeat,
+  wS as nearestBeat,
+  kS as nextBeat,
   H5 as niceCeiling,
   g0 as objectPositionAt,
   Xw as organicBodyContours,
   Ao as organicCenterLine,
   D5 as outfitPreset,
   Cx as owl,
-  UT as pageTransition,
+  VT as pageTransition,
   Jk as panelMesh,
   rp as parametricEasing,
   Hx as parrot,
@@ -22343,53 +22362,54 @@ export {
   id as parseTrigger,
   Ys as partialPath,
   D1 as pathLength,
-  OT as pedallingKeys,
+  _T as pedallingKeys,
   fu as pedallingPose,
-  qS as penroseStairs,
-  zS as penroseTriangle,
-  lT as persona,
+  YS as penroseStairs,
+  jS as penroseTriangle,
+  hT as persona,
   rs as phaseOf,
   Jr as pieceMotion,
   Ix as pigeon,
   Bu as pingPong,
-  gS as planNarration,
+  mS as planNarration,
   fk as plantDanceFoot,
-  n4 as play,
-  r4 as playSequence,
-  t4 as playWhenVisible,
+  o4 as play,
+  a4 as playSequence,
+  n4 as playWhenVisible,
   Ru as playheadCrossings,
   Ml as pointAlong,
   Su as pointAtDistance,
-  w4 as pointOnHead,
+  v4 as pointOnHead,
   fm as pointsToPath,
   Dt as pose,
-  c4 as poseTracks,
-  DS as powSimilarity,
+  u4 as poseTracks,
+  zS as powSimilarity,
   gl as projectIsometric,
   rc as propActions,
   TM as propAnchors3D,
   sc as propAt,
   mg as propControls,
   Lf as propLineWidth,
-  $T as propObjects,
+  OT as propObjects,
   SM as propPartsInSpace,
   xg as propPreset,
-  TT as propRide,
-  IT as propRide3D,
+  AT as propRide,
+  CT as propRide3D,
   Lx as propScript,
-  PT as propScript3D,
+  IT as propScript3D,
   $r as propShapeMesh,
-  dT as propSurface,
+  gT as propSurface,
   PM as propTarget,
-  AT as propTow,
+  PT as propTow,
   vM as propView,
   En as quadruped,
   rS as quat,
-  CT as quickPlay,
-  KT as quickTo,
+  RT as quickPlay,
+  UT as quickTo,
   xx as rabbit,
   Lu as randomBetween,
   uS as randomChoice,
+  dS as randomNormal,
   Vp as randomSnapped,
   Ue as reachCharacter,
   Jv as reachOf,
@@ -22416,26 +22436,27 @@ export {
   mn as rotateAbout,
   Al as routineBeats,
   as as rubberLimb,
-  HS as safeAreas,
-  GS as scalePoints,
+  FS as safeAreas,
+  JS as scalePoints,
   q3 as scenePreset,
   B3 as scenery,
   ag as scriptActionSummaries,
   Ql as scriptTracks,
-  QS as scrollProgress,
-  e4 as scrubOnScroll,
-  B4 as scrubPath,
-  a4 as seatHeight,
+  e4 as scrollProgress,
+  s4 as scrubOnScroll,
+  q4 as scrubPath,
+  c4 as seatHeight,
   Gp as serializeTimeline,
   Xp as serializeTrack,
-  DT as set,
+  zT as set,
   Xl as shade,
   Qk as shapeMesh,
   fl as shapeToPathData,
-  LS as similarity,
+  fS as shuffled,
+  NS as similarity,
   bm as similarityAbout,
   wm as similarityFixedPoint,
-  BS as similarityMatrix,
+  qS as similarityMatrix,
   Np as simplifyKeyframes,
   au as sittingPose,
   Ol as skeletonInView,
@@ -22447,7 +22468,7 @@ export {
   Wy as snapConfig,
   Dy as snapDuration,
   Ny as snapProgress,
-  X4 as softCartoonCharacter,
+  G4 as softCartoonCharacter,
   go as solveAt,
   co as solvePlanSpace,
   gg as solveProp,
@@ -22455,15 +22476,15 @@ export {
   Yk as soundsOf,
   Nv as speechDuration,
   t5 as speechLength,
-  ET as spliceTracks,
-  qT as splitText,
+  $T as spliceTracks,
+  YT as splitText,
   zg as springDuration,
   zo as springFollow,
   J3 as springValueAt,
-  US as squashStretch,
+  VS as squashStretch,
   Sx as squirrel,
   Tn as stagePlanSpace,
-  H4 as stageSpots,
+  F4 as stageSpots,
   wu as staggerDistance,
   hl as staggerOffset,
   fa as staggerOffsets,
@@ -22477,38 +22498,38 @@ export {
   Tk as stickToHuman,
   Mb as strideLength,
   kt as surfaceBox,
-  aT as surfaceScript,
+  cT as surfaceScript,
   V2 as sweepingPose,
   y1 as syncMediaElement,
   xb as talkingMouth,
   Dr as taperedLine,
   jt as taperedOutline,
   Yp as textAt,
-  HT as tf,
-  zT as ticker,
-  BT as timeline,
-  LT as to,
+  FT as tf,
+  jT as ticker,
+  qT as timeline,
+  NT as to,
   cS as toJSON,
   iS as toKeyframedTrack,
   aS as toKeyframedTracks,
-  TS as torusNoise,
+  AS as torusNoise,
   nn as trackTargets,
   WM as tractor,
-  RS as trailSamples,
+  LS as trailSamples,
   DM as trainCar,
   qM as tree,
   js as triggerDistance,
   FM as truck,
   Zk as tubeMesh,
   dt as unknownName,
-  o4 as unmount,
+  i4 as unmount,
   Gl as valueAt,
-  VS as vec3,
+  ZS as vec3,
   Ve as vehicle,
   vb as walkPose,
   rx as wheelchair,
-  Y4 as whiteboard,
-  z4 as withErased,
+  X4 as whiteboard,
+  j4 as withErased,
   rn as withExpression,
-  MS as wobble
+  SS as wobble
 };

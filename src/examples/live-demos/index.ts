@@ -49,6 +49,10 @@ import { matrixLesson } from './matrix-lesson'
 import { derivative } from './derivative'
 import { riemannSums } from './riemann-sums'
 import { taylorSeries } from './taylor-series'
+import { galtonBoard } from './galton-board'
+import { centralLimit } from './central-limit'
+import { monteCarloPi } from './monte-carlo-pi'
+import { bayesTest } from './bayes-test'
 import { organicCharacters } from './organic-characters'
 import { cricketStory } from './cricket-story'
 import { handOver } from './hand-over'
@@ -132,6 +136,10 @@ import matrixLessonSource from './matrix-lesson.js?raw'
 import derivativeSource from './derivative.js?raw'
 import riemannSumsSource from './riemann-sums.js?raw'
 import taylorSeriesSource from './taylor-series.js?raw'
+import galtonBoardSource from './galton-board.js?raw'
+import centralLimitSource from './central-limit.js?raw'
+import monteCarloPiSource from './monte-carlo-pi.js?raw'
+import bayesTestSource from './bayes-test.js?raw'
 import organicCharactersSource from './organic-characters.js?raw'
 import cricketStorySource from './cricket-story.js?raw'
 import handOverSource from './hand-over.js?raw'
@@ -282,6 +290,10 @@ export const liveDemos: LiveDemoWithCode[] = [
   withCode(derivative, derivativeSource),
   withCode(riemannSums, riemannSumsSource),
   withCode(taylorSeries, taylorSeriesSource),
+  withCode(galtonBoard, galtonBoardSource),
+  withCode(centralLimit, centralLimitSource),
+  withCode(monteCarloPi, monteCarloPiSource),
+  withCode(bayesTest, bayesTestSource),
   withCode(organicCharacters, organicCharactersSource),
   withCode(cricketStory, cricketStorySource),
   withCode(handOver, handOverSource),

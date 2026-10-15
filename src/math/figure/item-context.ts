@@ -1,6 +1,7 @@
 import { determinant, IDENTITY, isMat2, type Mat2 } from '../linear/mat2'
 import { isVec2, type Vec2 } from '../linear/vec2'
-import type { MathTheme, NumRef, VecRef } from './figure-spec'
+import type { DistributionRef, MathTheme, NumRef, VecRef } from './figure-spec'
+import type { Distribution } from '../prob/distributions'
 import type { Plane } from './plane'
 
 /** Values by name, as the figure holds them at one moment. */
@@ -68,4 +69,22 @@ export function numOf(values: Values, ref: NumRef): number {
   const value = values[ref]
   if (typeof value !== 'number') throw new Error(`math figure: value "${ref}" is not a number`)
   return value
+}
+
+/**
+ * A distribution with its value names replaced by the values' numbers. Counts
+ * (binomial n, dice count and sides, a mean's count) are rounded to whole numbers.
+ */
+export function distributionOf(values: Values, ref: DistributionRef): Distribution {
+  const n = (r: NumRef | undefined) => (r === undefined ? undefined : numOf(values, r))
+  const whole = (r: NumRef | undefined) => (r === undefined ? undefined : Math.round(numOf(values, r)))
+  switch (ref.kind) {
+    case 'normal': return { kind: 'normal', mean: n(ref.mean), sd: n(ref.sd) }
+    case 'uniform': return { kind: 'uniform', min: n(ref.min), max: n(ref.max) }
+    case 'exponential': return { kind: 'exponential', rate: n(ref.rate) }
+    case 'binomial': return { kind: 'binomial', n: whole(ref.n)!, p: n(ref.p)! }
+    case 'poisson': return { kind: 'poisson', rate: n(ref.rate)! }
+    case 'dice': return { kind: 'dice', count: whole(ref.count), sides: whole(ref.sides) }
+    case 'mean': return { kind: 'mean', of: distributionOf(values, ref.of), count: whole(ref.count)! }
+  }
 }

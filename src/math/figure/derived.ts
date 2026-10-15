@@ -1,6 +1,13 @@
 import { compile, compileDerivative, type Scope } from '../expr/evaluate'
 import type { MathItem } from './figure-spec'
-import { numOf, type Values } from './item-context'
+import { distributionOf, numOf, type Values } from './item-context'
+import { density, isDiscrete, meanOf, samples, sdOf } from '../prob/distributions'
+import { summary } from '../prob/histogram'
+import { leastSquares, scatterPoints } from '../prob/scatter'
+import { bayesAreas } from '../prob/bayes'
+import { evaluate } from '../expr/evaluate'
+import { parseExpression } from '../expr/parse-expression'
+import { pointsSpec, sampleCount } from './items/probability'
 
 /**
  * Numbers items work out from the figure's values, so TeX can show them with
@@ -70,6 +77,50 @@ export function derivedValues(items: MathItem[], values: Values, scope: Scope): 
           Object.assign(derived, { [`${item.id}.x`]: x, [`${item.id}.y`]: compile(item.on)(x, read) })
         }
         break
+      case 'histogram': {
+        const drawn = samples(distributionOf(values, item.distribution), item.seed ?? item.id, sampleCount(numOf(values, item.count)))
+        const { mean, sd } = summary(drawn)
+        Object.assign(derived, { [`${item.id}.count`]: drawn.length, [`${item.id}.mean`]: mean, [`${item.id}.sd`]: sd })
+        break
+      }
+      case 'distribution': {
+        const d = distributionOf(values, item.distribution)
+        let p = 0
+        if (item.shade) {
+          const [a, b] = [numOf(values, item.shade[0]), numOf(values, item.shade[1])].sort((x, y) => x - y)
+          if (isDiscrete(d)) {
+            for (let k = Math.max(0, Math.ceil(a)); k <= Math.floor(b) && k <= 5000; k++) p += density(d, k)
+          } else {
+            p = integrate((x) => density(d, x), a, b, 2048)
+          }
+        }
+        Object.assign(derived, { [`${item.id}.p`]: p, [`${item.id}.mean`]: meanOf(d), [`${item.id}.sd`]: sdOf(d) })
+        break
+      }
+      case 'galton':
+        derived[`${item.id}.landed`] = Math.max(0, Math.floor(numOf(values, item.balls)))
+        break
+      case 'scatter': {
+        const points = scatterPoints(pointsSpec(item, { values }), item.seed ?? item.id, sampleCount(numOf(values, item.count)))
+        const test = item.inside ? parseExpression(item.inside) : undefined
+        const inside = test ? points.filter(([x, y]) => evaluate(test, { ...read, x, y }) <= 0).length : 0
+        const fit = leastSquares(points)
+        Object.assign(derived, {
+          [`${item.id}.count`]: points.length,
+          [`${item.id}.inside`]: inside,
+          [`${item.id}.ratio`]: points.length ? inside / points.length : 0,
+          [`${item.id}.slope`]: fit?.slope ?? 0,
+          [`${item.id}.intercept`]: fit?.intercept ?? 0,
+          [`${item.id}.r`]: fit?.r ?? 0,
+        })
+        break
+      }
+      case 'bayes': {
+        const prior = numOf(values, item.prior)
+        const areas = bayesAreas(prior, numOf(values, item.truePositive), numOf(values, item.falsePositive))
+        Object.assign(derived, { [`${item.id}.prior`]: prior, [`${item.id}.posterior`]: areas.posterior, [`${item.id}.positive`]: areas.positive, [`${item.id}.truePositive`]: areas.truePositive, [`${item.id}.falsePositive`]: areas.falsePositive })
+        break
+      }
       case 'taylor':
         derived[`${item.id}.order`] = Math.min(20, Math.max(0, numOf(values, item.order)))
         // The whole terms in so far (the order part way to the next counts as the one before).

@@ -80,3 +80,24 @@ export function randomChoice<T>(source: RandomSource, items: readonly T[]): T | 
   if (items.length === 0) return undefined
   return items[Math.floor(source.next() * items.length)]
 }
+
+/**
+ * A normally distributed value (mean `mean`, standard deviation `sd`), drawn
+ * from `source` by the Box–Muller transform. Uses two draws per value.
+ */
+export function randomNormal(source: RandomSource, mean = 0, sd = 1): number {
+  // 1 − next() is in (0, 1], so the logarithm is finite.
+  const u = 1 - source.next()
+  const v = source.next()
+  return mean + sd * Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v)
+}
+
+/** A shuffled copy of `items` (Fisher–Yates), drawn from `source`; `items` is unchanged. */
+export function shuffled<T>(source: RandomSource, items: readonly T[]): T[] {
+  const out = [...items]
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(source.next() * (i + 1))
+    ;[out[i], out[j]] = [out[j], out[i]]
+  }
+  return out
+}

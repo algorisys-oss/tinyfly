@@ -21,6 +21,8 @@ resolves to the built package.
 | `eigen-explainer.mjs` | A 16:9 explainer: eigenvectors stay on their lines while the plane transforms |
 | `riemann-short.mjs` | A 9:16 short: rectangles thin out toward the integral, then the area fills in |
 | `taylor-explainer.mjs` | A 16:9 explainer: sin x rebuilt term by term from its derivatives at 0 |
+| `galton-short.mjs` | A 9:16 short: a Galton board fills into a bell curve |
+| `clt-explainer.mjs` | A 16:9 explainer: averages of k draws pile into a normal curve |
 | `cairo-style.mjs` | Pure immediate mode: a duration and `draw(ctx, { time })` |
 | `pencil-sketch.mjs` | A Pencilmation-style gag: the `sketch` style (pencil strokes with line boil) on the figure, `sketchPen` for the ground and the pencil |
 | `cartoon-acting.mjs` | Before and after: the same keys through `poseTracks()` and `actTracks()` (`snappy`): wind-ups, overshoot, overlap, eyes leading; a `take` gag, speed lines (`drawStickSmear`) and a dust puff, drawn on twos (`drawingRate: 12`). See [docs/acting.md](../../docs/acting.md) |

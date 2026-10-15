@@ -78,6 +78,12 @@ Some names are reserved, because a track on them would move the whole figure:
 | `area` | `expr`, `from`, `to`, `lower?` (another function), `negativeColor?`, `fillOpacity?` |
 | `taylor` | `expr`, `at`, `order` (0–20; a fractional order grows the next term in), `domain?` |
 
+| `histogram` | `distribution`, `count` (samples so far), `bins?: [from, to, n]`, `scale?: 'density' \| 'count'`, `curve?`, `seed?` |
+| `distribution` | `distribution`, `shade?: [a, b]` (P(a ≤ X ≤ b)), `domain?` |
+| `galton` | `rows?`, `balls` (fractional: the next ball on its way), `spacing?`, `top?`, `seed?` |
+| `scatter` | `points: { kind: 'uniform', x, y }` or `{ kind: 'linear', slope, intercept, noise, x }`, `count`, `inside?` (an expression in x and y, true when ≤ 0), `fit?`, `seed?` |
+| `bayes` | `prior`, `truePositive`, `falsePositive`, `at?`, `size?`, `labels?` |
+
 `point` also rides a curve: `{ on: 'sin(x)', x: 'p' }` is the point (p, sin p), and
 `hollow: true` draws an open circle for a hole or a limit. `function` takes
 `derivative: n` to plot f′, f″ … and `dashed: true`.
@@ -97,6 +103,25 @@ Items work out numbers that TeX can show with `\val{…}`:
 | `area` | `ID.value` (the signed integral) |
 | `point` on a curve | `ID.x`, `ID.y` |
 | `taylor` | `ID.order`, `ID.degree` (its whole part) |
+| `histogram` | `ID.count`, `ID.mean`, `ID.sd` (of the samples so far) |
+| `distribution` | `ID.p` (the shaded probability), `ID.mean`, `ID.sd` |
+| `galton` | `ID.landed` |
+| `scatter` | `ID.count`, `ID.inside`, `ID.ratio`, `ID.slope`, `ID.intercept`, `ID.r` |
+| `bayes` | `ID.prior`, `ID.posterior`, `ID.positive`, `ID.truePositive`, `ID.falsePositive` |
+
+### Distributions and randomness
+
+A distribution is data: `{ kind: 'normal', mean, sd }`, `uniform` (`min`,
+`max`), `exponential` (`rate`), `binomial` (`n`, `p`), `poisson` (`rate`),
+`dice` (`count`, `sides`), or `{ kind: 'mean', of, count }`, the average of
+`count` draws (what the central limit theorem is about). Any of its numbers
+may be a value name, so a slider moves the mean or n. `density`, `meanOf`,
+`sdOf`, `sample` and `samples` work on them directly.
+
+Every sample comes from a seed (the item id unless `seed` is given), through
+the engine's `createRandom`, `randomNormal` and `shuffled`. A histogram that
+grows from 10 to 1000 samples keeps its first 10, and every render, video and
+reader sees the same draws.
 
 Slopes, derivative plots and Taylor coefficients come from symbolic
 differentiation of the expression (`differentiate`, `compileDerivative`), so
@@ -162,7 +187,7 @@ lesson's step options (`duration`, `easing`, `delay`).
   <figcaption>The determinant is the area of the unit square after the map.</figcaption>
 </figure>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.116.0/cdn/tinyfly-math.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.117.0/cdn/tinyfly-math.iife.js" data-tinyfly-auto></script>
 ```
 
 The figure draws itself into an SVG and redraws from the timeline whenever the
@@ -261,6 +286,13 @@ their own.
 | `areaFigure({ expr, from, to })` | The area up to `b`, its value shown |
 | `taylorFigure({ expr, at, order })` | Taylor polynomials of degree `order` |
 | `limitFigure({ expr, at, limit })` | A point `p` sliding toward a hole |
+| `normalFigure({ mean, sd, shade })` | The normal curve with P(a ≤ X ≤ b) shaded (`mu`, `sigma`, `a`, `b`) |
+| `binomialFigure({ n, p })` | Binomial bars |
+| `cltFigure({ of, k, samples })` | Means of `k` draws piling into a normal curve |
+| `galtonFigure({ rows, balls })` | A Galton board |
+| `monteCarloPiFigure({ count })` | Points in a square; the share inside the circle ≈ π/4 |
+| `regressionFigure({ slope, intercept, noise, count })` | Noisy points and the least-squares line |
+| `bayesFigure({ prior, sensitivity, falsePositive })` | A medical test as areas: P(condition given a positive) |
 
 Each returns a plain figure to change or extend. In each, `M` starts at the
 identity unless `matrix` is given.
@@ -268,13 +300,14 @@ identity unless `matrix` is given.
 ## Examples
 
 - Gallery: **Linear Map**, **Eigenvectors**, **Equation Steps**, **Matrix Lesson**,
-  **Derivative**, **Riemann Sums** and **Taylor Series**.
-- Videos: `linear-map-short.mjs` and `riemann-short.mjs` (9:16), `eigen-explainer.mjs`
-  and `taylor-explainer.mjs` (16:9), in `examples/headless-video/`.
+  **Derivative**, **Riemann Sums**, **Taylor Series**, **Galton Board**, **Central Limit
+  Theorem**, **Monte Carlo π** and **Bayes: a Positive Test**.
+- Videos: `linear-map-short.mjs`, `riemann-short.mjs` and `galton-short.mjs` (9:16);
+  `eigen-explainer.mjs`, `taylor-explainer.mjs` and `clt-explainer.mjs` (16:9), in
+  `examples/headless-video/`.
 
 ## Next
 
-Probability and statistics (sampling, histograms, the Galton board), discrete
-maths (graphs, trees, sets) and AI/ML (networks, gradient descent on a loss
-surface) build on the same figure model.
+Discrete maths (graphs, trees, sets) and AI/ML (networks, gradient descent on
+a loss surface) build on the same figure model.
 See `todo.md` for their status.

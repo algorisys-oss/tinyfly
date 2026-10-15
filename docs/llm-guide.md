@@ -272,7 +272,9 @@ or `scale`: those belong to the figure's target. The same figure plays in a
 lesson page (`<figure data-tinyfly-math>`), an explorable and a video
 (`mathTarget`). Calculus items (`tangent`, `riemann`, `area`, `taylor`, a
 `point` with `on` and `x`) take numbers or number-value names for `at`, `n`,
-`to`, `order`, and publish `\\val{ID.slope}`, `ID.sum`, `ID.value` for TeX. See `docs/math.md`.
+`to`, `order`, and publish `\\val{ID.slope}`, `ID.sum`, `ID.value` for TeX. Probability items
+(`histogram`, `distribution`, `galton`, `scatter`, `bayes`) take a distribution as data
+(`{ kind: 'normal', mean: 'mu', sd: 1 }`) and draw seeded samples, never `Math.random`. See `docs/math.md`.
 
 ## Your own behaviours
 

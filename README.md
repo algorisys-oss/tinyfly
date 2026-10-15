@@ -47,7 +47,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Full screen** - `data-fullscreen="true"` adds a button that fills the screen with the figure, through the Fullscreen API or, on iPhone, an overlay; the drawing scales to the screen whatever the page's figure CSS says
 - **Scenarios** - Several timelines on one figure, and the reader chooses which plays: a group of options, a stepped slider, or clickable parts of the SVG (`data-tinyfly-choose`). Switching undoes the previous scenario's drawing and keeps the reader at the same step
 - **Authoring kit** - `lesson()` step builder and diagram primitives (array cells, pointer, stack, queue / channel, table, pipeline) in `@algorisys/tinyfly/teach`
-- **Maths animations** - `@algorisys/tinyfly/math`: figures as JSON (a grid a matrix warps, î and ĵ, vectors, function plots that break at asymptotes, polygons whose area shows the determinant, eigenlines, TeX labels; calculus: tangents and secants with exact slopes, Riemann sums, signed areas, Taylor polynomials from symbolic derivatives, limits), a built-in TeX subset (fractions, roots, sums and integrals with limits, matrices, Greek, live values) whose equations rewrite step by step with terms gliding, and ready linear algebra and calculus figures. One layout feeds lesson-page embeds (`<figure data-tinyfly-math>`, stepped with captions and questions), explorables where readers drag î and ĵ, and 9:16 or 16:9 videos ([guide](docs/math.md))
+- **Maths animations** - `@algorisys/tinyfly/math`: figures as JSON (a grid a matrix warps, î and ĵ, vectors, function plots that break at asymptotes, polygons whose area shows the determinant, eigenlines, TeX labels; calculus: tangents and secants with exact slopes, Riemann sums, signed areas, Taylor polynomials from symbolic derivatives, limits; probability: seeded histograms, distributions with shaded probabilities, a Galton board, the central limit theorem, Monte Carlo π, regression and Bayes as areas), a built-in TeX subset (fractions, roots, sums and integrals with limits, matrices, Greek, live values) whose equations rewrite step by step with terms gliding, and ready linear algebra, calculus and probability figures. One layout feeds lesson-page embeds (`<figure data-tinyfly-math>`, stepped with captions and questions), explorables where readers drag î and ĵ, and 9:16 or 16:9 videos ([guide](docs/math.md))
 - **Build tools** - `npx @algorisys/tinyfly validate` catches broken figures in CI; `render` writes a frame to static SVG for RSS, email and print
 
 ### Video from Code
@@ -284,7 +284,7 @@ GSAP-shaped functions at the top level. Teaching embeds are included: add
 itself.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.116.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.117.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -321,7 +321,7 @@ A teaching figure needs no code at all:
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON with markers… }</script>
   <figcaption>Appending to a full slice</figcaption>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.116.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.117.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
 ```
 
 See [Teaching Animations](docs/teaching.md).
@@ -420,7 +420,7 @@ Without a build step, the player bundle puts the same functions on a `tinyfly` g
   <div data-tinyfly="box" style="width: 60px; height: 60px; background: #4a9eff;"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.116.0/cdn/tinyfly-player.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.117.0/cdn/tinyfly-player.iife.js"></script>
 <script>
   tinyfly.play('#animation', './animation.json', { loop: -1 })
 </script>
@@ -529,7 +529,7 @@ Or skip the code entirely with declarative embeds (see [Teaching Animations](doc
   <svg viewBox="0 0 720 200">…</svg>
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON… }</script>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.116.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.117.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 ### Audio / Video Sync
@@ -839,7 +839,7 @@ Characters browser suite checks 74 desktop/mobile scenarios per browser.
 | Docs viewer and `llms.txt` (`src/docs`) | 18 |
 | Embeds, teaching kit, framework hooks, landing (`src/embed`, `src/teach`, `src/frameworks`, `src/landing`) | 33 |
 | Headless rendering and audio (`src/headless`) | 63 |
-| Maths figures, TeX, calculus, equation steps, embeds and explorables (`src/math`) | 76 |
+| Maths figures, TeX, calculus, probability, equation steps, embeds and explorables (`src/math`) | 99 |
 | Entry boundaries | 3 |
 
 ## Contributing
