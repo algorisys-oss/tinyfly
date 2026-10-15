@@ -119,6 +119,12 @@ export const DOCS: DocEntry[] = [
     section: 'Guides',
   },
   {
+    id: 'math',
+    title: 'Maths Animations',
+    summary: 'tinyfly/math: figures as JSON (grids a matrix warps, vectors, function plots, polygons, eigenlines, TeX labels and equations that rewrite step by step), animated by plain tracks, played in lesson-page embeds, explorables and videos from one layout; a built-in TeX subset and ready linear algebra figures.',
+    section: 'Guides',
+  },
+  {
     id: 'video-rendering',
     title: 'Rendering Video from Code',
     summary: 'Rendering a scene to MP4 without a browser: `tinyfly video`, custom canvas targets drawn by code, timing from narration and recorded voice-over, the stick-figure character, SRT/WebVTT captions, stills, porting Cairo scripts, and a benchmark against pycairo.',

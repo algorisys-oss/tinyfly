@@ -47,6 +47,7 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Full screen** - `data-fullscreen="true"` adds a button that fills the screen with the figure, through the Fullscreen API or, on iPhone, an overlay; the drawing scales to the screen whatever the page's figure CSS says
 - **Scenarios** - Several timelines on one figure, and the reader chooses which plays: a group of options, a stepped slider, or clickable parts of the SVG (`data-tinyfly-choose`). Switching undoes the previous scenario's drawing and keeps the reader at the same step
 - **Authoring kit** - `lesson()` step builder and diagram primitives (array cells, pointer, stack, queue / channel, table, pipeline) in `@algorisys/tinyfly/teach`
+- **Maths animations** - `@algorisys/tinyfly/math`: figures as JSON (a grid a matrix warps, î and ĵ, vectors, function plots that break at asymptotes, polygons whose area shows the determinant, eigenlines, TeX labels; calculus: tangents and secants with exact slopes, Riemann sums, signed areas, Taylor polynomials from symbolic derivatives, limits), a built-in TeX subset (fractions, roots, sums and integrals with limits, matrices, Greek, live values) whose equations rewrite step by step with terms gliding, and ready linear algebra and calculus figures. One layout feeds lesson-page embeds (`<figure data-tinyfly-math>`, stepped with captions and questions), explorables where readers drag î and ĵ, and 9:16 or 16:9 videos ([guide](docs/math.md))
 - **Build tools** - `npx @algorisys/tinyfly validate` catches broken figures in CI; `render` writes a frame to static SVG for RSS, email and print
 
 ### Video from Code
@@ -192,6 +193,7 @@ filling the page. [Open the manga example full page](https://tinyfly.app/example
 - [GSAP Compatibility](docs/gsap-compat.md) — The GSAP-flavoured API, the mapping table, and what we deliberately don't do
 - [Rendering Video from Code](docs/video-rendering.md) — `tinyfly video`, custom code-drawn targets, narration timing, captions and stills, without a browser
 - [Teaching Animations](docs/teaching.md) — Step-through figures: markers, captions, the stepping player, controls, declarative embeds, scenarios the reader chooses, `tinyfly/teach`, validate and render
+- [Maths Animations](docs/math.md) — `tinyfly/math`: figures, the TeX subset, equation steps, lesson embeds, explorables and videos
 - [Extending tinyfly](docs/extending.md) — Writing adapters, custom eases and stagger offsets, adding a track kind, contributing examples
 - [Deployment](docs/DEPLOYMENT.md) — Hosting, Docker, and CDN configuration
 - [2D Animation Roadmap](docs/2d-animation-roadmap.md) — Adobe Animate gap analysis and phased plan (symbols/library, camera, onion skinning, …)
@@ -230,6 +232,7 @@ for what you import:
 | `@algorisys/tinyfly/interaction` | `Observer`, `Draggable` | Browser |
 | `@algorisys/tinyfly/embed` | Teaching embeds: the player with step controls, captions, scenarios and one-script `[data-tinyfly-embed]` mounting; `validateEmbed`, `validateScenarios`, `renderFrame` | Browser (tools anywhere) |
 | `@algorisys/tinyfly/teach` | `lesson()` step builder and diagram primitives (cells, pointer, stack, queue, table, pipeline) | Anywhere |
+| `@algorisys/tinyfly/math` | Maths figures (`mathFigure`, `layoutFigure`, `mathTarget`), the TeX subset (`layoutTex`, `morphEquation`), lesson steps (`mathSteps`), embeds (`mountMath`) and explorables (`mathExplorable`), linear algebra presets, `vec2` / `mat2` | Anywhere (embeds and explorables: browser) |
 | `@algorisys/tinyfly/react`, `@algorisys/tinyfly/vue`, `@algorisys/tinyfly/svelte`, `@algorisys/tinyfly/solid` | `useTinyfly` hooks, a Svelte action and a Solid primitive: `live` animations scoped to a component and reverted on unmount | Browser (frameworks are optional peer dependencies) |
 | `@algorisys/tinyfly/maps` | Animated maps: OpenStreetMap tiles or an offline world outline, places, routes that draw on, a camera that flies (`mapTarget`, `mapFlyTracks`, `fitView`, `WORLD_CITIES`) | Anywhere with a Canvas 2D context (tiles need a network) |
 | `@algorisys/tinyfly/characters` | Poseable stick figure: `stickFigureTarget`, `poseTracks`, `POSES`, `blendPose`, `walkPose`, `drawStickFigure`; `stickFigureJoints` and `layers` for costumes, hair and props; `turn`, `sit` and ground contact; an organic look by default (`classic` keeps the old one); **characters v2**: `character()` / `characterTarget()`, turnarounds front to back, contact, reaching, clean / pencil / silhouette / illustrated looks; `hair`, `facialHair`, `glasses`, `hat`, `ears`, `face`, `feet`, `build`, `outfit` as data, `castMember()`, `HUMAN_EXPRESSIONS` with face marks; `embrace`, `helpUp`, `scenery` | Anywhere with a Canvas 2D context |
@@ -281,7 +284,7 @@ GSAP-shaped functions at the top level. Teaching embeds are included: add
 itself.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.115.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.116.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -302,6 +305,7 @@ itself.
 | `cdn/tinyfly.esm.js` | The same, as an ES module: `import { live } from '…/cdn/tinyfly.esm.js'` |
 | `cdn/tinyfly-player.iife.js` | Player only (~17 KB gzipped), for playing editor exports |
 | `cdn/tinyfly-embed.iife.js` | Only teaching figures (~19 KB gzipped): player, step controls, auto-mount |
+| `cdn/tinyfly-math.iife.js` | Maths figures, equations, lesson embeds (`data-tinyfly-math`) and explorables (~40 KB gzipped, with the embed player); works on its own or after `tinyfly.iife.js` |
 
 Replace `@v0.71.0` with the version you want. **Pin a version in production**:
 a tag's files never change, and each release's `cdn/README.md` lists an SRI hash
@@ -317,7 +321,7 @@ A teaching figure needs no code at all:
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON with markers… }</script>
   <figcaption>Appending to a full slice</figcaption>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.115.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.116.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
 ```
 
 See [Teaching Animations](docs/teaching.md).
@@ -335,7 +339,7 @@ This produces:
 
 - `lib/engine/tinyfly-engine.js` (ESM) and `.umd.cjs` — the engine
 - `lib/player/tinyfly-player.{es,umd,iife}.js` — the standalone DOM player
-- `lib/addons/{adapters,export,gsap-compat,drivers,interaction,teach}.js` — the optional entry points
+- `lib/addons/{adapters,export,gsap-compat,drivers,interaction,teach,math}.js` — the optional entry points
 - `lib/frameworks/{react,vue,svelte,solid}.js` — the framework hooks
 - `lib/embed/tinyfly-embed.{iife.js,js}` — teaching embeds; `lib/cli/tools.js` — the `tinyfly` command
 - `lib/browser/tinyfly.{iife,umd}.js` and `tinyfly.js` — the all-in-one bundle
@@ -416,7 +420,7 @@ Without a build step, the player bundle puts the same functions on a `tinyfly` g
   <div data-tinyfly="box" style="width: 60px; height: 60px; background: #4a9eff;"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.115.0/cdn/tinyfly-player.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.116.0/cdn/tinyfly-player.iife.js"></script>
 <script>
   tinyfly.play('#animation', './animation.json', { loop: -1 })
 </script>
@@ -525,7 +529,7 @@ Or skip the code entirely with declarative embeds (see [Teaching Animations](doc
   <svg viewBox="0 0 720 200">…</svg>
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON… }</script>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.115.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.116.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 ### Audio / Video Sync
@@ -835,7 +839,8 @@ Characters browser suite checks 74 desktop/mobile scenarios per browser.
 | Docs viewer and `llms.txt` (`src/docs`) | 18 |
 | Embeds, teaching kit, framework hooks, landing (`src/embed`, `src/teach`, `src/frameworks`, `src/landing`) | 33 |
 | Headless rendering and audio (`src/headless`) | 63 |
-| Entry boundaries | 2 |
+| Maths figures, TeX, calculus, equation steps, embeds and explorables (`src/math`) | 76 |
+| Entry boundaries | 3 |
 
 ## Contributing
 

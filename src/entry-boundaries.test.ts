@@ -44,10 +44,10 @@ function reachable(entry: string): string[] {
 }
 
 describe('entry boundaries', () => {
-  it('the engine and the player never reach 3D scenes, characters or maps', () => {
+  it('the engine and the player never reach 3D scenes, characters, maps or maths', () => {
     for (const entry of ['engine/index.ts', 'player/index.ts']) {
       const files = reachable(entry)
-      expect(files.filter((f) => /^(scene-3d|characters|maps)\//.test(f)), entry).toEqual([])
+      expect(files.filter((f) => /^(scene-3d|characters|maps|math)\//.test(f)), entry).toEqual([])
     }
   })
 
@@ -57,5 +57,15 @@ describe('entry boundaries', () => {
     expect(files.filter((f) => /webgl|gltf|three|adapters\/dom|adapters\/svg|^characters\//.test(f))).toEqual([])
     const source = files.map((f) => readFileSync(resolve(SRC, f), 'utf8')).join('\n')
     expect(source).not.toMatch(/from ['"]three['"]/)
+  })
+
+  it('the maths core reaches only the engine and the lesson builder; only math/embed reaches the player and DOM', () => {
+    const core = ['math/targets/math-target.ts', 'math/steps/math-steps.ts', 'math/presets/linear-algebra.ts', 'math/render/display-list-to-svg.ts']
+    for (const entry of core) {
+      const outside = reachable(entry).filter((f) => !f.startsWith('math/'))
+      expect(outside.filter((f) => !/^(engine\/|teach\/)/.test(f)), entry).toEqual([])
+      expect(reachable(entry).filter((f) => f.startsWith('math/embed/')), entry).toEqual([])
+    }
+    expect(reachable('math/index.ts').filter((f) => /^(characters|scene-3d|maps|editor|sports)\//.test(f))).toEqual([])
   })
 })

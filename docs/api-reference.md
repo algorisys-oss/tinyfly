@@ -38,7 +38,8 @@ Complete reference for the tinyfly animation engine, player, and adapters.
 Entry points: `tinyfly` (engine), `@algorisys/tinyfly/export` (CSS, Lottie, GIF, WebP,
 video and sprite-sheet exporters), `@algorisys/tinyfly/player`, `@algorisys/tinyfly/adapters` (DOM,
 Canvas, SVG and WebGL adapters, Flip helpers), `@algorisys/tinyfly/drivers`,
-`@algorisys/tinyfly/interaction`, `@algorisys/tinyfly/gsap-compat`, `@algorisys/tinyfly/scene-3d` (3D scenes), `@algorisys/tinyfly/browser` (the live
+`@algorisys/tinyfly/interaction`, `@algorisys/tinyfly/gsap-compat`, `@algorisys/tinyfly/scene-3d` (3D scenes), `@algorisys/tinyfly/math`
+(maths figures, equations and lessons; see [Maths Animations](math.md)), `@algorisys/tinyfly/browser` (the live
 runtime and everything except the exporters, for `<script>` tags), and `@algorisys/tinyfly/headless`
 (video and stills rendering in Node).
 

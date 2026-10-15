@@ -17,6 +17,10 @@ resolves to the built package.
 | `cricket-story.mjs` | Public sports APIs, a mixed organic cast, bat contact, event captions and a close-up camera; change the clip action/format/cast or use a full 360° ground orbit. See [cricket guide](../../docs/cricket.md). |
 | `stick-figure.mjs` | Narration timing (`planNarration`), the `characters` stick figure posed, walked and voiced by tracks, a per-scene backdrop, captions |
 | `bar-chart.mjs` | Timeline targets only: the whole animation is JSON |
+| `linear-map-short.mjs` | A 9:16 short: what a matrix does to the plane, from `@algorisys/tinyfly/math` figures and lesson steps |
+| `eigen-explainer.mjs` | A 16:9 explainer: eigenvectors stay on their lines while the plane transforms |
+| `riemann-short.mjs` | A 9:16 short: rectangles thin out toward the integral, then the area fills in |
+| `taylor-explainer.mjs` | A 16:9 explainer: sin x rebuilt term by term from its derivatives at 0 |
 | `cairo-style.mjs` | Pure immediate mode: a duration and `draw(ctx, { time })` |
 | `pencil-sketch.mjs` | A Pencilmation-style gag: the `sketch` style (pencil strokes with line boil) on the figure, `sketchPen` for the ground and the pencil |
 | `cartoon-acting.mjs` | Before and after: the same keys through `poseTracks()` and `actTracks()` (`snappy`): wind-ups, overshoot, overlap, eyes leading; a `take` gag, speed lines (`drawStickSmear`) and a dust puff, drawn on twos (`drawingRate: 12`). See [docs/acting.md](../../docs/acting.md) |

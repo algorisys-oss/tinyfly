@@ -5,6 +5,7 @@ import { GAITS } from './gaits'
 import { GAGS } from './acting/gags'
 import { actionNames } from './acting/beat-check'
 import * as teach from '../teach'
+import * as math from '../math'
 import { scriptTracks } from './acting/script'
 
 describe('capabilities', () => {
@@ -29,6 +30,16 @@ describe('capabilities', () => {
     expect(Object.keys(c.surfaces.chart.edits)).toEqual(['set', 'show', 'highlight', 'pull'])
     expect(Object.keys(c.surfaces.prop.anchors)).toEqual(['box', 'anchor:NAME', 'part:ID', 'control:NAME'])
     expect(capabilitiesMarkdown()).toContain('- `token:N:TEXT`')
+  })
+
+  it('lists the maths items, functions and helpers the math module has', () => {
+    const c = capabilities()
+    expect(Object.keys(c.math.items)).toEqual([...math.ITEM_KINDS])
+    expect(c.math.functions).toEqual(Object.keys(math.FUNCTIONS))
+    for (const name of ['mathFigure', 'layoutFigure', 'mathTarget', 'mathSteps', 'mountMath', 'mountAllMath', 'mathExplorable', 'mathFigureToSvg', 'linearMapFigure', 'determinantFigure', 'eigenFigure', 'vectorSumFigure', 'spanFigure', 'tangentFigure', 'secantFigure', 'riemannFigure', 'areaFigure', 'taylorFigure', 'limitFigure', 'differentiate', 'compileDerivative', 'integrate', 'layoutTex', 'morphEquation', 'vec2', 'mat2', 'drawDisplayList', 'displayListToSvg']) {
+      expect(math, name).toHaveProperty(name)
+    }
+    expect(capabilitiesMarkdown()).toContain('## Maths (`@algorisys/tinyfly/math`)')
   })
 
   it('names teaching helpers that exist', () => {

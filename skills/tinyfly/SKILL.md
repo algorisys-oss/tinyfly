@@ -166,6 +166,16 @@ names.
   `examples/headless-video/organic-characters.mjs` and
   `examples/headless-video/child-characters.mjs` examples.
 
+- Maths lessons: `@algorisys/tinyfly/math`. A figure is JSON (`values` +
+  `items`); check it with `mathFigure()`; write steps with `mathSteps(lesson,
+  'fig', figure)`. Matrices are `[a, b, c, d]` row by row (columns are where î
+  and ĵ land). Functions are expression strings, equations TeX in the built-in
+  subset; `\val{M.det}` shows a live value. Never name a value `x`, `y`, `t`,
+  `opacity` or `scale`. Lesson pages: `<figure data-tinyfly-math>` with
+  `tinyfly-math.iife.js`; videos: `mathTarget(figure)`. Calculus: `tangent`
+  (`h` makes a secant), `riemann`, `area`, `taylor`; animate `at` / `n` / `to` /
+  `order` through number values. See `docs/math.md`.
+
 ## 3. Check
 
 Cricket stories use `@algorisys/tinyfly/sports`: `cricketClip` gives owned JSON

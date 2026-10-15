@@ -21,6 +21,7 @@ export default defineConfig({
         interaction: resolve(__dirname, 'src/interaction/index.ts'),
         'gsap-compat': resolve(__dirname, 'src/compat/gsap/index.ts'),
         teach: resolve(__dirname, 'src/teach/index.ts'),
+        math: resolve(__dirname, 'src/math/index.ts'),
         characters: resolve(__dirname, 'src/characters/index.ts'),
         sports: resolve(__dirname, 'src/sports/index.ts'),
         maps: resolve(__dirname, 'src/maps/index.ts'),

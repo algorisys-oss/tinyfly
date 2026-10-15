@@ -15,6 +15,8 @@ export default defineConfig({
     alias: [
       { find: /^@algorisys\/tinyfly$/, replacement: new URL('./src/engine/index.ts', import.meta.url).pathname },
       { find: /^@algorisys\/tinyfly\/characters$/, replacement: new URL('./src/characters/index.ts', import.meta.url).pathname },
+      { find: /^@algorisys\/tinyfly\/math$/, replacement: new URL('./src/math/index.ts', import.meta.url).pathname },
+      { find: /^@algorisys\/tinyfly\/teach$/, replacement: new URL('./src/teach/index.ts', import.meta.url).pathname },
     ],
   },
   // Same as vite.config.ts, so code that reads the version works under test.

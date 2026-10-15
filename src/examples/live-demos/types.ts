@@ -36,6 +36,6 @@ export interface LiveDemo {
    * bundle (for example `maps`: tinyfly-maps.iife.js, which carries the
    * offline world map)
    */
-  addons?: Array<'maps' | 'scene-3d' | 'scene-3d-webgl'>
+  addons?: Array<'maps' | 'scene-3d' | 'scene-3d-webgl' | 'math'>
   run(live: LiveApi, root: HTMLElement): void | (() => void)
 }

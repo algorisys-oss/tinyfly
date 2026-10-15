@@ -690,6 +690,15 @@ export class TinyflyPlayer {
   }
 
   /**
+   * The animated values at the playhead, for renderers that draw from values
+   * rather than DOM elements (a canvas, or an SVG rebuilt each frame). Read it
+   * from a `subscribe` listener. Undefined before a timeline loads.
+   */
+  get state(): AnimationState | undefined {
+    return this.timeline?.getStateAtTime(this.timeline.currentTime)
+  }
+
+  /**
    * Get total duration.
    */
   get duration(): number {

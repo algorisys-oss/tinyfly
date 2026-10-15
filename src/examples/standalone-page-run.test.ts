@@ -9,6 +9,7 @@ import * as sports from '../sports'
 import * as maps from '../maps'
 import * as scene3d from '../scene-3d'
 import * as scene3dWebgl from '../scene-3d/webgl'
+import * as math from '../math/browser-entry'
 import { exercise, snapshot as markup, stubSvgGeometry } from './live-demos/test-support'
 
 stubSvgGeometry()
@@ -45,7 +46,7 @@ describe('copied live demo pages run', () => {
 
       // The browser bundle's global carries the engine and characters as well as `live`.
       // A demo that loads an add-on (maps, scene-3d) gets its functions on the same global.
-      const addons = { ...(demo.addons?.includes('maps') ? maps : {}), ...(demo.addons?.includes('scene-3d') ? scene3d : {}), ...(demo.addons?.includes('scene-3d-webgl') ? scene3dWebgl : {}) }
+      const addons = { ...(demo.addons?.includes('maps') ? maps : {}), ...(demo.addons?.includes('scene-3d') ? scene3d : {}), ...(demo.addons?.includes('scene-3d-webgl') ? scene3dWebgl : {}), ...(demo.addons?.includes('math') ? math : {}) }
       const api = preview ? await import('./browser-preview') : { ...engine, ...characters, ...sports, ...addons }
       expect(() => new Function('tinyfly', inline)({ ...api, live: createLive(stage) })).not.toThrow()
       await Promise.resolve()

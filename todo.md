@@ -1,3 +1,21 @@
+## Maths animations (`@algorisys/tinyfly/math`): linear algebra and calculus — v0.116.0
+
+- [x] Pure core: `vec2` / `mat2` (apply, multiply, determinant, inverse, real eigenpairs), a safe expression language (no `eval`; precedence, implicit multiplication, listed functions, position-naming errors).
+- [x] Built-in TeX subset: scripts, fractions, roots, accents, big operators with limits, named operators, Greek and symbols, p/b/v matrices, `\text`, `\color`, `\id` term names, `\val` live values; fixed glyph metrics (same layout in browsers, Workers and Node); did-you-mean errors.
+- [x] Equation steps: terms pair by text and order (or `\id`) and glide; others fade (`morphEquation`, `ITEM.step`).
+- [x] Figures as JSON: grid (matrix-warped, ghost), axes, vector, basis, point, function (breaks at gaps and asymptotes), parametric, polygon (determinant label), line (span / eigenlines), label, equation; dark / light / chalk themes; validation with fix-it messages; reserved value names.
+- [x] One pure layout → display list, drawn by a Canvas 2D renderer and an SVG writer; `mathTarget` canvas custom target with described props; `mathSteps` lesson helpers; `mathFigureToSvg`.
+- [x] Lesson-page embeds (`<figure data-tinyfly-math>`, `mountMath` / `mountAllMath`, auto-mount) on the ordinary embed player and controls (new `player.state`), and `mathExplorable` (sliders, drag vector tips and matrix columns, snapping).
+- [x] Linear algebra presets: linear map, determinant, eigenvectors, vector sum, span.
+- [x] New entry `@algorisys/tinyfly/math` (lib, types), CDN script `tinyfly-math.iife.js` (self-contained, ~40 KB gzipped), OSS publish, entry-boundary rules, capability catalog, docs (`docs/math.md`), README and model guides.
+- [x] Gallery: Linear Map (explorable), Eigenvectors, Equation Steps, Matrix Lesson (stepped embed). Videos: `linear-map-short.mjs` (9:16), `eigen-explainer.mjs` (16:9). Desktop, phone and video stills visually checked.
+- [x] Milestone 2, calculus: symbolic differentiation (`differentiate`, `compileDerivative`; every listed function but floor/ceil/round), Simpson `integrate`; items `tangent` (secant with `h`), `riemann` (left/right/midpoint/trapezoid), `area` (signed, between curves), `taylor` (fractional orders blend in the next term); points riding a curve and hollow points; derivative plots; derived numbers for TeX (`ID.slope`, `ID.sum`, `ID.exact`, `ID.value`, `ID.degree`); number fields take value names.
+- [x] Calculus presets (tangent, secant, Riemann, area, Taylor, limit), gallery demos (Derivative, Riemann Sums explorable, Taylor Series), videos `riemann-short.mjs` (9:16) and `taylor-explainer.mjs` (16:9), docs and catalog. Values checked against hand calculations; desktop, phone and video stills visually checked.
+- [ ] Surface anchors so characters point at figure parts (`point:A`, `term:eq:x`).
+- [ ] Milestone 3: probability and statistics (seeded gaussian / shuffle / sample; histograms, Galton board, CLT, Monte Carlo π, Bayes).
+- [ ] Milestone 4: discrete maths (graphs with BFS/DFS, trees, sets and Venn, modular clocks).
+- [ ] Milestone 5: AI/ML (networks with flowing activations, gradient descent on a scene-3d loss surface, decision boundaries, k-means, attention heatmaps).
+
 ## Illustrated character look — v0.115.0
 
 - [x] `look: 'illustrated'`: ink weighted by the light (heavier on the shadow side, thinner where lit), brush-tapered open strokes, and fills painted with graded shadow, core-shadow and highlight bands.

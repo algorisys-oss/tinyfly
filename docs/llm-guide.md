@@ -258,6 +258,22 @@ are declared up front, each with an id the places use. The catalog lists each
 surface's places and edits. See "A whole scene as data", "Whiteboards" and
 "Charts" in `docs/acting.md`.
 
+## Maths
+
+Maths lessons use `@algorisys/tinyfly/math`: write the figure as JSON (`width`,
+`height`, `values`, `items`: grid, axes, vector, basis, point, function,
+parametric, polygon, line, label, equation), check it with `mathFigure(spec)`,
+and write steps with `mathSteps(lesson, 'fig', figure)` (`applyMatrix`,
+`drawOn`, `showStep`). Matrices are `[a, b, c, d]` row by row; columns are where
+î and ĵ land. Functions are expression strings (`'sin(k x)'`, never JS), and
+equations are TeX in the built-in subset (`\frac`, `\sqrt`, `^`, `_`, matrices,
+`\val{M.det}` for live values). Do not name a value `x`, `y`, `t`, `opacity`
+or `scale`: those belong to the figure's target. The same figure plays in a
+lesson page (`<figure data-tinyfly-math>`), an explorable and a video
+(`mathTarget`). Calculus items (`tangent`, `riemann`, `area`, `taylor`, a
+`point` with `on` and `x`) take numbers or number-value names for `at`, `n`,
+`to`, `order`, and publish `\\val{ID.slope}`, `ID.sum`, `ID.value` for TeX. See `docs/math.md`.
+
 ## Your own behaviours
 
 Write new actions with `defineAction()` (from beats, or as timed pose steps),

@@ -132,6 +132,8 @@ export interface Capabilities {
   surfaceScript: Record<string, string>
   cameraShots: Record<string, string>
   teach: Record<string, string>
+  /** `@algorisys/tinyfly/math`: maths figures, equations and lessons */
+  math: { api: Record<string, string>; items: Record<string, string>; props: Record<string, string>; functions: string[]; tex: string }
   cli: Record<string, string>
 }
 
@@ -293,6 +295,47 @@ export function capabilities(version?: string, cast: Cast = {}): Capabilities {
       'lesson({ id })': 'steps as timeline JSON: to, set, together, wait, marker (with pause, question, captions)',
       'cells, pointer, stack, queue, table, pipeline': 'diagram primitives (SVG markup + step helpers)',
       'figure({ width, height, children })': 'the SVG holding the pieces',
+    },
+    math: {
+      api: {
+        'mathFigure(spec)': 'checks a figure (JSON: width, height, x?, y?, theme?: dark | light | chalk, values, items) and says how to fix it',
+        'layoutFigure(spec, props)': 'the figure at some values as shapes; drawDisplayList(ctx, list) or displayListToSvg(list) draws them',
+        'mathTarget(spec, { x, y })': 'a canvas target for videos and canvas pages; tracks animate its values and item props',
+        'mathSteps(lesson, target, spec, { hidden })': 'lesson steps: toValue, applyMatrix, drawOn, fadeIn, fadeOut, showStep (equations)',
+        'mountMath(element) / mountAllMath()': 'lesson-page embeds: <figure data-tinyfly-math> with data-tinyfly-figure and data-tinyfly-timeline JSON scripts, stepped like any embed',
+        'mathExplorable(element, spec, { sliders, drag })': 'reader-driven figures: sliders on number values, drag vector tips or matrix columns',
+        'mathFigureToSvg(spec, props)': 'a standalone SVG of a figure at some values',
+        'linearMapFigure, determinantFigure, eigenFigure, vectorSumFigure, spanFigure': 'ready linear algebra figures; the matrix is the value M',
+        'tangentFigure, secantFigure, riemannFigure, areaFigure, taylorFigure, limitFigure': 'ready calculus figures; their moving parts are number values (a, h, n, b, order, p)',
+        'differentiate / compileDerivative / integrate': 'exact symbolic derivatives of expressions; Simpson integration',
+        'layoutTex(tex) / morphEquation(a, b, t)': 'the built-in TeX subset, and term-by-term transitions',
+        'vec2, mat2': '2D vectors and 2×2 matrices (apply, multiply, determinant, inverse, eigen)',
+      },
+      items: {
+        grid: '{ step?, transform?: matrix value, ghost? }: lines of the plane, warped by a matrix',
+        axes: '{ ticks?, labels? }',
+        vector: '{ to, from?, transform?, label? (TeX), labelAt?: tip | middle }',
+        basis: '{ transform? }: î and ĵ',
+        point: '{ at, transform?, label?, hollow? } or { on: expr, x } (a point riding a curve)',
+        function: '{ expr: "sin(k x)", domain?, derivative?, dashed? }: y = f(x); number values are its parameters',
+        parametric: '{ x, y (expressions in t), t?, transform? }',
+        polygon: '{ points? (default the unit square), transform?, label? }: \\val{M.det} shows the determinant',
+        line: '{ along } or { eigen: matrix value }: a span, or eigenlines',
+        label: '{ tex, at, screen?, size?, align?, backdrop? }',
+        equation: '{ steps: [TeX…], at, screen? }: ITEM.step moves between steps, terms gliding',
+        tangent: '{ expr, at, h? (secant), label? }: \\val{ID.slope} is the exact slope',
+        riemann: '{ expr, from, to, n, rule?: left | right | midpoint | trapezoid }: \\val{ID.sum}, \\val{ID.exact}',
+        area: '{ expr, from, to, lower? }: signed, coloured by sign; \\val{ID.value}',
+        taylor: '{ expr, at, order }: exact Taylor polynomials; a fractional order grows the next term in',
+      },
+      props: {
+        'NAME': 'a value: a number, [x, y] vector or [a, b, c, d] matrix (row by row; columns are where î and ĵ land)',
+        'ITEM.draw': '0..1, draws an item on',
+        'ITEM.opacity': '0..1',
+        'ITEM.step': 'an equation\'s step; fractional values are part way',
+      },
+      functions: ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2', 'sinh', 'cosh', 'tanh', 'exp', 'ln', 'log', 'log2', 'sqrt', 'abs', 'floor', 'ceil', 'round', 'sign', 'min', 'max', 'sigmoid', 'relu'],
+      tex: '^ _ \\frac \\sqrt \\vec \\hat \\bar, \\sum \\prod \\int with limits, \\sin \\lim … , Greek, \\cdot \\times \\le \\to \\infty …, pmatrix / bmatrix / vmatrix, \\text, \\color{c}{…}, \\id{name}{…} (names a term for transitions), \\val{name:digits} (a live value)',
     },
     cli: {
       'tinyfly capabilities [--json]': 'this catalog',
@@ -497,6 +540,24 @@ export function capabilitiesMarkdown(version?: string, cast: Cast = {}): string 
     '## Teaching (`@algorisys/tinyfly/teach`)',
     '',
     ...Object.entries(c.teach).map(([name, what]) => `- \`${name}\`: ${what}`),
+    '',
+    '## Maths (`@algorisys/tinyfly/math`)',
+    '',
+    'A figure is JSON: a plane and items. Tracks on its target animate values by name and item props. One layout feeds a canvas (videos) and SVG (lesson embeds), so they match.',
+    '',
+    ...Object.entries(c.math.api).map(([name, what]) => `- \`${name}\`: ${what}`),
+    '',
+    'Items (each has `id`, `kind`, and optional `color`, `draw`, `opacity`):',
+    '',
+    ...Object.entries(c.math.items).map(([name, what]) => `- \`${name}\` ${what}`),
+    '',
+    'Props a timeline animates:',
+    '',
+    ...Object.entries(c.math.props).map(([name, what]) => `- \`${name}\`: ${what}`),
+    '',
+    `Expression functions: ${c.math.functions.map((name) => `\`${name}\``).join(', ')}; constants \`pi\`, \`e\`, \`tau\`.`,
+    '',
+    `TeX subset: ${c.math.tex}`,
     '',
     '## Command line',
     '',
