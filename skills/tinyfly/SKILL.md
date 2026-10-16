@@ -180,7 +180,8 @@ names.
   `clock`. AI/ML: `network`, `heatmap`, `contours`, `descent`, `classifier`,
   `kmeans`, each stepped by one value. A presenter: `mathSurface(figure, { x, y })`
   for `surfaceScript` (anchors `tip:ID`, `item:ID`, `term:ID:TEXT`; edits `set`,
-  `step`, `drawOn`). See `docs/math.md`.
+  `step`, `drawOn`). 3D loss surface: `lossSurface3D()` gives scene-3d JSON and
+  tracks. See `docs/math.md`.
 
 ## 3. Check
 

@@ -591,7 +591,7 @@ with a GSAP-style call (durations are in seconds here):
 ```html
 <div class="box" style="width:60px;height:60px;background:#4a9eff"></div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.120.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.121.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -799,7 +799,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.120.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.121.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -2714,7 +2714,7 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.120.0/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.121.0/cdn/tinyfly-player.iife.js`.
 
 ---
 
@@ -7068,7 +7068,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.120.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.121.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed
@@ -8501,7 +8501,8 @@ lesson page (`<figure data-tinyfly-math>`), an explorable and a video
 `contours`, `heatmap` (`softmax: true` for attention), `classifier` (`epochs`), `kmeans`
 (`iteration`); all seeded. For a presenter, `mathSurface(figure, { x, y })` gives the
 figure anchors (`tip:basis.i`, `item:ID`, `term:ID:TEXT`, `node:GRAPH:NODE`) and edits
-(`set` with `value`, `step` with `to`, `drawOn`) for `surfaceScript` beats. See `docs/math.md`.
+(`set` with `value`, `step` with `to`, `drawOn`) for `surfaceScript` beats. A 3D loss
+surface: `lossSurface3D({ expr, start, rate })` returns scene-3d JSON and tracks. See `docs/math.md`.
 
 ## Your own behaviours
 
@@ -8688,7 +8689,7 @@ path for all of that:
 </figure>
 
 <!-- once, anywhere on the page (a site-wide footer is fine) -->
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.120.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.121.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 Every `[data-tinyfly-embed]` mounts when the page is ready, with no per-post
@@ -9158,6 +9159,26 @@ every time:
   pre-mixed with the background, so neighbours never leave seams. Contours are
   traced by marching squares and joined into whole curves.
 
+#### A loss surface in 3D
+
+`lossSurface3D({ expr, start, rate, momentum?, steps?, region?, height?, orbit? })`
+builds f(x, y) as a 3D scene for `@algorisys/tinyfly/scene-3d`. You get a mesh
+coloured by height, a ball rolling down the exact-gradient path, the path
+appearing behind it, and a slow camera orbit. It returns plain data:
+`{ scene, tracks, duration, path, losses }`. The maths module does not import
+scene-3d.
+
+```js
+import { lossSurface3D } from '@algorisys/tinyfly/math'
+import { loadScene3D, drawScene3D } from '@algorisys/tinyfly/scene-3d'
+import { deserializeTimeline } from '@algorisys/tinyfly'
+
+const loss = lossSurface3D({ expr: '(x^2 + 4 y^2) / 4 + sin(1.5 x) / 2', start: [-2.6, 2.2], rate: 0.18, momentum: 0.6 })
+const scene = loadScene3D(loss.scene)
+const timeline = deserializeTimeline({ id: 'loss', config: { duration: loss.duration }, tracks: loss.tracks })
+// each frame: drawScene3D(ctx, scene, timeline.getStateAtTime(t).values, { width, height })
+```
+
 The pieces are also available on their own: `seededNetwork`, `forward`,
 `descentPath`, `trainLogistic`, `kmeansHistory`, `contourLines`, `colorAt`.
 
@@ -9254,7 +9275,7 @@ lesson's step options (`duration`, `easing`, `delay`).
   <figcaption>The determinant is the area of the unit square after the map.</figcaption>
 </figure>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.120.0/cdn/tinyfly-math.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.121.0/cdn/tinyfly-math.iife.js" data-tinyfly-auto></script>
 ```
 
 The figure draws itself into an SVG and redraws from the timeline whenever the
@@ -9425,15 +9446,17 @@ identity unless `matrix` is given.
   **Derivative**, **Riemann Sums**, **Taylor Series**, **Galton Board**, **Central Limit
   Theorem**, **Monte Carlo π**, **Bayes: a Positive Test**, **Graph Search**, **Recursion
   Tree**, **Set Operations**, **Clock Arithmetic**, **Neural Network**, **Gradient Descent**,
-  **Decision Boundary**, **K-Means**, **Attention Weights** and **Maths Presenter**.
+  **Decision Boundary**, **K-Means**, **Attention Weights**, **Maths Presenter** and
+  **Loss Surface in 3D**.
 - Videos: `linear-map-short.mjs`, `riemann-short.mjs`, `galton-short.mjs`,
   `graph-search-short.mjs` and `gradient-descent-short.mjs` (9:16); `eigen-explainer.mjs`,
   `taylor-explainer.mjs`, `clt-explainer.mjs`, `de-morgan-explainer.mjs` and
-  `neural-network-explainer.mjs` (16:9), in `examples/headless-video/`.
+  `neural-network-explainer.mjs` (16:9); `loss-surface-3d.mjs` (16:9, with scene-3d), in
+  `examples/headless-video/`.
 
 ## Next
 
-A 3D view of a loss surface (with the scene-3d renderer) is planned. See `todo.md`.
+See `todo.md` for what is planned next.
 See `todo.md` for their status.
 
 ---
@@ -10386,8 +10409,8 @@ On a page with no build step, load the maps add-on after the browser bundle; it
 adds to the same `tinyfly` global:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.120.0/cdn/tinyfly.iife.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.120.0/cdn/tinyfly-maps.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.121.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.121.0/cdn/tinyfly-maps.iife.js"></script>
 ```
 
 It is a separate script because the offline world map it carries adds about
@@ -15616,7 +15639,7 @@ magnet.addEventListener('pointerleave', () => {
 
 <!-- capabilities: generated from the library -->
 
-# tinyfly capabilities (v0.120.0)
+# tinyfly capabilities (v0.121.0)
 
 Generated from the library itself: every name below is accepted, and names not listed are rejected (beat scripts, code panels and `checkTracks` say which name was probably meant).
 
@@ -16098,6 +16121,7 @@ A figure is JSON: a plane and items. Tracks on its target animate values by name
 - `mathTarget(spec, { x, y })`: a canvas target for videos and canvas pages; tracks animate its values and item props
 - `mathSteps(lesson, target, spec, { hidden })`: lesson steps: toValue, applyMatrix, drawOn, fadeIn, fadeOut, showStep (equations)
 - `mountMath(element) / mountAllMath()`: lesson-page embeds: <figure data-tinyfly-math> with data-tinyfly-figure and data-tinyfly-timeline JSON scripts, stepped like any embed
+- `lossSurface3D({ expr, start, rate, momentum?, steps?, orbit? })`: a loss surface as scene-3d JSON with a ball rolling down the descent path: { scene, tracks, duration, path, losses }
 - `mathSurface(figure, { x, y })`: a figure as a surface for surfaceScript: anchors box, item:ID, tip:ID, point:ID, node:GRAPH:NODE, term:ID:TEXT, value:NAME; edits drawOn, erase, show, hide, step, set
 - `mathExplorable(element, spec, { sliders, drag })`: reader-driven figures: sliders on number values, drag vector tips or matrix columns
 - `mathFigureToSvg(spec, props)`: a standalone SVG of a figure at some values

@@ -142,6 +142,26 @@ every time:
   pre-mixed with the background, so neighbours never leave seams. Contours are
   traced by marching squares and joined into whole curves.
 
+#### A loss surface in 3D
+
+`lossSurface3D({ expr, start, rate, momentum?, steps?, region?, height?, orbit? })`
+builds f(x, y) as a 3D scene for `@algorisys/tinyfly/scene-3d`. You get a mesh
+coloured by height, a ball rolling down the exact-gradient path, the path
+appearing behind it, and a slow camera orbit. It returns plain data:
+`{ scene, tracks, duration, path, losses }`. The maths module does not import
+scene-3d.
+
+```js
+import { lossSurface3D } from '@algorisys/tinyfly/math'
+import { loadScene3D, drawScene3D } from '@algorisys/tinyfly/scene-3d'
+import { deserializeTimeline } from '@algorisys/tinyfly'
+
+const loss = lossSurface3D({ expr: '(x^2 + 4 y^2) / 4 + sin(1.5 x) / 2', start: [-2.6, 2.2], rate: 0.18, momentum: 0.6 })
+const scene = loadScene3D(loss.scene)
+const timeline = deserializeTimeline({ id: 'loss', config: { duration: loss.duration }, tracks: loss.tracks })
+// each frame: drawScene3D(ctx, scene, timeline.getStateAtTime(t).values, { width, height })
+```
+
 The pieces are also available on their own: `seededNetwork`, `forward`,
 `descentPath`, `trainLogistic`, `kmeansHistory`, `contourLines`, `colorAt`.
 
@@ -238,7 +258,7 @@ lesson's step options (`duration`, `easing`, `delay`).
   <figcaption>The determinant is the area of the unit square after the map.</figcaption>
 </figure>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.120.0/cdn/tinyfly-math.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.121.0/cdn/tinyfly-math.iife.js" data-tinyfly-auto></script>
 ```
 
 The figure draws itself into an SVG and redraws from the timeline whenever the
@@ -409,13 +429,15 @@ identity unless `matrix` is given.
   **Derivative**, **Riemann Sums**, **Taylor Series**, **Galton Board**, **Central Limit
   Theorem**, **Monte Carlo π**, **Bayes: a Positive Test**, **Graph Search**, **Recursion
   Tree**, **Set Operations**, **Clock Arithmetic**, **Neural Network**, **Gradient Descent**,
-  **Decision Boundary**, **K-Means**, **Attention Weights** and **Maths Presenter**.
+  **Decision Boundary**, **K-Means**, **Attention Weights**, **Maths Presenter** and
+  **Loss Surface in 3D**.
 - Videos: `linear-map-short.mjs`, `riemann-short.mjs`, `galton-short.mjs`,
   `graph-search-short.mjs` and `gradient-descent-short.mjs` (9:16); `eigen-explainer.mjs`,
   `taylor-explainer.mjs`, `clt-explainer.mjs`, `de-morgan-explainer.mjs` and
-  `neural-network-explainer.mjs` (16:9), in `examples/headless-video/`.
+  `neural-network-explainer.mjs` (16:9); `loss-surface-3d.mjs` (16:9, with scene-3d), in
+  `examples/headless-video/`.
 
 ## Next
 
-A 3D view of a loss surface (with the scene-3d renderer) is planned. See `todo.md`.
+See `todo.md` for what is planned next.
 See `todo.md` for their status.

@@ -17,8 +17,8 @@ export function colorAt(map: Colormap, t: number): string {
   const u = Math.min(1, Math.max(0, Number.isFinite(t) ? t : 0)) * (stops.length - 1)
   const k = Math.min(stops.length - 2, Math.floor(u))
   const f = u - k
-  const [r, g, b] = stops[k].map((v, i) => Math.round(v + (stops[k + 1][i] - v) * f))
-  return `rgb(${r}, ${g}, ${b})`
+  // Hex, which every renderer reads (2D canvas, SVG and scene-3d's mesh colours).
+  return `#${stops[k].map((v, i) => Math.round(v + (stops[k + 1][i] - v) * f).toString(16).padStart(2, '0')).join('')}`
 }
 
 /** [r, g, b] from `#rgb`, `#rrggbb` or `rgb(r, g, b)`; undefined for anything else. */

@@ -280,7 +280,8 @@ lesson page (`<figure data-tinyfly-math>`), an explorable and a video
 `contours`, `heatmap` (`softmax: true` for attention), `classifier` (`epochs`), `kmeans`
 (`iteration`); all seeded. For a presenter, `mathSurface(figure, { x, y })` gives the
 figure anchors (`tip:basis.i`, `item:ID`, `term:ID:TEXT`, `node:GRAPH:NODE`) and edits
-(`set` with `value`, `step` with `to`, `drawOn`) for `surfaceScript` beats. See `docs/math.md`.
+(`set` with `value`, `step` with `to`, `drawOn`) for `surfaceScript` beats. A 3D loss
+surface: `lossSurface3D({ expr, start, rate })` returns scene-3d JSON and tracks. See `docs/math.md`.
 
 ## Your own behaviours
 

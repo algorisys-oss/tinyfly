@@ -67,7 +67,7 @@ describe('classification and clustering', () => {
 
 describe('colours', () => {
   it('maps 0..1 through a colormap and mixes over a background', () => {
-    expect(colorAt('viridis', 0)).toBe('rgb(68, 1, 84)')
+    expect(colorAt('viridis', 0)).toBe('#440154')
     expect(colorAt('viridis', 2)).toBe(colorAt('viridis', 1))
     expect(blendOver('#ffffff', '#000000', 0.5)).toBe('rgb(128, 128, 128)')
     expect(blendOver('rgb(10, 20, 30)', '#000', 1)).toBe('rgb(10, 20, 30)')

@@ -20888,6 +20888,7 @@ function h3(t, e = {}) {
         "mathTarget(spec, { x, y })": "a canvas target for videos and canvas pages; tracks animate its values and item props",
         "mathSteps(lesson, target, spec, { hidden })": "lesson steps: toValue, applyMatrix, drawOn, fadeIn, fadeOut, showStep (equations)",
         "mountMath(element) / mountAllMath()": "lesson-page embeds: <figure data-tinyfly-math> with data-tinyfly-figure and data-tinyfly-timeline JSON scripts, stepped like any embed",
+        "lossSurface3D({ expr, start, rate, momentum?, steps?, orbit? })": "a loss surface as scene-3d JSON with a ball rolling down the descent path: { scene, tracks, duration, path, losses }",
         "mathSurface(figure, { x, y })": "a figure as a surface for surfaceScript: anchors box, item:ID, tip:ID, point:ID, node:GRAPH:NODE, term:ID:TEXT, value:NAME; edits drawOn, erase, show, hide, step, set",
         "mathExplorable(element, spec, { sliders, drag })": "reader-driven figures: sliders on number values, drag vector tips or matrix columns",
         "mathFigureToSvg(spec, props)": "a standalone SVG of a figure at some values",
