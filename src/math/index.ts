@@ -44,6 +44,7 @@ export { displayListToSvg, displayListToSvgContent } from './render/display-list
 export { mathTarget, mathFigureProps, type MathCanvasTarget } from './targets/math-target'
 export { mathSteps, type MathSteps } from './steps/math-steps'
 export { mountMath, mountAllMath, type MountedMathFigure } from './embed/mount-math'
+export { mathSurface, MATH_SURFACE, type MathSurface, type MathSurfaceBox, type MathSurfaceEdit } from './surface/math-surface'
 export { mathExplorable, type MathExplorable, type ExplorableOptions, type SliderControl, type DragHandle } from './embed/explorable'
 export {
   linearMapFigure,

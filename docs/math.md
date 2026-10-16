@@ -238,7 +238,7 @@ lesson's step options (`duration`, `easing`, `delay`).
   <figcaption>The determinant is the area of the unit square after the map.</figcaption>
 </figure>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.119.1/cdn/tinyfly-math.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.120.0/cdn/tinyfly-math.iife.js" data-tinyfly-auto></script>
 ```
 
 The figure draws itself into an SVG and redraws from the timeline whenever the
@@ -295,6 +295,50 @@ Line widths and text sizes are given for a 600 px figure and scale with the
 figure's smaller side, so a figure reads the same as a 600 px card and as a
 1080×1920 short. `mathTarget()` is a canvas custom target: register it on any
 `CanvasAdapter` too, and `describeTarget` / `checkTracks` know its props.
+
+## Presenting with characters
+
+`mathSurface(figure, { x, y })` makes a figure a **surface**, the way a code
+panel, a whiteboard or a chart is one. Its places have names, so a character's
+beats can aim at them as plain data. Its edits change the figure when a beat
+says so, recorded on the figure's own props:
+
+```js
+import { linearMapFigure, mathSurface } from '@algorisys/tinyfly/math'
+import { surfaceScript } from '@algorisys/tinyfly/characters'
+
+const fig = mathSurface(linearMapFigure({ width: 400, height: 400 }), { x: 20, y: 20 })
+const on = (anchor) => ({ surface: 'fig', anchor })
+const result = surfaceScript('teacher', { fig }, [
+  { do: 'walk', to: 560 },
+  { do: 'point', target: on('tip:basis.j'), say: 'Now slide it over…',
+    then: { surface: 'fig', edit: 'set', anchor: 'value:M', value: [1, 1, 0, 1] } },
+  { do: 'point', target: on('item:square'), say: 'A shear: the area stays 1.' },
+], { from: 740, ground: 420, height: 190 })
+// result.tracks: the figure's and the teacher's tracks; draw fig.target with its props
+```
+
+| Anchor | Names |
+|---|---|
+| `box` | the whole figure |
+| `item:ID` | everything an item draws |
+| `tip:ID` | the tip of a vector (`tip:basis.i`, `tip:basis.j` for î and ĵ) |
+| `point:ID` | a point, including one riding a curve |
+| `node:GRAPH:NODE` | a node of a graph |
+| `term:ID:TEXT` | glyphs of an equation or label by their text (`term:eq:2x`; `term:eq#2:x` for the second) |
+| `value:NAME` | a value, for `set` (its box is the whole figure) |
+
+| Edit | Does |
+|---|---|
+| `drawOn`, `erase` | draws an item on, or off (`item:ID`) |
+| `show`, `hide` | fades an item in or out |
+| `step` | moves an equation to step `to`, terms gliding |
+| `set` | tweens a value to `value`: a number, `[x, y]` or `[a, b, c, d]` |
+
+Anchors are worked out from the figure as it is at that moment, so after a
+`set` warps the plane, `tip:basis.i` is where î has gone. Parts of a figure do
+not come loose: `piece`, `fling`, `follow` and `move` explain that edits are
+the way to change it.
 
 ## Equations
 
@@ -365,7 +409,7 @@ identity unless `matrix` is given.
   **Derivative**, **Riemann Sums**, **Taylor Series**, **Galton Board**, **Central Limit
   Theorem**, **Monte Carlo π**, **Bayes: a Positive Test**, **Graph Search**, **Recursion
   Tree**, **Set Operations**, **Clock Arithmetic**, **Neural Network**, **Gradient Descent**,
-  **Decision Boundary**, **K-Means** and **Attention Weights**.
+  **Decision Boundary**, **K-Means**, **Attention Weights** and **Maths Presenter**.
 - Videos: `linear-map-short.mjs`, `riemann-short.mjs`, `galton-short.mjs`,
   `graph-search-short.mjs` and `gradient-descent-short.mjs` (9:16); `eigen-explainer.mjs`,
   `taylor-explainer.mjs`, `clt-explainer.mjs`, `de-morgan-explainer.mjs` and
@@ -373,6 +417,5 @@ identity unless `matrix` is given.
 
 ## Next
 
-Characters can already stand beside a figure in a video; letting them point at
-named parts of it (a vector's tip, an equation term) is planned. See `todo.md`.
+A 3D view of a loss surface (with the scene-3d renderer) is planned. See `todo.md`.
 See `todo.md` for their status.

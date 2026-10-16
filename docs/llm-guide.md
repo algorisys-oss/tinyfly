@@ -278,7 +278,9 @@ lesson page (`<figure data-tinyfly-math>`), an explorable and a video
 `graph` (nodes with `at`, or `tree: { root }`; `search` stepped by `step`), `venn` (`highlight: "(A | B)'"`),
 `clock` (`modulus`, `value`). AI/ML: `network` (`flow`), `descent` (`steps`, exact gradient),
 `contours`, `heatmap` (`softmax: true` for attention), `classifier` (`epochs`), `kmeans`
-(`iteration`); all seeded. See `docs/math.md`.
+(`iteration`); all seeded. For a presenter, `mathSurface(figure, { x, y })` gives the
+figure anchors (`tip:basis.i`, `item:ID`, `term:ID:TEXT`, `node:GRAPH:NODE`) and edits
+(`set` with `value`, `step` with `to`, `drawOn`) for `surfaceScript` beats. See `docs/math.md`.
 
 ## Your own behaviours
 

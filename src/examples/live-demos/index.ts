@@ -62,6 +62,7 @@ import { gradientDescent } from './gradient-descent'
 import { decisionBoundary } from './decision-boundary'
 import { kMeans } from './k-means'
 import { attention } from './attention'
+import { mathPresenter } from './math-presenter'
 import { organicCharacters } from './organic-characters'
 import { cricketStory } from './cricket-story'
 import { handOver } from './hand-over'
@@ -158,6 +159,7 @@ import gradientDescentSource from './gradient-descent.js?raw'
 import decisionBoundarySource from './decision-boundary.js?raw'
 import kMeansSource from './k-means.js?raw'
 import attentionSource from './attention.js?raw'
+import mathPresenterSource from './math-presenter.js?raw'
 import organicCharactersSource from './organic-characters.js?raw'
 import cricketStorySource from './cricket-story.js?raw'
 import handOverSource from './hand-over.js?raw'
@@ -321,6 +323,7 @@ export const liveDemos: LiveDemoWithCode[] = [
   withCode(decisionBoundary, decisionBoundarySource),
   withCode(kMeans, kMeansSource),
   withCode(attention, attentionSource),
+  withCode(mathPresenter, mathPresenterSource),
   withCode(organicCharacters, organicCharactersSource),
   withCode(cricketStory, cricketStorySource),
   withCode(handOver, handOverSource),

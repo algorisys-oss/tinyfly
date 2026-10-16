@@ -591,7 +591,7 @@ with a GSAP-style call (durations are in seconds here):
 ```html
 <div class="box" style="width:60px;height:60px;background:#4a9eff"></div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.119.1/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.120.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -799,7 +799,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.119.1/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.120.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -2714,7 +2714,7 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.119.1/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.120.0/cdn/tinyfly-player.iife.js`.
 
 ---
 
@@ -7068,7 +7068,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.119.1/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.120.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed
@@ -8499,7 +8499,9 @@ lesson page (`<figure data-tinyfly-math>`), an explorable and a video
 `graph` (nodes with `at`, or `tree: { root }`; `search` stepped by `step`), `venn` (`highlight: "(A | B)'"`),
 `clock` (`modulus`, `value`). AI/ML: `network` (`flow`), `descent` (`steps`, exact gradient),
 `contours`, `heatmap` (`softmax: true` for attention), `classifier` (`epochs`), `kmeans`
-(`iteration`); all seeded. See `docs/math.md`.
+(`iteration`); all seeded. For a presenter, `mathSurface(figure, { x, y })` gives the
+figure anchors (`tip:basis.i`, `item:ID`, `term:ID:TEXT`, `node:GRAPH:NODE`) and edits
+(`set` with `value`, `step` with `to`, `drawOn`) for `surfaceScript` beats. See `docs/math.md`.
 
 ## Your own behaviours
 
@@ -8686,7 +8688,7 @@ path for all of that:
 </figure>
 
 <!-- once, anywhere on the page (a site-wide footer is fine) -->
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.119.1/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.120.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 Every `[data-tinyfly-embed]` mounts when the page is ready, with no per-post
@@ -9252,7 +9254,7 @@ lesson's step options (`duration`, `easing`, `delay`).
   <figcaption>The determinant is the area of the unit square after the map.</figcaption>
 </figure>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.119.1/cdn/tinyfly-math.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.120.0/cdn/tinyfly-math.iife.js" data-tinyfly-auto></script>
 ```
 
 The figure draws itself into an SVG and redraws from the timeline whenever the
@@ -9309,6 +9311,50 @@ Line widths and text sizes are given for a 600 px figure and scale with the
 figure's smaller side, so a figure reads the same as a 600 px card and as a
 1080×1920 short. `mathTarget()` is a canvas custom target: register it on any
 `CanvasAdapter` too, and `describeTarget` / `checkTracks` know its props.
+
+## Presenting with characters
+
+`mathSurface(figure, { x, y })` makes a figure a **surface**, the way a code
+panel, a whiteboard or a chart is one. Its places have names, so a character's
+beats can aim at them as plain data. Its edits change the figure when a beat
+says so, recorded on the figure's own props:
+
+```js
+import { linearMapFigure, mathSurface } from '@algorisys/tinyfly/math'
+import { surfaceScript } from '@algorisys/tinyfly/characters'
+
+const fig = mathSurface(linearMapFigure({ width: 400, height: 400 }), { x: 20, y: 20 })
+const on = (anchor) => ({ surface: 'fig', anchor })
+const result = surfaceScript('teacher', { fig }, [
+  { do: 'walk', to: 560 },
+  { do: 'point', target: on('tip:basis.j'), say: 'Now slide it over…',
+    then: { surface: 'fig', edit: 'set', anchor: 'value:M', value: [1, 1, 0, 1] } },
+  { do: 'point', target: on('item:square'), say: 'A shear: the area stays 1.' },
+], { from: 740, ground: 420, height: 190 })
+// result.tracks: the figure's and the teacher's tracks; draw fig.target with its props
+```
+
+| Anchor | Names |
+|---|---|
+| `box` | the whole figure |
+| `item:ID` | everything an item draws |
+| `tip:ID` | the tip of a vector (`tip:basis.i`, `tip:basis.j` for î and ĵ) |
+| `point:ID` | a point, including one riding a curve |
+| `node:GRAPH:NODE` | a node of a graph |
+| `term:ID:TEXT` | glyphs of an equation or label by their text (`term:eq:2x`; `term:eq#2:x` for the second) |
+| `value:NAME` | a value, for `set` (its box is the whole figure) |
+
+| Edit | Does |
+|---|---|
+| `drawOn`, `erase` | draws an item on, or off (`item:ID`) |
+| `show`, `hide` | fades an item in or out |
+| `step` | moves an equation to step `to`, terms gliding |
+| `set` | tweens a value to `value`: a number, `[x, y]` or `[a, b, c, d]` |
+
+Anchors are worked out from the figure as it is at that moment, so after a
+`set` warps the plane, `tip:basis.i` is where î has gone. Parts of a figure do
+not come loose: `piece`, `fling`, `follow` and `move` explain that edits are
+the way to change it.
 
 ## Equations
 
@@ -9379,7 +9425,7 @@ identity unless `matrix` is given.
   **Derivative**, **Riemann Sums**, **Taylor Series**, **Galton Board**, **Central Limit
   Theorem**, **Monte Carlo π**, **Bayes: a Positive Test**, **Graph Search**, **Recursion
   Tree**, **Set Operations**, **Clock Arithmetic**, **Neural Network**, **Gradient Descent**,
-  **Decision Boundary**, **K-Means** and **Attention Weights**.
+  **Decision Boundary**, **K-Means**, **Attention Weights** and **Maths Presenter**.
 - Videos: `linear-map-short.mjs`, `riemann-short.mjs`, `galton-short.mjs`,
   `graph-search-short.mjs` and `gradient-descent-short.mjs` (9:16); `eigen-explainer.mjs`,
   `taylor-explainer.mjs`, `clt-explainer.mjs`, `de-morgan-explainer.mjs` and
@@ -9387,8 +9433,7 @@ identity unless `matrix` is given.
 
 ## Next
 
-Characters can already stand beside a figure in a video; letting them point at
-named parts of it (a vector's tip, an equation term) is planned. See `todo.md`.
+A 3D view of a loss surface (with the scene-3d renderer) is planned. See `todo.md`.
 See `todo.md` for their status.
 
 ---
@@ -10341,8 +10386,8 @@ On a page with no build step, load the maps add-on after the browser bundle; it
 adds to the same `tinyfly` global:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.119.1/cdn/tinyfly.iife.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.119.1/cdn/tinyfly-maps.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.120.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.120.0/cdn/tinyfly-maps.iife.js"></script>
 ```
 
 It is a separate script because the offline world map it carries adds about
@@ -15571,7 +15616,7 @@ magnet.addEventListener('pointerleave', () => {
 
 <!-- capabilities: generated from the library -->
 
-# tinyfly capabilities (v0.119.1)
+# tinyfly capabilities (v0.120.0)
 
 Generated from the library itself: every name below is accepted, and names not listed are rejected (beat scripts, code panels and `checkTracks` say which name was probably meant).
 
@@ -16053,6 +16098,7 @@ A figure is JSON: a plane and items. Tracks on its target animate values by name
 - `mathTarget(spec, { x, y })`: a canvas target for videos and canvas pages; tracks animate its values and item props
 - `mathSteps(lesson, target, spec, { hidden })`: lesson steps: toValue, applyMatrix, drawOn, fadeIn, fadeOut, showStep (equations)
 - `mountMath(element) / mountAllMath()`: lesson-page embeds: <figure data-tinyfly-math> with data-tinyfly-figure and data-tinyfly-timeline JSON scripts, stepped like any embed
+- `mathSurface(figure, { x, y })`: a figure as a surface for surfaceScript: anchors box, item:ID, tip:ID, point:ID, node:GRAPH:NODE, term:ID:TEXT, value:NAME; edits drawOn, erase, show, hide, step, set
 - `mathExplorable(element, spec, { sliders, drag })`: reader-driven figures: sliders on number values, drag vector tips or matrix columns
 - `mathFigureToSvg(spec, props)`: a standalone SVG of a figure at some values
 - `linearMapFigure, determinantFigure, eigenFigure, vectorSumFigure, spanFigure`: ready linear algebra figures; the matrix is the value M

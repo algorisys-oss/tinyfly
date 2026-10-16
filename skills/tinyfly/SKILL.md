@@ -178,7 +178,9 @@ names.
   `galton`, `scatter`, `bayes`; distributions are data and samples are seeded.
   Discrete: `graph` (searches stepped by `step`), `venn` (set expressions),
   `clock`. AI/ML: `network`, `heatmap`, `contours`, `descent`, `classifier`,
-  `kmeans`, each stepped by one value. See `docs/math.md`.
+  `kmeans`, each stepped by one value. A presenter: `mathSurface(figure, { x, y })`
+  for `surfaceScript` (anchors `tip:ID`, `item:ID`, `term:ID:TEXT`; edits `set`,
+  `step`, `drawOn`). See `docs/math.md`.
 
 ## 3. Check
 

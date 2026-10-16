@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.120.0](v0.120.0.md) | 2026-10-16 | Characters present maths figures: `mathSurface` anchors and edits for `surfaceScript` |
 | [v0.119.1](v0.119.1.md) | 2026-10-16 | ML figures treat a NaN or infinite epochs / iteration / steps / flow as 0 |
 | [v0.119.0](v0.119.0.md) | 2026-10-16 | Maths animations: AI/ML (neural networks, gradient descent, attention heatmaps, decision boundaries, k-means) |
 | [v0.118.0](v0.118.0.md) | 2026-10-16 | Maths animations: discrete maths (graph searches, recursion trees, Venn diagrams, clock arithmetic) |
