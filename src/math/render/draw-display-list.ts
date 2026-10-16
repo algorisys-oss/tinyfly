@@ -13,6 +13,22 @@ function drawShape(ctx: CanvasRenderingContext2D, shape: Shape): void {
   switch (shape.type) {
     case 'line':
       if (shape.points.length < 2) return
+      if (shape.clip?.length) {
+        ctx.save()
+        for (const { points, outside } of shape.clip) {
+          trace(ctx, points, true)
+          if (outside) {
+            // A huge rectangle around it, filled even-odd: everything but the polygon.
+            ctx.rect(-1e6, -1e6, 2e6, 2e6)
+            ctx.clip('evenodd')
+          } else {
+            ctx.clip()
+          }
+        }
+        drawShape(ctx, { ...shape, clip: undefined })
+        ctx.restore()
+        return
+      }
       trace(ctx, shape.points, shape.closed)
       if (shape.fill) {
         ctx.fillStyle = shape.fill

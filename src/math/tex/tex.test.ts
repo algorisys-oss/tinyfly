@@ -14,6 +14,9 @@ describe('parseTex', () => {
     expect(texts('\\sin x + \\text{area}')).toBe('sinx+area')
     expect(texts('\\begin{pmatrix} 1 & 2 \\\\ 3 & 4 \\end{pmatrix}')).toBe('1234')
     expect(texts("f'(x)")).toBe('f′(x)')
+    expect(texts('A \\triangle B \\cup \\varnothing')).toBe('A△B∪∅')
+    expect(texts('\\binom{n}{k}')).toBe('(nk)')
+    expect(layoutTex('\\binom{n}{k}').pieces.some((p) => p.kind === 'rule')).toBe(false)
   })
 
   it('names the position of a mistake and suggests a command', () => {

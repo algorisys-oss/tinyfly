@@ -7,6 +7,9 @@ import { differentiate } from '../expr/differentiate'
 import { ITEM_KINDS, MATH_THEMES, type DistributionRef, type MathFigureSpec, type MathItem, type NumRef, type VecRef } from './figure-spec'
 import { distributionOf, scopeOf } from './item-context'
 import { distributionProblem, DISTRIBUTION_KINDS } from '../prob/distributions'
+import { SEARCH_KINDS } from '../discrete/graph-search'
+import { parseSetExpression, setNames } from '../discrete/set-expression'
+import { graphEdges, graphPositions } from './items/discrete'
 import { derivedValues } from './derived'
 
 /**
@@ -213,6 +216,51 @@ export function validateMathFigure(spec: MathFigureSpec): MathFigureSpec {
         number(item, 'prior', item.prior)
         number(item, 'truePositive', item.truePositive)
         number(item, 'falsePositive', item.falsePositive)
+        break
+      case 'graph': {
+        if (!Array.isArray(item.nodes) || item.nodes.length === 0) fail(`${item.id}.nodes needs at least one node`)
+        const nodeIds = item.nodes.map((node) => node.id)
+        if (new Set(nodeIds).size !== nodeIds.length) fail(`${item.id}: two nodes share an id`)
+        const known = (field: string, id: string) => {
+          if (!nodeIds.includes(id)) fail(`${item.id}.${field}: ${unknownName('node', id, nodeIds)}`)
+        }
+        if (!Array.isArray(item.edges)) fail(`${item.id}.edges must be an array`)
+        graphEdges(item).forEach((edge, k) => {
+          known(`edges[${k}]`, edge.from)
+          known(`edges[${k}]`, edge.to)
+          if (edge.weight !== undefined && !(edge.weight >= 0)) fail(`${item.id}.edges[${k}]: weights must be ≥ 0 (shortest paths need them)`)
+        })
+        if (item.tree) known('tree.root', item.tree.root)
+        const placed = graphPositions(item)
+        const unplaced = nodeIds.filter((id) => !placed.has(id))
+        if (unplaced.length) fail(`${item.id}: nodes ${unplaced.join(', ')} have no "at" and are not reached from the tree root`)
+        if (item.search) {
+          if (!SEARCH_KINDS.includes(item.search.kind)) fail(`${item.id}.search: ${unknownName('search', item.search.kind, SEARCH_KINDS)}`)
+          known('search.start', item.search.start)
+        }
+        number(item, 'step', item.step)
+        item.nodes.forEach((node) => node.label !== undefined && tex(item, `nodes.${node.id}.label`, node.label))
+        break
+      }
+      case 'venn': {
+        if (!Array.isArray(item.sets) || item.sets.length < 2 || item.sets.length > 3) fail(`${item.id}.sets: give two or three sets`)
+        const ids = item.sets.map((set) => set.id)
+        if (!ids.every((id) => /^[A-Za-z]\w*$/.test(id))) fail(`${item.id}.sets: ids must be names like A, B, Evens`)
+        if (item.highlight) {
+          try {
+            for (const name of setNames(parseSetExpression(item.highlight))) {
+              if (!ids.includes(name)) fail(`${item.id}.highlight: ${unknownName('set', name, ids)}`)
+            }
+          } catch (error) {
+            fail(`${item.id}.highlight: ${(error as Error).message}`)
+          }
+        }
+        item.sets.forEach((set) => set.label !== undefined && tex(item, `sets.${set.id}.label`, set.label))
+        break
+      }
+      case 'clock':
+        if (!Number.isInteger(item.modulus) || item.modulus < 2 || item.modulus > 60) fail(`${item.id}.modulus must be a whole number 2..60`)
+        number(item, 'value', item.value)
         break
       case 'taylor':
         expression(item, 'expr', item.expr, 'x')

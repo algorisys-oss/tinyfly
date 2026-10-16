@@ -176,7 +176,8 @@ names.
   (`h` makes a secant), `riemann`, `area`, `taylor`; animate `at` / `n` / `to` /
   `order` through number values. Probability: `histogram`, `distribution`,
   `galton`, `scatter`, `bayes`; distributions are data and samples are seeded.
-  See `docs/math.md`.
+  Discrete: `graph` (searches stepped by `step`), `venn` (set expressions),
+  `clock`. See `docs/math.md`.
 
 ## 3. Check
 

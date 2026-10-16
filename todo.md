@@ -1,4 +1,4 @@
-## Maths animations (`@algorisys/tinyfly/math`): linear algebra, calculus — v0.116.0; probability and statistics — v0.117.0
+## Maths animations (`@algorisys/tinyfly/math`): linear algebra, calculus — v0.116.0; probability and statistics — v0.117.0; discrete maths — v0.118.0
 
 - [x] Pure core: `vec2` / `mat2` (apply, multiply, determinant, inverse, real eigenpairs), a safe expression language (no `eval`; precedence, implicit multiplication, listed functions, position-naming errors).
 - [x] Built-in TeX subset: scripts, fractions, roots, accents, big operators with limits, named operators, Greek and symbols, p/b/v matrices, `\text`, `\color`, `\id` term names, `\val` live values; fixed glyph metrics (same layout in browsers, Workers and Node); did-you-mean errors.
@@ -13,7 +13,7 @@
 - [x] Calculus presets (tangent, secant, Riemann, area, Taylor, limit), gallery demos (Derivative, Riemann Sums explorable, Taylor Series), videos `riemann-short.mjs` (9:16) and `taylor-explainer.mjs` (16:9), docs and catalog. Values checked against hand calculations; desktop, phone and video stills visually checked.
 - [ ] Surface anchors so characters point at figure parts (`point:A`, `term:eq:x`).
 - [x] Milestone 3, probability and statistics: engine `randomNormal` / `shuffled`; distributions as data (normal, uniform, exponential, binomial, poisson, dice, mean of k) with density, mean, sd, support and seeded `samples`; items `histogram`, `distribution` (shaded probability), `galton`, `scatter` (Monte Carlo inside-test, least-squares fit), `bayes`; derived numbers; presets (normal, binomial, CLT, Galton, Monte Carlo π, regression, Bayes); demos (Galton Board, Central Limit Theorem, Monte Carlo π, Bayes: a Positive Test); videos `galton-short.mjs` (9:16), `clt-explainer.mjs` (16:9). Densities checked to integrate to 1 and match their means; desktop, phone and video stills checked.
-- [ ] Milestone 4: discrete maths (graphs with BFS/DFS, trees, sets and Venn, modular clocks).
+- [x] Milestone 4, discrete maths: graph searches as event data (BFS queue, DFS stack, Dijkstra open set and distances; neighbour order fixed by node order), tree layout, set expressions (`| & - ^ '` and `∪ ∩ ∖ △ ¬`) and their Venn cells; items `graph` (stepped searches, frontier strip, weights, directed arrows), `venn` (regions by clipping; display-list clip support in canvas and SVG with geometry-hashed ids), `clock`; presets (graph search, shortest path, Fibonacci recursion tree, Venn, clock); demos (Graph Search, Recursion Tree, Set Operations, Clock Arithmetic); videos `graph-search-short.mjs` (9:16), `de-morgan-explainer.mjs` (16:9). TeX gains `\\binom`, `\\triangle` and set/logic symbols; symbols render in a maths-symbol font stack (DejaVu fallback in Node).
 - [ ] Milestone 5: AI/ML (networks with flowing activations, gradient descent on a scene-3d loss surface, decision boundaries, k-means, attention heatmaps).
 
 ## Illustrated character look — v0.115.0

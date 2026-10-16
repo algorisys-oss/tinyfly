@@ -12,6 +12,16 @@
  */
 export const MATH_FONT = '"Latin Modern Math", "STIX Two Math", "Cambria Math", "Times New Roman", "Liberation Serif", "Noto Serif", Times, serif'
 
+/**
+ * Font for operators and symbols (∪ ∩ △ ∈ ≤ ∑ …): maths faces first, then
+ * DejaVu, whose serif and maths faces cover them where text serifs such as
+ * Liberation Serif do not. Letters, digits and Greek use MATH_FONT.
+ */
+export const MATH_SYMBOL_FONT = '"Latin Modern Math", "STIX Two Math", "Cambria Math", "DejaVu Math TeX Gyre", "DejaVu Serif", serif'
+
+/** The font a glyph is drawn in: MATH_FONT for letters, digits and Greek, MATH_SYMBOL_FONT for the rest. */
+export const fontFor = (text: string) => (/^[A-Za-z0-9\u0370-\u03ff.,;:!?()[\]'"/ ]+$/.test(text) ? MATH_FONT : MATH_SYMBOL_FONT)
+
 /** Height above the baseline of the maths axis (where fraction bars and − sit). */
 export const AXIS_HEIGHT = 0.25
 
@@ -36,6 +46,9 @@ export function advance(text: string): number {
   if ('{}'.includes(text)) return 0.5
   if ('|'.includes(text)) return 0.28
   if (',.;:!'.includes(text)) return 0.28
+  if ("'’‘".includes(text)) return 0.28
+  if ('-‐'.includes(text)) return 0.33
+  if ('′″'.includes(text)) return 0.3
   if ('+−=<>±×÷≤≥≠≈∼≡∝→←↔⇒⇔∈∉⊂⊃⊆⊇∪∩∧∨'.includes(text)) return 0.78
   if ('·∘'.includes(text)) return 0.28
   if ('∑∏'.includes(text)) return 1.05

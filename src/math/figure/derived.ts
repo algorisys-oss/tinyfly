@@ -8,6 +8,7 @@ import { bayesAreas } from '../prob/bayes'
 import { evaluate } from '../expr/evaluate'
 import { parseExpression } from '../expr/parse-expression'
 import { pointsSpec, sampleCount } from './items/probability'
+import { clockHour, searchState } from './items/discrete'
 
 /**
  * Numbers items work out from the figure's values, so TeX can show them with
@@ -119,6 +120,24 @@ export function derivedValues(items: MathItem[], values: Values, scope: Scope): 
         const prior = numOf(values, item.prior)
         const areas = bayesAreas(prior, numOf(values, item.truePositive), numOf(values, item.falsePositive))
         Object.assign(derived, { [`${item.id}.prior`]: prior, [`${item.id}.posterior`]: areas.posterior, [`${item.id}.positive`]: areas.positive, [`${item.id}.truePositive`]: areas.truePositive, [`${item.id}.falsePositive`]: areas.falsePositive })
+        break
+      }
+      case 'graph': {
+        const state = searchState(item, values)
+        if (state) {
+          derived[`${item.id}.visited`] = state.done
+          derived[`${item.id}.steps`] = state.events.length
+          if (item.search?.kind === 'dijkstra') {
+            // Every node's distance, ∞ until the search has found one.
+            const distances = state.events[state.done - 1]?.distances ?? {}
+            for (const node of item.nodes) derived[`${item.id}.d.${node.id}`] = distances[node.id] ?? Infinity
+          }
+        }
+        break
+      }
+      case 'clock': {
+        const value = numOf(values, item.value)
+        Object.assign(derived, { [`${item.id}.hour`]: clockHour(value, item.modulus), [`${item.id}.turns`]: Math.floor(Math.round(value) / item.modulus) })
         break
       }
       case 'taylor':

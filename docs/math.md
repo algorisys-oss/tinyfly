@@ -83,6 +83,9 @@ Some names are reserved, because a track on them would move the whole figure:
 | `galton` | `rows?`, `balls` (fractional: the next ball on its way), `spacing?`, `top?`, `seed?` |
 | `scatter` | `points: { kind: 'uniform', x, y }` or `{ kind: 'linear', slope, intercept, noise, x }`, `count`, `inside?` (an expression in x and y, true when ≤ 0), `fit?`, `seed?` |
 | `bayes` | `prior`, `truePositive`, `falsePositive`, `at?`, `size?`, `labels?` |
+| `graph` | `nodes: [{ id, at?, label? }]`, `edges` (`[from, to, weight?]` or objects), `directed?`, `tree?: { root, spacing?, at? }`, `search?: { kind: 'bfs' \| 'dfs' \| 'dijkstra', start }`, `step?`, `frontier?` (screen px), `weights?`, `radius?` |
+| `venn` | `sets` (two or three `{ id, label?, color? }`), `highlight?` (a set expression), `highlightColor?`, `at?`, `radius?`, `universe?` |
+| `clock` | `modulus`, `value`, `at?`, `radius?` |
 
 `point` also rides a curve: `{ on: 'sin(x)', x: 'p' }` is the point (p, sin p), and
 `hollow: true` draws an open circle for a hole or a limit. `function` takes
@@ -108,6 +111,23 @@ Items work out numbers that TeX can show with `\val{…}`:
 | `galton` | `ID.landed` |
 | `scatter` | `ID.count`, `ID.inside`, `ID.ratio`, `ID.slope`, `ID.intercept`, `ID.r` |
 | `bayes` | `ID.prior`, `ID.posterior`, `ID.positive`, `ID.truePositive`, `ID.falsePositive` |
+| `graph` with a search | `ID.visited`, `ID.steps`, and for Dijkstra `ID.d.NODE` (∞ until known) |
+| `clock` | `ID.hour` (value mod modulus), `ID.turns` |
+
+### Graphs, searches and sets
+
+A search is shown step by step: `step` counts the nodes finished, and its
+fractional part draws the edge the search is crossing to the next one. Finished
+nodes are yellow; nodes waiting in the queue (breadth first), the stack (depth
+first) or the open set (Dijkstra) are blue; yellow edges are how each node was
+reached. Neighbours are taken in the order the nodes are listed, so a search
+always tells the same story (`searchEvents` returns it as data). A tree lays
+itself out from its root when nodes have no `at` (`treeLayout`), which is how
+`recursionTreeFigure` draws the calls a recursive function makes.
+
+Venn regions are set expressions: `A | B`, `A & B`, `A - B`, `A ^ B`, `A'` (or
+`!A`), with brackets; `∪ ∩ ∖ △ ¬` work too. Each cell of the region is drawn as
+the universe clipped inside and outside the circles, the same in canvas and SVG.
 
 ### Distributions and randomness
 
@@ -187,7 +207,7 @@ lesson's step options (`duration`, `easing`, `delay`).
   <figcaption>The determinant is the area of the unit square after the map.</figcaption>
 </figure>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.117.0/cdn/tinyfly-math.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.118.0/cdn/tinyfly-math.iife.js" data-tinyfly-auto></script>
 ```
 
 The figure draws itself into an SVG and redraws from the timeline whenever the
@@ -253,9 +273,9 @@ Equations are typeset by a built-in TeX subset, with no KaTeX or MathJax:
 - `\sum`, `\prod` and `\int`, with limits above and below in display style
 - Named operators: `\sin \cos \tan \log \ln \exp \det \lim \max \min` …
 - Greek letters
-- Symbols: `\cdot \times \pm \le \ge \ne \approx \to \infty \partial \nabla \in` …
+- Symbols: `\cdot \times \pm \le \ge \ne \approx \to \infty \partial \nabla \in \cup \cap \triangle \varnothing` …
 - Matrices: `\begin{pmatrix|bmatrix|vmatrix|matrix} … \end{…}`
-- `\text{…}`, `\color{name}{…}`, and spacing `\, \; \quad`
+- `\binom{n}{k}`, `\text{…}`, `\color{name}{…}`, and spacing `\, \; \quad`
 - `\left( … \right)`, with delimiters at their natural size
 - `\id{name}{…}`, which names a term
 - `\val{name}` and `\val{name:digits}` for live values
@@ -293,6 +313,11 @@ their own.
 | `monteCarloPiFigure({ count })` | Points in a square; the share inside the circle ≈ π/4 |
 | `regressionFigure({ slope, intercept, noise, count })` | Noisy points and the least-squares line |
 | `bayesFigure({ prior, sensitivity, falsePositive })` | A medical test as areas: P(condition given a positive) |
+| `graphSearchFigure({ search, start })` | Breadth- or depth-first search on a sample graph, with its queue or stack (`step`) |
+| `shortestPathFigure({ start, target })` | Dijkstra on the weighted sample graph, distances shown (`step`) |
+| `recursionTreeFigure({ n })` | The call tree of naive recursive Fibonacci, in call order (`step`) |
+| `vennFigure({ sets, highlight, label })` | Two or three sets with a region shaded |
+| `clockFigure({ modulus, value })` | Clock arithmetic (`value`) |
 
 Each returns a plain figure to change or extend. In each, `M` starts at the
 identity unless `matrix` is given.
@@ -301,13 +326,14 @@ identity unless `matrix` is given.
 
 - Gallery: **Linear Map**, **Eigenvectors**, **Equation Steps**, **Matrix Lesson**,
   **Derivative**, **Riemann Sums**, **Taylor Series**, **Galton Board**, **Central Limit
-  Theorem**, **Monte Carlo π** and **Bayes: a Positive Test**.
-- Videos: `linear-map-short.mjs`, `riemann-short.mjs` and `galton-short.mjs` (9:16);
-  `eigen-explainer.mjs`, `taylor-explainer.mjs` and `clt-explainer.mjs` (16:9), in
-  `examples/headless-video/`.
+  Theorem**, **Monte Carlo π**, **Bayes: a Positive Test**, **Graph Search**, **Recursion
+  Tree**, **Set Operations** and **Clock Arithmetic**.
+- Videos: `linear-map-short.mjs`, `riemann-short.mjs`, `galton-short.mjs` and
+  `graph-search-short.mjs` (9:16); `eigen-explainer.mjs`, `taylor-explainer.mjs`,
+  `clt-explainer.mjs` and `de-morgan-explainer.mjs` (16:9), in `examples/headless-video/`.
 
 ## Next
 
-Discrete maths (graphs, trees, sets) and AI/ML (networks, gradient descent on
-a loss surface) build on the same figure model.
+AI/ML (networks with flowing activations, gradient descent on a loss surface,
+decision boundaries) builds on the same figure model.
 See `todo.md` for their status.

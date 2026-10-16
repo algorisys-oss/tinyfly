@@ -10,6 +10,7 @@ import { layoutEquation, layoutLabel } from './items/text'
 import { layoutArea, layoutRiemann, layoutTangent, layoutTaylor } from './items/calculus'
 import { derivedValues } from './derived'
 import { layoutBayes, layoutDistribution, layoutGalton, layoutHistogram, layoutScatter } from './items/probability'
+import { layoutClock, layoutGraph, layoutVenn } from './items/discrete'
 
 /**
  * Animated values for a figure, as a timeline writes them on its target:
@@ -39,6 +40,9 @@ function layoutItem(item: MathItem, ctx: ItemContext): Shape[] {
     case 'galton': return layoutGalton(item, ctx)
     case 'scatter': return layoutScatter(item, ctx)
     case 'bayes': return layoutBayes(item, ctx)
+    case 'graph': return layoutGraph(item, ctx)
+    case 'venn': return layoutVenn(item, ctx)
+    case 'clock': return layoutClock(item, ctx)
   }
 }
 

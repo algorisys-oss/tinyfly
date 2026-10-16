@@ -1,6 +1,6 @@
 import type { Vec2 } from '../linear/vec2'
 import type { TexLayout, TexPiece } from '../tex/tex-layout'
-import { MATH_FONT } from '../tex/glyph-metrics'
+import { fontFor } from '../tex/glyph-metrics'
 
 /**
  * What a figure looks like at one moment, as plain shapes in screen pixels
@@ -19,6 +19,11 @@ export type Shape =
       fill?: string
       opacity?: number
       dash?: number[]
+      /**
+       * Draw only inside every one of these polygons (or, with `outside`,
+       * only outside it): how a Venn diagram shades A ∩ B or A − B.
+       */
+      clip?: { points: Vec2[]; outside?: boolean }[]
     }
   | {
       type: 'arrow'
@@ -142,7 +147,7 @@ export function texPiecesToShapes(
     if (piece.kind === 'glyph') {
       return {
         type: 'text', id, text: piece.text, x: ox + (piece.x + piece.width / 2) * s, y: oy + piece.y * s,
-        size: piece.size * s, font: MATH_FONT, italic: piece.italic, color, align: 'center', opacity,
+        size: piece.size * s, font: fontFor(piece.text), italic: piece.italic, color, align: 'center', opacity,
       }
     }
     if (piece.kind === 'rule') {

@@ -1,4 +1,5 @@
 import type { Vec2 } from '../linear/vec2'
+import type { SearchKind } from '../discrete/graph-search'
 
 /**
  * A maths figure as plain JSON: a coordinate plane and the items drawn on it.
@@ -327,11 +328,68 @@ export interface BayesItem extends ItemBase {
   labels?: boolean
 }
 
+/** A node of a graph: where it is (world units; optional when the graph is a tree) and its TeX label (default its id). */
+export interface GraphNode {
+  id: string
+  at?: Vec2
+  label?: string
+}
+
+/** An edge: `{ from, to, weight? }` or the shorthand `[from, to]` / `[from, to, weight]`. */
+export type GraphEdgeSpec = { from: string; to: string; weight?: number } | [string, string] | [string, string, number]
+
+/** Nodes and edges, optionally searched step by step (breadth first, depth first, or shortest paths). */
+export interface GraphItem extends ItemBase {
+  kind: 'graph'
+  nodes: GraphNode[]
+  edges: GraphEdgeSpec[]
+  /** Arrows instead of lines; searches follow edge direction (default false) */
+  directed?: boolean
+  /** Lay the nodes out as a tree from `root`, top down (`spacing` [across, down] world units, `at` the root) */
+  tree?: { root: string; spacing?: [number, number]; at?: Vec2 }
+  /** The search to show */
+  search?: { kind: SearchKind; start: string }
+  /** How many search steps are done; the fractional part is the next node being reached (default all) */
+  step?: NumRef
+  /** Show the queue / stack / open set as a row of labels, at this screen position (px) */
+  frontier?: Vec2
+  /** Show edge weights (default: when a shortest-path search is shown) */
+  weights?: boolean
+  /** Node radius, px at a 600 px figure (default 18) */
+  radius?: number
+}
+
+/** Two or three sets as circles, with a set expression shaded: `A & B`, `(A | B)'`, `A ^ B`. */
+export interface VennItem extends ItemBase {
+  kind: 'venn'
+  sets: { id: string; label?: string; color?: string }[]
+  /** The region to shade, a set expression over the set ids */
+  highlight?: string
+  highlightColor?: string
+  /** Centre, world units (default the origin) */
+  at?: Vec2
+  /** Circle radius, world units (default 1.5) */
+  radius?: number
+  /** Draw the universe as a box around them (default true) */
+  universe?: boolean
+}
+
+/** A clock of `modulus` hours: clock arithmetic. The hand points at `value` mod `modulus`, gliding between hours. */
+export interface ClockItem extends ItemBase {
+  kind: 'clock'
+  modulus: number
+  value: NumRef
+  at?: Vec2
+  /** World units (default 2) */
+  radius?: number
+}
+
 export type MathItem =
   | GridItem | AxesItem | VectorItem | BasisItem | PointItem | FunctionItem
   | ParametricItem | PolygonItem | LineItem | LabelItem | EquationItem
   | TangentItem | RiemannItem | AreaItem | TaylorItem
   | HistogramItem | DistributionItem | GaltonItem | ScatterItem | BayesItem
+  | GraphItem | VennItem | ClockItem
 
 export type MathItemKind = MathItem['kind']
 
@@ -339,6 +397,7 @@ export const ITEM_KINDS: readonly MathItemKind[] = [
   'grid', 'axes', 'vector', 'basis', 'point', 'function', 'parametric', 'polygon', 'line', 'label', 'equation',
   'tangent', 'riemann', 'area', 'taylor',
   'histogram', 'distribution', 'galton', 'scatter', 'bayes',
+  'graph', 'venn', 'clock',
 ]
 
 export type MathThemeName = 'dark' | 'light' | 'chalk'

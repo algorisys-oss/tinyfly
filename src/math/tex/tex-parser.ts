@@ -6,7 +6,7 @@ import { closestName } from '../../engine/authoring/did-you-mean'
  * Supported:
  * - Letters (italic), digits, `+ - = < > ( ) [ ] | , . ; : ! '`
  * - `^` and `_` with a single token or a `{group}`
- * - `\frac{a}{b}`, `\sqrt{x}`, `\vec{v}`, `\hat{x}`, `\bar{x}`
+ * - `\frac{a}{b}`, `\binom{n}{k}`, `\sqrt{x}`, `\vec{v}`, `\hat{x}`, `\bar{x}`
  * - Big operators `\sum \prod \int` (limits from `_` and `^`), and named
  *   operators `\sin \cos \tan \log \ln \exp \det \lim \max \min \arg`
  * - Greek letters and the symbols in SYMBOLS (`\cdot \times \le \to \infty` …)
@@ -26,7 +26,7 @@ export type TexNode =
   | { type: 'symbol'; text: string; cls: TexClass; italic: boolean }
   | { type: 'group'; body: TexNode[] }
   | { type: 'scripts'; base: TexNode; sup?: TexNode; sub?: TexNode }
-  | { type: 'frac'; num: TexNode; den: TexNode }
+  | { type: 'frac'; num: TexNode; den: TexNode; bar?: boolean }
   | { type: 'sqrt'; body: TexNode }
   | { type: 'accent'; accent: 'vec' | 'hat' | 'bar'; body: TexNode }
   | { type: 'bigop'; text: string; limits: boolean }
@@ -49,6 +49,8 @@ const GREEK: Record<string, string> = {
 export const SYMBOLS: Record<string, [string, TexClass]> = {
   cdot: ['·', 'bin'], times: ['×', 'bin'], div: ['÷', 'bin'], pm: ['±', 'bin'], mp: ['∓', 'bin'], circ: ['∘', 'bin'],
   cup: ['∪', 'bin'], cap: ['∩', 'bin'], land: ['∧', 'bin'], lor: ['∨', 'bin'], setminus: ['∖', 'bin'],
+  triangle: ['△', 'bin'], oplus: ['⊕', 'bin'], otimes: ['⊗', 'bin'], ominus: ['⊖', 'bin'], varnothing: ['∅', 'ord'], complement: ['∁', 'ord'],
+  nsubseteq: ['⊈', 'rel'], ni: ['∋', 'rel'], mapsfrom: ['↤', 'rel'], gets: ['←', 'rel'], vdash: ['⊢', 'rel'], models: ['⊨', 'rel'],
   le: ['≤', 'rel'], leq: ['≤', 'rel'], ge: ['≥', 'rel'], geq: ['≥', 'rel'], ne: ['≠', 'rel'], neq: ['≠', 'rel'],
   approx: ['≈', 'rel'], sim: ['∼', 'rel'], equiv: ['≡', 'rel'], propto: ['∝', 'rel'], to: ['→', 'rel'],
   rightarrow: ['→', 'rel'], leftarrow: ['←', 'rel'], mapsto: ['↦', 'rel'], Rightarrow: ['⇒', 'rel'],
@@ -84,7 +86,7 @@ export class TexError extends Error {
 /** Every command the parser knows, for "did you mean" messages and discovery. */
 export const TEX_COMMANDS = [
   ...Object.keys(GREEK), ...Object.keys(SYMBOLS), ...Object.keys(BIG_OPS), ...Object.keys(OP_NAMES), ...Object.keys(SPACES).filter((k) => k.length > 1),
-  'frac', 'sqrt', 'vec', 'hat', 'bar', 'text', 'color', 'id', 'val', 'begin', 'end', 'left', 'right',
+  'frac', 'binom', 'sqrt', 'vec', 'hat', 'bar', 'text', 'color', 'id', 'val', 'begin', 'end', 'left', 'right',
 ].sort()
 
 /** Parse a TeX string into a group node. */
@@ -209,6 +211,15 @@ export function parseTex(source: string): TexNode {
       switch (name) {
         case 'frac':
           return { type: 'frac', num: readArgument('numerator'), den: readArgument('denominator') }
+        case 'binom': {
+          // n over k with no bar, in brackets.
+          const top = readArgument('\\binom\'s top')
+          const bottom = readArgument('\\binom\'s bottom')
+          return {
+            type: 'group',
+            body: [{ type: 'symbol', text: '(', cls: 'open', italic: false }, { type: 'frac', num: top, den: bottom, bar: false }, { type: 'symbol', text: ')', cls: 'close', italic: false }],
+          }
+        }
         case 'sqrt':
           return { type: 'sqrt', body: readArgument('the square root\'s body') }
         case 'vec':

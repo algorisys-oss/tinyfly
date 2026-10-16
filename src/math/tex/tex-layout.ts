@@ -295,7 +295,7 @@ function layoutFrac(node: Extract<TexNode, { type: 'frac' }>, ctx: Context): Box
     depth: denY + den.depth,
     pieces: [
       ...shift(num, (width - num.width) / 2, numY),
-      { kind: 'rule', x: 0, y: -axis - rule / 2, width, height: rule, ...(ctx.color ? { color: ctx.color } : {}), id: nextId(ctx, 'frac') },
+      ...(node.bar === false ? [] : [{ kind: 'rule' as const, x: 0, y: -axis - rule / 2, width, height: rule, ...(ctx.color ? { color: ctx.color } : {}), id: nextId(ctx, 'frac') }]),
       ...shift(den, (width - den.width) / 2, denY),
     ],
   }

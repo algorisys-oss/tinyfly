@@ -53,6 +53,10 @@ import { galtonBoard } from './galton-board'
 import { centralLimit } from './central-limit'
 import { monteCarloPi } from './monte-carlo-pi'
 import { bayesTest } from './bayes-test'
+import { graphSearch } from './graph-search'
+import { recursionTree } from './recursion-tree'
+import { setOperations } from './set-operations'
+import { clockArithmetic } from './clock-arithmetic'
 import { organicCharacters } from './organic-characters'
 import { cricketStory } from './cricket-story'
 import { handOver } from './hand-over'
@@ -140,6 +144,10 @@ import galtonBoardSource from './galton-board.js?raw'
 import centralLimitSource from './central-limit.js?raw'
 import monteCarloPiSource from './monte-carlo-pi.js?raw'
 import bayesTestSource from './bayes-test.js?raw'
+import graphSearchSource from './graph-search.js?raw'
+import recursionTreeSource from './recursion-tree.js?raw'
+import setOperationsSource from './set-operations.js?raw'
+import clockArithmeticSource from './clock-arithmetic.js?raw'
 import organicCharactersSource from './organic-characters.js?raw'
 import cricketStorySource from './cricket-story.js?raw'
 import handOverSource from './hand-over.js?raw'
@@ -294,6 +302,10 @@ export const liveDemos: LiveDemoWithCode[] = [
   withCode(centralLimit, centralLimitSource),
   withCode(monteCarloPi, monteCarloPiSource),
   withCode(bayesTest, bayesTestSource),
+  withCode(graphSearch, graphSearchSource),
+  withCode(recursionTree, recursionTreeSource),
+  withCode(setOperations, setOperationsSource),
+  withCode(clockArithmetic, clockArithmeticSource),
   withCode(organicCharacters, organicCharactersSource),
   withCode(cricketStory, cricketStorySource),
   withCode(handOver, handOverSource),

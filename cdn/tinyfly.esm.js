@@ -20894,6 +20894,8 @@ function h3(t, e = {}) {
         "tangentFigure, secantFigure, riemannFigure, areaFigure, taylorFigure, limitFigure": "ready calculus figures; their moving parts are number values (a, h, n, b, order, p)",
         "differentiate / compileDerivative / integrate": "exact symbolic derivatives of expressions; Simpson integration",
         "normalFigure, binomialFigure, cltFigure, galtonFigure, monteCarloPiFigure, regressionFigure, bayesFigure": "ready probability and statistics figures",
+        "graphSearchFigure, shortestPathFigure, recursionTreeFigure, vennFigure, clockFigure": "ready discrete maths figures; searches move with the value step",
+        "searchEvents / parseSetExpression / regionCells": "graph searches as data; set expressions and their Venn cells",
         distributions: "{ kind: normal | uniform | exponential | binomial | poisson | dice | mean, …numbers or value names }; density, meanOf, sdOf, samples (seeded)",
         "layoutTex(tex) / morphEquation(a, b, t)": "the built-in TeX subset, and term-by-term transitions",
         "vec2, mat2": "2D vectors and 2×2 matrices (apply, multiply, determinant, inverse, eigen)"
@@ -20918,7 +20920,10 @@ function h3(t, e = {}) {
         distribution: "{ distribution, shade?: [a, b] }: a density curve (bars when discrete); \\val{ID.p}",
         galton: "{ rows?, balls, spacing?, top?, seed? }: a Galton board; fractional balls = the next one falling",
         scatter: "{ points: uniform | linear, count, inside?, fit?, seed? }: Monte Carlo and regression; \\val{ID.ratio}, \\val{ID.r}",
-        bayes: "{ prior, truePositive, falsePositive }: Bayes as areas; \\val{ID.posterior}"
+        bayes: "{ prior, truePositive, falsePositive }: Bayes as areas; \\val{ID.posterior}",
+        graph: "{ nodes, edges, directed?, tree?, search?: { kind: bfs | dfs | dijkstra, start }, step?, frontier? }: searches step by step",
+        venn: "{ sets (2 or 3), highlight?: set expression like (A | B)' }: shaded by clipping",
+        clock: "{ modulus, value }: clock arithmetic; \\val{ID.hour}"
       },
       props: {
         NAME: "a value: a number, [x, y] vector or [a, b, c, d] matrix (row by row; columns are where î and ĵ land)",

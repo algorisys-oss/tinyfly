@@ -1,6 +1,7 @@
 import type { Vec2 } from '../linear/vec2'
 import type { DisplayList, Shape } from '../figure/display-list'
 import { arrowGeometry } from './arrow'
+import { hashSeed } from '../../engine/authoring/random'
 
 /** Two decimals: plenty for screen pixels, and keeps the markup small. */
 const n = (v: number) => String(Math.round(v * 100) / 100)
@@ -12,10 +13,23 @@ const pathOf = (points: Vec2[], closed = false) =>
 
 const opacityOf = (shape: Shape) => (shape.opacity !== undefined && shape.opacity < 1 ? ` opacity="${n(shape.opacity)}"` : '')
 
+
 function shapeToSvg(shape: Shape): string {
   switch (shape.type) {
     case 'line': {
       if (shape.points.length < 2) return ''
+      if (shape.clip?.length) {
+        // Nested groups, one clip path each; an outside clip is the polygon cut from a huge rectangle.
+        const clips = shape.clip.map(({ points, outside }) => {
+          const d = outside ? `M-1000000 -1000000H1000000V1000000H-1000000Z${pathOf(points, true)}` : pathOf(points, true)
+          // Named by its geometry: the same output every time, and two figures on one page
+          // share an id only when their clip shapes are identical.
+          const id = `tfclip${hashSeed(`${outside ? 'o' : 'i'}${d}`).toString(36)}`
+          return { id, def: `<clipPath id="${id}"><path d="${d}"${outside ? ' clip-rule="evenodd"' : ''}/></clipPath>` }
+        })
+        const inner = shapeToSvg({ ...shape, clip: undefined })
+        return `<defs>${clips.map((c) => c.def).join('')}</defs>` + clips.reduceRight((body, c) => `<g clip-path="url(#${c.id})">${body}</g>`, inner)
+      }
       const fill = shape.fill ? ` fill="${escape(shape.fill)}"` : ' fill="none"'
       const stroke = shape.stroke && (shape.width ?? 1) > 0 ? ` stroke="${escape(shape.stroke)}" stroke-width="${n(shape.width ?? 1)}"` : ''
       const dash = shape.dash?.length ? ` stroke-dasharray="${shape.dash.map(n).join(' ')}"` : ''
