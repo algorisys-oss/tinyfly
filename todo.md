@@ -1,4 +1,4 @@
-## Maths animations (`@algorisys/tinyfly/math`): linear algebra, calculus — v0.116.0; probability and statistics — v0.117.0; discrete maths — v0.118.0; AI/ML — v0.119.0
+## Maths animations (`@algorisys/tinyfly/math`): linear algebra, calculus — v0.116.0; probability and statistics — v0.117.0; discrete maths — v0.118.0; AI/ML — v0.119.0 (CDN) / v0.119.1
 
 - [x] Pure core: `vec2` / `mat2` (apply, multiply, determinant, inverse, real eigenpairs), a safe expression language (no `eval`; precedence, implicit multiplication, listed functions, position-naming errors).
 - [x] Built-in TeX subset: scripts, fractions, roots, accents, big operators with limits, named operators, Greek and symbols, p/b/v matrices, `\text`, `\color`, `\id` term names, `\val` live values; fixed glyph metrics (same layout in browsers, Workers and Node); did-you-mean errors.

@@ -45,6 +45,12 @@ describe('ML items', () => {
     expect(of(shapes(figure), 'km.centroid')).toHaveLength(3)
   })
 
+  it('treats a non-finite count as 0 rather than failing', () => {
+    expect(() => shapes(decisionBoundaryFigure(), { epochs: Number.NaN })).not.toThrow()
+    expect(() => shapes(kmeansFigure(), { iteration: Number.POSITIVE_INFINITY })).not.toThrow()
+    expect(() => shapes(gradientDescentFigure(), { steps: Number.NaN })).not.toThrow()
+  })
+
   it('draws TeX colour names from the theme', () => {
     const [sigma] = of(shapes(activationFigure()), 'readout').filter((s) => s.type === 'text')
     expect(sigma.type === 'text' && sigma.color).toBe('#58c4dd') // the dark theme's blue, not CSS blue

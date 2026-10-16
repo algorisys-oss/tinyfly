@@ -20,6 +20,9 @@ const memo = <T>(cache: Map<string, T>, key: string, make: () => T): T => {
   return value
 }
 
+/** A value that counts something (epochs, steps, iterations): NaN or ±∞ count as 0. */
+const count = (v: number) => (Number.isFinite(v) ? v : 0)
+
 const view = (ctx: Pick<ItemContext, 'plane'>) => ({ x: ctx.plane.x, y: ctx.plane.y, w: ctx.plane.x[1] - ctx.plane.x[0], h: ctx.plane.y[1] - ctx.plane.y[0] })
 
 // ── network ────────────────────────────────────────────────────────────────
@@ -29,7 +32,7 @@ export function networkState(item: NetworkItem, values: Values) {
   const network = seededNetwork(item.layers, item.seed ?? item.id)
   const inputs = Array.from({ length: item.layers[0] }, (_, i) => (item.inputs?.[i] === undefined ? 0.5 : numOf(values, item.inputs[i])))
   const activations = forward(network, inputs, item.activation ?? 'sigmoid')
-  const flow = item.flow === undefined ? item.layers.length - 1 : Math.min(item.layers.length - 1, Math.max(0, numOf(values, item.flow)))
+  const flow = item.flow === undefined ? item.layers.length - 1 : Math.min(item.layers.length - 1, Math.max(0, count(numOf(values, item.flow))))
   return { network, activations, flow }
 }
 
@@ -201,7 +204,7 @@ export function descentState(item: DescentItem, values: Values, scope: Record<st
   const start = vecOf(values, item.start)
   const rate = numOf(values, item.rate)
   const momentum = item.momentum === undefined ? 0 : numOf(values, item.momentum)
-  const steps = Math.min(500, Math.max(0, numOf(values, item.steps)))
+  const steps = Math.min(500, Math.max(0, count(numOf(values, item.steps))))
   const numbers = Object.entries(scope).filter(([k]) => !k.includes('.'))
   const path = memo(PATHS, JSON.stringify([item.expr, start, rate, momentum, numbers]), () => descentPath(item.expr, start, rate, 500, momentum, scope))
   const whole = Math.min(path.length - 1, Math.floor(steps))
@@ -231,7 +234,7 @@ const TRAINING = new Map<string, { data: { point: Vec2; label: number }[]; model
 
 export function classifierState(item: ClassifierItem, values: Values) {
   const centres = item.centres ?? [[-1.5, -1], [1.5, 1]]
-  const epochs = Math.min(500, Math.max(0, numOf(values, item.epochs)))
+  const epochs = Math.min(500, Math.max(0, count(numOf(values, item.epochs))))
   const [w0, w1, b0] = item.start ?? [0.9, -1.1, 0.8]
   const { data, models } = memo(TRAINING, JSON.stringify([centres, item.count, item.spread, item.seed ?? item.id, item.rate, w0, w1, b0]), () => {
     const data = blobs(centres, item.count ?? 40, item.spread ?? 0.9, item.seed ?? item.id)
@@ -296,7 +299,7 @@ export function kmeansState(item: KMeansItem, values: Values) {
     const start = [...points].sort((a, b) => Math.hypot(a[0] - mean[0], a[1] - mean[1]) - Math.hypot(b[0] - mean[0], b[1] - mean[1])).slice(0, k)
     return { points, history: kmeansHistory(points, k, 20, start) }
   })
-  const iteration = Math.min(history.length - 1, Math.max(0, numOf(values, item.iteration)))
+  const iteration = Math.min(history.length - 1, Math.max(0, count(numOf(values, item.iteration))))
   const whole = Math.floor(iteration)
   const t = iteration - whole
   const centroids = history[whole].map((c, j) => lerp(c, history[Math.min(history.length - 1, whole + 1)][j], t))
