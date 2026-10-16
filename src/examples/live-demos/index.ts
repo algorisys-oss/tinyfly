@@ -57,6 +57,11 @@ import { graphSearch } from './graph-search'
 import { recursionTree } from './recursion-tree'
 import { setOperations } from './set-operations'
 import { clockArithmetic } from './clock-arithmetic'
+import { neuralNetwork } from './neural-network'
+import { gradientDescent } from './gradient-descent'
+import { decisionBoundary } from './decision-boundary'
+import { kMeans } from './k-means'
+import { attention } from './attention'
 import { organicCharacters } from './organic-characters'
 import { cricketStory } from './cricket-story'
 import { handOver } from './hand-over'
@@ -148,6 +153,11 @@ import graphSearchSource from './graph-search.js?raw'
 import recursionTreeSource from './recursion-tree.js?raw'
 import setOperationsSource from './set-operations.js?raw'
 import clockArithmeticSource from './clock-arithmetic.js?raw'
+import neuralNetworkSource from './neural-network.js?raw'
+import gradientDescentSource from './gradient-descent.js?raw'
+import decisionBoundarySource from './decision-boundary.js?raw'
+import kMeansSource from './k-means.js?raw'
+import attentionSource from './attention.js?raw'
 import organicCharactersSource from './organic-characters.js?raw'
 import cricketStorySource from './cricket-story.js?raw'
 import handOverSource from './hand-over.js?raw'
@@ -306,6 +316,11 @@ export const liveDemos: LiveDemoWithCode[] = [
   withCode(recursionTree, recursionTreeSource),
   withCode(setOperations, setOperationsSource),
   withCode(clockArithmetic, clockArithmeticSource),
+  withCode(neuralNetwork, neuralNetworkSource),
+  withCode(gradientDescent, gradientDescentSource),
+  withCode(decisionBoundary, decisionBoundarySource),
+  withCode(kMeans, kMeansSource),
+  withCode(attention, attentionSource),
   withCode(organicCharacters, organicCharactersSource),
   withCode(cricketStory, cricketStorySource),
   withCode(handOver, handOverSource),

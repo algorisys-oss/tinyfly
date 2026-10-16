@@ -9,6 +9,7 @@ import { evaluate } from '../expr/evaluate'
 import { parseExpression } from '../expr/parse-expression'
 import { pointsSpec, sampleCount } from './items/probability'
 import { clockHour, searchState } from './items/discrete'
+import { mlDerived } from './items/ml'
 
 /**
  * Numbers items work out from the figure's values, so TeX can show them with
@@ -140,6 +141,12 @@ export function derivedValues(items: MathItem[], values: Values, scope: Scope): 
         Object.assign(derived, { [`${item.id}.hour`]: clockHour(value, item.modulus), [`${item.id}.turns`]: Math.floor(Math.round(value) / item.modulus) })
         break
       }
+      case 'network':
+      case 'descent':
+      case 'classifier':
+      case 'kmeans':
+        Object.assign(derived, mlDerived(item, values, read))
+        break
       case 'taylor':
         derived[`${item.id}.order`] = Math.min(20, Math.max(0, numOf(values, item.order)))
         // The whole terms in so far (the order part way to the next counts as the one before).

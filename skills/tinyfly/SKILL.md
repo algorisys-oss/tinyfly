@@ -177,7 +177,8 @@ names.
   `order` through number values. Probability: `histogram`, `distribution`,
   `galton`, `scatter`, `bayes`; distributions are data and samples are seeded.
   Discrete: `graph` (searches stepped by `step`), `venn` (set expressions),
-  `clock`. See `docs/math.md`.
+  `clock`. AI/ML: `network`, `heatmap`, `contours`, `descent`, `classifier`,
+  `kmeans`, each stepped by one value. See `docs/math.md`.
 
 ## 3. Check
 

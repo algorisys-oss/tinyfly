@@ -1,5 +1,7 @@
 import type { Vec2 } from '../linear/vec2'
 import type { SearchKind } from '../discrete/graph-search'
+import type { Activation } from '../ml/network'
+import type { Colormap } from '../ml/colormap'
 
 /**
  * A maths figure as plain JSON: a coordinate plane and the items drawn on it.
@@ -384,12 +386,114 @@ export interface ClockItem extends ItemBase {
   radius?: number
 }
 
+/** A fully connected neural network; activations flow layer by layer as `flow` grows. */
+export interface NetworkItem extends ItemBase {
+  kind: 'network'
+  /** Nodes per layer, input first: [3, 4, 4, 2] */
+  layers: number[]
+  /** Seed for the weights (default the item id) */
+  seed?: number | string
+  activation?: Activation
+  /** Input values (numbers or value names; default 0.5 each) */
+  inputs?: NumRef[]
+  /** How far activations have flowed: 0 the inputs only, 1 the first hidden layer … (default all) */
+  flow?: NumRef
+  /** Centre and size, world units (default most of the view) */
+  at?: Vec2
+  size?: Vec2
+  /** TeX labels beside the input and output nodes */
+  labels?: { inputs?: string[]; outputs?: string[] }
+  /** Node radius, px at a 600 px figure (default 16) */
+  radius?: number
+}
+
+/** A grid of coloured cells: given values (attention weights) or a function of x and y. */
+export interface HeatmapItem extends ItemBase {
+  kind: 'heatmap'
+  /** Rows of values, top row first */
+  cells?: number[][]
+  /** Or a function of x and y, sampled over `region` */
+  expr?: string
+  region?: [[number, number], [number, number]]
+  /** Samples per side for `expr` (default 48) */
+  resolution?: number
+  /** Normalise each row with softmax first, as attention does */
+  softmax?: boolean
+  /** World bottom-left corner and size, for `cells` (default most of the view) */
+  at?: Vec2
+  size?: Vec2
+  /** Value range for the colours (default the cells' min and max) */
+  range?: [number, number]
+  colormap?: Colormap
+  rowLabels?: string[]
+  colLabels?: string[]
+  /** Write each value in its cell (default false) */
+  values?: boolean
+}
+
+/** Level curves of f(x, y). */
+export interface ContoursItem extends ItemBase {
+  kind: 'contours'
+  expr: string
+  /** How many levels between the sampled min and max (default 10), or the levels themselves */
+  levels?: number | number[]
+  region?: [[number, number], [number, number]]
+  resolution?: number
+  colormap?: Colormap
+  width?: number
+}
+
+/** Gradient descent on f(x, y) from `start`: `steps` taken so far (fractional: the next one under way). */
+export interface DescentItem extends ItemBase {
+  kind: 'descent'
+  expr: string
+  start: VecRef
+  rate: NumRef
+  steps: NumRef
+  momentum?: NumRef
+  width?: number
+}
+
+/** Logistic regression on two seeded clusters, trained epoch by epoch: the decision boundary moves into place. */
+export interface ClassifierItem extends ItemBase {
+  kind: 'classifier'
+  /** Cluster centres (default [[-1.5, -1], [1.5, 1]]) */
+  centres?: [Vec2, Vec2]
+  /** Points per cluster (default 40) */
+  count?: number
+  spread?: number
+  seed?: number | string
+  /** Epochs trained (fractional: part way to the next) */
+  epochs: NumRef
+  /** Learning rate (default 0.5) */
+  rate?: number
+  /** The model before training, [w₁, w₂, b] (default a deliberately wrong guess, so the boundary visibly turns into place) */
+  start?: [number, number, number]
+  /** Shade P(class) behind the points (default true) */
+  probability?: boolean
+}
+
+/** k-means on seeded clusters: points coloured by their nearest centroid, centroids moving each iteration. */
+export interface KMeansItem extends ItemBase {
+  kind: 'kmeans'
+  /** Where the true clusters are */
+  centres: Vec2[]
+  count?: number
+  spread?: number
+  seed?: number | string
+  /** How many centroids (default one per centre) */
+  k?: number
+  /** Iterations done (fractional: centroids part way to the next) */
+  iteration: NumRef
+}
+
 export type MathItem =
   | GridItem | AxesItem | VectorItem | BasisItem | PointItem | FunctionItem
   | ParametricItem | PolygonItem | LineItem | LabelItem | EquationItem
   | TangentItem | RiemannItem | AreaItem | TaylorItem
   | HistogramItem | DistributionItem | GaltonItem | ScatterItem | BayesItem
   | GraphItem | VennItem | ClockItem
+  | NetworkItem | HeatmapItem | ContoursItem | DescentItem | ClassifierItem | KMeansItem
 
 export type MathItemKind = MathItem['kind']
 
@@ -398,6 +502,7 @@ export const ITEM_KINDS: readonly MathItemKind[] = [
   'tangent', 'riemann', 'area', 'taylor',
   'histogram', 'distribution', 'galton', 'scatter', 'bayes',
   'graph', 'venn', 'clock',
+  'network', 'heatmap', 'contours', 'descent', 'classifier', 'kmeans',
 ]
 
 export type MathThemeName = 'dark' | 'light' | 'chalk'

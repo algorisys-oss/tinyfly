@@ -121,6 +121,8 @@ export interface TexPlacement {
   opacity?: number
   /** Prefixed to every piece's id, so several equations in one figure stay apart */
   idPrefix: string
+  /** Colour names TeX's \\color{…} may use (a theme's palette), mapped to CSS colours */
+  palette?: Record<string, string>
 }
 
 /** The origin (left edge, baseline) of a layout placed by `place`, in px. */
@@ -141,7 +143,7 @@ export function texPiecesToShapes(
   const s = place.size
   const base = place.opacity ?? 1
   return pieces.map((piece): Shape => {
-    const color = piece.color ?? place.color
+    const color = (piece.color && place.palette?.[piece.color]) ?? piece.color ?? place.color
     const opacity = base * (piece.opacity ?? 1)
     const id = `${place.idPrefix}${piece.id}`
     if (piece.kind === 'glyph') {

@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.119.0](v0.119.0.md) | 2026-10-16 | Maths animations: AI/ML (neural networks, gradient descent, attention heatmaps, decision boundaries, k-means) |
 | [v0.118.0](v0.118.0.md) | 2026-10-16 | Maths animations: discrete maths (graph searches, recursion trees, Venn diagrams, clock arithmetic) |
 | [v0.117.0](v0.117.0.md) | 2026-10-16 | Maths animations: probability and statistics (seeded histograms, distributions, Galton board, CLT, Monte Carlo π, regression, Bayes) |
 | [v0.116.0](v0.116.0.md) | 2026-10-16 | Maths animations: `@algorisys/tinyfly/math` with linear algebra, calculus, a built-in TeX subset, lesson embeds, explorables and videos |

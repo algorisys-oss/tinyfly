@@ -31,7 +31,7 @@ export function layoutLabel(item: LabelItem, ctx: ItemContext): Shape[] {
   const size = (item.size ?? 28) * ctx.plane.scale
   const color = colorOf(ctx.theme, item.color, ctx.theme.ink)
   // A label fades in rather than drawing on.
-  const place = { x, y, size, color, align: item.align, opacity: ctx.opacity * ctx.draw, idPrefix: `${item.id}.` }
+  const place = { x, y, size, color, align: item.align, opacity: ctx.opacity * ctx.draw, idPrefix: `${item.id}.`, palette: ctx.theme.colors }
   const layout = layoutTex(item.tex, { values: ctx.scope })
   const panel = item.backdrop ?? item.screen ?? false
   return [...(panel ? backdrop(item.id, [layout], place, ctx) : []), ...texToShapes(layout, place)]
@@ -45,7 +45,7 @@ export function layoutEquation(item: EquationItem, ctx: ItemContext): Shape[] {
   const step = Math.min(last, Math.max(0, ctx.prop('step') ?? item.step ?? 0))
   const from = Math.floor(step)
   const progress = step - from
-  const place = { x, y, size, color, align: item.align, opacity: ctx.opacity * ctx.draw, idPrefix: `${item.id}.` }
+  const place = { x, y, size, color, align: item.align, opacity: ctx.opacity * ctx.draw, idPrefix: `${item.id}.`, palette: ctx.theme.colors }
   const layoutOf = (k: number): TexLayout => layoutTex(item.steps[k], { values: ctx.scope })
   const panel = item.backdrop ?? item.screen ?? false
   if (progress === 0 || from >= last) {

@@ -276,7 +276,9 @@ lesson page (`<figure data-tinyfly-math>`), an explorable and a video
 (`histogram`, `distribution`, `galton`, `scatter`, `bayes`) take a distribution as data
 (`{ kind: 'normal', mean: 'mu', sd: 1 }`) and draw seeded samples, never `Math.random`. Discrete:
 `graph` (nodes with `at`, or `tree: { root }`; `search` stepped by `step`), `venn` (`highlight: "(A | B)'"`),
-`clock` (`modulus`, `value`). See `docs/math.md`.
+`clock` (`modulus`, `value`). AI/ML: `network` (`flow`), `descent` (`steps`, exact gradient),
+`contours`, `heatmap` (`softmax: true` for attention), `classifier` (`epochs`), `kmeans`
+(`iteration`); all seeded. See `docs/math.md`.
 
 ## Your own behaviours
 

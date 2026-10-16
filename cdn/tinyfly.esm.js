@@ -20896,6 +20896,7 @@ function h3(t, e = {}) {
         "normalFigure, binomialFigure, cltFigure, galtonFigure, monteCarloPiFigure, regressionFigure, bayesFigure": "ready probability and statistics figures",
         "graphSearchFigure, shortestPathFigure, recursionTreeFigure, vennFigure, clockFigure": "ready discrete maths figures; searches move with the value step",
         "searchEvents / parseSetExpression / regionCells": "graph searches as data; set expressions and their Venn cells",
+        "neuralNetworkFigure, gradientDescentFigure, attentionFigure, decisionBoundaryFigure, kmeansFigure, activationFigure": "ready AI/ML figures",
         distributions: "{ kind: normal | uniform | exponential | binomial | poisson | dice | mean, …numbers or value names }; density, meanOf, sdOf, samples (seeded)",
         "layoutTex(tex) / morphEquation(a, b, t)": "the built-in TeX subset, and term-by-term transitions",
         "vec2, mat2": "2D vectors and 2×2 matrices (apply, multiply, determinant, inverse, eigen)"
@@ -20923,7 +20924,13 @@ function h3(t, e = {}) {
         bayes: "{ prior, truePositive, falsePositive }: Bayes as areas; \\val{ID.posterior}",
         graph: "{ nodes, edges, directed?, tree?, search?: { kind: bfs | dfs | dijkstra, start }, step?, frontier? }: searches step by step",
         venn: "{ sets (2 or 3), highlight?: set expression like (A | B)' }: shaded by clipping",
-        clock: "{ modulus, value }: clock arithmetic; \\val{ID.hour}"
+        clock: "{ modulus, value }: clock arithmetic; \\val{ID.hour}",
+        network: "{ layers, activation?, inputs?, flow?, seed?, labels? }: a forward pass, layer by layer",
+        heatmap: "{ cells (softmax? per row) or expr in x, y; colormap?, rowLabels?, colLabels?, values? }: attention maps, loss fields",
+        contours: "{ expr in x, y, levels? }: level curves (marching squares)",
+        descent: "{ expr in x, y, start, rate, steps, momentum? }: gradient descent with an exact gradient",
+        classifier: "{ epochs, centres?, rate?, start? }: logistic regression training; \\val{ID.accuracy}",
+        kmeans: "{ centres, iteration, k? }: Lloyd iterations; \\val{ID.inertia}"
       },
       props: {
         NAME: "a value: a number, [x, y] vector or [a, b, c, d] matrix (row by row; columns are where î and ĵ land)",

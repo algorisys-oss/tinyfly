@@ -65,6 +65,8 @@ export const SYMBOLS: Record<string, [string, TexClass]> = {
 const BIG_OPS: Record<string, [string, boolean]> = { sum: ['∑', true], prod: ['∏', true], int: ['∫', false], oint: ['∮', false] }
 const OP_NAMES: Record<string, boolean> = {
   sin: false, cos: false, tan: false, log: false, ln: false, exp: false, det: false, tr: false, rank: false,
+  sinh: false, cosh: false, tanh: false, sec: false, csc: false, cot: false, arcsin: false, arccos: false, arctan: false,
+  gcd: false, lcm: false, deg: false, dim: false, ker: false, softmax: false,
   lim: true, max: true, min: true, argmax: true, argmin: true, arg: false, sup: true, inf: true, Pr: false, E: false, Var: false,
 }
 const SPACES: Record<string, number> = { ',': 3 / 18, ':': 4 / 18, ';': 5 / 18, '!': -3 / 18, quad: 1, qquad: 2 }

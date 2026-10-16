@@ -86,6 +86,12 @@ Some names are reserved, because a track on them would move the whole figure:
 | `graph` | `nodes: [{ id, at?, label? }]`, `edges` (`[from, to, weight?]` or objects), `directed?`, `tree?: { root, spacing?, at? }`, `search?: { kind: 'bfs' \| 'dfs' \| 'dijkstra', start }`, `step?`, `frontier?` (screen px), `weights?`, `radius?` |
 | `venn` | `sets` (two or three `{ id, label?, color? }`), `highlight?` (a set expression), `highlightColor?`, `at?`, `radius?`, `universe?` |
 | `clock` | `modulus`, `value`, `at?`, `radius?` |
+| `network` | `layers` (`[3, 5, 4, 2]`), `activation?: 'sigmoid' \| 'tanh' \| 'relu'`, `inputs?`, `flow?`, `seed?`, `at?`, `size?`, `labels?: { inputs?, outputs? }`, `radius?` |
+| `heatmap` | `cells` (rows, top first; `softmax?` per row) or `expr` in x and y with `region?`, `resolution?`; `range?`, `colormap?: 'viridis' \| 'heat' \| 'diverging'`, `rowLabels?`, `colLabels?`, `values?`, `at?`, `size?` |
+| `contours` | `expr` in x and y, `levels?` (a count or the levels), `region?`, `resolution?`, `colormap?` |
+| `descent` | `expr` in x and y, `start`, `rate`, `steps`, `momentum?` |
+| `classifier` | `epochs`, `centres?`, `count?`, `spread?`, `rate?`, `start?: [w₁, w₂, b]`, `probability?`, `seed?` |
+| `kmeans` | `centres` (the true clusters), `iteration`, `k?`, `count?`, `spread?`, `seed?` |
 
 `point` also rides a curve: `{ on: 'sin(x)', x: 'p' }` is the point (p, sin p), and
 `hollow: true` draws an open circle for a hole or a limit. `function` takes
@@ -113,6 +119,31 @@ Items work out numbers that TeX can show with `\val{…}`:
 | `bayes` | `ID.prior`, `ID.posterior`, `ID.positive`, `ID.truePositive`, `ID.falsePositive` |
 | `graph` with a search | `ID.visited`, `ID.steps`, and for Dijkstra `ID.d.NODE` (∞ until known) |
 | `clock` | `ID.hour` (value mod modulus), `ID.turns` |
+| `network` | `ID.out0`, `ID.out1` … (the outputs) |
+| `descent` | `ID.x`, `ID.y`, `ID.loss`, `ID.step` |
+| `classifier` | `ID.accuracy`, `ID.loss`, `ID.epoch` |
+| `kmeans` | `ID.inertia`, `ID.iteration`, `ID.iterations` |
+
+### Machine learning
+
+Everything is seeded and worked out exactly, so a figure trains the same way
+every time:
+
+- **Networks** draw seeded weights: blue edges add, red ones subtract, and
+  thicker edges count more. `flow` moves activations layer by layer, with
+  pulses on the edges being fed.
+- **Descent** takes exact partial derivatives of its expression, so the path
+  follows the true gradient. A step size that diverges stops cleanly.
+- **Classifiers** train logistic regression by full-batch gradient descent,
+  starting from a deliberately wrong line that visibly turns into place.
+- **k-means** runs Lloyd's algorithm from the points nearest the middle of the
+  data, so the centroids travel; a fractional `iteration` glides them.
+- **Heatmaps and contours** colour through a colormap. Dimmed cells are
+  pre-mixed with the background, so neighbours never leave seams. Contours are
+  traced by marching squares and joined into whole curves.
+
+The pieces are also available on their own: `seededNetwork`, `forward`,
+`descentPath`, `trainLogistic`, `kmeansHistory`, `contourLines`, `colorAt`.
 
 ### Graphs, searches and sets
 
@@ -207,7 +238,7 @@ lesson's step options (`duration`, `easing`, `delay`).
   <figcaption>The determinant is the area of the unit square after the map.</figcaption>
 </figure>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.118.0/cdn/tinyfly-math.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.119.0/cdn/tinyfly-math.iife.js" data-tinyfly-auto></script>
 ```
 
 The figure draws itself into an SVG and redraws from the timeline whenever the
@@ -318,6 +349,12 @@ their own.
 | `recursionTreeFigure({ n })` | The call tree of naive recursive Fibonacci, in call order (`step`) |
 | `vennFigure({ sets, highlight, label })` | Two or three sets with a region shaded |
 | `clockFigure({ modulus, value })` | Clock arithmetic (`value`) |
+| `neuralNetworkFigure({ layers, activation, inputs })` | A forward pass (`flow`, inputs `in0` …) |
+| `gradientDescentFigure({ expr, start, rate, momentum })` | Descent on a narrow valley over its contours (`steps`, `rate`, `momentum`) |
+| `attentionFigure({ tokens, scores })` | Attention weights, softmaxed per row, with token labels |
+| `decisionBoundaryFigure({ rate, spread })` | Logistic regression finding the line between two clusters (`epochs`) |
+| `kmeansFigure({ centres, k })` | k-means finding clusters (`iteration`) |
+| `activationFigure()` | Sigmoid, tanh and ReLU |
 
 Each returns a plain figure to change or extend. In each, `M` starts at the
 identity unless `matrix` is given.
@@ -327,13 +364,15 @@ identity unless `matrix` is given.
 - Gallery: **Linear Map**, **Eigenvectors**, **Equation Steps**, **Matrix Lesson**,
   **Derivative**, **Riemann Sums**, **Taylor Series**, **Galton Board**, **Central Limit
   Theorem**, **Monte Carlo π**, **Bayes: a Positive Test**, **Graph Search**, **Recursion
-  Tree**, **Set Operations** and **Clock Arithmetic**.
-- Videos: `linear-map-short.mjs`, `riemann-short.mjs`, `galton-short.mjs` and
-  `graph-search-short.mjs` (9:16); `eigen-explainer.mjs`, `taylor-explainer.mjs`,
-  `clt-explainer.mjs` and `de-morgan-explainer.mjs` (16:9), in `examples/headless-video/`.
+  Tree**, **Set Operations**, **Clock Arithmetic**, **Neural Network**, **Gradient Descent**,
+  **Decision Boundary**, **K-Means** and **Attention Weights**.
+- Videos: `linear-map-short.mjs`, `riemann-short.mjs`, `galton-short.mjs`,
+  `graph-search-short.mjs` and `gradient-descent-short.mjs` (9:16); `eigen-explainer.mjs`,
+  `taylor-explainer.mjs`, `clt-explainer.mjs`, `de-morgan-explainer.mjs` and
+  `neural-network-explainer.mjs` (16:9), in `examples/headless-video/`.
 
 ## Next
 
-AI/ML (networks with flowing activations, gradient descent on a loss surface,
-decision boundaries) builds on the same figure model.
+Characters can already stand beside a figure in a video; letting them point at
+named parts of it (a vector's tip, an equation term) is planned. See `todo.md`.
 See `todo.md` for their status.

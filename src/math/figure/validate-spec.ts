@@ -10,6 +10,8 @@ import { distributionProblem, DISTRIBUTION_KINDS } from '../prob/distributions'
 import { SEARCH_KINDS } from '../discrete/graph-search'
 import { parseSetExpression, setNames } from '../discrete/set-expression'
 import { graphEdges, graphPositions } from './items/discrete'
+import { ACTIVATIONS } from '../ml/network'
+import { COLORMAPS } from '../ml/colormap'
 import { derivedValues } from './derived'
 
 /**
@@ -258,6 +260,57 @@ export function validateMathFigure(spec: MathFigureSpec): MathFigureSpec {
         item.sets.forEach((set) => set.label !== undefined && tex(item, `sets.${set.id}.label`, set.label))
         break
       }
+      case 'network':
+        if (!Array.isArray(item.layers) || item.layers.length < 2 || item.layers.length > 8 || !item.layers.every((n) => Number.isInteger(n) && n >= 1 && n <= 12)) {
+          fail(`${item.id}.layers: give 2 to 8 layers of 1 to 12 nodes, like [3, 4, 2]`)
+        }
+        if (item.activation !== undefined && !ACTIVATIONS.includes(item.activation)) fail(`${item.id}.activation: ${unknownName('activation', item.activation, ACTIVATIONS)}`)
+        if (item.inputs && item.inputs.length > item.layers[0]) fail(`${item.id}.inputs: more inputs than the ${item.layers[0]} input nodes`)
+        item.inputs?.forEach((ref, k) => number(item, `inputs[${k}]`, ref))
+        number(item, 'flow', item.flow)
+        item.labels?.inputs?.forEach((t, k) => tex(item, `labels.inputs[${k}]`, t))
+        item.labels?.outputs?.forEach((t, k) => tex(item, `labels.outputs[${k}]`, t))
+        break
+      case 'heatmap':
+        if ((item.cells === undefined) === (item.expr === undefined)) fail(`${item.id} needs exactly one of cells or expr`)
+        if (item.cells && !(Array.isArray(item.cells) && item.cells.length >= 1 && item.cells.length <= 64 && item.cells.every((row) => Array.isArray(row) && row.length === item.cells![0].length && row.length <= 64 && row.every(Number.isFinite)))) {
+          fail(`${item.id}.cells must be up to 64 equal rows of up to 64 numbers`)
+        }
+        if (item.expr) twoVariables(item, 'expr', item.expr)
+        if (item.resolution !== undefined && !(Number.isInteger(item.resolution) && item.resolution >= 4 && item.resolution <= 120)) fail(`${item.id}.resolution must be 4..120`)
+        if (item.colormap !== undefined && !COLORMAPS.includes(item.colormap)) fail(`${item.id}.colormap: ${unknownName('colormap', item.colormap, COLORMAPS)}`)
+        item.rowLabels?.forEach((t, k) => tex(item, `rowLabels[${k}]`, t))
+        item.colLabels?.forEach((t, k) => tex(item, `colLabels[${k}]`, t))
+        break
+      case 'contours':
+        twoVariables(item, 'expr', item.expr)
+        if (item.colormap !== undefined && !COLORMAPS.includes(item.colormap)) fail(`${item.id}.colormap: ${unknownName('colormap', item.colormap, COLORMAPS)}`)
+        if (item.resolution !== undefined && !(Number.isInteger(item.resolution) && item.resolution >= 8 && item.resolution <= 200)) fail(`${item.id}.resolution must be 8..200`)
+        break
+      case 'descent':
+        twoVariables(item, 'expr', item.expr)
+        for (const variable of ['x', 'y']) {
+          try {
+            differentiate(parseExpression(item.expr), variable)
+          } catch (error) {
+            fail(`${item.id}.expr: ${(error as Error).message} (descent needs a gradient)`)
+          }
+        }
+        vector(item, 'start', item.start)
+        number(item, 'rate', item.rate)
+        number(item, 'steps', item.steps)
+        number(item, 'momentum', item.momentum)
+        break
+      case 'classifier':
+        number(item, 'epochs', item.epochs)
+        if (item.count !== undefined && !(Number.isInteger(item.count) && item.count >= 1 && item.count <= 500)) fail(`${item.id}.count must be 1..500 points per cluster`)
+        if (item.centres !== undefined && !(item.centres.length === 2 && item.centres.every(isVec2))) fail(`${item.id}.centres must be two [x, y] points`)
+        break
+      case 'kmeans':
+        if (!Array.isArray(item.centres) || item.centres.length < 1 || item.centres.length > 6 || !item.centres.every(isVec2)) fail(`${item.id}.centres: give 1 to 6 [x, y] cluster centres`)
+        if (item.k !== undefined && !(Number.isInteger(item.k) && item.k >= 1 && item.k <= 6)) fail(`${item.id}.k must be 1..6`)
+        number(item, 'iteration', item.iteration)
+        break
       case 'clock':
         if (!Number.isInteger(item.modulus) || item.modulus < 2 || item.modulus > 60) fail(`${item.id}.modulus must be a whole number 2..60`)
         number(item, 'value', item.value)

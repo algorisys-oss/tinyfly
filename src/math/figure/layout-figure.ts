@@ -11,6 +11,7 @@ import { layoutArea, layoutRiemann, layoutTangent, layoutTaylor } from './items/
 import { derivedValues } from './derived'
 import { layoutBayes, layoutDistribution, layoutGalton, layoutHistogram, layoutScatter } from './items/probability'
 import { layoutClock, layoutGraph, layoutVenn } from './items/discrete'
+import { layoutClassifier, layoutContours, layoutDescent, layoutHeatmap, layoutKMeans, layoutNetwork } from './items/ml'
 
 /**
  * Animated values for a figure, as a timeline writes them on its target:
@@ -43,6 +44,12 @@ function layoutItem(item: MathItem, ctx: ItemContext): Shape[] {
     case 'graph': return layoutGraph(item, ctx)
     case 'venn': return layoutVenn(item, ctx)
     case 'clock': return layoutClock(item, ctx)
+    case 'network': return layoutNetwork(item, ctx)
+    case 'heatmap': return layoutHeatmap(item, ctx)
+    case 'contours': return layoutContours(item, ctx)
+    case 'descent': return layoutDescent(item, ctx)
+    case 'classifier': return layoutClassifier(item, ctx)
+    case 'kmeans': return layoutKMeans(item, ctx)
   }
 }
 
