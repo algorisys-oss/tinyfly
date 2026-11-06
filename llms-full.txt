@@ -591,7 +591,7 @@ with a GSAP-style call (durations are in seconds here):
 ```html
 <div class="box" style="width:60px;height:60px;background:#4a9eff"></div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.121.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.122.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -799,7 +799,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.121.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.122.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -2714,7 +2714,7 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.121.0/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.122.0/cdn/tinyfly-player.iife.js`.
 
 ---
 
@@ -7068,7 +7068,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.121.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.122.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed
@@ -8438,6 +8438,12 @@ from. The eight presets in `ANIME_CAST` (`animeBoy`, `animeGirl`,
 Use `face: { style: 'anime', iris: '#4b7fce', lashes: true, ageLines: 0.6 }`
 for coloured expressive eyes and optional creases; this is a face style,
 not a `look` value. It uses the same expressions, blink, gaze and turn fields.
+White outlined stick figures are `figure: 'bean'` (presets `beanMan`, `beanWoman`,
+`beanKid`, `beanBoss`, `beanDetective`, `beanStick` in `BEAN_CAST`): seamless outlined noodle limbs or bare
+lines (`bean: { limbs: 'tube' | 'line' }`), a shaped body (`bean.torso` fullness), big oval eyes
+(`face.style: 'oval'`, usable on any figure), `hands: 'mitten'` and cartoon shoes; colours from
+`bean: { shirt, sleeves, trousers, shoes }` or an `outfit`; detective gear `bean: { coat, fedora, shades: true }`
+(aviators replace the eyes, brows still show); `halo` gives line limbs a pale edge. A bean is always drawn clean.
 The `look` values are `clean`, `pencil`, `silhouette` and `illustrated`
 (inked and painted, tuned with `illustrated: { light, weight, taper, shadow, highlight }`).
 Age is proportions, hair, creases and clothes, never a stoop; a `cane` in a hand or
@@ -8689,7 +8695,7 @@ path for all of that:
 </figure>
 
 <!-- once, anywhere on the page (a site-wide footer is fine) -->
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.121.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.122.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 Every `[data-tinyfly-embed]` mounts when the page is ready, with no per-post
@@ -9275,7 +9281,7 @@ lesson's step options (`duration`, `easing`, `delay`).
   <figcaption>The determinant is the area of the unit square after the map.</figcaption>
 </figure>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.121.0/cdn/tinyfly-math.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.122.0/cdn/tinyfly-math.iife.js" data-tinyfly-auto></script>
 ```
 
 The figure draws itself into an SVG and redraws from the timeline whenever the
@@ -10409,8 +10415,8 @@ On a page with no build step, load the maps add-on after the browser bundle; it
 adds to the same `tinyfly` global:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.121.0/cdn/tinyfly.iife.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.121.0/cdn/tinyfly-maps.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.122.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.122.0/cdn/tinyfly-maps.iife.js"></script>
 ```
 
 It is a separate script because the offline world map it carries adds about
@@ -11114,7 +11120,7 @@ cast member at an adult `height` (each stands at their own scale of it). The
 family: `boy`, `girl`, `youngMan`, `youngWoman`, `man`, `woman`, `grandpa`,
 `grandma`; at work (from the occupations sheet): `doctor`, `cook`, `builder`,
 `courier`, `teacher`, `farmer`. `CHARACTER_CAST` has each one's `label`,
-`group` (`family`, `work`, `anime` or `manga`), `scale` and `options`.
+`group` (`family`, `work`, `anime`, `manga` or `bean`), `scale` and `options`.
 
 ```js
 const family = ['man', 'woman', 'girl', 'grandma'].map((name) => character(castMember(name, 280)))
@@ -11156,6 +11162,67 @@ The **Colour Anime Cast** example shows all eight presets, expressions,
 face close-ups and a complete turnaround. Both the Character and 3D Scene
 editors offer these presets in their Cast picker. The Character editor also
 has Face style, Iris colour, Eyelashes and Age creases controls, saved in project JSON.
+
+### Bean figures (white outlined stick figures)
+
+`figure: 'bean'` draws the common white outlined stick-figure style: a white
+figure with a thick black outline, smooth noodle limbs, a shaped body (rounded
+shoulders, a slight waist, fuller hips and a rounded seat), a round head with
+big white oval eyes, small pupils and heavy brows, white mittens and big
+cartoon shoes (a flat sole on the ground, a rounded toe cap, a low heel). The
+rig solves the pose as for every figure, so every pose, gait, dance, reach,
+turn and lip-sync works on it.
+
+```js
+const hero = character({ figure: 'bean', height: 400, hair: { style: 'spiky', color: '#111' },
+  bean: { shirt: '#ef4444', trousers: '#1e3a5f' } })
+drawCharacter(ctx, hero, humanPose({ ...HUMAN_POSES.point, ...HUMAN_EXPRESSIONS.happy, turn: 0.5 }))
+const stick = character(castMember('beanStick', 400))   // bare line limbs
+```
+
+- Each limb is one smooth curve through its joints, stroked in the ink and
+  stroked again, narrower, in the fill, with round caps and joins: elbows and
+  knees never show a seam. The front arm, and on a plain figure the neck and
+  the legs, join the body without a seam: their outline is left out where it
+  lies inside the body at the root, so the fills flow together. Under a tee or
+  trousers the hem shows instead.
+- Painter order (`joints.parts[id].order`): the back arm, the legs, the neck,
+  the body (and coat), the near arm and the head (and fedora). A limb reaching toward the viewer
+  (hands on the knees, seated thighs) draws over the body.
+- `bean: { limbs, torso, limbWidth, lineWidth, outlineWidth, fill, shirt, sleeves, trousers, shoes }`:
+  `limbs: 'tube'` (default, outlined noodles) or `'line'` (bare round-capped
+  ink lines for the arms, legs and neck; the body, eyes, mittens and shoes
+  stay; `halo: '#f5f5f4'` adds a pale edge so they read on a dark set); the
+  near arm is in front of the body in both modes; `torso` body fullness
+  (1; 1.3 chubby, 0.85 thin); widths as fractions of the height (0.024 tube,
+  0.017 line, 0.0105 outline; `lineWidth` on the character also sets the
+  outline); `fill` (white); a `shirt` colour with `sleeves: 'short' | 'long' | 'none'`;
+  `trousers`; `shoes` (the fill; a dark shoe gets a shine and a dark sole).
+  An `outfit`'s `shirt`, `trousers` and `sleeves` colour the bean too (its
+  layers are not used).
+- Detective gear: `coat` (a trench coat in that colour: lapels, a belt and
+  buckle, double-breasted buttons, a hem at the knee and sleeves to the
+  wrist), `fedora` (a brim, a pinched crown and a band) and `shades: true`
+  (big dark aviator lenses in place of the eyes, the brows still showing,
+  so the face keeps its expression; the same as `face: { shades: true }` on
+  any oval-eyed face). `castMember('beanDetective', 400)` wears all three.
+- Defaults: ink `#111111`, white skin, `hands: 'mitten'`, shoulders 0.04 and
+  hips 0.02 of the height, `face: { style: 'oval', projection: 'volume', teeth: true, tongue: true }`.
+  The bean is always drawn in the clean look (its outline is the look).
+- `face.style: 'oval'` works on any figure: big white oval eyes almost
+  touching, a small pupil following `lookX`/`lookY`, lids in the skin for
+  `lid`, a blink or a half-open `eye.*`, a lid line when shut (arched up in a
+  laugh), heavy brows for `brow.left`/`brow.right` and `browTilt`, and
+  bigger eyes for `eye.*` above 1 and `bulge`. Glasses grow to fit round the
+  big eyes; `face.shades` puts aviators in their place.
+- `hands: 'mitten'` (any figure) is a plain oval mitten along the forearm.
+- Presets in `BEAN_CAST` (also in `CHARACTER_CAST`, group `bean`):
+  `beanMan`, `beanWoman`, `beanKid`, `beanBoss`, `beanDetective` and
+  `beanStick` (bare lines).
+- Helpers for your own layers: `beanTorso(bean, joints)` and
+  `beanTorsoOutline(torso)` (the body's shape), `beanLimbLine(root, joint, end)`
+  (a limb's centre line), `mittenAt`, `beanShoeAt`, `beanOrder`, `beanOverBody`,
+  `drawBeanFedora`.
 
 ### Young adult manga cast
 
@@ -15639,7 +15706,7 @@ magnet.addEventListener('pointerleave', () => {
 
 <!-- capabilities: generated from the library -->
 
-# tinyfly capabilities (v0.121.0)
+# tinyfly capabilities (v0.122.0)
 
 Generated from the library itself: every name below is accepted, and names not listed are rejected (beat scripts, code panels and `checkTracks` say which name was probably meant).
 
@@ -15923,7 +15990,7 @@ Native dances: `garba`, `garbaThreeClap`, `dandiya`; `humanDanceFrame(style, bea
 Appearance options of `character({ … })`, all plain data that turns with the head (see docs/character-appearance.md):
 
 - `build`: `standard`, `slim`, `tall`, `short`, `broad`, `curvy`, `stocky`, `kid`, `child`, `toddler`
-- `figure`: `fluid`, `stick`, `organic`
+- `figure`: `fluid`, `stick`, `organic`, `bean`
 - `look`: `clean` (default), `pencil`, `silhouette`, `illustrated` (inked and painted: line weight follows the light, brush-tapered strokes, shadow/core/highlight tones from each fill; `illustrated: { light: [x, y], weight, taper, shadow, highlight }`, each 0–1)
 - `body.torso · body.arm · body.leg · body.neck`: Organic half-width profiles: [{ at: 0..1, width: fractionOfHeight }], increasing from 0 to 1; independent of ink width.
 - `body.measurements`: Organic torso from tape-measure girths { height, bust, underbust?, waist, hip } in any one unit, or a named shape (hourglass | pear | rectangle | invertedTriangle | round). Sets the front width, the side depth (bust forward, seat back, belly) and the hip and thigh spacing; reads correctly at every turn. An explicit torso / torsoFront / torsoBack / hipWidth still wins.
@@ -15932,15 +15999,17 @@ Appearance options of `character({ … })`, all plain data that turns with the h
 - `softCartoonCharacter(name, options?)`: Original youngMan / youngWoman / childBoy / childGirl story presets. Children have larger head proportions, shorter limbs and rounded torsos; every face, hair, build, hand, clothing and material option can be overridden.
 - `face.projection`: Organic default volume follows the head axes, keeps both eyes in three-quarter views and projects a small nose above the mouth; opaque hair covers features. cartoon keeps the classic face slide.
 - `outfitPreset(category, overrides?)`: Fresh JSON Everyday / Formal / Casual wardrobe defaults for every actor; top: tshirt | shirt | blouse | dress, trouserStyle: plain | jeans | cargo, colours, sleeves, bottoms, collar and tie are editable.
+- `figure: 'bean'`: The white outlined stick figure: one smooth stroked outline per limb (no seams at elbows, knees or the front arm's shoulder), a shaped body (rounded shoulders, slight waist, fuller hips), big oval eyes, mittens and cartoon shoes; every pose, gait, dance and turn works. Always drawn clean; the near arm is in front of the body in both limb modes. `bean: { limbs: tube | line, halo (a pale edge on line limbs), torso, limbWidth, lineWidth, outlineWidth, fill, shirt, sleeves: short | long | none, trousers, shoes (a dark shoe gets a shine), coat (a trench coat: lapels, belt and buckle, buttons, knee hem, sleeves to the wrist), fedora, shades (aviators in place of the eyes; brows still show) }`; an `outfit`'s shirt, trousers and sleeves colour it. `castMember('beanMan' | 'beanWoman' | 'beanKid' | 'beanBoss' | 'beanDetective' | 'beanStick', h)`.
+- `hands`: `dot` | `cartoon` (with `handStyle: glove | natural`) | `mitten` (a plain oval mitten; the bean figure's default)
 - `leafOutfit`: Organic-only JSON garment { top?, color?, accent?, length? }; curved leaves follow torso/thighs at native part depths. Everyday basicOutfit also follows organic contours.
 - `hair`: `softSweep`, `flowingBob`, `cascadingWaves`, `bald`, `buzzCut`, `crewCut`, `short`, `sidePart`, `sideSwept`, `slickBack`, `quiff`, `spiky`, `mangaSpikes`, `mangaSweep`, `undercut`, `curlyCrop`, `afro`, `wavyCrop`, `shortLocs`, `flatTop`, `receding`, `thinning`, `pixie`, `bob`, `longBob`, `wavyBob`, `shoulderStraight`, `shoulderWaves`, `longStraight`, `longWaves`, `longCurls`, `longLocs`, `lowPonytail`, `highPonytail`, `ponytail`, `sidePonytail`, `topBun`, `lowBun`, `singleBraid`, `twinBraids`, `braids` (colours: `black`, `brown`, `chestnut`, `auburn`, `blond`, `ginger`, `gray`, `white` in `HAIR_COLORS`)
 - Flowing hair: `softSweep`, `flowingBob`, `cascadingWaves`; editable `locks: [{ path, width, follow? }]` with cubic `{ around, up, lift? }` points (around in degrees, dimensions in head radii), `fall: { taper, wave }` and `shine` (0–1). Roots stay attached; `hairFollowTracks` also drives flexible short locks.
 - `facialHair`: `cleanShaven`, `stubble`, `pencilMoustache`, `shortMoustache`, `chevron`, `handlebar`, `walrus`, `goatee`, `vanDyke`, `circleBeard`, `shortBoxed`, `fullBeard`, `longBeard`, `roundedBeard`, `pointedBeard`, `chinStrap`, `soulPatch`, `sideburns`, `muttonChops`, `moustacheStubble`
 - `glasses`: `round`, `square`, `sunglasses`; `hat`: `cap`, `beanie`, `hardHat`, `sunHat`, `bowler`; `ears: true`; `face: { teeth, tongue }` (shown when the mouth opens); `feet`: `round`, `flat`, `pointed`, `big`
 - `outfit`: `{ top: tshirt | shirt | blouse | dress, trouserStyle: plain | jeans | cargo, shirt: top colour, trousers: bottom colour, sleeves: short | long | none, bottom: trousers | shorts | skirt, collar, tie: colour, over: apron | labCoat | hoodie | cardigan | overalls | sari, overColor, shoes: boots, shoeColor }`
-- `castMember(name, height)`: `boy`, `girl`, `youngMan`, `youngWoman`, `man`, `woman`, `grandpa`, `grandma`, `doctor`, `cook`, `builder`, `courier`, `teacher`, `farmer`, `animeBoy`, `animeGirl`, `animeYoungMan`, `animeYoungWoman`, `animeMan`, `animeWoman`, `animeOlderMan`, `animeOlderWoman`, `mangaYoungMan`, `mangaYoungWoman`, `mangaRival`, `mangaHeroine`
+- `castMember(name, height)`: `boy`, `girl`, `youngMan`, `youngWoman`, `man`, `woman`, `grandpa`, `grandma`, `doctor`, `cook`, `builder`, `courier`, `teacher`, `farmer`, `animeBoy`, `animeGirl`, `animeYoungMan`, `animeYoungWoman`, `animeMan`, `animeWoman`, `animeOlderMan`, `animeOlderWoman`, `mangaYoungMan`, `mangaYoungWoman`, `mangaRival`, `mangaHeroine`, `beanMan`, `beanWoman`, `beanKid`, `beanBoss`, `beanDetective`, `beanStick`
 - Face marks (pose fields, 0–1): `blush`, `tears`, `sweat`; close-up fields `pupil` (size, 1 usual), `lid` (upper lids lowered, 0–1), `bulge` (eyes out of the head, 0–1); `face: { nose: true, inPupil(ctx, pupil) }`; `drawCharacterHead(ctx, who, pose, { x, y, radius })` draws just the head big
-- Face styles: `simple`, `anime`; `face: { style: 'anime', iris: '#4b7fce', lashes: true, ageLines: 0.8 }` uses coloured eyes and the same expressions, blinks and gaze. `ANIME_CAST` contains eight age presets, also available through `castMember`.
+- Face styles: `simple`, `anime`, `oval`; `face: { style: 'anime', iris: '#4b7fce', lashes: true, ageLines: 0.8 }` uses coloured eyes and the same expressions, blinks and gaze. `ANIME_CAST` contains eight age presets, also available through `castMember`. `face: { style: 'oval' }` (the bean figure's default) draws big white oval eyes with small pupils that follow `lookX`/`lookY`, lids for `lid`, `blink` and half-open eyes, and heavy brows for `brow.*`/`browTilt`; glasses grow to fit round them.
 - Face shapes: `round`, `angular`; `face: { shape: 'angular', jawWidth: 0.74, chinWidth: 0.14, eyeScale: 0.8, eyeAspect: 0.65 }` sets a tapered 3D jaw and narrower anime eyes; `jawRoundness: 1` softens the cheek/chin corners (default 0 keeps sharp jaws). `MANGA_CAST` contains four original young adult presets; hair styles `mangaSpikes` and `mangaSweep` remain editable.
 - Hair in motion (pose fields): `hair.swing` (degrees round the head, + toward its left), `hair.trail` (head radii back), `hair.lift` (head radii up); key them with `hairFollowTracks(target, tracks, who)` after the character's tracks, or `hairFollow` + `hairMotionAt` when posing per frame
 - `holding`: `mug` (left or right), `phone` (left or right), `book` (one hand or both), `bag` (left or right), `briefcase` (left or right), `umbrella` (left or right), `broom` (left or right), `cane` (left or right), `parcel` (both); pose fields `held.left`, `held.right`, `held.both` (below 0.5 lets go); `handGrip(joints, side)`

@@ -1732,8 +1732,19 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
           <option value="fluid">Fluid</option>
           <option value="stick">Stick</option>
           <option value="organic">Organic cartoon</option>
+          <option value="bean">Bean (white outlined)</option>
         </select>
       </div>
+      <Show when={element.figure === 'bean'}>
+        <div class="property-row">
+          <label>Limbs</label>
+          <select value={element.bean?.limbs ?? 'tube'} onChange={(e) => updateElement({ bean: { ...element.bean, limbs: e.currentTarget.value as 'tube' | 'line' } })}>
+            <option value="tube">Outlined tubes</option>
+            <option value="line">Bare lines</option>
+          </select>
+        </div>
+        <div class="property-row"><label>Body fullness</label><input type="range" min="0.6" max="1.6" step="0.05" value={element.bean?.torso ?? 1} onInput={(e) => updateElement({ bean: { ...element.bean, torso: Number(e.currentTarget.value) } })} /></div>
+      </Show>
       <Show when={element.figure === 'organic'}>
         <div class="property-row">
           <label>Body shape</label>
@@ -1817,6 +1828,7 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
           <option value="dot">Round</option>
           <option value="cartoon">Cartoon gloves</option>
           <option value="natural">Natural (five fingers, for mudras)</option>
+          <option value="mitten">Mittens</option>
         </select>
       </div>
       <Show when={element.outfit === 'basic'}>
@@ -1912,6 +1924,7 @@ export const PropertyPanel: Component<PropertyPanelProps> = (props) => {
         <select value={values().faceStyle} onChange={(e) => updateElement({ faceStyle: e.currentTarget.value as CharacterElement['faceStyle'] })}>
           <option value="simple">Simple</option>
           <option value="anime">Colour anime</option>
+          <option value="oval">Big oval eyes</option>
         </select>
       </div>
       <div class="property-row">

@@ -31,7 +31,8 @@ function render(who: Character, pose: Pose, withoutLegs = false) {
 const walk = { 'leg.left.swing': 28, 'leg.left.knee': 30, 'leg.right.swing': -18 }
 
 describe('outfit coverage during turns', () => {
-  it.each(Object.keys(CHARACTER_CAST) as CastName[])('%s: keeps near thighs and trouser roots behind the top', (name) => {
+  // Bean figures wear their outfit's colours themselves, not its layers (see bean-figure.test.ts).
+  it.each((Object.keys(CHARACTER_CAST) as CastName[]).filter((name) => (CHARACTER_CAST[name].options as { figure?: string }).figure !== 'bean'))('%s: keeps near thighs and trouser roots behind the top', (name) => {
     let checked = 0
     const failures: string[] = []
     for (const over of [null, 'hoodie', 'cardigan', 'overalls', 'labCoat', 'apron', 'sari'] as const) {

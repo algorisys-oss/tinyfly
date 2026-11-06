@@ -125,8 +125,12 @@ export interface PupilCircle {
 export interface FaceOptions {
   /** `cartoon` keeps the classic face slide; `volume` follows the head's 3D axes (organic default). */
   projection?: 'cartoon' | 'volume'
-  /** `simple` (default) or colour anime eyes with irises, highlights and expressive lids. Uses the same pose fields. */
-  style?: 'simple' | 'anime'
+  /**
+   * `simple` (default), colour `anime` eyes with irises, highlights and
+   * expressive lids, or big white `oval` eyes with small pupils and heavy
+   * brows (the bean figure's). Each uses the same pose fields.
+   */
+  style?: 'simple' | 'anime' | 'oval'
   /** Anime iris colour (default blue); plain data, including in scene JSON. */
   iris?: string
   /** Head outline: round (default) or angular cheeks, jaw and chin. */
@@ -149,6 +153,8 @@ export interface FaceOptions {
   tongue?: boolean
   /** A small nose between the eyes and the mouth (default none) */
   nose?: boolean
+  /** Big dark aviator lenses in place of the eyes, the brows still showing (`style: 'oval'`; default none) */
+  shades?: boolean
   /** The head's fill, for lids that cover the eye (default white) */
   skin?: string
   /**
@@ -182,6 +188,10 @@ export function drawFace(pen: Pen, head: SolvedHead, pose: Pose, lineWidth: numb
 
   for (const side of [1, -1]) {
     const name = side === 1 ? 'left' : 'right'
+    if (options.style === 'oval') {
+      if (facingAt(OVAL_EYE.x * side, OVAL_EYE.y) >= SHOWN) drawOvalEye(pen, head, side, pose, options)
+      continue
+    }
     const ex = EYE_X * side
     if (facingAt(ex, EYE_Y) < SHOWN) continue
     const eye = { x: ex, y: EYE_Y }
@@ -234,6 +244,7 @@ export function drawFace(pen: Pen, head: SolvedHead, pose: Pose, lineWidth: numb
     pen.line(toScreen([outer, { x: (outer.x + inner.x) / 2, y: (outer.y + inner.y) / 2 + arch }, inner], { x: ex, y: brow }), thin * (painted ? 2.2 : 1))
   }
 
+  if (options.style === 'oval' && options.shades) drawAviatorFrame(pen, head, options)
   drawMarks(pen, head, pose, thin, options.projection)
   drawAgeLines(pen, head, options.ageLines ?? 0, thin, options.projection)
 
@@ -377,6 +388,115 @@ function drawAnimeEye(
       pen.line(screen([{ x, y }, { x: x + side * 0.055, y: y + 0.07 }]), thin * 0.75)
     }
   }
+}
+
+/**
+ * Big oval eyes (`style: 'oval'`, the bean figure's): a tall white oval per
+ * eye, the two almost touching, with a small black pupil that follows the
+ * gaze, upper lids in the skin that lower with `lid` or a half-shut eye, and
+ * a heavy straight brow above each that `brow.*` raises and `browTilt` slants.
+ * Shut (a blink, a laugh) it is a lid line. All in head coordinates, so it
+ * turns with the head.
+ */
+export const OVAL_EYE = { x: 0.31, y: 0.12, rx: 0.29, ry: 0.44 } as const
+
+/** An aviator lens's half-width and half-height, head radii */
+const AVIATOR = { rx: 0.37, ry: 0.33 } as const
+
+const cubic = (a: Point, b: Point, c: Point, d: Point, samples = 10): Point[] =>
+  Array.from({ length: samples }, (_, i) => {
+    const t = (i + 1) / samples
+    const u = 1 - t
+    return { x: u * u * u * a.x + 3 * u * u * t * b.x + 3 * u * t * t * c.x + t * t * t * d.x, y: u * u * u * a.y + 3 * u * u * t * b.y + 3 * u * t * t * c.y + t * t * t * d.y }
+  })
+
+/** A big dark aviator lens over an eye (face coordinates, y up): a flat top, a teardrop bulge below, a glint. */
+function drawAviatorLens(pen: Pen, screen: (points: Point[]) => Point[], ex: number, ey: number, side: number, thin: number): void {
+  const { rx, ry } = AVIATOR
+  // The outer edge is the side away from the nose.
+  const p = (x: number, y: number): Point => ({ x: ex + side * x, y: ey - y })
+  const start = p(-rx, -ry * 0.55)
+  const outline = [
+    start,
+    ...quadratic(start, p(0, -ry * 0.8), p(rx, -ry * 0.6), 8).slice(1),
+    ...cubic(p(rx, -ry * 0.6), p(rx * 1.08, ry * 0.2), p(rx * 0.75, ry * 1.05), p(0, ry)),
+    ...cubic(p(0, ry), p(-rx * 0.8, ry * 0.95), p(-rx * 1.1, ry * 0.1), start),
+  ]
+  pen.shape(screen(outline), '#161c27', thin * 1.3, true)
+  // A paler lower half, then a glint across it.
+  pen.shape(screen(outline.filter((q) => q.y <= ey - ry * 0.15)), 'rgba(80, 96, 122, 0.45)', 0, true)
+  const glint = 0.035
+  pen.shape(screen([p(-rx * 0.55 - glint, ry * 0.5), p(-rx * 0.55 + glint, ry * 0.5), p(rx * 0.05 + glint, -ry * 0.45), p(rx * 0.05 - glint, -ry * 0.45)]), 'rgba(255, 255, 255, 0.55)', 0, true)
+}
+
+/** The aviators' bridge between the lenses and the arms back over the temples. */
+function drawAviatorFrame(pen: Pen, head: SolvedHead, options: FaceOptions): void {
+  const frame = Math.max(1, 0.06 * head.rx)
+  const y = OVAL_EYE.y + 0.12
+  const shown = (x: number) => faceToScreen(head, [], { x, y }, options.projection).facing >= SHOWN
+  if (shown(-0.1) && shown(0.1)) pen.line(faceToScreen(head, quadratic({ x: -0.1, y }, { x: 0, y: y + 0.06 }, { x: 0.1, y }), { x: 0, y }, options.projection).points, frame)
+  for (const side of [1, -1]) {
+    const hinge = { x: side * (OVAL_EYE.x + AVIATOR.rx * 0.95), y }
+    if (headPoint(head, [side, 0, 0]).facing <= 0.15 || !shown(hinge.x)) continue
+    const [from] = faceToScreen(head, [hinge], hinge, options.projection).points
+    pen.line([from, headPoint(head, [side * 0.98, y, -0.1]).point], frame * 0.9)
+  }
+}
+
+function drawOvalEye(pen: Pen, head: SolvedHead, side: number, pose: Pose, options: FaceOptions): void {
+  const name = side === 1 ? 'left' : 'right'
+  const { x: ex, y: ey } = { x: OVAL_EYE.x * side, y: OVAL_EYE.y }
+  const eye = { x: ex, y: ey }
+  const screen = (points: Point[]) => faceToScreen(head, points, eye, options.projection).points
+  // Line weights by the head's size: the eye's outline, and the heavier brow.
+  const thin = Math.max(1, 0.055 * head.rx)
+  const heavy = Math.max(1.5, 0.095 * head.rx)
+  const blink = Math.min(1, Math.max(0, field(pose, 'blink', 0)))
+  const openness = Math.max(0, field(pose, `eye.${name}`, 1))
+  const open = eyeOpenness(openness, blink)
+  const bulge = Math.min(1, Math.max(0, field(pose, 'bulge', 0)))
+  const grow = 1 + 0.12 * Math.min(1, Math.max(0, openness - 1)) + 0.25 * bulge
+  const rx = OVAL_EYE.rx * grow
+  const ry = OVAL_EYE.ry * grow
+  const smile = field(pose, 'smile', 0)
+  if (options.shades) {
+    drawAviatorLens(pen, screen, ex, ey, side, thin)
+  } else if (open < 0.2) {
+    // Shut: a lid line across the middle, arched up in a laugh, down otherwise.
+    const arch = smile > 0.5 ? 0.14 : -0.08
+    pen.line(screen(quadratic({ x: ex - rx * 0.85, y: ey }, { x: ex, y: ey + arch }, { x: ex + rx * 0.85, y: ey })), thin * 1.4)
+  } else {
+    const outline = ellipse(ex, ey, rx, ry, 32)
+    pen.shape(screen(outline), '#ffffff', thin, true)
+    // The lid comes down for `lid`, and as far as a half-open eye is shut.
+    const lid = Math.min(1, Math.max(Math.max(0, field(pose, 'lid', 0)), 1 - Math.min(1, open)))
+    const edge = ey + ry - 2 * ry * lid * 0.95
+    const lookX = Math.max(-1, Math.min(1, field(pose, 'lookX', 0)))
+    const lookY = Math.max(-1, Math.min(1, field(pose, 'lookY', 0)))
+    const r = 0.085 * Math.max(0.3, field(pose, 'pupil', 1)) * (1 + bulge * 0.2)
+    const px = ex + lookX * rx * 0.45
+    const py = ey - lookY * ry * 0.45 - ry * 0.05
+    const pupil = ellipse(px, py, r, r, 20).map((p) => ({ x: p.x, y: Math.min(p.y, edge) }))
+    if (py - r < edge) pen.shape(screen(pupil), pen.ink, 0, true)
+    if (lid > 0.02) {
+      // The lid: the eye above its edge, in the skin, its edge drawn, the eye's outline kept.
+      // The covered cap: round the top of the oval from where the edge meets it on the right to the left.
+      const from = Math.asin(Math.max(-1, Math.min(1, (edge - ey) / ry)))
+      const cap = Array.from({ length: 25 }, (_, i) => {
+        const a = from + ((Math.PI - 2 * from) * i) / 24
+        return { x: ex + rx * Math.cos(a), y: ey + ry * Math.sin(a) }
+      })
+      pen.shape(screen(cap), options.skin ?? '#ffffff', 0, true)
+      pen.line(screen([cap[0], cap[cap.length - 1]]), thin)
+      pen.shape(screen(outline), null, thin, true)
+    }
+  }
+  // The brow: raised (+) or lowered (−), its inner end tilted by browTilt (+ worried, − cross).
+  const by = ey + (options.shades ? AVIATOR.ry + 0.1 : ry + 0.12) + 0.08 * field(pose, `brow.${name}`, 0)
+  const tilt = field(pose, 'browTilt', 0) * 0.06
+  const outer = { x: ex + side * rx * 1.0, y: by }
+  const inner = { x: ex - side * rx * 0.8, y: by + tilt }
+  pen.line(faceToScreen(head, [inner, outer], { x: ex, y: by }, options.projection).points, heavy)
 }
 
 /** A closed mouth's lower lip: a soft rose lens under the line (illustrated look). */

@@ -1,3 +1,13 @@
+## Bean figures — v0.122.0
+
+- [x] `figure: 'bean'`: white outlined stick figure on the human rig; limbs as one smooth curve stroked ink then fill (no elbow/knee seams); seamless joins of the front arm, plain neck and plain legs into the body; shaped body (shoulders, waist, hips, seat); cartoon shoes; painter order with reaching limbs over the body.
+- [x] `bean.limbs: 'line'` bare stick variant (optional `halo` edge; near arm in front in both modes); `bean` options for torso fullness, widths, fill, shirt/sleeves, trousers, shoes (dark shoes shine); outfit colours map onto the bean.
+- [x] Detective gear: trench `coat`, `fedora`, aviator `shades` (`face.shades`) that keep the brows; `beanDetective` preset.
+- [x] `face.style: 'oval'` big oval eyes (gaze, lids, blinks, brows, tilt) on any figure; glasses fitted round them.
+- [x] `hands: 'mitten'` on any figure.
+- [x] `BEAN_CAST` presets via `castMember`; capabilities, docs, model guides, editor controls.
+- [x] Tests (order, joints, seam and gap pixel checks, options, faces, presets); renders reviewed.
+
 ## Maths animations (`@algorisys/tinyfly/math`): linear algebra, calculus — v0.116.0; probability and statistics — v0.117.0; discrete maths — v0.118.0; AI/ML — v0.119.0 (CDN) / v0.119.1; presenter surfaces — v0.120.0; 3D loss surface — v0.121.0
 
 - [x] Pure core: `vec2` / `mat2` (apply, multiply, determinant, inverse, real eigenpairs), a safe expression language (no `eval`; precedence, implicit multiplication, listed functions, position-naming errors).

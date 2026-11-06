@@ -1,5 +1,5 @@
 import { createSignal } from 'solid-js'
-import type { ChartDatum, ChartKind, ChartSeries, CodeLanguage, HairSpec, OrganicBodyOptions, LeafOutfitOptions } from '../../characters'
+import type { ChartDatum, ChartKind, ChartSeries, CodeLanguage, HairSpec, OrganicBodyOptions, LeafOutfitOptions, BeanOptions } from '../../characters'
 import type { CharacterActing } from '../utils/character-acting'
 import { createStore } from 'solid-js/store'
 import { measureTextLetters } from '../utils/split-text'
@@ -257,8 +257,10 @@ export interface SymbolInstanceElement extends BaseElement {
  */
 export interface CharacterElement extends BaseElement {
   type: 'character'
-  /** `stick`: traditional; `fluid`: tapered limbs; `organic`: filled cartoon anatomy. */
-  figure: 'fluid' | 'stick' | 'organic'
+  /** `stick`: traditional; `fluid`: tapered limbs; `organic`: filled cartoon anatomy; `bean`: white outlined figure. */
+  figure: 'fluid' | 'stick' | 'organic' | 'bean'
+  /** The bean figure's options (limbs, torso, widths, colours); its outfit colours come from `shirt`/`trousers` when `outfit` is basic. */
+  bean?: BeanOptions
   /** JSON contour profiles and skin material; used by organic figures. */
   body?: OrganicBodyOptions
   leafOutfit?: LeafOutfitOptions
@@ -285,7 +287,7 @@ export interface CharacterElement extends BaseElement {
    * Hands: round (default), cartoon gloves, or natural five-fingered hands.
    * Gloves and natural hands take hand shapes (`hand.left.*` fields).
    */
-  hands?: 'dot' | 'cartoon' | 'natural'
+  hands?: 'dot' | 'cartoon' | 'natural' | 'mitten'
   /**
    * The pose when nothing animates it: only the fields that differ from rest
    * (`turn` is the view: 0 front, 1 side, 2 back, 3 other side). Keyframes on
@@ -323,7 +325,7 @@ export interface CharacterElement extends BaseElement {
   teeth?: boolean
   tongue?: boolean
   /** Face drawing style; expressions still use the normal pose fields. */
-  faceStyle?: 'simple' | 'anime'
+  faceStyle?: 'simple' | 'anime' | 'oval'
   /** Optional character stroke width in pixels. */
   lineWidth?: number
   faceShape?: 'round' | 'angular'

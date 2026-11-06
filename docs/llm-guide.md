@@ -217,6 +217,12 @@ from. The eight presets in `ANIME_CAST` (`animeBoy`, `animeGirl`,
 Use `face: { style: 'anime', iris: '#4b7fce', lashes: true, ageLines: 0.6 }`
 for coloured expressive eyes and optional creases; this is a face style,
 not a `look` value. It uses the same expressions, blink, gaze and turn fields.
+White outlined stick figures are `figure: 'bean'` (presets `beanMan`, `beanWoman`,
+`beanKid`, `beanBoss`, `beanDetective`, `beanStick` in `BEAN_CAST`): seamless outlined noodle limbs or bare
+lines (`bean: { limbs: 'tube' | 'line' }`), a shaped body (`bean.torso` fullness), big oval eyes
+(`face.style: 'oval'`, usable on any figure), `hands: 'mitten'` and cartoon shoes; colours from
+`bean: { shirt, sleeves, trousers, shoes }` or an `outfit`; detective gear `bean: { coat, fedora, shades: true }`
+(aviators replace the eyes, brows still show); `halo` gives line limbs a pale edge. A bean is always drawn clean.
 The `look` values are `clean`, `pencil`, `silhouette` and `illustrated`
 (inked and painted, tuned with `illustrated: { light, weight, taper, shadow, highlight }`).
 Age is proportions, hair, creases and clothes, never a stoop; a `cane` in a hand or

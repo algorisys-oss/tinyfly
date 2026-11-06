@@ -38,6 +38,11 @@ names.
   painted: light-weighted lines, shadow and highlight tones, tuned with
   `illustrated: { light, weight, taper, shadow, highlight }`); anime is a face style.
   The same `HUMAN_EXPRESSIONS`, blink, gaze, turn, acting and dance fields apply.
+- White outlined stick figures: `figure: 'bean'` (or `castMember('beanMan' | 'beanWoman' | 'beanKid' | 'beanBoss' | 'beanDetective' | 'beanStick', height)`)
+  draws seamless outlined noodle limbs (`bean: { limbs: 'line' }` for bare lines), a shaped body, big oval eyes
+  (`face.style: 'oval'`), mittens and cartoon shoes; colour it with `bean: { shirt, sleeves, trousers, shoes }`;
+  detective gear `bean: { coat, fedora, shades: true }`; `halo` edges line limbs.
+  It is always drawn clean; every pose, gait, dance and expression field works on it.
 
 - Prefer the high-level builders: `scriptTracks()` beats for characters
   (`characterScript(target, who, beats)` for the same beats on a v2

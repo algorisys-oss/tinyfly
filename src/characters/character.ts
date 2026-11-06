@@ -25,6 +25,7 @@ import { leafOutfit, type LeafOutfitOptions } from './wardrobe/leaf-outfit'
 import { holdingLayers, resolveHolding, type Holding, type HoldingSpec } from './hands/held-items'
 import { HAND_REST, type HandPose } from './hands/hand-rig'
 import { drawCartoonHand } from './hands/draw-cartoon-hand'
+import { beanOrder, drawBeanFedora, drawBeanPart, mittenAt, resolveBean, type Bean, type BeanOptions } from './body/bean-figure'
 
 /**
  * Characters (v2): any body plan, posed by numbers, turned in 3D, drawn flat
@@ -34,8 +35,12 @@ import { drawCartoonHand } from './hands/draw-cartoon-hand'
  * and unchanged. See docs/character-system-m1.md.
  */
 
-/** `stick`: traditional stick figure; `fluid`: tapered limbs; `organic`: filled cartoon anatomy. */
-export type FigureStyle = 'fluid' | 'stick' | 'organic'
+/**
+ * `stick`: traditional stick figure; `fluid`: tapered limbs; `organic`: filled
+ * cartoon anatomy; `bean`: the white outlined figure (smooth outlined noodle
+ * limbs or bare lines, a shaped body, big oval eyes, mittens, cartoon shoes).
+ */
+export type FigureStyle = 'fluid' | 'stick' | 'organic' | 'bean'
 
 /**
  * Draws part of a character: clothes, hair, a prop. The context is in the
@@ -75,6 +80,14 @@ export interface CharacterOptions extends HeadLookOptions {
   /** What each hand holds (`{ right: 'mug' }`, `{ both: 'parcel' }`); a pose field `held.<side>` below 0.5 lets go */
   holding?: HoldingSpec | null
   figure?: FigureStyle
+  /**
+   * The bean figure's options (`figure: 'bean'`): `limbs` (tube | line),
+   * `torso` fullness, `limbWidth`, `lineWidth`, `outlineWidth` (fractions of
+   * the height), `fill`, a `shirt` colour with `sleeves`, `trousers`, `shoes`,
+   * a `halo` for line limbs, and detective gear: `coat`, `fedora`, `shades`.
+   * An `outfit`'s shirt, trousers and sleeves colour it too.
+   */
+  bean?: BeanOptions
   /** Opt-in organic contours, skin material and independent outline settings. */
   body?: OrganicBodyOptions
   look?: Look
@@ -106,9 +119,10 @@ export interface CharacterOptions extends HeadLookOptions {
    * Hands on the fluid figure: `dot` (default) a round end to each arm,
    * `cartoon` posed cartoon hands (gloved in `skin`), shaped by the pose's
    * `hand.left.*` / `hand.right.*` fields (any field of a hand pose, e.g.
-   * `hand.right.index.curl`; see {@link characterHandPose})
+   * `hand.right.index.curl`; see {@link characterHandPose}), `mitten` a
+   * plain oval mitten in `skin` (the bean figure's default)
    */
-  hands?: 'dot' | 'cartoon'
+  hands?: 'dot' | 'cartoon' | 'mitten'
   /**
    * Cartoon hands as `glove` (default: a thumb and three plump fingers, the
    * classic cartoon glove) or `natural` (five slimmer fingers, so shapes like
@@ -128,6 +142,8 @@ export interface Character {
   plan: BodyPlan
   figure: FigureStyle
   body?: OrganicBody
+  /** The bean figure's resolved options (bean only) */
+  bean?: Bean
   look: Look
   illustrated: ResolvedIllustration
   height: number
@@ -138,7 +154,7 @@ export interface Character {
   pencil: PencilOptions
   layers: CharacterLayers
   contact: 'ground' | 'none'
-  hands: 'dot' | 'cartoon'
+  hands: 'dot' | 'cartoon' | 'mitten'
   handStyle: 'glove' | 'natural'
   handSize: number
   /** Hair, facial hair, glasses, a hat and ears: every choice spelled out, so a saved character never changes when a preset does */
@@ -167,20 +183,29 @@ export function character(options: CharacterOptions = {}): Character {
   const build: HumanBuild = options.build ? HUMAN_BUILDS[options.build] : {}
   const bold = (options.proportions ?? 'bold') === 'bold'
   const figure = options.figure ?? 'fluid'
-  const look = options.look ?? 'clean'
+  if (!['fluid', 'stick', 'organic', 'bean'].includes(figure)) throw new Error(`character: unknown figure '${figure}'`)
   const height = options.height ?? 300
   const stick = figure === 'stick'
   const organic = figure === 'organic'
-  const shoulderWidth = options.shoulderWidth ?? build.shoulderWidth ?? (organic ? 0.07 : 0.06)
+  const isBean = figure === 'bean'
+  // The bean figure is always drawn clean: its outline is its look.
+  const look = isBean ? 'clean' : (options.look ?? 'clean')
+  const bean = isBean ? resolveBean({
+    ...(options.outfit ? { shirt: options.outfit.shirt, trousers: options.outfit.trousers, ...(options.outfit.sleeves ? { sleeves: options.outfit.sleeves } : {}) } : {}),
+    ...(options.lineWidth !== undefined ? { outlineWidth: options.lineWidth / height } : {}),
+    ...options.bean,
+  }) : undefined
+  const shoulderWidth = options.shoulderWidth ?? build.shoulderWidth ?? (organic ? 0.07 : isBean ? 0.04 : 0.06)
   // Measured hips are more specific than a named build: the legs sit under them.
   const measuredHips = organic && options.body?.measurements !== undefined ? measuredHipWidth(options.body.measurements) : undefined
-  const hipWidth = options.hipWidth ?? measuredHips ?? build.hipWidth ?? (organic ? 0.045 : 0.022)
-  const lineWidth = options.lineWidth ?? height * (organic ? 0.005 : bold ? 0.045 : 0.022)
-  const ink = options.ink ?? (organic ? '#53362d' : look === 'pencil' ? '#2f2f33' : '#1e293b')
+  const hipWidth = options.hipWidth ?? measuredHips ?? build.hipWidth ?? (organic ? 0.045 : isBean ? 0.02 : 0.022)
+  const lineWidth = bean ? bean.outlineWidth * height : options.lineWidth ?? height * (organic ? 0.005 : bold ? 0.045 : 0.022)
+  const ink = options.ink ?? (organic ? '#53362d' : isBean ? '#111111' : look === 'pencil' ? '#2f2f33' : '#1e293b')
   const skin = options.skin ?? (organic ? '#f1bf98' : look === 'pencil' ? 'none' : '#ffffff')
   const body = organic ? resolveOrganicBody(options.body ?? {}, { skin, ink, lineWidth, shoulderWidth, hipWidth }) : undefined
   if (options.leafOutfit && !organic) throw new Error("character: leafOutfit requires figure: 'organic'")
-  const outfit = options.outfit ? basicOutfit(options.outfit) : null
+  // A bean wears its outfit's colours itself (see resolveBean), not the outfit's layers.
+  const outfit = options.outfit && !isBean ? basicOutfit(options.outfit) : null
   const holding = options.holding ? resolveHolding(options.holding) : {}
   // Clothes first, then the author's layers, then what the hands hold.
   let layers: CharacterLayers = outfit ? stackLayers(outfit, options.layers ?? {}) : (options.layers ?? {})
@@ -199,6 +224,7 @@ export function character(options: CharacterOptions = {}): Character {
       }),
     figure,
     ...(body ? { body } : {}),
+    ...(bean ? { bean } : {}),
     look,
     illustrated: resolveIllustration(options.illustrated, body?.shading.light),
     height,
@@ -210,11 +236,17 @@ export function character(options: CharacterOptions = {}): Character {
     layers,
     holding,
     contact: options.contact ?? 'ground',
-    hands: options.hands ?? (organic ? 'cartoon' : 'dot'),
+    hands: options.hands ?? (organic ? 'cartoon' : isBean ? 'mitten' : 'dot'),
     handStyle: options.handStyle ?? (organic ? 'natural' : 'glove'),
     handSize: options.handSize ?? (organic ? 0.073 : options.handStyle === 'natural' ? 0.14 : 0.17),
     head: resolveHeadLook(options),
-    face: { ...(organic ? { style: 'anime' as const, projection: 'volume' as const, iris: '#66422e', nose: true } : {}), ...options.face, teeth: options.face?.teeth ?? false, tongue: options.face?.tongue ?? false },
+    face: {
+      ...(organic ? { style: 'anime' as const, projection: 'volume' as const, iris: '#66422e', nose: true } : {}),
+      ...(isBean ? { style: 'oval' as const, projection: 'volume' as const, ...(options.bean?.shades ? { shades: true } : {}) } : {}),
+      ...options.face,
+      teeth: options.face?.teeth ?? isBean,
+      tongue: options.face?.tongue ?? isBean,
+    },
   }
 }
 
@@ -296,8 +328,7 @@ function solveFrom(character: Character, full: Pose, skeleton: Skeleton): Solved
   // Limb keys are relative to different parent joints, so a near thigh's
   // larger key must not paint its waist garment over a foreground wrist.
   const foregroundArm = (id: string) => character.body && id.startsWith('arm.') && keys[id] >= 0 ? 1 : 0
-  const order = [...planOrder].sort((a, b) => foregroundArm(a) - foregroundArm(b) || keys[a] - keys[b] || planOrder.indexOf(a) - planOrder.indexOf(b))
-  order.forEach((id, index) => { parts[id].order = index })
+  let order = [...planOrder].sort((a, b) => foregroundArm(a) - foregroundArm(b) || keys[a] - keys[b] || planOrder.indexOf(a) - planOrder.indexOf(b))
 
   const points: Record<string, Point> = { hip: skeleton.hip }
   for (const [name, [chainId, joint]] of Object.entries(character.plan.landmarks ?? {})) {
@@ -319,6 +350,16 @@ function solveFrom(character: Character, full: Pose, skeleton: Skeleton): Solved
     grounded,
   }
   if (character.body) joints.bodyContours = organicBodyContours(character.body, joints, character.plan)
+  // The bean figure's own painter order: back arm, legs, neck, body, front arm, head.
+  if (character.bean && character.plan.id === 'human') {
+    const reach: Record<string, number> = {}
+    for (const id of ['arm.left', 'arm.right', 'leg.left', 'leg.right']) {
+      const depths = skeleton.chains[id]?.depths ?? [0]
+      reach[id] = Math.max(...depths.slice(1, 3)) - depths[0]
+    }
+    order = beanOrder(character.bean, joints, reach)
+  }
+  order.forEach((id, index) => { parts[id].order = index })
   return { skeleton, joints, order }
 }
 
@@ -369,15 +410,22 @@ function drawPart(ctx: CanvasRenderingContext2D, pen: Pen, character: Character,
       drawFace(pen, head, pose, lw, { ...character.face, skin: character.skin === 'none' ? '#ffffff' : character.skin }, ctx)
       ctx.restore()
     })
+    if (character.bean?.fedora) drawBeanFedora(ctx, head, character.bean.fedora, character.ink, lw, pose['head.turn'] ?? 0)
     return
   }
   const chain = character.plan.chains.find((c) => c.id === id)!
   const points = joints.chains[id]
   const line = joints.parts[id].points
+  if (character.bean && character.plan.id === 'human') {
+    drawBeanPart(ctx, character.bean, joints, id, { ink: character.ink, hands: character.hands })
+    if (character.hands === 'cartoon' && id.startsWith('arm.')) drawArmHand(ctx, pen, character, points, id.endsWith('.left') ? 'left' : 'right', pose)
+    return
+  }
   if (character.body && drawOrganicPart(ctx, pen, character.body, joints, id)) {
     if (id.startsWith('leg.')) drawOrganicPart(ctx, pen, character.body, joints, id.replace('leg.', 'foot.'))
     if (id.startsWith('arm.')) {
       if (character.hands === 'cartoon') drawArmHand(ctx, pen, character, points, id.endsWith('.left') ? 'left' : 'right', pose)
+      else if (character.hands === 'mitten') drawMitten(pen, character, points)
       else {
         const hand = points.at(-1)!
         pen.ellipse(hand.x, hand.y, character.height * 0.014, character.height * 0.014, 0, character.skin === 'none' ? null : character.skin, lw)
@@ -401,6 +449,8 @@ function drawPart(ctx: CanvasRenderingContext2D, pen: Pen, character: Character,
       pen.limb([points[2], points[3]], chain.bones[2].width[0] * lw, chain.bones[2].width[1] * lw)
     } else if (character.hands === 'cartoon' && id.startsWith('arm.')) {
       drawArmHand(ctx, pen, character, points, id.endsWith('.left') ? 'left' : 'right', pose)
+    } else if (character.hands === 'mitten' && id.startsWith('arm.')) {
+      drawMitten(pen, character, points)
     } else {
       const hand = points[points.length - 1]
       pen.dot(hand.x, hand.y, lw * 0.62)
@@ -439,6 +489,12 @@ export function characterHandPose(pose: Pose, side: 'left' | 'right'): HandPose 
   // Hanging at the side the thumb points forward: seen from the front that is the thumb side (turn 1).
   const hanging = side === 'right' ? 1 - view : 1 + view
   return { ...HAND_REST, ...own, turn: hanging + (own.turn ?? 0) }
+}
+
+/** A plain oval mitten on the end of an arm, along the forearm, in the skin (white when see-through). */
+function drawMitten(pen: Pen, character: Character, points: Point[]) {
+  const m = mittenAt(points[points.length - 2], points[points.length - 1], character.height)
+  pen.ellipse(m.x, m.y, m.rx, m.ry, m.angle, character.skin === 'none' ? '#ffffff' : character.skin, character.lineWidth * (character.body ? 1 : 0.45))
 }
 
 /** A cartoon hand on the end of an arm, pointing along the forearm. */

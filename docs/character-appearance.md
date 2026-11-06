@@ -497,7 +497,7 @@ cast member at an adult `height` (each stands at their own scale of it). The
 family: `boy`, `girl`, `youngMan`, `youngWoman`, `man`, `woman`, `grandpa`,
 `grandma`; at work (from the occupations sheet): `doctor`, `cook`, `builder`,
 `courier`, `teacher`, `farmer`. `CHARACTER_CAST` has each one's `label`,
-`group` (`family`, `work`, `anime` or `manga`), `scale` and `options`.
+`group` (`family`, `work`, `anime`, `manga` or `bean`), `scale` and `options`.
 
 ```js
 const family = ['man', 'woman', 'girl', 'grandma'].map((name) => character(castMember(name, 280)))
@@ -539,6 +539,67 @@ The **Colour Anime Cast** example shows all eight presets, expressions,
 face close-ups and a complete turnaround. Both the Character and 3D Scene
 editors offer these presets in their Cast picker. The Character editor also
 has Face style, Iris colour, Eyelashes and Age creases controls, saved in project JSON.
+
+### Bean figures (white outlined stick figures)
+
+`figure: 'bean'` draws the common white outlined stick-figure style: a white
+figure with a thick black outline, smooth noodle limbs, a shaped body (rounded
+shoulders, a slight waist, fuller hips and a rounded seat), a round head with
+big white oval eyes, small pupils and heavy brows, white mittens and big
+cartoon shoes (a flat sole on the ground, a rounded toe cap, a low heel). The
+rig solves the pose as for every figure, so every pose, gait, dance, reach,
+turn and lip-sync works on it.
+
+```js
+const hero = character({ figure: 'bean', height: 400, hair: { style: 'spiky', color: '#111' },
+  bean: { shirt: '#ef4444', trousers: '#1e3a5f' } })
+drawCharacter(ctx, hero, humanPose({ ...HUMAN_POSES.point, ...HUMAN_EXPRESSIONS.happy, turn: 0.5 }))
+const stick = character(castMember('beanStick', 400))   // bare line limbs
+```
+
+- Each limb is one smooth curve through its joints, stroked in the ink and
+  stroked again, narrower, in the fill, with round caps and joins: elbows and
+  knees never show a seam. The front arm, and on a plain figure the neck and
+  the legs, join the body without a seam: their outline is left out where it
+  lies inside the body at the root, so the fills flow together. Under a tee or
+  trousers the hem shows instead.
+- Painter order (`joints.parts[id].order`): the back arm, the legs, the neck,
+  the body (and coat), the near arm and the head (and fedora). A limb reaching toward the viewer
+  (hands on the knees, seated thighs) draws over the body.
+- `bean: { limbs, torso, limbWidth, lineWidth, outlineWidth, fill, shirt, sleeves, trousers, shoes }`:
+  `limbs: 'tube'` (default, outlined noodles) or `'line'` (bare round-capped
+  ink lines for the arms, legs and neck; the body, eyes, mittens and shoes
+  stay; `halo: '#f5f5f4'` adds a pale edge so they read on a dark set); the
+  near arm is in front of the body in both modes; `torso` body fullness
+  (1; 1.3 chubby, 0.85 thin); widths as fractions of the height (0.024 tube,
+  0.017 line, 0.0105 outline; `lineWidth` on the character also sets the
+  outline); `fill` (white); a `shirt` colour with `sleeves: 'short' | 'long' | 'none'`;
+  `trousers`; `shoes` (the fill; a dark shoe gets a shine and a dark sole).
+  An `outfit`'s `shirt`, `trousers` and `sleeves` colour the bean too (its
+  layers are not used).
+- Detective gear: `coat` (a trench coat in that colour: lapels, a belt and
+  buckle, double-breasted buttons, a hem at the knee and sleeves to the
+  wrist), `fedora` (a brim, a pinched crown and a band) and `shades: true`
+  (big dark aviator lenses in place of the eyes, the brows still showing,
+  so the face keeps its expression; the same as `face: { shades: true }` on
+  any oval-eyed face). `castMember('beanDetective', 400)` wears all three.
+- Defaults: ink `#111111`, white skin, `hands: 'mitten'`, shoulders 0.04 and
+  hips 0.02 of the height, `face: { style: 'oval', projection: 'volume', teeth: true, tongue: true }`.
+  The bean is always drawn in the clean look (its outline is the look).
+- `face.style: 'oval'` works on any figure: big white oval eyes almost
+  touching, a small pupil following `lookX`/`lookY`, lids in the skin for
+  `lid`, a blink or a half-open `eye.*`, a lid line when shut (arched up in a
+  laugh), heavy brows for `brow.left`/`brow.right` and `browTilt`, and
+  bigger eyes for `eye.*` above 1 and `bulge`. Glasses grow to fit round the
+  big eyes; `face.shades` puts aviators in their place.
+- `hands: 'mitten'` (any figure) is a plain oval mitten along the forearm.
+- Presets in `BEAN_CAST` (also in `CHARACTER_CAST`, group `bean`):
+  `beanMan`, `beanWoman`, `beanKid`, `beanBoss`, `beanDetective` and
+  `beanStick` (bare lines).
+- Helpers for your own layers: `beanTorso(bean, joints)` and
+  `beanTorsoOutline(torso)` (the body's shape), `beanLimbLine(root, joint, end)`
+  (a limb's centre line), `mittenAt`, `beanShoeAt`, `beanOrder`, `beanOverBody`,
+  `drawBeanFedora`.
 
 ### Young adult manga cast
 

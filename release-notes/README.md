@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.122.0](v0.122.0.md) | 2026-11-06 | Bean figures: `figure: 'bean'` white outlined stick figures with seamless outlines, bare-line limbs, big oval eyes, mittens and cartoon shoes |
 | [v0.121.0](v0.121.0.md) | 2026-10-16 | A loss surface in 3D: lossSurface3D builds scene-3d JSON with a ball rolling down the descent path |
 | [v0.120.0](v0.120.0.md) | 2026-10-16 | Characters present maths figures: `mathSurface` anchors and edits for `surfaceScript` |
 | [v0.119.1](v0.119.1.md) | 2026-10-16 | ML figures treat a NaN or infinite epochs / iteration / steps / flow as 0 |

@@ -15,8 +15,8 @@ import { HAIR_COLORS } from './head/hair'
 export interface CastMember {
   /** What to call them in a picker */
   label: string
-  /** A family, occupation, colour anime or young adult manga preset. */
-  group: 'family' | 'work' | 'anime' | 'manga'
+  /** A family, occupation, colour anime, young adult manga or bean (white outlined stick figure) preset. */
+  group: 'family' | 'work' | 'anime' | 'manga' | 'bean'
   /** Height next to an adult (1) */
   scale: number
   /** Everything else about them */
@@ -110,6 +110,40 @@ export const MANGA_CAST = {
 } satisfies Record<string, CastMember>
 
 export type MangaCastName = keyof typeof MANGA_CAST
+
+/**
+ * Bean figures (`figure: 'bean'`): white outlined stick figures with big oval
+ * eyes, told apart by hair, glasses, facial hair and a colour or two. Original,
+ * generic starting points; every field stays editable.
+ */
+export const BEAN_CAST = {
+  beanMan: {
+    label: 'Bean man', group: 'bean', scale: 1,
+    options: { figure: 'bean', hair: { style: 'short', color: '#1f1f1f' } },
+  },
+  beanWoman: {
+    label: 'Bean woman', group: 'bean', scale: 0.96,
+    options: { figure: 'bean', hair: { style: 'bob', color: '#1f1f1f' }, bean: { torso: 0.95 } },
+  },
+  beanKid: {
+    label: 'Bean kid', group: 'bean', scale: 0.72,
+    options: { figure: 'bean', headSize: 0.36, legLength: 0.9, armLength: 0.92, hair: { style: 'spiky', color: '#1f1f1f' }, bean: { shirt: '#f2b134', trousers: '#3d5a80', torso: 0.9 } },
+  },
+  beanBoss: {
+    label: 'Bean boss', group: 'bean', scale: 1,
+    options: { figure: 'bean', hair: { style: 'slickBack', color: '#4a4a4a' }, facialHair: 'shortMoustache', glasses: 'square', bean: { shirt: '#5b7aa6', trousers: '#2b2f3a', sleeves: 'long', torso: 1.25 } },
+  },
+  beanDetective: {
+    label: 'Bean detective', group: 'bean', scale: 1,
+    options: { figure: 'bean', hair: { style: 'short', color: '#2a2a2a' }, bean: { coat: '#b08a5a', fedora: '#5b4636', shades: true, trousers: '#2b2f3a', shoes: '#1a1a1a' } },
+  },
+  beanStick: {
+    label: 'Bean stick figure', group: 'bean', scale: 1,
+    options: { figure: 'bean', bean: { limbs: 'line' } },
+  },
+} satisfies Record<string, CastMember>
+
+export type BeanCastName = keyof typeof BEAN_CAST
 
 export const CHARACTER_CAST = {
   boy: {
@@ -205,6 +239,7 @@ export const CHARACTER_CAST = {
   },
   ...ANIME_CAST,
   ...MANGA_CAST,
+  ...BEAN_CAST,
 } satisfies Record<string, CastMember>
 
 export type CastName = keyof typeof CHARACTER_CAST

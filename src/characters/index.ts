@@ -37,7 +37,8 @@ export { organicBodyContours, organicCenterLine, type OrganicBodyContours, type 
 export { BODY_SHAPES, bodyShapeProfiles, measuredHipWidth, resolveMeasurements, type BodyMeasurements, type BodyShapeName, type BodyShapeProfiles } from './body/body-shape'
 export { humanPlan, humanPose, mirrorHumanPose, humanFieldLabel, HUMAN_REST, HUMAN_POSES, HUMAN_EXPRESSIONS, HUMAN_BUILDS, FOOT_SHAPES, type FootShape, type HumanBuild, type HumanBuildName, type HumanPoseName, type HumanExpressionName } from './species/human'
 // A recurring cast of ready-made characters (family, ages, looks).
-export { CHARACTER_CAST, ANIME_CAST, MANGA_CAST, castMember, type CastMember, type CastName, type AnimeCastName, type MangaCastName } from './cast'
+export { CHARACTER_CAST, ANIME_CAST, MANGA_CAST, BEAN_CAST, castMember, type CastMember, type CastName, type AnimeCastName, type MangaCastName, type BeanCastName } from './cast'
+export { resolveBean, beanTorso, beanTorsoOutline, beanOrder, beanOverBody, beanLimbLine, mittenAt, beanShoeAt, drawBeanFedora, BEAN_ARM_REACH, BEAN_LEG_REACH, BEAN_SOLE, BEAN_DARK_SOLE, type Bean, type BeanOptions, type BeanTorso } from './body/bean-figure'
 export type { FaceOptions, PupilCircle } from './head/face'
 // Two characters whose hands meet: handshakes, high fives, fist bumps, a parcel handed over.
 export { meetHands, meetingSpacing, HAND_MEETINGS, embrace, embraceSpacing, EMBRACE, helpUp, helpUpSpacing, HELP_UP, type HandMeeting, type HandsMeet, type MeetingPartner, type MeetHandsOptions, type Embrace, type EmbraceOptions, type HelpUp, type HelpUpOptions } from './interactions'

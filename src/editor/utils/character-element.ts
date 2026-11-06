@@ -26,11 +26,15 @@ export function characterOf(element: CharacterElement): Character {
     lineWidth: element.lineWidth,
     // Each character boils on its own: the seed comes from its id.
     seed: hashSeed(element.id) % 1000,
+    ...(element.figure === 'bean' ? { bean: {
+      ...(element.outfit === 'basic' ? { shirt: element.shirt, trousers: element.trousers, ...(element.sleeves ? { sleeves: element.sleeves } : {}) } : {}),
+      ...element.bean,
+    } } : {}),
     layers:
-      element.outfit === 'basic'
+      element.outfit === 'basic' && element.figure !== 'bean'
         ? basicOutfit({ top: element.top, trouserStyle: element.trouserStyle, shirt: element.shirt, trousers: element.trousers, sleeves: element.sleeves, bottom: element.bottom, collar: element.collar, tie: element.tie, over: element.over, shoes: element.shoes })
         : undefined,
-    hands: element.hands === undefined ? undefined : element.hands === 'dot' ? 'dot' : 'cartoon',
+    hands: element.hands === undefined ? undefined : element.hands === 'dot' || element.hands === 'mitten' ? element.hands : 'cartoon',
     handStyle: element.hands === undefined ? undefined : element.hands === 'natural' ? 'natural' : 'glove',
     handSize: element.handSize,
     ...element.build,
@@ -40,7 +44,7 @@ export function characterOf(element: CharacterElement): Character {
     hat: (element.hat as HatStyle | undefined) ?? null,
     ears: element.ears ?? false,
     face: {
-      teeth: element.teeth ?? false, tongue: element.tongue ?? false,
+      teeth: element.teeth ?? element.figure === 'bean', tongue: element.tongue ?? element.figure === 'bean',
       ...(element.faceStyle !== undefined ? { style: element.faceStyle } : {}),
       ...(element.faceShape !== undefined ? { shape: element.faceShape } : {}),
       ...(element.faceProjection !== undefined ? { projection: element.faceProjection } : {}),
@@ -68,7 +72,7 @@ export function characterControlValues(element: CharacterElement) {
     hipWidth: Math.abs(who.plan.chains.find(chain => chain.id === 'leg.left')?.offset?.[0] ?? 0),
     legLength: element.build?.legLength ?? 1,
     armLength: element.build?.armLength ?? 1,
-    hands: who.hands === 'dot' ? 'dot' : who.handStyle === 'natural' ? 'natural' : 'cartoon',
+    hands: who.hands === 'dot' || who.hands === 'mitten' ? who.hands : who.handStyle === 'natural' ? 'natural' : 'cartoon',
     lineWidth: who.lineWidth,
     skin: who.skin,
     ink: who.ink,
@@ -139,6 +143,9 @@ export function castElementFields(name: CastName): Partial<CharacterElement> {
     glasses: styleOf(options.glasses),
     hat: styleOf(options.hat),
     ears: Boolean(options.ears),
+    ...(options.bean ? { bean: { ...(options.bean as Record<string, unknown>) } } : options.figure ? { bean: undefined } : {}),
+    // A bean wears its own colours (bean.shirt / bean.trousers) unless the preset dresses it.
+    ...(options.figure === 'bean' && !outfit ? { outfit: 'none' as const } : {}),
     ...(outfit
       ? {
           outfit: 'basic' as const,
