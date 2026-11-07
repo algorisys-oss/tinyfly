@@ -1,3 +1,12 @@
+## Noir / detective kit and bean household clothes — v0.123.0
+
+- [x] Atmosphere (`src/characters/noir/atmosphere.ts`): `drawRain` (seeded, clipped to a box), `drawBlinds`, `drawDarkness` with torch cones and holes (`coneCorners`), `drawGlow`, `drawVignette`, `lightningFlash`, `lightFlicker`; pure functions of time.
+- [x] Detective overlays (`overlays.ts`): `drawClueMarker` / `clueMarkerAt`, `drawEvidenceFolder`, `drawClockFace` / `clockHandAngles`, `drawTimeChip`, `drawNameCard`, `drawNarrationBox` / `lineReveal` (typed a word at a time), `drawSpeechBubble`; caller text and fonts.
+- [x] Case board (`case-board.ts`): `caseBoard` (checked data, did-you-mean), `drawCaseBoard` (cork, pinned photo/note cards popping up, red strings stretching, `cross` / `strike` / `scribble` / `circle` marks drawn on), `caseBoardMarkerTip`, `caseCardBox`, `caseMarkPath`, `drawPushPin`, `drawMarkerStroke`.
+- [x] Bean household clothes: `bean.skirt` (colour or `{ color, length }`, flares standing, lies along the thighs seated), `bean.drape` (pallu/dupatta sash), `bean.bangles`; `beanSari` preset; `beanAlongLeg`, `beanStanding`, `BEAN_BANGLE_STOPS`.
+- [x] `NOIR_KIT` in the capabilities catalog (`npx tinyfly capabilities`), docs/noir-detective.md, appearance guide, model guides, the Noir Case File live example; tests (pixels, timing, determinism, errors).
+- [ ] Later: soft-edged torch beams; a case board as a surface for `surfaceScript` (pin, tie, cross out as beats); editor controls for bean clothes.
+
 ## Bean figures — v0.122.0
 
 - [x] `figure: 'bean'`: white outlined stick figure on the human rig; limbs as one smooth curve stroked ink then fill (no elbow/knee seams); seamless joins of the front arm, plain neck and plain legs into the body; shaped body (shoulders, waist, hips, seat); cartoon shoes; painter order with reaching limbs over the body.

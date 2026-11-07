@@ -223,6 +223,17 @@ lines (`bean: { limbs: 'tube' | 'line' }`), a shaped body (`bean.torso` fullness
 (`face.style: 'oval'`, usable on any figure), `hands: 'mitten'` and cartoon shoes; colours from
 `bean: { shirt, sleeves, trousers, shoes }` or an `outfit`; detective gear `bean: { coat, fedora, shades: true }`
 (aviators replace the eyes, brows still show); `halo` gives line limbs a pale edge. A bean is always drawn clean.
+Household clothes on a bean: `bean: { skirt: '#c2410c' }` (a sari to the ankle) or
+`skirt: { color, length: 0.45 }` (a kurta hem; pair it with `trousers`), `drape` (a pallu or dupatta sash)
+and `bangles`; preset `beanSari`. The skirt follows the legs (flared standing, along the thighs seated).
+For detective / noir scenes use the canvas kit (docs/noir-detective.md): `drawRain(ctx, time, box)`,
+`drawBlinds`, `drawDarkness(ctx, { amount, cones: [{ x, y, angle /* degrees */, length, width }], holes })`,
+`drawGlow`, `drawVignette`, `drawClueMarker(ctx, time, { x, y, at })`, `drawNameCard(ctx, time, { name, role, at, anchor })`,
+`drawNarrationBox(ctx, time, { text, start, end, speaker })`, `drawSpeechBubble(ctx, time, { text, start, end, tail })`,
+`drawTimeChip`, `drawClockFace`, `drawEvidenceFolder`, and a case board as data:
+`drawCaseBoard(ctx, caseBoard({ x, y, width, height, cards, strings, marks }), time, { drawCard })`
+(marks `cross | strike | scribble | circle`; it returns the marker nib). All times are ms and every
+function is a pure function of time; never use `Math.random` for rain or grain. Text is yours (any script).
 The `look` values are `clean`, `pencil`, `silhouette` and `illustrated`
 (inked and painted, tuned with `illustrated: { light, weight, taper, shadow, highlight }`).
 Age is proportions, hair, creases and clothes, never a stoop; a `cane` in a hand or

@@ -11,6 +11,17 @@ its own controls and scrolling in a full viewport; gallery panels and code
 sections remain in the original tab. **Copy code** exports the same standalone
 HTML. [Try the manga example](https://tinyfly.app/examples/live-manga-cast/full).
 
+## Noir Case File
+
+[Noir Case File](https://tinyfly.app/examples/live-noir-case-file) plays a
+detective scene from the noir kit: rain on the window, street light through
+the blinds, a torch beam in the dark, the red clue magnifier, a speech
+bubble, a freeze-frame name card, a narration box and a time chip. Switch to
+the case board, where cards are pinned up, red string stretches between them
+and the marker crosses out, strikes, scribbles out and rings them. The bean
+cast wears a trench coat and a sari with a pallu and bangles. See
+[Noir and Detective Scenes](noir-detective.md).
+
 ## Young Adult Manga Cast
 
 [Young Adult Manga Cast](https://tinyfly.app/examples/live-manga-cast) shows
@@ -743,7 +754,7 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.122.0/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.123.0/cdn/tinyfly-player.iife.js`.
 
 ---
 

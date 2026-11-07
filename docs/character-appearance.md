@@ -563,8 +563,9 @@ const stick = character(castMember('beanStick', 400))   // bare line limbs
   the legs, join the body without a seam: their outline is left out where it
   lies inside the body at the root, so the fills flow together. Under a tee or
   trousers the hem shows instead.
-- Painter order (`joints.parts[id].order`): the back arm, the legs, the neck,
-  the body (and coat), the near arm and the head (and fedora). A limb reaching toward the viewer
+- Painter order (`joints.parts[id].order`): the back arm, the legs (and a
+  skirt over both), the neck, the body (with its drape, and coat), the near
+  arm and the head (and fedora). A limb reaching toward the viewer
   (hands on the knees, seated thighs) draws over the body.
 - `bean: { limbs, torso, limbWidth, lineWidth, outlineWidth, fill, shirt, sleeves, trousers, shoes }`:
   `limbs: 'tube'` (default, outlined noodles) or `'line'` (bare round-capped
@@ -583,6 +584,26 @@ const stick = character(castMember('beanStick', 400))   // bare line limbs
   (big dark aviator lenses in place of the eyes, the brows still showing,
   so the face keeps its expression; the same as `face: { shades: true }` on
   any oval-eyed face). `castMember('beanDetective', 400)` wears all three.
+- Household clothes (all off by default):
+  - `skirt`: a colour (a sari or long skirt, ending just above the ankle so
+    the shoes show) or `{ color, length }`, `length` 0.1–1 of the way from
+    the hips to the ankles (about 0.45 for a kurta's hem over trousers). It
+    follows the legs: standing or walking it is one flared shape outside both
+    legs with two soft pleats; seated (`beanStanding(joints)` is false) it
+    lies along each thigh to the knees and shins, its ends kept above the
+    floor. Under a skirt the legs draw before the body, so the body covers
+    the waist.
+  - `drape`: a pallu or dupatta in that colour, a band from the shoulder by
+    the neck across the chest to the far hip, inside the body's outline.
+  - `bangles`: their colour; three thin rings across each forearm near the
+    wrist (`BEAN_BANGLE_STOPS`), over any sleeve.
+  - `castMember('beanSari', 400)` wears all three, with a blouse (`shirt`),
+    a low bun and dark shoes.
+
+  ```js
+  const kurta = character({ figure: 'bean', height: 400, hair: { style: 'bob', color: '#222' },
+    bean: { shirt: '#0e7490', skirt: { color: '#0e7490', length: 0.45 }, trousers: '#f5f5f4', drape: '#fbbf24', bangles: '#dc2626' } })
+  ```
 - Defaults: ink `#111111`, white skin, `hands: 'mitten'`, shoulders 0.04 and
   hips 0.02 of the height, `face: { style: 'oval', projection: 'volume', teeth: true, tongue: true }`.
   The bean is always drawn in the clean look (its outline is the look).
@@ -594,12 +615,16 @@ const stick = character(castMember('beanStick', 400))   // bare line limbs
   big eyes; `face.shades` puts aviators in their place.
 - `hands: 'mitten'` (any figure) is a plain oval mitten along the forearm.
 - Presets in `BEAN_CAST` (also in `CHARACTER_CAST`, group `bean`):
-  `beanMan`, `beanWoman`, `beanKid`, `beanBoss`, `beanDetective` and
-  `beanStick` (bare lines).
+  `beanMan`, `beanWoman`, `beanKid`, `beanBoss`, `beanDetective`,
+  `beanStick` (bare lines) and `beanSari` (a sari with a pallu and bangles).
 - Helpers for your own layers: `beanTorso(bean, joints)` and
   `beanTorsoOutline(torso)` (the body's shape), `beanLimbLine(root, joint, end)`
   (a limb's centre line), `mittenAt`, `beanShoeAt`, `beanOrder`, `beanOverBody`,
-  `drawBeanFedora`.
+  `drawBeanFedora`, `beanAlongLeg(joints, side, f)` (a point along a leg) and
+  `beanStanding(joints)`.
+- For detective and noir scenes around these figures (rain, blinds, torch
+  beams, clue markers, name cards, a case board), see
+  [Noir and Detective Scenes](noir-detective.md).
 
 ### Young adult manga cast
 

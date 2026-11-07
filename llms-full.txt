@@ -591,7 +591,7 @@ with a GSAP-style call (durations are in seconds here):
 ```html
 <div class="box" style="width:60px;height:60px;background:#4a9eff"></div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.122.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.123.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -799,7 +799,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.122.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.123.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -1982,6 +1982,17 @@ its own controls and scrolling in a full viewport; gallery panels and code
 sections remain in the original tab. **Copy code** exports the same standalone
 HTML. [Try the manga example](https://tinyfly.app/examples/live-manga-cast/full).
 
+## Noir Case File
+
+[Noir Case File](https://tinyfly.app/examples/live-noir-case-file) plays a
+detective scene from the noir kit: rain on the window, street light through
+the blinds, a torch beam in the dark, the red clue magnifier, a speech
+bubble, a freeze-frame name card, a narration box and a time chip. Switch to
+the case board, where cards are pinned up, red string stretches between them
+and the marker crosses out, strikes, scribbles out and rings them. The bean
+cast wears a trench coat and a sari with a pallu and bangles. See
+[Noir and Detective Scenes](noir-detective.md).
+
 ## Young Adult Manga Cast
 
 [Young Adult Manga Cast](https://tinyfly.app/examples/live-manga-cast) shows
@@ -2714,7 +2725,7 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.122.0/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.123.0/cdn/tinyfly-player.iife.js`.
 
 ---
 
@@ -7068,7 +7079,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.122.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.123.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed
@@ -8444,6 +8455,17 @@ lines (`bean: { limbs: 'tube' | 'line' }`), a shaped body (`bean.torso` fullness
 (`face.style: 'oval'`, usable on any figure), `hands: 'mitten'` and cartoon shoes; colours from
 `bean: { shirt, sleeves, trousers, shoes }` or an `outfit`; detective gear `bean: { coat, fedora, shades: true }`
 (aviators replace the eyes, brows still show); `halo` gives line limbs a pale edge. A bean is always drawn clean.
+Household clothes on a bean: `bean: { skirt: '#c2410c' }` (a sari to the ankle) or
+`skirt: { color, length: 0.45 }` (a kurta hem; pair it with `trousers`), `drape` (a pallu or dupatta sash)
+and `bangles`; preset `beanSari`. The skirt follows the legs (flared standing, along the thighs seated).
+For detective / noir scenes use the canvas kit (docs/noir-detective.md): `drawRain(ctx, time, box)`,
+`drawBlinds`, `drawDarkness(ctx, { amount, cones: [{ x, y, angle /* degrees */, length, width }], holes })`,
+`drawGlow`, `drawVignette`, `drawClueMarker(ctx, time, { x, y, at })`, `drawNameCard(ctx, time, { name, role, at, anchor })`,
+`drawNarrationBox(ctx, time, { text, start, end, speaker })`, `drawSpeechBubble(ctx, time, { text, start, end, tail })`,
+`drawTimeChip`, `drawClockFace`, `drawEvidenceFolder`, and a case board as data:
+`drawCaseBoard(ctx, caseBoard({ x, y, width, height, cards, strings, marks }), time, { drawCard })`
+(marks `cross | strike | scribble | circle`; it returns the marker nib). All times are ms and every
+function is a pure function of time; never use `Math.random` for rain or grain. Text is yours (any script).
 The `look` values are `clean`, `pencil`, `silhouette` and `illustrated`
 (inked and painted, tuned with `illustrated: { light, weight, taper, shadow, highlight }`).
 Age is proportions, hair, creases and clothes, never a stoop; a `cane` in a hand or
@@ -8695,7 +8717,7 @@ path for all of that:
 </figure>
 
 <!-- once, anywhere on the page (a site-wide footer is fine) -->
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.122.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.123.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 Every `[data-tinyfly-embed]` mounts when the page is ready, with no per-post
@@ -9281,7 +9303,7 @@ lesson's step options (`duration`, `easing`, `delay`).
   <figcaption>The determinant is the area of the unit square after the map.</figcaption>
 </figure>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.122.0/cdn/tinyfly-math.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.123.0/cdn/tinyfly-math.iife.js" data-tinyfly-auto></script>
 ```
 
 The figure draws itself into an SVG and redraws from the timeline whenever the
@@ -10415,8 +10437,8 @@ On a page with no build step, load the maps add-on after the browser bundle; it
 adds to the same `tinyfly` global:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.122.0/cdn/tinyfly.iife.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.122.0/cdn/tinyfly-maps.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.123.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.123.0/cdn/tinyfly-maps.iife.js"></script>
 ```
 
 It is a separate script because the offline world map it carries adds about
@@ -10616,6 +10638,148 @@ prop, or the depths to slot it between fingers.
 - A forearm pointing straight at the viewer does not foreshorten the hand.
 - The v1 stick figure draws these hands with `style.hands`; see
   [Dance and Flips](dance.md).
+
+---
+
+<!-- docs/noir-detective.md -->
+
+# Noir and Detective Scenes
+
+A kit for detective stories and film-noir moods on a canvas: rain on the
+window, street light through venetian blinds, a dark room with a torch beam,
+soft pools of light and a vignette; the red magnifier that marks a clue, an
+evidence folder, a wall clock and a time chip, a freeze-frame name card for a
+suspect, a first-person narration box and speech bubbles; and a case board
+with pinned cards, red string and the marker's cross-outs and scribble-outs.
+
+Every function draws on a Canvas 2D context, takes the time in ms and plain
+options, and draws the same thing for the same input: rain comes from a
+seeded generator, never `Math.random`, so a frame looks the same whether it
+is rendered in order, out of order or scrubbed to. Text is always yours (any
+language or script) and so are the fonts (`font` is a CSS family list).
+
+```js
+import { character, castMember, drawCharacter, humanPose, HUMAN_POSES,
+  drawRain, drawBlinds, drawDarkness, drawVignette, drawClueMarker,
+  drawNameCard, drawNarrationBox, drawTimeChip } from '@algorisys/tinyfly/characters'
+
+const detective = character(castMember('beanDetective', 460))
+
+function frame(ctx, time) {
+  ctx.fillStyle = '#232b37'
+  ctx.fillRect(0, 0, 1920, 1080)
+  drawRain(ctx, time, { x: 1500, y: 160, width: 340, height: 440 })          // the window
+  drawBlinds(ctx, { x: 0, y: 0, width: 1920, height: 1080, opacity: 0.08 })
+  ctx.save(); ctx.translate(560, 880)
+  drawCharacter(ctx, detective, humanPose({ ...HUMAN_POSES.think, turn: 0.45 }), time)
+  ctx.restore()
+  drawDarkness(ctx, { amount: 1, cones: [{ x: 640, y: 520, angle: 15, length: 760, width: 190 }] })
+  drawClueMarker(ctx, time, { x: 900, y: 680, at: 1500 })
+  drawNameCard(ctx, time, { name: 'The witness', role: 'heard footsteps', at: 6800, anchor: { x: 1340, y: 470 } })
+  drawVignette(ctx, { width: 1920, height: 1080 })
+  drawTimeChip(ctx, time, { x: 50, y: 40, text: 'Tuesday · 9:40 PM' })
+  drawNarrationBox(ctx, time, { text: 'It rained all night.', start: 300, end: 3400, speaker: 'Case file #1' })
+}
+```
+
+The [Noir Case File](https://tinyfly.app/examples/live-noir-case-file)
+example plays a whole scene and its case board.
+
+## Atmosphere
+
+| Function | What it draws |
+|---|---|
+| `drawRain(ctx, time, { x, y, width, height, drops?, opacity?, color?, speed?, length?, slant?, lineWidth?, seed? })` | Streaks falling in a box (a window, or the whole frame), clipped to it. 70 drops at 900–1440 px/s by default; `seed` moves them. |
+| `drawBlinds(ctx, { x, y, width, height, opacity?, slope?, spacing?, band?, color? })` | Key light through venetian blinds: parallel slanted bands (`slope` 0.35, every 52 px, 24 px thick). |
+| `drawDarkness(ctx, { amount, cones?, holes?, bounds?, color?, opacity?, beam?, beamOpacity? })` | A dark overlay (`amount` 0–1) with torch beams and round holes cut out. A cone is `{ x, y, angle, length, width }`: from its apex toward `angle` degrees (0 right, 90 down), `width` half-wide at its end; a hole is `{ x, y, radius }`. Beams keep a little of the dark and a faint warm tint (`beam: null` for none). `coneCorners(cone)` gives a beam's corners. |
+| `drawGlow(ctx, { x, y, radius, color?, opacity? })` | A soft pool of light (a lamp, a lit window): a radial gradient to clear. |
+| `drawVignette(ctx, { width, height, x?, y?, inner?, outer?, opacity?, color? })` | The frame's edges fall into dark, from `inner` to `outer` of the half-diagonal. |
+| `lightningFlash(time, strikes, decay?)` | Flash brightness 0–1 from strike times; fill the frame with a pale blue at about 0.25 × this. |
+| `lightFlicker(time, strength?)` | A failing bulb: 0 or `strength`, in an irregular but repeatable rhythm; darken the room by it. |
+
+Colours may be `#rgb`, `#rrggbb`, `rgb()` or `rgba()`; opacities multiply in.
+
+## Detective overlays
+
+| Function | What it draws |
+|---|---|
+| `drawClueMarker(ctx, time, { x, y, radius?, at, duration?, color?, lineWidth? })` | The red magnifier over a clue (or a red herring): pops on at `at`, pulses, fades out over the last 400 ms of `duration` (3000). Returns its opacity; `clueMarkerAt(time, { at, duration })` gives `{ opacity, scale }`. |
+| `drawEvidenceFolder(ctx, { x, y, scale?, angle?, color?, ink?, label?, font? })` | A tabbed folder (68 × 48 px at scale 1), tilted `angle` degrees, with an optional short label. |
+| `drawClockFace(ctx, { x, y, radius?, hours, minutes, face?, ink? })` | A wall clock showing a time; `clockHandAngles(hours, minutes)` gives the hands. |
+| `drawTimeChip(ctx, time, { x, y, text, size?, font?, color?, background?, at? })` | A time or place chip (amber on black) that fades in; returns its width. |
+| `drawNameCard(ctx, time, { name, role?, at, duration?, anchor, side?, frame?, dim?, color?, nameSize?, roleSize?, font?, tilt? })` | The freeze-frame suspect card: the frame dims (`dim` 0.35) and a slanted red band names them beside their head (`anchor`), on the side with room (`side: 'auto'`). Returns its opacity. |
+| `drawNarrationBox(ctx, time, { text, start, end, speaker?, x?, width?, bottom?, size?, font?, background?, ink?, tagColor?, typeDuration? })` | A first-person narration box along the bottom: cream paper, the narrator's tag, the words typed on a whole word at a time (so every script types cleanly). `lineReveal(time, start, end)` gives `{ opacity, reveal }`. |
+| `drawSpeechBubble(ctx, time, { text, start, end, tail, speaker?, maxWidth?, size?, font?, bounds?, maxCenterY?, gap?, fill?, ink? })` | A crisp comic bubble above the speaker, its tail to `tail` (their head), kept inside `bounds`; pops on at `start`, shrinks away after `end`. |
+
+The defaults fit a 1920 × 1080 frame; pass `frame`, `bounds` or `x`/`width`
+for another size. Draw overlays after the camera's transform is undone (in
+screen space) and map heads with your camera, as `cameraPoint` does.
+
+## The case board
+
+A board is plain data: cards (photos of suspects, notes about clues), strings
+between them and the marker's work, each with a time.
+
+```js
+import { caseBoard, drawCaseBoard, caseBoardMarkerTip, drawCharacter, humanPose } from '@algorisys/tinyfly/characters'
+
+const board = caseBoard({
+  x: 60, y: 110, width: 1800, height: 900,
+  cards: [
+    { id: 'title', x: 900, y: 40, kind: 'note', title: 'WHO CUT THE ALARM?', width: 520, height: 96 },
+    { id: 'lift', x: 900, y: 300, title: 'Lift 2', note: 'stuck at 9:40' },
+    { id: 'guard', x: 330, y: 540, title: 'The guard', note: 'had the key', at: 700 },
+    { id: 'wire', x: 1450, y: 220, kind: 'note', title: 'alarm wire: cut', at: 1400 },
+  ],
+  strings: [{ from: 'lift', to: 'guard', at: 1000 }, { from: 'lift', to: 'wire', at: 1400 }],
+  marks: [
+    { on: 'guard', kind: 'cross', at: 3200 },
+    { on: 'title', kind: 'scribble', at: 6000, duration: 1200 },
+  ],
+})
+
+const nib = drawCaseBoard(ctx, board, time, {
+  drawCard: (ctx, card, area) => { /* draw a portrait inside area (clipped), in the card's frame */ },
+})
+if (nib) drawMarkerHand(ctx, nib)   // your own hand or pen, at the marker's nib
+```
+
+- **Cards**: `{ id, x, y, kind?, title?, note?, width?, height?, angle?, color?, at?, highlight? }`.
+  `x`, `y` is where the card is pinned (its top centre), relative to the
+  board. `kind: 'photo'` (default, 220 × 260) is a print with a dark picture
+  area, a bold title and a red note; `kind: 'note'` (220 × 124) is a yellow
+  slip with the title and note in `handFont`. A card pops up onto its pin at
+  `at`; `highlight: { at, duration }` pulses an amber outline round it. Tilts
+  default to a small seeded angle.
+- **Strings**: `{ from, to, at?, duration?, color? }`, red string stretching
+  from one pin to the other over `duration` (600 ms), under the cards.
+- **Marks**: `{ on, kind, at, duration?, color?, width? }`, the marker drawn
+  on over `duration` (1400 ms): `cross` (two diagonals, one after the
+  other: ruled out), `strike` (one diagonal: half ruled out), `scribble` (a
+  zigzag across the card: scribbled out) and `circle` (a loose ring round
+  it). Marks stay once drawn.
+- `caseBoard` checks the board and resolves every default; an unknown card
+  id or kind throws with a did-you-mean.
+- `drawCaseBoard(ctx, board, time, { drawCard })` returns the marker's nib
+  while a mark is being drawn (else null), as does
+  `caseBoardMarkerTip(board, time)`: put a hand there. `caseCardBox(board, id)`
+  gives a card's pin, centre and corners; `caseMarkPath(board, mark)` a
+  mark's stroke points; `drawPushPin` and `drawMarkerStroke(ctx, points,
+  progress)` draw single pieces for your own boards.
+
+## With the characters
+
+The [bean figures](character-appearance.md#bean-figures-white-outlined-stick-figures)
+come dressed for it: `castMember('beanDetective')` wears a trench coat, a
+fedora and aviator shades, and household clothes (`skirt`, `drape`,
+`bangles`; `castMember('beanSari')`) dress the witnesses. Draw a suspect in a
+photo card through `drawCard`, and anchor a name card or a speech bubble at a
+figure's head from `characterJoints`.
+
+## In the catalog
+
+`npx tinyfly capabilities` lists the kit under "Noir / detective kit";
+`capabilities().noir` has it as data (`NOIR_KIT`).
 
 ---
 
@@ -11186,8 +11350,9 @@ const stick = character(castMember('beanStick', 400))   // bare line limbs
   the legs, join the body without a seam: their outline is left out where it
   lies inside the body at the root, so the fills flow together. Under a tee or
   trousers the hem shows instead.
-- Painter order (`joints.parts[id].order`): the back arm, the legs, the neck,
-  the body (and coat), the near arm and the head (and fedora). A limb reaching toward the viewer
+- Painter order (`joints.parts[id].order`): the back arm, the legs (and a
+  skirt over both), the neck, the body (with its drape, and coat), the near
+  arm and the head (and fedora). A limb reaching toward the viewer
   (hands on the knees, seated thighs) draws over the body.
 - `bean: { limbs, torso, limbWidth, lineWidth, outlineWidth, fill, shirt, sleeves, trousers, shoes }`:
   `limbs: 'tube'` (default, outlined noodles) or `'line'` (bare round-capped
@@ -11206,6 +11371,26 @@ const stick = character(castMember('beanStick', 400))   // bare line limbs
   (big dark aviator lenses in place of the eyes, the brows still showing,
   so the face keeps its expression; the same as `face: { shades: true }` on
   any oval-eyed face). `castMember('beanDetective', 400)` wears all three.
+- Household clothes (all off by default):
+  - `skirt`: a colour (a sari or long skirt, ending just above the ankle so
+    the shoes show) or `{ color, length }`, `length` 0.1–1 of the way from
+    the hips to the ankles (about 0.45 for a kurta's hem over trousers). It
+    follows the legs: standing or walking it is one flared shape outside both
+    legs with two soft pleats; seated (`beanStanding(joints)` is false) it
+    lies along each thigh to the knees and shins, its ends kept above the
+    floor. Under a skirt the legs draw before the body, so the body covers
+    the waist.
+  - `drape`: a pallu or dupatta in that colour, a band from the shoulder by
+    the neck across the chest to the far hip, inside the body's outline.
+  - `bangles`: their colour; three thin rings across each forearm near the
+    wrist (`BEAN_BANGLE_STOPS`), over any sleeve.
+  - `castMember('beanSari', 400)` wears all three, with a blouse (`shirt`),
+    a low bun and dark shoes.
+
+  ```js
+  const kurta = character({ figure: 'bean', height: 400, hair: { style: 'bob', color: '#222' },
+    bean: { shirt: '#0e7490', skirt: { color: '#0e7490', length: 0.45 }, trousers: '#f5f5f4', drape: '#fbbf24', bangles: '#dc2626' } })
+  ```
 - Defaults: ink `#111111`, white skin, `hands: 'mitten'`, shoulders 0.04 and
   hips 0.02 of the height, `face: { style: 'oval', projection: 'volume', teeth: true, tongue: true }`.
   The bean is always drawn in the clean look (its outline is the look).
@@ -11217,12 +11402,16 @@ const stick = character(castMember('beanStick', 400))   // bare line limbs
   big eyes; `face.shades` puts aviators in their place.
 - `hands: 'mitten'` (any figure) is a plain oval mitten along the forearm.
 - Presets in `BEAN_CAST` (also in `CHARACTER_CAST`, group `bean`):
-  `beanMan`, `beanWoman`, `beanKid`, `beanBoss`, `beanDetective` and
-  `beanStick` (bare lines).
+  `beanMan`, `beanWoman`, `beanKid`, `beanBoss`, `beanDetective`,
+  `beanStick` (bare lines) and `beanSari` (a sari with a pallu and bangles).
 - Helpers for your own layers: `beanTorso(bean, joints)` and
   `beanTorsoOutline(torso)` (the body's shape), `beanLimbLine(root, joint, end)`
   (a limb's centre line), `mittenAt`, `beanShoeAt`, `beanOrder`, `beanOverBody`,
-  `drawBeanFedora`.
+  `drawBeanFedora`, `beanAlongLeg(joints, side, f)` (a point along a leg) and
+  `beanStanding(joints)`.
+- For detective and noir scenes around these figures (rain, blinds, torch
+  beams, clue markers, name cards, a case board), see
+  [Noir and Detective Scenes](noir-detective.md).
 
 ### Young adult manga cast
 
@@ -15706,7 +15895,7 @@ magnet.addEventListener('pointerleave', () => {
 
 <!-- capabilities: generated from the library -->
 
-# tinyfly capabilities (v0.122.0)
+# tinyfly capabilities (v0.123.0)
 
 Generated from the library itself: every name below is accepted, and names not listed are rejected (beat scripts, code panels and `checkTracks` say which name was probably meant).
 
@@ -16007,7 +16196,7 @@ Appearance options of `character({ … })`, all plain data that turns with the h
 - `facialHair`: `cleanShaven`, `stubble`, `pencilMoustache`, `shortMoustache`, `chevron`, `handlebar`, `walrus`, `goatee`, `vanDyke`, `circleBeard`, `shortBoxed`, `fullBeard`, `longBeard`, `roundedBeard`, `pointedBeard`, `chinStrap`, `soulPatch`, `sideburns`, `muttonChops`, `moustacheStubble`
 - `glasses`: `round`, `square`, `sunglasses`; `hat`: `cap`, `beanie`, `hardHat`, `sunHat`, `bowler`; `ears: true`; `face: { teeth, tongue }` (shown when the mouth opens); `feet`: `round`, `flat`, `pointed`, `big`
 - `outfit`: `{ top: tshirt | shirt | blouse | dress, trouserStyle: plain | jeans | cargo, shirt: top colour, trousers: bottom colour, sleeves: short | long | none, bottom: trousers | shorts | skirt, collar, tie: colour, over: apron | labCoat | hoodie | cardigan | overalls | sari, overColor, shoes: boots, shoeColor }`
-- `castMember(name, height)`: `boy`, `girl`, `youngMan`, `youngWoman`, `man`, `woman`, `grandpa`, `grandma`, `doctor`, `cook`, `builder`, `courier`, `teacher`, `farmer`, `animeBoy`, `animeGirl`, `animeYoungMan`, `animeYoungWoman`, `animeMan`, `animeWoman`, `animeOlderMan`, `animeOlderWoman`, `mangaYoungMan`, `mangaYoungWoman`, `mangaRival`, `mangaHeroine`, `beanMan`, `beanWoman`, `beanKid`, `beanBoss`, `beanDetective`, `beanStick`
+- `castMember(name, height)`: `boy`, `girl`, `youngMan`, `youngWoman`, `man`, `woman`, `grandpa`, `grandma`, `doctor`, `cook`, `builder`, `courier`, `teacher`, `farmer`, `animeBoy`, `animeGirl`, `animeYoungMan`, `animeYoungWoman`, `animeMan`, `animeWoman`, `animeOlderMan`, `animeOlderWoman`, `mangaYoungMan`, `mangaYoungWoman`, `mangaRival`, `mangaHeroine`, `beanMan`, `beanWoman`, `beanKid`, `beanBoss`, `beanDetective`, `beanStick`, `beanSari`
 - Face marks (pose fields, 0–1): `blush`, `tears`, `sweat`; close-up fields `pupil` (size, 1 usual), `lid` (upper lids lowered, 0–1), `bulge` (eyes out of the head, 0–1); `face: { nose: true, inPupil(ctx, pupil) }`; `drawCharacterHead(ctx, who, pose, { x, y, radius })` draws just the head big
 - Face styles: `simple`, `anime`, `oval`; `face: { style: 'anime', iris: '#4b7fce', lashes: true, ageLines: 0.8 }` uses coloured eyes and the same expressions, blinks and gaze. `ANIME_CAST` contains eight age presets, also available through `castMember`. `face: { style: 'oval' }` (the bean figure's default) draws big white oval eyes with small pupils that follow `lookX`/`lookY`, lids for `lid`, `blink` and half-open eyes, and heavy brows for `brow.*`/`browTilt`; glasses grow to fit round them.
 - Face shapes: `round`, `angular`; `face: { shape: 'angular', jawWidth: 0.74, chinWidth: 0.14, eyeScale: 0.8, eyeAspect: 0.65 }` sets a tapered 3D jaw and narrower anime eyes; `jawRoundness: 1` softens the cheek/chin corners (default 0 keeps sharp jaws). `MANGA_CAST` contains four original young adult presets; hair styles `mangaSpikes` and `mangaSweep` remain editable.
@@ -16015,6 +16204,34 @@ Appearance options of `character({ … })`, all plain data that turns with the h
 - `holding`: `mug` (left or right), `phone` (left or right), `book` (one hand or both), `bag` (left or right), `briefcase` (left or right), `umbrella` (left or right), `broom` (left or right), `cane` (left or right), `parcel` (both); pose fields `held.left`, `held.right`, `held.both` (below 0.5 lets go); `handGrip(joints, side)`
 - `meetHands(kind, a, b)` (stand them `meetingSpacing(kind, a, b)` apart): `handshake`, `highFive`, `fistBump`, `handOver`; `embrace(a, b)` (a hug, `embraceSpacing` apart); `helpUp(helper, sitter, progress)` (0 on the floor, hand taken; 1 standing; `helpUpSpacing` apart)
 - Everyday cycles like a gait: `humanCyclePose('sweeping' | 'brushing', phase, base)` (0 → 1 is one stroke and back; sweeping with `holding: { right: 'broom' }`)
+
+## Noir / detective kit
+
+Canvas drawing functions for detective and noir scenes (see docs/noir-detective.md). Times are ms; every one is a pure function of its options and the time (rain is seeded), so frames draw the same in any order. Text and fonts are the caller’s.
+
+- `drawRain(ctx, time, { x, y, width, height, drops?, opacity?, color?, speed?, length?, slant?, lineWidth?, seed? })`: rain streaks falling in a box (a window, the frame), clipped to it; seeded, a pure function of time
+- `drawBlinds(ctx, { x, y, width, height, opacity?, slope?, spacing?, band?, color? })`: key light through venetian blinds: slanted bright bands
+- `drawDarkness(ctx, { amount, cones?: [{ x, y, angle (deg), length, width }], holes?: [{ x, y, radius }], bounds?, color?, opacity?, beam?, beamOpacity? })`: a dark room with torch beams and round holes of light cut out (coneCorners(cone) gives a beam’s corners)
+- `drawGlow(ctx, { x, y, radius, color?, opacity? })`: a soft pool of light
+- `drawVignette(ctx, { width, height, x?, y?, inner?, outer?, opacity?, color? })`: the frame’s edges fall into dark
+- `lightningFlash(time, strikes, decay?)`: flash brightness 0..1 from strike times (ms)
+- `lightFlicker(time, strength?)`: a failing bulb: how much darker the room is (0 or strength)
+- `drawClueMarker(ctx, time, { x, y, radius?, at, duration?, color?, lineWidth? })`: the red magnifier over a clue: pops on, pulses, fades (clueMarkerAt gives its opacity and scale)
+- `drawEvidenceFolder(ctx, { x, y, scale?, angle?, color?, ink?, label?, font? })`: a tabbed evidence folder
+- `drawClockFace(ctx, { x, y, radius?, hours, minutes, face?, ink? })`: a wall clock showing a time (clockHandAngles gives the hands)
+- `drawTimeChip(ctx, time, { x, y, text, size?, font?, color?, background?, at? })`: a time/place chip in a corner; returns its width
+- `drawNameCard(ctx, time, { name, role?, at, duration?, anchor, side?, frame?, dim?, color?, font?, tilt? })`: a freeze-frame suspect card: the frame dims, a slanted red band beside the head
+- `drawNarrationBox(ctx, time, { text, start, end, speaker?, x?, width?, bottom?, size?, font?, typeDuration? })`: a first-person narration box along the bottom, words typed on (lineReveal gives opacity and reveal)
+- `drawSpeechBubble(ctx, time, { text, start, end, tail, speaker?, maxWidth?, size?, font?, bounds?, maxCenterY?, gap? })`: a comic speech bubble above the speaker, tail to the head, popping on
+- `caseBoard({ x, y, width, height, cards, strings?, marks?, cork?, frame?, font?, handFont?, seed? })`: checks and resolves a case board (did-you-mean on unknown card ids and kinds)
+- `drawCaseBoard(ctx, board, time, { drawCard? })`: the board at a time: cork, red strings stretching, cards popping up on pins, marker strokes; returns the nib point while a mark is drawn
+- `caseBoardMarkerTip(board, time)`: where the marker’s nib is (for a hand), or null
+- `caseCardBox(board, id)`: a card’s pin, centre and corners, scene px
+- `caseMarkPath(board, { on, kind })`: a mark’s stroke points
+- `drawPushPin(ctx, x, y, { color?, radius? })`: a red push pin
+- `drawMarkerStroke(ctx, points, progress, { color?, width? })`: the first part of a marker stroke; returns the nib
+
+Case board cards: { id, x, y (its pin, relative to the board), kind?, title?, note?, width?, height?, angle?, color?, at?, highlight?: { at, duration } }, kinds `photo`, `note`. Strings: { from, to, at?, duration?, color? }. Marks: { on, kind, at, duration?, color?, width? }, kinds `cross` (two diagonals across the card, one after the other (ruled out)), `strike` (one diagonal, bottom-left to top-right (half ruled out)), `scribble` (a zigzag back and forth across the card (scribbled out)), `circle` (a loose ring round the card (this one)).
 
 ## Code panel
 

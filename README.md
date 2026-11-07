@@ -161,6 +161,17 @@ bare line limbs with `bean: { limbs: 'line' }`), a shaped body, big oval eyes (`
 mittens and cartoon shoes, plus detective gear (`coat`, `fedora`, aviator `shades`), on the same rig, so every pose, gait, dance and expression works.
 Try `character(castMember('beanMan', 400))` or the other `BEAN_CAST` presets; see
 [the appearance guide](docs/character-appearance.md#bean-figures-white-outlined-stick-figures).
+Household clothes dress them too: a `skirt` (a sari, or a kurta's hem with `length`) that
+walks and sits with the legs, a `drape` (pallu or dupatta) and `bangles` (`castMember('beanSari', 400)`).
+
+**Noir and detective scenes**: a canvas kit for detective stories, deterministic from time: rain in a
+window, light through blinds, darkness with torch beams and holes, glow, vignette, lightning and a
+flickering bulb (`drawRain`, `drawBlinds`, `drawDarkness`, …); the red clue magnifier, an evidence folder,
+a clock and time chip, a freeze-frame suspect name card, a typed narration box and speech bubbles; and a
+case board as data (`caseBoard` + `drawCaseBoard`: pinned photo and note cards, red string, marker
+cross-outs and scribble-outs drawn on over time). Text and fonts are yours. See
+[Noir and Detective Scenes](docs/noir-detective.md) and the
+[Noir Case File](https://tinyfly.app/examples/live-noir-case-file) example.
 
 The [Young Adult Manga Cast](https://tinyfly.app/examples/live-manga-cast)
 adds four original presets with angular jaws, tapered chins, narrower eyes
@@ -291,7 +302,7 @@ GSAP-shaped functions at the top level. Teaching embeds are included: add
 itself.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.122.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.123.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -328,7 +339,7 @@ A teaching figure needs no code at all:
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON with markers… }</script>
   <figcaption>Appending to a full slice</figcaption>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.122.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.123.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
 ```
 
 See [Teaching Animations](docs/teaching.md).
@@ -427,7 +438,7 @@ Without a build step, the player bundle puts the same functions on a `tinyfly` g
   <div data-tinyfly="box" style="width: 60px; height: 60px; background: #4a9eff;"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.122.0/cdn/tinyfly-player.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.123.0/cdn/tinyfly-player.iife.js"></script>
 <script>
   tinyfly.play('#animation', './animation.json', { loop: -1 })
 </script>
@@ -536,7 +547,7 @@ Or skip the code entirely with declarative embeds (see [Teaching Animations](doc
   <svg viewBox="0 0 720 200">…</svg>
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON… }</script>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.122.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.123.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 ### Audio / Video Sync

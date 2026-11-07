@@ -43,6 +43,13 @@ names.
   (`face.style: 'oval'`), mittens and cartoon shoes; colour it with `bean: { shirt, sleeves, trousers, shoes }`;
   detective gear `bean: { coat, fedora, shades: true }`; `halo` edges line limbs.
   It is always drawn clean; every pose, gait, dance and expression field works on it.
+  Household clothes: `bean: { skirt, drape, bangles }` (`skirt` a colour or `{ color, length }`; preset `beanSari`).
+- Detective / noir scenes: canvas functions, all pure in time (ms): `drawRain`, `drawBlinds`,
+  `drawDarkness` (torch `cones` with `angle` in degrees, `holes`), `drawGlow`, `drawVignette`,
+  `lightningFlash`, `lightFlicker`; overlays `drawClueMarker`, `drawEvidenceFolder`, `drawClockFace`,
+  `drawTimeChip`, `drawNameCard`, `drawNarrationBox`, `drawSpeechBubble`; a case board as data
+  (`caseBoard({ cards, strings, marks })`, `drawCaseBoard(ctx, board, time, { drawCard })` returns the
+  marker nib; marks `cross | strike | scribble | circle`). Text and fonts are the caller's.
 
 - Prefer the high-level builders: `scriptTracks()` beats for characters
   (`characterScript(target, who, beats)` for the same beats on a v2

@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.123.0](v0.123.0.md) | 2026-11-07 | Noir and detective kit: rain, blinds, torch-lit darkness, clue markers, name cards, narration, speech bubbles and a case board; bean household clothes (skirt, drape, bangles) |
 | [v0.122.0](v0.122.0.md) | 2026-11-06 | Bean figures: `figure: 'bean'` white outlined stick figures with seamless outlines, bare-line limbs, big oval eyes, mittens and cartoon shoes |
 | [v0.121.0](v0.121.0.md) | 2026-10-16 | A loss surface in 3D: lossSurface3D builds scene-3d JSON with a ball rolling down the descent path |
 | [v0.120.0](v0.120.0.md) | 2026-10-16 | Characters present maths figures: `mathSurface` anchors and edits for `surfaceScript` |

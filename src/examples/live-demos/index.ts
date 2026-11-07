@@ -39,6 +39,7 @@ import { dressedFigures } from './dressed-figures'
 import { castTurnaround } from './cast-turnaround'
 import { animeCast } from './anime-cast'
 import { mangaCast } from './manga-cast'
+import { noirCaseFile } from './noir-case-file'
 import { hairAndHats } from './hair-and-hats'
 import { flowingHair } from './flowing-hair'
 import { illustratedLook } from './illustrated-look'
@@ -137,6 +138,7 @@ import homeTimeSource from './home-time.js?raw'
 import castTurnaroundSource from './cast-turnaround.js?raw'
 import animeCastSource from './anime-cast.js?raw'
 import mangaCastSource from './manga-cast.js?raw'
+import noirCaseFileSource from './noir-case-file.js?raw'
 import hairAndHatsSource from './hair-and-hats.js?raw'
 import flowingHairSource from './flowing-hair.js?raw'
 import illustratedLookSource from './illustrated-look.js?raw'
@@ -302,6 +304,7 @@ export const liveDemos: LiveDemoWithCode[] = [
   withCode(castTurnaround, castTurnaroundSource),
   withCode(animeCast, animeCastSource),
   withCode(mangaCast, mangaCastSource),
+  withCode(noirCaseFile, noirCaseFileSource),
   withCode(hairAndHats, hairAndHatsSource),
   withCode(flowingHair, flowingHairSource),
   withCode(illustratedLook, illustratedLookSource),

@@ -35,6 +35,7 @@ import { CRICKET_DECISION_VIEWS } from '../sports/cricket/cricket-camera-review'
 import { CRICKET_VIEWS } from '../sports/cricket/cricket-camera'
 import { CRICKET_PLAY_COMPONENTS, CRICKET_PLAY_EXAMPLES } from '../sports/cricket/cricket-play'
 import { CRICKET_MARKING_PROFILES } from '../sports/cricket/cricket-markings'
+import { NOIR_KIT } from './noir/noir-kit'
 
 /** Every prop preset, by the name of the function that makes it. */
 
@@ -124,6 +125,17 @@ export interface Capabilities {
     heldItems: Record<string, string>
     /** `meetHands(kind, a, b)` */
     handMeetings: string[]
+  }
+  /** The noir / detective kit: atmosphere, detective overlays and the case board (canvas drawing functions) */
+  noir: {
+    atmosphere: Record<string, string>
+    overlays: Record<string, string>
+    caseBoard: Record<string, string>
+    cardKinds: readonly string[]
+    markKinds: Record<string, string>
+    card: string
+    string: string
+    mark: string
   }
   codePanel: { languages: readonly string[]; removeStyles: readonly string[]; anchors: Record<string, string>; edits: Record<string, string> }
   /** Surfaces figures act on, by kind: their named anchors and edits (`surface.anchor(name)`, `surface.edit(name, anchor, options)`) */
@@ -267,6 +279,7 @@ export function capabilities(version?: string, cast: Cast = {}): Capabilities {
       heldItems: Object.fromEntries(Object.entries(HELD_ITEMS).map(([name, item]) => [name, item.hands])),
       handMeetings: Object.keys(HAND_MEETINGS),
     },
+    noir: NOIR_KIT,
     codePanel: {
       languages: CODE_LANGUAGES,
       removeStyles: REMOVE_STYLES,
@@ -509,6 +522,14 @@ export function capabilitiesMarkdown(version?: string, cast: Cast = {}): string 
     `- \`holding\`: ${Object.entries(c.character.heldItems).map(([name, hands]) => `\`${name}\` (${hands === 'both' ? 'both' : hands === 'either' ? 'one hand or both' : 'left or right'})`).join(', ')}; pose fields \`held.left\`, \`held.right\`, \`held.both\` (below 0.5 lets go); \`handGrip(joints, side)\``,
     `- \`meetHands(kind, a, b)\` (stand them \`meetingSpacing(kind, a, b)\` apart): ${list(c.character.handMeetings)}; \`embrace(a, b)\` (a hug, \`embraceSpacing\` apart); \`helpUp(helper, sitter, progress)\` (0 on the floor, hand taken; 1 standing; \`helpUpSpacing\` apart)`,
     '- Everyday cycles like a gait: `humanCyclePose(\'sweeping\' | \'brushing\', phase, base)` (0 → 1 is one stroke and back; sweeping with `holding: { right: \'broom\' }`)',
+    '',
+    '## Noir / detective kit',
+    '',
+    'Canvas drawing functions for detective and noir scenes (see docs/noir-detective.md). Times are ms; every one is a pure function of its options and the time (rain is seeded), so frames draw the same in any order. Text and fonts are the caller’s.',
+    '',
+    ...(['atmosphere', 'overlays', 'caseBoard'] as const).flatMap((group) => Object.entries(c.noir[group]).map(([name, what]) => `- \`${name}\`: ${what}`)),
+    '',
+    `Case board cards: ${c.noir.card}, kinds ${list(c.noir.cardKinds)}. Strings: ${c.noir.string}. Marks: ${c.noir.mark}, kinds ${Object.entries(c.noir.markKinds).map(([k, what]) => `\`${k}\` (${what})`).join(', ')}.`,
     '',
     '## Code panel',
     '',

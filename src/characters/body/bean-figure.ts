@@ -23,8 +23,14 @@ import type { CharacterJoints } from '../character'
  * at the knee, sleeves to the wrist) and a `fedora` (a brim, a pinched crown
  * and a band). Big dark aviator `shades` are `face.shades` (see face.ts).
  *
- * Painter order: the back arm, the legs and the neck, the body (and the
- * coat), then the near arm and the head (and the fedora). Plain tube legs and
+ * Household clothes: a `skirt` (a sari or long skirt to the ankle, or a
+ * kurta's hem part way down the legs with `length`) that follows the legs,
+ * so it walks and sits; a `drape` (a pallu or dupatta from one shoulder
+ * across the chest to the hip) and `bangles` (a few rings on each wrist).
+ *
+ * Painter order: the back arm, the legs and the neck (and the skirt over
+ * both legs), the body (with its drape, and the coat), then the near arm and
+ * the head (and the fedora). Plain tube legs and
  * neck join the body without a seam, so they come after it.
  */
 
@@ -57,6 +63,17 @@ export interface BeanOptions {
   fedora?: string | null
   /** Big dark aviator shades in place of the eyes, the brows still showing: sets `face.shades` (default false) */
   shades?: boolean
+  /**
+   * A skirt over both legs: a colour (a sari or long skirt, to the ankle), or
+   * `{ color, length }` with `length` 0.1..1 of the way from the hips to the
+   * ankles (about 0.45 for a kurta's hem). It follows the legs: it flares
+   * standing and walking, and lies along the thighs seated (default none)
+   */
+  skirt?: string | { color: string; length?: number } | null
+  /** A pallu or dupatta in this colour, from the near shoulder across the chest to the hip (default none) */
+  drape?: string | null
+  /** Bangles in this colour, a few rings on each wrist (default none) */
+  bangles?: string | null
 }
 
 export interface Bean {
@@ -73,6 +90,9 @@ export interface Bean {
   halo: string | null
   coat: string | null
   fedora: string | null
+  skirt: { color: string; length: number } | null
+  drape: string | null
+  bangles: string | null
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v))
@@ -99,7 +119,17 @@ export function resolveBean(options: BeanOptions = {}): Bean {
     halo: options.halo ?? null,
     coat: options.coat ?? null,
     fedora: options.fedora ?? null,
+    skirt: resolveSkirt(options.skirt),
+    drape: options.drape ?? null,
+    bangles: options.bangles ?? null,
   }
+}
+
+function resolveSkirt(skirt: BeanOptions['skirt']): Bean['skirt'] {
+  if (skirt === undefined || skirt === null) return null
+  if (typeof skirt === 'string') return { color: skirt, length: 1 }
+  if (typeof skirt !== 'object' || typeof skirt.color !== 'string') throw new Error('bean: skirt is a colour or { color, length }')
+  return { color: skirt.color, length: clamp(finite(skirt.length, 1), 0.1, 1) }
 }
 
 /**
@@ -193,7 +223,7 @@ export function beanOrder(bean: Bean, joints: CharacterJoints, reach: Record<str
   // The nearer arm always goes over the body.
   const armOver = (id: string) => forward(id) || id === arms[1]
   // Plain tube limbs join the body without a seam, so they go over it; under a tee, trousers or a coat its hem shows.
-  const legOver = (id: string) => forward(id) || (bean.limbs === 'tube' && !bean.trousers && !bean.coat)
+  const legOver = (id: string) => forward(id) || (bean.limbs === 'tube' && !bean.trousers && !bean.coat && !bean.skirt)
   const neckOver = bean.limbs === 'tube' && !bean.shirt && !bean.coat
   return [
     ...arms.filter((id) => !armOver(id)),
@@ -512,6 +542,147 @@ function drawShoe(ctx: CanvasRenderingContext2D, at: ReturnType<typeof beanShoeA
   ctx.restore()
 }
 
+/** A point `f` (0 hip … 1 ankle) along a leg's hip → knee → ankle path, by length. */
+export function beanAlongLeg(joints: CharacterJoints, side: 'left' | 'right', f: number): Point {
+  const a = joints.points[`hip.${side}`]
+  const b = joints.points[`knee.${side}`]
+  const c = joints.points[`ankle.${side}`]
+  const l1 = Math.hypot(b.x - a.x, b.y - a.y)
+  const l2 = Math.hypot(c.x - b.x, c.y - b.y)
+  const d = clamp(f, 0, 1) * (l1 + l2)
+  return d <= l1 ? mid(a, b, l1 > 0 ? d / l1 : 0) : mid(b, c, l2 > 0 ? Math.min(1, (d - l1) / l2) : 1)
+}
+
+/**
+ * Whether a bean stands (the knees well below the hips) rather than sits:
+ * standing, the skirt is one flared shape; seated, it lies along the thighs.
+ */
+export function beanStanding(joints: CharacterJoints): boolean {
+  const P = joints.points
+  const thigh = Math.hypot(P['knee.left'].x - P['hip.left'].x, P['knee.left'].y - P['hip.left'].y)
+  return (P['knee.left'].y + P['knee.right'].y) / 2 - P.hip.y > 0.6 * thigh
+}
+
+/**
+ * A skirt over both legs. Standing or walking: one flared shape from the hips
+ * to the hem, its sides outside both legs, with two soft pleats. Seated: a
+ * wide band along each leg, the gap between them filled, and a hem line.
+ */
+function drawSkirt(ctx: CanvasRenderingContext2D, joints: CharacterJoints, skirt: { color: string; length: number }, W: number, O: number, ink: string): void {
+  const H = joints.height
+  const band = W * 3.1
+  const standing = beanStanding(joints)
+  const P = joints.points
+  const leg = Math.hypot(P['knee.left'].x - P['hip.left'].x, P['knee.left'].y - P['hip.left'].y) + Math.hypot(P['ankle.left'].x - P['knee.left'].x, P['ankle.left'].y - P['knee.left'].y)
+  // Seated, each band's round end stays above the ankle, so it never dips through the floor.
+  const f = Math.min(0.93, skirt.length, standing ? 1 : 1 - (band / 2 + O) / Math.max(leg, 1))
+  const steps = [0, 0.25, 0.5, 0.75, 1].map((k) => k * f)
+  const L = steps.map((k) => beanAlongLeg(joints, 'left', k))
+  const R = steps.map((k) => beanAlongLeg(joints, 'right', k))
+  ctx.save()
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+  if (standing) {
+    const flare = H * 0.035 * f
+    const rows = steps.map((_, n) => {
+      const k = n / (steps.length - 1)
+      return { a: Math.min(L[n].x, R[n].x) - band / 2 - flare * k, b: Math.max(L[n].x, R[n].x) + band / 2 + flare * k, y: (L[n].y + R[n].y) / 2 }
+    })
+    const hem = rows[rows.length - 1]
+    ctx.beginPath()
+    ctx.moveTo(rows[0].a + band * 0.2, rows[0].y - H * 0.02)
+    for (const r of rows.slice(1)) ctx.lineTo(r.a, r.y)
+    ctx.quadraticCurveTo((hem.a + hem.b) / 2, hem.y + H * 0.012, hem.b, hem.y)
+    for (const r of [...rows].reverse().slice(1)) ctx.lineTo(r.b, r.y)
+    ctx.lineTo(rows[0].b - band * 0.2, rows[0].y - H * 0.02)
+    ctx.closePath()
+    ctx.fillStyle = skirt.color
+    ctx.fill()
+    ctx.lineWidth = O
+    ctx.strokeStyle = ink
+    ctx.stroke()
+    ctx.strokeStyle = 'rgba(0,0,0,0.2)'
+    ctx.lineWidth = O * 0.6
+    for (const k of [0.38, 0.62]) {
+      ctx.beginPath()
+      ctx.moveTo(rows[1].a + (rows[1].b - rows[1].a) * k, rows[1].y)
+      ctx.lineTo(hem.a + (hem.b - hem.a) * (k * 1.2 - 0.1), hem.y)
+      ctx.stroke()
+    }
+    ctx.restore()
+    return
+  }
+  for (const pts of [L, R]) {
+    stroke(ctx, pts, band + 2 * O, ink)
+    stroke(ctx, pts, band, skirt.color)
+  }
+  ctx.beginPath()
+  ctx.moveTo(L[0].x, L[0].y)
+  for (const p of L.slice(1)) ctx.lineTo(p.x, p.y)
+  for (const p of [...R].reverse()) ctx.lineTo(p.x, p.y)
+  ctx.closePath()
+  ctx.fillStyle = skirt.color
+  ctx.fill()
+  const hl = L[L.length - 1]
+  const hr = R[R.length - 1]
+  const dir = Math.sign(hr.x - hl.x) || 1
+  ctx.beginPath()
+  ctx.moveTo(hl.x - (dir * band) / 2, hl.y + band * 0.1)
+  ctx.lineTo(hr.x + (dir * band) / 2, hr.y + band * 0.1)
+  ctx.lineWidth = O
+  ctx.strokeStyle = ink
+  ctx.stroke()
+  ctx.restore()
+}
+
+/** A pallu / dupatta: a band from the near shoulder across the chest to the hip, inside the body's outline. */
+function drawDrape(ctx: CanvasRenderingContext2D, torso: BeanTorso, color: string, ink: string, O: number): void {
+  const len = torso.length
+  const sx = len * 0.58
+  const bx = -len * 0.62
+  const ws = torso.width * 0.82
+  const wh = torso.width
+  // Its upper edge runs from the shoulder by the neck to above the far hip, its lower edge from the outer shoulder to the seat.
+  const band = [
+    { x: sx + len * 0.1, y: -ws * 1.2 },
+    { x: sx + len * 0.1, y: -ws * 0.2 },
+    { x: bx + len * 0.45, y: wh * 1.3 },
+    { x: bx, y: wh * 1.3 },
+  ].map((p) => toScene(torso, p))
+  ctx.save()
+  ctx.beginPath()
+  traceTorso(ctx, torso)
+  ctx.clip()
+  ctx.beginPath()
+  band.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)))
+  ctx.closePath()
+  ctx.fillStyle = color
+  ctx.fill()
+  ctx.lineWidth = O
+  ctx.lineJoin = 'round'
+  ctx.strokeStyle = ink
+  ctx.stroke()
+  ctx.restore()
+  // The body's outline again, over the drape's edges.
+  ctx.beginPath()
+  traceTorso(ctx, torso)
+  ctx.lineWidth = O
+  ctx.strokeStyle = ink
+  ctx.stroke()
+}
+
+/** Where a bean's bangles sit: rings across the forearm at these fractions from the elbow to the wrist. */
+export const BEAN_BANGLE_STOPS = [0.7, 0.78, 0.86] as const
+
+/** Bangles: three thin rings across the forearm near the wrist. */
+function drawBangles(ctx: CanvasRenderingContext2D, elbow: Point, hand: Point, H: number, color: string, ink: string, O: number): void {
+  const angle = Math.atan2(hand.y - elbow.y, hand.x - elbow.x)
+  for (const f of BEAN_BANGLE_STOPS) {
+    const c = mid(elbow, hand, f)
+    blob(ctx, c.x, c.y, H * 0.006, H * 0.019, angle, color, ink, O * 0.55)
+  }
+}
+
 export interface BeanDrawOptions {
   ink: string
   /** The hands: `mitten` drawn here; others by the caller */
@@ -537,6 +708,7 @@ export function drawBeanPart(ctx: CanvasRenderingContext2D, bean: Bean, joints: 
     ctx.lineWidth = O
     ctx.strokeStyle = ink
     ctx.stroke()
+    if (bean.drape) drawDrape(ctx, torso, bean.drape, ink, O)
     if (bean.coat) {
       const thigh = (side: string) => Math.hypot(P[`knee.${side}`].x - P[`hip.${side}`].x, P[`knee.${side}`].y - P[`hip.${side}`].y)
       drawTrench(ctx, torso, bean.coat, (thigh('left') + thigh('right')) / 2, ink, O, H)
@@ -584,6 +756,7 @@ export function drawBeanPart(ctx: CanvasRenderingContext2D, bean: Bean, joints: 
       else coatOutline()
       stroke(ctx, coatSleeve, coatW, bean.coat!)
     }
+    if (bean.bangles) drawBangles(ctx, el, hd, H, bean.bangles, ink, O)
     if (options.hands === 'mitten') {
       const m = mittenAt(el, hd, H)
       blob(ctx, m.x, m.y, m.rx, m.ry, m.angle, bean.fill, ink, O)
@@ -616,6 +789,9 @@ export function drawBeanPart(ctx: CanvasRenderingContext2D, bean: Bean, joints: 
     // Which way the figure faces on screen: right for turns 0..2, left for 2..4.
     const facing = ((turn % 4) + 4) % 4 > 2 ? -1 : 1
     drawShoe(ctx, beanShoeAt(P[`ankle.${side}`], P[`toe.${side}`], H, facing), H, bean.shoes, ink, O)
+    // The skirt goes over both legs: drawn with whichever leg is drawn last.
+    const other = `leg.${side === 'left' ? 'right' : 'left'}`
+    if (bean.skirt && (joints.parts[id]?.order ?? 0) >= (joints.parts[other]?.order ?? 0)) drawSkirt(ctx, joints, bean.skirt, W, O, ink)
   }
   ctx.restore()
 }

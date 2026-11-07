@@ -38,7 +38,7 @@ export { BODY_SHAPES, bodyShapeProfiles, measuredHipWidth, resolveMeasurements, 
 export { humanPlan, humanPose, mirrorHumanPose, humanFieldLabel, HUMAN_REST, HUMAN_POSES, HUMAN_EXPRESSIONS, HUMAN_BUILDS, FOOT_SHAPES, type FootShape, type HumanBuild, type HumanBuildName, type HumanPoseName, type HumanExpressionName } from './species/human'
 // A recurring cast of ready-made characters (family, ages, looks).
 export { CHARACTER_CAST, ANIME_CAST, MANGA_CAST, BEAN_CAST, castMember, type CastMember, type CastName, type AnimeCastName, type MangaCastName, type BeanCastName } from './cast'
-export { resolveBean, beanTorso, beanTorsoOutline, beanOrder, beanOverBody, beanLimbLine, mittenAt, beanShoeAt, drawBeanFedora, BEAN_ARM_REACH, BEAN_LEG_REACH, BEAN_SOLE, BEAN_DARK_SOLE, type Bean, type BeanOptions, type BeanTorso } from './body/bean-figure'
+export { resolveBean, beanTorso, beanTorsoOutline, beanOrder, beanOverBody, beanLimbLine, mittenAt, beanShoeAt, beanAlongLeg, beanStanding, drawBeanFedora, BEAN_ARM_REACH, BEAN_BANGLE_STOPS, BEAN_LEG_REACH, BEAN_SOLE, BEAN_DARK_SOLE, type Bean, type BeanOptions, type BeanTorso } from './body/bean-figure'
 export type { FaceOptions, PupilCircle } from './head/face'
 // Two characters whose hands meet: handshakes, high fives, fist bumps, a parcel handed over.
 export { meetHands, meetingSpacing, HAND_MEETINGS, embrace, embraceSpacing, EMBRACE, helpUp, helpUpSpacing, HELP_UP, type HandMeeting, type HandsMeet, type MeetingPartner, type MeetHandsOptions, type Embrace, type EmbraceOptions, type HelpUp, type HelpUpOptions } from './interactions'
@@ -58,6 +58,8 @@ export { hairFollow, hairFollowTracks, hairMotionAt, type HairFollowSample, type
 export * from './hands'
 // Acting: anticipation, overshoot, overlap, eyes leading, gags and speed lines (see docs/acting.md).
 export * from './acting'
+// Noir / detective kit: rain, blinds, darkness with torch beams, glow, vignette, clue markers, name cards, narration, speech bubbles and a case board (see docs/noir-detective.md).
+export * from './noir'
 export * from './capabilities'
 export { describeTarget, checkTracks, animatableProperties, CANVAS_PROPERTIES, type PropertyInfo, type TargetAbout, type TargetDescription, type TrackProblem } from '../adapters/canvas/target-properties'
 export * from './props'

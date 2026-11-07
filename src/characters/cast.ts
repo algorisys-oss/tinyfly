@@ -141,6 +141,10 @@ export const BEAN_CAST = {
     label: 'Bean stick figure', group: 'bean', scale: 1,
     options: { figure: 'bean', bean: { limbs: 'line' } },
   },
+  beanSari: {
+    label: 'Bean woman in a sari', group: 'bean', scale: 0.96,
+    options: { figure: 'bean', hair: { style: 'lowBun', color: '#1f1f1f' }, bean: { torso: 1.05, shirt: '#7c2d12', sleeves: 'short', skirt: '#c2410c', drape: '#ea580c', bangles: '#d4a017', shoes: '#7c2d12' } },
+  },
 } satisfies Record<string, CastMember>
 
 export type BeanCastName = keyof typeof BEAN_CAST

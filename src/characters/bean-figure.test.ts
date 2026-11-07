@@ -3,7 +3,7 @@ import { createCanvas } from '@napi-rs/canvas'
 import { character, characterJoints, drawCharacter, drawCharacterHead, type CharacterOptions } from './character'
 import { BEAN_CAST, castMember, CHARACTER_CAST } from './cast'
 import { HUMAN_EXPRESSIONS, HUMAN_POSES, humanPose } from './species/human'
-import { beanLimbLine, beanTorso, beanTorsoOutline, resolveBean } from './body/bean-figure'
+import { beanLimbLine, beanStanding, beanTorso, beanTorsoOutline, resolveBean } from './body/bean-figure'
 import { capabilities } from './capabilities'
 import type { Point } from '../adapters/canvas/sketch'
 import type { Pose } from './rig/body-plan'
@@ -61,7 +61,7 @@ describe('bean figure', () => {
     expect(who.skin).toBe('#ffffff')
     expect(who.lineWidth).toBeCloseTo(H * 0.0105)
     expect(who.face).toMatchObject({ style: 'oval', projection: 'volume', teeth: true, tongue: true })
-    expect(who.bean).toEqual({ limbs: 'tube', torso: 1, limbWidth: 0.024, lineWidth: 0.017, outlineWidth: 0.0105, fill: '#ffffff', shirt: null, sleeves: 'short', trousers: null, shoes: '#ffffff', halo: null, coat: null, fedora: null })
+    expect(who.bean).toEqual({ limbs: 'tube', torso: 1, limbWidth: 0.024, lineWidth: 0.017, outlineWidth: 0.0105, fill: '#ffffff', shirt: null, sleeves: 'short', trousers: null, shoes: '#ffffff', halo: null, coat: null, fedora: null, skirt: null, drape: null, bangles: null })
     // The bean is always clean, and wears an outfit's colours itself, not its layers.
     const dressed = character({ figure: 'bean', look: 'pencil', outfit: { shirt: '#ef4444', trousers: '#1e3a5f', sleeves: 'long' } })
     expect(dressed.look).toBe('clean')
@@ -93,6 +93,8 @@ describe('bean figure', () => {
     expect(order({ bean: { limbs: 'line' } }, {})).toEqual(['arm.right', 'leg.right', 'leg.left', 'neck', 'spine', 'arm.left', 'head'])
     // Under a coat the legs and neck go under the body too.
     expect(order({ bean: { coat: '#a07a4a' } }, {})).toEqual(['arm.right', 'leg.right', 'leg.left', 'neck', 'spine', 'arm.left', 'head'])
+    // Under a skirt the legs go under the body, so the body covers the skirt's waist.
+    expect(order({ bean: { skirt: '#c2410c' } }, {})).toEqual(['arm.right', 'leg.right', 'leg.left', 'spine', 'neck', 'arm.left', 'head'])
     // Facing screen-right, the right arm is the near one.
     expect(order({}, { turn: 1 }).indexOf('arm.right')).toBeGreaterThan(order({}, { turn: 1 }).indexOf('spine'))
     expect(order({}, { turn: 1 }).indexOf('arm.left')).toBeLessThan(order({}, { turn: 1 }).indexOf('spine'))
@@ -248,6 +250,58 @@ describe('bean figure', () => {
     expect(lens[0] + lens[1] + lens[2]).toBeLessThan(300)
   })
 
+  it('wears household clothes: a skirt that follows the legs, a drape across the chest and bangles', () => {
+    const skirt = [0xc2, 0x41, 0x0c]
+    const drape = [0x00, 0xcc, 0x44]
+    const bangle = [0xff, 0xd7, 0x00]
+    const { joints, at } = render({ bean: { skirt: '#c2410c', drape: '#00cc44', bangles: '#ffd700' } }, HUMAN_POSES.rest)
+    const P = joints.points
+    // Standing, the skirt is one shape: between the shins (backdrop on a plain figure) and outside each leg.
+    const shin = (P['knee.left'].y + P['ankle.left'].y) / 2
+    const between = { x: (P['knee.left'].x + P['knee.right'].x) / 2, y: shin }
+    expect(isBackdrop(render({}, HUMAN_POSES.rest).at(between))).toBe(true)
+    expect(at(between)).toEqual(skirt)
+    const outer = Math.max(P['knee.left'].x, P['knee.right'].x) + H * 0.03
+    expect(at({ x: outer, y: shin })).toEqual(skirt)
+    // It stops just above the ground (length 1 ends at 0.93 of the leg), so the shoes show.
+    expect(at({ x: P['ankle.left'].x, y: -H * 0.006 })).not.toEqual(skirt)
+    // A kurta's hem (length 0.45) stops above the knee's shin.
+    const kurta = render({ bean: { skirt: { color: '#c2410c', length: 0.45 } } }, HUMAN_POSES.rest)
+    expect(kurta.at(between)).not.toEqual(skirt)
+    expect(kurta.at({ x: between.x, y: P['hip.left'].y + (P['knee.left'].y - P['hip.left'].y) * 0.6 })).toEqual(skirt)
+    // The drape runs across the body: some of the chest is drape, the body's outline still closes it.
+    const torso = beanTorso(resolveBean(), joints)
+    const outline = beanTorsoOutline(torso, 16)
+    const xs = outline.map((p) => p.x)
+    let draped = 0
+    for (let y = Math.round(torso.cy - torso.length * 0.4); y < torso.cy + torso.length * 0.4; y += 3) {
+      for (let x = Math.round(Math.min(...xs)); x < Math.max(...xs); x += 2) if (String(at({ x, y })) === String(drape)) draped++
+    }
+    expect(draped).toBeGreaterThan(20)
+    // Bangles: rings on each forearm near the wrist.
+    for (const side of ['left', 'right']) {
+      const el = P[`elbow.${side}`]
+      const hd = P[`hand.${side}`]
+      const near = { x: el.x + (hd.x - el.x) * 0.78, y: el.y + (hd.y - el.y) * 0.78 }
+      expect(across(at, near, { x: hd.x - el.x, y: hd.y - el.y }, 6).some((c) => String(c) === String(bangle)), side).toBe(true)
+    }
+    // Seated, the skirt lies along the thighs (over the lap), not a standing flare.
+    const seated = render({ bean: { skirt: '#c2410c' } }, { ...HUMAN_POSES.sit, turn: 1 })
+    const S = seated.joints.points
+    // Along both thighs (not just where a hand rests on the knee), skirt and no bare white leg.
+    for (const side of ['left', 'right']) {
+      const hip = S[`hip.${side}`]
+      const knee = S[`knee.${side}`]
+      const thigh = [0.3, 0.5, 0.7].map((k) => seated.at({ x: hip.x + (knee.x - hip.x) * k, y: hip.y + (knee.y - hip.y) * k }))
+      expect(thigh.some((c) => String(c) === String(skirt)), side).toBe(true)
+      expect(thigh.some(isWhite), side).toBe(false)
+    }
+    expect(beanStanding(seated.joints)).toBe(false)
+    expect(beanStanding(joints)).toBe(true)
+    expect(resolveBean({ skirt: { color: '#123456', length: 7 } }).skirt).toEqual({ color: '#123456', length: 1 })
+    expect(() => resolveBean({ skirt: { length: 0.5 } as never })).toThrow(/skirt/)
+  })
+
   it('gives line limbs an optional pale halo, and dark shoes a dark sole', () => {
     const { joints, at } = render({ bean: { limbs: 'line', halo: '#00ff00' } }, HUMAN_POSES.rest)
     const P = joints.points
@@ -291,7 +345,7 @@ describe('bean figure', () => {
   })
 
   it('ships original bean presets through castMember and lists them in the catalog', () => {
-    expect(Object.keys(BEAN_CAST)).toEqual(['beanMan', 'beanWoman', 'beanKid', 'beanBoss', 'beanDetective', 'beanStick'])
+    expect(Object.keys(BEAN_CAST)).toEqual(['beanMan', 'beanWoman', 'beanKid', 'beanBoss', 'beanDetective', 'beanStick', 'beanSari'])
     for (const name of Object.keys(BEAN_CAST) as Array<keyof typeof BEAN_CAST>) {
       expect(CHARACTER_CAST[name]).toBe(BEAN_CAST[name])
       const who = character(castMember(name, 400))
@@ -299,6 +353,7 @@ describe('bean figure', () => {
       expect(who.height).toBe(Math.round(400 * BEAN_CAST[name].scale))
     }
     expect(character(castMember('beanStick', 400)).bean?.limbs).toBe('line')
+    expect(character(castMember('beanSari', 400)).bean).toMatchObject({ skirt: { color: '#c2410c', length: 1 }, drape: '#ea580c', bangles: '#d4a017' })
     const catalog = capabilities()
     expect(catalog.character.figureStyles).toContain('bean')
     expect(catalog.character.faceStyles).toContain('oval')

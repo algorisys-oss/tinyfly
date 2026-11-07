@@ -143,6 +143,12 @@ export const DOCS: DocEntry[] = [
     section: 'Guides',
   },
   {
+    id: 'noir-detective',
+    title: 'Noir and Detective Scenes',
+    summary: 'A canvas kit for detective stories: rain in a window, light through blinds, darkness with torch beams and holes, glow, vignette, lightning and a flickering bulb; the red clue magnifier, an evidence folder, a clock and time chip, a freeze-frame suspect name card, a typed narration box and speech bubbles; and a case board as data (pinned photo and note cards, red string, marker cross-outs, strikes, scribble-outs and rings drawn on over time, with the marker nib for a hand). Deterministic from time; text and fonts are yours.',
+    section: 'Guides',
+  },
+  {
     id: 'character-appearance',
     title: 'Character Appearance',
     summary: 'Hair (34 styles), facial hair (20), glasses, hats and ears for the v2 character as plain data on the head, so they turn with it through all eight views; builds (child, tall, short…), a recurring cast (castMember), expressions with blush, tears and sweat, everyday poses, held items (mug, phone, bags, umbrella, parcel) and two characters’ hands meeting (meetHands: handshake, high five, hand-over).',
