@@ -115,7 +115,7 @@ describe('editable clothing', () => {
         expect(escaped).toBe(0)
       }
     }
-  }, 20000)
+  })
 
   it('fits adults and children deterministically while walking, sitting and turning', () => {
     for (const name of ['youngMan', 'youngWoman', 'childBoy', 'childGirl'] satisfies SoftCartoonName[]) {
@@ -132,5 +132,5 @@ describe('editable clothing', () => {
         }
       }
     }
-  }, 20000)
+  })
 })

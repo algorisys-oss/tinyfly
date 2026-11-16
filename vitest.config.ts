@@ -25,6 +25,10 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['src/**/*.test.ts'],
+    // Many tests render whole scenes and take several seconds each; with every
+    // worker busy (or the machine loaded) they cross vitest's 5 s default and
+    // abort `npm publish`. One generous limit here replaces per-test timeouts.
+    testTimeout: 60_000,
     // CSS is stubbed out in tests by default, which also empties `?raw` imports.
     // The code examples' markup CSS is copied into standalone pages, so its
     // tests need the real file.

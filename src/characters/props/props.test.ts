@@ -3,7 +3,8 @@ import { Timeline } from '../../engine/core/timeline'
 import { springFollow } from '../../engine/authoring/spring-follow'
 import { describeTarget } from '../../adapters/canvas/target-properties'
 import { boxMesh, cylinderMesh, extrudeMesh } from './shapes'
-import { propView, solveProp, type PropRig } from './rig'
+import { propView, solveProp, propPartsInSpace, type PropRig } from './rig'
+import { mat4 } from '../../engine/math'
 import { car } from './families/vehicle'
 import { propTarget, propAt, solveAt } from './target'
 import { propScript, checkPropBeats } from './script'
@@ -230,6 +231,24 @@ describe('environment props', () => {
     // The open door shows the doorway behind it, front-on.
     const parts = solveAt(prop, { turn: 0, door: 1 }, 30)
     expect([...parts.under, ...parts.over].map((p) => p.part.id)).toContain('doorway')
+  })
+
+  it("a house's door hangs on either edge, swings out or in, and has its handle on the free edge", async () => {
+    const { house } = await import('./families/environment')
+    // Seen front-on at scale 30, around x = 300: where the door's free edge is, shut and open.
+    const handleX = (spec: Parameters<typeof house>[0]) => propAt(propTarget({ x: 300, y: 400, prop: house(spec), scale: 30, values: { turn: 0 } }), { time: 0, state: new Timeline({ id: 'd', tracks: [] }).getStateAtTime(0) }, 'house').anchor('handle')
+    expect(handleX({}).x).toBeGreaterThan(300)
+    expect(handleX({ door: { hinge: 'right' } }).x).toBeLessThan(300)
+    // How far out from the wall the free edge comes with the door open (its panel runs 0.9 m across from the hinge).
+    const doorDepth = (spec: Parameters<typeof house>[0]) => {
+      const door = propPartsInSpace(house(spec).rig, { door: 1 }).find((p) => p.part.id === 'door')!
+      return mat4.transformPoint(door.matrix, [spec?.door?.hinge === 'right' ? -0.9 : 0.9, 1, 0])[2]
+    }
+    const front = 3.2 / 2
+    expect(doorDepth({})).toBeGreaterThan(front)
+    expect(doorDepth({ door: { hinge: 'right' } })).toBeGreaterThan(front)
+    expect(doorDepth({ door: { hinge: 'right', opens: 'in' } })).toBeLessThan(front)
+    expect(doorDepth({ door: { opens: 'in' } })).toBeLessThan(front)
   })
 
   it('every prop can pop in and vanish', () => {

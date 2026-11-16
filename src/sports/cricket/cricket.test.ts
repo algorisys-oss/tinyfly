@@ -113,7 +113,7 @@ describe('cricket JSON API', () => {
     const plays = Object.keys(CRICKET_ACTIONS) as CricketAction[]
     const motion = plays.map(action => JSON.stringify(cricketClip({ action, every: 1000 }).timeline.tracks))
     expect(new Set(motion).size).toBe(plays.length)
-  }, 15000)
+  })
 })
 
 function headAt(clip: CricketClip, id: string, time: number, motion?: Timeline) {
@@ -209,7 +209,7 @@ describe('cricket facing and stance', () => {
         }
       }
     }
-  }, 15000)
+  })
 
   it('keeps running players and a collecting fielder facing their travel', () => {
     const clip = cricketClip({ action: 'running', every: 100 })
@@ -256,7 +256,7 @@ describe('cricket facing and stance', () => {
       expect(clip.result).toMatchObject({ runs: action === 'running' ? 1 : 0, wickets: action === 'run-out' ? 1 : 0 })
       expect(clip.events.find(event => event.id === 'contact')?.time).toBe(actual(2900))
     }
-  }, 30000)
+  })
 
   it.each(['batting', 'running', 'catch', 'fielding', 'throw', 'run-out'] as const)('hands the %s fielder from ball attention to travel without a backward snap', action => {
     let reference: number[] | undefined
@@ -282,7 +282,7 @@ describe('cricket facing and stance', () => {
         near(point(clip, event.time), posed(clip, id, event.time).palm())
       }
     }
-  }, 30000)
+  })
 
   it('keeps the bowler yaw continuous as the run-out return passes behind', () => {
     for (const [duration, every] of [[6000, 40], [6000, 137], [6000, 1000], [4000, 1000], [60000, 1000]]) {
@@ -304,7 +304,7 @@ describe('cricket facing and stance', () => {
         expect(horizontalAlignment(bowler.sample.position, [Math.sin(angle), 0, Math.cos(angle)], point(clip, time))).toBeGreaterThan(.999)
       }
     }
-  }, 30000)
+  })
 })
 
 describe('cricket camera regressions', () => {
@@ -513,7 +513,7 @@ describe.each(['adults', 'men', 'children', 'mixed'] as CricketCast[])('%s crick
       }
       near(point(clip, caughtAt), posed(clip, 'keeper', caughtAt, motion).palm())
     }
-  }, 30000)
+  })
   it('retains intentional LBW contact at the native rear leg', () => {
     for (const duration of [4000, 6000, 60000]) {
       const clip = cricketClip({ action: 'lbw', cast, duration, every: 1000 })

@@ -56,5 +56,5 @@ describe('soft cartoon child actors', () => {
         expect(render(pose).equals(pixels)).toBe(true)
       }
     }
-  }, 20000)
+  })
 })

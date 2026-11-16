@@ -172,7 +172,11 @@ Make your own from the family generators: `vehicle(spec)` takes:
 - wheels (any radius; `side: 0` for a bike's middle line; `style: 'spoked'`)
 - doors, lights, side windows, frame tubes, an antenna, a seat and extra parts
 
-`tree(spec)` and `house(spec)` take sizes and colours.
+`tree(spec)` and `house(spec)` take sizes and colours. A house's front door
+hangs on its left edge and swings out unless told otherwise
+(`house({ door: { hinge: 'right', opens: 'in' } })`); its `handle` anchor is on
+the free edge, so hang the door on the side away from the figure that opens it
+and aim the grab at `anchor:handle`.
 
 **Furniture.** `chair()`, `desk()`, `bed()` and `door()` stand on the ground
 facing the viewer, and their places are anchors a figure uses them at: a

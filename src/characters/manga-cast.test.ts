@@ -93,7 +93,7 @@ describe('young adult manga cast', () => {
         }
       }
     }
-  }, 20000)
+  })
 
   it('changes hair independently of the face and retains shared expression and gaze controls', () => {
     const preset = castMember('mangaYoungWoman', 300)

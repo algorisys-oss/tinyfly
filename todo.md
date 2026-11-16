@@ -1,3 +1,8 @@
+## Home Time door opens from the handle side — v0.126.0
+
+- [x] `house({ door: { hinge, opens } })`: the front door hangs on its left or right edge and swings out or in (default left, out, as before); new `handle` anchor on the free edge.
+- [x] Home Time: the figure comes from the left, so the door hangs on the right and swings into the house; the grab aims at `anchor:handle` (it used to take the door on its hinge side, and the door swung out over the figure).
+
 ## No gimbal lock in the 3D rig — v0.125.0
 
 - [x] Bones turn in their parent bone's frame (`BoneFrame` is now the bone's axes), and swing and spread combine as one tilt (`tilt`, `tiltFrame`, inverse `hangingTilt`): spread works on a thigh swung level (seated knees open) and on arms held forward (hands meet); an elbow bends about its upper arm wherever it points. Pure swings and pure spreads are unchanged.

@@ -63,5 +63,5 @@ describe('colour anime characters', () => {
       }
     }
     expect(castMember('animeOlderWoman', 300, { face: { style: 'simple' } }).face?.style).toBe('simple')
-  }, 20000)
+  })
 })

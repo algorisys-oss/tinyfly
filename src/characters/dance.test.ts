@@ -224,7 +224,7 @@ describe('stick-figure target', () => {
     const standing = draw(0)
     const dancing = draw(1)
     expect(standing.every((v, i) => v === dancing[i])).toBe(false)
-  }, 30000)
+  })
 })
 
 describe('taps', () => {
@@ -321,7 +321,7 @@ describe('baked hands', () => {
     const relaxed = draw({})
     const fist = draw(Object.fromEntries(Object.entries(HAND_SHAPES.fist).map(([field, value]) => [`hand.right.${field}`, value])))
     expect(relaxed.every((v, i) => v === fist[i])).toBe(false)
-  }, 30000)
+  })
 })
 
 describe('travelling moves: glides and the moonwalk', () => {

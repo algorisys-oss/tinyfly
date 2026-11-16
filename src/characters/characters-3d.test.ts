@@ -118,7 +118,7 @@ describe('characters in 3D scenes', () => {
       for (let i = 0; i < pixels.length; i += 4) if ([128, 64, 32].every((v, k) => Math.abs(v - pixels[i + k]) < 10)) covered++
       expect(covered, `${name} camera ${yaw} nod ${nod} head ${headTurn}: skin showing through rear hair`).toBeGreaterThan(35)
     }
-  }, 15000)
+  })
 
   it.each(['youngMan', 'youngWoman', 'childBoy', 'childGirl'] as const)('keeps %s wrists over waist garments in globally sorted scene pixels', name => {
     const size = { width: 500, height: 450 }

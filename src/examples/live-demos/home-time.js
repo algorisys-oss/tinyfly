@@ -32,7 +32,9 @@ export function run(live, root) {
   const START = 40
 
   // A house is a prop; as a surface, its controls are things a figure changes.
-  const home = tinyfly.propTarget({ x: 430, y: GROUND, prop: tinyfly.house(), values: { turn: 0.25 } })
+  const home = tinyfly.propTarget({ x: 430, y: GROUND, prop: tinyfly.house({ door: { hinge: 'right', opens: 'in' } }), values: { turn: 0.25 } })
+  // The figure comes from the left, so the door hangs on its right edge and swings in, as a front door does:
+  // the hand takes the handle on the near side and the door turns away from it, into the house.
   const homeSurface = tinyfly.propSurface(home)
   // The house stands on its middle; seen from a little above, its front wall comes forward of that.
   // The figure walks on the doorstep's line, in front of the house, not through its walls.
@@ -44,7 +46,7 @@ export function run(live, root) {
     { home: homeSurface },
     [
       { do: 'walk', to: homeSurface.anchor('anchor:door').x - 70, mood: 'sleepy', say: 'Long day.' },
-      { do: 'grab', target: on('anchor:door'), mood: 'neutral', then: { surface: 'home', edit: 'switch', anchor: 'control:door', until: 'end' } },
+      { do: 'grab', target: on('anchor:handle'), mood: 'neutral', then: { surface: 'home', edit: 'switch', anchor: 'control:door', until: 'end' } },
       { do: 'point', target: on('part:window-1'), mood: 'happy', then: { surface: 'home', edit: 'switch', anchor: 'control:lights' } },
       { do: 'cheer', for: 900, say: 'Home!', mood: 'joyful' },
       { do: 'hold', for: 900 },
@@ -96,7 +98,7 @@ export const homeTime = {
   id: 'live-home-time',
   name: 'Home Time',
   description:
-    'A stick figure comes home at dusk: it grabs the door, which swings open as the hand closes on it, and points at a window, and the windows light up. The house is a prop used as a surface (propSurface): its controls are named places (`control:door`, `control:lights`) the beats switch, and its parts and anchors (`part:window-1`, `anchor:door`) are places they aim at.',
+    'A stick figure comes home at dusk: it grabs the door by its handle, and the door, hung on the far side, swings open into the house as the hand closes on it, and points at a window, and the windows light up. The house is a prop used as a surface (propSurface): its controls are named places (`control:door`, `control:lights`) the beats switch, and its parts and anchors (`part:window-1`, `anchor:handle`) are places they aim at.',
   category: 'video',
   tags: ['canvas', 'character', 'stick figure', 'acting', 'props', 'house', 'video'],
   html,

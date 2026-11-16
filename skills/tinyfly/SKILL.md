@@ -109,6 +109,9 @@ names.
   or `part:ID`). Walk figures on a prop's front line (a house's
   `anchor:doorstep` y), not on the prop's own `y`, or they pass through its
   walls.
+- A house's door hangs on its left edge unless `house({ door: { hinge:
+  'right', opens: 'in' } })`; hang it on the side away from the figure and
+  grab `anchor:handle` (on the free edge), or the figure opens it from the hinge.
 - For objects in the scene (vehicles, trees, houses, furniture, aircraft,
   animals, birds) use the prop presets with `propScript()`; seat figures with
   `propRide()`, tow with `propTow()`. Furniture's anchors are where a figure

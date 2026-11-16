@@ -591,7 +591,7 @@ with a GSAP-style call (durations are in seconds here):
 ```html
 <div class="box" style="width:60px;height:60px;background:#4a9eff"></div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.125.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.126.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -799,7 +799,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.125.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.126.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -2725,7 +2725,7 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.125.0/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.126.0/cdn/tinyfly-player.iife.js`.
 
 ---
 
@@ -7079,7 +7079,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.125.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.126.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed
@@ -8135,7 +8135,11 @@ Make your own from the family generators: `vehicle(spec)` takes:
 - wheels (any radius; `side: 0` for a bike's middle line; `style: 'spoked'`)
 - doors, lights, side windows, frame tubes, an antenna, a seat and extra parts
 
-`tree(spec)` and `house(spec)` take sizes and colours.
+`tree(spec)` and `house(spec)` take sizes and colours. A house's front door
+hangs on its left edge and swings out unless told otherwise
+(`house({ door: { hinge: 'right', opens: 'in' } })`); its `handle` anchor is on
+the free edge, so hang the door on the side away from the figure that opens it
+and aim the grab at `anchor:handle`.
 
 **Furniture.** `chair()`, `desk()`, `bed()` and `door()` stand on the ground
 facing the viewer, and their places are anchors a figure uses them at: a
@@ -8623,6 +8627,10 @@ Loops chapter of `docs/video-rendering.md`.
 - **Walk figures in front of props, not through them.** A prop stands on its
   middle; its front comes forward of that. Use its front line as the
   figure's `ground` (a house's `anchor:doorstep`).
+- **Open a door from its handle side.** A house's door hangs on its left edge
+  by default; a figure coming from the left opens it from the hinge. Hang it
+  on the far side (`house({ door: { hinge: 'right', opens: 'in' } })`) and aim
+  the grab at `anchor:handle`, not `anchor:door`.
 - **Angles are degrees.** Stick-figure arms: 0 hangs down, 90 straight out,
   180 straight up; in profile the left arm's forward is negative.
 - **A character's look is data, and names are checked.** `hair: 'bob'`, not
@@ -8726,7 +8734,7 @@ path for all of that:
 </figure>
 
 <!-- once, anywhere on the page (a site-wide footer is fine) -->
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.125.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.126.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 Every `[data-tinyfly-embed]` mounts when the page is ready, with no per-post
@@ -9312,7 +9320,7 @@ lesson's step options (`duration`, `easing`, `delay`).
   <figcaption>The determinant is the area of the unit square after the map.</figcaption>
 </figure>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.125.0/cdn/tinyfly-math.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.126.0/cdn/tinyfly-math.iife.js" data-tinyfly-auto></script>
 ```
 
 The figure draws itself into an SVG and redraws from the timeline whenever the
@@ -10446,8 +10454,8 @@ On a page with no build step, load the maps add-on after the browser bundle; it
 adds to the same `tinyfly` global:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.125.0/cdn/tinyfly.iife.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.125.0/cdn/tinyfly-maps.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.126.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.126.0/cdn/tinyfly-maps.iife.js"></script>
 ```
 
 It is a separate script because the offline world map it carries adds about
@@ -15909,7 +15917,7 @@ magnet.addEventListener('pointerleave', () => {
 
 <!-- capabilities: generated from the library -->
 
-# tinyfly capabilities (v0.125.0)
+# tinyfly capabilities (v0.126.0)
 
 Generated from the library itself: every name below is accepted, and names not listed are rejected (beat scripts, code panels and `checkTracks` say which name was probably meant).
 
@@ -16162,7 +16170,7 @@ Scenery: `scenery({ x, y, width, height, kind: sky | room, hour, clouds, wind, r
 | `bike()` | vehicle | `drive` (to), `brake` (to), `bump`, `honk` | `wheelSpin` | seat, front, back, roof |
 | `motorbike()` | vehicle | `drive` (to), `brake` (to), `bump`, `honk`, `lights` (on) | `wheelSpin`, `lights` | seat, front, back, roof |
 | `tree()` | plant | `sway`, `shake`, `shedLeaves` | `sway`, `canopySway` | canopy, top, base, branch |
-| `house()` | building | `door` (open), `lights` (on), `shake`, `smoke` | `door`, `lights` | door, doorstep, ridge, chimney |
+| `house()` | building | `door` (open), `lights` (on), `shake`, `smoke` | `door`, `lights` | door, handle, doorstep, ridge, chimney |
 | `chair()` | furniture | `tip`, `fall` | `tip` | seat, back, front |
 | `desk()` | furniture | `drawer` (open) | `drawer` | top, edge, drawer, chair |
 | `bed()` | furniture | `bounce` | `give` | mattress, pillow, foot, side |

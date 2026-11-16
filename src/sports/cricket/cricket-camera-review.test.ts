@@ -28,7 +28,7 @@ describe('cricket decision cameras', () => {
       expect(camera.getStateAtTime(clip.duration).values.get(clip.scene.id + '/camera')!.get('position')).toEqual(start.get('position'))
       expect(JSON.stringify(clip)).toBe(original)
     }
-  }, 15000)
+  })
   it.each(['adults', 'men', 'children', 'mixed'] as CricketCast[])('frames the %s approaching runner and wicket together at run-out', cast => {
     const clip = cricketClip({ cast, action: 'run-out', every: 1000 })
     const motion = new Timeline(clip.timeline), state = motion.getStateAtTime(5000).values
@@ -64,7 +64,7 @@ describe('cricket decision cameras', () => {
       for (const id of ['striker-crease', 'striker-wicket']) expect(Math.abs(mat4.transformPoint(projected, clip.landmarks[id])[0])).toBeLessThan(.9)
       expect(JSON.stringify(clip)).toBe(original)
     }
-  }, 15000)
+  })
   it('selects physical events independently of protected decisions', () => {
     const noBall = cricketPlayClip({ delivery: { legality: 'no-ball' }, finish: 'stumps', decision: { dismissal: 'bowled' }, every: 1000 })
     expect(cricketCameraReview(noBall, 'striker-crease')).toMatchObject({ id: 'wicket', time: 3200 })

@@ -36,6 +36,6 @@ describe('examples/headless-video', () => {
         expect(varied, `${file} at ${time}ms`).toBe(true)
       }
       // Model sheets draw hundreds of posed figures and hands per frame.
-    }, 20000)
+    })
   }
 })

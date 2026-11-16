@@ -87,5 +87,5 @@ describe('flowing hair controls', () => {
       node.dispatchEvent(new Event('input'))
     }
     expect(rendered).not.toHaveBeenCalled()
-  }, 30000)
+  })
 })

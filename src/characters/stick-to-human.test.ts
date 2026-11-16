@@ -124,7 +124,7 @@ describe('natural hands', () => {
     const natural = draw('natural')
     expect(glove.every((v, i) => v === natural[i])).toBe(false)
     expect(character({ handStyle: 'natural' }).handSize).toBeLessThan(character({}).handSize)
-  }, 30000)
+  })
 })
 
 describe('mirrorHumanPose', () => {
@@ -162,7 +162,7 @@ describe('mirrorHumanPose', () => {
       expect(ink).toBeGreaterThan(5000)
       expect(differ / ink).toBeLessThan(0.005)
     }
-  }, 30000)
+  })
 
   it('swaps sides and turns the other way; mirrored twice it is the same pose', () => {
     const human = stickToHuman(pose({ turn: 0.9, rightShoulder: 40, lean: 5 }))

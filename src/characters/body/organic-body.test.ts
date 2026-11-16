@@ -238,7 +238,7 @@ describe('organic character anatomy and material', () => {
     }
     const j = characterJointsInView(character({ figure: 'organic' }), humanPose({ turn: .5 }), { toView: p => p, toScreen: ([x, y]) => ({ x: x * 100 + 250, y: 350 - y * 100 }) }, { height: 3 })
     expect(j.bodyContours!.spine.outline.every(p => Number.isFinite(p.x) && Number.isFinite(p.y))).toBe(true)
-  }, 15000)
+  })
 
   it('clips deterministic shading inside filled shapes and leaves legacy modes opt-in', () => {
     const flat = character({ figure: 'organic', height: 300, body: { shading: { mode: 'none' } } })

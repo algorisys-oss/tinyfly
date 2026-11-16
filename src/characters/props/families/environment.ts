@@ -154,8 +154,12 @@ export interface HouseSpec {
   wallHeight?: number
   roofHeight?: number
   overhang?: number
-  /** The front door: across position of its middle, size */
-  door?: { at?: number; width?: number; height?: number }
+  /**
+   * The front door: across position of its middle, size, the edge it hangs on as seen from the front
+   * (default 'left') and which way it swings (default 'out'). Its handle is on the other edge, so hang it
+   * on the side away from where a figure stands to open it.
+   */
+  door?: { at?: number; width?: number; height?: number; hinge?: 'left' | 'right'; opens?: 'out' | 'in' }
   /** Front windows: across position of the middle, height of the bottom, size */
   windows?: Array<{ at: number; low: number; width: number; height: number }>
   /** A chimney on the roof (across, front to back) */
@@ -175,6 +179,12 @@ export function house(spec: HouseSpec = {}): Prop {
   const doorWidth = spec.door?.width ?? 0.9
   const doorHeight = spec.door?.height ?? 1.9
   const doorAt = spec.door?.at ?? 0
+  const hinge = spec.door?.hinge ?? 'left'
+  // Across from the hinge to the free edge: +1 when hung on the left, -1 when hung on the right.
+  const swing = hinge === 'left' ? 1 : -1
+  const hingeAt = doorAt - (swing * doorWidth) / 2
+  // Turning about the upright axis by -80° (hung left) carries the free edge out of the wall; the other way, in.
+  const openDegrees = -80 * swing * ((spec.door?.opens ?? 'out') === 'out' ? 1 : -1)
   const windows = spec.windows ?? [
     { at: -1.25, low: 1.0, width: 0.8, height: 0.8 },
     { at: 1.25, low: 1.0, width: 0.8, height: 0.8 },
@@ -190,8 +200,8 @@ export function house(spec: HouseSpec = {}): Prop {
     },
     // The doorway behind the door shows when it opens.
     { id: 'doorway', shape: { type: 'panel', points: [[0, 0], [doorWidth, 0], [doorWidth, doorHeight], [0, doorHeight]], facing: 'front' }, at: [doorAt - doorWidth / 2, 0, front - 0.005], fill: colors.doorway, outline: 0.6, seeThrough: true },
-    // The door, hinged on its left edge (the panel's origin); drawn over a rider, so a figure in the doorway shows only when it opens.
-    { id: 'door', shape: { type: 'panel', points: [[0, 0], [doorWidth, 0], [doorWidth, doorHeight], [0, doorHeight]], facing: 'front' }, at: [doorAt - doorWidth / 2, 0, front + 0.005], fill: colors.door, outline: 0.8, overRider: true },
+    // The door, hinged on the panel's origin edge (left or right); drawn over a rider, so a figure in the doorway shows only when it opens.
+    { id: 'door', shape: { type: 'panel', points: [[0, 0], [swing * doorWidth, 0], [swing * doorWidth, doorHeight], [0, doorHeight]], facing: 'front' }, at: [hingeAt, 0, front + 0.005], fill: colors.door, outline: 0.8, overRider: true },
   ]
   windows.forEach((w, i) => {
     parts.push({
@@ -225,7 +235,7 @@ export function house(spec: HouseSpec = {}): Prop {
   const rig: PropRig = {
     parts,
     controls: {
-      door: { description: 'The front door open: 0 shut, 1 open', unit: '0..1', min: 0, max: 1, bind: [{ parts: ['door'], rotate: { axis: 'y', degrees: -80 } }] },
+      door: { description: 'The front door open: 0 shut, 1 open', unit: '0..1', min: 0, max: 1, bind: [{ parts: ['door'], rotate: { axis: 'y', degrees: openDegrees } }] },
       lights: { description: 'The windows lit: 0 dark, 1 lit', unit: '0..1', min: 0, max: 1 },
     },
     length: depth + overhang * 2,
@@ -233,6 +243,8 @@ export function house(spec: HouseSpec = {}): Prop {
     footprint: [width + 0.6, depth + 0.6],
     anchors: {
       door: { at: [doorAt, doorHeight / 2, front] },
+      // The handle, a hand's width in from the free edge.
+      handle: { at: [hingeAt + swing * (doorWidth - 0.12), doorHeight * 0.5, front + 0.02] },
       doorstep: { at: [doorAt, 0, front + 0.4] },
       ridge: { at: [0, wall + roof, 0] },
       ...(chimney ? { chimney: { at: [chimney.at, wall + roof + 0.5, chimney.back] } } : {}),

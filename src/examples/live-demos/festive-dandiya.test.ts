@@ -109,5 +109,5 @@ describe.each(['live', 'headless'] as const)('festive dandiya %s geometry', (kin
     expect(festival.spinDegrees(12) - festival.spinDegrees(8)).toBe(180)
     expect(festival.spinDegrees(24) - festival.spinDegrees(16)).toBe(360)
     if (festival.video) expect(festival.video).toMatchObject({ duration: 24000, loop: true })
-  }, 20000)
+  })
 })

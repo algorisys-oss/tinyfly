@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.126.0](v0.126.0.md) | 2026-11-16 | House doors hang on either edge and swing out or in, with a `handle` anchor; Home Time's figure opens the door from the handle side |
 | [v0.125.0](v0.125.0.md) | 2026-11-16 | No gimbal lock in the human rig: spread and forearm bend work on limbs swung forward (seated knees open, hands meet in front); bones turn in their parent's frame |
 | [v0.124.0](v0.124.0.md) | 2026-11-16 | Natural gaits: the run lands on a bent knee and flies with its legs apart, arms hang plumb under a lean, reaches move the short way; `flight` and `give` gait fields |
 | [v0.123.0](v0.123.0.md) | 2026-11-07 | Noir and detective kit: rain, blinds, torch-lit darkness, clue markers, name cards, narration, speech bubbles and a case board; bean household clothes (skirt, drape, bangles) |

@@ -391,6 +391,10 @@ Loops chapter of `docs/video-rendering.md`.
 - **Walk figures in front of props, not through them.** A prop stands on its
   middle; its front comes forward of that. Use its front line as the
   figure's `ground` (a house's `anchor:doorstep`).
+- **Open a door from its handle side.** A house's door hangs on its left edge
+  by default; a figure coming from the left opens it from the hinge. Hang it
+  on the far side (`house({ door: { hinge: 'right', opens: 'in' } })`) and aim
+  the grab at `anchor:handle`, not `anchor:door`.
 - **Angles are degrees.** Stick-figure arms: 0 hangs down, 90 straight out,
   180 straight up; in profile the left arm's forward is negative.
 - **A character's look is data, and names are checked.** `hair: 'bob'`, not
