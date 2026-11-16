@@ -147,6 +147,10 @@ names.
   split, grounded as the legs pass) and `give: 20–30` (a bent landing knee),
   or it bounces at the wrong moment on stiff legs. Gait arms hang plumb, so
   `shoulder` is measured from the vertical, not from the leaning chest.
+- Human limbs: `swing` and `spread` work at any angle (one combined tilt,
+  each bone turning with its parent), so hands meet in front with
+  `arm.*.swing: 90` plus a negative `spread` or forearm `bend`, and seated
+  knees open with `leg.*.spread`.
 - Soft cartoon bodies: `figure: 'organic'` defaults to
   `face.projection: 'volume'` for head turns with hair occlusion, a flatter
   profile face and a nose projecting from above the mouth;

@@ -33,16 +33,75 @@ export function rotY([x, y, z]: Vec3, a: number): Vec3 {
 }
 
 const add = (a: Vec3, b: Vec3): Vec3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
+const dot = (a: Vec3, b: Vec3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 const scale = (a: Vec3, k: number): Vec3 => [a[0] * k, a[1] * k, a[2] * k]
 
-/** A bone's absolute orientation: summed swing and (signed) spread, radians. */
-export interface BoneFrame {
-  swing: number
-  spread: number
+/**
+ * A bone's frame: where its own left (x), up (y) and forward (z) axes point in
+ * the character's space. Each bone's frame is the frame of the bone it hangs
+ * from, turned by its own angles, so an elbow or knee always bends about its
+ * upper bone, however that bone is turned.
+ */
+export type BoneFrame = readonly [Vec3, Vec3, Vec3]
+
+/** The hips' frame: the character's own axes. */
+export const BODY_FRAME: BoneFrame = [
+  [1, 0, 0],
+  [0, 1, 0],
+  [0, 0, 1],
+]
+
+/** A vector given in a bone's own axes, in the character's space. */
+export const orient = ([x, y, z]: Vec3, frame: BoneFrame): Vec3 => [
+  x * frame[0][0] + y * frame[1][0] + z * frame[2][0],
+  x * frame[0][1] + y * frame[1][1] + z * frame[2][1],
+  x * frame[0][2] + y * frame[1][2] + z * frame[2][2],
+]
+
+/** A vector in the character's space, in a bone's own axes (the inverse of `orient`). */
+export const unorient = (v: Vec3, frame: BoneFrame): Vec3 => [dot(v, frame[0]), dot(v, frame[1]), dot(v, frame[2])]
+
+/**
+ * Tilt a vector by a swing and a spread (radians) taken together, as one turn
+ * about a level axis: a hanging vector's end moves forward by the swing and
+ * out toward +x by the spread, in proportion, however large either is. Swing
+ * alone is `rotX`, spread alone is `rotZ`. Unlike turning by one and then the
+ * other, neither stops working when the other reaches 90°: a thigh swung
+ * level still spreads its knee out, an arm held forward still swings in.
+ * (Only a bone tilted straight up, 180° from hanging, is past all spreading.)
+ */
+export function tilt(v: Vec3, swing: number, spread: number): Vec3 {
+  const angle = Math.hypot(swing, spread)
+  if (angle < 1e-12) return v
+  // Rodrigues: the axis (-swing, 0, spread)/angle is level and square to the tilt.
+  const k: Vec3 = [-swing / angle, 0, spread / angle]
+  const c = Math.cos(angle)
+  const s = Math.sin(angle)
+  const across: Vec3 = [k[1] * v[2] - k[2] * v[1], k[2] * v[0] - k[0] * v[2], k[0] * v[1] - k[1] * v[0]]
+  const along = dot(k, v) * (1 - c)
+  return [v[0] * c + across[0] * s + k[0] * along, v[1] * c + across[1] * s + k[1] * along, v[2] * c + across[2] * s + k[2] * along]
 }
 
-/** Turn a vector by a bone frame, as its bones are turned: spread after swing. */
-export const orient = (v: Vec3, frame: BoneFrame): Vec3 => rotZ(rotX(v, frame.swing), frame.spread)
+/** The frame of a bone tilted (swing, spread, radians) from the bone it hangs from. */
+export const tiltFrame = (parent: BoneFrame, swing: number, spread: number): BoneFrame =>
+  BODY_FRAME.map((axis) => orient(tilt(axis, swing, spread), parent)) as unknown as BoneFrame
+
+/**
+ * The tilt (swing, spread, radians) that turns a hanging bone (0, -1, 0) to
+ * point along `d`, given in the frame of the bone it hangs from. The inverse
+ * of `tilt`; of the two tilts that reach each direction (less or more than
+ * half a turn), the one nearer `near` is returned, so a blend moves the short way.
+ */
+export function hangingTilt(d: Vec3, near: { swing: number; spread: number } = { swing: 0, spread: 0 }): { swing: number; spread: number } {
+  const across = Math.hypot(d[0], d[2])
+  if (across < 1e-12) return d[1] <= 0 ? { swing: 0, spread: 0 } : { swing: Math.PI, spread: 0 }
+  const angle = Math.atan2(across, -d[1])
+  const short = { swing: (angle * d[2]) / across, spread: (angle * d[0]) / across }
+  const longAngle = angle - 2 * Math.PI
+  const long = { swing: (longAngle * d[2]) / across, spread: (longAngle * d[0]) / across }
+  const distance = (t: { swing: number; spread: number }) => Math.hypot(t.swing - near.swing, t.spread - near.spread)
+  return distance(long) < distance(short) - 1e-9 ? long : short
+}
 
 export interface SolvedChain {
   id: string
@@ -117,28 +176,27 @@ export function solvePlanSpace(plan: BodyPlan, pose: Pose, height: number): Plan
   const hipHeight = plan.hipHeight * H * (plan.boneScale?.(pose, null) ?? 1)
   const root: Vec3 = [0, hipHeight, 0]
 
-  // Forward kinematics: each chain from its parent's joint, its bones' angles summed.
+  // Forward kinematics: each chain from its parent's joint, each bone tilted from the one before.
   const solved: Record<string, { joints3: Vec3[]; frames: BoneFrame[] }> = {}
   for (const chain of plan.chains) {
     const parent = chain.parent ? solved[chain.parent] : undefined
     if (chain.parent && !parent) throw new Error(`body plan ${plan.id}: chain ${chain.id} comes before its parent ${chain.parent}`)
     const at = chain.at ?? (parent ? parent.joints3.length - 1 : 0)
     const base = parent ? parent.joints3[at] : root
-    const parentFrame = parent ? parent.frames[Math.max(0, at - 1)] : { swing: 0, spread: 0 }
+    const parentFrame = parent ? parent.frames[Math.max(0, at - 1)] : BODY_FRAME
     const start = chain.offset ? add(base, orient(scale(chain.offset, H), parentFrame)) : base
     const side = chain.side ?? 1
     const lengthScale = plan.boneScale?.(pose, chain) ?? 1
     const angles = plan.angles(pose, chain)
     const joints3: Vec3[] = [start]
     const frames: BoneFrame[] = []
-    let swing = parentFrame.swing
-    let spread = parentFrame.spread
+    let frame = parentFrame
     chain.bones.forEach((bone, i) => {
       const a = angles[i] ?? { swing: 0, spread: 0 }
-      swing += rad(a.swing)
-      spread += rad(a.spread) * side
-      frames.push({ swing, spread })
-      const direction = rotY(orient(chain.rest, { swing, spread }), rad(a.yaw ?? 0))
+      frame = tiltFrame(frame, rad(a.swing), rad(a.spread) * side)
+      frames.push(frame)
+      // Yaw turns this bone alone about the vertical (a foot turned out); its children do not inherit it.
+      const direction = rotY(orient(chain.rest, frame), rad(a.yaw ?? 0))
       joints3.push(add(joints3[i], scale(direction, bone.length * H * lengthScale)))
     })
     solved[chain.id] = { joints3, frames }

@@ -1,3 +1,10 @@
+## No gimbal lock in the 3D rig — v0.125.0
+
+- [x] Bones turn in their parent bone's frame (`BoneFrame` is now the bone's axes), and swing and spread combine as one tilt (`tilt`, `tiltFrame`, inverse `hangingTilt`): spread works on a thigh swung level (seated knees open) and on arms held forward (hands meet); an elbow bends about its upper arm wherever it points. Pure swings and pure spreads are unchanged.
+- [x] `reachPose` solves in the new frames; a knee stays a hinge (the leg swivels about the hip–target line so the shin needs no sideways tilt).
+- [x] Ready-made poses checked against the old rig: `lift`, `read`, `type` now bring the hands together as their forearm `bend` asked; `sitFloor` knees open wider; others move ≤ 3% of the height.
+- [ ] Later: retune `sitFloor` if its wider knees read wrong in scenes.
+
 ## Natural gaits and reaches — v0.124.0
 
 - [x] Review of the 2D stick rig and the 3D human rig (contact sheets of every gait and pose at front, ¾ and profile).
@@ -5,7 +12,6 @@
 - [x] Knee give: new gait field `give` bends the weight-bearing knee (thigh forward half as much so the foot stays under the hips); `run` 30, `bouncy` 12, `doubleBounce` 10. `gaitGive()` shared by both rigs.
 - [x] Swinging arms hang plumb: gait and walk arms take back the chest's `lean` + `bend` (both rigs), so `tired` no longer trails its arms behind; `sneak`'s held paws re-measured from the vertical (55 → 25, same look).
 - [x] Reach (`reachPose`): of the two equivalent (swing, spread) solutions, the one nearer the limb's current angles, so blending to a reach moves forward and up, not out and over.
-- [ ] Later: compose limb rotations in the parent bone's frame (spread and bend do nothing on a limb swung straight forward: a seated figure can't open its knees, forward arms can't bring hands together). Changes every saved pose, so it needs a migration plan.
 - [ ] Later: joint-range checks (a negative human knee, a 2D elbow past ~150°) in `checkTracks`; a warning when a 2D stick figure walks front-on (`turn` 0).
 
 ## Noir / detective kit and bean household clothes — v0.123.0

@@ -311,6 +311,12 @@ and the checks accept them. See "Your own actions, gaits and personas" in
 `flight: true` (airborne with the legs apart, grounded as they pass) and a
 knee `give` of 20–30 so it lands on a bent knee.
 
+On the human rig a limb's `swing` and `spread` combine as one tilt, and each
+bone turns with the one it hangs from, so both work at any angle: a seated
+figure opens its knees with `leg.*.spread`, and arms held forward
+(`swing: 90`) bring the hands together with a negative `spread` or forearm
+`bend`. (Up to v0.124.0 spread and bend did nothing on a limb swung level.)
+
 ## 2. Ask a target what it can do
 
 ```js

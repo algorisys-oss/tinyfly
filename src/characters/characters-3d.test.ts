@@ -213,7 +213,7 @@ describe('characters in 3D scenes', () => {
 
   it('allows a world object between an organic rear arm and foreground arm', () => {
     const size = { width: 500, height: 450 }
-    const pose = humanPose({ turn: .6, 'arm.left.swing': -40, 'arm.right.swing': 40 })
+    const pose = humanPose({ turn: .6, 'arm.left.swing': -40, 'arm.left.spread': 0, 'arm.right.swing': 40 })
     const options: CharacterOptions = { figure: 'organic', body: { shading: { mode: 'none' } } }
     const json: Scene3D = { ...scene(), objects: [
       { id: 'cam', kind: 'camera', projection: 'orthographic', height: 2.5, near: .1, far: 50, position: [0, 1, 5] },

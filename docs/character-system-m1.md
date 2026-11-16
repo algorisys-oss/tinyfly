@@ -95,10 +95,21 @@ angles in degrees:
 - **swing**: forward (+) and back (−), about the character's x axis;
 - **spread**: away from the body (+) and across it (−), about its z axis.
 
-A bone's angles add to its parent bone's, as v1's elbow adds to its shoulder.
-Direction = Rz(spread · side) · Rx(swing) · rest. Seen from the front only the
-spread shows; seen from the side only the swing. This is what fixes the
-"arms forward and back in profile" problem.
+Each bone turns in its parent bone's frame, as v1's elbow turns with its
+shoulder: an elbow bends about the upper arm wherever the upper arm points.
+Swing and spread are taken together as one tilt about a level axis, the way a
+joystick leans: the end of a hanging bone moves forward by the swing and out
+by the spread, however large either is (swing alone is Rx(swing), spread alone
+Rz(spread · side)). So a thigh swung level still spreads its knee, and an arm
+held forward still swings in to meet the other hand; only a bone tilted
+straight up from hanging is past spreading. Seen from the front a swing
+foreshortens and a spread shows; seen from the side, the other way round. This
+is what fixes the "arms forward and back in profile" problem.
+
+(Up to v0.124.0, a bone's swing and spread were added to its parent's and
+applied spread after swing, so spread and forearm bend did nothing on a limb
+swung straight forward. Poses that mix large swings with spreads, mostly
+forward arms with a forearm `bend`, now look as their numbers say.)
 
 ## Pose
 
