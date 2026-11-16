@@ -275,7 +275,10 @@ export function walkPose(phase: number, base: StickPose = REST_POSE, stride = 1)
   const lift = Math.cos(phase * Math.PI * 2) * stride
   // Raised either way: a left arm reaching forward has a negative angle.
   const swings = (shoulder: number) => Math.abs(shoulder) <= SWINGING_ARM_LIMIT
-  const armSwing = (shoulder: number) => (swings(shoulder) ? 22 * swing : shoulder)
+  // Swinging arms hang plumb: leaning tips the chest, and the arms with it,
+  // so they swing about the vertical instead (forward is − for the left arm).
+  const plumb = base.lean + WALK_LEAN * stride + (base.bend ?? 0)
+  const armSwing = (shoulder: number, forward: number) => (swings(shoulder) ? forward * plumb + 22 * swing : shoulder)
   // A swinging arm's forearm follows through as it comes forward. Forward (+x) is a
   // negative angle for the left arm and a positive one for the right.
   const leftElbow = swings(base.leftShoulder) ? base.leftElbow - WALK_ELBOW * Math.max(0, -swing) : base.leftElbow
@@ -295,8 +298,8 @@ export function walkPose(phase: number, base: StickPose = REST_POSE, stride = 1)
     leftKnee: -30 * Math.max(0, lift),
     rightKnee: 30 * Math.max(0, -lift),
     // Arms swing against the legs: left arm back while the left foot is forward.
-    leftShoulder: armSwing(base.leftShoulder),
-    rightShoulder: armSwing(base.rightShoulder),
+    leftShoulder: armSwing(base.leftShoulder, -1),
+    rightShoulder: armSwing(base.rightShoulder, 1),
   }
 }
 

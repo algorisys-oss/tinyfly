@@ -48,7 +48,13 @@ describe('human gaits', () => {
   }
 
   it('give each gait its character, and keep raised arms raised', () => {
-    expect(humanGaitPose('run', 0).lift).toBeGreaterThan(0.03)
+    // A run is in the air with the legs apart, on the ground on a bent knee as they pass.
+    expect(humanGaitPose('run', 0.25).lift).toBeGreaterThan(0.03)
+    expect(humanGaitPose('run', 0).lift).toBeCloseTo(0)
+    expect(humanGaitPose('run', 0.5)['leg.left.knee']).toBeGreaterThan(20)
+    // Swinging arms hang plumb under a slumped, leaning body.
+    const tired = joints(humanGaitPose('tired', 0, humanPose({ turn: 1 })))
+    expect(Math.abs(tired.points['hand.right'].x - tired.points['shoulder.right'].x)).toBeLessThan(tired.height * 0.05)
     expect(humanGaitPose('sneak', 0.3)['leg.left.ankle']).toBeLessThan(-20)
     expect(joints(humanGaitPose('sneak', 0.25)).head.center.y).toBeGreaterThan(joints(humanGaitPose('walk', 0.25)).head.center.y)
     expect(humanGaitPose('tired', 0).bend).toBeGreaterThan(0)

@@ -25,3 +25,17 @@ describe('two-bone reaching with authored yaw', () => {
     })
   }
 })
+
+describe('reaching the short way', () => {
+  it('raises an arm forward to a point in front and above, not out to the side and over', () => {
+    const plan = humanPlan()
+    const height = 300
+    const shoulder = solvePlanSpace(plan, HUMAN_REST, height).chains['arm.left'].joints3[0]
+    const target: [number, number, number] = [shoulder[0], shoulder[1] + 60, shoulder[2] + 60]
+    const pose = reachPose(plan, HUMAN_REST, 'arm.left', target, { height })
+    expect(Math.abs(pose['arm.left.spread'])).toBeLessThan(45)
+    expect(pose['arm.left.swing']).toBeGreaterThan(90)
+    const hand = solvePlanSpace(plan, { ...HUMAN_REST, ...pose }, height).chains['arm.left'].joints3[2]
+    expect(Math.hypot(hand[0] - target[0], hand[1] - target[1], hand[2] - target[2])).toBeLessThan(1e-6)
+  })
+})

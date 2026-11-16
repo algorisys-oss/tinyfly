@@ -1,3 +1,13 @@
+## Natural gaits and reaches — v0.124.0
+
+- [x] Review of the 2D stick rig and the 3D human rig (contact sheets of every gait and pose at front, ¾ and profile).
+- [x] Run timing: new gait field `flight` puts the bounce's peak at the split (airborne with the legs apart, grounded as they pass); `run` uses it. `gaitBob()` shared by both rigs.
+- [x] Knee give: new gait field `give` bends the weight-bearing knee (thigh forward half as much so the foot stays under the hips); `run` 30, `bouncy` 12, `doubleBounce` 10. `gaitGive()` shared by both rigs.
+- [x] Swinging arms hang plumb: gait and walk arms take back the chest's `lean` + `bend` (both rigs), so `tired` no longer trails its arms behind; `sneak`'s held paws re-measured from the vertical (55 → 25, same look).
+- [x] Reach (`reachPose`): of the two equivalent (swing, spread) solutions, the one nearer the limb's current angles, so blending to a reach moves forward and up, not out and over.
+- [ ] Later: compose limb rotations in the parent bone's frame (spread and bend do nothing on a limb swung straight forward: a seated figure can't open its knees, forward arms can't bring hands together). Changes every saved pose, so it needs a migration plan.
+- [ ] Later: joint-range checks (a negative human knee, a 2D elbow past ~150°) in `checkTracks`; a warning when a 2D stick figure walks front-on (`turn` 0).
+
 ## Noir / detective kit and bean household clothes — v0.123.0
 
 - [x] Atmosphere (`src/characters/noir/atmosphere.ts`): `drawRain` (seeded, clipped to a box), `drawBlinds`, `drawDarkness` with torch cones and holes (`coneCorners`), `drawGlow`, `drawVignette`, `lightningFlash`, `lightFlicker`; pure functions of time.

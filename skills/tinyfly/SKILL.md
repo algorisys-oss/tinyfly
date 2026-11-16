@@ -143,6 +143,10 @@ names.
 - For recurring characters, make a `persona()` (look, acting, gait, mood,
   stance) and use `persona.script()`; for a move the catalog lacks, write it
   with `defineAction()` rather than hand-keying joints in many places.
+- A custom run gait (`defineGait`) needs `flight: true` (airborne at the
+  split, grounded as the legs pass) and `give: 20–30` (a bent landing knee),
+  or it bounces at the wrong moment on stiff legs. Gait arms hang plumb, so
+  `shoulder` is measured from the vertical, not from the leaning chest.
 - Soft cartoon bodies: `figure: 'organic'` defaults to
   `face.projection: 'volume'` for head turns with hair occlusion, a flatter
   profile face and a nose projecting from above the mouth;

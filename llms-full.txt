@@ -591,7 +591,7 @@ with a GSAP-style call (durations are in seconds here):
 ```html
 <div class="box" style="width:60px;height:60px;background:#4a9eff"></div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.123.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.124.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -799,7 +799,7 @@ Without a build step, the all-in-one bundle exposes the same functions on a
 global — `tinyfly.to()`, `tinyfly.timeline()` and so on:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.123.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.124.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, duration: 1 })
 </script>
@@ -2725,7 +2725,7 @@ For simple website embedding without a build system.
 </html>
 ```
 
-Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.123.0/cdn/tinyfly-player.iife.js`.
+Build the player with `npm run build:player` to generate `lib/player/tinyfly-player.iife.js`, or load it from the CDN: `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.124.0/cdn/tinyfly-player.iife.js`.
 
 ---
 
@@ -7079,7 +7079,7 @@ The dialog shows the generated HTML/JavaScript code with a **Copy Code** button.
 **Steps to embed:**
 1. Build the player: `npm run build:player`
 2. Copy `lib/player/tinyfly-player.iife.js` to your project (or load
-   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.123.0/cdn/tinyfly-player.iife.js`
+   `https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.124.0/cdn/tinyfly-player.iife.js`
    instead; see [Deployment](DEPLOYMENT.md))
 3. Copy the generated code into your HTML
 4. Adjust the script `src` path if needed
@@ -8538,7 +8538,10 @@ Write new actions with `defineAction()` (from beats, or as timed pose steps),
 new gaits with `defineGait()`, and characters with `persona()`. Pass them where
 they are used; `persona.describe()` and `capabilities(version, cast)` list them,
 and the checks accept them. See "Your own actions, gaits and personas" in
-`docs/acting.md`.
+`docs/acting.md`. In a gait, swinging arms hang plumb whatever the `lean` and
+`bend` (so `shoulder` is from the vertical); a run-like gait wants
+`flight: true` (airborne with the legs apart, grounded as they pass) and a
+knee `give` of 20–30 so it lands on a bent knee.
 
 ## 2. Ask a target what it can do
 
@@ -8717,7 +8720,7 @@ path for all of that:
 </figure>
 
 <!-- once, anywhere on the page (a site-wide footer is fine) -->
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.123.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.124.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 Every `[data-tinyfly-embed]` mounts when the page is ready, with no per-post
@@ -9303,7 +9306,7 @@ lesson's step options (`duration`, `easing`, `delay`).
   <figcaption>The determinant is the area of the unit square after the map.</figcaption>
 </figure>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.123.0/cdn/tinyfly-math.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.124.0/cdn/tinyfly-math.iife.js" data-tinyfly-auto></script>
 ```
 
 The figure draws itself into an SVG and redraws from the timeline whenever the
@@ -10437,8 +10440,8 @@ On a page with no build step, load the maps add-on after the browser bundle; it
 adds to the same `tinyfly` global:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.123.0/cdn/tinyfly.iife.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.123.0/cdn/tinyfly-maps.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.124.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.124.0/cdn/tinyfly-maps.iife.js"></script>
 ```
 
 It is a separate script because the offline world map it carries adds about
@@ -11795,7 +11798,8 @@ shoots up and curls on landing. At 0 the figure is drawn exactly as before.
 How a figure walks is data: `GAITS` has `walk` (the plain walk, the same as
 `walkPose()`), `bouncy`, `doubleBounce` (two bobs a step), `sneak` (tiptoe in
 a crouch, paws up), `strut` (chest out), `tired` (slumped and dragging) and
-`run` (knees high, arms pumping, off the ground between steps).
+`run` (knees high, arms pumping, in the air with the legs apart and landing
+on a bent knee as they pass).
 
 ```js
 gaitPose('sneak', phase, base)          // a pose at a phase of the cycle
@@ -11804,8 +11808,12 @@ gaitStrideLength('sneak', height)       // ground per cycle, so feet stay plante
 
 A gait is a handful of numbers (`swing`, `knee`, `arm`, `elbow`, `forearm`,
 `shoulder`, `lean`, `bend`, `headTilt`, `bounce`, `bounces`, `squash`,
-`crouch`, `tiptoe`, `sway`), so you can write your own and pass it in place of
-a name. On a `stickFigureTarget` the `gait` prop picks one, and a string track
+`crouch`, `tiptoe`, `sway`, `flight`, `give`), so you can write your own and
+pass it in place of a name. `flight: true` puts the bounce's peak where the
+legs are furthest apart (a run) instead of where they pass (a walk), and
+`give` (degrees) bends the knee of the leg carrying the weight. Swinging arms
+hang plumb however far the gait leans, so `shoulder` (paws held up) is
+measured from the vertical. On a `stickFigureTarget` the `gait` prop picks one, and a string track
 switches it: `{ property: 'gait', keyframes: [{ time: 0, value: 'walk' }, { time: 3000, value: 'run' }] }`.
 
 ## Lip-sync
@@ -15895,7 +15903,7 @@ magnet.addEventListener('pointerleave', () => {
 
 <!-- capabilities: generated from the library -->
 
-# tinyfly capabilities (v0.123.0)
+# tinyfly capabilities (v0.124.0)
 
 Generated from the library itself: every name below is accepted, and names not listed are rejected (beat scripts, code panels and `checkTracks` say which name was probably meant).
 

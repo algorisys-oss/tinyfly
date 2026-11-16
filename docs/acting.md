@@ -172,7 +172,8 @@ shoots up and curls on landing. At 0 the figure is drawn exactly as before.
 How a figure walks is data: `GAITS` has `walk` (the plain walk, the same as
 `walkPose()`), `bouncy`, `doubleBounce` (two bobs a step), `sneak` (tiptoe in
 a crouch, paws up), `strut` (chest out), `tired` (slumped and dragging) and
-`run` (knees high, arms pumping, off the ground between steps).
+`run` (knees high, arms pumping, in the air with the legs apart and landing
+on a bent knee as they pass).
 
 ```js
 gaitPose('sneak', phase, base)          // a pose at a phase of the cycle
@@ -181,8 +182,12 @@ gaitStrideLength('sneak', height)       // ground per cycle, so feet stay plante
 
 A gait is a handful of numbers (`swing`, `knee`, `arm`, `elbow`, `forearm`,
 `shoulder`, `lean`, `bend`, `headTilt`, `bounce`, `bounces`, `squash`,
-`crouch`, `tiptoe`, `sway`), so you can write your own and pass it in place of
-a name. On a `stickFigureTarget` the `gait` prop picks one, and a string track
+`crouch`, `tiptoe`, `sway`, `flight`, `give`), so you can write your own and
+pass it in place of a name. `flight: true` puts the bounce's peak where the
+legs are furthest apart (a run) instead of where they pass (a walk), and
+`give` (degrees) bends the knee of the leg carrying the weight. Swinging arms
+hang plumb however far the gait leans, so `shoulder` (paws held up) is
+measured from the vertical. On a `stickFigureTarget` the `gait` prop picks one, and a string track
 switches it: `{ property: 'gait', keyframes: [{ time: 0, value: 'walk' }, { time: 3000, value: 'run' }] }`.
 
 ## Lip-sync

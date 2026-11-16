@@ -1,7 +1,7 @@
 import type { EasingType } from '../../engine/types'
 import type { Pose } from '../rig/body-plan'
 import type { CharacterPoseKey } from '../character'
-import { resolveGait, type Gait, type GaitName } from '../gaits'
+import { gaitBob, gaitGive, resolveGait, type Gait, type GaitName } from '../gaits'
 import { unknownName } from '../../engine/authoring/did-you-mean'
 import { HUMAN_EXPRESSIONS, HUMAN_REST, humanPose } from './human'
 
@@ -37,17 +37,24 @@ export function humanGaitPose(gait: GaitName | Gait | string | undefined, phase:
   const angle = phase * Math.PI * 2
   const swing = Math.sin(angle) * stride
   const lift = Math.cos(angle) * stride
-  const bob = (1 + Math.cos(angle * 2 * (spec.bounces ?? 1))) / 2
+  // The bob peaks as the legs pass, or with them furthest apart for a gait with `flight`.
+  const bob = gaitBob(spec, angle)
   const crouch = spec.crouch ?? 0
-  const held = spec.shoulder ?? 0
   const forearm = spec.forearm ?? 0
   const out: Pose = { ...HUMAN_REST, ...base }
+  out.lean = field(base, 'lean') + spec.lean * stride
+  out.bend = field(base, 'bend') + (spec.bend ?? 0)
+  // The arms hang from the chest, which the lean and the curve of the back
+  // tip forward: swinging arms take that back, so they hang and swing plumb.
+  const held = (spec.shoulder ?? 0) + out.lean + out.bend
 
   // Legs: the left foot comes forward while `swing` > 0; the leg passing forward lifts its knee.
-  out['leg.left.swing'] = spec.swing * swing + crouch * 0.6
-  out['leg.right.swing'] = -spec.swing * swing + crouch * 0.6
-  out['leg.left.knee'] = spec.knee * Math.max(0, lift) + crouch * 1.2
-  out['leg.right.knee'] = spec.knee * Math.max(0, -lift) + crouch * 1.2
+  // The leg carrying the weight gives at the knee, its thigh forward half as much (the foot stays under the hips).
+  const give = gaitGive(spec, lift)
+  out['leg.left.swing'] = spec.swing * swing + crouch * 0.6 + give.left * 0.5
+  out['leg.right.swing'] = -spec.swing * swing + crouch * 0.6 + give.right * 0.5
+  out['leg.left.knee'] = spec.knee * Math.max(0, lift) + crouch * 1.2 + give.left
+  out['leg.right.knee'] = spec.knee * Math.max(0, -lift) + crouch * 1.2 + give.right
   out['leg.left.ankle'] = field(base, 'leg.left.ankle') - (spec.tiptoe ?? 0)
   out['leg.right.ankle'] = field(base, 'leg.right.ankle') - (spec.tiptoe ?? 0)
 
@@ -60,8 +67,6 @@ export function humanGaitPose(gait: GaitName | Gait | string | undefined, phase:
     out[`arm.${side}.elbow`] = field(base, `arm.${side}.elbow`) + forearm + spec.elbow * Math.max(0, sign * swing)
   }
 
-  out.lean = field(base, 'lean') + spec.lean * stride
-  out.bend = field(base, 'bend') + (spec.bend ?? 0)
   // The head stays level as the body leans in, then takes the gait's own carriage.
   out['head.nod'] = field(base, 'head.nod') - spec.lean * 0.5 * stride + (spec.headTilt ?? 0)
   out.side = field(base, 'side') + (spec.sway ?? 0) * Math.sin(angle)

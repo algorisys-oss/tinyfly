@@ -20,10 +20,20 @@ const unit = (a: Vec3): Vec3 => {
 /** Wrap an angle into (-π, π]. */
 const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a))
 
-/** The frame (swing, spread) that turns a hanging bone (0, -1, 0) to point along `d`. */
-function hangingFrame(d: Vec3): { swing: number; spread: number } {
+/**
+ * The frame (swing, spread) that turns a hanging bone (0, -1, 0) to point
+ * along `d`. Every direction has two: swung less than 90° (spread toward the
+ * side it points to) or past 90° (spread back toward the middle). The one
+ * nearer `near`, the bone's frame now, is taken, so blending to the new pose
+ * moves the limb the short way (forward and up, not out to the side and over).
+ */
+function hangingFrame(d: Vec3, near: { swing: number; spread: number }): { swing: number; spread: number } {
   const [x, y, z] = unit(d)
-  return { swing: Math.asin(Math.max(-1, Math.min(1, z))), spread: Math.atan2(x, -y) }
+  const swing = Math.asin(Math.max(-1, Math.min(1, z)))
+  const low = { swing, spread: Math.atan2(x, -y) }
+  const high = { swing: wrap(Math.PI - swing), spread: Math.atan2(-x, y) }
+  const distance = (f: { swing: number; spread: number }) => Math.abs(wrap(f.swing - near.swing)) + Math.abs(wrap(f.spread - near.spread))
+  return distance(high) < distance(low) - 1e-9 ? high : low
 }
 
 export interface ReachOptions {
@@ -76,8 +86,8 @@ export function reachPose(plan: BodyPlan, pose: Pose, chainId: string, target: V
   const end: Vec3 = [start[0] + u[0] * d, start[1] + u[1] * d, start[2] + u[2] * d]
 
   const side = chain.side ?? 1
-  const upper = hangingFrame(rotY(sub(joint, start), -yaw(0)))
-  const lower = hangingFrame(rotY(sub(end, joint), -yaw(1)))
+  const upper = hangingFrame(rotY(sub(joint, start), -yaw(0)), solved.frames[0])
+  const lower = hangingFrame(rotY(sub(end, joint), -yaw(1)), solved.frames[1])
   const angles = [
     { swing: deg(wrap(upper.swing - parentFrame.swing)), spread: deg(wrap(upper.spread - parentFrame.spread)) * side },
     { swing: deg(wrap(lower.swing - upper.swing)), spread: deg(wrap(lower.spread - upper.spread)) * side },

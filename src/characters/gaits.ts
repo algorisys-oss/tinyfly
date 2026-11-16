@@ -23,7 +23,10 @@ export interface Gait {
   elbow: number
   /** Forearms held bent forward by this much throughout: pumping running arms, sneaking paws (degrees) */
   forearm?: number
-  /** Upper arms held raised forward by this much (sneaking paws up), degrees */
+  /**
+   * Upper arms held raised forward by this much (sneaking paws up), degrees
+   * from the vertical: swinging arms hang plumb however far the body leans.
+   */
   shoulder?: number
   /** Forward lean, degrees */
   lean: number
@@ -43,6 +46,17 @@ export interface Gait {
   tiptoe?: number
   /** Side-to-side sway of the upper body, degrees (a strut, a waddle) */
   sway?: number
+  /**
+   * The bounce peaks with the legs furthest apart (a run's flight) instead of
+   * as they pass: the figure is on the ground as the legs pass each other.
+   */
+  flight?: boolean
+  /**
+   * Knee give, degrees: the leg carrying the weight bends this much under it
+   * (and both stay a little soft), so a run lands and pushes off on bent knees
+   * instead of stiff scissors.
+   */
+  give?: number
 }
 
 /**
@@ -57,12 +71,12 @@ export interface Gait {
  */
 export const GAITS = {
   walk: { swing: 24, knee: 30, arm: 22, elbow: 28, lean: 4 },
-  bouncy: { swing: 26, knee: 45, arm: 34, elbow: 30, lean: 2, bend: -4, bounce: 0.035, squash: 0.06 },
-  doubleBounce: { swing: 22, knee: 40, arm: 26, elbow: 24, lean: 3, bounce: 0.02, bounces: 2, squash: 0.04 },
-  sneak: { swing: 28, knee: 70, arm: 6, elbow: 0, forearm: 110, shoulder: 55, lean: 16, bend: 14, headTilt: -8, crouch: 50, tiptoe: 25 },
+  bouncy: { swing: 26, knee: 45, arm: 34, elbow: 30, lean: 2, bend: -4, bounce: 0.035, squash: 0.06, give: 12 },
+  doubleBounce: { swing: 22, knee: 40, arm: 26, elbow: 24, lean: 3, bounce: 0.02, bounces: 2, squash: 0.04, give: 10 },
+  sneak: { swing: 28, knee: 70, arm: 6, elbow: 0, forearm: 110, shoulder: 25, lean: 16, bend: 14, headTilt: -8, crouch: 50, tiptoe: 25 },
   strut: { swing: 26, knee: 30, arm: 30, elbow: 20, lean: -4, bend: -10, headTilt: -6, sway: 4, bounce: 0.01 },
   tired: { swing: 14, knee: 14, arm: 6, elbow: 6, lean: 10, bend: 16, headTilt: 12 },
-  run: { swing: 40, knee: 95, arm: 45, elbow: 0, forearm: 90, lean: 16, bend: 6, bounce: 0.05, squash: 0.06 },
+  run: { swing: 40, knee: 95, arm: 45, elbow: 0, forearm: 90, lean: 16, bend: 6, bounce: 0.05, squash: 0.06, flight: true, give: 30 },
   shove: { swing: 18, knee: 28, arm: 0, elbow: 0, lean: 0 },
 } satisfies Record<string, Gait>
 
@@ -70,6 +84,25 @@ export type GaitName = keyof typeof GAITS
 
 /** Arms raised further than this (degrees) keep their pose while walking, as in walkPose. */
 const SWINGING_ARM_LIMIT = 40
+
+/**
+ * How high the bounce is at `angle` (radians into the cycle), 0..1: peaking as
+ * the legs pass, or with them furthest apart for a gait with `flight`.
+ */
+export function gaitBob(spec: Gait, angle: number): number {
+  const wave = Math.cos(angle * 2 * (spec.bounces ?? 1))
+  return spec.flight ? (1 - wave) / 2 : (1 + wave) / 2
+}
+
+/**
+ * Knee give at `lift` (the cycle's cosine, scaled by the stride): degrees
+ * each knee bends under the gait's `give`. The left leg carries the weight
+ * while `lift` < 0 (the right one is swinging through), the right while > 0.
+ */
+export function gaitGive(spec: Gait, lift: number): { left: number; right: number } {
+  const give = spec.give ?? 0
+  return { left: give * (0.4 + 0.6 * Math.max(0, -lift)), right: give * (0.4 + 0.6 * Math.max(0, lift)) }
+}
 
 /** A gait by name or as data; an unknown name is the plain walk. */
 export function resolveGait(gait: GaitName | Gait | string | undefined): Gait {
@@ -94,29 +127,37 @@ export function gaitPose(gait: GaitName | Gait | string | undefined, phase: numb
   // Paws held up (sneak) start from the held angle. Forward is negative for the
   // left limbs and positive for the right (angles run outward per side), so the
   // same swing moves the two arms opposite ways, against the legs.
-  const held = spec.shoulder ?? 0
+  // Swinging arms hang plumb: the lean and the curve of the back tip the
+  // chest, and the arms with it, so they swing about the vertical instead.
+  const lean = base.lean + spec.lean * stride
+  const bend = (base.bend ?? 0) + (spec.bend ?? 0)
+  const plumb = lean + bend
+  const held = (spec.shoulder ?? 0) + plumb
   const armSwing = (shoulder: number, forward: number) => (swings(shoulder) ? forward * held + spec.arm * swing : shoulder)
   const forearm = spec.forearm ?? 0
   const leftElbow = swings(base.leftShoulder) ? base.leftElbow - forearm - spec.elbow * Math.max(0, -swing) : base.leftElbow
   const rightElbow = swings(base.rightShoulder) ? base.rightElbow + forearm + spec.elbow * Math.max(0, swing) : base.rightElbow
-  // The bob peaks as the legs pass each other (swing 0), once or twice a step.
-  const bobs = spec.bounces ?? 1
-  const bob = (1 + Math.cos(angle * 2 * bobs)) / 2
+  // The bob peaks as the legs pass each other (swing 0), once or twice a step,
+  // or, with `flight`, as they are furthest apart.
+  const bob = gaitBob(spec, angle)
   const crouch = spec.crouch ?? 0
+  // The leg carrying the weight gives at the knee; its thigh comes forward by
+  // half as much so the foot stays under the hips.
+  const give = gaitGive(spec, lift)
   return {
     ...base,
-    lean: base.lean + spec.lean * stride + (spec.sway ?? 0) * Math.sin(angle) * (1 - (base.turn ?? 0)),
-    bend: (base.bend ?? 0) + (spec.bend ?? 0),
+    lean: lean + (spec.sway ?? 0) * Math.sin(angle) * (1 - (base.turn ?? 0)),
+    bend,
     headTilt: base.headTilt - spec.lean * 0.5 * stride + (spec.headTilt ?? 0),
     leftElbow,
     rightElbow,
     // A crouch brings both thighs forward and folds both shins back.
-    leftHip: -spec.swing * swing - crouch * 0.5,
-    rightHip: -spec.swing * swing + crouch * 0.5,
+    leftHip: -spec.swing * swing - crouch * 0.5 - give.left * 0.5,
+    rightHip: -spec.swing * swing + crouch * 0.5 + give.right * 0.5,
     // The leg swinging forward lifts its knee; a crouch keeps both bent. A positive
     // knee folds toward the centre, which is backward only for the right leg.
-    leftKnee: -spec.knee * Math.max(0, lift) - crouch,
-    rightKnee: spec.knee * Math.max(0, -lift) + crouch,
+    leftKnee: -spec.knee * Math.max(0, lift) - crouch - give.left,
+    rightKnee: spec.knee * Math.max(0, -lift) + crouch + give.right,
     leftAnkle: (base.leftAnkle ?? 0) + (spec.tiptoe ?? 0),
     rightAnkle: (base.rightAnkle ?? 0) + (spec.tiptoe ?? 0),
     leftShoulder: armSwing(base.leftShoulder, -1),

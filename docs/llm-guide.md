@@ -306,7 +306,10 @@ Write new actions with `defineAction()` (from beats, or as timed pose steps),
 new gaits with `defineGait()`, and characters with `persona()`. Pass them where
 they are used; `persona.describe()` and `capabilities(version, cast)` list them,
 and the checks accept them. See "Your own actions, gaits and personas" in
-`docs/acting.md`.
+`docs/acting.md`. In a gait, swinging arms hang plumb whatever the `lean` and
+`bend` (so `shoulder` is from the vertical); a run-like gait wants
+`flight: true` (airborne with the legs apart, grounded as they pass) and a
+knee `give` of 20–30 so it lands on a bent knee.
 
 ## 2. Ask a target what it can do
 

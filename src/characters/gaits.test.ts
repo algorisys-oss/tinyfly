@@ -35,8 +35,11 @@ describe('gaits', () => {
   }
 
   it('give each gait its character', () => {
-    // A run is off the ground as the legs pass; the sneak is on tiptoe and crouched; tired slumps; strut puts the chest out.
-    expect(gaitPose('run', 0).rise).toBeGreaterThan(0.03)
+    // A run is off the ground with the legs apart and on it, knee bent, as they pass;
+    // the sneak is on tiptoe and crouched; tired slumps; strut puts the chest out.
+    expect(gaitPose('run', 0.25).rise).toBeGreaterThan(0.03)
+    expect(gaitPose('run', 0).rise).toBeCloseTo(0)
+    expect(gaitPose('run', 0.5).leftKnee).toBeLessThan(-20)
     expect(gaitPose('sneak', 0.3).leftAnkle).toBeGreaterThan(20)
     expect(stickFigureJoints(gaitPose('sneak', 0.25)).hip.y).toBeGreaterThan(stickFigureJoints(gaitPose('walk', 0.25)).hip.y)
     expect(gaitPose('tired', 0).bend).toBeGreaterThan(0)
