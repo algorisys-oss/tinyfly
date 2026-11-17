@@ -226,6 +226,13 @@ lines (`bean: { limbs: 'tube' | 'line' }`), a shaped body (`bean.torso` fullness
 Household clothes on a bean: `bean: { skirt: '#c2410c' }` (a sari to the ankle) or
 `skirt: { color, length: 0.45 }` (a kurta hem; pair it with `trousers`), `drape` (a pallu or dupatta sash)
 and `bangles`; preset `beanSari`. The skirt follows the legs (flared standing, along the thighs seated).
+For science explainers use the cosmic kit (docs/cosmic-explainer.md): `drawSkyGradient` (one sky per scene),
+`drawDust` and `drawBokeh` (always on; pass the camera `offset`), flat-shaded `drawShadedBall`, `drawIsoCube`,
+`drawHaze`; a dive through scale with `drawZoomLevels(ctx, time, { width, height, depth: depthAt(time, keys), levels })`
+(each level function draws itself at scale 1 around the centre; put each level's arrival on the word that names it);
+burned-in `drawShortCaption(ctx, time, { lines, x, y })` and `drawLabelChip`. Sound effects come from
+tinyfly/headless (`soundWhoosh`, `soundPop`, `soundThud`, `soundShimmer`, `soundTick`, `soundClick`, `soundPad`)
+as `renderMix` layers `{ samples, at, gain }`; no files needed.
 For detective / noir scenes use the canvas kit (docs/noir-detective.md): `drawRain(ctx, time, box)`,
 `drawBlinds`, `drawDarkness(ctx, { amount, cones: [{ x, y, angle /* degrees */, length, width }], holes })`,
 `drawGlow`, `drawVignette`, `drawClueMarker(ctx, time, { x, y, at })`, `drawNameCard(ctx, time, { name, role, at, anchor })`,

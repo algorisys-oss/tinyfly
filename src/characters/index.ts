@@ -60,6 +60,8 @@ export * from './hands'
 export * from './acting'
 // Noir / detective kit: rain, blinds, darkness with torch beams, glow, vignette, clue markers, name cards, narration, speech bubbles and a case board (see docs/noir-detective.md).
 export * from './noir'
+// Cosmic explainer kit: gradient skies, parallax dust and bokeh, flat-shaded shapes, zooming through scale with portals, short captions and label chips (see docs/cosmic-explainer.md).
+export * from './cosmic'
 export * from './capabilities'
 export { describeTarget, checkTracks, animatableProperties, CANVAS_PROPERTIES, type PropertyInfo, type TargetAbout, type TargetDescription, type TrackProblem } from '../adapters/canvas/target-properties'
 export * from './props'

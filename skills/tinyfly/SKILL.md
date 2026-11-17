@@ -44,6 +44,13 @@ names.
   detective gear `bean: { coat, fedora, shades: true }`; `halo` edges line limbs.
   It is always drawn clean; every pose, gait, dance and expression field works on it.
   Household clothes: `bean: { skirt, drape, bangles }` (`skirt` a colour or `{ color, length }`; preset `beanSari`).
+- Science explainers (the cosmic kit, docs/cosmic-explainer.md): `drawSkyGradient(ctx, { width, height, sky })`,
+  `drawDust` / `drawBokeh` (pass the camera `offset` for parallax), `drawShadedBall`, `drawIsoCube`, `drawHaze`;
+  a dive through scale with `drawZoomLevels(ctx, time, { width, height, depth: depthAt(time, keys), levels })`
+  (level functions draw at scale 1 around the centre; about `k + 0.35` fills the frame with level k);
+  `drawShortCaption(ctx, time, { lines, x, y })` (two words at a time), `drawLabelChip`, `drawCornerNote`.
+  Sounds without files from tinyfly/headless: `soundWhoosh`, `soundPop`, `soundThud`, `soundShimmer`,
+  `soundTick`, `soundClick`, `soundPad`; pass them to `renderMix` as `{ samples, at, gain }` layers.
 - Detective / noir scenes: canvas functions, all pure in time (ms): `drawRain`, `drawBlinds`,
   `drawDarkness` (torch `cones` with `angle` in degrees, `holes`), `drawGlow`, `drawVignette`,
   `lightningFlash`, `lightFlicker`; overlays `drawClueMarker`, `drawEvidenceFolder`, `drawClockFace`,

@@ -113,10 +113,17 @@ export async function cutAudioToLoop(file: string, options: CutAudioToLoopOption
   return output
 }
 
-export interface MixFileLayer extends Omit<MixLayer, 'samples'> {
-  /** The audio file, relative to `baseDir` (any format ffmpeg reads) */
-  file: string
-}
+export type MixFileLayer = Omit<MixLayer, 'samples'> &
+  (
+    | {
+        /** The audio file, relative to `baseDir` (any format ffmpeg reads) */
+        file: string
+      }
+    | {
+        /** Samples already made at the mix's sample rate (e.g. soundPop(48000)) */
+        samples: Float32Array
+      }
+  )
 
 export interface RenderMixOptions extends Omit<MixOptions, 'sampleRate'> {
   /** WAV file to write, relative to `baseDir` */
@@ -136,8 +143,13 @@ export async function renderMix(layers: MixFileLayer[], options: RenderMixOption
   const baseDir = options.baseDir ?? process.cwd()
   const sampleRate = options.sampleRate ?? 48000
   const decoded: MixLayer[] = []
-  for (const { file, ...layer } of layers) {
-    decoded.push({ ...layer, samples: await decodeAudio(resolve(baseDir, file), { sampleRate, ffmpeg: options.ffmpeg ?? 'ffmpeg' }) })
+  for (const layer of layers) {
+    if ('samples' in layer) {
+      decoded.push(layer)
+      continue
+    }
+    const { file, ...rest } = layer
+    decoded.push({ ...rest, samples: await decodeAudio(resolve(baseDir, file), { sampleRate, ffmpeg: options.ffmpeg ?? 'ffmpeg' }) })
   }
   const output = resolve(baseDir, options.output)
   await mkdir(dirname(output), { recursive: true })

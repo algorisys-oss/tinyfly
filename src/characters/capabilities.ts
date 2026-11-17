@@ -36,6 +36,7 @@ import { CRICKET_VIEWS } from '../sports/cricket/cricket-camera'
 import { CRICKET_PLAY_COMPONENTS, CRICKET_PLAY_EXAMPLES } from '../sports/cricket/cricket-play'
 import { CRICKET_MARKING_PROFILES } from '../sports/cricket/cricket-markings'
 import { NOIR_KIT } from './noir/noir-kit'
+import { COSMIC_KIT } from './cosmic/cosmic-kit'
 
 /** Every prop preset, by the name of the function that makes it. */
 
@@ -125,6 +126,15 @@ export interface Capabilities {
     heldItems: Record<string, string>
     /** `meetHands(kind, a, b)` */
     handMeetings: string[]
+  }
+  /** The cosmic explainer kit: skies and depth, flat-shaded shapes, zooming through scale, short captions (canvas drawing functions) */
+  cosmic: {
+    depth: Record<string, string>
+    shapes: Record<string, string>
+    zoom: Record<string, string>
+    captions: Record<string, string>
+    skies: readonly string[]
+    sounds: string
   }
   /** The noir / detective kit: atmosphere, detective overlays and the case board (canvas drawing functions) */
   noir: {
@@ -280,6 +290,7 @@ export function capabilities(version?: string, cast: Cast = {}): Capabilities {
       handMeetings: Object.keys(HAND_MEETINGS),
     },
     noir: NOIR_KIT,
+    cosmic: COSMIC_KIT,
     codePanel: {
       languages: CODE_LANGUAGES,
       removeStyles: REMOVE_STYLES,
@@ -530,6 +541,14 @@ export function capabilitiesMarkdown(version?: string, cast: Cast = {}): string 
     ...(['atmosphere', 'overlays', 'caseBoard'] as const).flatMap((group) => Object.entries(c.noir[group]).map(([name, what]) => `- \`${name}\`: ${what}`)),
     '',
     `Case board cards: ${c.noir.card}, kinds ${list(c.noir.cardKinds)}. Strings: ${c.noir.string}. Marks: ${c.noir.mark}, kinds ${Object.entries(c.noir.markKinds).map(([k, what]) => `\`${k}\` (${what})`).join(', ')}.`,
+    '',
+    '## Cosmic explainer kit',
+    '',
+    'Canvas drawing functions for science-explainer scenes (see docs/cosmic-explainer.md): flat gradient skies, parallax dust and bokeh, flat-shaded shapes, zooming through scale with portals, burned-in short captions and label chips. Times are ms; every one is a pure function of its options and the time (particles are seeded), so frames draw the same in any order. Pair with the noir kit’s `drawGlow` and `drawVignette`.',
+    '',
+    ...(['depth', 'shapes', 'zoom', 'captions'] as const).flatMap((group) => Object.entries(c.cosmic[group]).map(([name, what]) => `- \`${name}\`: ${what}`)),
+    '',
+    `Skies: ${list(c.cosmic.skies)}. Sounds: ${c.cosmic.sounds}.`,
     '',
     '## Code panel',
     '',

@@ -19,6 +19,16 @@
 - [x] Reach (`reachPose`): of the two equivalent (swing, spread) solutions, the one nearer the limb's current angles, so blending to a reach moves forward and up, not out and over.
 - [ ] Later: joint-range checks (a negative human knee, a 2D elbow past ~150°) in `checkTracks`; a warning when a 2D stick figure walks front-on (`turn` 0).
 
+## Cosmic explainer kit and sound effects from numbers — v0.127.0
+
+- [x] Skies and depth (`src/characters/cosmic/sky.ts`): `drawSkyGradient` with `COSMIC_SKIES` presets, `drawDust` (three parallax depths, twinkling, camera `offset`), `drawBokeh`, `dustTwinkle`; pure functions of time, hashed positions.
+- [x] Flat-shaded shapes (`shapes.ts`): `drawShadedBall` (shadow crescent + highlight, no outline), `drawIsoCube` / `isoCubeFaces`, `drawHaze` (probability cloud on a ring); `cosmicShade`, `parseRgb`.
+- [x] Zooming through scale (`zoom.ts`): `depthAt`, `zoomAt` (log space), `drawZoomLevels` (levels `factor` apart in growing portals, covered levels skipped), `zoomLevelLayout`, `drawPortalRim`, `levelPresence`.
+- [x] Short captions and chips (`captions.ts`): `drawShortCaption` (one to three words at a time by character share), `captionChunkAt`, `captionChunks` (Devanagari works), `drawLabelChip`, `drawCornerNote`.
+- [x] Sound effects from numbers (`src/headless/sound-effects.ts`): `soundWhoosh`, `soundPop`, `soundThud`, `soundShimmer`, `soundTick`, `soundClick`, `soundPad` (seeded Float32Array samples); `renderMix` layers take `samples` as well as `file`.
+- [x] `COSMIC_KIT` in the capabilities catalog, docs/cosmic-explainer.md, README, the `cosmic-explainer.mjs` headless example; tests (pixels, determinism, timing, errors, the mix).
+- [ ] Later: a live gallery example; motion blur / smear frames for fast moves; word-level caption timing from narration alignment.
+
 ## Noir / detective kit and bean household clothes — v0.123.0
 
 - [x] Atmosphere (`src/characters/noir/atmosphere.ts`): `drawRain` (seeded, clipped to a box), `drawBlinds`, `drawDarkness` with torch cones and holes (`coneCorners`), `drawGlow`, `drawVignette`, `lightningFlash`, `lightFlicker`; pure functions of time.

@@ -149,6 +149,12 @@ export const DOCS: DocEntry[] = [
     section: 'Guides',
   },
   {
+    id: 'cosmic-explainer',
+    title: 'Cosmic Explainer Scenes',
+    summary: 'A canvas kit for animated science explainers: saturated gradient skies, parallax dust and bokeh, flat-shaded shapes (a sphere with a shadow crescent, an isometric cube, a probability haze), zooming through scale in growing portals (drawZoomLevels, depthAt, zoomAt), burned-in short captions two words at a time and label chips; plus sound effects made from numbers (whoosh, pop, thud, shimmer, tick, click, an ambient pad) that renderMix takes as samples. Deterministic from time.',
+    section: 'Guides',
+  },
+  {
     id: 'character-appearance',
     title: 'Character Appearance',
     summary: 'Hair (34 styles), facial hair (20), glasses, hats and ears for the v2 character as plain data on the head, so they turn with it through all eight views; builds (child, tall, short…), a recurring cast (castMember), expressions with blush, tears and sweat, everyday poses, held items (mug, phone, bags, umbrella, parcel) and two characters’ hands meeting (meetHands: handshake, high five, hand-over).',

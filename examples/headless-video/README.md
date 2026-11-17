@@ -15,6 +15,7 @@ resolves to the built package.
 | Scene | Shows |
 |---|---|
 | `cricket-story.mjs` | Public sports APIs, a mixed organic cast, bat contact, event captions and a close-up camera; change the clip action/format/cast or use a full 360° ground orbit. See [cricket guide](../../docs/cricket.md). |
+| `cosmic-explainer.mjs` | A 9:16 science short in the cosmic style: gradient skies, dust and bokeh, a dive through scale (skin → cells → one atom) in portals, short captions, label chips, and a sound mix made only from the sound generators. See [Cosmic Explainer Scenes](../../docs/cosmic-explainer.md). |
 | `stick-figure.mjs` | Narration timing (`planNarration`), the `characters` stick figure posed, walked and voiced by tracks, a per-scene backdrop, captions |
 | `bar-chart.mjs` | Timeline targets only: the whole animation is JSON |
 | `linear-map-short.mjs` | A 9:16 short: what a matrix does to the plane, from `@algorisys/tinyfly/math` figures and lesson steps |
