@@ -27,7 +27,8 @@
 - [x] Short captions and chips (`captions.ts`): `drawShortCaption` (one to three words at a time by character share), `captionChunkAt`, `captionChunks` (Devanagari works), `drawLabelChip`, `drawCornerNote`.
 - [x] Sound effects from numbers (`src/headless/sound-effects.ts`): `soundWhoosh`, `soundPop`, `soundThud`, `soundShimmer`, `soundTick`, `soundClick`, `soundPad` (seeded Float32Array samples); `renderMix` layers take `samples` as well as `file`.
 - [x] `COSMIC_KIT` in the capabilities catalog, docs/cosmic-explainer.md, README, the `cosmic-explainer.mjs` headless example; tests (pixels, determinism, timing, errors, the mix).
-- [ ] Later: a live gallery example; motion blur / smear frames for fast moves; word-level caption timing from narration alignment.
+- [x] The Cosmic Dive live example (`live-cosmic-dive`, v0.127.1): play or scrub a dive through scale.
+- [ ] Later: motion blur / smear frames for fast moves; word-level caption timing from narration alignment; a helper for the depth at which a level covers the frame.
 
 ## Noir / detective kit and bean household clothes — v0.123.0
 

@@ -38,7 +38,9 @@ function frame(ctx, time) {
 ```
 
 `examples/headless-video/cosmic-explainer.mjs` is a whole 9:16 short built
-this way, with its sound mix made entirely from the generators.
+this way, with its sound mix made entirely from the generators, and the
+[Cosmic Dive](https://tinyfly.app/examples/live-cosmic-dive) example plays the
+same dive at 16:9 in the browser (pause and scrub it).
 
 ## Skies and depth
 
@@ -81,6 +83,8 @@ not drawn.
 | `zoomLevelLayout({ width, height, depth, levelCount, factor?, portalRadius? })` | Which levels draw at a depth, with their scale and portal radius. |
 | `levelPresence(depth, level)` | 0..1: how fully a level fills the screen, to show or fade its label. |
 | `drawPortalRim(ctx, x, y, radius, color?, width?)` | The glowing ring on its own (a lens edge, an inset). |
+
+A level covers the frame once its portal reaches half the frame's diagonal: `portalRadius × factor^(depth − k) ≥ √(w² + h²) / 2`. With the defaults (520 px, ×14) that is depth `k + 0.28` on a 1920×1080 frame; a smaller `portalRadius` needs a deeper key before the level behind stops showing at the corners.
 
 Time the depth keys to the narration: put each level's arrival on the word
 that names it. For an endless, self-similar zoom (the same frame inside
