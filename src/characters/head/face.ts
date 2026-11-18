@@ -141,9 +141,9 @@ export interface FaceOptions {
   chinWidth?: number
   /** Round angular jaw corners, 0..1 (default 0: keep the sharp outline). */
   jawRoundness?: number
-  /** Anime eye size, 0.5..1.2 (default 1). */
+  /** Anime or oval eye size, 0.5..1.2 (default 1). Bigger oval eyes sit further apart, so they still nearly touch. */
   eyeScale?: number
-  /** Anime eye height relative to width, 0.45..1.2 (default 1). */
+  /** Anime or oval eye height relative to width, 0.45..1.2 (default 1); below 1 makes oval eyes rounder. */
   eyeAspect?: number
   /** Anime outer lashes (default true). */
   lashes?: boolean
@@ -189,7 +189,8 @@ export function drawFace(pen: Pen, head: SolvedHead, pose: Pose, lineWidth: numb
   for (const side of [1, -1]) {
     const name = side === 1 ? 'left' : 'right'
     if (options.style === 'oval') {
-      if (facingAt(OVAL_EYE.x * side, OVAL_EYE.y) >= SHOWN) drawOvalEye(pen, head, side, pose, options)
+      const oval = ovalEye(options)
+      if (facingAt(oval.x * side, oval.y) >= SHOWN) drawOvalEye(pen, head, side, pose, options)
       continue
     }
     const ex = EYE_X * side
@@ -400,6 +401,13 @@ function drawAnimeEye(
  */
 export const OVAL_EYE = { x: 0.31, y: 0.12, rx: 0.29, ry: 0.44 } as const
 
+/** An oval eye's centre and radii (head radii) for a face's `eyeScale` and `eyeAspect`. */
+export function ovalEye(face: Pick<FaceOptions, 'eyeScale' | 'eyeAspect'> = {}): { x: number; y: number; rx: number; ry: number } {
+  const scale = Math.min(1.2, Math.max(0.5, face.eyeScale ?? 1))
+  const aspect = Math.min(1.2, Math.max(0.45, face.eyeAspect ?? 1))
+  return { x: OVAL_EYE.x * scale, y: OVAL_EYE.y, rx: OVAL_EYE.rx * scale, ry: OVAL_EYE.ry * scale * aspect }
+}
+
 /** An aviator lens's half-width and half-height, head radii */
 const AVIATOR = { rx: 0.37, ry: 0.33 } as const
 
@@ -432,11 +440,12 @@ function drawAviatorLens(pen: Pen, screen: (points: Point[]) => Point[], ex: num
 /** The aviators' bridge between the lenses and the arms back over the temples. */
 function drawAviatorFrame(pen: Pen, head: SolvedHead, options: FaceOptions): void {
   const frame = Math.max(1, 0.06 * head.rx)
-  const y = OVAL_EYE.y + 0.12
+  const oval = ovalEye(options)
+  const y = oval.y + 0.12
   const shown = (x: number) => faceToScreen(head, [], { x, y }, options.projection).facing >= SHOWN
   if (shown(-0.1) && shown(0.1)) pen.line(faceToScreen(head, quadratic({ x: -0.1, y }, { x: 0, y: y + 0.06 }, { x: 0.1, y }), { x: 0, y }, options.projection).points, frame)
   for (const side of [1, -1]) {
-    const hinge = { x: side * (OVAL_EYE.x + AVIATOR.rx * 0.95), y }
+    const hinge = { x: side * (oval.x + AVIATOR.rx * 0.95), y }
     if (headPoint(head, [side, 0, 0]).facing <= 0.15 || !shown(hinge.x)) continue
     const [from] = faceToScreen(head, [hinge], hinge, options.projection).points
     pen.line([from, headPoint(head, [side * 0.98, y, -0.1]).point], frame * 0.9)
@@ -445,7 +454,8 @@ function drawAviatorFrame(pen: Pen, head: SolvedHead, options: FaceOptions): voi
 
 function drawOvalEye(pen: Pen, head: SolvedHead, side: number, pose: Pose, options: FaceOptions): void {
   const name = side === 1 ? 'left' : 'right'
-  const { x: ex, y: ey } = { x: OVAL_EYE.x * side, y: OVAL_EYE.y }
+  const oval = ovalEye(options)
+  const { x: ex, y: ey } = { x: oval.x * side, y: oval.y }
   const eye = { x: ex, y: ey }
   const screen = (points: Point[]) => faceToScreen(head, points, eye, options.projection).points
   // Line weights by the head's size: the eye's outline, and the heavier brow.
@@ -456,8 +466,8 @@ function drawOvalEye(pen: Pen, head: SolvedHead, side: number, pose: Pose, optio
   const open = eyeOpenness(openness, blink)
   const bulge = Math.min(1, Math.max(0, field(pose, 'bulge', 0)))
   const grow = 1 + 0.12 * Math.min(1, Math.max(0, openness - 1)) + 0.25 * bulge
-  const rx = OVAL_EYE.rx * grow
-  const ry = OVAL_EYE.ry * grow
+  const rx = oval.rx * grow
+  const ry = oval.ry * grow
   const smile = field(pose, 'smile', 0)
   if (options.shades) {
     drawAviatorLens(pen, screen, ex, ey, side, thin)

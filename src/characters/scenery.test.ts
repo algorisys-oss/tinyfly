@@ -71,6 +71,9 @@ describe('scenery', () => {
       expect(built.ground).toBeCloseTo(340, 6)
       expect(built.scenery.target.about?.kind).toBe(name === 'office' || name === 'home' ? 'room' : 'sky')
     }
+    // The props take the scene's outline, so a set can match its characters' ink.
+    const inked = buildScene('office', { width: 720, height: 400, ink: '#111111', lineWidth: 5 })
+    for (const prop of inked.props) expect(prop.propDraw).toMatchObject({ ink: '#111111', lineWidth: 5 })
     expect(() => scenePreset('beach', { width: 1, height: 1 })).toThrow(/Unknown scene preset "beach"/)
   })
 })

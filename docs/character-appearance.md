@@ -567,7 +567,7 @@ const stick = character(castMember('beanStick', 400))   // bare line limbs
   skirt over both), the neck, the body (with its drape, and coat), the near
   arm and the head (and fedora). A limb reaching toward the viewer
   (hands on the knees, seated thighs) draws over the body.
-- `bean: { limbs, torso, limbWidth, lineWidth, outlineWidth, fill, shirt, sleeves, trousers, shoes }`:
+- `bean: { limbs, torso, limbWidth, lineWidth, outlineWidth, fill, shirt, sleeves, trousers, shoes, tie }`:
   `limbs: 'tube'` (default, outlined noodles) or `'line'` (bare round-capped
   ink lines for the arms, legs and neck; the body, eyes, mittens and shoes
   stay; `halo: '#f5f5f4'` adds a pale edge so they read on a dark set); the
@@ -575,9 +575,14 @@ const stick = character(castMember('beanStick', 400))   // bare line limbs
   (1; 1.3 chubby, 0.85 thin); widths as fractions of the height (0.024 tube,
   0.017 line, 0.0105 outline; `lineWidth` on the character also sets the
   outline); `fill` (white); a `shirt` colour with `sleeves: 'short' | 'long' | 'none'`;
-  `trousers`; `shoes` (the fill; a dark shoe gets a shine and a dark sole).
-  An `outfit`'s `shirt`, `trousers` and `sleeves` colour the bean too (its
+  `trousers`; `shoes` (the fill; a dark shoe gets a shine and a dark sole);
+  `tie` (a necktie down the chest: a knot at the collar and a pointed blade,
+  sliding toward the side the body turns to and hidden from behind; under a coat).
+  An `outfit`'s `shirt`, `trousers`, `sleeves` and `tie` colour the bean too (its
   layers are not used).
+- Bigger comedy eyes: `face: { eyeScale: 1.2, eyeAspect: 0.8 }` makes the oval
+  eyes larger and rounder (scale 0.5–1.2, aspect 0.45–1.2); they move apart as
+  they grow, so they still nearly touch, and glasses grow round them.
 - Detective gear: `coat` (a trench coat in that colour: lapels, a belt and
   buckle, double-breasted buttons, a hem at the knee and sleeves to the
   wrist), `fedora` (a brim, a pinched crown and a band) and `shades: true`

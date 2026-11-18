@@ -246,6 +246,8 @@ scenery and where the props stand) and `buildScene` builds it into targets:
 of the afternoon against the city: houses, a car, a tree), `office` (a room
 with a desk, a chair and a door) and `home` (a room at night with a bed, a
 chair and a door). The Park Day card plays a day over the park.
+`buildScene(name, { width, height, ink: '#111', lineWidth: 5 })` outlines
+every prop in that ink and width, so the set matches heavily inked characters.
 
 ## In 3D scenes
 

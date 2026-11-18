@@ -1,7 +1,7 @@
 import type { Point } from '../../adapters/canvas/sketch'
 import type { SolvedHead } from '../rig/skeleton'
 import type { Pen } from '../look/pen'
-import { faceToScreen, OVAL_EYE, type FaceOptions } from './face'
+import { faceToScreen, ovalEye, type FaceOptions } from './face'
 import { facingOf, onScreen } from './shell'
 
 /**
@@ -34,7 +34,10 @@ const SHOWN = 0.05
 /** Where the lenses sit and how big they are: round the usual eyes, or round big oval eyes (face style `oval`). */
 interface LensFit { x: number; y: number; rx: number; ry: number }
 const USUAL_FIT: LensFit = { x: 0.34, y: 0.12, rx: 1, ry: 1 }
-const OVAL_FIT: LensFit = { x: OVAL_EYE.x, y: OVAL_EYE.y, rx: (OVAL_EYE.rx + 0.03) / 0.2, ry: (OVAL_EYE.ry + 0.06) / 0.19 }
+function ovalFit(face: FaceOptions): LensFit {
+  const eye = ovalEye(face)
+  return { x: eye.x, y: eye.y, rx: (eye.rx + 0.03) / 0.2, ry: (eye.ry + 0.06) / 0.19 }
+}
 
 /** A lens's outline around an eye, in face coordinates. */
 function lensOutline(style: GlassesStyle, cx: number, fit: LensFit = USUAL_FIT): Point[] {
@@ -58,7 +61,7 @@ export interface GlassesDrawOptions {
 
 export function drawGlasses(pen: Pen, head: SolvedHead, glasses: Glasses, options: GlassesDrawOptions): void {
   const frame = Math.max(1, Math.min(options.lineWidth * 0.5, 0.11 * head.rx))
-  const fit = options.face?.style === 'oval' ? OVAL_FIT : USUAL_FIT
+  const fit = options.face?.style === 'oval' ? ovalFit(options.face) : USUAL_FIT
   const half = 0.2 * fit.rx
   const shown: number[] = []
   for (const side of [1, -1]) {

@@ -57,6 +57,8 @@ export interface BeanOptions {
   shoes?: string
   /** A pale edge round `line` limbs, so they read on a dark set (default none) */
   halo?: string | null
+  /** A necktie in this colour down the front of the body, from the collar to above the waist (default none) */
+  tie?: string | null
   /** A trench coat in this colour, over the body to the knees, sleeves to the wrist (default none) */
   coat?: string | null
   /** A fedora in this colour on the head (default none) */
@@ -88,6 +90,7 @@ export interface Bean {
   trousers: string | null
   shoes: string
   halo: string | null
+  tie: string | null
   coat: string | null
   fedora: string | null
   skirt: { color: string; length: number } | null
@@ -117,6 +120,7 @@ export function resolveBean(options: BeanOptions = {}): Bean {
     trousers: options.trousers ?? null,
     shoes: options.shoes ?? fill,
     halo: options.halo ?? null,
+    tie: options.tie ?? null,
     coat: options.coat ?? null,
     fedora: options.fedora ?? null,
     skirt: resolveSkirt(options.skirt),
@@ -635,6 +639,41 @@ function drawSkirt(ctx: CanvasRenderingContext2D, joints: CharacterJoints, skirt
   ctx.restore()
 }
 
+/**
+ * A necktie down the middle of the chest, in the body's frame (x from the
+ * hips toward the shoulders): a small knot at the collar and a blade that
+ * widens to a point above the waist. It slides toward the side the body
+ * turns to and narrows with the turn; from behind it is hidden.
+ */
+function drawTie(ctx: CanvasRenderingContext2D, torso: BeanTorso, turn: number, color: string, ink: string, O: number): void {
+  const facing = Math.cos((turn * Math.PI) / 2)
+  if (facing <= 0.1) return
+  const len = torso.length
+  const tw = torso.width
+  const sx = len * 0.58
+  const shift = Math.sin((turn * Math.PI) / 2) * tw * 0.55
+  const narrow = Math.max(0.35, facing)
+  const p = (x: number, y: number) => toScene(torso, { x, y: shift + y * narrow })
+  const knot = [p(sx - len * 0.02, -tw * 0.13), p(sx - len * 0.02, tw * 0.13), p(sx - len * 0.13, tw * 0.09), p(sx - len * 0.13, -tw * 0.09)]
+  const blade = [p(sx - len * 0.13, -tw * 0.09), p(sx - len * 0.13, tw * 0.09), p(len * 0.02, tw * 0.17), p(-len * 0.08, 0), p(len * 0.02, -tw * 0.17)]
+  ctx.save()
+  ctx.beginPath()
+  traceTorso(ctx, torso)
+  ctx.clip()
+  ctx.lineJoin = 'round'
+  ctx.lineWidth = O * 0.8
+  ctx.strokeStyle = ink
+  ctx.fillStyle = color
+  for (const shape of [blade, knot]) {
+    ctx.beginPath()
+    shape.forEach((q, i) => (i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)))
+    ctx.closePath()
+    ctx.fill()
+    ctx.stroke()
+  }
+  ctx.restore()
+}
+
 /** A pallu / dupatta: a band from the near shoulder across the chest to the hip, inside the body's outline. */
 function drawDrape(ctx: CanvasRenderingContext2D, torso: BeanTorso, color: string, ink: string, O: number): void {
   const len = torso.length
@@ -709,6 +748,7 @@ export function drawBeanPart(ctx: CanvasRenderingContext2D, bean: Bean, joints: 
     ctx.strokeStyle = ink
     ctx.stroke()
     if (bean.drape) drawDrape(ctx, torso, bean.drape, ink, O)
+    if (bean.tie) drawTie(ctx, torso, joints.turn, bean.tie, ink, O)
     if (bean.coat) {
       const thigh = (side: string) => Math.hypot(P[`knee.${side}`].x - P[`hip.${side}`].x, P[`knee.${side}`].y - P[`hip.${side}`].y)
       drawTrench(ctx, torso, bean.coat, (thigh('left') + thigh('right')) / 2, ink, O, H)

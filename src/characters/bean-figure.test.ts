@@ -61,7 +61,7 @@ describe('bean figure', () => {
     expect(who.skin).toBe('#ffffff')
     expect(who.lineWidth).toBeCloseTo(H * 0.0105)
     expect(who.face).toMatchObject({ style: 'oval', projection: 'volume', teeth: true, tongue: true })
-    expect(who.bean).toEqual({ limbs: 'tube', torso: 1, limbWidth: 0.024, lineWidth: 0.017, outlineWidth: 0.0105, fill: '#ffffff', shirt: null, sleeves: 'short', trousers: null, shoes: '#ffffff', halo: null, coat: null, fedora: null, skirt: null, drape: null, bangles: null })
+    expect(who.bean).toEqual({ limbs: 'tube', torso: 1, limbWidth: 0.024, lineWidth: 0.017, outlineWidth: 0.0105, fill: '#ffffff', shirt: null, sleeves: 'short', trousers: null, shoes: '#ffffff', halo: null, tie: null, coat: null, fedora: null, skirt: null, drape: null, bangles: null })
     // The bean is always clean, and wears an outfit's colours itself, not its layers.
     const dressed = character({ figure: 'bean', look: 'pencil', outfit: { shirt: '#ef4444', trousers: '#1e3a5f', sleeves: 'long' } })
     expect(dressed.look).toBe('clean')
@@ -314,6 +314,22 @@ describe('bean figure', () => {
     expect(isWhite(sole)).toBe(false)
   })
 
+  it('wears a tie down the chest that follows the turn and hides from behind; an outfit tie maps to it', () => {
+    const tie = [0xcc, 0x00, 0x44]
+    // A point on the blade: down the body's centre line, between the knot and the tip.
+    const onBlade = (joints: ReturnType<typeof render>['joints']) => {
+      const torso = beanTorso(resolveBean(), joints)
+      return { x: torso.cx + Math.cos(torso.angle) * torso.length * 0.28, y: torso.cy + Math.sin(torso.angle) * torso.length * 0.28 }
+    }
+    const front = render({ bean: { shirt: '#ffffff', tie: '#cc0044' } }, HUMAN_POSES.rest)
+    expect(front.at(onBlade(front.joints))).toEqual(tie)
+    const profile = render({ bean: { shirt: '#ffffff', tie: '#cc0044' } }, { ...HUMAN_POSES.rest, turn: 1 })
+    expect(profile.at(onBlade(profile.joints))).not.toEqual(tie)
+    const back = render({ bean: { shirt: '#ffffff', tie: '#cc0044' } }, { ...HUMAN_POSES.rest, turn: 2 })
+    expect(back.at(onBlade(back.joints))).not.toEqual(tie)
+    expect(character({ figure: 'bean', outfit: { shirt: '#fff', trousers: '#333', tie: '#cc0044' } }).bean?.tie).toBe('#cc0044')
+  })
+
   it('oval eyes follow the expression fields and the gaze, and fit glasses round them', () => {
     const head = (options: CharacterOptions, pose: Pose) => {
       const canvas = createCanvas(240, 240)
@@ -328,6 +344,9 @@ describe('bean figure', () => {
     }
     for (const name of Object.keys(HUMAN_EXPRESSIONS) as Array<keyof typeof HUMAN_EXPRESSIONS>) expect(() => head({}, HUMAN_EXPRESSIONS[name])).not.toThrow()
     expect(head({ glasses: 'round' }, {}).equals(neutral)).toBe(false)
+    // eyeScale and eyeAspect size the oval eyes, and the glasses grow with them.
+    expect(head({ face: { eyeScale: 1.2, eyeAspect: 0.8 } }, {}).equals(neutral)).toBe(false)
+    expect(head({ glasses: 'round', face: { eyeScale: 1.2 } }, {}).equals(head({ glasses: 'round' }, {}))).toBe(false)
     // The oval style works on any figure, through face.style.
     const fluid = character({ height: H, face: { style: 'oval' } })
     expect(fluid.face.style).toBe('oval')

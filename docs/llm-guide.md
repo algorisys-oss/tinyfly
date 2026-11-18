@@ -220,8 +220,9 @@ not a `look` value. It uses the same expressions, blink, gaze and turn fields.
 White outlined stick figures are `figure: 'bean'` (presets `beanMan`, `beanWoman`,
 `beanKid`, `beanBoss`, `beanDetective`, `beanStick` in `BEAN_CAST`): seamless outlined noodle limbs or bare
 lines (`bean: { limbs: 'tube' | 'line' }`), a shaped body (`bean.torso` fullness), big oval eyes
-(`face.style: 'oval'`, usable on any figure), `hands: 'mitten'` and cartoon shoes; colours from
-`bean: { shirt, sleeves, trousers, shoes }` or an `outfit`; detective gear `bean: { coat, fedora, shades: true }`
+(`face.style: 'oval'`, usable on any figure; `face: { eyeScale: 1.2, eyeAspect: 0.8 }` makes them bigger
+and rounder), `hands: 'mitten'` and cartoon shoes; colours from
+`bean: { shirt, sleeves, trousers, shoes, tie }` or an `outfit` (its tie too); detective gear `bean: { coat, fedora, shades: true }`
 (aviators replace the eyes, brows still show); `halo` gives line limbs a pale edge. A bean is always drawn clean.
 Household clothes on a bean: `bean: { skirt: '#c2410c' }` (a sari to the ankle) or
 `skirt: { color, length: 0.45 }` (a kurta hem; pair it with `trousers`), `drape` (a pallu or dupatta sash)

@@ -1,3 +1,11 @@
+## Comedy cartoon look: bigger oval eyes, bean tie, inked sets — v0.128.0
+
+- [x] `face: { eyeScale, eyeAspect }` size `style: 'oval'` eyes too (bigger and rounder googly eyes); `ovalEye(face)` gives their geometry; glasses and aviators fit the resized eyes.
+- [x] `bean.tie`: a necktie down the chest (knot and pointed blade), following the body's turn, hidden from behind, under a coat; `outfit.tie` maps onto a bean.
+- [x] `buildScene(name, { ink, lineWidth })` outlines the preset's props to match heavily inked characters.
+- [x] Tests (ovalEye, tie pixels across turns, eye size and glasses renders, scene prop outlines); capabilities, LLM guide, skill, appearance and props docs.
+- [ ] Later: one outline weight for whole scenes (scenery window and skirting too); a flat dot-eye face for the soft cast.
+
 ## Home Time door opens from the handle side — v0.126.0
 
 - [x] `house({ door: { hinge, opens } })`: the front door hangs on its left or right edge and swings out or in (default left, out, as before); new `handle` anchor on the free edge.

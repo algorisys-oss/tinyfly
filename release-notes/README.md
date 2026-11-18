@@ -27,6 +27,7 @@ tinyfly follows [Semantic Versioning](https://semver.org/):
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| [v0.128.0](v0.128.0.md) | 2026-11-18 | Comedy cartoon look: bigger, rounder oval eyes (`eyeScale`/`eyeAspect`), a tie on the bean figure, `buildScene` props inked to match the characters |
 | [v0.127.1](v0.127.1.md) | 2026-11-17 | The Cosmic Dive live example (a dive through scale with the cosmic kit, play or scrub); when a zoom level covers the frame |
 | [v0.127.0](v0.127.0.md) | 2026-11-17 | Cosmic explainer kit (gradient skies, dust and bokeh, flat-shaded shapes, zoom through scale in portals, short captions, label chips) and sound effects from numbers; `renderMix` takes samples |
 | [v0.126.0](v0.126.0.md) | 2026-11-16 | House doors hang on either edge and swing out or in, with a `handle` anchor; Home Time's figure opens the door from the handle side |

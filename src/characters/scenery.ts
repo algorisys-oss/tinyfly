@@ -439,6 +439,9 @@ export interface ScenePresetOptions {
   scale?: number
   /** Overrides for the scenery (an hour, weather, colours) */
   scenery?: Partial<SceneryOptions>
+  /** The props' outline colour and width in px (default each prop's own), so a set can match its characters' ink */
+  ink?: string
+  lineWidth?: number
 }
 
 /** A prop in a preset: which, where its middle stands (scene x), facing which way, with its scale. */
@@ -498,6 +501,7 @@ export function scenePreset(name: ScenePresetName | string, options: ScenePreset
 export function buildScene(name: ScenePresetName | string, options: ScenePresetOptions): { scenery: Scenery; props: PropTarget[]; ground: number } {
   const preset = scenePreset(name, options)
   const sky = scenery(preset.scenery)
-  const props = preset.props.map((placed) => propTarget({ x: placed.x, y: sky.ground, prop: propPreset(placed.preset), scale: placed.scale, values: { turn: placed.turn ?? 0, ...placed.values } }))
+  const outline = { ...(options.ink !== undefined ? { ink: options.ink } : {}), ...(options.lineWidth !== undefined ? { lineWidth: options.lineWidth } : {}) }
+  const props = preset.props.map((placed) => propTarget({ x: placed.x, y: sky.ground, prop: propPreset(placed.preset), scale: placed.scale, values: { turn: placed.turn ?? 0, ...placed.values }, ...outline }))
   return { scenery: sky, props, ground: sky.ground }
 }

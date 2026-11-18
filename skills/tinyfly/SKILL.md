@@ -40,7 +40,8 @@ names.
   The same `HUMAN_EXPRESSIONS`, blink, gaze, turn, acting and dance fields apply.
 - White outlined stick figures: `figure: 'bean'` (or `castMember('beanMan' | 'beanWoman' | 'beanKid' | 'beanBoss' | 'beanDetective' | 'beanStick', height)`)
   draws seamless outlined noodle limbs (`bean: { limbs: 'line' }` for bare lines), a shaped body, big oval eyes
-  (`face.style: 'oval'`), mittens and cartoon shoes; colour it with `bean: { shirt, sleeves, trousers, shoes }`;
+  (`face.style: 'oval'`; `face: { eyeScale, eyeAspect }` sizes them), mittens and cartoon shoes; colour it with
+  `bean: { shirt, sleeves, trousers, shoes, tie }`;
   detective gear `bean: { coat, fedora, shades: true }`; `halo` edges line limbs.
   It is always drawn clean; every pose, gait, dance and expression field works on it.
   Household clothes: `bean: { skirt, drape, bangles }` (`skirt` a colour or `{ color, length }`; preset `beanSari`).

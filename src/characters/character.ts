@@ -84,8 +84,8 @@ export interface CharacterOptions extends HeadLookOptions {
    * The bean figure's options (`figure: 'bean'`): `limbs` (tube | line),
    * `torso` fullness, `limbWidth`, `lineWidth`, `outlineWidth` (fractions of
    * the height), `fill`, a `shirt` colour with `sleeves`, `trousers`, `shoes`,
-   * a `halo` for line limbs, and detective gear: `coat`, `fedora`, `shades`.
-   * An `outfit`'s shirt, trousers and sleeves colour it too.
+   * a `halo` for line limbs, a necktie (`tie`), and detective gear: `coat`, `fedora`, `shades`.
+   * An `outfit`'s shirt, trousers, sleeves and tie colour it too.
    */
   bean?: BeanOptions
   /** Opt-in organic contours, skin material and independent outline settings. */
@@ -191,7 +191,7 @@ export function character(options: CharacterOptions = {}): Character {
   // The bean figure is always drawn clean: its outline is its look.
   const look = isBean ? 'clean' : (options.look ?? 'clean')
   const bean = isBean ? resolveBean({
-    ...(options.outfit ? { shirt: options.outfit.shirt, trousers: options.outfit.trousers, ...(options.outfit.sleeves ? { sleeves: options.outfit.sleeves } : {}) } : {}),
+    ...(options.outfit ? { shirt: options.outfit.shirt, trousers: options.outfit.trousers, ...(options.outfit.sleeves ? { sleeves: options.outfit.sleeves } : {}), ...(options.outfit.tie ? { tie: options.outfit.tie } : {}) } : {}),
     ...(options.lineWidth !== undefined ? { outlineWidth: options.lineWidth / height } : {}),
     ...options.bean,
   }) : undefined
