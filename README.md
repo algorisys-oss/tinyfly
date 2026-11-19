@@ -34,6 +34,13 @@ A lightweight, API-driven animation engine and visual editor for creating high-p
 - **Track queries** - `getTracks(filter)`, `removeTracks(filter)`, and `findConflicts()` to surface overlapping writes
 - **Compile-time values** - `"+=100"` and `"random(-50, 50)"` resolve at authoring time from a recorded seed, so the JSON holds plain numbers and replays identically
 
+### Presentations
+- **Decks from markup** - `@algorisys/tinyfly/present`: `createDeck('#deck', { scenes })` turns `[data-slide]` sections into a talk stepped with a clicker or the keyboard, on a fixed 1920 × 1080 stage scaled to any screen; `[data-step]` fragments appear on the click they name
+- **A scene per slide** - `{ marks, draw(ctx, frame) }`: one scene time per click, and the deck plays the clock from mark to mark, so stick figures act out each point as the presenter clicks. A second press while a step plays shows its end and never skips a step
+- **Presenter window** - Notes, elapsed time, time left of the slot, and what the next press will do, in a second window that works from `file://`
+- **Countdowns** - `<button data-timer="30">` for polls and QR codes; scenes get the countdown each frame, so a figure can dance while the room votes
+- **One offline file** - `npx @algorisys/tinyfly present index.html -o Talk.html` inlines scripts, styles, images and fonts, and fails when anything would still need the network. `DeckState` is the same deck with no page, driven by explicit times ([guide](docs/presenting.md))
+
 ### Scroll & Interaction
 - **Scroll-driven playback** - `ScrollDriver` scrubs a timeline against scroll position with GSAP-style trigger strings (`'top bottom'`, `'top top+=500'`); the geometry is a pure, unit-tested function
 - **Play when visible** - `VisibilityDriver` plays on appearance (`once` / `repeat` / `reset`) via IntersectionObserver
@@ -220,6 +227,7 @@ filling the page. [Open the manga example full page](https://tinyfly.app/example
 - [GSAP Compatibility](docs/gsap-compat.md) — The GSAP-flavoured API, the mapping table, and what we deliberately don't do
 - [Rendering Video from Code](docs/video-rendering.md) — `tinyfly video`, custom code-drawn targets, narration timing, captions and stills, without a browser
 - [Teaching Animations](docs/teaching.md) — Step-through figures: markers, captions, the stepping player, controls, declarative embeds, scenarios the reader chooses, `tinyfly/teach`, validate and render
+- [Presentations](docs/presenting.md) — `tinyfly/present`: decks from markup, a scene per slide, the presenter window, countdowns, and one offline HTML file
 - [Maths Animations](docs/math.md) — `tinyfly/math`: figures, the TeX subset, equation steps, lesson embeds, explorables and videos
 - [Extending tinyfly](docs/extending.md) — Writing adapters, custom eases and stagger offsets, adding a track kind, contributing examples
 - [Deployment](docs/DEPLOYMENT.md) — Hosting, Docker, and CDN configuration
@@ -311,7 +319,7 @@ GSAP-shaped functions at the top level. Teaching embeds are included: add
 itself.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.128.0/cdn/tinyfly.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.129.0/cdn/tinyfly.iife.js"></script>
 <script>
   tinyfly.to('.box', { x: 200, rotate: 90, duration: 1, ease: 'power2.out' })
 
@@ -348,7 +356,7 @@ A teaching figure needs no code at all:
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON with markers… }</script>
   <figcaption>Appending to a full slice</figcaption>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.128.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.129.0/cdn/tinyfly.iife.js" data-tinyfly-auto></script>
 ```
 
 See [Teaching Animations](docs/teaching.md).
@@ -447,7 +455,7 @@ Without a build step, the player bundle puts the same functions on a `tinyfly` g
   <div data-tinyfly="box" style="width: 60px; height: 60px; background: #4a9eff;"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.128.0/cdn/tinyfly-player.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.129.0/cdn/tinyfly-player.iife.js"></script>
 <script>
   tinyfly.play('#animation', './animation.json', { loop: -1 })
 </script>
@@ -556,7 +564,7 @@ Or skip the code entirely with declarative embeds (see [Teaching Animations](doc
   <svg viewBox="0 0 720 200">…</svg>
   <script type="application/json" data-tinyfly-timeline>{ …timeline JSON… }</script>
 </figure>
-<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.128.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
+<script src="https://cdn.jsdelivr.net/gh/algorisys-oss/tinyfly@v0.129.0/cdn/tinyfly-embed.iife.js" data-tinyfly-auto></script>
 ```
 
 ### Audio / Video Sync

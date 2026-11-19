@@ -294,6 +294,9 @@ and stump radii. Preserve bowled's collision and stumping's later wicket break.
 - Tracks: `checkTracks(tracks, targets)` — unknown targets and properties,
   key order, value kinds and ranges.
 - Teaching timelines: `npx @algorisys/tinyfly validate timeline.json --markup figure.svg`.
+- Presentations (`createDeck`, `docs/presenting.md`): build with
+  `npx @algorisys/tinyfly present index.html -o Talk.html`; it fails when the page
+  would still load a file or the network. Check moments with `deck.seek(slide, step, ms)`.
 
 Fix every error; read every warning.
 

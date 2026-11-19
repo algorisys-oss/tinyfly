@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>tinyfly deck</title>
+<style>
+  #deck { --tf-deck-bg: #f6f8fc; --tf-deck-accent: #f0812f; font-family: "Segoe UI", Inter, Arial, sans-serif; color: #1b2a4a; }
+  h1 { position: absolute; left: 120px; top: 110px; margin: 0; font-size: 96px; }
+  h2 { position: absolute; left: 120px; top: 90px; margin: 0; font-size: 72px; }
+  .lead { position: absolute; left: 120px; top: 250px; font-size: 40px; color: #5b6b85; }
+  ul { position: absolute; left: 120px; top: 230px; margin: 0; padding: 0; list-style: none; font-size: 46px; }
+  li { margin-bottom: 34px; padding: 22px 34px; width: 760px; background: #fff; border-radius: 20px; box-shadow: 0 10px 30px rgba(14,40,65,.1); }
+  li.tf-now { outline: 5px solid #f0812f; }
+  .poll { position: absolute; left: 120px; top: 260px; width: 520px; padding: 40px; background: #0e2841; color: #fff; border-radius: 26px; font-size: 38px; text-align: center; }
+  .poll button { margin-top: 30px; width: 100%; --tf-deck-panel: #2e5597; }
+</style>
+</head>
+<body>
+<main id="deck">
+  <section data-slide="hello" data-title="Hello">
+    <h1>A deck made with tinyfly</h1>
+    <p class="lead">Press → or click. P opens the presenter window, ? lists the keys.</p>
+    <aside data-notes>Welcome everyone. The figure walks in by itself; wait for the wave.</aside>
+  </section>
+
+  <section data-slide="points" data-title="Three things a deck does">
+    <h2>Three things a deck does</h2>
+    <ul>
+      <li data-step="1">Each click plays the scene to its next mark</li>
+      <li data-step="2">Markup appears on the click it names</li>
+      <li data-step="3" data-reveal="pop">A second press never skips a step</li>
+    </ul>
+    <aside data-notes>One point per click. The figure points at each card as it appears.</aside>
+  </section>
+
+  <section data-slide="poll" data-title="A question, with a countdown">
+    <h2>A question, with a countdown</h2>
+    <div class="poll" data-step="1" data-reveal="fade">
+      Which would you fix first?
+      <button data-timer="10"></button>
+    </div>
+    <aside data-notes>Next starts the countdown. Next again ends it early. The figure dances while it runs.</aside>
+  </section>
+</main>
+<script src="../../lib/browser/tinyfly.iife.js"></script>
+<script src="scenes.js"></script>
+<script>
+  window.deck = tinyfly.createDeck('#deck', { scenes: window.SCENES, slotMinutes: 5, title: 'tinyfly deck' })
+</script>
+</body>
+</html>

@@ -119,6 +119,12 @@ export const DOCS: DocEntry[] = [
     section: 'Guides',
   },
   {
+    id: 'presenting',
+    title: 'Presentations',
+    summary: 'A talk from a tinyfly page: tinyfly/present turns slide markup into a deck stepped with a clicker, with a scene per slide that plays from mark to mark, a presenter window with notes and a clock, countdowns for polls, and `tinyfly present` to build one offline HTML file.',
+    section: 'Guides',
+  },
+  {
     id: 'math',
     title: 'Maths Animations',
     summary: 'tinyfly/math: figures as JSON (grids a matrix warps, vectors, function plots, polygons, eigenlines, TeX labels and equations that rewrite step by step), animated by plain tracks, played in lesson-page embeds, explorables and videos from one layout; a built-in TeX subset and ready linear algebra figures.',

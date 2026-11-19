@@ -68,4 +68,8 @@ describe('entry boundaries', () => {
     }
     expect(reachable('math/index.ts').filter((f) => /^(characters|scene-3d|maps|editor|sports)\//.test(f))).toEqual([])
   })
+
+  it('present stands alone: a deck needs no engine, player or characters', () => {
+    expect(reachable('present/index.ts').filter((f) => !f.startsWith('present/'))).toEqual([])
+  })
 })

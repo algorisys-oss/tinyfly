@@ -18,6 +18,8 @@
  * `@algorisys/tinyfly/embed` and the CLI. For a page that only shows teaching
  * figures, `tinyfly-embed.iife.js` is the smaller choice.
  *
+ * Presentations are here as well (`createDeck`), so a deck needs this one script.
+ *
  * Bundler users should import the individual entry points instead
  * (`tinyfly`, `tinyfly/player`, `tinyfly/gsap-compat`, …) so unused parts
  * tree-shake away; this file exists for pages with no build step.
@@ -79,6 +81,9 @@ export type { Controls, ControlsOptions, ControlLabels, FullscreenControl } from
 export { mount, mountAll, unmount } from '../embed/mount'
 export { bindChoiceHotspots } from '../embed/choices'
 export type { MountedEmbed, MountOptions } from '../embed/mount'
+// Presentations: slides stepped with a clicker, a scene per slide, a presenter window.
+export { createDeck, DeckState, DEFAULT_DECK_LABELS } from '../present'
+export type { Deck, DeckOptions, DeckScene, DeckSceneFactory, DeckFrame, DeckLabels } from '../present'
 
 // Teaching figures mount themselves when the script tag has data-tinyfly-auto.
 autoMountFromCurrentScript()

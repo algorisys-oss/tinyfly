@@ -36,6 +36,14 @@
  *       says whether the video loops (exit 1 when it does not). Needs ffmpeg on
  *       the PATH (not for stills or --loop-check) and the optional package
  *       @napi-rs/canvas.
+ *
+ *   tinyfly present <deck.html> [-o <out.html>] [--allow-remote]
+ *       Build a presentation into one HTML file that works offline from
+ *       file://: scripts and stylesheets inlined, images, fonts and media as
+ *       data URIs. Exit 1 when a local file is missing, when something cannot
+ *       be inlined, or when the page still loads anything from the network
+ *       (--allow-remote keeps network URLs and only warns). Default output:
+ *       <deck>.offline.html beside the page.
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { basename, dirname, extname, join, resolve } from 'node:path'
@@ -86,7 +94,8 @@ const usage = () => {
       '  tinyfly validate <timeline.json> [<timeline.json> …] [--markup <file>]\n' +
       '  tinyfly render <timeline.json> <markup file> [--at start|end|<ms>|<marker id>]\n' +
       '  tinyfly video <scene.mjs> [-o <out.mp4>] [--stills <dir>] [--frames <i,j,…> | --times <ms,…>] [--loop-check]\n' +
-      '                [--scale <n>] [--fps <n>] [--crf <n>] [--codec h264|prores] [--no-audio] [--srt <file>] [--vtt <file>]'
+      '                [--scale <n>] [--fps <n>] [--crf <n>] [--codec h264|prores] [--no-audio] [--srt <file>] [--vtt <file>]\n' +
+      '  tinyfly present <deck.html> [-o <out.html>] [--allow-remote]'
   )
   process.exit(2)
 }
@@ -150,6 +159,8 @@ if (command === 'capabilities') {
   process.stdout.write(renderFrame(readFileSync(markupFile, 'utf8'), readJson(timelineFile), frame))
 } else if (command === 'video') {
   await video()
+} else if (command === 'present') {
+  await present()
 } else {
   usage()
 }
@@ -244,4 +255,39 @@ async function video() {
     console.error(error instanceof Error ? error.message : error)
     process.exit(1)
   }
+}
+
+async function present() {
+  const output = flag('-o') ?? flag('--output')
+  const allowRemote = has('--allow-remote')
+  const [pageFile] = rest
+  if (!pageFile || rest.length > 1) usage()
+  const dir = dirname(resolve(pageFile))
+  const read = (encoding) => (path) => {
+    try {
+      return readFileSync(join(dir, path), encoding)
+    } catch {
+      return null
+    }
+  }
+  let html
+  try {
+    html = readFileSync(pageFile, 'utf8')
+  } catch (error) {
+    console.error(`tinyfly: cannot read ${pageFile}: ${error.message}`)
+    process.exit(2)
+  }
+  const { inlineDeck } = await import('../lib/addons/present.js')
+  const result = inlineDeck(html, { readText: read('utf8'), readBase64: read('base64') })
+  for (const path of result.missing) console.error(`error: missing file: ${path}`)
+  for (const item of result.unsupported) console.error(`error: cannot inline: ${item}`)
+  for (const url of result.remote) console.error(`${allowRemote ? 'warning' : 'error'}: loads from the network: ${url}`)
+  const errors = result.missing.length + result.unsupported.length + (allowRemote ? 0 : result.remote.length)
+  if (errors > 0) {
+    console.error(`${pageFile}: ${errors} error(s); nothing written`)
+    process.exit(1)
+  }
+  const out = output ?? join(dir, `${basename(pageFile, extname(pageFile))}.offline.html`)
+  writeFileSync(out, result.html)
+  console.error(`${out}: ${result.inlined.length} file(s) inlined, ${(Buffer.byteLength(result.html) / 1024).toFixed(0)} KB`)
 }

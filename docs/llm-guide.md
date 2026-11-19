@@ -365,6 +365,9 @@ scriptTracks: 2 problem(s) in the beats:
 - **Code panels** reject unknown languages and remove styles. `token()` throws
   when a line doesn't have the word.
 - **Teaching timelines**: `npx @algorisys/tinyfly validate timeline.json --markup figure.svg`.
+- **Presentations** ([presenting.md](presenting.md)): `npx @algorisys/tinyfly present index.html -o Talk.html`
+  fails when the page would still load a file or the network. Check moments
+  with `deck.seek(slide, step, ms)`.
 
 ## 4. Look at it
 

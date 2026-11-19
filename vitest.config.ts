@@ -16,6 +16,7 @@ export default defineConfig({
       { find: /^@algorisys\/tinyfly$/, replacement: new URL('./src/engine/index.ts', import.meta.url).pathname },
       { find: /^@algorisys\/tinyfly\/characters$/, replacement: new URL('./src/characters/index.ts', import.meta.url).pathname },
       { find: /^@algorisys\/tinyfly\/math$/, replacement: new URL('./src/math/index.ts', import.meta.url).pathname },
+      { find: /^@algorisys\/tinyfly\/present$/, replacement: new URL('./src/present/index.ts', import.meta.url).pathname },
       { find: /^@algorisys\/tinyfly\/teach$/, replacement: new URL('./src/teach/index.ts', import.meta.url).pathname },
     ],
   },

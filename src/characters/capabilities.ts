@@ -390,6 +390,7 @@ export function capabilities(version?: string, cast: Cast = {}): Capabilities {
       'tinyfly validate <timeline.json> [--markup file]': 'check a timeline against its markup',
       'tinyfly render <timeline.json> <markup> [--at …]': 'a frame as static markup',
       'tinyfly video <scene.mjs> [--stills dir --times …]': 'MP4, or PNG stills to look at',
+      'tinyfly present <deck.html> [-o out.html]': 'a presentation as one offline HTML file',
     },
   }
 }

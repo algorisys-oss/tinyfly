@@ -1,3 +1,13 @@
+## Presentations (`@algorisys/tinyfly/present`) — v0.129.0
+
+- [x] `DeckState`: slides, steps from scene marks (padded to the markup's fragments), scene clocks, countdowns and the next-press hint as plain state with explicit times; a press while a step plays snaps to its end.
+- [x] `createDeck(root, { scenes, slotMinutes, labels, … })`: `[data-slide]` / `[data-step]` / `[data-notes]` / `[data-timer]` markup, a fixed stage scaled to the window, scenes as `{ marks, draw(ctx, frame), update(frame) }` built when first needed, keys and clicker, typed slide numbers, black and white screens, full screen, the place kept in the URL hash, `seek(slide, step, ms)` for rehearsal.
+- [x] Presenter window (notes, elapsed and remaining time, clicks, next-press hint), written into a blank window so it works from `file://`.
+- [x] `inlineDeck()` and `tinyfly present <deck.html> [-o out.html] [--allow-remote]`: one offline HTML file; missing files, network URLs and things it cannot inline are errors.
+- [x] `createDeck` in the browser bundle (`tinyfly.createDeck`); `./present` package entry that reaches nothing else (entry-boundary test).
+- [x] Tests (state, deck in happy-dom, inliner); `examples/present-deck`; docs/presenting.md, README, capabilities, LLM guide, skill.
+- [ ] Later: a scene made from a timeline with markers (marks from `pause` markers); shared stick-figure scene helpers (actor, speech bubble, badge) so decks stop copying them; slide transitions beyond the cross-fade; a `tinyfly present --watch`; touch swipes.
+
 ## Comedy cartoon look: bigger oval eyes, bean tie, inked sets — v0.128.0
 
 - [x] `face: { eyeScale, eyeAspect }` size `style: 'oval'` eyes too (bigger and rounder googly eyes); `ovalEye(face)` gives their geometry; glasses and aviators fit the resized eyes.
